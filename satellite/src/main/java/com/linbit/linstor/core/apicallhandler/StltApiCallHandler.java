@@ -170,7 +170,7 @@ public class StltApiCallHandler
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.EXT_FILE_MAP_LOCK) ReadWriteLock extFileMapLockRef,
-        @Named( CoreModule.REMOTE_MAP_LOCK) ReadWriteLock remoteMapLockRef,
+        @Named(CoreModule.REMOTE_MAP_LOCK) ReadWriteLock remoteMapLockRef,
         @Named(LinStor.SATELLITE_PROPS) Props satellitePropsRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
@@ -603,7 +603,9 @@ public class StltApiCallHandler
                     try
                     {
                         StorPool sp = spd.getStorPool(apiCtx, controllerPeerConnector.getLocalNodeName());
-                        if (sp != null) { // storage pool probably not deployed on this node
+                        if (sp != null)
+                        {
+                            // storage pool probably not deployed on this node
                             DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(sp);
                             deviceProvider.checkConfig(sp);
                         }
@@ -1006,12 +1008,13 @@ public class StltApiCallHandler
     // write stdout & stderr in file if failed, but don't mark as failed, write stdout if successful
     private LinstorFile makeFileFromCmdNoFailed(String nodeName, String[] command, String fileName)
     {
+        LinstorFile file;
         try
         {
             OutputData output = extCmdFactory.create().exec(command);
             if (output.exitCode != 0)
             {
-                return new LinstorFile(
+                file = new LinstorFile(
                     nodeName,
                     fileName,
                     new Date(System.currentTimeMillis()),
@@ -1020,7 +1023,7 @@ public class StltApiCallHandler
             }
             else
             {
-                return new LinstorFile(
+                file = new LinstorFile(
                     nodeName,
                     fileName,
                     new Date(System.currentTimeMillis()),
@@ -1030,24 +1033,26 @@ public class StltApiCallHandler
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
-            return new LinstorFile(
+            file = new LinstorFile(
                 nodeName,
                 fileName + ".failed",
                 new Date(System.currentTimeMillis()),
                 exc.getClass().getCanonicalName() + ": " + exc.getMessage() + "\ncommand: " + Arrays.toString(command)
             );
         }
+        return file;
     }
 
     // write stderr & stdout in file if failed, write stdout if successful
     private LinstorFile makeFileFromCmd(String nodeName, String[] command, String fileName)
     {
+        LinstorFile file;
         try
         {
             OutputData output = extCmdFactory.create().exec(command);
             if (output.exitCode != 0)
             {
-                return new LinstorFile(
+                file = new LinstorFile(
                     nodeName,
                     fileName + ".failed",
                     new Date(System.currentTimeMillis()),
@@ -1056,7 +1061,7 @@ public class StltApiCallHandler
             }
             else
             {
-                return new LinstorFile(
+                file = new LinstorFile(
                     nodeName,
                     fileName,
                     new Date(System.currentTimeMillis()),
@@ -1066,13 +1071,14 @@ public class StltApiCallHandler
         }
         catch (IOException | ChildProcessTimeoutException exc)
         {
-            return new LinstorFile(
+            file = new LinstorFile(
                 nodeName,
                 fileName + ".failed",
                 new Date(System.currentTimeMillis()),
                 exc.getClass().getCanonicalName() + ": " + exc.getMessage() + "\ncommand: " + Arrays.toString(command)
             );
         }
+        return file;
     }
 
     private interface ApplyData

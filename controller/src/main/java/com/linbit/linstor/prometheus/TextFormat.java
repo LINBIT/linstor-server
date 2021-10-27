@@ -10,11 +10,13 @@ import io.prometheus.client.Collector;
  * TextFormat implements the simple prometheus text format:
  * https://prometheus.io/docs/instrumenting/exposition_formats/
  */
-public class TextFormat {
+public class TextFormat
+{
     private final StringBuilder sb = new StringBuilder();
     private String currentSection;
 
-    private enum Type {
+    private enum Type
+    {
         counter,
         gauge,
         histogram,
@@ -53,7 +55,7 @@ public class TextFormat {
     {
         currentSection = sectionName.trim();
 
-        if(help != null && !help.isEmpty())
+        if (help != null && !help.isEmpty())
         {
             sb.append("# HELP ");
             sb.append(currentSection);
@@ -78,7 +80,8 @@ public class TextFormat {
     public void writeSample(@Nullable final Map<String, String> labels, double value)
     {
         sb.append(currentSection);
-        if (labels != null && !labels.isEmpty()) {
+        if (labels != null && !labels.isEmpty())
+        {
             sb.append('{');
             sb.append(formatLabels(labels));
             sb.append("}");
@@ -89,7 +92,8 @@ public class TextFormat {
     }
 
     @Override
-    public String toString() {
+    public String toString()
+    {
         return sb.toString();
     }
 
@@ -97,7 +101,7 @@ public class TextFormat {
     {
         ArrayList<String> kvVal = new ArrayList<>();
         // TODO value escaping
-        for(final Map.Entry<String, String> entry : labels.entrySet())
+        for (final Map.Entry<String, String> entry : labels.entrySet())
         {
             kvVal.add(entry.getKey() + "=\"" + entry.getValue() + "\"");
         }

@@ -39,7 +39,8 @@ import java.util.stream.Collectors;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.hotspot.DefaultExports;
 
-public class PrometheusBuilder {
+public class PrometheusBuilder
+{
     private final ErrorReporter errorReporter;
 
     private static final String VOLUME_STATE_HELP;
@@ -49,7 +50,8 @@ public class PrometheusBuilder {
     private static final int RSC_STATE_UN_USED = 0;
     private static final int RSC_STATE_IN_USE = 1;
 
-    private enum VolumeStates {
+    private enum VolumeStates
+    {
         UPTODATE("UpToDate", 1),
         CREATED("Created", 2),
         ATTACHED("Attached", 3),
@@ -83,26 +85,32 @@ public class PrometheusBuilder {
 
         public static VolumeStates getByName(final String name)
         {
-            for(VolumeStates state : VolumeStates.values()) {
+            VolumeStates vlmStates = DUNKNOWN;
+            for (VolumeStates state : VolumeStates.values())
+            {
                 if (state.getName().equalsIgnoreCase(name))
                 {
-                    return state;
+                    vlmStates = state;
+                    break;
                 }
             }
-            return DUNKNOWN;
+            return vlmStates;
         }
     }
 
-    static {
+    static
+    {
         // init volumeStatehelp
         StringBuilder help = new StringBuilder();
-        for (VolumeStates state : VolumeStates.values()) {
+        for (VolumeStates state : VolumeStates.values())
+        {
             help.append(state.getValue()).append("=\"").append(state.getName()).append("\", ");
         }
         VOLUME_STATE_HELP = help.toString();
 
         StringBuilder sb = new StringBuilder();
-        for (ApiConsts.ConnectionStatus conStat : ApiConsts.ConnectionStatus.values()) {
+        for (ApiConsts.ConnectionStatus conStat : ApiConsts.ConnectionStatus.values())
+        {
             sb.append(conStat.ordinal()).append("=\"").append(conStat.name()).append("\", ");
         }
         NODE_STATE_HELP = sb.toString();
@@ -143,20 +151,26 @@ public class PrometheusBuilder {
 
     @Nullable
     private SatelliteResourceState getResourceState(
-        final Map<NodeName, SatelliteState> satelliteStates, final ResourceApi rscApi)
+        final Map<NodeName, SatelliteState> satelliteStates,
+        final ResourceApi rscApi
+    )
     {
-        try {
+        SatelliteResourceState state = null;
+        try
+        {
             final ResourceName rscNameRes = new ResourceName(rscApi.getName());
             final NodeName linNodeName = new NodeName(rscApi.getNodeName());
             if (satelliteStates.containsKey(linNodeName) && satelliteStates.get(linNodeName)
                     .getResourceStates().containsKey(rscNameRes))
             {
-                return satelliteStates.get(linNodeName).getResourceStates().get(rscNameRes);
+                state = satelliteStates.get(linNodeName).getResourceStates().get(rscNameRes);
             }
-        } catch (InvalidNameException invNamExc) {
+        }
+        catch (InvalidNameException invNamExc)
+        {
             errorReporter.reportError(invNamExc);
         }
-        return null;
+        return state;
     }
 
     private static int resourceState(@Nullable SatelliteResourceState resState)
@@ -171,7 +185,9 @@ public class PrometheusBuilder {
 
     @Nonnull
     private static Map<String, String> volumeExport(
-        final ResourceApi resourceApi, final VolumeApi vlmApi)
+        final ResourceApi resourceApi,
+        final VolumeApi vlmApi
+    )
     {
         final HashMap<String, String> map = new HashMap<>();
         map.put("resource", resourceApi.getName());
@@ -224,8 +240,8 @@ public class PrometheusBuilder {
         @Nullable final ResourceList rl,
         @Nullable final List<StorPoolApi> storagePoolList,
         @Nullable final List<ErrorReport> errorReports,
-        final long scrape_request_count,
-        final long scrape_start_millis) throws IOException
+        final long scrapeRequestCount,
+        final long scrapeStartMillis) throws IOException
     {
         TextFormat tf = new TextFormat();
 
@@ -239,10 +255,12 @@ public class PrometheusBuilder {
         if (nodeApiList != null)
         {
             tf.startGauge("linstor_node_state", NODE_STATE_HELP);
-            for (NodeApi node : nodeApiList) {
+            for (NodeApi node : nodeApiList)
+            {
                 tf.writeSample(
-                        nodeExport(node),
-                        node.connectionStatus().getValue());
+                    nodeExport(node),
+                    node.connectionStatus().getValue()
+                );
             }
         }
 
@@ -256,7 +274,8 @@ public class PrometheusBuilder {
         {
             tf.startGauge("linstor_resource_state", "-1=\"unknown state\", 0=\"secondary\", 1=\"primary\"");
             ArrayList<Pair<ResourceApi, VolumeApi>> volumeApis = new ArrayList<>();
-            for (ResourceApi resApi : rl.getResources()) {
+            for (ResourceApi resApi : rl.getResources())
+            {
                 SatelliteResourceState resState = getResourceState(rl.getSatelliteStates(), resApi);
                 tf.writeSample(resourceExport(resApi), resourceState(resState));
                 volumeApis.addAll(resApi.getVlmList().stream()
@@ -265,15 +284,18 @@ public class PrometheusBuilder {
             }
 
             tf.startGauge("linstor_volume_state", VOLUME_STATE_HELP);
-            for (Pair<ResourceApi, VolumeApi> pair : volumeApis) {
+            for (Pair<ResourceApi, VolumeApi> pair : volumeApis)
+            {
                 JsonGenTypes.Volume vlm = Json.apiToVolume(pair.objB);
                 vlm.state = Volumes.getVolumeState(
-                    rl, pair.objA.getNodeName(), pair.objA.getName(), vlm.volume_number);
+                    rl, pair.objA.getNodeName(), pair.objA.getName(), vlm.volume_number
+                );
                 tf.writeSample(volumeExport(pair.objA, pair.objB), volumeState(pair.objA, vlm));
             }
 
             tf.startGauge("linstor_volume_allocated_size_bytes");
-            for (Pair<ResourceApi, VolumeApi> pair : volumeApis) {
+            for (Pair<ResourceApi, VolumeApi> pair : volumeApis)
+            {
                 double val = pair.objB.getAllocatedSize().isPresent() ?
                     pair.objB.getAllocatedSize().get() * 1024 : Double.NaN;
                 tf.writeSample(volumeExport(pair.objA, pair.objB), val);
@@ -283,24 +305,30 @@ public class PrometheusBuilder {
         if (storagePoolList != null)
         {
             tf.startGauge("linstor_storage_pool_capacity_free_bytes");
-            for (StorPoolApi storPoolApi : storagePoolList) {
+            for (StorPoolApi storPoolApi : storagePoolList)
+            {
                 tf.writeSample(
                     storagePoolExport(storPoolApi),
-                    safeStorPoolValue(storPoolApi.getFreeCapacity(), storPoolApi.getDeviceProviderKind()));
+                    safeStorPoolValue(storPoolApi.getFreeCapacity(), storPoolApi.getDeviceProviderKind())
+                );
             }
 
             tf.startGauge("linstor_storage_pool_capacity_total_bytes");
-            for (StorPoolApi storPoolApi : storagePoolList) {
+            for (StorPoolApi storPoolApi : storagePoolList)
+            {
                 tf.writeSample(
                     storagePoolExport(storPoolApi),
-                    safeStorPoolValue(storPoolApi.getTotalCapacity(), storPoolApi.getDeviceProviderKind()));
+                    safeStorPoolValue(storPoolApi.getTotalCapacity(), storPoolApi.getDeviceProviderKind())
+                );
             }
 
             tf.startGauge("linstor_storage_pool_error_count");
-            for (StorPoolApi storPoolApi : storagePoolList) {
+            for (StorPoolApi storPoolApi : storagePoolList)
+            {
                 tf.writeSample(storagePoolExport(storPoolApi),
                     storPoolApi.getReports().getEntries().stream()
-                        .filter(ApiCallRc.RcEntry::isError).count());
+                        .filter(ApiCallRc.RcEntry::isError).count()
+                );
             }
         }
 
@@ -312,26 +340,33 @@ public class PrometheusBuilder {
                 .map(err -> new Pair<>(err.getModuleString(), err.getNodeName()))
                 .collect(Collectors.toSet());
 
-            nodes.forEach(node -> {
-                HashMap<String, String> errMap = new HashMap<>();
-                errMap.put("hostname", node.objB);
-                errMap.put("module", node.objA);
-                tf.writeSample(errMap, errorReports.stream()
-                    .filter(rep -> rep.getNodeName().equals(node.objB) &&
-                        rep.getModuleString().equals(node.objA))
-                    .count());
-            });
+            nodes.forEach(
+                node ->
+                {
+                    HashMap<String, String> errMap = new HashMap<>();
+                    errMap.put("hostname", node.objB);
+                    errMap.put("module", node.objA);
+                    tf.writeSample(
+                        errMap, errorReports.stream()
+                        .filter(
+                            rep -> (rep.getNodeName().equals(node.objB) &&
+                                rep.getModuleString().equals(node.objA)))
+                        .count()
+                    );
+                }
+            );
         }
 
         StringWriter sw = new StringWriter();
         io.prometheus.client.exporter.common.TextFormat.write004(
-            sw, CollectorRegistry.defaultRegistry.metricFamilySamples());
+            sw, CollectorRegistry.defaultRegistry.metricFamilySamples()
+        );
 
         tf.startCounter("linstor_scrape_requests_count");
-        tf.writeSample(scrape_request_count);
+        tf.writeSample(scrapeRequestCount);
 
         tf.startGauge("linstor_scrape_duration_seconds");
-        tf.writeSample((System.currentTimeMillis() - scrape_start_millis) / 1000.0);
+        tf.writeSample((System.currentTimeMillis() - scrapeStartMillis) / 1000.0);
 
         return tf.toString() + sw.toString();
     }

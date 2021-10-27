@@ -195,7 +195,8 @@ public class CtrlRscMakeAvailableApiCallHandler
             if (isFlagSet(rsc, Resource.Flags.INACTIVE) && !isFlagSet(rsc, Resource.Flags.INACTIVE_PERMANENTLY))
             {
                 Resource activeRsc = getActiveRsc(rsc);
-                if (activeRsc == null) {
+                if (activeRsc == null)
+                {
                     disableFlag(rsc, Resource.Flags.INACTIVE);
                     flux = stltUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
                         updateResponses -> CtrlResponseUtils.combineResponses(
@@ -394,6 +395,7 @@ public class CtrlRscMakeAvailableApiCallHandler
 
     private Resource getActiveRsc(Resource myRsc)
     {
+        Resource activeRsc = null;
         ResourceDefinition rscDfn = myRsc.getResourceDefinition();
         try
         {
@@ -402,7 +404,8 @@ public class CtrlRscMakeAvailableApiCallHandler
             {
                 if (!myRsc.equals(rsc) && !rsc.getStateFlags().isSet(peerCtxProvider.get(), Resource.Flags.INACTIVE))
                 {
-                    return rsc;
+                    activeRsc = rsc;
+                    break;
                 }
             }
         }
@@ -414,7 +417,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
-        return null;
+        return activeRsc;
     }
 
     private Resource getActiveRsc(ResourceWithPayloadApi rscToCreate, Node node, ResourceDefinition rscDfn)

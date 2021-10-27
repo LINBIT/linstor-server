@@ -66,22 +66,42 @@ public interface StorPoolApi
 
     @Nonnull
     @JsonIgnore
-    default String getBackingPoolName() {
-        switch (getDeviceProviderKind()) {
+    default String getBackingPoolName()
+    {
+        String result;
+        switch (getDeviceProviderKind())
+        {
             case LVM_THIN:
+                // fall-through
             case ZFS:
+                // fall-through
             case ZFS_THIN:
+                // fall-through
             case FILE_THIN:
+                // fall-through
             case FILE:
+                // fall-through
             case EXOS:
-            case LVM: return getStorPoolProps().get(StorageConstants.NAMESPACE_STOR_DRIVER +
-                    "/" + ApiConsts.KEY_STOR_POOL_NAME);
+                // fall-through
+            case LVM:
+                result = getStorPoolProps().get(
+                    StorageConstants.NAMESPACE_STOR_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME
+                );
+                break;
             case SPDK:
+                // fall-through
             case REMOTE_SPDK:
+                // fall-through
             case DISKLESS:
+                // fall-through
             case OPENFLEX_TARGET:
+                // fall-through
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
-            default: return "";
+                // fall-through
+            default:
+                result = "";
+                break;
         }
+        return result;
     }
 }

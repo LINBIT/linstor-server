@@ -131,16 +131,18 @@ public class StltExtToolsChecker
 
     public boolean areSupported(boolean recache, ExtTools... tools)
     {
+        boolean supported = true;
         Map<ExtTools, ExtToolsInfo> extTools = getExternalTools(recache);
         for (ExtTools tool : tools)
         {
             ExtToolsInfo extToolsInfo = extTools.get(tool);
             if (extToolsInfo == null || !extToolsInfo.isSupported())
             {
-                return false;
+                supported = false;
+                break;
             }
         }
-        return true;
+        return supported;
     }
 
     private ExtToolsInfo getDrbd9Info()
@@ -463,14 +465,14 @@ public class StltExtToolsChecker
 
     private void checkModuleLoaded(List<String> loadedModulesRef, String moduleName, List<String> failReasons)
     {
-        String module_Name = moduleName.replaceAll("-", "_");
-        if (!loadedModulesRef.contains(module_Name))
+        String listedModuleName = moduleName.replaceAll("-", "_");
+        if (!loadedModulesRef.contains(listedModuleName))
         {
             check(failReasons, "modprobe", moduleName);
         }
         else
         {
-            errorReporter.logTrace("Module '%s' already loaded (found in /proc/modules)", module_Name);
+            errorReporter.logTrace("Module '%s' already loaded (found in /proc/modules)", listedModuleName);
         }
     }
 

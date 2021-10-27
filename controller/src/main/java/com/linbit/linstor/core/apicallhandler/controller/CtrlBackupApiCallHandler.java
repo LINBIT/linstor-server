@@ -283,7 +283,7 @@ public class CtrlBackupApiCallHandler
         String snapName,
         long nowRef,
         boolean setShippingFlag,
-        boolean incremental,
+        boolean allowIncremental,
         Map<ExtTools, ExtToolsInfo.Version> requiredExtTools,
         Map<ExtTools, ExtToolsInfo.Version> optionalExtTools,
         RemoteType remoteTypeRef
@@ -299,7 +299,8 @@ public class CtrlBackupApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_CRYPT_PASSPHRASE,
-                        "Backup shipping requires a set up encryption. Please use 'linstor encryption create-passphrase' or '... enter-passphrase'"
+                        "Backup shipping requires a set up encryption. Please use 'linstor encryption " +
+                            "create-passphrase' or '... enter-passphrase'"
                     )
                 );
             }
@@ -329,12 +330,14 @@ public class CtrlBackupApiCallHandler
             String prevSnapName = rscDfn.getProps(peerAccCtx.get()).getProp(
                 InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT, ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
             );
+            boolean incremental = allowIncremental;
             if (incremental)
             {
                 if (prevSnapName == null)
                 {
                     errorReporter.logWarning(
-                        "Could not create an incremental backup for resource %s as there is no previous full backup. Creating a full backup instead.",
+                        "Could not create an incremental backup for resource %s as there is no previous " +
+                            "full backup. Creating a full backup instead.",
                         rscNameRef
                     );
                     incremental = false;
@@ -349,7 +352,9 @@ public class CtrlBackupApiCallHandler
                     if (prevSnapDfn == null)
                     {
                         errorReporter.logWarning(
-                            "Could not create an incremental backup for resource %s as the previous snapshot %s needed for the incremental backup has already been deleted. Creating a full backup instead.",
+                            "Could not create an incremental backup for resource %s as the previous snapshot " +
+                                "%s needed for the incremental backup has already been deleted. Creating a full " +
+                                "backup instead.",
                             rscNameRef, prevSnapName
                         );
                         incremental = false;
@@ -364,7 +369,8 @@ public class CtrlBackupApiCallHandler
                             if (prevSnapVlmDfnSize != vlmDfnSize)
                             {
                                 errorReporter.logDebug(
-                                    "Current vlmDfn size (%d) does not match with prev snapDfn (%s) size (%d). Forcing full backup.",
+                                    "Current vlmDfn size (%d) does not match with prev snapDfn (%s) size (%d). " +
+                                        "Forcing full backup.",
                                     vlmDfnSize,
                                     snapVlmDfn,
                                     prevSnapVlmDfnSize
@@ -430,8 +436,8 @@ public class CtrlBackupApiCallHandler
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
 
-            // save the s3 suffix as prop so that when restoring the satellite can reconstruct the .meta name (s3 suffix
-            // is NOT part of snapshot name)
+            // save the s3 suffix as prop so that when restoring the satellite can reconstruct the .meta name
+            // (s3 suffix is NOT part of snapshot name)
             String s3Suffix = sysCfgRepo.getStltConfForView(peerAccCtx.get()).getProp(
                 ApiConsts.KEY_BACKUP_S3_SUFFIX,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
@@ -475,7 +481,8 @@ public class CtrlBackupApiCallHandler
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_INVLD_BACKUP_CONFIG,
                             "Backup shipping of resource '" + rscDfn.getName().displayValue +
-                                "' cannot be started since there is no support for mixing external and internal drbd-metadata among volumes."
+                                "' cannot be started since there is no support for mixing external and internal " +
+                                "drbd-metadata among volumes."
                         )
                     );
                 }
@@ -525,7 +532,7 @@ public class CtrlBackupApiCallHandler
             );
 
             Flux<ApiCallRc> flux = snapshotCrtHandler.postCreateSnapshot(snapDfn)
-                .concatWith(Flux.<ApiCallRc> just(responses));
+                .concatWith(Flux.<ApiCallRc>just(responses));
             return new Pair<>(flux, createdSnapshot);
         }
         catch (AccessDeniedException exc)
@@ -801,12 +808,9 @@ public class CtrlBackupApiCallHandler
         );
         if (id != null && !id.isEmpty()) // case 1: id [cascading]
         {
-            if (!id.endsWith(META_SUFFIX))
-            {
-                id += META_SUFFIX;
-            }
+            final String delId = id.endsWith(META_SUFFIX) ? id : id + META_SUFFIX;
             deleteByIdPrefix(
-                id,
+                delId,
                 false,
                 cascading,
                 s3LinstorObjects,
@@ -814,6 +818,7 @@ public class CtrlBackupApiCallHandler
                 toDelete
             );
         }
+        else
         if (idPrefix != null && !idPrefix.isEmpty()) // case 2: idPrefix [cascading]
         {
             deleteByIdPrefix(
@@ -825,13 +830,15 @@ public class CtrlBackupApiCallHandler
                 toDelete
             );
         }
-        else if (s3Key != null && !s3Key.isEmpty()) // case 3: s3Key [cascading]
+        else
+        if (s3Key != null && !s3Key.isEmpty()) // case 3: s3Key [cascading]
         {
             deleteByS3Key(s3LinstorObjects, Collections.singleton(s3Key), cascading, toDelete);
             toDelete.s3keys.add(s3Key);
             toDelete.s3KeysNotFound.remove(s3Key); // ignore this
         }
-        else if (
+        else
+        if (
             timestamp != null && !timestamp.isEmpty() ||
                 rscName != null && !rscName.isEmpty() ||
                 nodeName != null && !nodeName.isEmpty()
@@ -846,7 +853,8 @@ public class CtrlBackupApiCallHandler
                 toDelete
             );
         }
-        else if (all) // case 5: all // force cascading
+        else
+        if (all) // case 5: all // force cascading
         {
             deleteByS3Key(
                 s3LinstorObjects,
@@ -855,7 +863,8 @@ public class CtrlBackupApiCallHandler
                 toDelete
             );
         }
-        else if (allLocalCluster) // case 6: allCluster // forced cascading
+        else
+        if (allLocalCluster) // case 6: allCluster // forced cascading
         {
             deleteAllLocalCluster(
                 s3LinstorObjects,
@@ -1099,10 +1108,10 @@ public class CtrlBackupApiCallHandler
     )
         throws AccessDeniedException
     {
-        Predicate<String> nodeNameCheck = nodeNameRef == null || nodeNameRef.isEmpty() ? ignore -> true
-            : nodeNameRef::equalsIgnoreCase;
-        Predicate<String> rscNameCheck = rscNameRef == null || rscNameRef.isEmpty() ? ignore -> true
-            : rscNameRef::equalsIgnoreCase;
+        Predicate<String> nodeNameCheck = nodeNameRef == null ||
+            nodeNameRef.isEmpty() ? ignore -> true : nodeNameRef::equalsIgnoreCase;
+        Predicate<String> rscNameCheck = rscNameRef == null ||
+            rscNameRef.isEmpty() ? ignore -> true : rscNameRef::equalsIgnoreCase;
         Predicate<Long> timestampCheck;
         if (timestampRef == null || timestampRef.isEmpty())
         {
@@ -1145,12 +1154,12 @@ public class CtrlBackupApiCallHandler
                  */
                 String timeStr;
                 {
-                    Matcher m = META_FILE_PATTERN.matcher(s3Obj.s3Key);
-                    if (!m.find())
+                    Matcher mtc = META_FILE_PATTERN.matcher(s3Obj.s3Key);
+                    if (!mtc.find())
                     {
                         throw new ImplementationError("Unexpected meta filename");
                     }
-                    timeStr = m.group(2).substring(S3Consts.SNAP_PREFIX_LEN);
+                    timeStr = mtc.group(2).substring(S3Consts.SNAP_PREFIX_LEN);
                 }
                 long startTimestamp;
                 try
@@ -1362,19 +1371,20 @@ public class CtrlBackupApiCallHandler
                     .build()
             );
         }
-        ApiCallRcImpl responses = new ApiCallRcImpl();
         Date targetTime = null;
         String shortTargetName = null;
-        if (lastBackup != null && !lastBackup.isEmpty())
+        String adjLastBackup = lastBackup;
+        String curSrcRscName = srcRscName;
+        if (adjLastBackup != null && !adjLastBackup.isEmpty())
         {
-            if (!lastBackup.endsWith(META_SUFFIX))
+            if (!adjLastBackup.endsWith(META_SUFFIX))
             {
-                lastBackup = lastBackup + META_SUFFIX;
+                adjLastBackup = adjLastBackup + META_SUFFIX;
             }
-            Matcher targetMatcher = META_FILE_PATTERN.matcher(lastBackup);
+            Matcher targetMatcher = META_FILE_PATTERN.matcher(adjLastBackup);
             if (targetMatcher.matches())
             {
-                srcRscName = targetMatcher.group(1);
+                curSrcRscName = targetMatcher.group(1);
                 String snapName = targetMatcher.group(2);
                 shortTargetName = targetMatcher.group(1) + "_" + snapName;
                 try
@@ -1383,7 +1393,7 @@ public class CtrlBackupApiCallHandler
                 }
                 catch (ParseException exc)
                 {
-                    errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + lastBackup);
+                    errorReporter.reportError(exc, peerAccCtx.get(), null, "used s3 key: " + adjLastBackup);
                 }
             }
             else
@@ -1391,10 +1401,13 @@ public class CtrlBackupApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
-                        "The target backup " + lastBackup +
-                            " is invalid since it does not match the pattern of '<rscName>_back_YYYYMMDD_HHMMSS<optional-backup-s3-suffix> (e.g. my-rsc_back_20210824_072543)" +
+                        "The target backup " + adjLastBackup +
+                            " is invalid since it does not match the pattern of " +
+                            "'<rscName>_back_YYYYMMDD_HHMMSS<optional-backup-s3-suffix> " +
+                            "(e.g. my-rsc_back_20210824_072543)" +
                             META_FILE_PATTERN + "'. " +
-                            "Please provide a valid target backup, or provide only the source resource name to restore to the latest backup of that resource."
+                            "Please provide a valid target backup, or provide only the source resource name to " +
+                            "restore to the latest backup of that resource."
                     )
                 );
             }
@@ -1403,18 +1416,19 @@ public class CtrlBackupApiCallHandler
         byte[] targetMasterKey = getLocalMasterKey();
         // 1. list srcRscName*
         List<S3ObjectSummary> objects = backupHandler
-            .listObjects(srcRscName, remote, peerAccCtx.get(), targetMasterKey);
+            .listObjects(curSrcRscName, remote, peerAccCtx.get(), targetMasterKey);
         Set<String> s3keys = objects.stream()
             .map(S3ObjectSummary::getKey)
             .collect(Collectors.toCollection(TreeSet::new));
-        if (targetTime != null && !s3keys.contains(lastBackup))
+        if (targetTime != null && !s3keys.contains(adjLastBackup))
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
-                    "The target backup " + lastBackup +
+                    "The target backup " + adjLastBackup +
                         " is invalid since it does not exist in the given remote " + remoteName + ". " +
-                        "Please provide a valid target backup, or provide only the source resource name to restore to the latest backup of that resource."
+                        "Please provide a valid target backup, or provide only the source resource name to " +
+                            "restore to the latest backup of that resource."
                 )
             );
         }
@@ -1429,15 +1443,15 @@ public class CtrlBackupApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_NOT_FOUND_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
-                        "Could not find backups with the given resource name '" + srcRscName + "' in remote '" +
+                        "Could not find backups with the given resource name '" + curSrcRscName + "' in remote '" +
                             remoteName + "'"
                     )
                 );
             }
-            Matcher m = META_FILE_PATTERN.matcher(metaName);
-            if (m.matches())
+            Matcher mtc = META_FILE_PATTERN.matcher(metaName);
+            if (mtc.matches())
             {
-                latestBackTs = S3Consts.DATE_FORMAT.parse(m.group(2).substring(S3Consts.SNAP_PREFIX_LEN));
+                latestBackTs = S3Consts.DATE_FORMAT.parse(mtc.group(2).substring(S3Consts.SNAP_PREFIX_LEN));
             }
             else
             {
@@ -1510,16 +1524,18 @@ public class CtrlBackupApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_NOT_ENOUGH_FREE_SPACE | ApiConsts.MASK_BACKUP,
-                        "The storage-pool(s) " + StringUtils.join(spTooFull, ", ") + " do(es) not have enough space remaining for the restore." +
+                        "The storage-pool(s) " + StringUtils.join(spTooFull, ", ") + " do(es) not have enough space " +
+                            "remaining for the restore." +
                             " For more information, please use the 'backup info' command."
                     )
                 );
             }
 
+            ApiCallRcImpl responses = new ApiCallRcImpl();
             for (Pair<String, BackupMetaDataPojo> metadata : data)
             {
                 Snapshot snap = createSnapshotByS3Meta(
-                    srcRscName,
+                    curSrcRscName,
                     storPoolMap,
                     node,
                     targetRscName,
@@ -1539,7 +1555,7 @@ public class CtrlBackupApiCallHandler
                 resetData = false;
                 snap.getProps(peerAccCtx.get()).setProp(
                     InternalApiConsts.KEY_BACKUP_TO_RESTORE,
-                    srcRscName + "_" + snap.getSnapshotName().displayValue,
+                    curSrcRscName + "_" + snap.getSnapshotName().displayValue,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
                 );
                 if (nextBackup != null)
@@ -1561,7 +1577,7 @@ public class CtrlBackupApiCallHandler
             }
             ctrlTransactionHelper.commit();
             responses.addEntry(
-                "Restoring backup of resource " + srcRscName + " from remote " + remoteName +
+                "Restoring backup of resource " + curSrcRscName + " from remote " + remoteName +
                     " into resource " + targetRscName + " in progress.",
                 ApiConsts.MASK_INFO
             );
@@ -1604,11 +1620,11 @@ public class CtrlBackupApiCallHandler
         Date latestBackTs = null;
         for (String s3key : s3keys)
         {
-            Matcher m = META_FILE_PATTERN.matcher(s3key);
-            if (m.matches())
+            Matcher mtc = META_FILE_PATTERN.matcher(s3key);
+            if (mtc.matches())
             {
                 // remove "back_" prefix
-                String ts = m.group(2).substring(S3Consts.SNAP_PREFIX_LEN);
+                String ts = mtc.group(2).substring(S3Consts.SNAP_PREFIX_LEN);
                 Date curTs = S3Consts.DATE_FORMAT.parse(ts);
                 if (targetTime != null)
                 {
@@ -1617,7 +1633,7 @@ public class CtrlBackupApiCallHandler
                             (targetTime.after(curTs) || targetTime.equals(curTs))
                     )
                     {
-                        metaName = m.group();
+                        metaName = mtc.group();
                         latestBackTs = curTs;
                     }
                 }
@@ -1625,7 +1641,7 @@ public class CtrlBackupApiCallHandler
                 {
                     if (latestBackTs == null || latestBackTs.before(curTs))
                     {
-                        metaName = m.group();
+                        metaName = mtc.group();
                         latestBackTs = curTs;
                     }
                 }
@@ -1716,12 +1732,12 @@ public class CtrlBackupApiCallHandler
             }
         }
         // 8. create rscDfn
-        Matcher m = META_FILE_PATTERN.matcher(metaName);
-        if (!m.find())
+        Matcher mtc = META_FILE_PATTERN.matcher(metaName);
+        if (!mtc.find())
         {
             throw new ImplementationError("not a meta file: " + metaName);
         }
-        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(m.group(2));
+        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(mtc.group(2));
         ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, metaName, resetData);
         // 9. create snapDfn
         SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses, downloadOnly);
@@ -2422,7 +2438,8 @@ public class CtrlBackupApiCallHandler
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.WARN_BACKUP_DL_ONLY,
                     "The target resource-definition is already deployed on nodes. " +
-                        "After downloading the Backup Linstor will NOT restore the data to prevent unintentional data-loss."
+                        "After downloading the Backup Linstor will NOT restore the data to prevent unintentional " +
+                        "data-loss."
                 )
             );
         }
@@ -2673,11 +2690,11 @@ public class CtrlBackupApiCallHandler
         {
             if (!linstorBackupsS3Keys.contains(s3key))
             {
-                Matcher m = BACKUP_VOLUME_PATTERN.matcher(s3key);
-                if (m.matches())
+                Matcher mtc = BACKUP_VOLUME_PATTERN.matcher(s3key);
+                if (mtc.matches())
                 {
-                    String rscName = m.group(1);
-                    String snapName = m.group(4);
+                    String rscName = mtc.group(1);
+                    String snapName = mtc.group(4);
 
                     SnapshotDefinition snapDfn = loadSnapDfnIfExists(rscName, snapName);
 
@@ -2685,7 +2702,7 @@ public class CtrlBackupApiCallHandler
                         s3key,
                         rscName,
                         snapName,
-                        m,
+                        mtc,
                         BACKUP_VOLUME_PATTERN,
                         s3keys,
                         linstorBackupsS3Keys,
@@ -2733,14 +2750,14 @@ public class CtrlBackupApiCallHandler
                         );
                     }
                     String s3KeyShouldLookLikeThis = futureS3Keys.iterator().next();
-                    Matcher m = BACKUP_VOLUME_PATTERN.matcher(s3KeyShouldLookLikeThis);
-                    if (m.find())
+                    Matcher mtc = BACKUP_VOLUME_PATTERN.matcher(s3KeyShouldLookLikeThis);
+                    if (mtc.find())
                     {
                         BackupApi back = fillBackupListPojo(
                             s3KeyShouldLookLikeThis,
                             rscName,
                             snapName,
-                            m,
+                            mtc,
                             BACKUP_VOLUME_PATTERN,
                             s3keys,
                             linstorBackupsS3Keys,
@@ -2793,7 +2810,7 @@ public class CtrlBackupApiCallHandler
         String s3key,
         String rscName,
         String snapName,
-        Matcher m,
+        Matcher mtc,
         Pattern pattern,
         Set<String> s3keys,
         Set<String> usedKeys,
@@ -2813,7 +2830,7 @@ public class CtrlBackupApiCallHandler
             AccessContext peerCtx = peerAccCtx.get();
 
             {
-                int vlmNr = Integer.parseInt(m.group(3));
+                int vlmNr = Integer.parseInt(mtc.group(3));
                 vlms.put(vlmNr, new BackupVolumePojo(vlmNr, null, null, new BackupVlmS3Pojo(s3key)));
             }
             // get all other keys that start with rscName & contain snapName
@@ -2918,7 +2935,7 @@ public class CtrlBackupApiCallHandler
         );
     }
 
-    private Flux<ApiCallRc> backupAbortInTransaction(String rscNameRef, boolean restore, boolean create)
+    private Flux<ApiCallRc> backupAbortInTransaction(String rscNameRef, boolean restorePrm, boolean createPrm)
         throws AccessDeniedException, DatabaseException
     {
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
@@ -2927,6 +2944,9 @@ public class CtrlBackupApiCallHandler
         {
             return Flux.empty();
         }
+
+        boolean restore = restorePrm;
+        boolean create = createPrm;
         if (!restore && !create)
         {
             if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
@@ -2978,8 +2998,9 @@ public class CtrlBackupApiCallHandler
         ApiCallRcImpl success = new ApiCallRcImpl();
         success.addEntry(
             "Successfully aborted all " +
-                (create && restore ? "in-progress backup-shipments and restores"
-                    : create ? "in-progress backup-shipments" : "in-progress backup-restores") +
+                ((create && restore) ?
+                    "in-progress backup-shipments and restores" :
+                    (create ? "in-progress backup-shipments" : "in-progress backup-restores")) +
                 " of resource " + rscNameRef,
             ApiConsts.MASK_SUCCESS
         );
@@ -3046,12 +3067,13 @@ public class CtrlBackupApiCallHandler
         S3Remote remote = getS3Remote(remoteName);
         String metaFileName = "";
         byte[] masterKey = getLocalMasterKey();
+        String curSrcRscName = srcRscName;
         if (lastBackup != null && !lastBackup.isEmpty())
         {
             Matcher volM = BACKUP_VOLUME_PATTERN.matcher(lastBackup);
             if (volM.matches())
             {
-                srcRscName = volM.group(1);
+                curSrcRscName = volM.group(1);
                 metaFileName = volM.group(1) + volM.group(4) + volM.group(5) + META_SUFFIX;
             }
             else
@@ -3060,7 +3082,7 @@ public class CtrlBackupApiCallHandler
                     .matcher(lastBackup.endsWith(META_SUFFIX) ? lastBackup : lastBackup + META_SUFFIX);
                 if (metaM.matches())
                 {
-                    srcRscName = metaM.group(1);
+                    curSrcRscName = metaM.group(1);
                     metaFileName = lastBackup.endsWith(META_SUFFIX) ? lastBackup : lastBackup + META_SUFFIX;
                 }
                 else
@@ -3069,15 +3091,18 @@ public class CtrlBackupApiCallHandler
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
                             "The target backup " + lastBackup +
-                                " is invalid since it does not match the pattern of '<rscName>_back_YYYYMMDD_HHMMSS<optional-backup-s3-suffix> (e.g. my-rsc_back_20210824_072543)" +
+                                " is invalid since it does not match the pattern of " +
+                                "'<rscName>_back_YYYYMMDD_HHMMSS<optional-backup-s3-suffix> " +
+                                "(e.g. my-rsc_back_20210824_072543)" +
                                 META_FILE_PATTERN + "'. " +
-                                "Please provide a valid target backup, or provide only the source resource name to restore to the latest backup of that resource."
+                                "Please provide a valid target backup, or provide only the source resource name " +
+                                "to restore to the latest backup of that resource."
                         )
                     );
                 }
             }
         }
-        List<S3ObjectSummary> objects = backupHandler.listObjects(srcRscName, remote, sysCtx, masterKey);
+        List<S3ObjectSummary> objects = backupHandler.listObjects(curSrcRscName, remote, sysCtx, masterKey);
         Set<String> s3keys = objects.stream().map(S3ObjectSummary::getKey)
             .collect(Collectors.toCollection(TreeSet::new));
 
@@ -3128,7 +3153,9 @@ public class CtrlBackupApiCallHandler
         {
             do
             {
-                BackupMetaDataPojo metadata = backupHandler.getMetaFile(metaFileName, remote, peerAccCtx.get(), masterKey);
+                BackupMetaDataPojo metadata = backupHandler.getMetaFile(
+                    metaFileName, remote, peerAccCtx.get(), masterKey
+                );
                 data.add(metadata);
                 if (metadata.getBasedOn() == null)
                 {
@@ -3188,7 +3215,7 @@ public class CtrlBackupApiCallHandler
         }
 
         BackupInfoPojo backupInfo = new BackupInfoPojo(
-            srcRscName,
+            curSrcRscName,
             fullBackup,
             latestBackup,
             data.size(),
@@ -3262,13 +3289,13 @@ public class CtrlBackupApiCallHandler
                 Long dlSizeKib = null;
                 for (BackupMetaInfoPojo backup : meta.getBackups().get(volume.getVlmNr()))
                 {
-                    Matcher m = BACKUP_VOLUME_PATTERN.matcher(backup.getName());
-                    if (m.matches())
+                    Matcher mtc = BACKUP_VOLUME_PATTERN.matcher(backup.getName());
+                    if (mtc.matches())
                     {
-                        boolean empty = m.group(2) == null || m.group(2).isEmpty();
+                        boolean empty = mtc.group(2) == null || mtc.group(2).isEmpty();
                         if (
                             empty && layerData.getRscNameSuffix().isEmpty() ||
-                                !empty && m.group(2).equals(layerData.getRscNameSuffix())
+                                !empty && mtc.group(2).equals(layerData.getRscNameSuffix())
                         )
                         {
                             vlmName = backup.getName();
@@ -3528,9 +3555,9 @@ public class CtrlBackupApiCallHandler
             successRef ? "finished successfully" : "failed"
         );
         SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, true);
+        Flux<ApiCallRc> cleanupFlux = Flux.empty();
         try
         {
-            Flux<ApiCallRc> cleanupFlux = Flux.empty();
             NodeName nodeName = peerProvider.get().getNode().getName();
             backupInfoMgr.abortCreateDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
             if (!successRef && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
@@ -3539,51 +3566,54 @@ public class CtrlBackupApiCallHandler
                 snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                 ctrlTransactionHelper.commit();
                 startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
-                return ctrlSnapShipAbortHandler.abortBackupShippingPrivileged(snapDfn.getResourceDefinition());
+                cleanupFlux = ctrlSnapShipAbortHandler.abortBackupShippingPrivileged(snapDfn.getResourceDefinition());
             }
-            snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
-            if (successRef)
+            else
             {
-                snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
-            }
-            Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
-            String remoteName = snap.getProps(peerAccCtx.get()).removeProp(
-                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
-            snap.getProps(peerAccCtx.get()).removeProp(
-                InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
-            if (successRef)
-            {
-                ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
-                rscDfn.getProps(peerAccCtx.get()).setProp(
-                    InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                    snapNameRef,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
-                );
-
-                Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-                if (remote != null && remote instanceof StltRemote)
+                snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+                if (successRef)
                 {
-                    cleanupFlux = cleanupStltRemote((StltRemote) remote);
+                    snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
                 }
-            }
-            ctrlTransactionHelper.commit();
-            startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
-            return cleanupFlux.concatWith(
-                ctrlSatelliteUpdateCaller.updateSatellites(
-                    snapDfn,
-                    CtrlSatelliteUpdateCaller.notConnectedWarn()
-                ).transform(
-                    responses -> CtrlResponseUtils.combineResponses(
-                        responses,
-                        LinstorParsingUtils.asRscName(rscNameRef),
-                        "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+                Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
+                String remoteName = snap.getProps(peerAccCtx.get()).removeProp(
+                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
+                snap.getProps(peerAccCtx.get()).removeProp(
+                    InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
+                if (successRef)
+                {
+                    ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
+                    rscDfn.getProps(peerAccCtx.get()).setProp(
+                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                        snapNameRef,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
+                    );
+
+                    Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                    if (remote != null && remote instanceof StltRemote)
+                    {
+                        cleanupFlux = cleanupStltRemote((StltRemote) remote);
+                    }
+                }
+                ctrlTransactionHelper.commit();
+                startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
+                cleanupFlux = cleanupFlux.concatWith(
+                    ctrlSatelliteUpdateCaller.updateSatellites(
+                        snapDfn,
+                        CtrlSatelliteUpdateCaller.notConnectedWarn()
+                    ).transform(
+                        responses -> CtrlResponseUtils.combineResponses(
+                            responses,
+                            LinstorParsingUtils.asRscName(rscNameRef),
+                            "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+                        )
                     )
-                )
-            );
+                );
+            }
         }
         catch (AccessDeniedException | InvalidNameException | InvalidValueException | InvalidKeyException exc)
         {
@@ -3593,6 +3623,7 @@ public class CtrlBackupApiCallHandler
         {
             throw new ApiDatabaseException(exc);
         }
+        return cleanupFlux;
     }
 
     private void startStltCleanup(Peer peer, String rscNameRef, String snapNameRef)
@@ -3654,7 +3685,32 @@ public class CtrlBackupApiCallHandler
         for (StorPool sp : storPools)
         {
             DeviceProviderKind deviceProviderKind = sp.getDeviceProviderKind();
-            if (!deviceProviderKind.isSnapshotShippingSupported())
+            if (deviceProviderKind.isSnapshotShippingSupported())
+            {
+                ExtToolsManager extToolsManager = rsc.getNode().getPeer(peerAccCtx.get()).getExtToolsManager();
+                errors.addEntry(
+                    getErrorRcIfNotSupported(
+                        deviceProviderKind,
+                        extToolsManager,
+                        ExtTools.UTIL_LINUX,
+                        "setsid from util_linux",
+                        new ExtToolsInfo.Version(2, 24)
+                    )
+                );
+                if (deviceProviderKind.equals(DeviceProviderKind.LVM_THIN))
+                {
+                    errors.addEntry(
+                        getErrorRcIfNotSupported(
+                            deviceProviderKind,
+                            extToolsManager,
+                            ExtTools.THIN_SEND_RECV,
+                            "thin_send_recv",
+                            new ExtToolsInfo.Version(0, 24)
+                        )
+                    );
+                }
+            }
+            else
             {
                 errors.addEntry(
                     ApiCallRcImpl.simpleEntry(
@@ -3663,29 +3719,6 @@ public class CtrlBackupApiCallHandler
                             "The storage pool kind %s does not support snapshot shipping",
                             deviceProviderKind.name()
                         )
-                    )
-                );
-                continue;
-            }
-            ExtToolsManager extToolsManager = rsc.getNode().getPeer(peerAccCtx.get()).getExtToolsManager();
-            errors.addEntry(
-                getErrorRcIfNotSupported(
-                    deviceProviderKind,
-                    extToolsManager,
-                    ExtTools.UTIL_LINUX,
-                    "setsid from util_linux",
-                    new ExtToolsInfo.Version(2, 24)
-                )
-            );
-            if (deviceProviderKind.equals(DeviceProviderKind.LVM_THIN))
-            {
-                errors.addEntry(
-                    getErrorRcIfNotSupported(
-                        deviceProviderKind,
-                        extToolsManager,
-                        ExtTools.THIN_SEND_RECV,
-                        "thin_send_recv",
-                        new ExtToolsInfo.Version(0, 24)
                     )
                 );
             }
@@ -3701,10 +3734,11 @@ public class CtrlBackupApiCallHandler
         ExtToolsInfo.Version version
     )
     {
+        ApiCallRcEntry errorRc;
         ExtToolsInfo info = extToolsManagerRef.getExtToolInfo(extTool);
         if (info == null || !info.isSupported())
         {
-            return ApiCallRcImpl.simpleEntry(
+            errorRc = ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
                 String.format(
                     "%s based backup shipping requires support for %s",
@@ -3714,9 +3748,10 @@ public class CtrlBackupApiCallHandler
                 true
             );
         }
+        else
         if (version != null && !info.hasVersionOrHigher(version))
         {
-            return ApiCallRcImpl.simpleEntry(
+            errorRc = ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
                 String.format(
                     "%s based backup shipping requires at least version %s for %s",
@@ -3727,7 +3762,11 @@ public class CtrlBackupApiCallHandler
                 true
             );
         }
-        return null;
+        else
+        {
+            errorRc = null;
+        }
+        return errorRc;
     }
 
     private byte[] getLocalMasterKey()
