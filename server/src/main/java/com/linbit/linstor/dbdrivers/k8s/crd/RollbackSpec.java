@@ -45,8 +45,8 @@ public class RollbackSpec implements LinstorSpec
         @JsonProperty("deleteMap") HashMap<String, HashSet<String>> deleteMapRef
     )
     {
-        rollbackMap = rollbackMapRef;
-        deleteMap = deleteMapRef;
+        rollbackMap = rollbackMapRef == null ? new HashMap<>() : rollbackMapRef;
+        deleteMap = deleteMapRef == null ? new HashMap<>() : deleteMapRef;
     }
 
     @JsonIgnore
