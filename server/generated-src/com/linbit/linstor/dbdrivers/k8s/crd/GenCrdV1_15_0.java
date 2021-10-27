@@ -18,6 +18,8 @@ import java.util.TreeMap;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -984,6 +986,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class FilesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -4332451864562355580L;
@@ -1124,6 +1127,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class KeyValueStoreSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 1022852919437968966L;
@@ -1254,6 +1258,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerBcacheVolumesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -861516041805861805L;
@@ -1399,6 +1404,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerCacheVolumesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -1443993076571409340L;
@@ -1546,6 +1552,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdResourcesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -8495915986226445943L;
@@ -1705,6 +1712,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdResourceDefinitionsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 6299069368093429316L;
@@ -1877,6 +1885,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdVolumesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -5779542991709357964L;
@@ -2015,6 +2024,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdVolumeDefinitionsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 1704563899162230102L;
@@ -2158,6 +2168,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerLuksVolumesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -3793467758870247673L;
@@ -2287,6 +2298,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerOpenflexResourceDefinitionsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -8745909652719308691L;
@@ -2423,6 +2435,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerOpenflexVolumesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -1934037394962832552L;
@@ -2567,6 +2580,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerResourceIdsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -774380137302674205L;
@@ -2732,6 +2746,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerStorageVolumesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 448013887603074080L;
@@ -2875,6 +2890,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LayerWritecacheVolumesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -4836912705479287053L;
@@ -3017,6 +3033,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class LinstorRemotesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -7758231826798464706L;
@@ -3175,6 +3192,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class NodesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 2849158441770844734L;
@@ -3315,6 +3333,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class NodeConnectionsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -6620765402558872524L;
@@ -3450,6 +3469,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class NodeNetInterfacesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 4609326287102851655L;
@@ -3613,6 +3633,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class NodeStorPoolSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 6072345702714964136L;
@@ -3768,6 +3789,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class PropsContainersSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 2967503225377768183L;
@@ -3901,6 +3923,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class ResourcesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -8590892533024068379L;
@@ -4058,6 +4081,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class ResourceConnectionsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -3088095736042315495L;
@@ -4229,6 +4253,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class ResourceDefinitionsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -4037651531363700137L;
@@ -4429,6 +4454,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class ResourceGroupsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -3394988788490151201L;
@@ -4651,6 +4677,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class S3RemotesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -8174072396908589549L;
@@ -4819,6 +4846,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SatellitesCapacitySpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 7203012779856314459L;
@@ -4943,6 +4971,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SecAccessTypesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 3110224716593514828L;
@@ -5062,6 +5091,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SecAclMapSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 8088557165655933959L;
@@ -5189,6 +5219,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SecConfigurationSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 1499181990377066975L;
@@ -5313,6 +5344,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SecDfltRolesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 6224538930545419070L;
@@ -5438,6 +5470,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SecIdentitiesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -4934240261264741688L;
@@ -5583,6 +5616,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SecIdRoleMapSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -6748446103418429760L;
@@ -5705,6 +5739,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SecObjectProtectionSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 365859057959054507L;
@@ -5842,6 +5877,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SecRolesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 7714797591578346290L;
@@ -5982,6 +6018,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SecTypesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 234388807775458892L;
@@ -6108,6 +6145,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SecTypeRulesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 2231285451984617884L;
@@ -6233,6 +6271,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class SpaceHistorySpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -835286477031084777L;
@@ -6352,6 +6391,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class StorPoolDefinitionsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -1235608243955673111L;
@@ -6474,6 +6514,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class TrackingDateSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 5344676886222908825L;
@@ -6593,6 +6634,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class VolumesSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 2853580310863792490L;
@@ -6749,6 +6791,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class VolumeConnectionsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = 5005490779644349444L;
@@ -6906,6 +6949,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class VolumeDefinitionsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -7891841234159474860L;
@@ -7057,6 +7101,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @JsonInclude(Include.NON_NULL)
     public static class VolumeGroupsSpec implements LinstorSpec
     {
         @JsonIgnore private static final long serialVersionUID = -5602493521231706961L;

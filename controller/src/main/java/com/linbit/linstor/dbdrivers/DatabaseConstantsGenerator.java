@@ -460,6 +460,8 @@ public final class DatabaseConstantsGenerator
             null, // empty line
             "com.fasterxml.jackson.annotation.JsonCreator",
             "com.fasterxml.jackson.annotation.JsonIgnore",
+            "com.fasterxml.jackson.annotation.JsonInclude",
+            "com.fasterxml.jackson.annotation.JsonInclude.Include",
             "com.fasterxml.jackson.annotation.JsonProperty",
             // "com.fasterxml.jackson.databind.annotation.JsonDeserialize",
             // "io.fabric8.kubernetes.api.model.KubernetesResource",
@@ -771,6 +773,7 @@ public final class DatabaseConstantsGenerator
          * Spec class
          */
         appendEmptyLine();
+        appendLine("@JsonInclude(Include.NON_NULL)");
         appendLine("public static class %s implements %s", specClassName, CRD_LINSTOR_SPEC_INTERFACE_NAME);
         try (IndentLevel specClazzIndent = new IndentLevel())
         {
