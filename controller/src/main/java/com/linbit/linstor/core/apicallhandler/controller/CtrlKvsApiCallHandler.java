@@ -182,23 +182,26 @@ public class CtrlKvsApiCallHandler
         }
         catch (DatabaseException exc)
         {
-            apiCallRc.addEntry(
-                ResponseUtils.getSqlMsg("Persisting properties in instancename '" + kvsNameStr + "'"),
-                ApiConsts.FAIL_SQL
-            );
+            throw new ApiDatabaseException(exc);
         }
         catch (InvalidKeyException exc)
         {
-            apiCallRc.addEntry(
-                "Invalid key: '" + exc.invalidKey + "'",
-                ApiConsts.FAIL_INVLD_PROP
+            throw new ApiRcException(
+                ApiCallRcImpl
+                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid key.")
+                    .setCause("The key '" + exc.invalidKey + "' is invalid.")
+                    .build(),
+                exc
             );
         }
         catch (InvalidValueException exc)
         {
-            apiCallRc.addEntry(
-                "Invalid value: '" + exc.value + "' for key: '" + exc.key + "'",
-                ApiConsts.FAIL_INVLD_PROP
+            throw new ApiRcException(
+                ApiCallRcImpl
+                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid value.")
+                    .setCause("The value '" + exc.value + "' is invalid for key '" + exc.key + "'.")
+                    .build(),
+                exc
             );
         }
         catch (AccessDeniedException exc)
