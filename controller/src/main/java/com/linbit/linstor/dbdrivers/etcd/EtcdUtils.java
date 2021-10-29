@@ -29,7 +29,7 @@ public class EtcdUtils
     @UsedByMigration
     public static final String PK_DELIMITER = ":";
     // not really a constant anymore as it can be set via a configuration property
-    public static String LINSTOR_PREFIX = null;
+    public static String linstorPrefix = null;
 
     private static final Deadline DEFAULT_DEADLINE = Deadline.after(60, TimeUnit.SECONDS);
 
@@ -44,7 +44,7 @@ public class EtcdUtils
     )
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(LINSTOR_PREFIX).append(tableName).append(PATH_DELIMITER);
+        sb.append(linstorPrefix).append(tableName).append(PATH_DELIMITER);
         if (pks.length > 0)
         {
             for (String pk : pks)
@@ -130,7 +130,7 @@ public class EtcdUtils
     public static String getTablePk(Column col, String... pks)
     {
         StringBuilder ret = new StringBuilder();
-        ret.append(LINSTOR_PREFIX).append(col.getTable().getName()).append(PATH_DELIMITER);
+        ret.append(linstorPrefix).append(col.getTable().getName()).append(PATH_DELIMITER);
         if (pks != null)
         {
             for (String pk : pks)
@@ -159,7 +159,7 @@ public class EtcdUtils
     {
         // key is something like
         // /LINSTOR/$table/$composedPk/$column = $valueOfColumn
-        int tableStartIdx = LINSTOR_PREFIX.length();
+        int tableStartIdx = linstorPrefix.length();
         int composedKeyStartIdx = key.indexOf(PATH_DELIMITER, tableStartIdx + 1);
         int composedKeyEndIdx = key.lastIndexOf(PATH_DELIMITER);
 

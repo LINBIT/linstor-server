@@ -162,7 +162,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         throws AccessDeniedException
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(EtcdUtils.LINSTOR_PREFIX).append(table.getName()).append(EtcdUtils.PATH_DELIMITER);
+        sb.append(EtcdUtils.linstorPrefix).append(table.getName()).append(EtcdUtils.PATH_DELIMITER);
 
         for (Column col : table.values())
         {
@@ -348,7 +348,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     public String getDbDump()
     {
         EtcdTransaction tx = transMgrProvider.get().getTransaction();
-        TreeMap<String, String> dump = tx.get(EtcdUtils.LINSTOR_PREFIX, true);
+        TreeMap<String, String> dump = tx.get(EtcdUtils.linstorPrefix, true);
         StringBuilder sb = new StringBuilder();
         for (Entry<String, String> ent : dump.entrySet())
         {

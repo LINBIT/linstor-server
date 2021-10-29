@@ -468,7 +468,7 @@ public final class Controller
         System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.CONTROLLER_MODULE);
         LinStor.printStartupInfo();
 
-        EtcdUtils.LINSTOR_PREFIX = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
+        EtcdUtils.linstorPrefix = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
 
         StdErrorReporter errorLog = new StdErrorReporter(
             LinStor.CONTROLLER_MODULE,

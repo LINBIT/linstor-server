@@ -271,7 +271,7 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
          * This action should always have its own transaction (i.e. no other actions should
          * be active concurrently)
          */
-        ControllerETCDTransactionMgr txMgr = new ControllerETCDTransactionMgr(etcdDb, 1, EtcdUtils.LINSTOR_PREFIX);
+        ControllerETCDTransactionMgr txMgr = new ControllerETCDTransactionMgr(etcdDb, 1, EtcdUtils.linstorPrefix);
         EtcdTransaction tx = txMgr.getTransaction();
         tx.put(
             EtcdUtils.buildKey(SecConfiguration.ENTRY_VALUE, SecurityDbConsts.KEY_SEC_LEVEL),
@@ -287,7 +287,7 @@ public class DbEtcdPersistence implements DbAccessor<ControllerETCDDatabase>
          * This action should always have its own transaction (i.e. no other actions should
          * be active concurrently)
          */
-        ControllerETCDTransactionMgr txMgr = new ControllerETCDTransactionMgr(etcdDb, 1, EtcdUtils.LINSTOR_PREFIX);
+        ControllerETCDTransactionMgr txMgr = new ControllerETCDTransactionMgr(etcdDb, 1, EtcdUtils.linstorPrefix);
         EtcdTransaction tx = txMgr.getTransaction();
 
         tx.put(

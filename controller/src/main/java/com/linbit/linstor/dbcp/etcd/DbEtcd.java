@@ -109,7 +109,7 @@ public class DbEtcd implements ControllerETCDDatabase
         etcdTxMgr.rollbackIfNeeded();
         EtcdTransaction etcdTx = etcdTxMgr.getTransaction();
 
-        Map<String, String> dbHistoryVersionResponse = etcdTx.get(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version");
+        Map<String, String> dbHistoryVersionResponse = etcdTx.get(EtcdUtils.linstorPrefix + "DBHISTORY/version");
         Map<String, String> dbHistoryVersionPre34 = etcdTx.get(DB_HISTORY_VERSION_KEY_PRE34);
 
         int dbVersion = dbHistoryVersionResponse.size() > 0 ?
@@ -169,10 +169,10 @@ public class DbEtcd implements ControllerETCDDatabase
                     );
                 }
                 errorReporter.logDebug("Migration DB: " + dbVersion + ": " + migration.getDescription());
-                migration.migrate(etcdTx, EtcdUtils.LINSTOR_PREFIX);
+                migration.migrate(etcdTx, EtcdUtils.linstorPrefix);
 
                 dbVersion = migration.getNextVersion();
-                etcdTx.put(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", "" + dbVersion);
+                etcdTx.put(EtcdUtils.linstorPrefix + "DBHISTORY/version", "" + dbVersion);
 
                 etcdTxMgr.commit();
                 etcdTx = etcdTxMgr.getTransaction();
@@ -215,7 +215,7 @@ public class DbEtcd implements ControllerETCDDatabase
     @Override
     public void start() throws SystemServiceStartException
     {
-        if (EtcdUtils.LINSTOR_PREFIX == null)
+        if (EtcdUtils.linstorPrefix == null)
         {
             throw new SystemServiceStartException("ETCD prefix is not set", true);
         }
@@ -309,7 +309,7 @@ public class DbEtcd implements ControllerETCDDatabase
         ControllerETCDTransactionMgr etcdTxMgr = txMgrGenerator.startTransaction();
         EtcdTransaction etcdTx = etcdTxMgr.getTransaction();
 
-        TreeMap<String, String> entries = etcdTx.get(EtcdUtils.LINSTOR_PREFIX + "DBHISTORY/version", true);
+        TreeMap<String, String> entries = etcdTx.get(EtcdUtils.linstorPrefix + "DBHISTORY/version", true);
         if (entries.size() == 0)
         {
             throw new DatabaseException("ETCD database reported 0 entries ");
