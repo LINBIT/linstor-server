@@ -90,7 +90,7 @@ class StltExternalFilesApiCallHandler
 
             // TODO maybe only add rscNames that also have requested this extFile to be placed.
             Set<ResourceName> rscNameSet = new HashSet<>(rscDfnMap.keySet());
-            deviceManager.ExternalFileUpdateApplied(
+            deviceManager.externalFileUpdateApplied(
                 localExtFile.getName(),
                 ctrlPeerConnector.getLocalNodeName(),
                 rscNameSet

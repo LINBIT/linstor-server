@@ -27,7 +27,7 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     void storPoolUpdateApplied(Set<StorPoolName> storPoolSet, Set<ResourceName> rscSet, ApiCallRc responses);
     void rscUpdateApplied(Set<Resource.ResourceKey> rscSet);
     void snapshotUpdateApplied(Set<SnapshotDefinition.Key> snapshotKeySet);
-    void ExternalFileUpdateApplied(ExternalFileName extFile, NodeName nodeName, Set<ResourceName> rscNameSet);
+    void externalFileUpdateApplied(ExternalFileName extFile, NodeName nodeName, Set<ResourceName> rscNameSet);
 
     void remoteUpdateApplied(RemoteName remoteNameRef, NodeName nodeNameRef);
 

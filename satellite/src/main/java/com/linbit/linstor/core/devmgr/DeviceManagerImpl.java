@@ -483,7 +483,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     @Override
-    public void ExternalFileUpdateApplied(
+    public void externalFileUpdateApplied(
         ExternalFileName extFileNameRef,
         NodeName nodeNameRef,
         Set<ResourceName> rscNameSet
