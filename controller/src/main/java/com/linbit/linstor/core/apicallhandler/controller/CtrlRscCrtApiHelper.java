@@ -175,6 +175,7 @@ public class CtrlRscCrtApiHelper
         Resource rsc;
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
+        AccessContext peerCtx = peerAccCtx.get();
         Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
         if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
@@ -188,12 +189,18 @@ public class CtrlRscCrtApiHelper
             );
         }
 
-        Resource tiebreaker = autoHelper.get().getTiebreakerResource(nodeNameStr, rscNameStr);
-        String storPoolName = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);
-        if (tiebreaker != null)
+        Resource rscForToggleDiskful = ctrlApiDataLoader.loadRsc(node.getName(), rscDfn.getName(), false);
+        if (rscForToggleDiskful != null && !isFlagSet(rscForToggleDiskful, Resource.Flags.DRBD_DISKLESS))
         {
-            rsc = tiebreaker;
-            autoHelper.get().removeTiebreakerFlag(tiebreaker);
+            // diskful resource, do not try to toggle this
+            rscForToggleDiskful = null;
+        }
+
+        String storPoolName = rscPropsMap.get(ApiConsts.KEY_STOR_POOL_NAME);
+        if (rscForToggleDiskful != null)
+        {
+            rsc = rscForToggleDiskful;
+            autoHelper.get().removeTiebreakerFlag(rscForToggleDiskful); // just in case this was a tiebreaker
             String storPoolNameStr = storPoolName;
             StorPool storPool = storPoolNameStr == null ? null
                 : ctrlApiDataLoader.loadStorPool(storPoolNameStr, nodeNameStr, false);
@@ -225,24 +232,31 @@ public class CtrlRscCrtApiHelper
             }
             else
             {
-                // target resource is diskless.
-                NodeName tiebreakerNodeName = tiebreaker.getNode().getName();
-                autoFlux.add(
-                    ctrlSatelliteUpdateCaller.updateSatellites(
-                        tiebreaker.getDefinition(),
-                        Flux.empty() // if failed, there is no need for the retry-task to wait for readyState
-                        // this is only true as long as there is no other flux concatenated after readyResponses
-                    )
-                        .transform(
-                            updateResponses -> CtrlResponseUtils.combineResponses(
-                                updateResponses,
-                                rscDfn.getName(),
-                                Collections.singleton(tiebreakerNodeName),
-                                "Removed TIE_BREAKER flag from resource {1} on {0}",
-                                "Update of resource {1} on '" + tiebreakerNodeName + "' applied on node {0}"
-                            )
+                if (isFlagSet(rscForToggleDiskful, Resource.Flags.TIE_BREAKER))
+                {
+                    // target resource is diskless.
+                    NodeName tiebreakerNodeName = rscForToggleDiskful.getNode().getName();
+                    autoFlux.add(
+                        ctrlSatelliteUpdateCaller.updateSatellites(
+                            rscForToggleDiskful.getDefinition(),
+                            Flux.empty() // if failed, there is no need for the retry-task to wait for readyState
+                            // this is only true as long as there is no other flux concatenated after readyResponses
                         )
-                );
+                            .transform(
+                                updateResponses -> CtrlResponseUtils.combineResponses(
+                                    updateResponses,
+                                    rscDfn.getName(),
+                                    Collections.singleton(tiebreakerNodeName),
+                                    "Removed TIE_BREAKER flag from resource {1} on {0}",
+                                    "Update of resource {1} on '" + tiebreakerNodeName + "' applied on node {0}"
+                                )
+                            )
+                    );
+                }
+                else
+                {
+                    // noop, resource is already diskless as expected
+                }
             }
         }
         else
@@ -276,7 +290,7 @@ public class CtrlRscCrtApiHelper
             }
 
             List<DeviceLayerKind> layerStack = getLayerstackOrBuildDefault(
-                peerAccCtx.get(),
+                peerCtx,
                 layerDataHelper,
                 errorReporter,
                 layerStackStrListRef,
