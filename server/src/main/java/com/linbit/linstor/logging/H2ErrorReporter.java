@@ -8,6 +8,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
 
 import javax.annotation.Nullable;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.sql.Clob;
@@ -187,7 +188,7 @@ public class H2ErrorReporter {
                     rslt.getString("ORIGIN_FILE"),
                     rslt.getString("ORIGIN_METHOD"),
                     rslt.getInt("ORIGIN_LINE"),
-                    rslt.getTimestamp("DATETIME"),
+                    rslt.getDate("DATETIME"),
                     text
                 ));
             }
