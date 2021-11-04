@@ -249,6 +249,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
         for (LAYER_DATA vlmData : vlmDataList)
         {
+            // Whatever happens, we have to report the free space of these storage pools even if no layer
+            // actually changed anything. The controller simply expects a report of free sizes
+            addChangedStorPool(vlmData.getStorPool());
+
             volumesLut.put(
                 new Pair<>(
                     vlmData.getRscLayerObject().getSuffixedResourceName(),
@@ -271,99 +275,104 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             String lvId = vlmData.getIdentifier();
             if (vlmData.exists())
             {
-                if (cloneService.isRunning(
-                    vlmData.getRscLayerObject().getResourceName(),
-                    vlmData.getVlmNr(),
-                    vlmData.getRscLayerObject().getResourceNameSuffix()))
+                if (!cloneService.isRunning(
+                        vlmData.getRscLayerObject().getResourceName(),
+                        vlmData.getVlmNr(),
+                        vlmData.getRscLayerObject().getResourceNameSuffix()))
                 {
-                    errorReporter.logTrace("Cloning in process for %s", lvId);
-                    continue;
-                }
-                errorReporter.logTrace("Lv %s found", lvId);
-                if (!vlmShouldExist)
-                {
-                    if (SharedStorageUtils.isNeededBySharedResource(storDriverAccCtx, vlmData))
+                    errorReporter.logTrace("Lv %s found", lvId);
+                    if (!vlmShouldExist)
                     {
-                        if (vlmData.isActive(storDriverAccCtx))
+                        if (SharedStorageUtils.isNeededBySharedResource(storDriverAccCtx, vlmData))
                         {
-                            vlmsToDeactivate.add(vlmData);
-                            errorReporter.logTrace(
-                                "Lv %s will not be deleted as it is needed by shared resource. Deactivating LV instead",
-                                lvId
-                            );
+                            if (vlmData.isActive(storDriverAccCtx))
+                            {
+                                vlmsToDeactivate.add(vlmData);
+                                errorReporter.logTrace(
+                                    "Lv %s will not be deleted as it is needed by shared resource. " +
+                                        "Deactivating LV instead",
+                                    lvId
+                                );
+                            }
+                            else
+                            {
+                                errorReporter.logTrace(
+                                    "Lv %s will not be deleted as it is needed by shared resource. " +
+                                        "Already deactivated",
+                                    lvId
+                                );
+                            }
                         }
                         else
                         {
-                            errorReporter.logTrace(
-                                "Lv %s will not be deleted as it is needed by shared resource. Already deactivated",
-                                lvId
-                            );
+                            errorReporter.logTrace("Lv %s will be deleted", lvId);
+                            vlmsToDelete.add(vlmData);
+                        }
+                    }
+                    else
+                    if (!vlmShouldBeActive)
+                    {
+                        if (vlmData.isActive(storDriverAccCtx))
+                        {
+                            errorReporter.logTrace("Lv %s will be deactivated", lvId);
+                            vlmsToDeactivate.add(vlmData);
+                        }
+                        else
+                        {
+                            errorReporter.logTrace("Lv %s stays deactivated", lvId);
                         }
                     }
                     else
                     {
-                        errorReporter.logTrace("Lv %s will be deleted", lvId);
-                        vlmsToDelete.add(vlmData);
-                    }
-                }
-                else if (!vlmShouldBeActive)
-                {
-                    if (vlmData.isActive(storDriverAccCtx))
-                    {
-                        errorReporter.logTrace("Lv %s will be deactivated", lvId);
-                        vlmsToDeactivate.add(vlmData);
-                    }
-                    else
-                    {
-                        errorReporter.logTrace("Lv %s stays deactivated", lvId);
+                        if (vlmData.isActive(storDriverAccCtx))
+                        {
+                            Size sizeState = vlmData.getSizeState();
+                            if (
+                                sizeState.equals(VlmProviderObject.Size.TOO_SMALL) ||
+                                    ((Volume) vlmData.getVolume()).getFlags().isSet(storDriverAccCtx, Volume.Flags.RESIZE) &&
+                                        (sizeState.equals(VlmProviderObject.Size.TOO_LARGE)
+                                    )
+                            )
+                            {
+                                errorReporter.logTrace(
+                                    "Lv %s will be resized. Expected size: %dkb, actual size: %dkb",
+                                    lvId,
+                                    vlmData.getExpectedSize(),
+                                    vlmData.getAllocatedSize()
+                                );
+                                vlmsToResize.add(vlmData);
+                            }
+                            vlmsToCheckForRollback.add(vlmData);
+                        }
                     }
                 }
                 else
                 {
-                    if (vlmData.isActive(storDriverAccCtx))
-                    {
-                        Size sizeState = vlmData.getSizeState();
-                        if (
-                            sizeState.equals(VlmProviderObject.Size.TOO_SMALL) ||
-                                ((Volume) vlmData.getVolume()).getFlags().isSet(storDriverAccCtx, Volume.Flags.RESIZE) &&
-                                    (sizeState.equals(VlmProviderObject.Size.TOO_LARGE)
-                                )
-                        )
-                        {
-                            errorReporter.logTrace(
-                                "Lv %s will be resized. Expected size: %dkb, actual size: %dkb",
-                                lvId,
-                                vlmData.getExpectedSize(),
-                                vlmData.getAllocatedSize()
-                            );
-                            vlmsToResize.add(vlmData);
-                        }
-                        vlmsToCheckForRollback.add(vlmData);
-                    }
+                    errorReporter.logTrace("Cloning in progress for %s", lvId);
                 }
             }
             else
             {
                 if (vlmShouldExist)
                 {
-                    if (cloneService.isRunning(
+                    if (!cloneService.isRunning(
                             vlmData.getRscLayerObject().getResourceName(),
                             vlmData.getVlmNr(),
-                            vlmData.getRscLayerObject().getResourceNameSuffix())) {
-                        errorReporter.logTrace("Cloning in process for %s", lvId);
-                        continue;
+                            vlmData.getRscLayerObject().getResourceNameSuffix()))
+                    {
+                        errorReporter.logTrace("Lv %s will be created", lvId);
+                        vlmsToCreate.add(vlmData);
                     }
-                    errorReporter.logTrace("Lv %s will be created", lvId);
-                    vlmsToCreate.add(vlmData);
+                    else
+                    {
+                        errorReporter.logTrace("Cloning in process for %s", lvId);
+                    }
                 }
                 else
                 {
                     errorReporter.logTrace("Lv %s should be deleted but does not exist; no-op", lvId);
                 }
             }
-            // whatever happens, we have to report the free space of these storage pools even if no layer
-            // actually changed anything. The controller simply expects a report of free sizes
-            addChangedStorPool(vlmData.getStorPool());
         }
 
         /*
@@ -406,12 +415,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         // after we are done, and the resource has the INACTIVE flag, clear the devicepath again
         for (LAYER_DATA vlmData : vlmDataList)
         {
-            if (
-                vlmData.getRscLayerObject().getAbsResource().getStateFlags().isSet(
+            if (vlmData.getRscLayerObject().getAbsResource().getStateFlags().isSet(
                     storDriverAccCtx,
-                    Resource.Flags.INACTIVE
-                )
-            )
+                    Resource.Flags.INACTIVE))
             {
                 setDevicePath(vlmData, null);
             }
@@ -571,7 +577,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
-                if (cloneVolume) {
+                if (cloneVolume)
+                {
                     if (!cloneService.isRunning(
                             vlmData.getRscLayerObject().getResourceName(),
                             vlmData.getVlmNr(),
@@ -581,7 +588,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     {
                         createLvWithCopy(vlmData);
                     }
-                } else {
+                }
+                else
+                {
                     createLvImpl(vlmData);
                 }
             }
@@ -593,10 +602,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             // some providers cannot construct a device path in the next call and therefore return null here
             String devicePath = getDevicePath(storageName, lvId);
 
-            if (!cloneVolume) {
+            if (!cloneVolume)
+            {
                 // those providers will most likely also skip setting the (null) devicePath.
                 setDevicePath(vlmData, devicePath);
-            } else {
+            }
+            else
+            {
                 // volumes will be cloned in a background thread, and we don't want other layers try to read/write to it
                 // while we currently dd/send/recv, it will be set after cloning finished
                 setDevicePath(vlmData, null);
@@ -1464,35 +1476,46 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         }
     }
 
-    final protected @Nonnull Resource getResource(LAYER_DATA vlmData, String rscName)
+    protected final @Nonnull Resource getResource(LAYER_DATA vlmData, String rscName)
         throws AccessDeniedException, StorageException
     {
+        Resource rsc;
         try
         {
             ResourceName tmpName = new ResourceName(rscName);
-            Resource rsc = vlmData.getRscLayerObject().getAbsResource()
+            rsc = vlmData.getRscLayerObject().getAbsResource()
                 .getNode().getResource(storDriverAccCtx, tmpName);
-            if (rsc == null) {
+            if (rsc == null)
+            {
                 throw new StorageException("Couldn't find resource: " + rscName);
             }
-            return rsc;
-        } catch(InvalidNameException exc) {
+        }
+        catch (InvalidNameException exc)
+        {
             throw new ImplementationError("Couldn't create resource name from: " + rscName);
         }
+        return rsc;
     }
 
-    final protected @Nonnull LAYER_DATA getVlmDataFromResource(Resource rsc, String rscNameSuffix, VolumeNumber vlmNr)
+    protected final @Nonnull LAYER_DATA getVlmDataFromResource(Resource rsc, String rscNameSuffix, VolumeNumber vlmNr)
         throws AccessDeniedException, StorageException
     {
+        LAYER_DATA vlmData = null;
         List<AbsRscLayerObject<Resource>> storageRscDataList = LayerUtils.getChildLayerDataByKind(
             rsc.getLayerData(storDriverAccCtx), DeviceLayerKind.STORAGE);
         for (AbsRscLayerObject<Resource> storageRscData : storageRscDataList)
         {
-            if (storageRscData.getResourceNameSuffix().equals(rscNameSuffix)) {
-                return storageRscData.getVlmProviderObject(vlmNr);
+            if (storageRscData.getResourceNameSuffix().equals(rscNameSuffix))
+            {
+                vlmData = storageRscData.getVlmProviderObject(vlmNr);
+                break;
             }
         }
-        throw new ImplementationError("Couldn't find VlmData for resource: " + rsc.getResourceDefinition().getName());
+        if (vlmData == null)
+        {
+            throw new ImplementationError("Couldn't find VlmData for resource: " + rsc.getResourceDefinition().getName());
+        }
+        return vlmData;
     }
 
     @SuppressWarnings("unchecked")
