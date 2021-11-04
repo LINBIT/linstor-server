@@ -9,6 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -93,34 +94,51 @@ public class LsBlkUtils
         return parseLsblkOutput(new String(outputData.stdoutData, StandardCharsets.UTF_8));
     }
 
-    public static boolean parentIsVDO(ExtCmd extCmd, @Nonnull List<String> devicePaths)
+    public static boolean parentIsVDO(ExtCmd extCmd, @Nonnull List<String> devicePathList)
         throws StorageException
     {
-        if (devicePaths.isEmpty()) {
-            return false;
-        }
-
-        List<LsBlkEntry> entries = lsblk(extCmd);
-        for (final String devicePath : devicePaths) {
-            Optional<LsBlkEntry> dev = entries.stream()
-                .filter(entry -> entry.getName() != null && entry.getName().equals(devicePath))
-                .findFirst();
-            if (dev.isPresent()) {
-                Optional<LsBlkEntry> parent = entries.stream()
-                    .filter(entry -> entry.getName() != null && entry.getName().equals(dev.get().getParentName()))
-                    .findFirst();
-                if (parent.isPresent()) {
-                    if (!parent.get().getFsType().equalsIgnoreCase("vdo")) {
-                        return false;
+        // TODO: If possible, it would make sense time-complexity-wise to call the lsblk method
+        //       only once for multiple calls of this method, and have it create a map of
+        //       names to LsBlkEntry items, so this method could perform a map lookup rather
+        //       than having to recreate and then iterate the list twice for each call.
+        boolean vdoFlag = !devicePathList.isEmpty();
+        if (vdoFlag)
+        {
+            List<LsBlkEntry> entries = lsblk(extCmd);
+            Iterator<String> devicePathIter = devicePathList.iterator();
+            while (devicePathIter.hasNext() && vdoFlag)
+            {
+                final String devicePath = devicePathIter.next();
+                LsBlkEntry dev = getLsBlkEntryByName(entries, devicePath);
+                vdoFlag = dev != null;
+                if (vdoFlag)
+                {
+                    LsBlkEntry parent = getLsBlkEntryByName(entries, dev.getParentName());
+                    vdoFlag = parent != null;
+                    if (vdoFlag)
+                    {
+                        vdoFlag = parent.getFsType().equalsIgnoreCase("vdo");
                     }
-                } else {
-                    return false;
                 }
-            } else {
-                return false;
             }
         }
-        return true;
+        return vdoFlag;
+    }
+
+    private static LsBlkEntry getLsBlkEntryByName(final List<LsBlkEntry> entries, final String name)
+    {
+        LsBlkEntry selectedEntry = null;
+        Iterator<LsBlkEntry> entryIter = entries.iterator();
+        while (entryIter.hasNext() && selectedEntry == null)
+        {
+            final LsBlkEntry entry = entryIter.next();
+            final String entryName = entry.getName();
+            if (entryName != null && entryName.equals(name))
+            {
+                selectedEntry = entry;
+            }
+        }
+        return selectedEntry;
     }
 
     /**
