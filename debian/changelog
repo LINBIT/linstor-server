@@ -1,3 +1,23 @@
+linstor-server (1.16.0~rc.3-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * clone-status: only check rsc status for involved nodes
+
+  [ Gabor Hernadi ]
+  * ExtFiles: Clean cache on FullSync
+  * CRD: Fixed possible NPE
+  * CRD: Ignore null values in yaml
+  * KVStore: Throw exception on error
+  * RscCreate: auto toggle disk diskless->diskful
+  * Stlt,Drbd: Wait for kmod if needed
+  * LvmThin: Added check if thin pool exists
+  * LvmThin: Enable zeroing mode if not active
+  * Lvm,-Thin: Added metadata_percent and chunk_size columns to lvs
+  * Proto: Added changed/deleted StorPool props to update
+  * LvmThin: enable DRBD's discard-zeroes-if-aligned
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 04 Nov 2021 06:29:49 +0000
+
 linstor-server (1.16.0~rc.2-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
