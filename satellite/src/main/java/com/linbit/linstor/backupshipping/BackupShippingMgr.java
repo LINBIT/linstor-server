@@ -127,7 +127,7 @@ public class BackupShippingMgr
     {
         for (AbsBackupShippingService backupShippingService : services.values())
         {
-            backupShippingService.killAllShipping();
+            backupShippingService.killAllShipping(false);
         }
     }
 

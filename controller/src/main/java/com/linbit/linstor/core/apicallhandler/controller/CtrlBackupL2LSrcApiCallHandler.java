@@ -8,11 +8,13 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -413,7 +415,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                             lockGuardFactory.create()
                                 .read(LockObj.NODES_MAP)
                                 .write(LockObj.RSC_DFN_MAP).buildDeferred(),
-                            () -> startShippingInTransaction(restResponse, data)
+                            () -> confirmBackupShippingRequestArrived(restResponse, data)
                         )
                     )
             );
@@ -429,6 +431,19 @@ public class CtrlBackupL2LSrcApiCallHandler
         return flux;
     }
 
+    private Flux<ApiCallRc> confirmBackupShippingRequestArrived(
+        BackupShippingResponse responseRef,
+        BackupShippingData data
+    )
+    {
+        return Flux.just(
+            ApiCallRcImpl.copyAndPrefix(
+                "Remote '" + data.linstorRemote.getName().displayValue + "': ",
+                responseRef.responses
+            )
+        );
+    }
+
     /**
      * First flux: Updates stltRemote with received IP/Port<br/>
      *
@@ -439,8 +454,22 @@ public class CtrlBackupL2LSrcApiCallHandler
      *
      * @return
      */
+    public Flux<ApiCallRc> startShipping(
+        BackupShippingReceiveRequest responseRef,
+        BackupShippingData data
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Backup shipping L2L: make stlt start shipping",
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP).buildDeferred(),
+            () -> startShippingInTransaction(responseRef, data)
+        );
+    }
+
     private Flux<ApiCallRc> startShippingInTransaction(
-        BackupShippingResponse responseRef,
+        BackupShippingReceiveRequest responseRef,
         BackupShippingData data
     )
     {
@@ -570,7 +599,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             );
     }
 
-    private class BackupShippingRestClient
+    class BackupShippingRestClient
     {
         private final ErrorReporter errorReporter;
         private final RestHttpClient restClient;
@@ -587,6 +616,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         {
             Flux<BackupShippingResponse> flux = Flux.create(fluxSink ->
             {
+                // Runnable needed for flux shenanigans
+                // (avoids deadlock if flux error occurs while building pipeline)
                 Runnable run = () ->
                 {
                     try
@@ -596,6 +627,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                         final int badRequest = Response.Status.BAD_REQUEST.getStatusCode();
                         final int internalServerError = Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
 
+                        backupInfoMgr.addL2LSrcData(data.linstorRemote.getName(), data);
                         String restURL = data.linstorRemote.getUrl(accCtx).toExternalForm() +
                             "/v1/internal/backups/requestShip";
                         RestResponse<BackupShippingResponse> response = restClient.execute(
@@ -609,6 +641,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                                     data.metaDataPojo,
                                     data.srcBackupName,
                                     data.srcClusterId,
+                                    data.linstorRemote.getName().displayValue,
                                     data.srcSnapDfnUuids,
                                     data.dstRscName,
                                     data.dstNodeName,
@@ -622,7 +655,6 @@ public class CtrlBackupL2LSrcApiCallHandler
                             Arrays.asList(responseOk, notFound, badRequest, internalServerError),
                             BackupShippingResponse.class
                         );
-
                         if (response.getStatusCode() != responseOk)
                         {
                             ApiCallRcImpl apiCallRc;
@@ -650,7 +682,6 @@ public class CtrlBackupL2LSrcApiCallHandler
                                         .build()
                                 );
                             }
-
                             fluxSink.error(new ApiRcException(apiCallRc));
                         }
                         else
@@ -666,13 +697,94 @@ public class CtrlBackupL2LSrcApiCallHandler
                     }
                 };
                 new Thread(run).start();
-            }
-            );
+            });
+            return flux;
+        }
+
+        public Flux<JsonGenTypes.ApiCallRc> sendBackupReceiveRequest(
+            BackupShippingReceiveRequest data,
+            AccessContext accCtx
+        )
+        {
+            Flux<JsonGenTypes.ApiCallRc> flux = Flux.create(fluxSink ->
+            {
+                // Runnable needed for flux shenanigans
+                // (avoids deadlock if flux error occurs while building pipeline)
+                Runnable run = () ->
+                {
+                    try
+                    {
+                        final int responseOk = Response.Status.OK.getStatusCode();
+                        final int notFound = Response.Status.NOT_FOUND.getStatusCode();
+                        final int badRequest = Response.Status.BAD_REQUEST.getStatusCode();
+                        final int internalServerError = Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
+
+                        String restURL = data.remoteUrl +
+                            "/v1/internal/backups/requestReceive";
+                        RestResponse<JsonGenTypes.ApiCallRc[]> response = restClient.execute(
+                            null,
+                            RestOp.POST,
+                            restURL,
+                            Collections.emptyMap(),
+                            objMapper.writeValueAsString(
+                                data
+                            ),
+                            Arrays.asList(responseOk, notFound, badRequest, internalServerError),
+                            JsonGenTypes.ApiCallRc[].class
+                        );
+
+                        if (response.getStatusCode() != responseOk)
+                        {
+                            ApiCallRcImpl apiCallRc;
+
+                            if (response.getStatusCode() == internalServerError)
+                            {
+                                apiCallRc = ApiCallRcImpl.copyAndPrefix(
+                                    "Remote '" + data.remoteName + "': ",
+                                    data.responses
+                                );
+                            }
+                            else
+                            {
+                                apiCallRc = new ApiCallRcImpl();
+                                apiCallRc.addEntry(
+                                    ApiCallRcImpl.entryBuilder(
+                                        ApiConsts.FAIL_BACKUP_INCOMPATIBLE_VERSION,
+                                        "Source controller incompatible"
+                                    )
+                                        .setCause("Probably the source controller is not recent enough")
+                                        .setCorrection(
+                                            "Make sure the source cluster is on the same version as the current cluster (" +
+                                                LinStor.VERSION_INFO_PROVIDER.getVersion() + ")"
+                                        )
+                                        .build()
+                                );
+                            }
+
+                            fluxSink.error(new ApiRcException(apiCallRc));
+                        }
+                        else
+                        {
+                            for (JsonGenTypes.ApiCallRc apiCallRc : response.getData())
+                            {
+                                fluxSink.next(apiCallRc);
+                            }
+                            fluxSink.complete();
+                        }
+                    }
+                    catch (StorageException | IOException exc)
+                    {
+                        errorReporter.reportError(exc);
+                        fluxSink.error(exc);
+                    }
+                };
+                new Thread(run).start();
+            });
             return flux;
         }
     }
 
-    private class BackupShippingData
+    public class BackupShippingData
     {
         private final HashSet<String> srcSnapDfnUuids = new HashSet<>();
         private final String srcClusterId;

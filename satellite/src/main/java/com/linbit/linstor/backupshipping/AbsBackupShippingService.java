@@ -45,7 +45,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public abstract class AbsBackupShippingService implements SystemService
 {
@@ -109,16 +109,24 @@ public abstract class AbsBackupShippingService implements SystemService
         threadGroup = new ThreadGroup("SnapshotShippingSerivceThreadGroup");
 
         // this causes all shippings to be aborted should the satellite lose connection to the controller
-        stltConnTracker.addClosingListener(this::killAllShipping);
+        stltConnTracker.addClosingListener(() -> killAllShipping(false));
     }
 
-    public void killAllShipping() throws StorageException
+    public void killAllShipping(boolean doPostShipping)
     {
         for (ShippingInfo shippingInfo : shippingInfoMap.values())
         {
             for (SnapVlmDataInfo snapVlmDataInfo : shippingInfo.snapVlmDataInfoMap.values())
             {
-                snapVlmDataInfo.daemon.shutdown();
+                snapVlmDataInfo.daemon.shutdown(doPostShipping);
+                try
+                {
+                    snapVlmDataInfo.daemon.awaitShutdown(750);
+                }
+                catch (InterruptedException exc)
+                {
+                    errorReporter.reportError(exc);
+                }
             }
         }
         shippingInfoMap.clear();
@@ -142,7 +150,7 @@ public abstract class AbsBackupShippingService implements SystemService
             SnapVlmDataInfo snapVlmDataInfo = info.snapVlmDataInfoMap.get(snapVlmData);
             if (snapVlmDataInfo != null)
             {
-                snapVlmDataInfo.daemon.shutdown();
+                snapVlmDataInfo.daemon.shutdown(false);
             }
         }
         else
@@ -204,8 +212,10 @@ public abstract class AbsBackupShippingService implements SystemService
                 backupName,
                 remoteMap.get(new RemoteName(remoteName, true)),
                 false,
-                success -> postShipping(
+                null,
+                (success, addrInUse) -> postShipping(
                     success,
+                    addrInUse,
                     snapVlmData,
                     InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_SENT,
                     true,
@@ -232,6 +242,12 @@ public abstract class AbsBackupShippingService implements SystemService
             Remote remote = remoteMap.get(new RemoteName(remoteName, true));
 
             ensureRemoteType(remote);
+            Integer port = null;
+            if (remote instanceof StltRemote)
+            {
+                port = ((StltRemote) remote).getPorts(accCtx)
+                    .get(snapVlmData.getVlmNr() + snapVlmData.getRscLayerObject().getResourceNameSuffix());
+            }
 
             String backupName = getBackupNameForRestore(snapVlmData);
             startDaemon(
@@ -248,8 +264,10 @@ public abstract class AbsBackupShippingService implements SystemService
                 backupName,
                 remote,
                 true,
-                success -> postShipping(
+                port,
+                (success, addrInUse) -> postShipping(
                     success,
+                    addrInUse,
                     snapVlmData,
                     InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_RECEIVED,
                     true,
@@ -263,15 +281,18 @@ public abstract class AbsBackupShippingService implements SystemService
 
     public void allBackupPartsRegistered(Snapshot snap)
     {
+        ShippingInfo info = null;
+        boolean justStarted = false;
         synchronized (snap)
         {
-            ShippingInfo info = shippingInfoMap.get(snap);
+            info = shippingInfoMap.get(snap);
             if (info != null)
             {
                 synchronized (info)
                 {
                     if (!info.isStarted)
                     {
+                        String remoteName = "";
                         for (SnapVlmDataInfo snapVlmDataInfo : info.snapVlmDataInfoMap.values())
                         {
                             String uploadId = snapVlmDataInfo.daemon.start();
@@ -284,7 +305,7 @@ public abstract class AbsBackupShippingService implements SystemService
                             {
                                 try
                                 {
-                                    String remoteName = snap.getProps(accCtx).getProp(
+                                    remoteName = snap.getProps(accCtx).getProp(
                                         InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                                         ApiConsts.NAMESPC_BACKUP_SHIPPING
                                     );
@@ -313,10 +334,15 @@ public abstract class AbsBackupShippingService implements SystemService
                                 }
                             }
                         }
+                        justStarted = true;
                         info.isStarted = true;
                     }
                 }
             }
+        }
+        if (info != null && justStarted)
+        {
+            postAllBackupPartsRegistered(snap, info);
         }
     }
 
@@ -327,7 +353,8 @@ public abstract class AbsBackupShippingService implements SystemService
         String backupNameRef,
         Remote remote,
         boolean restore,
-        Consumer<Boolean> postAction,
+        Integer portRef,
+        BiConsumer<Boolean, Integer> postAction,
         AbsStorageVlmData<Snapshot> basedOnSnapVlmData,
         AbsStorageVlmData<Snapshot> snapVlmData
     )
@@ -350,11 +377,7 @@ public abstract class AbsBackupShippingService implements SystemService
                 }
                 if (remote instanceof StltRemote)
                 {
-                    if (info.ports == null)
-                    {
-                        info.ports = new ArrayList<>();
-                    }
-                    info.ports.add(
+                    info.portsUsed.add(
                         ((StltRemote) remote).getPorts(accCtx)
                             .get(snapVlmData.getVlmNr() + snapVlmData.getRscLayerObject().getResourceNameSuffix())
                     );
@@ -369,6 +392,7 @@ public abstract class AbsBackupShippingService implements SystemService
                             backupNameRef,
                             remote,
                             restore,
+                            portRef,
                             postAction
                         ),
                         backupNameRef,
@@ -426,6 +450,7 @@ public abstract class AbsBackupShippingService implements SystemService
 
     private void postShipping(
         boolean successRef,
+        Integer portInUseRef,
         AbsStorageVlmData<Snapshot> snapVlmData,
         String internalApiName,
         boolean updateCtrlRef,
@@ -442,6 +467,15 @@ public abstract class AbsBackupShippingService implements SystemService
             if (shippingInfo != null)
             {
                 shippingInfo.snapVlmDataFinishedShipping++;
+                if (portInUseRef != null)
+                {
+                    if (shippingInfo.alreadyInUse == null)
+                    {
+                        shippingInfo.alreadyInUse = new TreeSet<>();
+                    }
+                    shippingInfo.alreadyInUse.add(portInUseRef);
+                    shippingInfo.portsUsed.remove(portInUseRef);
+                }
                 if (successRef)
                 {
                     shippingInfo.snapVlmDataFinishedSuccessfully++;
@@ -451,41 +485,58 @@ public abstract class AbsBackupShippingService implements SystemService
                 {
                     if (updateCtrlRef)
                     {
-                        boolean success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
+                        if(!shippingInfo.alreadyInUse.isEmpty()) {
+                            controllerPeerConnector.getControllerPeer().sendMessage(
+                                interComSerializer.onewayBuilder(
+                                    InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_WRONG_PORTS
+                                ).notifyBackupShippingWrongPorts(
+                                    shippingInfo.remote.getName().displayValue,
+                                    snap.getSnapshotName().displayValue,
+                                    snap.getResourceName().displayValue,
+                                    shippingInfo.alreadyInUse
+                                ).build()
+                            );
+                        }
+                        else {
+                            boolean success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
 
-                        preCtrlNotifyBackupShipped(successRef, restoring, snap, shippingInfo);
+                            preCtrlNotifyBackupShipped(successRef, restoring, snap, shippingInfo);
 
-                        controllerPeerConnector.getControllerPeer().sendMessage(
-                            interComSerializer.onewayBuilder(internalApiName)
-                                .notifyBackupShipped(
-                                    snap,
-                                    success,
-                                    shippingInfo.ports == null ? new ArrayList<>() : shippingInfo.ports
-                                )
-                                .build()
-                        );
+                            controllerPeerConnector.getControllerPeer().sendMessage(
+                                interComSerializer.onewayBuilder(internalApiName)
+                                    .notifyBackupShipped(
+                                        snap,
+                                        success,
+                                        shippingInfo.portsUsed == null ? new TreeSet<>() : shippingInfo.portsUsed
+                                    )
+                                    .build()
+                            );
+                        }
                     }
 
                     for (SnapVlmDataInfo snapVlmDataInfo : shippingInfo.snapVlmDataInfoMap.values())
                     {
-                        snapVlmDataInfo.daemon.shutdown(); // just make sure that everything is already stopped
+                        snapVlmDataInfo.daemon.shutdown(false); // just make sure that everything is already stopped
                     }
-                    try
+                    if (shippingInfo.alreadyInUse.isEmpty())
                     {
-                        String simpleBackupName = snap.getProps(accCtx)
-                            .getProp(InternalApiConsts.KEY_BACKUP_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                        if (finishedShipments.containsKey(snap))
+                        try
                         {
-                            finishedShipments.get(snap).add(simpleBackupName);
+                            String simpleBackupName = snap.getProps(accCtx)
+                                .getProp(InternalApiConsts.KEY_BACKUP_TO_RESTORE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                            if (finishedShipments.containsKey(snap))
+                            {
+                                finishedShipments.get(snap).add(simpleBackupName);
+                            }
+                            else
+                            {
+                                finishedShipments.put(snap, new ArrayList<>(Arrays.asList(simpleBackupName)));
+                            }
                         }
-                        else
+                        catch (InvalidKeyException | AccessDeniedException exc)
                         {
-                            finishedShipments.put(snap, new ArrayList<>(Arrays.asList(simpleBackupName)));
+                            throw new ImplementationError(exc);
                         }
-                    }
-                    catch (InvalidKeyException | AccessDeniedException exc)
-                    {
-                        throw new ImplementationError(exc);
                     }
                     shippingInfoMap.remove(snap);
                 }
@@ -644,7 +695,7 @@ public abstract class AbsBackupShippingService implements SystemService
         {
             for (SnapVlmDataInfo snapVlmDataInfo : info.snapVlmDataInfoMap.values())
             {
-                snapVlmDataInfo.daemon.shutdown();
+                snapVlmDataInfo.daemon.shutdown(false);
             }
         }
 
@@ -684,7 +735,8 @@ public abstract class AbsBackupShippingService implements SystemService
         String backupNameRef,
         Remote remoteRef,
         boolean restoreRef,
-        Consumer<Boolean> postActionRef
+        Integer portRef,
+        BiConsumer<Boolean, Integer> postActionRef
     );
 
     protected abstract String getBackupNameForRestore(AbsStorageVlmData<Snapshot> snapVlmDataRef)
@@ -709,17 +761,20 @@ public abstract class AbsBackupShippingService implements SystemService
         ShippingInfo shippingInfoRef
     );
 
+    protected abstract void postAllBackupPartsRegistered(Snapshot snap, ShippingInfo info);
+
     static class ShippingInfo
     {
         private boolean isStarted = false;
         Map<AbsStorageVlmData<Snapshot>, SnapVlmDataInfo> snapVlmDataInfoMap = new HashMap<>();
         Remote remote = null;
-        List<Integer> ports;
+        Set<Integer> portsUsed = new TreeSet<>();
+        Set<Integer> alreadyInUse = new TreeSet<>();
 
         String s3MetaKey;
         String basedOnS3MetaKey;
 
-        private int snapVlmDataFinishedShipping = 0;
+        int snapVlmDataFinishedShipping = 0;
         private int snapVlmDataFinishedSuccessfully = 0;
     }
 

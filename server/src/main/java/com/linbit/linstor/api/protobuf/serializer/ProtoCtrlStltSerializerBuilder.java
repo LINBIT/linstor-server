@@ -74,8 +74,10 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyNodeSuccessOuterClas
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyStorPoolSuccessOuterClass.MsgIntApplyStorPoolSuccess;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupRcvReadyOuterClass.MsgIntBackupRcvReady;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippedOuterClass.MsgIntBackupShipped;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippingIdOuterClass.MsgIntBackupShippingId;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippingWrongPortsOuterClass.MsgIntBackupShippingWrongPorts;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntCloneUpdateOuterClass.MsgIntCloneUpdate;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntRequestSharedStorPoolLocksOuterClass.MsgIntRequestSharedStorPoolLocks;
@@ -872,7 +874,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     public CtrlStltSerializerBuilder notifyBackupShipped(
         Snapshot snapRef,
         boolean success,
-        List<Integer> ports
+        Set<Integer> ports
     )
     {
         try
@@ -882,6 +884,56 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setSnapName(snapRef.getSnapshotName().displayValue)
                 .addAllPorts(ports)
                 .setSuccess(success)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder notifyBackupShippingWrongPorts(
+        String remoteName,
+        String snapName,
+        String rscName,
+        Set<Integer> ports
+    )
+    {
+        try
+        {
+            MsgIntBackupShippingWrongPorts.newBuilder()
+                .setRemoteName(remoteName)
+                .setSnapName(snapName)
+                .setRscName(rscName)
+                .addAllPorts(ports)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializerBuilder notifyBackupRcvReady(
+        String remoteName,
+        String snapName,
+        String rscName,
+        String nodeName
+    )
+    {
+        try
+        {
+            MsgIntBackupRcvReady.newBuilder()
+                .setRemoteName(remoteName)
+                .setSnapName(snapName)
+                .setRscName(rscName)
+                .setNodeName(nodeName)
                 .build()
                 .writeDelimitedTo(baos);
         }

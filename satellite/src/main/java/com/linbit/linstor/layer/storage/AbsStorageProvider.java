@@ -882,6 +882,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         {
                             startSending(snapVlm);
                         }
+                        // else if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                        // snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
+                        // {
+                        // startBackupRestore(snapVlm);
+                        // }
                     }
                     catch (InvalidNameException exc)
                     {

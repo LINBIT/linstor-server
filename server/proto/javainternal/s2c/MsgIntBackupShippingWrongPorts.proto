@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+// Internal message to notify the ctrl that the given ports are alreay in use
+message MsgIntBackupShippingWrongPorts
+{
+    string remote_name = 1;
+    string snap_name = 2;
+    string rsc_name = 3;
+    repeated sint32 ports = 4;
+}

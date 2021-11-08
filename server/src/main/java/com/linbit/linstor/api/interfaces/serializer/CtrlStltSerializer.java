@@ -138,13 +138,27 @@ public interface CtrlStltSerializer extends CommonSerializer
             boolean successRef
         );
 
-        CtrlStltSerializerBuilder notifyBackupShipped(Snapshot snap, boolean successRef, List<Integer> ports);
+        CtrlStltSerializerBuilder notifyBackupShipped(Snapshot snap, boolean successRef, Set<Integer> ports);
 
         CtrlStltSerializerBuilder notifyBackupShippingId(
             Snapshot snap,
             String backupName,
             String uploadId,
             String remoteName
+        );
+
+        CtrlStltSerializerBuilder notifyBackupShippingWrongPorts(
+            String remoteName,
+            String snapName,
+            String rscName,
+            Set<Integer> ports
+        );
+
+        CtrlStltSerializerBuilder notifyBackupRcvReady(
+            String remoteName,
+            String snapName,
+            String rscName,
+            String nodeName
         );
 
         CtrlStltSerializerBuilder notifyBackupShippingFinished(String rscName, String snapName);

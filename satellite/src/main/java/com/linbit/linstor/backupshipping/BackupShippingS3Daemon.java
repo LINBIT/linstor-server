@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -50,7 +50,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     private String uploadId = null;
     private final AccessContext accCtx;
 
-    private final Consumer<Boolean> afterTermination;
+    private final BiConsumer<Boolean, Integer> afterTermination;
 
     public BackupShippingS3Daemon(
         ErrorReporter errorReporterRef,
@@ -62,7 +62,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
         BackupToS3 backupHandlerRef,
         boolean restoreRef,
         long size,
-        Consumer<Boolean> afterTerminationRef,
+        BiConsumer<Boolean, Integer> postActionRef,
         AccessContext accCtxRef,
         byte[] masterKeyRef
     )
@@ -70,7 +70,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
         errorReporter = errorReporterRef;
         command = commandRef;
         remote = remoteRef;
-        afterTermination = afterTerminationRef;
+        afterTermination = postActionRef;
         backupName = backupNameRef;
         backupHandler = backupHandlerRef;
         volSize = size;
@@ -94,6 +94,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
         }
     }
 
+    @Override
     public String start()
     {
         running = true;
@@ -121,7 +122,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
                     false
                 )
             );
-            shutdown();
+            shutdown(false);
         }
         catch (AccessDeniedException exc)
         {
@@ -136,7 +137,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
                     false
                 )
             );
-            shutdown();
+            shutdown(false);
         }
         uploadId = uploadIdRef;
         return uploadIdRef;
@@ -289,7 +290,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
                 if (!success)
                 {
                     afterTerminationSent = true;
-                    afterTermination.accept(success);
+                    afterTermination.accept(success, null);
                     try
                     {
                         if (uploadId != null)
@@ -318,14 +319,14 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
                     }
                     if (shutdownAllowed)
                     {
-                        shutdown();
+                        shutdown(false);
                     }
                 }
             }
             else if (!afterTerminationSent)
             {
                 afterTerminationSent = true;
-                afterTermination.accept(success);
+                afterTermination.accept(success, null);
                 if (!success)
                 {
                     try
@@ -366,7 +367,8 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     {
     }
 
-    public void shutdown()
+    @Override
+    public void shutdown(boolean ignored)
     {
         threadFinished(false, false);
         running = false;
@@ -382,6 +384,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
         deque.addFirst(new PoisonEvent());
     }
 
+    @Override
     public void awaitShutdown(long timeoutRef) throws InterruptedException
     {
         if (cmdThread != null)

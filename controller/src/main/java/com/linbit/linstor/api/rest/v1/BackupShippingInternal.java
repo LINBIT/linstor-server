@@ -1,12 +1,20 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LDstApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LSrcApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
@@ -35,7 +43,9 @@ public class BackupShippingInternal
 {
     private final RequestHelper requestHelper;
     private final CtrlBackupL2LDstApiCallHandler backupL2LDstApiCallHandler;
+    private final CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandler;
     private final ErrorReporter errorReporter;
+    private final BackupInfoManager backupInfoMgr;
 
     private final ObjectMapper objectMapper;
 
@@ -43,12 +53,16 @@ public class BackupShippingInternal
     public BackupShippingInternal(
         RequestHelper requestHelperRef,
         CtrlBackupL2LDstApiCallHandler backupL2LDstApiCallHandlerRef,
-        ErrorReporter errorReporterRef
+        CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandlerRef,
+        ErrorReporter errorReporterRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         requestHelper = requestHelperRef;
         backupL2LDstApiCallHandler = backupL2LDstApiCallHandlerRef;
+        backupL2LSrcApiCallHandler = backupL2LSrcApiCallHandlerRef;
         errorReporter = errorReporterRef;
+        backupInfoMgr = backupInfoMgrRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -78,7 +92,8 @@ public class BackupShippingInternal
                 shipRequest.dstStorPool,
                 shipRequest.storPoolRenameMap,
                 shipRequest.useZstd,
-                shipRequest.downloadOnly
+                shipRequest.downloadOnly,
+                shipRequest.srcL2LRemoteName
             ).subscriberContext(
                 requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
             );
@@ -92,11 +107,7 @@ public class BackupShippingInternal
                         ApiConsts.FAIL_INVLD_REQUEST,
                         "Failed to deserialize JSON",
                         exc.getMessage()
-                    ),
-                    null,
-                    null,
-                    null,
-                    null
+                    )
                 )
             );
         }
@@ -104,7 +115,7 @@ public class BackupShippingInternal
             .map(shipResponse ->
             {
                 Response.ResponseBuilder builder = Response
-                    .status(shipResponse.canReceive ? Response.Status.OK : Response.Status.BAD_REQUEST);
+                    .status(Response.Status.OK);
                 return builder.entity(responseToJson(shipResponse))
                     .type(MediaType.APPLICATION_JSON).build();
             })
@@ -120,11 +131,7 @@ public class BackupShippingInternal
                             ApiConsts.FAIL_UNKNOWN_ERROR,
                             exc.getMessage(),
                             "ErrorReport id on target cluster: " + reportErrorId
-                        ),
-                        null,
-                        null,
-                        null,
-                        null
+                        )
                     )
                 );
                 return Mono.just(
@@ -134,6 +141,50 @@ public class BackupShippingInternal
             })
             .subscribe(asyncResponse::resume);
 
+    }
+
+    @POST
+    @Path("requestReceive")
+    public void internalRequestReceive(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        Flux<ApiCallRc> responses;
+        BackupShippingReceiveRequest receiveRequest;
+        try
+        {
+            receiveRequest = objectMapper.readValue(jsonData, BackupShippingReceiveRequest.class);
+            RemoteName remote = new RemoteName(receiveRequest.remoteName);
+            BackupShippingData data = backupInfoMgr.getL2LSrcData(remote);
+            backupInfoMgr.removeL2LSrcData(remote);
+            responses = backupL2LSrcApiCallHandler.startShipping(receiveRequest, data)
+                .subscriberContext(
+                    requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
+                );
+        }
+        catch (JsonProcessingException exc)
+        {
+            responses = Flux.just(
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_INVLD_REQUEST,
+                    "Failed to deserialize JSON",
+                    exc.getMessage()
+                )
+            );
+        }
+        catch (InvalidNameException exc)
+        {
+            responses = Flux.just(
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_INVLD_REMOTE_NAME,
+                    "Given RemoteName was invalid",
+                    exc.getMessage()
+                )
+            );
+        }
+        ApiCallRcRestUtils.mapToMonoResponse(responses).subscribe(asyncResponse::resume);
     }
 
     private String responseToJson(BackupShippingResponse responseRef)

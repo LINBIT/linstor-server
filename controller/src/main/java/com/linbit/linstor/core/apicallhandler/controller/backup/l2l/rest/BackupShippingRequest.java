@@ -32,6 +32,7 @@ public class BackupShippingRequest
     public final BackupMetaDataPojo metaData;
     public final String srcBackupName;
     public final String srcClusterId;
+    public final String srcL2LRemoteName;
     public final Set<String> srcSnapDfnUuids;
 
     public final @Nullable String dstNodeName;
@@ -46,6 +47,7 @@ public class BackupShippingRequest
         @JsonProperty("metaData") BackupMetaDataPojo metaDataRef,
         @JsonProperty("srcBackupName") String srcBackupNameRef,
         @JsonProperty("srcClusterId") String srcClusterIdRef,
+        @JsonProperty("srcL2LRemoteName") String srcL2LRemoteNameRef,
         @JsonProperty("srcSnapUuids") HashSet<String> srcSnapDfnUuidsRef,
         @JsonProperty("dstRscName") String dstRscNameRef,
         @JsonProperty("dstNodeName") @Nullable String dstNodeNameRef,
@@ -56,6 +58,7 @@ public class BackupShippingRequest
         @JsonProperty("downloadOnly") boolean downloadOnlyRef
     )
     {
+        srcL2LRemoteName = Objects.requireNonNull(srcL2LRemoteNameRef, "source linstor remote name must not be null!");
         srcVersion = Objects.requireNonNull(srcVersionRef, "Version must not be null!");
         dstRscName = Objects.requireNonNull(dstRscNameRef, "Target resource name must not be null!");
         srcBackupName = Objects.requireNonNull(srcBackupNameRef, "BackupName must not be null!");

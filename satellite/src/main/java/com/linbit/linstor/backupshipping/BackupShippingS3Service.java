@@ -27,7 +27,7 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -146,7 +146,8 @@ public class BackupShippingS3Service extends AbsBackupShippingService
         String backupNameRef,
         Remote remote,
         boolean restore,
-        Consumer<Boolean> postAction
+        Integer ignored,
+        BiConsumer<Boolean, Integer> postAction
     )
     {
         return new BackupShippingS3Daemon(
@@ -198,5 +199,11 @@ public class BackupShippingS3Service extends AbsBackupShippingService
                 success = false;
             }
         }
+    }
+
+    @Override
+    protected void postAllBackupPartsRegistered(Snapshot snapRef, ShippingInfo infoRef)
+    {
+        // ignored
     }
 }

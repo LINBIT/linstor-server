@@ -13,7 +13,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
 {
@@ -27,25 +27,31 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     private final LinkedBlockingDeque<Event> deque;
     private final DaemonHandler handler;
 
+    private final Integer port;
+
     private boolean started = false;
     private boolean alreadyInUse = false;
 
-    private final Consumer<Boolean> afterTermination;
+    private final BiConsumer<Boolean, Integer> afterTermination;
+    private boolean runAfterTermination = false;
 
     public BackupShippingL2LDaemon(
         ErrorReporter errorReporterRef,
         ThreadGroup threadGroupRef,
         String threadName,
         String[] commandRef,
-        Consumer<Boolean> afterTerminationRef
+        Integer portRef,
+        BiConsumer<Boolean, Integer> postActionRef
     )
     {
         errorReporter = errorReporterRef;
         command = commandRef;
-        afterTermination = afterTerminationRef;
+        afterTermination = postActionRef;
 
         deque = new LinkedBlockingDeque<>(DFLT_DEQUE_CAPACITY);
         handler = new DaemonHandler(deque, command);
+
+        port = portRef;
 
         thread = new Thread(threadGroupRef, this, threadName);
     }
@@ -72,7 +78,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
                     false
                 )
             );
-            shutdown();
+            shutdown(false);
         }
 
         return null;
@@ -82,6 +88,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     public void run()
     {
         errorReporter.logTrace("starting daemon: %s", Arrays.toString(command));
+        boolean first = true;
         while (started)
         {
             Event event;
@@ -114,18 +121,29 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
                 if (event instanceof PoisonEvent)
                 {
                     errorReporter.logTrace("PoisonEvent");
+                    if (runAfterTermination)
+                    {
+                        afterTermination.accept(false, null);
+                    }
                     break;
                 }
                 else
                 if (event instanceof EOFEvent)
                 {
-                    int exitCode = handler.getExitCode();
-                    errorReporter.logTrace(
-                        "EOF. Exit code: %d %s",
-                        exitCode,
-                        (alreadyInUse && exitCode == 0 ? " but port is already in use" : "")
-                    );
-                    afterTermination.accept(exitCode == 0 && !alreadyInUse);
+                    if (!first)
+                    {
+                        int exitCode = handler.getExitCode();
+                        errorReporter.logTrace(
+                            "EOF. Exit code: %d %s",
+                            exitCode,
+                            (alreadyInUse && exitCode == 0 ? " but port is already in use" : "")
+                        );
+                        afterTermination.accept(exitCode == 0 && !alreadyInUse, alreadyInUse ? port : null);
+                    }
+                    else
+                    {
+                        first = false;
+                    }
                 }
             }
             catch (InterruptedException exc)
@@ -154,8 +172,9 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     {}
 
     @Override
-    public void shutdown()
+    public void shutdown(boolean runAfterTerminationRef)
     {
+        runAfterTermination = runAfterTerminationRef;
         started = false;
         handler.stop(false);
         if (thread != null)

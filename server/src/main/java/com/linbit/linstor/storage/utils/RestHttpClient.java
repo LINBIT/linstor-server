@@ -144,7 +144,6 @@ public class RestHttpClient implements RestClient
                      * Technically JSON allows duplicate keys, even with different value types.
                      * In some cases we need to get rid of this. (sorry for this ugly hack)
                      */
-
                     if (request.responseClass.isArray())
                     {
                         Map<String, Object>[] obj = OBJECT_MAPPER.readValue(

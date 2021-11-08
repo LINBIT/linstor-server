@@ -2,7 +2,10 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LDstApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -27,6 +30,8 @@ public class BackupInfoManager
     private final Map<NodeName, Map<SnapshotDefinition.Key, AbortInfo>> abortCreateMap;
     private final Map<ResourceName, Set<Snapshot>> abortRestoreMap;
     private final Map<Snapshot, Snapshot> backupsToDownload;
+    private final Map<RemoteName, CtrlBackupL2LSrcApiCallHandler.BackupShippingData> l2lSrcData;
+    private final Map<Snapshot, CtrlBackupL2LDstApiCallHandler.BackupShippingData> l2lDstData;
 
     @Inject
     public BackupInfoManager(TransactionObjectFactory transObjFactoryRef)
@@ -35,6 +40,8 @@ public class BackupInfoManager
         abortCreateMap = new HashMap<>();
         abortRestoreMap = new HashMap<>();
         backupsToDownload = new HashMap<>();
+        l2lSrcData = new HashMap<>();
+        l2lDstData = new HashMap<>();
     }
 
     /**
@@ -314,6 +321,36 @@ public class BackupInfoManager
                 toDelete = backupsToDownload.remove(toDelete);
             }
         }
+    }
+
+    public void addL2LSrcData(RemoteName name, CtrlBackupL2LSrcApiCallHandler.BackupShippingData data)
+    {
+        l2lSrcData.put(name, data);
+    }
+
+    public CtrlBackupL2LSrcApiCallHandler.BackupShippingData getL2LSrcData(RemoteName name)
+    {
+        return l2lSrcData.get(name);
+    }
+
+    public void removeL2LSrcData(RemoteName name)
+    {
+        l2lSrcData.remove(name);
+    }
+
+    public void addL2LDstData(Snapshot snap, CtrlBackupL2LDstApiCallHandler.BackupShippingData data)
+    {
+        l2lDstData.put(snap, data);
+    }
+
+    public CtrlBackupL2LDstApiCallHandler.BackupShippingData getL2LDstData(Snapshot snap)
+    {
+        return l2lDstData.get(snap);
+    }
+
+    public void removeL2LDstData(Snapshot snap)
+    {
+        l2lDstData.remove(snap);
     }
 
     public static class AbortInfo

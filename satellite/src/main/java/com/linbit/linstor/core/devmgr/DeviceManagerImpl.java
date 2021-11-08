@@ -1473,7 +1473,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 ResourceName resourceName = dispatchRscResponseEntry.getKey();
                 ApiCallRc response = dispatchRscResponseEntry.getValue();
                 List<FluxSink<ApiCallRc>> sinks = dispatchRscs.get(resourceName);
-
                 if (sinks != null)
                 {
                     for (FluxSink<ApiCallRc> sink : sinks)

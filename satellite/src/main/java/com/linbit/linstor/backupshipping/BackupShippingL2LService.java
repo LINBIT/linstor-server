@@ -1,7 +1,10 @@
 package com.linbit.linstor.backupshipping;
 
+import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
@@ -23,7 +26,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.Map;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 @Singleton
 public class BackupShippingL2LService extends AbsBackupShippingService
@@ -122,7 +125,8 @@ public class BackupShippingL2LService extends AbsBackupShippingService
         String backupNameRef,
         Remote remoteRef,
         boolean restoreRef,
-        Consumer<Boolean> postActionRef
+        Integer portRef,
+        BiConsumer<Boolean, Integer> postActionRef
     )
     {
         return new BackupShippingL2LDaemon(
@@ -130,6 +134,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
             threadGroup,
             backupNameRef,
             fullCommandRef,
+            portRef,
             postActionRef
         );
     }
@@ -150,5 +155,69 @@ public class BackupShippingL2LService extends AbsBackupShippingService
     )
     {
         // ignore
+    }
+
+    @Override
+    protected void postAllBackupPartsRegistered(Snapshot snap, ShippingInfo info)
+    {
+        String remoteName = "";
+        synchronized (snap)
+        {
+            try
+            {
+                if (snap.getFlags().isSet(accCtx, Snapshot.Flags.BACKUP_TARGET))
+                {
+                    remoteName = snap.getProps(accCtx).getProp(
+                        InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    );
+                    if (remoteName == null || remoteName.isEmpty())
+                    {
+                        throw new ImplementationError(
+                            "KEY_BACKUP_SRC_REMOTE is not set for the backup-shipping of " +
+                                snap.getSnapshotName()
+                        );
+                    }
+                }
+                else
+                {
+                    return;
+                }
+            }
+            catch (InvalidKeyException | AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            // wait to see if the daemons could start successfully
+            try
+            {
+                snap.wait(750);
+            }
+            catch (InterruptedException exc)
+            {
+                // ignore if this happens during shutdown
+                throw new ImplementationError(exc);
+            }
+        }
+        if (info.snapVlmDataFinishedShipping > 0)
+        {
+            killAllShipping(true);
+        }
+        else
+        {
+
+            // tell ctrl to tell src to start sending
+            controllerPeerConnector.getControllerPeer().sendMessage(
+                interComSerializer
+                    .onewayBuilder(InternalApiConsts.API_NOTIFY_BACKUP_RCV_READY)
+                    .notifyBackupRcvReady(
+                        remoteName,
+                        snap.getSnapshotName().displayValue,
+                        snap.getResourceName().displayValue,
+                        snap.getNodeName().displayValue
+                    )
+                    .build()
+            );
+        }
     }
 }
