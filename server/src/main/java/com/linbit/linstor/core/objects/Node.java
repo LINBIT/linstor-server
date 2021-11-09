@@ -890,7 +890,9 @@ public class Node extends BaseTransactionObject
     {
         DELETE(1L),
         EVICTED(DELETE.flagValue | 1L << 1),
-        QIGNORE(0x10000L);
+        EVACUATE(1L << 2),
+        QIGNORE(0x10000L),
+        ;
 
         public final long flagValue;
 

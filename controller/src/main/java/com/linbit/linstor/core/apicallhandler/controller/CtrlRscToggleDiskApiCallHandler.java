@@ -870,7 +870,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return ret;
     }
 
-    private Publisher<ApiCallRc> waitForMigration(
+    Publisher<ApiCallRc> waitForMigration(
         NodeName nodeName,
         ResourceName rscName,
         NodeName migrateFromNodeName

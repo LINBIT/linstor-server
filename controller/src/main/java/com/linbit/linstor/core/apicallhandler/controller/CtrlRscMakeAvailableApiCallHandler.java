@@ -865,7 +865,7 @@ public class CtrlRscMakeAvailableApiCallHandler
             .build();
     }
 
-    private StorPool getStorPoolOrFail(Set<StorPool> storPoolSetRef, String nodeNameRef, boolean disklessRef)
+    static StorPool getStorPoolOrFail(Set<StorPool> storPoolSetRef, String nodeNameRef, boolean disklessRef)
     {
         if (storPoolSetRef == null)
         {
@@ -884,12 +884,13 @@ public class CtrlRscMakeAvailableApiCallHandler
         return storPoolSetRef.iterator().next();
     }
 
-    private ApiRcException failNoStorPoolFound(String nodeName, boolean diskless)
+    static ApiRcException failNoStorPoolFound(String nodeName, boolean diskless)
     {
         return new ApiRcException(
             ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
-                "Autoplacer could not find " + (diskless ? "diskless" : "diskful") + " stor pool on node " + nodeName +
+                "Autoplacer could not find " + (diskless ? "diskless" : "diskful") + " stor pool " +
+                    (nodeName == null ? "" : "on node " + nodeName) +
                     " matching resource-groups autoplace-settings"
             )
         );

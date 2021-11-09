@@ -155,7 +155,7 @@ public class CtrlRscAutoPlaceApiCallHandler
 
     Flux<ApiCallRc> autoPlaceInTransaction(
         String rscNameStr,
-        AutoSelectFilterApi selectFilterRef,
+        @Nullable AutoSelectFilterApi selectFilterRef,
         ResponseContext context
     )
     {
@@ -182,7 +182,8 @@ public class CtrlRscAutoPlaceApiCallHandler
 
         for (Resource rsc : alreadyPlaced)
         {
-            if (isFlagSet(rsc, Resource.Flags.DELETE))
+            if (isFlagSet(rsc, Resource.Flags.DELETE) || isFlagSet(rsc, Resource.Flags.EVACUATE) ||
+                isNodeFlagSet(rsc, Node.Flags.EVACUATE))
             {
                 alreadyPlacedDeleting.add(rsc);
             }

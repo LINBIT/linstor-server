@@ -14,7 +14,10 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
+import com.linbit.linstor.api.pojo.ResourceWithPayloadPojo;
+import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.PortAlreadyInUseException;
@@ -22,6 +25,7 @@ import com.linbit.linstor.core.SatelliteConnector;
 import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
@@ -133,6 +137,9 @@ public class CtrlNodeApiCallHandler
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final CtrlRscDeleteApiCallHandler rscDeleteHandler;
     private final CtrlSnapshotDeleteApiCallHandler snapDeleteHandler;
+    private final CtrlRscToggleDiskApiCallHandler rscToggleDiskApiCallHandler;
+    private final Autoplacer autoplacer;
+    private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -161,7 +168,10 @@ public class CtrlNodeApiCallHandler
         ErrorReporter errorReporterRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         CtrlRscDeleteApiCallHandler rscDeleteHandlerRef,
-        CtrlSnapshotDeleteApiCallHandler snapDeleteHandlerRef
+        CtrlSnapshotDeleteApiCallHandler snapDeleteHandlerRef,
+        Autoplacer autoplacerRef,
+        CtrlRscToggleDiskApiCallHandler rscToggleDiskApiCallHandlerRef,
+        CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -190,6 +200,9 @@ public class CtrlNodeApiCallHandler
         freeCapacityFetcher = freeCapacityFetcherRef;
         rscDeleteHandler = rscDeleteHandlerRef;
         snapDeleteHandler = snapDeleteHandlerRef;
+        autoplacer = autoplacerRef;
+        rscToggleDiskApiCallHandler = rscToggleDiskApiCallHandlerRef;
+        ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
     }
 
     Node createNodeImpl(
@@ -1310,5 +1323,96 @@ public class CtrlNodeApiCallHandler
                 }
             )
         );
+    }
+
+    public Flux<ApiCallRc> evacuateNode(String nodeNameRef)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Evacuate node",
+            lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
+            () -> evacuateNodeInTrasaction(nodeNameRef)
+        );
+    }
+
+    private Flux<ApiCallRc> evacuateNodeInTrasaction(String nodeNameEvacuateSourceStrRef)
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_NODE, nodeNameEvacuateSourceStrRef);
+
+        Flux<ApiCallRc> flux;
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        Node node = ctrlApiDataLoader.loadNode(nodeNameEvacuateSourceStrRef, true);
+        NodeName nodeNameEvacuateSource = node.getName();
+        try
+        {
+            AccessContext peerCtx = peerAccCtx.get();
+            node.getFlags().enableFlags(peerCtx, Node.Flags.EVACUATE);
+
+            List<ResourceDefinition> affectedRscDfnList = new ArrayList<>();
+            Iterator<Resource> rscIt = node.iterateResources(peerCtx);
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                rsc.getStateFlags().enableFlags(peerCtx, Resource.Flags.EVACUATE);
+                rsc.getProps(peerAccCtx.get()).map().put(ApiConsts.KEY_RSC_MIGRATE_FROM, nodeNameEvacuateSource.value);
+                affectedRscDfnList.add(rsc.getDefinition());
+            }
+
+            List<Flux<ApiCallRc>> fluxList = new ArrayList<>();
+            for (ResourceDefinition rscDfn : affectedRscDfnList)
+            {
+                Set<StorPool> storPoolSet = autoplacer.autoPlace(
+                    AutoSelectFilterPojo.merge(
+                        rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
+                    ),
+                    rscDfn,
+                    CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerCtx)
+                );
+
+                StorPool sp = CtrlRscMakeAvailableApiCallHandler.getStorPoolOrFail(storPoolSet, null, false);
+                NodeName nodeNameEvacTarget = sp.getNode().getName();
+
+                ResourceWithPayloadPojo createRscPojo = new ResourceWithPayloadPojo(
+                    new RscPojo(
+                        rscDfn.getName().displayValue,
+                        nodeNameEvacTarget.displayValue,
+                        0L,
+                        Collections.singletonMap(
+                            ApiConsts.KEY_STOR_POOL_NAME,
+                            sp.getName().displayValue
+                        )
+                    ),
+                    rscDfn.getLayerStack(peerCtx).stream().map(DeviceLayerKind::name).collect(Collectors.toList()),
+                    null
+                );
+                fluxList.add(
+                    ctrlRscCrtApiCallHandler.createResource(Collections.singletonList(createRscPojo))
+                        .concatWith(
+                            rscToggleDiskApiCallHandler.waitForMigration(
+                                nodeNameEvacTarget,
+                                rscDfn.getName(),
+                                nodeNameEvacuateSource
+                            )
+                        )
+                );
+            }
+
+            ctrlTransactionHelper.commit();
+            flux = Flux.<ApiCallRc>just(apiCallRc)
+                .concatWith(Flux.merge(fluxList));
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "update the node type",
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
+        return flux;
     }
 }

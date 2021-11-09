@@ -93,6 +93,9 @@ class Selector
                     countResource &= skipAlreadyPlacedOnNodeNamesCheck == null ||
                         !skipAlreadyPlacedOnNodeNamesCheck.contains(node.getName().displayValue);
 
+                    countResource &= !(rsc.getStateFlags().isSet(apiCtx, Resource.Flags.EVACUATE) ||
+                        node.getFlags().isSet(apiCtx, Node.Flags.EVACUATE));
+
                     if (countResource)
                     {
                         alreadyDeployedOnNodes.add(node);

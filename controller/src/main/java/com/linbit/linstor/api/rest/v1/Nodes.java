@@ -299,6 +299,19 @@ public class Nodes
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
+    @PUT
+    @Path("{nodeName}/evacuate")
+    public void evacuateNode(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName
+    )
+    {
+        final Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.evacuateNode(nodeName)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_NODE_EVACUATE, request));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+    }
+
     @GET
     @Path("{nodeName}/net-interfaces")
     public Response listNetInterfaces(

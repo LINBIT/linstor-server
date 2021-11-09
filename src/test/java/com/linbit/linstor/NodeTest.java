@@ -1,14 +1,14 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Node;
 
 import java.util.List;
 
 import org.junit.Test;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  *
@@ -21,12 +21,18 @@ public class NodeTest
     {
         final long mask = Node.Flags.DELETE.flagValue |
                 Node.Flags.QIGNORE.flagValue |
-                Node.Flags.EVICTED.flagValue;
+            Node.Flags.EVICTED.flagValue |
+            Node.Flags.EVACUATE.flagValue;
         List<String> strList = Node.Flags.toStringList(mask);
         assertEquals(Node.Flags.values().length, strList.size());
 
         assertArrayEquals(
-                new String[]{ApiConsts.FLAG_DELETE, ApiConsts.FLAG_EVICTED, ApiConsts.FLAG_QIGNORE},
+            new String[]
+            {
+                ApiConsts.FLAG_DELETE,
+                ApiConsts.FLAG_EVICTED,
+                ApiConsts.FLAG_EVACUATE,
+                ApiConsts.FLAG_QIGNORE  },
                 strList.toArray());
         assertEquals(mask, Node.Flags.fromStringList(strList));
     }
