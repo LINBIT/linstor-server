@@ -193,6 +193,15 @@ public class CtrlRscCrtApiHelper
                 )
             );
         }
+        if (isNodeFlagSet(node, Node.Flags.EVACUATE))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EVACUATING,
+                    "node '" + nodeNameStr + " is being evacuated. No new resources allowed on this node."
+                )
+            );
+        }
 
         Resource rscForToggleDiskful = ctrlApiDataLoader.loadRsc(node.getName(), rscDfn.getName(), false);
         if (rscForToggleDiskful != null && !isFlagSet(rscForToggleDiskful, Resource.Flags.DRBD_DISKLESS))
@@ -1170,6 +1179,24 @@ public class CtrlRscCrtApiHelper
                 accDeniedExc,
                 "accessing resources of " + getRscDfnDescriptionInline(rscDfn),
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
+        return ret;
+    }
+
+    private boolean isNodeFlagSet(Node node, Node.Flags... flags)
+    {
+        boolean ret;
+        try
+        {
+            ret = node.getFlags().isSet(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "getting flag for node",
+                ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }
         return ret;
