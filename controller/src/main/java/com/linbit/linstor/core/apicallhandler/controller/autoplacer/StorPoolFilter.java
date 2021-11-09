@@ -276,7 +276,8 @@ class StorPoolFilter
             Boolean nodeMatches = nodeMatchesMap.get(node);
             if (nodeMatches == null)
             {
-                nodeMatches = true;
+                nodeMatches = !node.getFlags().isSet(apiAccCtx, Node.Flags.EVACUATE);
+
                 Props nodeProps = node.getProps(apiAccCtx);
                 if (nodeMatches && filterNodeNameList != null && !filterNodeNameList.isEmpty())
                 {
