@@ -40,13 +40,17 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
 
     public ELEMENT set(ELEMENT obj) throws DatabaseException
     {
+        ELEMENT oldObj = object;
         if (!Objects.equals(obj, cachedObject))
         {
             activateTransMgr();
+            object = obj;
             dbDriver.update(parent, obj);
         }
-        ELEMENT oldObj = object;
-        object = obj;
+        else
+        {
+            object = obj;
+        }
         return oldObj;
     }
 
