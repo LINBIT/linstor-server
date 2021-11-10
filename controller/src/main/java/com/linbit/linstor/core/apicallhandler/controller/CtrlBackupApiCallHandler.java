@@ -518,8 +518,10 @@ public class CtrlBackupApiCallHandler
             ctrlTransactionHelper.commit();
 
             responses.addEntry(
-                "Shipping of resource " + rscNameRef + " to remote " + remoteName + " in progress.",
-                ApiConsts.MASK_INFO
+                ApiCallRcImpl.entryBuilder(
+                    ApiConsts.MASK_INFO, "Shipping of resource " + rscNameRef + " to remote " + remoteName +
+                        " in progress."
+                ).putObjRef(ApiConsts.KEY_SNAPSHOT, snapName).build()
             );
 
             Flux<ApiCallRc> flux = snapshotCrtHandler.postCreateSnapshot(snapDfn)
