@@ -277,6 +277,14 @@ class StorPoolFilter
             if (nodeMatches == null)
             {
                 nodeMatches = !node.getFlags().isSet(apiAccCtx, Node.Flags.EVACUATE);
+                if (!nodeMatches)
+                {
+                    errorReporter.logTrace(
+                        "Autoplacer.Filter: Disqualifying node '%s' as it is currently being evacuated",
+                        nodeDisplayValue,
+                        filterNodeNameList
+                    );
+                }
 
                 Props nodeProps = node.getProps(apiAccCtx);
                 if (nodeMatches && filterNodeNameList != null && !filterNodeNameList.isEmpty())
