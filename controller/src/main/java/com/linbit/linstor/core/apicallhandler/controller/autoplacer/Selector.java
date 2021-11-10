@@ -187,7 +187,11 @@ class Selector
         do
         {
             currentSelection = selectionManger.findSelection(startIdx);
-            if (currentSelection.size() == replicaCount)
+            if (currentSelection.isEmpty())
+            {
+                keepSearchingForCandidates = false;
+            }
+            else if (currentSelection.size() == replicaCount)
             {
                 double currentScore = 0;
 

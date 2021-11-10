@@ -1379,52 +1379,67 @@ public class CtrlNodeApiCallHandler
                 else
                 {
                     StorPool sp = getStorPoolForEvacuation(rscDfn);
-                    NodeName nodeNameEvacTarget = sp.getNode().getName();
-
-                    Flux<ApiCallRc> createOrToggleDiskFlux = null;
-                    Resource rscOnTargetNode = sp.getNode().getResource(peerCtx, rscName);
-                    if (rscOnTargetNode != null)
+                    if (sp == null)
                     {
-                        // selected node already has the resource
-                        if (!rscOnTargetNode.getStateFlags().isSet(peerCtx, Resource.Flags.DRBD_DISKLESS))
-                        {
-                            createOrToggleDiskFlux = rscToggleDiskApiCallHandler.resourceToggleDisk(
-                                nodeNameEvacTarget.displayValue,
-                                rscName.displayValue,
-                                sp.getName().displayValue,
-                                nodeNameEvacuateSourceStrRef,
-                                null,
-                                false
-                            );
-                        }
-                    }
-
-                    if (createOrToggleDiskFlux == null)
-                    {
-                        ResourceWithPayloadPojo createRscPojo = new ResourceWithPayloadPojo(
-                            new RscPojo(
-                                rscName.displayValue,
-                                nodeNameEvacTarget.displayValue,
-                                0L,
-                                Collections.singletonMap(
-                                    ApiConsts.KEY_STOR_POOL_NAME,
-                                    sp.getName().displayValue
-                                )
-                            ),
-                            rscDfn.getLayerStack(peerCtx).stream().map(DeviceLayerKind::name).collect(Collectors.toList()),
-                            null
-                        );
-                        createOrToggleDiskFlux = ctrlRscCrtApiCallHandler.createResource(Collections.singletonList(createRscPojo));
-                    }
-                    fluxList.add(
-                        createOrToggleDiskFlux.concatWith(
-                            rscToggleDiskApiCallHandler.waitForMigration(
-                                nodeNameEvacTarget,
-                                rscName,
-                                nodeNameEvacuateSource
+                        apiCallRc.addEntry(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.WARN_NOT_EVACUATING,
+                                "Resource '" + rscName.displayValue +
+                                    "' cannot be evacuated as no available storage pool was found"
                             )
-                        )
-                    );
+                        );
+                    }
+                    else
+                    {
+                        NodeName nodeNameEvacTarget = sp.getNode().getName();
+
+                        Flux<ApiCallRc> createOrToggleDiskFlux = null;
+                        Resource rscOnTargetNode = sp.getNode().getResource(peerCtx, rscName);
+                        if (rscOnTargetNode != null)
+                        {
+                            // selected node already has the resource
+                            if (!rscOnTargetNode.getStateFlags().isSet(peerCtx, Resource.Flags.DRBD_DISKLESS))
+                            {
+                                createOrToggleDiskFlux = rscToggleDiskApiCallHandler.resourceToggleDisk(
+                                    nodeNameEvacTarget.displayValue,
+                                    rscName.displayValue,
+                                    sp.getName().displayValue,
+                                    nodeNameEvacuateSourceStrRef,
+                                    null,
+                                    false
+                                );
+                            }
+                        }
+
+                        if (createOrToggleDiskFlux == null)
+                        {
+                            ResourceWithPayloadPojo createRscPojo = new ResourceWithPayloadPojo(
+                                new RscPojo(
+                                    rscName.displayValue,
+                                    nodeNameEvacTarget.displayValue,
+                                    0L,
+                                    Collections.singletonMap(
+                                        ApiConsts.KEY_STOR_POOL_NAME,
+                                        sp.getName().displayValue
+                                    )
+                                ),
+                                rscDfn.getLayerStack(peerCtx).stream().map(DeviceLayerKind::name)
+                                    .collect(Collectors.toList()),
+                                null
+                            );
+                            createOrToggleDiskFlux = ctrlRscCrtApiCallHandler
+                                .createResource(Collections.singletonList(createRscPojo));
+                        }
+                        fluxList.add(
+                            createOrToggleDiskFlux.concatWith(
+                                rscToggleDiskApiCallHandler.waitForMigration(
+                                    nodeNameEvacTarget,
+                                    rscName,
+                                    nodeNameEvacuateSource
+                                )
+                            )
+                        );
+                    }
                 }
             }
 
@@ -1451,7 +1466,7 @@ public class CtrlNodeApiCallHandler
     {
         AccessContext peerCtx = peerAccCtx.get();
 
-        Set<StorPool> storPoolSet = Collections.emptySet();
+        Set<StorPool> storPoolSet = null;
 
         // first try to toggle disk if possible
         Set<Resource> disklessRscSet = ResourceUtils.filterResourcesDrbdDiskless(rscDfn, peerCtx);
@@ -1472,7 +1487,7 @@ public class CtrlNodeApiCallHandler
             );
         }
 
-        if (storPoolSet.isEmpty())
+        if (storPoolSet == null || storPoolSet.isEmpty())
         {
             // no storage pool found for toggle disk. find any other storage pool
             storPoolSet = autoplacer.autoPlace(
@@ -1484,6 +1499,11 @@ public class CtrlNodeApiCallHandler
             );
         }
 
-        return CtrlRscMakeAvailableApiCallHandler.getStorPoolOrFail(storPoolSet, null, false);
+        StorPool ret = null;
+        if (storPoolSet != null && !storPoolSet.isEmpty())
+        {
+            ret = storPoolSet.iterator().next();
+        }
+        return ret;
     }
 }
