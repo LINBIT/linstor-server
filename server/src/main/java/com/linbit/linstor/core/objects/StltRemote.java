@@ -69,7 +69,7 @@ public class StltRemote extends BaseTransactionObject
 
         ip = transObjFactory.createTransactionSimpleObject(this, ipRef, null);
         ports = transObjFactory.createTransactionPrimitiveMap(portRef, null);
-        useZstd = transObjFactory.createTransactionSimpleObject(this, useZstdRef, null);
+        useZstd = transObjFactory.createTransactionSimpleObject(this, useZstdRef == null ? false : useZstdRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,
@@ -179,7 +179,7 @@ public class StltRemote extends BaseTransactionObject
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        useZstd.set(useZstdRef);
+        useZstd.set(useZstdRef == null ? false : useZstdRef);
     }
 
     @Override

@@ -28,20 +28,18 @@ public class BackupShippingReceiveRequest
     public final @Nullable Map<String, Integer> dstStltPorts;
     public final @Nullable String srcSnapDfnUuid;
 
-    public final @Nullable Boolean useZstd;
+    public final boolean useZstd;
 
     @JsonCreator
     public BackupShippingReceiveRequest(
         @JsonProperty("canReceive") boolean canReceiveRef,
         @JsonProperty("responses") ApiCallRcImpl responsesRef,
         @JsonProperty("remoteName") String remoteNameRef,
-        @JsonProperty(
-            "remoteUrl"
-        ) String remoteUrlRef,
+        @JsonProperty("remoteUrl") String remoteUrlRef,
         @JsonProperty("dstStltIp") @Nullable String dstStltIpRef,
         @JsonProperty("dstStltPort") @Nullable Map<String, Integer> snapShipPortsRef,
         @JsonProperty("srcBaseSnapDfnUuid") @Nullable String srcSnapDfnUuidRef,
-        @JsonProperty("useZstd") @Nullable Boolean useZstdRef
+        @JsonProperty("useZstd") boolean useZstdRef
     )
     {
         canReceive = canReceiveRef;
