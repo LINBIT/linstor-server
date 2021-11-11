@@ -7389,7 +7389,6 @@ components:
       type: object
       required:
         - layer_type
-        - alloc_size_kib
       properties:
         name:
           type: string

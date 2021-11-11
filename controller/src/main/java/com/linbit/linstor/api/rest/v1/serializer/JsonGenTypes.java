@@ -1314,7 +1314,7 @@ public class JsonGenTypes
         public String name;
         public String layer_type;
         public Long dl_size_kib;
-        public long alloc_size_kib;
+        public Long alloc_size_kib;
         public Long usable_size_kib;
     }
 
