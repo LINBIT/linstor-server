@@ -72,8 +72,9 @@ COPY --from=builder /home/makepkg/rpmbuild/RPMS/noarch/*.rpm /tmp/linstorpkgs/
 # lvm2: obvious as most of our pools are LVM based
 # util-linux: we had a use-case where having nsenter was nice (keep it, does not hurt)
 # socat: used with thin-send-recv to send snapshots to another LINSTOR cluster
+# procps-ng: used to find orphaned thin-send-recv processes
 RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical && \
-  yum install -y which lvm2 util-linux socat && \
+  yum install -y which lvm2 util-linux socat procps-ng && \
   yum install -y /tmp/linstorpkgs/linstor-common*.rpm /tmp/linstorpkgs/linstor-satellite*.rpm && \
   yum clean all -y
 
