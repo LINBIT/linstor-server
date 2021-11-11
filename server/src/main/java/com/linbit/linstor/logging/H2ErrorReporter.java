@@ -188,7 +188,7 @@ public class H2ErrorReporter {
                     rslt.getString("ORIGIN_FILE"),
                     rslt.getString("ORIGIN_METHOD"),
                     rslt.getInt("ORIGIN_LINE"),
-                    rslt.getDate("DATETIME"),
+                    new Date(rslt.getTimestamp("DATETIME").getTime()),
                     text
                 ));
             }
