@@ -1,3 +1,23 @@
+linstor-server (1.16.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * gitlab: use newer vmshed version
+
+  [ Gabor Hernadi ]
+  * ErrorReport: Fix compareTo method
+  * TxSimpleObj: Fixed persistence
+  * ErrorReport: fixed missing time
+
+  [ Johanna Kucera ]
+  * BackupShipping: Fix l2l being unable to ship multiple volumes
+  * BackupShipping: deallocate ports after l2l-shipping is done
+  * BackupShipping: allocate a new port if it is already in use
+  * BackupShipping: return snapName on backup create
+  * BackupShipping: fix NPE for backup info
+  * BackupShipping: prevent possible NPE for l2l shipping
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 11 Nov 2021 12:46:28 +0000
+
 linstor-server (1.16.0~rc.3-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
