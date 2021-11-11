@@ -99,6 +99,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
         Map<String, Integer> ports = stltRemote.getPorts(accCtx);
 
         StringBuilder cmdBuilder = new StringBuilder()
+            .append("set -o pipefail; ")
             .append("trap 'kill -HUP 0' SIGTERM; ")
             .append("(")
             .append(cmdRef)
