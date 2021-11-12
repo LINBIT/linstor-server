@@ -109,7 +109,13 @@ public abstract class AbsBackupShippingService implements SystemService
         threadGroup = new ThreadGroup("SnapshotShippingSerivceThreadGroup");
 
         // this causes all shippings to be aborted should the satellite lose connection to the controller
-        stltConnTracker.addClosingListener(() -> killAllShipping(false));
+        stltConnTracker.addClosingListener((peer, isCtrl) ->
+        {
+            if (isCtrl)
+            {
+                killAllShipping(false);
+            }
+        });
     }
 
     public void killAllShipping(boolean doPostShipping)

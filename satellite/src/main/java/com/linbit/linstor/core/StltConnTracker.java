@@ -6,7 +6,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.utils.ExceptionThrowingRunnable;
+import com.linbit.utils.ExceptionThrowingBiConsumer;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -23,7 +23,7 @@ public class StltConnTracker implements ConnectionObserver
     private final EventBroker eventBroker;
     private final ControllerPeerConnector controllerPeerConnector;
     private final Provider<DeviceManager> devMgrProvider;
-    private final ArrayList<ExceptionThrowingRunnable<StorageException>> closingListeners = new ArrayList<>();
+    private final ArrayList<ExceptionThrowingBiConsumer<Peer, Boolean, StorageException>> closingListeners = new ArrayList<>();
     private final ErrorReporter errorReporter;
 
     @Inject
@@ -92,7 +92,8 @@ public class StltConnTracker implements ConnectionObserver
     {
         if (connPeer != null)
         {
-            if (Objects.equals(connPeer, controllerPeerConnector.getControllerPeer()))
+            boolean isCtrl = Objects.equals(connPeer, controllerPeerConnector.getControllerPeer());
+            if (isCtrl)
             {
                 devMgrProvider.get().controllerConnectionLost();
             }
@@ -104,11 +105,11 @@ public class StltConnTracker implements ConnectionObserver
             }
             synchronized (closingListeners)
             {
-                for (ExceptionThrowingRunnable<StorageException> closingListener : closingListeners)
+                for (ExceptionThrowingBiConsumer<Peer, Boolean, StorageException> closingListener : closingListeners)
                 {
                     try
                     {
-                        closingListener.run();
+                        closingListener.accept(connPeer, isCtrl);
                     }
                     catch (StorageException exc)
                     {
@@ -119,11 +120,11 @@ public class StltConnTracker implements ConnectionObserver
         }
     }
 
-    public void addClosingListener(ExceptionThrowingRunnable<StorageException> run)
+    public void addClosingListener(ExceptionThrowingBiConsumer<Peer, Boolean, StorageException> consumer)
     {
         synchronized (closingListeners)
         {
-            closingListeners.add(run);
+            closingListeners.add(consumer);
         }
     }
 }
