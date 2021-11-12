@@ -27,9 +27,9 @@ import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.LinstorRemote;
 import com.linbit.linstor.core.objects.LinstorRemoteControllerFactory;
 import com.linbit.linstor.core.objects.Remote;
+import com.linbit.linstor.core.objects.Remote.Flags;
 import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.S3RemoteControllerFactory;
-import com.linbit.linstor.core.objects.Remote.Flags;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -230,14 +230,14 @@ public class CtrlRemoteApiCallHandler
         }
         catch (SdkClientException exc)
         {
-            String errRepNr = errorReporter.reportError(exc);
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
                     "The remote could not be reached with the given parameters and therefore wasn't created.\n" +
                         "Please check for spelling errors and that you have the correct access-key and secret-key.\n" +
-                        "For more information on the error, please check the following error-report: " + errRepNr
-                )
+                        "For more information on the error, please check the error-report."
+                ),
+                exc
             );
         }
         catch (AccessDeniedException exc)
@@ -258,12 +258,12 @@ public class CtrlRemoteApiCallHandler
         }
         catch (LinStorException exc)
         {
-            errorReporter.reportError(exc);
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
                     "Encrypting the access key or secret key failed."
-                )
+                ),
+                exc
             );
         }
     }
@@ -336,12 +336,12 @@ public class CtrlRemoteApiCallHandler
                 }
                 catch (LinStorException exc)
                 {
-                    errorReporter.reportError(exc);
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
                             "Encrypting the access key failed."
-                        )
+                        ),
+                        exc
                     );
                 }
                 s3remote.setAccessKey(peerAccCtx.get(), accessKey);
@@ -355,16 +355,30 @@ public class CtrlRemoteApiCallHandler
                 }
                 catch (LinStorException exc)
                 {
-                    errorReporter.reportError(exc);
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
                             "Encrypting the secret key failed."
-                        )
+                        ),
+                        exc
                     );
                 }
                 s3remote.setSecretKey(peerAccCtx.get(), secretKey);
             }
+            byte[] masterKey = ctrlSecObj.getCryptKey();
+            backupHandler.listObjects("", s3remote, peerAccCtx.get(), masterKey);
+        }
+        catch (SdkClientException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                    "The remote could not be reached with the given parameters and therefore wasn't created.\n" +
+                        "Please check for spelling errors and that you have the correct access-key and secret-key.\n" +
+                        "For more information on the error, please check the error-report."
+                ),
+                exc
+            );
         }
         catch (AccessDeniedException exc)
         {
@@ -589,7 +603,7 @@ public class CtrlRemoteApiCallHandler
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_EXISTS_REMOTE,
                     "The remote with the name '" + remoteNameStr +
-                        "' is not a s3 remote."
+                        "' is not a linstor remote."
                 )
             );
         }
