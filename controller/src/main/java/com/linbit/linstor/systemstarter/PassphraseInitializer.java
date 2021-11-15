@@ -41,6 +41,7 @@ public class PassphraseInitializer implements StartupInitializer
     public void initialize() throws SystemServiceStartException
     {
         apiCallScope.enter();
+
         try
         {
             TransactionMgrUtil.seedTransactionMgr(apiCallScope, transactionMgrGenerator.startTransaction());
@@ -55,12 +56,12 @@ public class PassphraseInitializer implements StartupInitializer
                 );
                 // setPassphraseImpl sets the props in this namespace; to ensure they are there, get it again
                 namespace = encHelper.getEncryptedNamespace(accCtx);
-                encHelper.setCryptKey(masterKey, namespace);
+                setCryptKey(masterKey, namespace);
             }
             else
             {
                 byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(namespace, ctrlCfg.getMasterPassphrase());
-                encHelper.setCryptKey(decryptedMasterKey, namespace);
+                setCryptKey(decryptedMasterKey, namespace);
             }
         }
         catch (Throwable exc)
@@ -73,4 +74,13 @@ public class PassphraseInitializer implements StartupInitializer
         }
     }
 
+    private void setCryptKey(byte[] masterKeyRef, Props namespaceRef)
+    {
+        encHelper.setCryptKey(
+            masterKeyRef,
+            namespaceRef,
+            false // do not update satellites before Auth (-> leads to unauthorized message -> error on stlt)
+            // cryptKey is part of the FullSync anyways
+        );
+    }
 }

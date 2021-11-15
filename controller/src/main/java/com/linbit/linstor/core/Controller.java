@@ -329,16 +329,18 @@ public final class Controller
             startOrderlist.add(dbNumberPoolInitializer);
             startOrderlist.add(new ServiceStarter(taskScheduleService));
             startOrderlist.add(controllerNetComInitializer);
+            if (ctrlCfg.getMasterPassphrase() != null)
+            {
+                // initialize passphrase before contacting satellites so that a possible passphrase can be included in
+                // the FullSync
+                startOrderlist.add(passphraseInitializer);
+            }
             startOrderlist.add(preConnectCleanupInitializer);
             startOrderlist.add(connectNodesInitializer);
             startOrderlist.add(openflexTargetProcessMgrInit);
             if (spaceTrackingService != null)
             {
                 startOrderlist.add(new ServiceStarter(spaceTrackingService));
-            }
-            if (ctrlCfg.getMasterPassphrase() != null)
-            {
-                startOrderlist.add(passphraseInitializer);
             }
             startOrderlist.add(grizzlyInit);
 

@@ -216,35 +216,38 @@ public class EncryptionHelper
         return ret;
     }
 
-    public void setCryptKey(byte[] cryptKey, Props namespace)
+    public void setCryptKey(byte[] cryptKey, Props namespace, boolean updateSatellites)
     {
         byte[] cryptHash = Base64.decode(namespace.getProp(KEY_CRYPT_HASH));
         byte[] cryptSalt = Base64.decode(namespace.getProp(KEY_PASSPHRASE_SALT));
         byte[] encKey = Base64.decode(namespace.getProp(KEY_CRYPT_KEY));
         ctrlSecObj.setCryptKey(cryptKey, cryptHash, cryptSalt, encKey);
 
-        for (Node node : nodesMap.values())
+        if (updateSatellites)
         {
-            Peer peer;
-            try
+            for (Node node : nodesMap.values())
             {
-                peer = node.getPeer(apiCtx);
-                peer.sendMessage(
-                    ctrlStltSrzl.onewayBuilder(InternalApiConsts.API_CRYPT_KEY)
-                        .cryptKey(
-                            cryptKey,
-                            cryptHash,
-                            cryptSalt,
-                            encKey,
-                            peer.getFullSyncId(),
-                            peer.getNextSerializerId()
-                        )
-                        .build()
-                );
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
+                Peer peer;
+                try
+                {
+                    peer = node.getPeer(apiCtx);
+                    peer.sendMessage(
+                        ctrlStltSrzl.onewayBuilder(InternalApiConsts.API_CRYPT_KEY)
+                            .cryptKey(
+                                cryptKey,
+                                cryptHash,
+                                cryptSalt,
+                                encKey,
+                                peer.getFullSyncId(),
+                                peer.getNextSerializerId()
+                            )
+                            .build()
+                    );
+                }
+                catch (AccessDeniedException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
             }
         }
     }

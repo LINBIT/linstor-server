@@ -863,7 +863,7 @@ public class CtrlConfApiCallHandler
                 byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(namespace, passphrase);
                 if (decryptedMasterKey != null)
                 {
-                    encHelper.setCryptKey(decryptedMasterKey, namespace);
+                    encHelper.setCryptKey(decryptedMasterKey, namespace, true);
 
                     ResponseUtils.reportSuccessStatic(
                         "Passphrase accepted",
@@ -974,7 +974,7 @@ public class CtrlConfApiCallHandler
                     );
                     // setPassphraseImpl sets the props in this namespace; to ensure they are there, get it again
                     namespace = encHelper.getEncryptedNamespace(peerAccCtx.get());
-                    encHelper.setCryptKey(masterKey, namespace);
+                    encHelper.setCryptKey(masterKey, namespace, true);
                     ResponseUtils.reportSuccessStatic(
                          "Crypt passphrase created.",
                          null, // details
