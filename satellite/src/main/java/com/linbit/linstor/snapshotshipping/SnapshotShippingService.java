@@ -328,7 +328,7 @@ public class SnapshotShippingService implements SystemService
             OutputData outputData = extCmdFactory.create().exec(
                 "bash",
                 "-c",
-                "ps ax -o pid,command | grep -E '" + cmdToKill + "' | grep -v grep"
+                "ps ax -o pid,command | grep '" + cmdToKill + "' | grep -v grep"
             );
             if (outputData.exitCode == 0) // != 0 means grep didnt find anything
             {
