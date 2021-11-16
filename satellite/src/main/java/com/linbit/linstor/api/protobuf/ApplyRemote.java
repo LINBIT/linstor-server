@@ -1,10 +1,12 @@
 package com.linbit.linstor.api.protobuf;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.javainternal.c2s.IntS3RemoteOuterClass.IntS3Remote;
 import com.linbit.linstor.proto.javainternal.c2s.IntStltRemoteOuterClass.IntStltRemote;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRemoteOuterClass.MsgIntApplyRemote;
@@ -25,13 +27,16 @@ import java.util.UUID;
 public class ApplyRemote implements ApiCall
 {
     private final StltApiCallHandler apiCallHandler;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public ApplyRemote(
-        StltApiCallHandler apiCallHandlerRef
+        StltApiCallHandler apiCallHandlerRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCallHandler = apiCallHandlerRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -57,6 +62,10 @@ public class ApplyRemote implements ApiCall
                 msgApplyRemote.getUpdateId()
             );
             apiCallHandler.applyStltRemoteChanges(stltRemotePojo);
+        }
+        else
+        {
+            errorReporter.reportError(new ImplementationError("Message does not have a known remote type."));
         }
 
     }

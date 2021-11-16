@@ -32,7 +32,6 @@ import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.S3RemoteControllerFactory;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -75,7 +74,6 @@ public class CtrlRemoteApiCallHandler
     private final LinstorRemoteControllerFactory linstorRemoteFactory;
     private final RemoteRepository remoteRepository;
     private final EncryptionHelper encryptionHelper;
-    private final ErrorReporter errorReporter;
     private final BackupToS3 backupHandler;
     private final CtrlSecurityObjects ctrlSecObj;
 
@@ -93,7 +91,6 @@ public class CtrlRemoteApiCallHandler
         LinstorRemoteControllerFactory linstorRemoteFactoryRef,
         RemoteRepository remoteRepositoryRef,
         EncryptionHelper encryptionHelperRef,
-        ErrorReporter errorReporterRef,
         BackupToS3 backupHandlerRef,
         CtrlSecurityObjects ctrlSecObjRef
     )
@@ -110,7 +107,6 @@ public class CtrlRemoteApiCallHandler
         linstorRemoteFactory = linstorRemoteFactoryRef;
         remoteRepository = remoteRepositoryRef;
         encryptionHelper = encryptionHelperRef;
-        errorReporter = errorReporterRef;
         backupHandler = backupHandlerRef;
         ctrlSecObj = ctrlSecObjRef;
     }
@@ -708,9 +704,14 @@ public class CtrlRemoteApiCallHandler
                     .setDetails(remoteDescription + " UUID is: " + remote.getUuid().toString())
                     .build()
             );
-            flux = Flux.<ApiCallRc>just(responses)
-                .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote))
-                .concatWith(deleteImpl(remote));
+
+            flux = Flux.<ApiCallRc> just(responses);
+            if (!(remote instanceof LinstorRemote))
+            {
+                // satellites do not know about any linstor-remote, so updating them here would break stuff
+                flux = flux.concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote));
+            }
+            flux = flux.concatWith(deleteImpl(remote));
         }
         return flux;
     }
