@@ -1150,12 +1150,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                     (!curRequiredLocks.equals(grantedLocks) || !curRequiredLocks.equals(requiredLocks))
             )
             {
-                // FIXME: This looks very suspicious, why would it show the same list of locks twice?
-                //        Was this supposed to show the global requiredLocks (member field) vs. the locks determined
-                //        to be required in this method, and then show which ones of the locks were actually granted?
                 throw new ImplementationError(
-                    "Required locks: " + curRequiredLocks + ", requested locks: " + curRequiredLocks + ", granted locks: " +
-                        grantedLocks
+                    "Required locks: " + requiredLocks + ", requested locks: " + curRequiredLocks +
+                        ", granted locks: " + grantedLocks
                 );
             }
             // errLog.logTrace("Requested shared locks granted: " + grantedLocks);
