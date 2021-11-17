@@ -1330,10 +1330,18 @@ public class CtrlNodeApiCallHandler
 
     public Flux<ApiCallRc> evacuateNode(String nodeNameRef)
     {
-        return scopeRunner.fluxInTransactionalScope(
-            "Evacuate node",
-            lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
-            () -> evacuateNodeInTrasaction(nodeNameRef)
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet()).flatMapMany(
+            // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
+            // the freeCapacities parameter here
+            ignoredFreeCapacities -> scopeRunner.fluxInTransactionalScope(
+                "Evacuate node (" + nodeNameRef + "): Fetch free spaces",
+                lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
+                () -> scopeRunner.fluxInTransactionalScope(
+                    "Evacuate node (" + nodeNameRef + "): Find new storage pools",
+                    lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
+                    () -> evacuateNodeInTrasaction(nodeNameRef)
+                )
+            )
         );
     }
 
