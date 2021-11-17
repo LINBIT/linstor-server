@@ -1507,6 +1507,24 @@ public class CtrlNodeApiCallHandler
             );
         }
 
+        if (storPoolSet == null || storPoolSet.isEmpty())
+        {
+            // configured place-count could not be met, but maybe we can still place the resource at least on one new
+            // node to keep the current replica count
+            storPoolSet = autoplacer.autoPlace(
+                AutoSelectFilterPojo.merge(
+                    new AutoSelectFilterBuilder()
+                        .setPlaceCount(rscDfn.getResourceCount()) // EVACUATE flag already set, therefore that rsc will
+                                                                  // not count -> effectively "+1" while overriding the
+                                                                  // configuration set in rscGrp
+                        .build(),
+                        rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
+                ),
+                rscDfn,
+                rscSize
+            );
+        }
+
         StorPool ret = null;
         if (storPoolSet != null && !storPoolSet.isEmpty())
         {
