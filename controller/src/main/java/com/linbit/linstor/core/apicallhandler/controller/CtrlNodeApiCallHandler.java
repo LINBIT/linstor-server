@@ -1071,7 +1071,7 @@ public class CtrlNodeApiCallHandler
     public Flux<ApiCallRc> restoreNode(String nodeName, boolean deleteResources, boolean deleteSnapshots)
     {
         return scopeRunner.fluxInTransactionalScope(
-            "Restore EVICTED node",
+            "Restore node",
             lockGuardFactory.createDeferred().write(LockObj.NODES_MAP, LockObj.RSC_DFN_MAP).build(),
             () ->
             {
@@ -1080,14 +1080,23 @@ public class CtrlNodeApiCallHandler
                 {
                     AccessContext peerCtx = peerAccCtx.get();
                     Node node = ctrlApiDataLoader.loadNode(nodeName, true);
-                    if (!node.getFlags().isSet(peerCtx, Node.Flags.EVICTED))
+
+                    StateFlags<Node.Flags> nodeFlags = node.getFlags();
+                    boolean wasNodeEvicted = nodeFlags.isSet(peerCtx, Node.Flags.EVICTED);
+                    boolean wasNodeEvacuated = nodeFlags.isSet(peerCtx, Node.Flags.EVACUATE);
+                    if (!wasNodeEvacuated && !wasNodeEvicted)
                     {
                         throw new ApiRcException(
-                            ApiCallRcImpl.simpleEntry(ApiConsts.MASK_ERROR, "Node '" + nodeName + "' is not evicted.")
+                            ApiCallRcImpl
+                                .simpleEntry(
+                                    ApiConsts.MASK_ERROR,
+                                    "Node '" + nodeName + "' is neither evicted nor evacuated."
+                                )
                                 .setSkipErrorReport(true)
                         );
                     }
-                    node.unMarkEvicted(peerCtx);
+                    node.getObjProt().requireAccess(peerCtx, AccessType.CONTROL);
+                    nodeFlags.disableFlags(peerCtx, Node.Flags.EVACUATE, Node.Flags.EVICTED);
 
                     Iterator<Resource> rscIt = node.iterateResources(peerCtx);
                     if (deleteResources)
@@ -1148,6 +1157,7 @@ public class CtrlNodeApiCallHandler
                         {
                             Resource rsc = rscIt.next();
                             StateFlags<Flags> flags = rsc.getStateFlags();
+                            boolean updateSatellite = false;
                             if (flags.isSet(peerCtx, Resource.Flags.EVICTED))
                             {
                                 flags.disableFlags(peerCtx, Resource.Flags.EVICTED);
@@ -1158,6 +1168,16 @@ public class CtrlNodeApiCallHandler
                                 }
                                 // although we will perform a FullSync soon, the other satellites also need to be
                                 // updated that this resource is back online
+                                updateSatellite = true;
+                            }
+                            if (flags.isSet(peerCtx, Resource.Flags.EVACUATE))
+                            {
+                                flags.disableFlags(peerCtx, Resource.Flags.EVACUATE);
+                                updateSatellite = true;
+                            }
+
+                            if (updateSatellite)
+                            {
                                 flux = flux.concatWith(
                                     ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty())
                                         .transform(
@@ -1188,8 +1208,14 @@ public class CtrlNodeApiCallHandler
 
                     ctrlTransactionHelper.commit();
 
-                    reconnectorTask
-                        .add(node.getPeer(peerCtx).getConnector().reconnect(node.getPeer(peerCtx)), false, false);
+                    if (wasNodeEvicted)
+                    {
+                        reconnectorTask.add(
+                            node.getPeer(peerCtx).getConnector().reconnect(node.getPeer(peerCtx)),
+                            false,
+                            false
+                        );
+                    }
                     Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateFlux = ctrlSatelliteUpdateCaller.updateSatellites(
                         node.getUuid(),
                         node.getName(),
