@@ -106,34 +106,10 @@ public final class Authentication
         byte[] enteredPasswordHash = null;
         try
         {
-            if (password != null && storedSalt != null && storedHash != null)
+            if (storedHash != null)
             {
-                final char[] passwordChars;
-                try
-                {
-                    passwordChars = UnicodeConversion.utf8BytesToUtf16Chars(password, true);
-                }
-                catch (UnicodeConversion.InvalidSequenceException exc)
-                {
-                    throw new SignInException("The password contains a byte sequence that is not a valid UTF-8 sequence");
-                }
-                PBEKeySpec keySpec = new PBEKeySpec(passwordChars, storedSalt, ITERATIONS, HASH_SIZE);
-
-                // Hash the password that was supplied for the signin
-                synchronized (keyFact)
-                {
-                    try
-                    {
-                        final SecretKey derivedKey = keyFact.generateSecret(keySpec);
-                        enteredPasswordHash = derivedKey.getEncoded();
-                    }
-                    catch (InvalidKeySpecException exc)
-                    {
-                        throw new ImplementationError(
-                            "The PBKDF2 key derivation generated an InvalidKeySpecException", exc
-                        );
-                    }
-                }
+                final SecretKey derivedKey = getPasswordHash(keyFact, password, storedSalt);
+                enteredPasswordHash = derivedKey.getEncoded();
 
                 if (enteredPasswordHash != null)
                 {
@@ -159,10 +135,62 @@ public final class Authentication
         finally
         {
             clearDataFields(enteredPasswordHash);
-            clearDataFields(password, storedSalt, storedHash);
+            clearDataFields(storedHash);
         }
 
         return matchFlag;
+    }
+
+    static SecretKey getPasswordHash(
+        SecretKeyFactory keyFact,
+        byte[] password,
+        byte[] salt
+    )
+        throws SignInException
+    {
+        final SecretKey derivedKey;
+        try
+        {
+            if (keyFact != null && password != null && salt != null)
+            {
+                final char[] passwordChars;
+                try
+                {
+                    passwordChars = UnicodeConversion.utf8BytesToUtf16Chars(password, true);
+                }
+                catch (UnicodeConversion.InvalidSequenceException exc)
+                {
+                    throw new SignInException("The password contains a byte sequence that is not a valid UTF-8 sequence");
+                }
+                PBEKeySpec keySpec = new PBEKeySpec(passwordChars, salt, ITERATIONS, HASH_SIZE);
+
+                synchronized (keyFact)
+                {
+                    try
+                    {
+                        derivedKey = keyFact.generateSecret(keySpec);
+                    }
+                    catch (InvalidKeySpecException exc)
+                    {
+                        throw new ImplementationError(
+                            "The PBKDF2 key derivation generated an InvalidKeySpecException", exc
+                        );
+                    }
+                }
+            }
+            else
+            {
+                throw new ImplementationError(
+                    Authentication.class.getSimpleName() + " method getPasswordHash called " +
+                    "with a null pointer argument"
+                );
+            }
+        }
+        finally
+        {
+            clearDataFields(password, salt);
+        }
+        return derivedKey;
     }
 
     /**
