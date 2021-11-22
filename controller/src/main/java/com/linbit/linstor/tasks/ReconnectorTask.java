@@ -32,6 +32,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
 import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
@@ -257,9 +258,13 @@ public class ReconnectorTask implements Task
     public long run()
     {
         Pair<ArrayList<ReconnectConfig>, ArrayList<Pair<Flux<ApiCallRc>, Peer>>> pair;
-        synchronized (syncObj)
+        try (LockGuard lockGuard = lockGuardFactory.build(LockType.READ, NODES_MAP))
         {
-            pair = getFailedPeers();
+            synchronized (syncObj)
+            {
+                // we are iterating the nodes and need to prevent getting a node deleted while we are iterating them
+                pair = getFailedPeers();
+            }
         }
         ArrayList<ReconnectConfig> localList = pair.objA;
         runEvictionFluxes(pair.objB);
@@ -688,11 +693,17 @@ public class ReconnectorTask implements Task
         public boolean equals(Object obj)
         {
             if (this == obj)
+            {
                 return true;
+            }
             if (obj == null)
+            {
                 return false;
+            }
             if (getClass() != obj.getClass())
+            {
                 return false;
+            }
             ReconnectConfig other = (ReconnectConfig) obj;
             return Objects.equals(peer, other.peer);
         }
