@@ -26,6 +26,7 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
 
         <module name="MultipleStringLiterals">
             <property name="severity" value="warning"/>
+            <property name="ignoreStringsRegexp" value=".{1,4}"/>
         </module>
 
         <module name="NestedForDepth">
@@ -49,8 +50,9 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         </module>
 
         <!-- Modules suggested for possible future use
-        <module name="FinalLocalVariable">
-            <property name="tokens" value="VARIABLE_DEF,PARAMETER_DEF"/>
+        <module name="FinalParameters">
+            <property name="tokens" value="METHOD_DEF,CTOR_DEF,LITERAL_CATCH,FOR_EACH_CLAUSE"/>
+            <property name="severity" value="warning"/>
         </module>
         -->
     </module>

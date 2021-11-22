@@ -23,7 +23,7 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
 
     <!-- Checks whether files end with a new line -->
     <module name="NewlineAtEndOfFile">
-        <property name="severity" value="warning"/>
+        <property name="severity" value="error"/>
     </module>
 
     <!-- Check that spaces are used for indentation, not tabs -->
@@ -33,6 +33,11 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
     </module>
 
     <module name="SuppressWarningsFilter"/>
+
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <property name="severity" value="warning"/>
+    </module>
 
     <module name="TreeWalker">
 
@@ -82,12 +87,12 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         </module>
 
         <module name="HiddenField">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="IllegalToken">
             <property name="tokens" value="LITERAL_CONTINUE"/>
-            <property name="severity" value="error"/>
+            <property name="severity" value="warning"/>
             <property name="id" value="checkstyle:continue"/>
         </module>
 
@@ -102,7 +107,7 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         </module>
 
         <module name="ParameterAssignment">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="RequireThis">
@@ -184,11 +189,11 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         </module>
 
         <module name="RedundantImport">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="UnusedImports">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
 
         <!--
@@ -218,7 +223,7 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         </module>
 
         <module name="StringLiteralEquality">
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
             <property name="id" value="checkstyle:stringliteralequality"/>
         </module>
 
@@ -349,22 +354,18 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         ================================================================================
         -->
 
-        <module name="LineLength">
-            <property name="max" value="120"/>
-            <property name="severity" value="warning"/>
-        </module>
-
         <module name="LeftCurly">
             <property name="option" value="nl"/>
             <property name="ignoreEnums" value="true"/>
             <property name="tokens" value="LITERAL_TRY,LITERAL_CATCH,LITERAL_FINALLY,LITERAL_IF,LITERAL_ELSE,CLASS_DEF,INTERFACE_DEF,LITERAL_FOR,LITERAL_WHILE,LITERAL_DO,STATIC_INIT"/>
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="RightCurly">
             <property name="option" value="alone"/>
+            <!-- check how this rule behaves for inline array initialier: 'new String[] {"test"}' -->
             <property name="tokens" value="LITERAL_TRY,LITERAL_CATCH,LITERAL_FINALLY,LITERAL_IF,LITERAL_ELSE,CLASS_DEF,METHOD_DEF,CTOR_DEF,LITERAL_FOR,LITERAL_WHILE,LITERAL_DO,STATIC_INIT,INSTANCE_INIT"/>
-            <property name="severity" value="warning"/>
+            <property name="severity" value="error"/>
         </module>
 
         <module name="NeedBraces">
