@@ -1418,7 +1418,7 @@ public class CtrlRscDfnApiCallHandler
                     updateResponses -> CtrlResponseUtils.combineResponses(
                         updateResponses,
                         rscDfn.getName(),
-                        "Deployed " + extFileNameRef + " on resource {1} on {0}"
+                        (deployRef ? "Deployed " : "Undeployed ") + extFileNameRef + " on resource {1} on {0}"
                     )
                 );
         }
