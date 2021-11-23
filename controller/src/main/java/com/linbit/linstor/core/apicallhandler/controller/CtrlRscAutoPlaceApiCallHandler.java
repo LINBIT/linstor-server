@@ -178,22 +178,23 @@ public class CtrlRscAutoPlaceApiCallHandler
 
         List<Resource> alreadyPlacedDiskfulNotDeleting = new ArrayList<>();
         List<Resource> alreadyPlacedDisklessNotDeleting = new ArrayList<>();
-        List<Resource> alreadyPlacedDeleting = new ArrayList<>();
 
         for (Resource rsc : alreadyPlaced)
         {
-            if (isFlagSet(rsc, Resource.Flags.DELETE) || isFlagSet(rsc, Resource.Flags.EVACUATE) ||
-                isNodeFlagSet(rsc, Node.Flags.EVACUATE))
+            // we do not care about deleting / evicted resources. just make sure to not count them
+            if (
+                !isSomeFlagSet(rsc, Resource.Flags.DELETE, Resource.Flags.EVICTED, Resource.Flags.EVACUATE) &&
+                    !isNodeFlagSet(rsc, Node.Flags.EVACUATE)
+            )
             {
-                alreadyPlacedDeleting.add(rsc);
-            }
-            else if (isFlagSet(rsc, Resource.Flags.DISKLESS))
-            {
-                alreadyPlacedDisklessNotDeleting.add(rsc);
-            }
-            else
-            {
-                alreadyPlacedDiskfulNotDeleting.add(rsc);
+                if (isFlagSet(rsc, Resource.Flags.DISKLESS))
+                {
+                    alreadyPlacedDisklessNotDeleting.add(rsc);
+                }
+                else
+                {
+                    alreadyPlacedDiskfulNotDeleting.add(rsc);
+                }
             }
         }
 
@@ -513,6 +514,24 @@ public class CtrlRscAutoPlaceApiCallHandler
         try
         {
             flagSet = rsc.getStateFlags().isSet(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access " + CtrlRscApiCallHandler.getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return flagSet;
+    }
+
+    private boolean isSomeFlagSet(Resource rsc, Resource.Flags... flags)
+    {
+        boolean flagSet = false;
+        try
+        {
+            flagSet = rsc.getStateFlags().isSomeSet(peerAccCtx.get(), flags);
         }
         catch (AccessDeniedException accDeniedExc)
         {

@@ -7,12 +7,14 @@ import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.S
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -80,7 +82,10 @@ class Selector
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
-                if (!rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DELETE))
+                StateFlags<Flags> rscFlags = rsc.getStateFlags();
+                boolean isRscDeleting = rscFlags.isSet(apiCtx, Resource.Flags.DELETE);
+                boolean isRscEvicted = rscFlags.isSet(apiCtx, Resource.Flags.EVICTED);
+                if (!isRscDeleting && !isRscEvicted)
                 {
                     Node node = rsc.getNode();
 
@@ -93,13 +98,13 @@ class Selector
                     countResource &= skipAlreadyPlacedOnNodeNamesCheck == null ||
                         !skipAlreadyPlacedOnNodeNamesCheck.contains(node.getName().displayValue);
 
-                    countResource &= !(rsc.getStateFlags().isSet(apiCtx, Resource.Flags.EVACUATE) ||
+                    countResource &= !(rscFlags.isSet(apiCtx, Resource.Flags.EVACUATE) ||
                         node.getFlags().isSet(apiCtx, Node.Flags.EVACUATE));
 
                     if (countResource)
                     {
                         alreadyDeployedOnNodes.add(node);
-                        if (rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DISKLESS))
+                        if (rscFlags.isSet(apiCtx, Resource.Flags.DISKLESS))
                         {
                             alreadyDeployedDisklessCount++;
                         }
