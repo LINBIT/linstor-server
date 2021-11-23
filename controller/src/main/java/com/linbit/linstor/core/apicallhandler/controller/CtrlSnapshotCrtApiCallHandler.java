@@ -11,6 +11,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -31,9 +32,6 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.satellitestate.SatelliteResourceState;
-import com.linbit.linstor.satellitestate.SatelliteState;
-import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -473,24 +471,14 @@ public class CtrlSnapshotCrtApiCallHandler
         {
             try
             {
-                SatelliteState stltState = snapshot.getNode().getPeer(apiCtx).getSatelliteState();
-                if (stltState != null)
+                boolean upToDate = SatelliteResourceStateDrbdUtils.allVolumesUpToDate(
+                    snapshot.getNode().getPeer(apiCtx),
+                    rscName
+                );
+                if (!upToDate)
                 {
-                    SatelliteResourceState rscState = stltState.getResourceStates().get(snapshotDfn.getResourceName());
-                    if (rscState != null)
-                    {
-                        Collection<SatelliteVolumeState> vlmStates = rscState.getVolumeStates().values();
-                        if (vlmStates != null)
-                        {
-                            for (SatelliteVolumeState stltVlmStates : vlmStates)
-                            {
-                                if (!stltVlmStates.getDiskState().equalsIgnoreCase("uptodate"))
-                                {
-                                    allUpToDate = false;
-                                }
-                            }
-                        }
-                    }
+                    allUpToDate = false;
+                    break;
                 }
             }
             catch (AccessDeniedException exc)

@@ -30,6 +30,7 @@ import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
+import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -1414,7 +1415,26 @@ public class CtrlNodeApiCallHandler
                 {
                     Resource rscToEvacuate = rscDfn.getResource(peerCtx, nodeNameEvacuateSource);
                     StateFlags<Flags> rscToEvacFlags = rscToEvacuate.getStateFlags();
-                    if (rscToEvacFlags.isSet(peerCtx, Resource.Flags.DRBD_DISKLESS))
+                    boolean justDeleteRscToEvac = rscToEvacFlags.isSet(peerCtx, Resource.Flags.DRBD_DISKLESS);
+
+                    if (!justDeleteRscToEvac)
+                    {
+                        int upToDatePeerCount = getUpToDatePeerCount(peerCtx, rscDfn);
+                        Integer expectedReplicaCount = rscDfn.getResourceGroup().getAutoPlaceConfig()
+                            .getReplicaCount(peerCtx);
+                        System.out.println("expected: " + expectedReplicaCount);
+                        if (expectedReplicaCount == null)
+                        {
+                            expectedReplicaCount = 2; // just to be sure
+                        }
+                        System.out.println("actual: " + upToDatePeerCount);
+                        if (upToDatePeerCount >= expectedReplicaCount)
+                        {
+                            justDeleteRscToEvac = true;
+                        }
+                    }
+
+                    if (justDeleteRscToEvac)
                     {
                         fluxList.add(
                             rscDeleteHandler.deleteResource(nodeNameEvacuateSourceStrRef, rscDfn.getName().displayValue)
@@ -1422,7 +1442,6 @@ public class CtrlNodeApiCallHandler
                     }
                     else
                     {
-
                         StorPool sp = getStorPoolForEvacuation(rscDfn);
                         if (sp == null)
                         {
@@ -1506,6 +1525,37 @@ public class CtrlNodeApiCallHandler
             throw new ApiDatabaseException(sqlExc);
         }
         return flux;
+    }
+
+    private int getUpToDatePeerCount(AccessContext accCtx, ResourceDefinition rscDfnRef) throws AccessDeniedException
+    {
+        int ret = 0;
+        ResourceName rscName = rscDfnRef.getName();
+        Iterator<Resource> rscIt = rscDfnRef.iterateResource(accCtx);
+        while(rscIt.hasNext())
+        {
+            Resource rsc = rscIt.next();
+            StateFlags<Flags> rscFlags = rsc.getStateFlags();
+            if (rscFlags.isUnset(
+                accCtx,
+                Resource.Flags.DELETE,
+                Resource.Flags.EVACUATE,
+                Resource.Flags.INACTIVE,
+                Resource.Flags.DRBD_DISKLESS
+            ))
+            {
+                boolean allDrbdVolumesUpToDate = SatelliteResourceStateDrbdUtils.allVolumesUpToDate(
+                    rsc.getNode().getPeer(accCtx),
+                    rscName,
+                    false
+                );
+                if (allDrbdVolumesUpToDate)
+                {
+                    ret++;
+                }
+            }
+        }
+        return ret;
     }
 
     private StorPool getStorPoolForEvacuation(ResourceDefinition rscDfn) throws AccessDeniedException
