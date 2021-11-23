@@ -1412,67 +1412,79 @@ public class CtrlNodeApiCallHandler
                 }
                 else
                 {
-                    StorPool sp = getStorPoolForEvacuation(rscDfn);
-                    if (sp == null)
+                    Resource rscToEvacuate = rscDfn.getResource(peerCtx, nodeNameEvacuateSource);
+                    StateFlags<Flags> rscToEvacFlags = rscToEvacuate.getStateFlags();
+                    if (rscToEvacFlags.isSet(peerCtx, Resource.Flags.DRBD_DISKLESS))
                     {
-                        apiCallRc.addEntry(
-                            ApiCallRcImpl.simpleEntry(
-                                ApiConsts.WARN_NOT_EVACUATING,
-                                "Resource '" + rscName.displayValue +
-                                    "' cannot be evacuated as no available storage pool was found"
-                            )
+                        fluxList.add(
+                            rscDeleteHandler.deleteResource(nodeNameEvacuateSourceStrRef, rscDfn.getName().displayValue)
                         );
                     }
                     else
                     {
-                        NodeName nodeNameEvacTarget = sp.getNode().getName();
 
-                        Flux<ApiCallRc> createOrToggleDiskFlux = null;
-                        Resource rscOnTargetNode = sp.getNode().getResource(peerCtx, rscName);
-                        if (rscOnTargetNode != null)
+                        StorPool sp = getStorPoolForEvacuation(rscDfn);
+                        if (sp == null)
                         {
-                            // selected node already has the resource
-                            if (!rscOnTargetNode.getStateFlags().isSet(peerCtx, Resource.Flags.DRBD_DISKLESS))
-                            {
-                                createOrToggleDiskFlux = rscToggleDiskApiCallHandler.resourceToggleDisk(
-                                    nodeNameEvacTarget.displayValue,
-                                    rscName.displayValue,
-                                    sp.getName().displayValue,
-                                    nodeNameEvacuateSourceStrRef,
-                                    null,
-                                    false
-                                );
-                            }
-                        }
-
-                        if (createOrToggleDiskFlux == null)
-                        {
-                            ResourceWithPayloadPojo createRscPojo = new ResourceWithPayloadPojo(
-                                new RscPojo(
-                                    rscName.displayValue,
-                                    nodeNameEvacTarget.displayValue,
-                                    0L,
-                                    Collections.singletonMap(
-                                        ApiConsts.KEY_STOR_POOL_NAME,
-                                        sp.getName().displayValue
-                                    )
-                                ),
-                                rscDfn.getLayerStack(peerCtx).stream().map(DeviceLayerKind::name)
-                                    .collect(Collectors.toList()),
-                                null
-                            );
-                            createOrToggleDiskFlux = ctrlRscCrtApiCallHandler
-                                .createResource(Collections.singletonList(createRscPojo));
-                        }
-                        fluxList.add(
-                            createOrToggleDiskFlux.concatWith(
-                                rscToggleDiskApiCallHandler.waitForMigration(
-                                    nodeNameEvacTarget,
-                                    rscName,
-                                    nodeNameEvacuateSource
+                            apiCallRc.addEntry(
+                                ApiCallRcImpl.simpleEntry(
+                                    ApiConsts.WARN_NOT_EVACUATING,
+                                    "Resource '" + rscName.displayValue +
+                                        "' cannot be evacuated as no available storage pool was found"
                                 )
-                            )
-                        );
+                            );
+                        }
+                        else
+                        {
+                            NodeName nodeNameEvacTarget = sp.getNode().getName();
+
+                            Flux<ApiCallRc> createOrToggleDiskFlux = null;
+                            Resource rscOnTargetNode = sp.getNode().getResource(peerCtx, rscName);
+                            if (rscOnTargetNode != null)
+                            {
+                                // selected node already has the resource
+                                if (!rscOnTargetNode.getStateFlags().isSet(peerCtx, Resource.Flags.DRBD_DISKLESS))
+                                {
+                                    createOrToggleDiskFlux = rscToggleDiskApiCallHandler.resourceToggleDisk(
+                                        nodeNameEvacTarget.displayValue,
+                                        rscName.displayValue,
+                                        sp.getName().displayValue,
+                                        nodeNameEvacuateSourceStrRef,
+                                        null,
+                                        false
+                                    );
+                                }
+                            }
+
+                            if (createOrToggleDiskFlux == null)
+                            {
+                                ResourceWithPayloadPojo createRscPojo = new ResourceWithPayloadPojo(
+                                    new RscPojo(
+                                        rscName.displayValue,
+                                        nodeNameEvacTarget.displayValue,
+                                        0L,
+                                        Collections.singletonMap(
+                                            ApiConsts.KEY_STOR_POOL_NAME,
+                                            sp.getName().displayValue
+                                        )
+                                    ),
+                                    rscDfn.getLayerStack(peerCtx).stream().map(DeviceLayerKind::name)
+                                        .collect(Collectors.toList()),
+                                    null
+                                );
+                                createOrToggleDiskFlux = ctrlRscCrtApiCallHandler
+                                    .createResource(Collections.singletonList(createRscPojo));
+                            }
+                            fluxList.add(
+                                createOrToggleDiskFlux.concatWith(
+                                    rscToggleDiskApiCallHandler.waitForMigration(
+                                        nodeNameEvacTarget,
+                                        rscName,
+                                        nodeNameEvacuateSource
+                                    )
+                                )
+                            );
+                        }
                     }
                 }
             }
