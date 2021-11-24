@@ -501,6 +501,38 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
             <property name="onCommentFormat" value="END GENERATED CODE"/>
         </module>
 
+        <module name="MultipleStringLiterals">
+            <property name="severity" value="warning"/>
+            <property name="ignoreStringsRegexp" value=".{1,4}"/>
+        </module>
+
+        <module name="NestedForDepth">
+            <property name="max" value="4"/>
+            <property name="severity" value="warning"/>
+        </module>
+
+        <module name="NestedIfDepth">
+            <property name="max" value="6"/>
+            <property name="severity" value="warning"/>
+        </module>
+
+        <module name="NestedTryDepth">
+            <property name="max" value="4"/>
+            <property name="severity" value="warning"/>
+        </module>
+
+        <module name="NPathComplexity">
+            <property name="max" value="2000"/>
+            <property name="severity" value="warning"/>
+        </module>
+
+        <!-- Modules suggested for possible future use
+        <module name="FinalParameters">
+            <property name="tokens" value="METHOD_DEF,CTOR_DEF,LITERAL_CATCH,FOR_EACH_CLAUSE"/>
+            <property name="severity" value="warning"/>
+        </module>
+        -->
+
     </module>
 </module>
 

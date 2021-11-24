@@ -4,8 +4,11 @@ apply plugin: 'java'
 apply plugin: 'eclipse'
 apply plugin: 'idea'
 apply plugin: 'application'
+apply plugin: 'checkstyle'
 
 sourceCompatibility = 1.8
+
+checkstyleTest.enabled = false
 
 def protobufVersion = '3.12.0'
 def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
@@ -29,6 +32,7 @@ buildscript {
 
 subprojects {
     apply plugin: 'java'
+    apply plugin: 'checkstyle'
     group 'com.linbit'
     sourceCompatibility = 1.8
 
