@@ -1,9 +1,11 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.db.utils.K8sCrdUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
@@ -13,6 +15,7 @@ import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent.LayerLuksVolumesSpec;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -122,33 +125,43 @@ public class LuksLayerK8sCrdDriver implements LuksLayerCtrlDatabaseDriver
             transMgrProvider
         );
 
-        HashMap<Integer, GenCrdCurrent.LayerLuksVolumesSpec> vlmSpecsMap = vlmSpecCache.get(id);
-
-        for (Entry<Integer, GenCrdCurrent.LayerLuksVolumesSpec> entry : vlmSpecsMap.entrySet())
+        int vlmNrInt = -1;
+        try
         {
-            LayerLuksVolumesSpec luksVlmSpec = entry.getValue();
-            VolumeNumber vlmNr;
-            try
+            Map<Integer, LayerLuksVolumesSpec> vlmSpecsMap = K8sCrdUtils.getCheckedVlmMap(
+                dbCtx,
+                absRsc,
+                vlmSpecCache,
+                id
+            );
+            for (Entry<Integer, GenCrdCurrent.LayerLuksVolumesSpec> entry : vlmSpecsMap.entrySet())
             {
-                vlmNr = new VolumeNumber(entry.getKey());
-            }
-            catch (ValueOutOfRangeException exc)
-            {
-                throw new LinStorDBRuntimeException(
-                    "Failed to restore stored volume number " + entry.getKey()
+                LayerLuksVolumesSpec luksVlmSpec = entry.getValue();
+                vlmNrInt = entry.getKey();
+                VolumeNumber vlmNr;
+                vlmNr = new VolumeNumber(vlmNrInt);
+                vlmDataMap.put(
+                    vlmNr,
+                    new LuksVlmData<>(
+                        absRsc.getVolume(vlmNr),
+                        rscData,
+                        Base64.decode(luksVlmSpec.encryptedPassword),
+                        this,
+                        transObjFactory,
+                        transMgrProvider
+                    )
                 );
             }
-            vlmDataMap.put(
-                vlmNr,
-                new LuksVlmData<>(
-                    absRsc.getVolume(vlmNr),
-                    rscData,
-                    Base64.decode(luksVlmSpec.encryptedPassword),
-                    this,
-                    transObjFactory,
-                    transMgrProvider
-                )
+        }
+        catch (ValueOutOfRangeException exc)
+        {
+            throw new LinStorDBRuntimeException(
+                "Failed to restore stored volume number " + vlmNrInt
             );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("ApiContext does not have enough privileges");
         }
         return new Pair<>(rscData, children);
     }

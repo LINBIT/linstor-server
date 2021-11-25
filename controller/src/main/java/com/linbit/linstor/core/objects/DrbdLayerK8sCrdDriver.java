@@ -12,6 +12,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.db.utils.K8sCrdUtils;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -602,7 +603,12 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
         int vlmNrInt = -1;
         try
         {
-            HashMap<Integer, LayerDrbdVolumesSpec> cachedDrbdVlmMap = drbdVlmCache.get(rscData.getRscLayerId());
+            Map<Integer, LayerDrbdVolumesSpec> cachedDrbdVlmMap = K8sCrdUtils.getCheckedVlmMap(
+                dbCtx,
+                rsc,
+                drbdVlmCache,
+                rscData.getRscLayerId()
+            );
             for (Entry<Integer, LayerDrbdVolumesSpec> entry : cachedDrbdVlmMap.entrySet())
             {
                 vlmNrInt = entry.getKey();
@@ -685,7 +691,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
                                 " resource name: " + snapVlmDfn.getResourceName() +
                                 " snapshot name: " + snapVlmDfn.getSnapshotName() +
                                 " vlmNr " + vlmNrInt
-                            );
+                        );
                     }
                 }
             }
@@ -703,6 +709,10 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
                 "Failed to restore stored storage pool name '" + exc.invalidName +
                     "' for resource layer id " + rscData.getRscLayerId() + " vlmNr: " + vlmNrInt
             );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("ApiContext does not have enough privileges");
         }
     }
 

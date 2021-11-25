@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDBRuntimeException;
@@ -7,6 +8,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.db.utils.K8sCrdUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
@@ -15,6 +17,7 @@ import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent.LayerCacheVolumesSpec;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -131,10 +134,15 @@ public class CacheLayerK8sCrdDriver implements CacheLayerCtrlDatabaseDriver
 
         int vlmNrInt = -1;
 
-        HashMap<Integer, GenCrdCurrent.LayerCacheVolumesSpec> vlmSpecsMap = vlmSpecCache.get(id);
-
         try
         {
+            Map<Integer, LayerCacheVolumesSpec> vlmSpecsMap = K8sCrdUtils.getCheckedVlmMap(
+                dbCtx,
+                absRsc,
+                vlmSpecCache,
+                id
+            );
+
             for (Entry<Integer, GenCrdCurrent.LayerCacheVolumesSpec> entry : vlmSpecsMap.entrySet())
             {
                 vlmNrInt = entry.getKey();
@@ -189,6 +197,10 @@ public class CacheLayerK8sCrdDriver implements CacheLayerCtrlDatabaseDriver
                     "' for resource layer id " + cacheRscData.getRscLayerId() + " vlmNr: " +
                     vlmNrInt
             );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("ApiContext does not have enough privileges");
         }
         return new Pair<>(cacheRscData, children);
     }

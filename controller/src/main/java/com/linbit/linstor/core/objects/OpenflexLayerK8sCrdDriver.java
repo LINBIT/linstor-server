@@ -12,6 +12,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.OpenflexLayerSQLDbDriver.OpenflexVlmInfo;
 import com.linbit.linstor.core.objects.StorPool.InitMaps;
+import com.linbit.linstor.core.objects.db.utils.K8sCrdUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -43,7 +44,6 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -61,7 +61,7 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
     private final SingleColumnDatabaseDriver<OpenflexRscDfnData<?>, String> nqnDriver;
 
     // key is layerRscId
-    private Map<Integer, List<OpenflexVlmInfo>> cachedVlmInfoMap;
+    private HashMap<Integer, HashMap<Integer, OpenflexVlmInfo>> cachedVlmInfoMap;
     private Map<Pair<ResourceDefinition, String>, Pair<OpenflexRscDfnData<Resource>, ArrayList<OpenflexRscData<Resource>>>> cacheRscDfnDataMap;
 
 
@@ -219,11 +219,11 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
                 rscLayerId = ofVlmSpec.layerResourceId;
                 int vlmNr = ofVlmSpec.vlmNr;
 
-                List<OpenflexVlmInfo> infoList = cachedVlmInfoMap.get(rscLayerId);
-                if (infoList == null)
+                HashMap<Integer, OpenflexVlmInfo> infoMap = cachedVlmInfoMap.get(rscLayerId);
+                if (infoMap == null)
                 {
-                    infoList = new ArrayList<>();
-                    cachedVlmInfoMap.put(rscLayerId, infoList);
+                    infoMap = new HashMap<>();
+                    cachedVlmInfoMap.put(rscLayerId, infoMap);
                 }
                 NodeName nodeName = new NodeName(ofVlmSpec.nodeName);
                 StorPoolName storPoolName = new StorPoolName(ofVlmSpec.poolName);
@@ -231,7 +231,8 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
                 Pair<StorPool, StorPool.InitMaps> storPoolWithInitMap = tmpStorPoolMapRef.get(
                     new Pair<>(nodeName, storPoolName)
                 );
-                infoList.add(
+                infoMap.put(
+                    vlmNr,
                     new OpenflexVlmInfo(
                         rscLayerId,
                         vlmNr,
@@ -257,9 +258,12 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
      * Fully loads a {@link NvmeRscData} object including its {@link NvmeVlmData}
      *
      * @param parentRef
+     *
      * @return a {@link Pair}, where the first object is the actual NvmeRscData and the second object
      * is the first objects backing list of the children-resource layer data. This list is expected to be filled
      * upon further loading, without triggering transaction (and possibly database-) updates.
+     *
+     * @throws DatabaseException
      */
     @Override
     public <RSC extends AbsResource<RSC>> Pair<OpenflexRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
@@ -268,6 +272,7 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
         String rscSuffixRef,
         AbsRscLayerObject<RSC> parentRef
     )
+        throws DatabaseException
     {
         Set<AbsRscLayerObject<RSC>> children = new HashSet<>();
         Map<VolumeNumber, OpenflexVlmData<RSC>> vlmMap = new TreeMap<>();
@@ -294,10 +299,15 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
         rscDfnDataPair.objB.add((OpenflexRscData<Resource>) ofRscData);// FIXME as soon as snapshots are supported for
                                                                        // openflex
 
-        List<OpenflexVlmInfo> ofVlmInfoList = cachedVlmInfoMap.get(id);
         try
         {
-            for (OpenflexVlmInfo ofVlmInfo : ofVlmInfoList)
+            Map<Integer, OpenflexVlmInfo> ofVlmInfoMap = K8sCrdUtils.getCheckedVlmMap(
+                dbCtx,
+                absRsc,
+                cachedVlmInfoMap,
+                id
+            );
+            for (OpenflexVlmInfo ofVlmInfo : ofVlmInfoMap.values())
             {
                 VolumeNumber vlmNr = new VolumeNumber(ofVlmInfo.vlmNr);
                 AbsVolume<RSC> vlm = absRsc.getVolume(vlmNr);
@@ -311,6 +321,10 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
         catch (ValueOutOfRangeException exc)
         {
             throw new ImplementationError("Invalid volume number loaded", exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("ApiContext does not have enough privileges");
         }
         return new Pair<>(ofRscData, children);
     }

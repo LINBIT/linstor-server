@@ -29,7 +29,8 @@ public interface OpenflexLayerCtrlDatabaseDriver extends OpenflexLayerDatabaseDr
         int idRef,
         String rscSuffixRef,
         AbsRscLayerObject<RSC> parentRef
-    );
+    )
+        throws DatabaseException;
 
     void clearLoadAllCache();
 

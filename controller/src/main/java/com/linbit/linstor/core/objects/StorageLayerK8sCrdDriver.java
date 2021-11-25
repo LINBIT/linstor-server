@@ -12,6 +12,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.StorageLayerSQLDbDriver.StorVlmInfoData;
+import com.linbit.linstor.core.objects.db.utils.K8sCrdUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
@@ -41,10 +42,9 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -62,7 +62,7 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
 
     private final SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool> storPoolDriver;
 
-    private Map<Integer, List<StorVlmInfoData>> cachedStorVlmInfoByRscLayerId;
+    private HashMap<Integer, HashMap<Integer, StorVlmInfoData>> cachedStorVlmInfoByRscLayerId;
 
     @Inject
     public StorageLayerK8sCrdDriver(
@@ -114,18 +114,19 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
                 rscLayerId = storVlmSpec.layerResourceId;
                 int vlmNr = storVlmSpec.vlmNr;
 
-                List<StorVlmInfoData> infoList = cachedStorVlmInfoByRscLayerId.get(rscLayerId);
-                if (infoList == null)
+                HashMap<Integer, StorVlmInfoData> infoMap = cachedStorVlmInfoByRscLayerId.get(rscLayerId);
+                if (infoMap == null)
                 {
-                    infoList = new ArrayList<>();
-                    cachedStorVlmInfoByRscLayerId.put(rscLayerId, infoList);
+                    infoMap = new HashMap<>();
+                    cachedStorVlmInfoByRscLayerId.put(rscLayerId, infoMap);
                 }
                 NodeName nodeName = new NodeName(storVlmSpec.nodeName);
                 StorPoolName storPoolName = new StorPoolName(storVlmSpec.storPoolName);
                 Pair<StorPool, StorPool.InitMaps> storPoolWithInitMap = tmpStorPoolMapRef.get(
                     new Pair<>(nodeName, storPoolName)
                 );
-                infoList.add(
+                infoMap.put(
+                    vlmNr,
                     new StorVlmInfoData(
                         rscLayerId,
                         vlmNr,
@@ -169,49 +170,59 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
             transMgrProvider
         );
 
-        List<StorVlmInfoData> vlmInfoList = cachedStorVlmInfoByRscLayerId.get(rscIdRef);
 
-        if (vlmInfoList != null)
+        int vlmNrInt = -1;
+        try
         {
-            for (StorVlmInfoData vlmInfo : vlmInfoList)
+            Map<Integer, StorVlmInfoData> vlmInfoMap = K8sCrdUtils.getCheckedVlmMap(
+                dbCtx,
+                absRsc,
+                cachedStorVlmInfoByRscLayerId,
+                rscIdRef
+            );
+            for (Entry<Integer, StorVlmInfoData> entry : vlmInfoMap.entrySet())
             {
-                try
-                {
-                    VolumeNumber vlmNr = new VolumeNumber(vlmInfo.vlmNr);
-                    AbsVolume<RSC> vlm = absRsc.getVolume(vlmNr);
+                vlmNrInt = entry.getKey();
+                StorVlmInfoData vlmInfo = entry.getValue();
 
-                    if (vlm == null)
+                VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);
+                AbsVolume<RSC> vlm = absRsc.getVolume(vlmNr);
+
+                if (vlm == null)
+                {
+                    if (absRsc instanceof Resource)
                     {
-                        if (absRsc instanceof Resource)
-                        {
-                            throw new LinStorRuntimeException(
-                                "Storage volume found but linstor volume missing: " +
-                                    absRsc + ", vlmNr: " + vlmNr
-                            );
-                        }
-                        else
-                        {
-                            throw new LinStorRuntimeException(
-                                "Storage snapshot volume found but linstor snapshot volume missing: " +
-                                    absRsc + ", vlmNr: " + vlmNr
-                            );
-                        }
+                        throw new LinStorRuntimeException(
+                            "Storage volume found but linstor volume missing: " +
+                                absRsc + ", vlmNr: " + vlmNr
+                        );
                     }
+                    else
+                    {
+                        throw new LinStorRuntimeException(
+                            "Storage snapshot volume found but linstor snapshot volume missing: " +
+                                absRsc + ", vlmNr: " + vlmNr
+                        );
+                    }
+                }
 
-                    VlmProviderObject<RSC> vlmData = loadVlmProviderObject(vlm, storageRscData, vlmInfo);
-                    vlmMap.put(vlmNr, vlmData);
-                }
-                catch (ValueOutOfRangeException exc)
-                {
-                    throw new LinStorDBRuntimeException(
-                        String.format(
-                            "Failed to restore stored volume number %d for (layered) resource id: %d",
-                            vlmInfo.vlmNr,
-                            vlmInfo.rscId
-                        )
-                    );
-                }
+                VlmProviderObject<RSC> vlmData = loadVlmProviderObject(vlm, storageRscData, vlmInfo);
+                vlmMap.put(vlmNr, vlmData);
             }
+        }
+        catch (ValueOutOfRangeException exc)
+        {
+            throw new LinStorDBRuntimeException(
+                String.format(
+                    "Failed to restore stored volume number %d for (layered) resource id: %d",
+                    vlmNrInt,
+                    rscIdRef
+                )
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("ApiContext does not have enough privileges");
         }
 
         return new Pair<>(

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDBRuntimeException;
@@ -7,6 +8,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.db.utils.K8sCrdUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
@@ -15,6 +17,7 @@ import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent.LayerWritecacheVolumesSpec;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -130,10 +133,16 @@ public class WritecacheLayerK8sCrdDriver implements WritecacheLayerCtrlDatabaseD
 
         int vlmNrInt = -1;
 
-        HashMap<Integer, GenCrdCurrent.LayerWritecacheVolumesSpec> vlmSpecsMap = vlmSpecCache.get(id);
 
         try
         {
+            Map<Integer, LayerWritecacheVolumesSpec> vlmSpecsMap = K8sCrdUtils.getCheckedVlmMap(
+                dbCtx,
+                absRsc,
+                vlmSpecCache,
+                id
+            );
+
             for (Entry<Integer, GenCrdCurrent.LayerWritecacheVolumesSpec> entry : vlmSpecsMap.entrySet())
             {
                 vlmNrInt = entry.getKey();
@@ -176,6 +185,10 @@ public class WritecacheLayerK8sCrdDriver implements WritecacheLayerCtrlDatabaseD
                 "Failed to restore stored storage pool name '" + exc.invalidName +
                     "' for resource layer id " + writecacheRscData.getRscLayerId() + " vlmNr: " + vlmNrInt
             );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError("ApiContext does not have enough privileges");
         }
         return new Pair<>(writecacheRscData, children);
     }
