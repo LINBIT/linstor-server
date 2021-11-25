@@ -1379,15 +1379,15 @@ public class CtrlNodeApiCallHandler
 
         Flux<ApiCallRc> flux;
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        Node node = ctrlApiDataLoader.loadNode(nodeNameEvacuateSourceStrRef, true);
-        NodeName nodeNameEvacuateSource = node.getName();
+        Node nodeToEvacuate = ctrlApiDataLoader.loadNode(nodeNameEvacuateSourceStrRef, true);
+        NodeName nodeNameEvacuateSource = nodeToEvacuate.getName();
         try
         {
             AccessContext peerCtx = peerAccCtx.get();
-            node.getFlags().enableFlags(peerCtx, Node.Flags.EVACUATE);
+            nodeToEvacuate.getFlags().enableFlags(peerCtx, Node.Flags.EVACUATE);
 
             List<ResourceDefinition> affectedRscDfnList = new ArrayList<>();
-            Iterator<Resource> rscIt = node.iterateResources(peerCtx);
+            Iterator<Resource> rscIt = nodeToEvacuate.iterateResources(peerCtx);
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
@@ -1416,6 +1416,15 @@ public class CtrlNodeApiCallHandler
                     Resource rscToEvacuate = rscDfn.getResource(peerCtx, nodeNameEvacuateSource);
                     StateFlags<Flags> rscToEvacFlags = rscToEvacuate.getStateFlags();
                     boolean justDeleteRscToEvac = rscToEvacFlags.isSet(peerCtx, Resource.Flags.DRBD_DISKLESS);
+
+                    if (!justDeleteRscToEvac)
+                    {
+                        // no use to keep a non-UpToDate resource that should be evacuated
+                        justDeleteRscToEvac = !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(
+                            nodeToEvacuate.getPeer(peerCtx),
+                            rscName
+                        );
+                    }
 
                     if (!justDeleteRscToEvac)
                     {
