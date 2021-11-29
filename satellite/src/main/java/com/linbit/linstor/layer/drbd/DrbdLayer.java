@@ -26,10 +26,10 @@ import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
-import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdConnection;
@@ -89,6 +89,8 @@ public class DrbdLayer implements DeviceLayer
     private static final String DRBD_CONFIG_TMP_SUFFIX = ".res_tmp";
 
     private static final long HAS_VALID_STATE_FOR_PRIMARY_TIMEOUT = 2000;
+
+    private static final String DRBD_NEW_GI = "0000000000000004";
 
     private final AccessContext workerCtx;
     private final DrbdAdm drbdUtils;
@@ -1145,36 +1147,7 @@ public class DrbdLayer implements DeviceLayer
 
             if (skipInitSync)
             {
-                String currentGi = null;
-                try
-                {
-                    currentGi = drbdVlmData.getVlmDfnLayerObject().getVolumeDefinition()
-                        .getProps(workerCtx).getProp(ApiConsts.KEY_DRBD_CURRENT_GI);
-                }
-                catch (InvalidKeyException invKeyExc)
-                {
-                    throw new ImplementationError(
-                        "API constant contains an invalid key",
-                        invKeyExc
-                    );
-                }
-                if (currentGi == null)
-                {
-                    int vlmNr = drbdVlmData.getVlmNr().value;
-                    throw new StorageException(
-                        "Meta data creation for resource '" +
-                        drbdVlmData.getRscLayerObject().getSuffixedResourceName() + "' volume " + vlmNr + " failed",
-                        getAbortMsg(drbdVlmData),
-                        "Volume " + vlmNr + " of the resource uses a thin provisioning storage driver,\n" +
-                        "but no initial value for the DRBD current generation is set on the volume definition",
-                        "- Ensure that the initial DRBD current generation is set on the volume definition\n" +
-                        "or\n" +
-                        "- Recreate the volume definition",
-                        "The key of the initial DRBD current generation property is:\n" +
-                        ApiConsts.KEY_DRBD_CURRENT_GI,
-                        null
-                    );
-                }
+                String currentGi = getCurrentGiFromVlmDfnProp(drbdVlmData);
 
                 String metaDiskPath = drbdVlmData.getMetaDiskPath();
                 boolean internal = false;
@@ -1206,6 +1179,42 @@ public class DrbdLayer implements DeviceLayer
                 exc
             );
         }
+    }
+
+    private String getCurrentGiFromVlmDfnProp(DrbdVlmData<Resource> drbdVlmData)
+        throws AccessDeniedException, ImplementationError, StorageException
+    {
+        String currentGi = null;
+        try
+        {
+            currentGi = drbdVlmData.getVlmDfnLayerObject().getVolumeDefinition()
+                .getProps(workerCtx).getProp(ApiConsts.KEY_DRBD_CURRENT_GI);
+        }
+        catch (InvalidKeyException invKeyExc)
+        {
+            throw new ImplementationError(
+                "API constant contains an invalid key",
+                invKeyExc
+            );
+        }
+        if (currentGi == null)
+        {
+            int vlmNr = drbdVlmData.getVlmNr().value;
+            throw new StorageException(
+                "Meta data creation for resource '" +
+                drbdVlmData.getRscLayerObject().getSuffixedResourceName() + "' volume " + vlmNr + " failed",
+                getAbortMsg(drbdVlmData),
+                "Volume " + vlmNr + " of the resource uses a thin provisioning storage driver,\n" +
+                "but no initial value for the DRBD current generation is set on the volume definition",
+                "- Ensure that the initial DRBD current generation is set on the volume definition\n" +
+                "or\n" +
+                "- Recreate the volume definition",
+                "The key of the initial DRBD current generation property is:\n" +
+                ApiConsts.KEY_DRBD_CURRENT_GI,
+                null
+            );
+        }
+        return currentGi;
     }
 
     private void updateResourceToCurrentDrbdState(DrbdRscData<Resource> drbdRscData)
@@ -1582,7 +1591,16 @@ public class DrbdLayer implements DeviceLayer
                     !rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DRBD_DISKLESS)
             )
             {
-                boolean alreadyInitialized = !allVlmsMetaDataNew(drbdRscData);
+                boolean alreadyInitialized;
+                try
+                {
+                    alreadyInitialized = !allVlmsMetaDataNew(drbdRscData);
+                }
+                catch (ExtCmdFailedException exc)
+                {
+                    throw new StorageException("Could not check if metadata is new", exc);
+                }
+
                 errorReporter.logTrace(
                     "Requesting primary on %s; already initialized: %b",
                     drbdRscData.getSuffixedResourceName(),
@@ -1641,11 +1659,53 @@ public class DrbdLayer implements DeviceLayer
         {
             throw new ImplementationError("Invalid hardcoded property key", invalidKeyExc);
         }
+
     }
 
     private boolean allVlmsMetaDataNew(DrbdRscData<Resource> rscState)
+        throws AccessDeniedException, StorageException, ImplementationError, ExtCmdFailedException
     {
-        return rscState.getVlmLayerObjects().values().stream().allMatch(DrbdVlmData::isMetaDataNew);
+        boolean allNew = true;
+        for (DrbdVlmData<Resource> drbdVlmData : rscState.getVlmLayerObjects().values())
+        {
+            boolean isMetadataNew = false;
+            if (drbdVlmData.isMetaDataNew())
+            {
+                isMetadataNew = true;
+            }
+            else
+            {
+                String currentGiFromVlmDfn = getCurrentGiFromVlmDfnProp(drbdVlmData);
+                String allGisFromMetaData;
+                {
+                    String metaDiskPath = drbdVlmData.getMetaDiskPath();
+                    boolean externalMd = metaDiskPath != null;
+                    if (!externalMd)
+                    {
+                        // internal meta data
+                        metaDiskPath = drbdVlmData.getBackingDevice();
+                    }
+                    allGisFromMetaData = drbdUtils.getCurrentGID(
+                        metaDiskPath,
+                        drbdVlmData.getVlmDfnLayerObject().getMinorNr().value,
+                        externalMd ? "flex-external" : "internal"
+                    );
+                }
+                if (allGisFromMetaData != null)
+                {
+                    String currentGiFromMetaData = allGisFromMetaData.split(":")[0];
+                    isMetadataNew = currentGiFromVlmDfn.equalsIgnoreCase(currentGiFromMetaData) ||
+                        currentGiFromMetaData.equals(DRBD_NEW_GI);
+                }
+            }
+
+            if (!isMetadataNew)
+            {
+                allNew = false;
+                break;
+            }
+        }
+        return allNew;
     }
 
     private void setResourceUpToDate(DrbdRscData<Resource> drbdRscData) throws StorageException

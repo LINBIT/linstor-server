@@ -283,21 +283,9 @@ public class DrbdAdm
         // It is probably safer to fail because missing meta data was not detected than
         // to overwrite existing meta data because it was not detected, therefore default
         // to true, indicating that meta data exists
-        List<String> command = new ArrayList<>();
-        command.add(DRBDMETA_UTIL);
-        command.add(Integer.toString(minorNr));
-        command.add("v09");
-        command.add(blockDevPath);
-        command.add(mdTypeParam);
-        command.add("get-gi");
-        command.add("--node-id");
-        command.add("0");
-        command.add("--force"); // force is needed if the drbd-resource is still in Negotiating state or earlier.
-        // in that case, drbdmeta asks "Exclusive open failed. Do it anyways?" and expects to type 'yes'.
-        // should not break anything
-
         boolean mdFlag = true;
-        String[] params = command.toArray(new String[command.size()]);
+
+        String[] params = getGetGiCommand(minorNr, blockDevPath, mdTypeParam);
         ExtCmd utilsCmd = extCmdFactory.create();
         File nullDevice = new File("/dev/null");
         try
@@ -317,6 +305,45 @@ public class DrbdAdm
             throw new ExtCmdFailedException(params, ioExc);
         }
         return mdFlag;
+    }
+
+    public String getCurrentGID(String blockDevPath, int minorNr, String mdTypeParam) throws ExtCmdFailedException
+    {
+        String ret;
+
+        String[] params = getGetGiCommand(minorNr, blockDevPath, mdTypeParam);
+        ExtCmd utilsCmd = extCmdFactory.create();
+        try
+        {
+            OutputData outputData = utilsCmd.exec(params);
+            ret = new String(outputData.stdoutData);
+        }
+        catch (ChildProcessTimeoutException timeoutExc)
+        {
+            throw new ExtCmdFailedException(params, timeoutExc);
+        }
+        catch (IOException ioExc)
+        {
+            throw new ExtCmdFailedException(params, ioExc);
+        }
+        return ret;
+    }
+
+    private static String[] getGetGiCommand(int minorNr, String blockDevPath, String mdTypeParam)
+    {
+        return new String[] {
+            DRBDMETA_UTIL,
+            Integer.toString(minorNr),
+            "v09",
+            blockDevPath,
+            mdTypeParam,
+            "get-gi",
+            "--node-id",
+            "0",
+            "--force"// force is needed if the drbd-resource is still in Negotiating state or earlier.
+            // in that case, drbdmeta asks "Exclusive open failed. Do it anyways?" and expects to type 'yes'.
+            // should not break anything
+        };
     }
 
     /**
