@@ -234,7 +234,7 @@ public class CtrlAuthentication
                     idName,
                     Role.PUBLIC_ROLE.name,
                     SecurityType.PUBLIC_TYPE.name,
-                    0L,
+                    new byte[0],
                     new byte[0]
                 );
 

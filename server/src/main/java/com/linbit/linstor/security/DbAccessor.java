@@ -23,8 +23,8 @@ public interface DbAccessor<DB_TYPE extends ControllerDatabase>
         IdentityName    idName,
         RoleName        dfltRlName,
         SecTypeName     dmnName,
-        long            privileges,
-        byte[]          password
+        byte[]          passwordSalt,
+        byte[]          passwordHash
     )
         throws DatabaseException;
 

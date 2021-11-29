@@ -3,6 +3,7 @@ package com.linbit.linstor.security;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.ControllerSQLDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.utils.UnicodeConversion;
 import java.security.spec.InvalidKeySpecException;
@@ -75,6 +76,26 @@ public final class Authentication
         {
             GLOBAL_AUTH_REQUIRED.set(false);
         }
+    }
+
+    public void createSignInEntry(
+        AccessContext           accCtx,
+        ControllerSQLDatabase   ctrlDb,
+        IdentityName            idName,
+        RoleName                dfltRlName,
+        SecTypeName             dmnName,
+        byte[]                  password
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        final PrivilegeSet effPriv = accCtx.getEffectivePrivs();
+        effPriv.requirePrivileges(Privilege.PRIV_SYS_ALL);
+
+        // TODO: Create a salt
+        // TODO: Create the password hash
+        // TODO: Check for duplicate sign-in entry
+        // TODO: Call persistence layer to create the sign-in entry
+        // TODO: Cleanup byte arrays
     }
 
     /**
@@ -160,7 +181,8 @@ public final class Authentication
                 }
                 catch (UnicodeConversion.InvalidSequenceException exc)
                 {
-                    throw new SignInException("The password contains a byte sequence that is not a valid UTF-8 sequence");
+                    throw new SignInException("The password contains a byte sequence that is not a " +
+                                              "valid UTF-8 sequence");
                 }
                 PBEKeySpec keySpec = new PBEKeySpec(passwordChars, salt, ITERATIONS, HASH_SIZE);
 

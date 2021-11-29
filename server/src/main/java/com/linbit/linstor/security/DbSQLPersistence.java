@@ -32,6 +32,7 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.VIEW_SEC_IDENTITIES
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VIEW_SEC_ROLES_LOAD;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VIEW_SEC_TYPES_LOAD;
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.VIEW_SEC_TYPE_RULES_LOAD;
+import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -65,6 +66,16 @@ public class DbSQLPersistence implements DbAccessor<ControllerSQLDatabase>
         "    LEFT JOIN " + TBL_SEC_ROLES + " ON " + TBL_SEC_DFLT_ROLES + "." + ROLE_NAME + " = " +
         TBL_SEC_ROLES + "." + ROLE_NAME + "\n" +
         "    WHERE " + TBL_SEC_IDENTITIES + "." + IDENTITY_NAME + " = ?";
+
+    private static final String INS_SIGNIN_ENTRY =
+        "INSERT INTO " + TBL_SEC_IDENTITIES + " (" +
+        IDENTITY_NAME + ", " +
+        IDENTITY_DSP_NAME + ", " +
+        ID_LOCKED + ", " +
+        ID_ENABLED + ", " +
+        PASS_SALT + ", " +
+        PASS_HASH + ") " +
+        "VALUES (?, ?, ?, ?, ?, ?)";
 
     private static final String SLCT_ID_ROLE_MAP_ENTRY =
         "SELECT " + IDENTITY_NAME + ", " + ROLE_NAME + " FROM " + TBL_SEC_ID_ROLE_MAP +
@@ -198,8 +209,8 @@ public class DbSQLPersistence implements DbAccessor<ControllerSQLDatabase>
         IdentityName            idName,
         RoleName                dfltRlName,
         SecTypeName             dmnName,
-        long                    privileges,
-        byte[]                  password
+        byte[]                  passwordSalt,
+        byte[]                  passwordHash
     )
         throws DatabaseException
     {
@@ -208,7 +219,21 @@ public class DbSQLPersistence implements DbAccessor<ControllerSQLDatabase>
         {
             dbConn = ctrlDb.getConnection();
 
+            final String encPasswordSalt = Base64.encode(passwordSalt);
+            final String encPasswordHash = Base64.encode(passwordHash);
+
+            final PreparedStatement stmt = dbConn.prepareStatement(INS_SIGNIN_ENTRY);
+            stmt.setString(1, idName.value);
+            stmt.setString(2, idName.displayValue);
+            // Parameter #3 - ID_LOCKED - false: Account is not locked
+            stmt.setBoolean(3, false);
+            // Parameter #4 - ID_ENABLED - true: Account is enabled
+            stmt.setBoolean(4, true);
+            stmt.setString(5, encPasswordSalt);
+            stmt.setString(6, encPasswordHash);
+
             // TODO: Register a new identity in the database
+            stmt.executeUpdate();
 
             dbConn.commit();
         }

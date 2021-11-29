@@ -69,6 +69,19 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     }
 
     @Override
+    public void createSignInEntry(
+        ControllerK8sCrdDatabase ctrlDb,
+        IdentityName    idName,
+        RoleName        dfltRlName,
+        SecTypeName     dmnName,
+        byte[]          passwordSalt,
+        byte[]          passwordHash
+    )
+        throws DatabaseException
+    {
+    }
+
+    @Override
     public IdentityRoleEntryPojo getIdRoleMapEntry(
         ControllerK8sCrdDatabase k8sCrdDb,
         IdentityName idName,
