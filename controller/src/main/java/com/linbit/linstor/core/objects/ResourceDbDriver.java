@@ -112,7 +112,7 @@ public class ResourceDbDriver extends
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
 
-        createTimestampDriver = generateSingleColumnDriverMapped(
+        createTimestampDriver = generateSingleColumnDriver(
             CREATE_TIMESTAMP,
             rsc -> rsc.getCreateTimestamp().isPresent() ? rsc.getCreateTimestamp().get().toString() : "null",
             createTimestampTypeMapper

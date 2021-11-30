@@ -149,21 +149,6 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
         );
     }
 
-    protected <INPUT_TYPE, DB_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateSingleColumnDriverMapped(
-        Column col,
-        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToString,
-        Function<INPUT_TYPE, DB_TYPE> sqlTypeMapper
-    )
-    {
-        return dbEngine.generateSingleColumnDriverMapped(
-            setters,
-            col,
-            sqlTypeMapper,
-            this::getId,
-            dataValueToString
-        );
-    }
-
     protected <LIST_TYPE> CollectionDatabaseDriver<DATA, LIST_TYPE> generateCollectionToJsonStringArrayDriver(
         Column col
     )

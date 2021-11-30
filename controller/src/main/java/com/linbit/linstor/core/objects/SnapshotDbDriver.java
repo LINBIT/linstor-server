@@ -123,7 +123,7 @@ public class SnapshotDbDriver extends
 
         flagsDriver = generateFlagDriver(RESOURCE_FLAGS, Snapshot.Flags.class);
 
-        createTimestampDriver = generateSingleColumnDriverMapped(
+        createTimestampDriver = generateSingleColumnDriver(
             CREATE_TIMESTAMP,
             snap -> snap.getCreateTimestamp().isPresent() ? snap.getCreateTimestamp().get().toString() : "null",
             createTimestampTypeMapper

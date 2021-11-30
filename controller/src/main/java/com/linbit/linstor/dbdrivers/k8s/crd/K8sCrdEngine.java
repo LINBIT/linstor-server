@@ -175,20 +175,6 @@ public class K8sCrdEngine implements DbEngine
     @Override
     public <DATA, INPUT_TYPE, DB_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateSingleColumnDriver(
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
-        Column col,
-        Function<INPUT_TYPE, DB_TYPE> ignoredTypeMapper,
-        DataToString<DATA> dataIdToString,
-        ExceptionThrowingFunction<DATA, String, AccessDeniedException> ignoredDataValueToString
-    )
-    {
-        final DatabaseTable table = col.getTable();
-        // k8s cannot update single "columns" just the whole object. Map all drivers to a simple object-update
-        return (data, ignored) -> updateOrCreate(table, setters, data, dataIdToString);
-    }
-
-    @Override
-    public <DATA, INPUT_TYPE, DB_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateSingleColumnDriverMapped(
-        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
         Column colRef,
         Function<INPUT_TYPE, DB_TYPE> ignoredTypeMapper,
         DataToString<DATA> dataIdToString,
