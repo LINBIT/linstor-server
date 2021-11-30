@@ -218,9 +218,6 @@ public class GrizzlyHttpService implements SystemService
                 ssle.setNeedClientAuth(hasClientAuth);
                 netListener.setSSLEngineConfig(ssle);
             }
-
-            enableCompression(httpSslServer);
-            httpSslServer.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
         }
         else
         {
@@ -230,8 +227,6 @@ public class GrizzlyHttpService implements SystemService
                 restResourceConfig,
                 false
             );
-            addUiStaticHandler(httpServer);
-            httpServer.getHttpHandler().setAllowEncodedSlash(true);
         }
 
         // configure access logging
@@ -279,11 +274,24 @@ public class GrizzlyHttpService implements SystemService
             errorReporter.logDebug("Rest-access log turned off.");
         }
 
-        if (httpServer != null)
+        // there is either https (+ http for redirect) or just http
+        // so we only need features enabled on the primary method
+        if (httpSslServer != null)
         {
-            enableCompression(httpServer);
-            httpServer.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
+            enableFeatures(httpSslServer);
         }
+        else
+        {
+            enableFeatures(httpServer);
+        }
+    }
+
+    private void enableFeatures(HttpServer httpServer)
+    {
+        enableCompression(httpServer);
+        addUiStaticHandler(httpServer);
+        httpServer.getHttpHandler().setAllowEncodedSlash(true);
+        httpServer.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
     }
 
     private void registerExceptionMappers(ResourceConfig resourceConfig)
@@ -400,8 +408,8 @@ public class GrizzlyHttpService implements SystemService
     @Override
     public boolean isStarted()
     {
-        return (httpServer != null ? httpServer.isStarted() : false) ||
-            (httpSslServer != null ? httpSslServer.isStarted() : false);
+        return (httpServer != null && httpServer.isStarted()) ||
+            (httpSslServer != null && httpSslServer.isStarted());
     }
 }
 
