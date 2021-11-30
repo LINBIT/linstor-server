@@ -160,7 +160,7 @@ public interface Peer
     /**
      * This is the same as calling {@code isConnected(true)}
      */
-    boolean isConnected();
+    boolean isOnline();
 
     ApiConsts.ConnectionStatus getConnectionStatus();
 

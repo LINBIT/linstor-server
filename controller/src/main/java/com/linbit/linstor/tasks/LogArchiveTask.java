@@ -57,7 +57,7 @@ public class LogArchiveTask implements TaskScheduleService.Task
             for (Node node : nodeRepository.getMapForView(sysCtx).values())
             {
                 Peer nodePeer = node.getPeer(sysCtx);
-                if (nodePeer != null && nodePeer.isConnected())
+                if (nodePeer != null && nodePeer.isOnline())
                 {
                     nodePeer.sendMessage(
                         ctrlStltSerializer.onewayBuilder(InternalApiConsts.API_ARCHIVE_LOGS).build()

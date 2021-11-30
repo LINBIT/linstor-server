@@ -502,7 +502,7 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public boolean isConnected()
+    public boolean isOnline()
     {
         return isConnected(true);
     }

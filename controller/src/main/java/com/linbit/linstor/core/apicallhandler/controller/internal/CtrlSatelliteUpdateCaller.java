@@ -131,7 +131,7 @@ public class CtrlSatelliteUpdateCaller
         Flux<ApiCallRc> response;
         Peer peer = satelliteToUpdate.getPeer(apiCtx);
 
-        if (peer.isConnected() && peer.hasFullSyncFailed())
+        if (peer.isOnline() && peer.hasFullSyncFailed())
         {
             response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(peer)));
         }
@@ -219,7 +219,7 @@ public class CtrlSatelliteUpdateCaller
         {
             Peer currentPeer = node.getPeer(apiCtx);
 
-            if (currentPeer.isConnected() && currentPeer.hasFullSyncFailed())
+            if (currentPeer.isOnline() && currentPeer.hasFullSyncFailed())
             {
                 response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(currentPeer)));
             }
@@ -290,7 +290,7 @@ public class CtrlSatelliteUpdateCaller
         Flux<ApiCallRc> response;
         Peer currentPeer = node.getPeer(apiCtx);
 
-        if (currentPeer.isConnected() && currentPeer.hasFullSyncFailed())
+        if (currentPeer.isOnline() && currentPeer.hasFullSyncFailed())
         {
             response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(currentPeer)));
         }
@@ -339,7 +339,7 @@ public class CtrlSatelliteUpdateCaller
         }
         else
         {
-            if (currentPeer.isConnected() && currentPeer.hasFullSyncFailed())
+            if (currentPeer.isOnline() && currentPeer.hasFullSyncFailed())
             {
                 response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(currentPeer)));
             }
@@ -463,7 +463,7 @@ public class CtrlSatelliteUpdateCaller
             {
                 Peer satellitePeer = nodeToContact.getPeer(apiCtx);
 
-                if (satellitePeer.isConnected() && !satellitePeer.hasFullSyncFailed())
+                if (satellitePeer.isOnline() && !satellitePeer.hasFullSyncFailed())
                 {
                     Flux<ApiCallRc> response = updateSatellite(
                         nodeToContact,

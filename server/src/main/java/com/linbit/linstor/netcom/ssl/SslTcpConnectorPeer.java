@@ -96,9 +96,9 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     }
 
     @Override
-    public boolean isConnected()
+    public boolean isOnline()
     {
-        return super.isConnected() && !handshaker.isHandshaking();
+        return super.isOnline() && !handshaker.isHandshaking();
     }
 
     @Override

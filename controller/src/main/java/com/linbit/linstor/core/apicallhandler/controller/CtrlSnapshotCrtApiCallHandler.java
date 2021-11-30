@@ -268,7 +268,7 @@ public class CtrlSnapshotCrtApiCallHandler
             {
                 Resource rsc = rscIt.next();
                 Node node = rsc.getNode();
-                if (!node.getPeer(apiCtx).isConnected())
+                if (!node.getPeer(apiCtx).isOnline())
                 {
                     offlineNodes.add(node.getName().displayValue);
                 }

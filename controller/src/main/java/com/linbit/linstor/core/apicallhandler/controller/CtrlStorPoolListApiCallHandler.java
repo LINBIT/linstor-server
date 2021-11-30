@@ -144,7 +144,7 @@ public class CtrlStorPoolListApiCallHandler
                                         freeCapacityAnswers.get(new StorPool.Key(storPool)) : null;
 
                                     Peer peer = storPool.getNode().getPeer(peerAccCtx.get());
-                                    if (peer == null || !peer.isConnected())
+                                    if (peer == null || !peer.isOnline())
                                     {
                                         freeCapacity = null;
                                         totalCapacity = null;

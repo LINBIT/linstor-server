@@ -162,7 +162,7 @@ public class PeerOffline implements Peer
     }
 
     @Override
-    public boolean isConnected()
+    public boolean isOnline()
     {
         return false;
     }

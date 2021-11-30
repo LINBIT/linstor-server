@@ -1359,7 +1359,7 @@ public class CtrlBackupApiCallHandler
     {
 
         Node node = ctrlApiDataLoader.loadNode(nodeName, true);
-        if (!node.getPeer(peerAccCtx.get()).isConnected())
+        if (!node.getPeer(peerAccCtx.get()).isOnline())
         {
             throw new ApiRcException(
                 ApiCallRcImpl

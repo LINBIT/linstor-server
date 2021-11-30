@@ -63,7 +63,7 @@ public class CtrlSnapshotHelper
         Node node = rsc.getNode();
         Peer currentPeer = getPeer(node);
 
-        boolean connected = currentPeer.isConnected();
+        boolean connected = currentPeer.isOnline();
         if (!connected)
         {
             throw new ApiRcException(ApiCallRcImpl

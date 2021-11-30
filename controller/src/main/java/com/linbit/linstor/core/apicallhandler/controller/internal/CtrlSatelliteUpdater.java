@@ -105,7 +105,7 @@ public class CtrlSatelliteUpdater
                         responses.addEntry(ResponseUtils.makeFullSyncFailedResponse(satellitePeer));
                     }
                     else
-                    if (satellitePeer.isConnected())
+                    if (satellitePeer.isOnline())
                     {
                         satellitePeer.sendMessage(changedMessage);
                     }
@@ -138,7 +138,7 @@ public class CtrlSatelliteUpdater
                 Resource currentRsc = rscIterator.next();
                 Peer currentPeer = currentRsc.getNode().getPeer(apiCtx);
 
-                boolean connected = currentPeer.isConnected();
+                boolean connected = currentPeer.isOnline();
                 if (connected)
                 {
                     if (currentPeer.hasFullSyncFailed())
@@ -184,7 +184,7 @@ public class CtrlSatelliteUpdater
         try
         {
             Peer satellitePeer = node.getPeer(apiCtx);
-            boolean connected = satellitePeer.isConnected();
+            boolean connected = satellitePeer.isOnline();
             if (connected)
             {
                 if (satellitePeer.hasFullSyncFailed())

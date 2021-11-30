@@ -2343,7 +2343,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to be ready
             Mockito.when(mockedPeer.apiCall(anyString(), any()))
                 .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
-            Mockito.when(mockedPeer.isConnected()).thenReturn(true);
+            Mockito.when(mockedPeer.isOnline()).thenReturn(true);
             Mockito.when(mockedPeer.getExtToolsManager()).thenReturn(mockedExtToolsMgr);
 
             try

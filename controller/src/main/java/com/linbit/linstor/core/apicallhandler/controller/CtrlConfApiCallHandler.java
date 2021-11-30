@@ -156,7 +156,7 @@ public class CtrlConfApiCallHandler
         {
             Peer satellitePeer = nodeToContact.getPeer(peerAccCtx.get());
 
-            if (satellitePeer.isConnected() && !satellitePeer.hasFullSyncFailed())
+            if (satellitePeer.isOnline() && !satellitePeer.hasFullSyncFailed())
             {
                 byte[] changedMessage = ctrlStltSrzl
                     .onewayBuilder(InternalApiConsts.API_CHANGED_CONTROLLER)

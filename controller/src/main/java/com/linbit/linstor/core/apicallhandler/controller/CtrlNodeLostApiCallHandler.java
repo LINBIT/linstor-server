@@ -142,7 +142,7 @@ public class CtrlNodeLostApiCallHandler
         }
 
         Peer nodePeer = getPeerPrivileged(node);
-        if (nodePeer != null && nodePeer.isConnected())
+        if (nodePeer != null && nodePeer.isOnline())
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_EXISTS_NODE_CONN,

@@ -287,7 +287,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
             int ct = 0;
             for (Resource rsc : rscDfn.streamResource(peerAccCtxProvider.get()).collect(Collectors.toList()))
             {
-                if (rsc.getNode().getPeer(peerAccCtxProvider.get()).isConnected() &&
+                if (rsc.getNode().getPeer(peerAccCtxProvider.get()).isOnline() &&
                     !rsc.getStateFlags().isSet(peerAccCtxProvider.get(), Resource.Flags.DRBD_DISKLESS))
                 {
                     ct++;

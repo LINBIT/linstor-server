@@ -96,7 +96,7 @@ class StorPoolFilter
                                 // have USE access
                                 storPool.getNode().getObjProt().queryAccess(peerCtx).hasAccess(AccessType.USE) &&
                                 // peer is online
-                                storPool.getNode().getPeer(apiAccCtx).isConnected()
+                                storPool.getNode().getPeer(apiAccCtx).isOnline()
                         )
                         {
                             ret.add(storPool);

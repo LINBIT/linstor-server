@@ -986,7 +986,7 @@ public class CtrlNodeApiCallHandler
         throws IOException, AccessDeniedException
     {
         Peer curPeer = ctrlApiDataLoader.loadNode(nodeName, true).getPeer(peerAccCtx.get());
-        if (!curPeer.isConnected())
+        if (!curPeer.isOnline())
         {
             return Flux.empty();
         }
@@ -1219,7 +1219,7 @@ public class CtrlNodeApiCallHandler
                 Node node = ctrlApiDataLoader.loadNode(nodeName, true);
                 try
                 {
-                    if (node.getPeer(apiCtx).isConnected())
+                    if (node.getPeer(apiCtx).isOnline())
                     {
                         throw new ApiRcException(
                             ApiCallRcImpl.simpleEntry(
