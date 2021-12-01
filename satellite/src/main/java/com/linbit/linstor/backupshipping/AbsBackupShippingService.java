@@ -485,7 +485,8 @@ public abstract class AbsBackupShippingService implements SystemService
                 {
                     if (updateCtrlRef)
                     {
-                        if(!shippingInfo.alreadyInUse.isEmpty()) {
+                        if(!shippingInfo.alreadyInUse.isEmpty())
+                        {
                             controllerPeerConnector.getControllerPeer().sendMessage(
                                 interComSerializer.onewayBuilder(
                                     InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_WRONG_PORTS
@@ -497,8 +498,10 @@ public abstract class AbsBackupShippingService implements SystemService
                                 ).build()
                             );
                         }
-                        else {
-                            boolean success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
+                        else
+                        {
+                            boolean success = shippingInfo.snapVlmDataFinishedSuccessfully ==
+                                shippingInfo.snapVlmDataFinishedShipping;
 
                             preCtrlNotifyBackupShipped(successRef, restoring, snap, shippingInfo);
 
@@ -637,8 +640,8 @@ public abstract class AbsBackupShippingService implements SystemService
                 String[] lines = out.split("\n");
                 for (String line : lines)
                 {
-                    line = line.trim(); // ps prints a trailing space
-                    String pid = line.substring(0, line.indexOf(" "));
+                    final String lineTrimmed = line.trim(); // ps prints a trailing space
+                    String pid = lineTrimmed.substring(0, lineTrimmed.indexOf(" "));
                     extCmdFactory.create().exec("pkill", "-9", "--parent", pid);
                     // extCmdFactory.create().exec("kill", pid);
                 }

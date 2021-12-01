@@ -4,7 +4,6 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
-import com.linbit.linstor.proto.common.StorPoolDfnOuterClass.StorPoolDfn;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;

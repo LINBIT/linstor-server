@@ -92,8 +92,8 @@ public class WatchStoreTest
         Mockito.verify(otherPeerDisposable, Mockito.never()).dispose();
     }
 
-    private Watch makeWatch(EventIdentifier resourceEventIdentifier)
+    private Watch makeWatch(EventIdentifier resourceEventIdentifierRef)
     {
-        return new Watch(UUID.randomUUID(), null, 0, resourceEventIdentifier);
+        return new Watch(UUID.randomUUID(), null, 0, resourceEventIdentifierRef);
     }
 }

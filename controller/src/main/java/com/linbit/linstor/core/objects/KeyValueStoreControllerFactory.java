@@ -2,7 +2,6 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
-import com.linbit.linstor.core.objects.KeyValueStore;
 import com.linbit.linstor.core.repository.KeyValueStoreRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;

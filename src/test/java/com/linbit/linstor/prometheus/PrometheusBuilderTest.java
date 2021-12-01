@@ -17,7 +17,8 @@ import java.util.UUID;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class PrometheusBuilderTest {
+public class PrometheusBuilderTest
+{
 
     @Test
     public void testNullMetrics() throws IOException {

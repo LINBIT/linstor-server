@@ -286,12 +286,12 @@ public class GrizzlyHttpService implements SystemService
         }
     }
 
-    private void enableFeatures(HttpServer httpServer)
+    private void enableFeatures(HttpServer httpServerRef)
     {
-        enableCompression(httpServer);
-        addUiStaticHandler(httpServer);
-        httpServer.getHttpHandler().setAllowEncodedSlash(true);
-        httpServer.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
+        enableCompression(httpServerRef);
+        addUiStaticHandler(httpServerRef);
+        httpServerRef.getHttpHandler().setAllowEncodedSlash(true);
+        httpServerRef.getServerConfiguration().setAllowPayloadForUndefinedHttpMethods(true);
     }
 
     private void registerExceptionMappers(ResourceConfig resourceConfig)

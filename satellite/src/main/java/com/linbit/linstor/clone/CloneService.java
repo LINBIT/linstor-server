@@ -171,7 +171,8 @@ public class CloneService implements SystemService
         return serviceStarted;
     }
 
-    public boolean isRunning(@Nonnull ResourceName rscName, @Nonnull VolumeNumber vlmNr, @Nonnull String suffix) {
+    public boolean isRunning(@Nonnull ResourceName rscName, @Nonnull VolumeNumber vlmNr, @Nonnull String suffix)
+    {
         return activeClones.stream().anyMatch(cloneInfo ->
             cloneInfo.getResourceName().equals(rscName) && cloneInfo.getVlmNr().equals(vlmNr) &&
                 cloneInfo.getSuffix().equals(suffix));
@@ -229,10 +230,12 @@ public class CloneService implements SystemService
 
     /**
      * Returns all clones belonging to the same resource/volume
+     *
      * @param ci
      * @return
      */
-    private Set<CloneInfo> volumeClones(final CloneInfo cloneInfo) {
+    private Set<CloneInfo> volumeClones(final CloneInfo cloneInfo)
+    {
         return activeClones.stream()
             .filter(ci -> ci.getResourceName().equals(
                 cloneInfo.getResourceName()) && ci.getVlmNr().equals(cloneInfo.getVlmNr()))
@@ -311,6 +314,7 @@ public class CloneService implements SystemService
         {
             return srcVlmData;
         }
+
         public AbsStorageVlmData<Resource> getDstVlmData()
         {
             return dstVlmData;
@@ -369,8 +373,14 @@ public class CloneService implements SystemService
         @Override
         public boolean equals(Object o)
         {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o)
+            {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass())
+            {
+                return false;
+            }
             CloneInfo cloneInfo = (CloneInfo) o;
             return getVlmNr() == cloneInfo.getVlmNr() && getResourceName().equals(cloneInfo.getResourceName()) &&
                 getSuffix().equals(cloneInfo.getSuffix());

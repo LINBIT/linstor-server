@@ -38,7 +38,8 @@ public class TaskScheduleService implements SystemService, Runnable
          * data that had first to be loaded from the Database.
          */
         default void initialize()
-        {}
+        {
+        }
     }
 
     private static final ServiceName SERVICE_NAME;

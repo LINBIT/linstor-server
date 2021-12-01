@@ -81,7 +81,8 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
                     lockGuardFactory.buildDeferred(WRITE, RSC_DFN_MAP),
                     () ->
                     {
-                        for (Map.Entry<Volume.Key, VlmAllocatedResult> entry : vlmAllocations.entrySet()) {
+                        for (Map.Entry<Volume.Key, VlmAllocatedResult> entry : vlmAllocations.entrySet())
+                        {
                             try
                             {
                                 Volume.Key vlmKey = entry.getKey();

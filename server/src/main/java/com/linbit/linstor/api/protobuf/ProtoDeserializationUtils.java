@@ -172,6 +172,7 @@ public class ProtoDeserializationUtils
                     {
                         throw new ImplementationError("Unknown (proto) ProviderType: " + providerKindRef);
                     }
+                    break;
             }
         }
         return kind;
@@ -233,6 +234,7 @@ public class ProtoDeserializationUtils
                 {
                     throw new ImplementationError("Unknown (proto) LayerType: " + layerTypeRef);
                 }
+                break;
         }
         return kind;
     }
@@ -418,6 +420,7 @@ public class ProtoDeserializationUtils
                 {
                     throw new ImplementationError("Unknown (proto) Externaltool: " + extToolsRef);
                 }
+                break;
         }
         return tool;
     }

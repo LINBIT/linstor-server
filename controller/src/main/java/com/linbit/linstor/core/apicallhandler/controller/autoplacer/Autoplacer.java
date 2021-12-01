@@ -56,10 +56,10 @@ public class Autoplacer
      * @param selectFilter
      * @param rscDfnRef
      * @param rscSize
-     *
      * @return Null if no selection could be made of a non-empty Set of selected StorPools
      */
-    public @Nullable Set<StorPool> autoPlace(
+    public @Nullable
+    Set<StorPool> autoPlace(
         AutoSelectFilterApi selectFilter,
         @Nullable ResourceDefinition rscDfnRef,
         long rscSize
@@ -143,7 +143,7 @@ public class Autoplacer
 
     /**
      * Returns a resource (except the fixedResources) which can be deleted.
-     *
+     * <p>
      * While under all circumstances all fixedResources are ignored, the selection prioritizes
      * resources that are already violating the resource-group's autoplace-config.
      * If there are no violations, the selection will choose the resource with the lowest
@@ -152,7 +152,6 @@ public class Autoplacer
      * @param rscDfnRef
      * @param unplaceCount
      * @param fixedResources
-     *
      * @return
      */
     public Resource autoUnplace(ResourceDefinition rscDfnRef, Collection<Resource> fixedResources)
@@ -237,22 +236,33 @@ public class Autoplacer
         public boolean equals(Object obj)
         {
             if (this == obj)
+            {
                 return true;
+            }
             if (obj == null)
+            {
                 return false;
+            }
             if (getClass() != obj.getClass())
+            {
                 return false;
+            }
             StorPoolWithScore other = (StorPoolWithScore) obj;
             if (Double.doubleToLongBits(score) != Double.doubleToLongBits(other.score))
+            {
                 return false;
+            }
             if (storPool == null)
             {
                 if (other.storPool != null)
+                {
                     return false;
+                }
             }
-            else
-                if (!storPool.equals(other.storPool))
-                    return false;
+            else if (!storPool.equals(other.storPool))
+            {
+                return false;
+            }
             return true;
         }
 

@@ -166,7 +166,7 @@ public class NameShortenerTest
         }
         catch (LinStorException expected)
         {
-
+            // expected
         }
     }
 
@@ -239,7 +239,8 @@ public class NameShortenerTest
         throws AccessDeniedException, ValueOutOfRangeException, Throwable
     {
         VolumeDefinition vlmDfn = rscDfn.getVolumeDfn(TestAccessContextProvider.SYS_CTX, new VolumeNumber(0));
-        if (vlmDfn == null) {
+        if (vlmDfn == null)
+        {
             vlmDfn = mock(rscDfn, vlmNr);
         }
         return vlmDfn;

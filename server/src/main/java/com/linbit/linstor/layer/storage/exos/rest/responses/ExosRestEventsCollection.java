@@ -4,51 +4,51 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class ExosRestEventsCollection extends ExosRestBaseResponse
 {
-	@JsonProperty("events")
-	public ExosRestEvent[] events;
+    @JsonProperty("events")
+    public ExosRestEvent[] events;
 
-	public static class ExosRestEvent
-	{
-		@JsonProperty("object-name")
-		public String objectName;
+    public static class ExosRestEvent
+    {
+        @JsonProperty("object-name")
+        public String objectName;
 
-		@JsonProperty("time-stamp")
-		public String timeStamp;
+        @JsonProperty("time-stamp")
+        public String timeStamp;
 
-		@JsonProperty("time-stamp-numeric")
-		public long timeStampNumeric;
+        @JsonProperty("time-stamp-numeric")
+        public long timeStampNumeric;
 
-		@JsonProperty("event-code")
-		public String eventCode;
+        @JsonProperty("event-code")
+        public String eventCode;
 
-		@JsonProperty("event-id")
-		public String eventId;
+        @JsonProperty("event-id")
+        public String eventId;
 
-		@JsonProperty("model")
-		public String model;
+        @JsonProperty("model")
+        public String model;
 
-		@JsonProperty("serial-number")
-		public String serialNumber;
+        @JsonProperty("serial-number")
+        public String serialNumber;
 
-		@JsonProperty("controller")
-		public String controller;
+        @JsonProperty("controller")
+        public String controller;
 
-		@JsonProperty("controller-numeric")
-		public long controllerNumeric;
+        @JsonProperty("controller-numeric")
+        public long controllerNumeric;
 
-		@JsonProperty("severity")
-		public String severity;
+        @JsonProperty("severity")
+        public String severity;
 
-		@JsonProperty("severity-numeric")
-		public long severityNumeric;
+        @JsonProperty("severity-numeric")
+        public long severityNumeric;
 
-		@JsonProperty("message")
-		public String message;
+        @JsonProperty("message")
+        public String message;
 
-		@JsonProperty("additional-information")
-		public String additionalInformation;
+        @JsonProperty("additional-information")
+        public String additionalInformation;
 
-		@JsonProperty("recommended-action")
-		public String recommendedAction;
-	}
+        @JsonProperty("recommended-action")
+        public String recommendedAction;
+    }
 }

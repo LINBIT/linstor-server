@@ -1,6 +1,5 @@
 package com.linbit.linstor.netcom.ssl;
 
-import com.linbit.ImplementationError;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;

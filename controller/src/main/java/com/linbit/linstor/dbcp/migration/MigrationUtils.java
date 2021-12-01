@@ -569,6 +569,7 @@ public class MigrationUtils
                     joinedRemoteColumns,
                     fkName
                 );
+                break;
             case UNKNOWN:
                 // fall-through
             case ETCD:

@@ -18,7 +18,9 @@ public interface TransactionMgr
     boolean isDirty();
     int sizeObjects();
 
-    default void returnConnection() { }
+    default void returnConnection()
+    {
+    }
 
     static boolean isCalledFromTransactionMgr(String methodName)
     {

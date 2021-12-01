@@ -219,14 +219,16 @@ public class SizeConvTest
                         fail("Exception expected at: " + str + ", force^2: false");
                     }
                     catch (IllegalArgumentException ignored)
-                    {}
+                    {
+                    }
                     try
                     {
                         SizeUnit.parse(str, true);
                         fail("Exception expected at: " + str + ", force^2: true");
                     }
                     catch (IllegalArgumentException ignored)
-                    {}
+                    {
+                    }
                 }
                 else
                 {

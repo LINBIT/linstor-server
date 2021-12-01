@@ -79,14 +79,14 @@ public final class DatabaseConstantsGenerator
     {
         TreeMap<String, Table> tables = new TreeMap<>();
         try
-        (
-            ResultSet metaTables = con.getMetaData().getTables(
-                null,
-                DB_SCHEMA,
-                null,
-                new String[] {TYPE_TABLE}
+            (
+                ResultSet metaTables = con.getMetaData().getTables(
+                    null,
+                    DB_SCHEMA,
+                    null,
+                    new String[]{TYPE_TABLE}
+                )
             )
-        )
         {
             while (metaTables.next())
             {
@@ -221,13 +221,13 @@ public final class DatabaseConstantsGenerator
              */
             appendEmptyLine();
             generateColumnClass(
-                new String[][] {
+                new String[][]{
                     {"String", "name"},
                     {"int", "sqlType"},
                     {"boolean", "isPk"},
                     {"boolean", "isNullable"}
                 },
-                new String[][] {
+                new String[][]{
                     {INTERFACE_NAME_SQL, "table"}
                 }
             );
@@ -1534,7 +1534,7 @@ public final class DatabaseConstantsGenerator
 
         IndentLevel()
         {
-            this ("{", "}", true, true);
+            this("{", "}", true, true);
         }
 
         IndentLevel(
@@ -1718,11 +1718,17 @@ public final class DatabaseConstantsGenerator
         public boolean equals(Object obj)
         {
             if (this == obj)
+            {
                 return true;
+            }
             if (obj == null)
+            {
                 return false;
+            }
             if (getClass() != obj.getClass())
+            {
                 return false;
+            }
             GeneratorVersion other = (GeneratorVersion) obj;
             return Objects.equals(originalVersion, other.originalVersion);
         }

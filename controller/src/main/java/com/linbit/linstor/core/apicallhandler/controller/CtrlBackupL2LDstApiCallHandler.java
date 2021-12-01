@@ -231,7 +231,8 @@ public class CtrlBackupL2LDstApiCallHandler
                 if (remote instanceof LinstorRemote)
                 {
                     LinstorRemote linRem = (LinstorRemote) remote;
-                    if(linRem.getClusterId(apiCtx).equals(UUID.fromString(srcClusterIdRef))){
+                    if(linRem.getClusterId(apiCtx).equals(UUID.fromString(srcClusterIdRef)))
+                    {
                         ret = linRem;
                         break;
                     }

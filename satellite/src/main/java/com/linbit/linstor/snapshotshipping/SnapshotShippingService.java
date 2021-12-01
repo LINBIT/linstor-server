@@ -336,8 +336,8 @@ public class SnapshotShippingService implements SystemService
                 String[] lines = out.split("\n");
                 for (String line : lines)
                 {
-                    line = line.trim(); // ps prints a trailing space
-                    String pid = line.substring(0, line.indexOf(" "));
+                    final String lineTrimmed = line.trim(); // ps prints a trailing space
+                    String pid = lineTrimmed.substring(0, lineTrimmed.indexOf(" "));
                     extCmdFactory.create().exec("pkill", "-9", "--parent", pid);
                     // extCmdFactory.create().exec("kill", pid);
                 }

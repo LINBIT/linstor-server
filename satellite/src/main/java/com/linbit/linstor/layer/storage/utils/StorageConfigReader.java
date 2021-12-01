@@ -41,12 +41,12 @@ public class StorageConfigReader
     {
         if (volumeGroup != null)
         {
-            volumeGroup = volumeGroup.trim();
+            final String volumeGroupTrimmed = volumeGroup.trim();
 
             try
             {
                 Checks.nameCheck(
-                    volumeGroup,
+                    volumeGroupTrimmed,
                     1,
                     Integer.MAX_VALUE,
                     VALID_CHARS,
@@ -55,7 +55,7 @@ public class StorageConfigReader
             }
             catch (InvalidNameException invalidNameExc)
             {
-                final String cause = String.format("Invalid name for volume group: %s", volumeGroup);
+                final String cause = String.format("Invalid name for volume group: %s", volumeGroupTrimmed);
                 throw new StorageException(
                     "Invalid configuration, " + cause,
                     null,
@@ -65,7 +65,7 @@ public class StorageConfigReader
                 );
             }
 
-            LvmUtils.checkVgExists(extCmdFactory, volumeGroup); // throws an exception
+            LvmUtils.checkVgExists(extCmdFactory, volumeGroupTrimmed); // throws an exception
             // if volume group does not exist
         }
     }

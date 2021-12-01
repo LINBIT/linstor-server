@@ -16,10 +16,12 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
-public class ProcCryptoUtilsTest extends TestCase {
+public class ProcCryptoUtilsTest extends TestCase
+{
 
     private static String PROC_CRYPTO_OUTPUT = null;
 
+    @Override
     public void setUp() throws IOException, URISyntaxException
     {
         final URI procCryptoURI = this.getClass()

@@ -308,7 +308,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                     .concatWith(resizeDrbd(rscName, vlmNr))
                     .concatWith(finishResize(rscName, vlmNr));
             }
-        } else
+        }
+        else
         {
             if (notifyStlts)
             {

@@ -123,6 +123,7 @@ public class ExtToolsInfo
         {
             this(null, null, null, null);
         }
+
         public Version(int majRef)
         {
             this(majRef, null, null, null);
@@ -148,7 +149,7 @@ public class ExtToolsInfo
 
         /**
          * Returns true if the version of "this" object is greater or equal to the parameter.
-         *
+         * <p>
          * null-values on either side also fulfill "greater or equal"
          */
         public boolean greaterOrEqual(Version vsn)
@@ -195,7 +196,8 @@ public class ExtToolsInfo
             return cmp;
         }
 
-        private int compare(Integer v1, Integer v2) {
+        private int compare(Integer v1, Integer v2)
+        {
             // null will be sorted before not-null
             int cmp;
             if (Objects.equals(v1, v2))
@@ -256,17 +258,24 @@ public class ExtToolsInfo
         public boolean equals(Object obj)
         {
             if (this == obj)
+            {
                 return true;
+            }
             if (obj == null)
+            {
                 return false;
+            }
             if (getClass() != obj.getClass())
+            {
                 return false;
+            }
             Version other = (Version) obj;
             return Objects.equals(major, other.major) &&
                 Objects.equals(minor, other.minor) &&
                 Objects.equals(patch, other.patch) &&
                 Objects.equals(additionalInfo, other.additionalInfo);
         }
+
         @Override
         public String toString()
         {

@@ -20,8 +20,10 @@ public class DBLoggingTest
 
     private void deleteDirectory(File directoryToBeDeleted) {
         File[] allContents = directoryToBeDeleted.listFiles();
-        if (allContents != null) {
-            for (File file : allContents) {
+        if (allContents != null)
+        {
+            for (File file : allContents)
+            {
                 deleteDirectory(file);
             }
         }

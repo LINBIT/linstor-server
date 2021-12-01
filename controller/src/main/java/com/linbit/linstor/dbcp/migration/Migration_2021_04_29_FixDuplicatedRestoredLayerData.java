@@ -33,56 +33,56 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
     protected void migrate(Connection dbCon, DbProduct dbProductRef) throws Exception
     {
         try
-        (
-            PreparedStatement select = dbCon.prepareStatement(
-                " SELECT LRI." +
-                    StringUtils.join(
-                        ", LRI.",
-                        LAYER_RESOURCE_ID,
-                        NODE_NAME,
-                        RESOURCE_NAME,
-                        SNAPSHOT_NAME,
-                        KIND,
-                        RSC_SUFFIX
-                    ) +
-                " FROM LAYER_RESOURCE_IDS AS LRI"
-            );
-            ResultSet rs = select.executeQuery();
+            (
+                PreparedStatement select = dbCon.prepareStatement(
+                    " SELECT LRI." +
+                        StringUtils.join(
+                            ", LRI.",
+                            LAYER_RESOURCE_ID,
+                            NODE_NAME,
+                            RESOURCE_NAME,
+                            SNAPSHOT_NAME,
+                            KIND,
+                            RSC_SUFFIX
+                        ) +
+                        " FROM LAYER_RESOURCE_IDS AS LRI"
+                );
+                ResultSet rs = select.executeQuery();
 
-            PreparedStatement deleteLayerRscId = dbCon.prepareStatement(
-                "DELETE FROM LAYER_RESOURCE_IDS " +
-                " WHERE " + LAYER_RESOURCE_ID + " = ?"
-            );
+                PreparedStatement deleteLayerRscId = dbCon.prepareStatement(
+                    "DELETE FROM LAYER_RESOURCE_IDS " +
+                        " WHERE " + LAYER_RESOURCE_ID + " = ?"
+                );
 
-            PreparedStatement deleteCacheVlms = dbCon.prepareStatement(
-                "DELETE FROM LAYER_CACHE_VOLUMES " +
-                " WHERE " + LAYER_RESOURCE_ID + " = ?"
-            );
-            PreparedStatement deleteDrbdRscs = dbCon.prepareStatement(
-                "DELETE FROM LAYER_DRBD_RESOURCES " +
-                " WHERE " + LAYER_RESOURCE_ID + " = ?"
-            );
-            PreparedStatement deleteDrbdVlms = dbCon.prepareStatement(
-                "DELETE FROM LAYER_DRBD_VOLUMES " +
-                " WHERE " + LAYER_RESOURCE_ID + " = ?"
-            );
-            PreparedStatement deleteLuksVlms = dbCon.prepareStatement(
-                "DELETE FROM LAYER_LUKS_VOLUMES " +
-                " WHERE " + LAYER_RESOURCE_ID + " = ?"
-            );
-            PreparedStatement deleteOpenflexVlms = dbCon.prepareStatement(
-                "DELETE FROM LAYER_OPENFLEX_VOLUMES " +
-                " WHERE " + LAYER_RESOURCE_ID + " = ?"
-            );
-            PreparedStatement deleteStorageVlms = dbCon.prepareStatement(
-                "DELETE FROM LAYER_STORAGE_VOLUMES " +
-                " WHERE " + LAYER_RESOURCE_ID + " = ?"
-            );
-            PreparedStatement deleteWriteCacheVlms = dbCon.prepareStatement(
-                "DELETE FROM LAYER_WRITECACHE_VOLUMES " +
-                " WHERE " + LAYER_RESOURCE_ID + " = ?"
-            );
-        )
+                PreparedStatement deleteCacheVlms = dbCon.prepareStatement(
+                    "DELETE FROM LAYER_CACHE_VOLUMES " +
+                        " WHERE " + LAYER_RESOURCE_ID + " = ?"
+                );
+                PreparedStatement deleteDrbdRscs = dbCon.prepareStatement(
+                    "DELETE FROM LAYER_DRBD_RESOURCES " +
+                        " WHERE " + LAYER_RESOURCE_ID + " = ?"
+                );
+                PreparedStatement deleteDrbdVlms = dbCon.prepareStatement(
+                    "DELETE FROM LAYER_DRBD_VOLUMES " +
+                        " WHERE " + LAYER_RESOURCE_ID + " = ?"
+                );
+                PreparedStatement deleteLuksVlms = dbCon.prepareStatement(
+                    "DELETE FROM LAYER_LUKS_VOLUMES " +
+                        " WHERE " + LAYER_RESOURCE_ID + " = ?"
+                );
+                PreparedStatement deleteOpenflexVlms = dbCon.prepareStatement(
+                    "DELETE FROM LAYER_OPENFLEX_VOLUMES " +
+                        " WHERE " + LAYER_RESOURCE_ID + " = ?"
+                );
+                PreparedStatement deleteStorageVlms = dbCon.prepareStatement(
+                    "DELETE FROM LAYER_STORAGE_VOLUMES " +
+                        " WHERE " + LAYER_RESOURCE_ID + " = ?"
+                );
+                PreparedStatement deleteWriteCacheVlms = dbCon.prepareStatement(
+                    "DELETE FROM LAYER_WRITECACHE_VOLUMES " +
+                        " WHERE " + LAYER_RESOURCE_ID + " = ?"
+                );
+            )
         {
             HashMap<LriKey, Integer> lastIds = new HashMap<>();
             while (rs.next())
@@ -168,11 +168,17 @@ public class Migration_2021_04_29_FixDuplicatedRestoredLayerData extends Linstor
         public boolean equals(Object obj)
         {
             if (this == obj)
+            {
                 return true;
+            }
             if (obj == null)
+            {
                 return false;
+            }
             if (getClass() != obj.getClass())
+            {
                 return false;
+            }
             LriKey other = (LriKey) obj;
 
             return Objects.equals(nodeName, other.nodeName) &&
