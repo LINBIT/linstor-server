@@ -503,7 +503,7 @@ public abstract class AbsBackupShippingService implements SystemService
                             boolean success = shippingInfo.snapVlmDataFinishedSuccessfully ==
                                 shippingInfo.snapVlmDataFinishedShipping;
 
-                            preCtrlNotifyBackupShipped(successRef, restoring, snap, shippingInfo);
+                            success = preCtrlNotifyBackupShipped(success, restoring, snap, shippingInfo);
 
                             controllerPeerConnector.getControllerPeer().sendMessage(
                                 interComSerializer.onewayBuilder(internalApiName)
@@ -757,7 +757,7 @@ public abstract class AbsBackupShippingService implements SystemService
         AbsStorageVlmData<Snapshot> snapVlmDataRef
     ) throws AccessDeniedException;
 
-    protected abstract void preCtrlNotifyBackupShipped(
+    protected abstract boolean preCtrlNotifyBackupShipped(
         boolean successRef,
         boolean restoringRef,
         Snapshot snapRef,

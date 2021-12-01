@@ -147,14 +147,14 @@ public class BackupShippingL2LService extends AbsBackupShippingService
     }
 
     @Override
-    protected void preCtrlNotifyBackupShipped(
+    protected boolean preCtrlNotifyBackupShipped(
         boolean successRef,
         boolean restoringRef,
         Snapshot snapRef,
         ShippingInfo shippingInfoRef
     )
     {
-        // ignore
+        return successRef;
     }
 
     @Override

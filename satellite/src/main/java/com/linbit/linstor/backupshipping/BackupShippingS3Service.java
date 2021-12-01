@@ -167,13 +167,14 @@ public class BackupShippingS3Service extends AbsBackupShippingService
     }
 
     @Override
-    protected void preCtrlNotifyBackupShipped(
+    protected boolean preCtrlNotifyBackupShipped(
         boolean success,
         boolean restoring,
         Snapshot snap,
         ShippingInfo shippingInfo
     )
     {
+        boolean successRet = success;
         if (success && !restoring)
         {
             try
@@ -191,14 +192,15 @@ public class BackupShippingS3Service extends AbsBackupShippingService
             catch (InvalidKeyException | AccessDeniedException | IOException | ParseException exc)
             {
                 errorReporter.reportError(new ImplementationError(exc));
-                success = false;
+                successRet = false;
             }
             catch (SdkClientException exc)
             {
                 errorReporter.reportError(exc);
-                success = false;
+                successRet = false;
             }
         }
+        return successRet;
     }
 
     @Override
