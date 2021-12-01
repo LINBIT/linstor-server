@@ -92,7 +92,7 @@ public class NetInterfaceDbDriver
                     netIf ->
                     {
                         Integer nullable = TcpPortNumber.getValueNullable(netIf.getStltConnPort(dbCtxRef));
-                        return nullable != null ? nullable.shortValue() : (Short) null;
+                        return nullable != null ? nullable.shortValue() : null;
                     }
                 );
                 break;
