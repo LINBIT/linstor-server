@@ -25,6 +25,7 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -495,20 +496,11 @@ public class CtrlRscGrpApiCallHandler
                     notifyStlts = true;
                     for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx))
                     {
-                        long rscCount = rscDfn.streamResource(apiCtx)
-                            .filter(
-                                rsc ->
-                                {
-                                    try
-                                    {
-                                        return !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER);
-                                    }
-                                    catch (AccessDeniedException exc)
-                                    {
-                                        throw new ImplementationError(exc);
-                                    }
-                                }
-                            ).count();
+                        long rscCount = ResourceDefinitionUtils.getResourceCount(
+                            apiCtx,
+                            rscDfn,
+                            rsc -> !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.TIE_BREAKER)
+                        );
                         if (rscCount < newReplicaCount)
                         {
                             errorReporter.logDebug(
