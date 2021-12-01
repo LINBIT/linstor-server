@@ -392,63 +392,14 @@ class StorPoolFilter
                     )
                 )
                 {
-                    Predicate<String> containedInList;
-                    Predicate<String> matchesRegex;
-                    if (filterDoNotPlaceWithRscList != null)
-                    {
-                        containedInList = str ->
-                        {
-                            boolean contained = false;
-                            for (String rscName : filterDoNotPlaceWithRscList)
-                            {
-                                if (str.equalsIgnoreCase(rscName))
-                                {
-                                    contained = true;
-                                    break;
-                                }
-                            }
-                            return contained;
-                        };
-                    }
-                    else
-                    {
-                        containedInList = ignored -> false;
-                    }
-
-                    if (filterDoNotPlaceWithRscRegex != null)
-                    {
-                        Pattern regex = Pattern.compile(filterDoNotPlaceWithRscRegex, Pattern.CASE_INSENSITIVE);
-                        matchesRegex = str -> regex.matcher(str).find();
-                    }
-                    else
-                    {
-                        matchesRegex = ignored -> false;
-                    }
-
-                    if (skipAlreadyPlacedOnAllNodesCheck ||
-                        !skipAlreadyPlacedOnNodeNamesCheck.contains(nodeDisplayValue))
-                    {
-                        Iterator<Resource> iterateResources = node.iterateResources(apiAccCtx);
-                        while (nodeMatches && iterateResources.hasNext())
-                        {
-                            Resource rsc = iterateResources.next();
-                            if (!rsc.getStateFlags().isSet(apiAccCtx, Resource.Flags.DELETE))
-                            {
-                                String rscName = rsc.getDefinition().getName().displayValue;
-
-                                boolean hasRscDeployed = matchesRegex.test(rscName) || containedInList.test(rscName);
-                                nodeMatches = !hasRscDeployed;
-                                if (hasRscDeployed)
-                                {
-                                    errorReporter.logTrace(
-                                        "Autoplacer.Filter: Disqualifying node '%s' as it has resource '%s' deployed",
-                                        nodeDisplayValue,
-                                        rscName
-                                    );
-                                }
-                            }
-                        }
-                    }
+                    nodeMatches = nodeDoNoPlaceWithFilters(
+                        filterDoNotPlaceWithRscList,
+                        filterDoNotPlaceWithRscRegex,
+                        skipAlreadyPlacedOnNodeNamesCheck,
+                        skipAlreadyPlacedOnAllNodesCheck,
+                        node,
+                        nodeDisplayValue
+                    );
                 }
                 if (nodeMatches && requiredVersion != null)
                 {
@@ -550,6 +501,77 @@ class StorPoolFilter
             }
         }
         return filteredList;
+    }
+
+    private Boolean nodeDoNoPlaceWithFilters(
+        List<String> filterDoNotPlaceWithRscList,
+        String filterDoNotPlaceWithRscRegex,
+        List<String> skipAlreadyPlacedOnNodeNamesCheck,
+        Boolean skipAlreadyPlacedOnAllNodesCheck,
+        Node node,
+        String nodeDisplayValue
+    )
+        throws AccessDeniedException
+    {
+        boolean ret = true;
+        Predicate<String> containedInList;
+        Predicate<String> matchesRegex;
+        if (filterDoNotPlaceWithRscList != null)
+        {
+            containedInList = str ->
+            {
+                boolean contained = false;
+                for (String rscName : filterDoNotPlaceWithRscList)
+                {
+                    if (str.equalsIgnoreCase(rscName))
+                    {
+                        contained = true;
+                        break;
+                    }
+                }
+                return contained;
+            };
+        }
+        else
+        {
+            containedInList = ignored -> false;
+        }
+
+        if (filterDoNotPlaceWithRscRegex != null)
+        {
+            Pattern regex = Pattern.compile(filterDoNotPlaceWithRscRegex, Pattern.CASE_INSENSITIVE);
+            matchesRegex = str -> regex.matcher(str).find();
+        }
+        else
+        {
+            matchesRegex = ignored -> false;
+        }
+
+        if (skipAlreadyPlacedOnAllNodesCheck ||
+            !skipAlreadyPlacedOnNodeNamesCheck.contains(nodeDisplayValue))
+        {
+            Iterator<Resource> iterateResources = node.iterateResources(apiAccCtx);
+            while (ret && iterateResources.hasNext())
+            {
+                Resource rsc = iterateResources.next();
+                if (!rsc.getStateFlags().isSet(apiAccCtx, Resource.Flags.DELETE))
+                {
+                    String rscName = rsc.getDefinition().getName().displayValue;
+
+                    boolean hasRscDeployed = matchesRegex.test(rscName) || containedInList.test(rscName);
+                    ret = !hasRscDeployed;
+                    if (hasRscDeployed)
+                    {
+                        errorReporter.logTrace(
+                            "Autoplacer.Filter: Disqualifying node '%s' as it has resource '%s' deployed",
+                            nodeDisplayValue,
+                            rscName
+                        );
+                    }
+                }
+            }
+        }
+        return ret;
     }
 
     @SuppressWarnings("rawtypes")
