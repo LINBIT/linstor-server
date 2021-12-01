@@ -141,13 +141,13 @@ public final class DatabaseConstantsGenerator
         renderPackageAndImports(
             pkgName,
             "com.linbit.ImplementationError",
-            "com.linbit.linstor.dbdrivers.DatabaseTable",
             "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
             null, // empty line
             "java.sql.Types"
         );
 
         appendEmptyLine();
+        appendLine("@SuppressWarnings(\"checkstyle:linelength\")");
         appendLine("public class %s", clazzName);
         try (IndentLevel clazzIndent = new IndentLevel())
         {
@@ -233,10 +233,11 @@ public final class DatabaseConstantsGenerator
             );
 
             appendEmptyLine();
+            appendLine("@SuppressWarnings(\"checkstyle:ReturnCount\")");
             appendLine("public static DatabaseTable getByValue(String value)");
             try (IndentLevel getByValueIdent = new IndentLevel())
             {
-                appendLine("switch(value.toUpperCase())");
+                appendLine("switch (value.toUpperCase())");
                 try (IndentLevel switchIndent = new IndentLevel())
                 {
                     for (Table tbl : tbls.values())
@@ -307,7 +308,11 @@ public final class DatabaseConstantsGenerator
         try (IndentLevel tblDfn = new IndentLevel())
         {
             // constructor
-            appendLine("private %s() { }", tblNameCamelCase);
+            appendLine("private %s()", tblNameCamelCase);
+            try (IndentLevel tblClsIndent = new IndentLevel())
+            {
+                // empty constructor
+            }
             appendEmptyLine();
 
             // primary key(s)
@@ -1504,7 +1509,7 @@ public final class DatabaseConstantsGenerator
         appendLine("public String toString()");
         try (IndentLevel toString = new IndentLevel())
         {
-            appendLine("return (table == null ? \"No table set\" : table ) + \", Column: \" + name;");
+            appendLine("return (table == null ? \"No table set\" : table) + \", Column: \" + name;");
         }
     }
 

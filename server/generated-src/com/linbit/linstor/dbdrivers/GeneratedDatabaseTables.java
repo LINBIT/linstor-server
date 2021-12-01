@@ -1,11 +1,11 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 
 import java.sql.Types;
 
+@SuppressWarnings("checkstyle:linelength")
 public class GeneratedDatabaseTables
 {
     private GeneratedDatabaseTables()
@@ -17,7 +17,9 @@ public class GeneratedDatabaseTables
 
     public static class Files implements DatabaseTable
     {
-        private Files() { }
+        private Files()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl PATH = new ColumnImpl("PATH", Types.VARCHAR, true, false);
@@ -57,7 +59,9 @@ public class GeneratedDatabaseTables
 
     public static class KeyValueStore implements DatabaseTable
     {
-        private KeyValueStore() { }
+        private KeyValueStore()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl KVS_NAME = new ColumnImpl("KVS_NAME", Types.VARCHAR, true, false);
@@ -93,7 +97,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerBcacheVolumes implements DatabaseTable
     {
-        private LayerBcacheVolumes() { }
+        private LayerBcacheVolumes()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
@@ -133,7 +139,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerCacheVolumes implements DatabaseTable
     {
-        private LayerCacheVolumes() { }
+        private LayerCacheVolumes()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
@@ -173,7 +181,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerDrbdResources implements DatabaseTable
     {
-        private LayerDrbdResources() { }
+        private LayerDrbdResources()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
@@ -215,7 +225,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerDrbdResourceDefinitions implements DatabaseTable
     {
-        private LayerDrbdResourceDefinitions() { }
+        private LayerDrbdResourceDefinitions()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
@@ -263,7 +275,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerDrbdVolumes implements DatabaseTable
     {
-        private LayerDrbdVolumes() { }
+        private LayerDrbdVolumes()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
@@ -301,7 +315,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerDrbdVolumeDefinitions implements DatabaseTable
     {
-        private LayerDrbdVolumeDefinitions() { }
+        private LayerDrbdVolumeDefinitions()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
@@ -341,7 +357,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerLuksVolumes implements DatabaseTable
     {
-        private LayerLuksVolumes() { }
+        private LayerLuksVolumes()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
@@ -377,7 +395,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerOpenflexResourceDefinitions implements DatabaseTable
     {
-        private LayerOpenflexResourceDefinitions() { }
+        private LayerOpenflexResourceDefinitions()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
@@ -415,7 +435,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerOpenflexVolumes implements DatabaseTable
     {
-        private LayerOpenflexVolumes() { }
+        private LayerOpenflexVolumes()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
@@ -453,7 +475,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerResourceIds implements DatabaseTable
     {
-        private LayerResourceIds() { }
+        private LayerResourceIds()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
@@ -499,7 +523,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerStorageVolumes implements DatabaseTable
     {
-        private LayerStorageVolumes() { }
+        private LayerStorageVolumes()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
@@ -539,7 +565,9 @@ public class GeneratedDatabaseTables
 
     public static class LayerWritecacheVolumes implements DatabaseTable
     {
-        private LayerWritecacheVolumes() { }
+        private LayerWritecacheVolumes()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
@@ -577,7 +605,9 @@ public class GeneratedDatabaseTables
 
     public static class LinstorRemotes implements DatabaseTable
     {
-        private LinstorRemotes() { }
+        private LinstorRemotes()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl NAME = new ColumnImpl("NAME", Types.VARCHAR, true, false);
@@ -621,7 +651,9 @@ public class GeneratedDatabaseTables
 
     public static class Nodes implements DatabaseTable
     {
-        private Nodes() { }
+        private Nodes()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
@@ -661,7 +693,9 @@ public class GeneratedDatabaseTables
 
     public static class NodeConnections implements DatabaseTable
     {
-        private NodeConnections() { }
+        private NodeConnections()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl NODE_NAME_SRC = new ColumnImpl("NODE_NAME_SRC", Types.VARCHAR, true, false);
@@ -697,7 +731,9 @@ public class GeneratedDatabaseTables
 
     public static class NodeNetInterfaces implements DatabaseTable
     {
-        private NodeNetInterfaces() { }
+        private NodeNetInterfaces()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
@@ -741,7 +777,9 @@ public class GeneratedDatabaseTables
 
     public static class NodeStorPool implements DatabaseTable
     {
-        private NodeStorPool() { }
+        private NodeStorPool()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
@@ -785,7 +823,9 @@ public class GeneratedDatabaseTables
 
     public static class PropsContainers implements DatabaseTable
     {
-        private PropsContainers() { }
+        private PropsContainers()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl PROPS_INSTANCE = new ColumnImpl("PROPS_INSTANCE", Types.VARCHAR, true, false);
@@ -821,7 +861,9 @@ public class GeneratedDatabaseTables
 
     public static class Resources implements DatabaseTable
     {
-        private Resources() { }
+        private Resources()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
@@ -863,7 +905,9 @@ public class GeneratedDatabaseTables
 
     public static class ResourceConnections implements DatabaseTable
     {
-        private ResourceConnections() { }
+        private ResourceConnections()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl NODE_NAME_SRC = new ColumnImpl("NODE_NAME_SRC", Types.VARCHAR, true, false);
@@ -907,7 +951,9 @@ public class GeneratedDatabaseTables
 
     public static class ResourceDefinitions implements DatabaseTable
     {
-        private ResourceDefinitions() { }
+        private ResourceDefinitions()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
@@ -957,7 +1003,9 @@ public class GeneratedDatabaseTables
 
     public static class ResourceGroups implements DatabaseTable
     {
-        private ResourceGroups() { }
+        private ResourceGroups()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl RESOURCE_GROUP_NAME = new ColumnImpl("RESOURCE_GROUP_NAME", Types.VARCHAR, true, false);
@@ -1017,7 +1065,9 @@ public class GeneratedDatabaseTables
 
     public static class S3Remotes implements DatabaseTable
     {
-        private S3Remotes() { }
+        private S3Remotes()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl NAME = new ColumnImpl("NAME", Types.VARCHAR, true, false);
@@ -1065,7 +1115,9 @@ public class GeneratedDatabaseTables
 
     public static class SatellitesCapacity implements DatabaseTable
     {
-        private SatellitesCapacity() { }
+        private SatellitesCapacity()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
@@ -1101,7 +1153,9 @@ public class GeneratedDatabaseTables
 
     public static class SecAccessTypes implements DatabaseTable
     {
-        private SecAccessTypes() { }
+        private SecAccessTypes()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl ACCESS_TYPE_NAME = new ColumnImpl("ACCESS_TYPE_NAME", Types.VARCHAR, true, false);
@@ -1135,7 +1189,9 @@ public class GeneratedDatabaseTables
 
     public static class SecAclMap implements DatabaseTable
     {
-        private SecAclMap() { }
+        private SecAclMap()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl OBJECT_PATH = new ColumnImpl("OBJECT_PATH", Types.VARCHAR, true, false);
@@ -1171,7 +1227,9 @@ public class GeneratedDatabaseTables
 
     public static class SecConfiguration implements DatabaseTable
     {
-        private SecConfiguration() { }
+        private SecConfiguration()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl ENTRY_KEY = new ColumnImpl("ENTRY_KEY", Types.VARCHAR, true, false);
@@ -1207,7 +1265,9 @@ public class GeneratedDatabaseTables
 
     public static class SecDfltRoles implements DatabaseTable
     {
-        private SecDfltRoles() { }
+        private SecDfltRoles()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl IDENTITY_NAME = new ColumnImpl("IDENTITY_NAME", Types.VARCHAR, true, false);
@@ -1241,7 +1301,9 @@ public class GeneratedDatabaseTables
 
     public static class SecIdentities implements DatabaseTable
     {
-        private SecIdentities() { }
+        private SecIdentities()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl IDENTITY_NAME = new ColumnImpl("IDENTITY_NAME", Types.VARCHAR, true, false);
@@ -1283,7 +1345,9 @@ public class GeneratedDatabaseTables
 
     public static class SecIdRoleMap implements DatabaseTable
     {
-        private SecIdRoleMap() { }
+        private SecIdRoleMap()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl IDENTITY_NAME = new ColumnImpl("IDENTITY_NAME", Types.VARCHAR, true, false);
@@ -1316,7 +1380,9 @@ public class GeneratedDatabaseTables
 
     public static class SecObjectProtection implements DatabaseTable
     {
-        private SecObjectProtection() { }
+        private SecObjectProtection()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl OBJECT_PATH = new ColumnImpl("OBJECT_PATH", Types.VARCHAR, true, false);
@@ -1354,7 +1420,9 @@ public class GeneratedDatabaseTables
 
     public static class SecRoles implements DatabaseTable
     {
-        private SecRoles() { }
+        private SecRoles()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl ROLE_NAME = new ColumnImpl("ROLE_NAME", Types.VARCHAR, true, false);
@@ -1394,7 +1462,9 @@ public class GeneratedDatabaseTables
 
     public static class SecTypes implements DatabaseTable
     {
-        private SecTypes() { }
+        private SecTypes()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl TYPE_NAME = new ColumnImpl("TYPE_NAME", Types.VARCHAR, true, false);
@@ -1430,7 +1500,9 @@ public class GeneratedDatabaseTables
 
     public static class SecTypeRules implements DatabaseTable
     {
-        private SecTypeRules() { }
+        private SecTypeRules()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl DOMAIN_NAME = new ColumnImpl("DOMAIN_NAME", Types.VARCHAR, true, false);
@@ -1466,7 +1538,9 @@ public class GeneratedDatabaseTables
 
     public static class SpaceHistory implements DatabaseTable
     {
-        private SpaceHistory() { }
+        private SpaceHistory()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl ENTRY_DATE = new ColumnImpl("ENTRY_DATE", Types.DATE, true, false);
@@ -1500,7 +1574,9 @@ public class GeneratedDatabaseTables
 
     public static class StorPoolDefinitions implements DatabaseTable
     {
-        private StorPoolDefinitions() { }
+        private StorPoolDefinitions()
+        {
+        }
 
         // Primary Key
         public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, true, false);
@@ -1536,7 +1612,9 @@ public class GeneratedDatabaseTables
 
     public static class TrackingDate implements DatabaseTable
     {
-        private TrackingDate() { }
+        private TrackingDate()
+        {
+        }
 
         // Primary Key
 
@@ -1568,7 +1646,9 @@ public class GeneratedDatabaseTables
 
     public static class Volumes implements DatabaseTable
     {
-        private Volumes() { }
+        private Volumes()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, true, false);
@@ -1610,7 +1690,9 @@ public class GeneratedDatabaseTables
 
     public static class VolumeConnections implements DatabaseTable
     {
-        private VolumeConnections() { }
+        private VolumeConnections()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl NODE_NAME_SRC = new ColumnImpl("NODE_NAME_SRC", Types.VARCHAR, true, false);
@@ -1652,7 +1734,9 @@ public class GeneratedDatabaseTables
 
     public static class VolumeDefinitions implements DatabaseTable
     {
-        private VolumeDefinitions() { }
+        private VolumeDefinitions()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
@@ -1694,7 +1778,9 @@ public class GeneratedDatabaseTables
 
     public static class VolumeGroups implements DatabaseTable
     {
-        private VolumeGroups() { }
+        private VolumeGroups()
+        {
+        }
 
         // Primary Keys
         public static final ColumnImpl RESOURCE_GROUP_NAME = new ColumnImpl("RESOURCE_GROUP_NAME", Types.VARCHAR, true, false);
@@ -2091,13 +2177,14 @@ public class GeneratedDatabaseTables
         @Override
         public String toString()
         {
-            return (table == null ? "No table set" : table ) + ", Column: " + name;
+            return (table == null ? "No table set" : table) + ", Column: " + name;
         }
     }
 
+    @SuppressWarnings("checkstyle:ReturnCount")
     public static DatabaseTable getByValue(String value)
     {
-        switch(value.toUpperCase())
+        switch (value.toUpperCase())
         {
             case "FILES":
                 return FILES;
