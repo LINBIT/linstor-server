@@ -45,10 +45,14 @@ test:
     - when: on_success
   script:
     - ./gradlew -PversionOverride= checkstyleMain
+    - ./gradlew -PversionOverride= assemble
     - JAVA_OPTS="-ea" ./gradlew -PversionOverride= check
   artifacts:
     reports:
       junit: build/test-results/test/TEST-*.xml
+    paths:
+      - build/distributions/linstor-server.tar
+    expire_in: 4 days
 
 deploy:
   stage: deploy
