@@ -12,6 +12,7 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -274,6 +275,31 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         Flux<ApiCallRc> updateResponses = Flux.empty();
         if (updateForResize)
         {
+            try
+            {
+                Iterator<Resource> itRsc = vlmDfn.getResourceDefinition().iterateResource(apiCtx);
+                while (itRsc.hasNext())
+                {
+                    final Resource rsc = itRsc.next();
+                    if (!rsc.isDiskless(apiCtx) &&
+                        !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(rsc.getNode().getPeer(apiCtx), rscName))
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.FAIL_NOT_ALL_UPTODATE,
+                            "Cannot resize volume, because we have a non-UpToDate DRBD device."
+                        ));
+                    }
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ApiAccessDeniedException(
+                    exc,
+                    "Access denied to check UpToDate",
+                    ApiConsts.FAIL_ACC_DENIED_VLM
+                );
+            }
+
             /*
              * If the VlmDfn will grow in size, we have to
              * * set the RESIZE flag on all volumes
@@ -420,8 +446,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_NOT_ENOUGH_FREE_SPACE,
-                        "Cannot grow the volumedefinition by " + additionalSize +
-                            "KiB, as the following storage pool do not have enough free space:\n" + sb.toString()
+                        "Cannot grow the volume definition by " + additionalSize +
+                            "KiB, as the following storage pool do not have enough free space:\n" + sb
                     )
                 );
             }
