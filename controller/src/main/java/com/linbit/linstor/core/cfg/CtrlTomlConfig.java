@@ -3,6 +3,7 @@ package com.linbit.linstor.core.cfg;
 import com.linbit.linstor.core.LinstorConfigTool;
 import com.linbit.linstor.core.cfg.LinstorConfig.RestAccessLogMode;
 
+@SuppressWarnings("checkstyle:MemberName")
 public class CtrlTomlConfig
 {
     static class HTTP

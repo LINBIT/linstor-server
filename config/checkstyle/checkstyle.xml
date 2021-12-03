@@ -18,7 +18,13 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
 
     <!-- Exclude auto-generated protobufs classes -->
     <module name="BeforeExecutionExclusionFileFilter">
-        <property name="fileNamePattern" value="^Msg.*OuterClass\.java$"/>
+        <property name="fileNamePattern" value=".*[\\/]generated-src[\\/].*$"/>
+    </module>
+    <module name="BeforeExecutionExclusionFileFilter">
+        <property name="fileNamePattern" value=".*[\\/]migration[\\/].*[\\/]Migration_.*\.java$"/>
+    </module>
+    <module name="BeforeExecutionExclusionFileFilter">
+        <property name="fileNamePattern" value="JsonGenTypes\.java$"/>
     </module>
 
     <!-- Checks whether files end with a new line -->
