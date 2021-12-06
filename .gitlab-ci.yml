@@ -22,6 +22,15 @@ stages:
   - deploy
   - test-e2e
 
+.upload_nexus:
+  script:
+    - LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
+    - dummy-release.sh linstor-server $LINSTOR_VERSION 1 linstor.spec
+    - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
+    - curl -isSf -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD --upload-file linstor-server-$LINSTOR_VERSION.tar.gz $LINBIT_REGISTRY_URL/repository/lbbuild-upstream/
+    - lbbuildctl build linstor-server --arch amd64 --ci -v "$LINSTOR_VERSION" -l -e LINBIT_REGISTRY_USER=$LINBIT_REGISTRY_USER -e LINBIT_REGISTRY_PASSWORD=$LINBIT_REGISTRY_PASSWORD -e LINBIT_REGISTRY_URL=$LINBIT_REGISTRY_URL -d ubuntu-bionic,ubuntu-focal,rhel7.0,rhel8.0
+    - rm linstor-server-$LINSTOR_VERSION.tar.gz
+
 check-openapi:
   stage: build
   image:
@@ -68,7 +77,7 @@ deploy:
   tags:
     - shell
 
-deploy-nexus-latest:
+deploy-nexus-master:
   stage: deploy
   image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
   rules:
@@ -76,7 +85,9 @@ deploy-nexus-latest:
   before_script:
     - curl -sSL $LINBIT_REGISTRY_URL/repository/lbbuild/lbbuildctl-latest -o /usr/local/bin/lbbuildctl
     - chmod +x /usr/local/bin/lbbuildctl
+  extends: .upload_nexus
   script:
+    - !reference [.upload_nexus, script]
     - LINSTOR_VERSION=1.99.0.latest
     - dummy-release.sh linstor-server $LINSTOR_VERSION 1 linstor.spec
     - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
@@ -89,16 +100,10 @@ deploy-nexus:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
-    - if: $CI_COMMIT_BRANCH == 'master'
   before_script:
     - curl -sSL $LINBIT_REGISTRY_URL/repository/lbbuild/lbbuildctl-latest -o /usr/local/bin/lbbuildctl
     - chmod +x /usr/local/bin/lbbuildctl
-  script:
-    - LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
-    - dummy-release.sh linstor-server $LINSTOR_VERSION 1 linstor.spec
-    - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
-    - curl -isSf -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD --upload-file linstor-server-$LINSTOR_VERSION.tar.gz $LINBIT_REGISTRY_URL/repository/lbbuild-upstream/
-    - lbbuildctl build linstor-server --arch amd64 --ci -v "$LINSTOR_VERSION" -l -e LINBIT_REGISTRY_USER=$LINBIT_REGISTRY_USER -e LINBIT_REGISTRY_PASSWORD=$LINBIT_REGISTRY_PASSWORD -e LINBIT_REGISTRY_URL=$LINBIT_REGISTRY_URL -d ubuntu-bionic,ubuntu-focal,rhel7.0,rhel8.0
+  extends: .upload_nexus
 
 test-e2e:
   stage: test-e2e
