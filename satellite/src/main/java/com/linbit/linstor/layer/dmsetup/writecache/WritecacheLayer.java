@@ -12,13 +12,13 @@ import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
-import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
@@ -42,6 +42,7 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -269,9 +270,11 @@ public class WritecacheLayer implements DeviceLayer
             }
         }
 
-        final boolean hasDrbd = LayerUtils.hasLayer(rscLayerDataRef, DeviceLayerKind.DRBD);
+        final AbsRscLayerObject<Resource> rootLayerData = rscLayerDataRef.getAbsResource()
+            .getLayerData(storDriverAccCtx);
+        final boolean hasDrbd = LayerUtils.hasLayer(rootLayerData, DeviceLayerKind.DRBD);
 
-        if (rscLayerDataRef.getAbsResource().getLayerData(storDriverAccCtx).getSuspendIo())
+        if (rootLayerData.getSuspendIo())
         {
             /*
              * rsc.getLayerData is either the same reference as our local rscLayerDataRef OR
