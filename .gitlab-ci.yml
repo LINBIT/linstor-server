@@ -8,7 +8,7 @@ variables:
   GIT_SUBMODULE_STRATEGY: recursive
   VIRTER_VERSION: v0.16.0
   VMSHED_VERSION: v0.14.4
-  BUILD_HELPERS_VERSION: c0d39c0e5a2235262f21d072c4bf3b2dd62b2040
+  BUILD_HELPERS_VERSION: cd83ef398a7748c4660c3f2db29241973bd1c897
 
 cache:
   paths:
@@ -124,8 +124,8 @@ test-e2e:
     - mkdir -p linstor-test-bundle
     - curl -sSL $LINBIT_REGISTRY_URL/repository/test-suite/linstor-test-bundle-$TEST_BUNDLE_BRANCH.tgz | tar -C linstor-test-bundle -xvzf -
     - |
-      curl -sSfL -u gitlab-ci-token:$CI_JOB_TOKEN https://gitlab.at.linbit.com/linbit/build-helpers/-/archive/$BUILD_HELPERS_VERSION/ignored.tar.gz | tar -xvzf -
-      mv build-helpers-* build-helpers
+      mkdir build-helpers
+      curl -sSfL $LINBIT_REGISTRY_URL/repository/test-suite/build-helpers-$BUILD_HELPERS_VERSION.tar.gz | tar -xvz -C ./build-helpers
       . build-helpers/gitlab-utils.sh
     - |
       ci_prepare_tools
