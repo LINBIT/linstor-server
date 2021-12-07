@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased
+       - Added /v1/nodes/{node}/evacuate
     * 1.11.0
        - Added /v1/stats/* endpoints for all objects
     * 1.10.2
@@ -164,7 +166,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.11.0
+  version: 1.12.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -1043,6 +1045,27 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/SatelliteConfig'
+  /v1/nodes/{node}/evacuate:
+    parameters:
+      - $ref: '#/components/parameters/Node'
+    put:
+      tags:
+        - developers
+      summary: evacuates the node
+      operationId: nodeEvacuate
+      description: |
+         Evacuates DRBD resources from the given node to other available nodes
+         and deletes the evacuated resources once the sync is complete. Additionally
+         sets the Node into EVACUATE state (no new resources allowed)
+      responses:
+        '200':
+          description: resources started to evacaute
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
   /v1/resource-definitions:
     get:
       tags:
