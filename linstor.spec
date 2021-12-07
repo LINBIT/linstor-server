@@ -20,10 +20,12 @@ Source0: http://pkg.linbit.com/downloads/linstor/linstor-server-%{FILE_VERSION}.
 
 %if 0%{?suse_version} >= 1500
 BuildRequires: java-1_8_0-openjdk-headless java-1_8_0-openjdk-devel python
-%elif 0%{?rhel} > 8
-BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel python
 %else
+    %if 0%{?rhel} > 8
+BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel python
+    %else
 BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel python2
+    %endif
 %endif
 
 %description
