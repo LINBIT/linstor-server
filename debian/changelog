@@ -1,3 +1,75 @@
+linstor-server (1.17.0-1) experimental; urgency=medium
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * docker: add "ps" to satellite container
+
+  [ Rene Peinthor ]
+  * extfiles: Fix incorrect undeployed message
+  * rpm: support rhel9
+  * gitlab: update virter and vmshed
+  * grizzlyservice: simplify and fix feature enabling
+  * http-index: redirect to /ui/ if installed otherwise show instructions
+  * gradle: add checkstyle plugin
+  * gitlab: remove gradle assemble step and use check instead of test
+  * checkstyle: fix errors
+  * gitlab: fix master build
+  * resize: Check that all DRBD resources are UpToDate before starting resize
+  * checkstyle: exclude most generated files
+  * gitlab: use build-helpers from nexus
+  * gitlab: use specific deploy step for nexus master upload
+  * gitlab: use vmshed v0.14.5
+  * rpm: fix spec file for suse linux
+
+  [ Gabor Hernadi ]
+  * Reconnector: Take node read lock
+  * Db,CRD: Fix DB load error when missing VlmDfn
+  * Auth: Do not send cryptKey before authentication
+  * Peer: renamed isConnected() to isOnline()
+  * Db,all: Generated column drivers now use the typeMapper
+  * NetIf,CRD: Fixed NPE
+  * Node,evacuate: First version
+  * Rsc,create: Prohibit creating rsc on evacuating node
+  * Autoplacer: Do not select evacuating node
+  * Autoplacer: Add trace-log for node evacuate filter
+  * Node,evac: Allow toggle disk
+  * Node,evac: Only evacuate DRBD resources
+  * Autoplacer,Selector: return null if no candidate to choose from
+  * Node,evac: Added fetch free spaces
+  * Node,evac: Keep current replCount if placeCount cannot be met
+  * Node,restore: also remove EVACUATE flag
+  * Node,evac: Delete diskless immediately
+  * Node,evac: Also delete overreplicated resources
+  * Node,evac: Also delete non-uptodate resources
+  * Checkstyle: Reworked rules
+  * BackupShipping: Do not ignore changable successRef
+  * Checkstyle: Resolved return within for
+  * Checkstyle: Extracted method to avoid return within a loop
+  * Checkstyle: Fixed generated code
+  * Writecache,suspend: Fix check if layerstack contains DRBD
+  * Autoplace: do not count evicted resources
+  * Node,Evacuate: Add entry in rest_v1_openapi.yaml
+  * Drbd: Improve check if metadata is new
+
+  [ Robert Altnoeder ]
+  * Style fixes
+  * Fix equals style
+  * Fix various sanitization and arithmetic problems
+  * Fix control flow
+  * Fix assignment to parameter
+  * Code cleanup
+  * Use for instead of while for assignment
+  * Style fixes & avoid shadowing member fields
+  * Style fixes & removed dead code (commented out)
+  * Fix control flow, style, shadowing, parameter assignment, tighten scope
+  * Refactor LINSTOR_PREFIX -> linstorPrefix (not a static constant)
+  * Refactor method ExternalFileUpdateApplied -> externalFileUpdateApplied
+  * getSharedName: Fix control flow
+  * AbsStorageProvider: Fix control flow, style fixes
+  * LsBlkUtils: Fix control flow in parentIsVDO, slightly faster lookups
+  * DeviceManageImpl: Fix error output
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 09 Dec 2021 07:25:57 +0000
+
 linstor-server (1.16.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.12.0
        - Added /v1/nodes/{node}/evacuate
     * 1.11.0
        - Added /v1/stats/* endpoints for all objects
