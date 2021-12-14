@@ -28,6 +28,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -74,7 +75,7 @@ class Selector
         int alreadyDeployedDiskfulCount = 0;
         int alreadyDeployedDisklessCount = 0;
         List<SharedStorPoolName> alreadyDeployedInSharedSPNames = new ArrayList<>();
-        DeviceProviderKind alreadySelectedProviderKind = null;
+        ArrayList<DeviceProviderKind> alreadySelectedProviderKindList = new ArrayList<>();
         if (rscDfnRef != null)
         {
             Iterator<Resource> rscIt = rscDfnRef.iterateResource(apiCtx);
@@ -134,18 +135,21 @@ class Selector
                                 DeviceProviderKind storageVlmProviderKind = sp.getDeviceProviderKind();
                                 if (!storageVlmProviderKind.equals(DeviceProviderKind.DISKLESS))
                                 {
-                                    if (alreadySelectedProviderKind == null)
+                                    for (DeviceProviderKind alreadySelectedProviderKind : alreadySelectedProviderKindList)
                                     {
-                                        alreadySelectedProviderKind = storageVlmProviderKind;
-                                    }
-                                    else
-                                    if (!alreadySelectedProviderKind.equals(storageVlmProviderKind))
-                                    {
-                                        throw new ImplementationError(
-                                            "Multiple deployed provider kinds found for: " +
-                                            rsc
+                                        boolean isMixingAllowed = DeviceProviderKind.isMixingAllowed(
+                                            alreadySelectedProviderKind,
+                                            storageVlmProviderKind
                                         );
+                                        if (!isMixingAllowed)
+                                        {
+                                            throw new ImplementationError(
+                                                "Multiple deployed provider kinds found for: " +
+                                                    rsc
+                                            );
+                                        }
                                     }
+                                    alreadySelectedProviderKindList.add(storageVlmProviderKind);
                                 }
                             }
                         }
@@ -181,7 +185,7 @@ class Selector
             alreadyDeployedDiskfulCount,
             alreadyDeployedDisklessCount,
             alreadyDeployedInSharedSPNames,
-            alreadySelectedProviderKind,
+            alreadySelectedProviderKindList,
             sortedStorPoolByScoreArr
         );
         final Integer replicaCount = selectionManger.additionalRscCountToSelect;
@@ -323,7 +327,7 @@ class Selector
     private class SelectionManger
     {
         private final List<Node> alreadyDeployedOnNodes;
-        private final DeviceProviderKind alreadySetProviderKind;
+        private final List<DeviceProviderKind> alreadySetProviderKindList;
         private final List<SharedStorPoolName> alreadyDeployedInSharedSPNames;
 
         private final AutoSelectFilterApi selectFilter;
@@ -332,7 +336,7 @@ class Selector
         private final Set<StorPoolWithScore> selectedStorPoolWithScoreSet;
         private final StorPoolWithScore[] sortedStorPoolByScoreArr;
         private final int additionalRscCountToSelect;
-        private DeviceProviderKind selectedProviderKind;
+        private final ArrayList<DeviceProviderKind> selectedProviderKindList;
 
         /*
          * temporary maps, extended when a storage pool is added and
@@ -347,7 +351,7 @@ class Selector
             int diskfulNodeCount,
             int disklessNodeCount,
             List<SharedStorPoolName> alreadyDeployedInSharedSPNamesRef,
-            DeviceProviderKind alreadySelectedProviderKindRef,
+            Collection<DeviceProviderKind> alreadySelectedProviderKindsRef,
             StorPoolWithScore[] sortedStorPoolByScoreArrRef
         )
             throws AccessDeniedException
@@ -355,18 +359,20 @@ class Selector
             selectFilter = selectFilterRef;
             alreadyDeployedOnNodes = alreadyDeployedOnNodesRef;
             alreadyDeployedInSharedSPNames = alreadyDeployedInSharedSPNamesRef;
-            selectedProviderKind = alreadySelectedProviderKindRef;
+            selectedProviderKindList = new ArrayList<>(alreadySelectedProviderKindsRef);
             sortedStorPoolByScoreArr = sortedStorPoolByScoreArrRef;
 
             if (selectFilterRef.getDisklessType() == null)
             {
                 additionalRscCountToSelect = getReplicaCount(selectFilterRef, diskfulNodeCount);
-                alreadySetProviderKind = alreadySelectedProviderKindRef;
+                alreadySetProviderKindList = Collections.unmodifiableList(
+                    new ArrayList<>(alreadySelectedProviderKindsRef)
+                );
             }
             else
             {
                 additionalRscCountToSelect = getReplicaCount(selectFilterRef, disklessNodeCount);
-                alreadySetProviderKind = DeviceProviderKind.DISKLESS;
+                alreadySetProviderKindList = Collections.singletonList(DeviceProviderKind.DISKLESS);
             }
 
             selectedNodes = new HashSet<>();
@@ -462,20 +468,20 @@ class Selector
                 );
             }
 
-            if (
-                selectedProviderKind != null &&
-                    !sp.getDeviceProviderKind().equals(selectedProviderKind)
-            )
+            for (DeviceProviderKind selectedProviderKind : selectedProviderKindList)
             {
-                errorReporter.logTrace(
-                    "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
-                        "canditate-selection as its provider kind (%s) does not match already selected (%s)",
-                    sp.getName().displayValue,
-                    sp.getNode().getName().displayValue,
-                    sp.getDeviceProviderKind().name(),
-                    selectedProviderKind.name()
-                );
-                isAllowed = false;
+                if (!DeviceProviderKind.isMixingAllowed(sp.getDeviceProviderKind(), selectedProviderKind))
+                {
+                    errorReporter.logTrace(
+                        "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
+                            "canditate-selection as its provider kind (%s) does not match already selected (%s)",
+                        sp.getName().displayValue,
+                        sp.getNode().getName().displayValue,
+                        sp.getDeviceProviderKind().name(),
+                        selectedProviderKind.name()
+                    );
+                    isAllowed = false;
+                }
             }
 
 
@@ -550,10 +556,7 @@ class Selector
                 currentSpWithScoreRef.storPool.getNode().getName().displayValue
             );
 
-            if (selectedProviderKind == null)
-            {
-                selectedProviderKind = currentSpWithScoreRef.storPool.getDeviceProviderKind();
-            }
+            selectedProviderKindList.add(currentSpWithScoreRef.storPool.getDeviceProviderKind());
 
             // update same props
             Map<String, String> updateEntriesForSameProps = new HashMap<>(); // prevent concurrentModificationException
@@ -594,14 +597,11 @@ class Selector
             selectedNodes.remove(sp.getNode());
             selectedSharedSPNames.remove(sp.getSharedStorPoolName());
 
-            if (selectedStorPoolWithScoreSet.isEmpty())
-            {
-                selectedProviderKind = null;
-            }
-            else
-            {
-                selectedProviderKind = selectedStorPoolWithScoreSet.iterator().next().storPool.getDeviceProviderKind();
-            }
+            selectedProviderKindList.remove(currentSpWithScoreRef.storPool.getDeviceProviderKind());
+            /*
+             * The current selection always must contain all alreadyExistingProviderKinds
+             */
+            assert selectedProviderKindList.containsAll(alreadySetProviderKindList);
 
             errorReporter.logTrace(
                 "Autoplacer.Selector: Removing StorPool '%s' on Node '%s' to current selection",
@@ -691,7 +691,8 @@ class Selector
             selectedSharedSPNames.clear();
             selectedSharedSPNames.addAll(alreadyDeployedInSharedSPNames);
 
-            selectedProviderKind = alreadySetProviderKind;
+            selectedProviderKindList.clear();
+            selectedProviderKindList.addAll(alreadySetProviderKindList);
 
             selectedStorPoolWithScoreSet.clear();
             rebuildTemporaryMaps();
