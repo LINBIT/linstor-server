@@ -276,7 +276,7 @@ public enum DeviceProviderKind
                 allowed = kind2.equals(FILE) || kind2.equals(FILE_THIN);
                 break;
             case LVM:
-                allowed = kind2.equals(LVM);
+                allowed = kind2.equals(LVM) || kind2.equals(EXOS);
                 break;
             case LVM_THIN:
                 allowed = kind2.equals(LVM_THIN);
@@ -295,7 +295,7 @@ public enum DeviceProviderKind
                 allowed = kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
                 break;
             case EXOS:
-                allowed = kind2.equals(EXOS);
+                allowed = kind2.equals(EXOS) || kind2.equals(LVM);
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
