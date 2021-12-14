@@ -198,6 +198,7 @@ public class InternalApiConsts
 
     // cloning
     public static final String KEY_CLONED_FROM = "cloned-from";
+    public static final String KEY_USE_ZFS_CLONE = "use-zfs-clone";
     public static final String API_NOTIFY_CLONE_UPDATE  = "NotifyCloneUpdate";
 
     private InternalApiConsts()

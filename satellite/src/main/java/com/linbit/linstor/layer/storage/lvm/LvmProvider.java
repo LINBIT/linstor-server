@@ -682,7 +682,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
 
         final String srcId = asLvIdentifier(srcVlmData);
-        final String srcFullSnapshotName = getCloneSnapshotName(srcVlmData, vlmData, "_");
+        final String srcFullSnapshotName = getCloneSnapshotNameFull(srcVlmData, vlmData, "_");
 
         if (!infoListCache.containsKey(srcVlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
         {
@@ -752,7 +752,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     {
         LvmData<Resource> srcData = (LvmData<Resource>) cloneInfo.getSrcVlmData();
         LvmData<Resource> dstData = (LvmData<Resource>) cloneInfo.getDstVlmData();
-        final String srcFullSnapshotName = getCloneSnapshotName(srcData, dstData, "_");
+        final String srcFullSnapshotName = getCloneSnapshotNameFull(srcData, dstData, "_");
 
         return new String[]
             {
@@ -768,7 +768,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
     {
         LvmData<Resource> srcData = (LvmData<Resource>) cloneInfo.getSrcVlmData();
-        final String srcFullSnapshotName = getCloneSnapshotName(
+        final String srcFullSnapshotName = getCloneSnapshotNameFull(
             srcData, (LvmData<Resource>) cloneInfo.getDstVlmData(), "_"
         );
 

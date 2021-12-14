@@ -10,6 +10,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.VolumeNumberAlloc;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -53,6 +54,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.debug.HexViewer;
 import com.linbit.linstor.layer.LayerPayload;
@@ -75,6 +77,7 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.ExternalNameConverter.createResourceName;
@@ -88,7 +91,6 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -137,6 +139,7 @@ public class CtrlRscDfnApiCallHandler
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final ResourceControllerFactory resourceControllerFactory;
     private final BackupInfoManager backupInfoMgr;
+    private final SystemConfRepository systemConfRepository;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -168,7 +171,8 @@ public class CtrlRscDfnApiCallHandler
         FreeCapacityFetcher freeCapacityFetcherRef,
         ResourceControllerFactory resourceControllerFactoryRef,
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
-        BackupInfoManager backupInfoMgrRef
+        BackupInfoManager backupInfoMgrRef,
+        SystemConfRepository systemConfRepositoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -200,6 +204,8 @@ public class CtrlRscDfnApiCallHandler
         resourceControllerFactory = resourceControllerFactoryRef;
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         backupInfoMgr = backupInfoMgrRef;
+        systemConfRepository = systemConfRepositoryRef;
+
     }
 
     public ResourceDefinition createResourceDefinition(
@@ -716,7 +722,11 @@ public class CtrlRscDfnApiCallHandler
         return responses;
     }
 
-    public Flux<ApiCallRc> cloneRscDfn(String srcRscName, String clonedRscName, byte[] clonedExtName)
+    public Flux<ApiCallRc> cloneRscDfn(
+        String srcRscName,
+        String clonedRscName,
+        byte[] clonedExtName,
+        Boolean useZfsClone)
     {
         ResponseContext context = makeResourceDefinitionContext(
             ApiOperation.makeCreateOperation(),
@@ -730,7 +740,7 @@ public class CtrlRscDfnApiCallHandler
                         "Clone resource-definition",
                         lockGuardFactory.buildDeferred(LockGuardFactory.LockType.WRITE, NODES_MAP, RSC_DFN_MAP),
                         () -> cloneRscDfnInTransaction(
-                            srcRscName, clonedRscName, clonedExtName, context, thinFreeCapacities)
+                            srcRscName, clonedRscName, clonedExtName, useZfsClone, context, thinFreeCapacities)
                     )
                     .transform(responses -> responseConverter.reportingExceptions(context, responses)));
     }
@@ -849,6 +859,7 @@ public class CtrlRscDfnApiCallHandler
         String srcRscName,
         String clonedRscName,
         byte[] clonedExtName,
+        Boolean useZfsClone,
         ResponseContext context,
         Map<StorPool.Key, Long> thinFreeCapacities)
     {
@@ -872,6 +883,17 @@ public class CtrlRscDfnApiCallHandler
             Map<String, String> clonedRscDfnProps = clonedRscDfn.getProps(peerAccCtx.get()).map();
             clonedRscDfnProps.putAll(srcRscDfn.getProps(peerAccCtx.get()).map());
             clonedRscDfnProps.put(InternalApiConsts.KEY_CLONED_FROM, srcRscDfn.getName().displayValue);
+
+            final Props rscGrpProps = srcRscDfn.getResourceGroup().getProps(peerAccCtx.get());
+            PriorityProps rscGrpPrioProps = new PriorityProps(
+                rscGrpProps, systemConfRepository.getCtrlConfForView(peerAccCtx.get())
+            );
+            String propUseZfsClone = rscGrpPrioProps.getProp(ApiConsts.KEY_USE_ZFS_CLONE);
+            boolean finalZfsClone = useZfsClone != null ? useZfsClone : StringUtils.propTrueOrYes(propUseZfsClone);
+            if (finalZfsClone)
+            {
+                clonedRscDfnProps.put(InternalApiConsts.KEY_USE_ZFS_CLONE, "true");
+            }
             clonedRscDfn.getFlags().enableFlags(peerAccCtx.get(), ResourceDefinition.Flags.CLONING);
 
             resourceDefinitionRepository.put(apiCtx, clonedRscDfn);

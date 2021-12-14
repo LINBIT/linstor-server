@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactoryStlt;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -375,6 +376,33 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             lvId
         );
         vlmData.setExists(false);
+
+        // This block will delete the clone snapshot on the base resource if `zfs clone` was used
+        // if deleting fails we should just ignore it as it doesn't have any impact on the
+        // deletion of the child resource
+        try
+        {
+            String useZfsClone = vlmData.getRscLayerObject().getAbsResource()
+                .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
+            if (useZfsClone != null)
+            {
+                String clonedFromRsc = vlmData.getRscLayerObject().getAbsResource()
+                    .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_CLONED_FROM);
+                String srcFullSnapshotName = asSnapLvIdentifierRaw(
+                    clonedFromRsc,
+                    vlmData.getRscLayerObject().getResourceNameSuffix(),
+                    getCloneSnapshotName(vlmData),
+                    vlmData.getVlmNr().value);
+                ZfsCommands.delete(extCmdFactory.create(), getZPool(vlmData.getStorPool()), srcFullSnapshotName);
+            }
+        }
+        catch (AccessDeniedException | StorageException exc)
+        {
+            // just report that we couldn't delete, it isn't a fatal error,
+            // and it is possible that a toggled disk doesn't have any base snapshot
+            errorReporter.logWarning("Unable to remove base snapshot of resource %s",
+                vlmData.getRscLayerObject().getResourceName());
+        }
     }
 
     @Override
@@ -769,11 +797,14 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         Resource srcRsc)
         throws StorageException, AccessDeniedException
     {
+        final String useZfsClone = vlmData.getRscLayerObject().getAbsResource()
+            .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
         final ZfsData<Resource> srcVlmData = getVlmDataFromResource(
             srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
 
         final String dstRscName = vlmData.getRscLayerObject().getResourceName().displayValue;
-        final String srcFullSnapshotName = getCloneSnapshotName(srcVlmData, vlmData, "@");
+        final String srcFullSnapshotName = getCloneSnapshotNameFull(srcVlmData, vlmData, "@");
+        final String dstId = asLvIdentifier(vlmData);
 
 
         if (!infoListCache.containsKey(srcVlmData.getZPool() + "/" + srcFullSnapshotName))
@@ -791,6 +822,16 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 "clone_for",
                 dstRscName
             );
+
+            if (useZfsClone != null)
+            {
+                ZfsCommands.restoreSnapshotFullName(
+                    extCmdFactory.create(),
+                    srcVlmData.getZPool(),
+                    srcFullSnapshotName,
+                    dstId
+                );
+            }
         }
         else
         {
@@ -806,37 +847,74 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     @Override
     public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
     {
-        ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
-        ZfsData<Resource> dstData = (ZfsData<Resource>) cloneInfo.getDstVlmData();
-        final String dstId = asLvIdentifier(dstData);
-        final String srcFullSnapshotName = getCloneSnapshotName(srcData, dstData, "@");
-        return new String[]
-            {
-                "setsid", "-w",
-                "bash",
-                "-c",
-                String.format(
-                    "trap 'kill -HUP 0' SIGTERM; " +
-                        "set -o pipefail; " +
-                        "(" +
-                        "zfs send --embed --dedup --large-block %s/%s | " +
-                        // if send/recv fails no new volume will be there, so destroy isn't needed
-                        "zfs receive -F %s/%s && zfs destroy -r %s/%s@%% ;" +
-                        ")& wait $!",
-                    srcData.getZPool(),
-                    srcFullSnapshotName,
-                    dstData.getZPool(),
-                    dstId,
-                    dstData.getZPool(),
-                    dstId)
-            };
+        String[] cmd;
+        String useZfsClone = null;
+        try
+        {
+            useZfsClone = cloneInfo.getDstVlmData().getRscLayerObject().getAbsResource()
+                .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
+        }
+        catch (AccessDeniedException accessDeniedException)
+        {
+            errorReporter.reportError(accessDeniedException);
+        }
+
+        if (useZfsClone == null)
+        {
+            ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
+            ZfsData<Resource> dstData = (ZfsData<Resource>) cloneInfo.getDstVlmData();
+            final String dstId = asLvIdentifier(dstData);
+            final String srcFullSnapshotName = getCloneSnapshotNameFull(srcData, dstData, "@");
+            cmd = new String[]
+                {
+                    "setsid", "-w",
+                    "bash",
+                    "-c",
+                    String.format(
+                        "trap 'kill -HUP 0' SIGTERM; " +
+                            "set -o pipefail; " +
+                            "(" +
+                            "zfs send --embed --dedup --large-block %s/%s | " +
+                            // if send/recv fails no new volume will be there, so destroy isn't needed
+                            "zfs receive -F %s/%s && zfs destroy -r %s/%s@%% ;" +
+                            ")& wait $!",
+                        srcData.getZPool(),
+                        srcFullSnapshotName,
+                        dstData.getZPool(),
+                        dstId,
+                        dstData.getZPool(),
+                        dstId)
+                };
+        }
+        else
+        {
+            cmd = new String[]{"sleep", "1"};
+        }
+        return cmd;
     }
 
     @Override
     public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
     {
-        ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
-        final String srcFullSnapshotName = getCloneSnapshotName(srcData, (ZfsData<Resource>) cloneInfo.getDstVlmData(), "@");
-        ZfsCommands.delete(extCmdFactory.create(), getZPool(srcData.getStorPool()), srcFullSnapshotName);
+        try
+        {
+            String useZfsClone = cloneInfo.getDstVlmData().getRscLayerObject().getAbsResource()
+                .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
+
+            // we cannot delete the snapshot if we have a dependent clone from it
+            // so only delete if it was a send/recv clone
+            // the snapshot will be tried to delete if the cloned resource gets removed
+            if (useZfsClone == null)
+            {
+                ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
+                final String srcFullSnapshotName = getCloneSnapshotNameFull(
+                    srcData, (ZfsData<Resource>) cloneInfo.getDstVlmData(), "@");
+                ZfsCommands.delete(extCmdFactory.create(), getZPool(srcData.getStorPool()), srcFullSnapshotName);
+            }
+        }
+        catch (AccessDeniedException accessDeniedException)
+        {
+            errorReporter.reportError(accessDeniedException);
+        }
     }
 }

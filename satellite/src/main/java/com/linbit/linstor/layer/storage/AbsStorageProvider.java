@@ -473,8 +473,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         return rsc.getVolume(vlmData.getVlmNr()).getFlags().isSet(storDriverAccCtx, Volume.Flags.CLONING_START);
     }
 
-    protected String getCloneSnapshotName(LAYER_DATA srcVlmData, LAYER_DATA dstVlmData, String separator) {
-        final String cloneSnapshotName = CLONE_PREFIX + String.format("%x", asLvIdentifier(dstVlmData).hashCode());
+    protected String getCloneSnapshotName(LAYER_DATA dstVlmData)
+    {
+        return String.format("%s%x", CLONE_PREFIX, asLvIdentifier(dstVlmData).hashCode());
+    }
+
+    protected String getCloneSnapshotNameFull(LAYER_DATA srcVlmData, LAYER_DATA dstVlmData, String separator)
+    {
+        final String cloneSnapshotName = getCloneSnapshotName(dstVlmData);
         final String srcId = asLvIdentifier(srcVlmData);
         return srcId + separator + cloneSnapshotName;
     }

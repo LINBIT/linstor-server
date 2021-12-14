@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased
+      - Added use_zfs_clone to clone request
     * 1.12.0
        - Added /v1/nodes/{node}/evacuate
     * 1.11.0
@@ -166,7 +168,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.12.0
+  version: 1.12.1
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -7690,6 +7692,11 @@ components:
           type: string
         external_name:
           $ref: '#/components/schemas/ExternalName'
+        use_zfs_clone:
+          type: boolean
+          description: |
+            If true Zfs will not use send/recv to clone, but instead
+            use a parent snapshot with clone, which cannot be deleted
     ResourceDefinitionCloneStarted:
       type: object
       description: Clone request started object

@@ -179,9 +179,20 @@ public class ZfsCommands
             zPool + File.separator +
             sourceLvName + "@" +
             sourceSnapName;
-        String fullQualifiedTargetLvId =
-            zPool + File.separator +
-            targetLvName;
+        return restoreSnapshotFullName(extCmd, zPool, fullQualifiedSourceSnapId, targetLvName);
+    }
+
+    public static OutputData restoreSnapshotFullName(
+        ExtCmd extCmd,
+        String zPool,
+        String sourceSnapshotName,
+        String targetLvName
+    )
+        throws StorageException
+    {
+        String fullQualifiedSourceSnapId =
+            zPool + File.separator + sourceSnapshotName;
+        String fullQualifiedTargetLvId = zPool + File.separator + targetLvName;
         return genericExecutor(
             extCmd,
             new String[] {

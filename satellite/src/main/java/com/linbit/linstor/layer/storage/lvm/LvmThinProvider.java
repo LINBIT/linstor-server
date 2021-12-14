@@ -495,7 +495,7 @@ public class LvmThinProvider extends LvmProvider
             srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
 
         final String srcId = asLvIdentifier(srcVlmData);
-        final String srcFullSnapshotName = getCloneSnapshotName(srcVlmData, vlmData, "_");
+        final String srcFullSnapshotName = getCloneSnapshotNameFull(srcVlmData, vlmData, "_");
         final String dstId = asLvIdentifier(vlmData);
 
         if (!infoListCache.containsKey(srcVlmData.getVolumeGroup() + "/" + srcFullSnapshotName))

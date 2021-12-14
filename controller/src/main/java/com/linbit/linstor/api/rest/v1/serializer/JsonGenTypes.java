@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.12.0";
+    public static final String REST_API_VERSION = "1.12.1";
 
     /**
      * Common api reply structure
@@ -1551,6 +1551,11 @@ public class JsonGenTypes
     {
         public String name;
         public String external_name;
+        /**
+         * If true Zfs will not use send/recv to clone, but instead
+         * use a parent snapshot with clone, which cannot be deleted
+         */
+        public Boolean use_zfs_clone;
     }
 
     /**

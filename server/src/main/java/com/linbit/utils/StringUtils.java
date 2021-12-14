@@ -122,6 +122,11 @@ public class StringUtils
         return ret;
     }
 
+    public static boolean propTrueOrYes(String propValue)
+    {
+        return propValue != null && (propValue.equalsIgnoreCase("true") || propValue.equalsIgnoreCase("yes"));
+    }
+
     public static class ConditionalStringJoiner
     {
         private final StringJoiner stringJoiner;

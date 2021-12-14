@@ -349,7 +349,8 @@ public class ResourceDefinitions
         Flux<ApiCallRc> flux = ctrlRscDfnApiCallHandler.cloneRscDfn(
             srcName,
             requestData.name,
-            requestData.external_name != null ? requestData.external_name.getBytes(StandardCharsets.UTF_8) : null
+            requestData.external_name != null ? requestData.external_name.getBytes(StandardCharsets.UTF_8) : null,
+            requestData.use_zfs_clone
         )
             .subscriberContext(requestHelper.createContext(ApiConsts.API_CLONE_RSCDFN, request));
 
