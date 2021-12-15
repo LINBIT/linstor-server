@@ -1738,7 +1738,7 @@ public class CtrlBackupApiCallHandler
             throw new ImplementationError("not a meta file: " + metaName);
         }
         SnapshotName snapName = LinstorParsingUtils.asSnapshotName(mtc.group(2));
-        ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, metaName, resetData);
+        ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, false, resetData);
         // 9. create snapDfn
         SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses, downloadOnly);
         // 10. create vlmDfn(s)
@@ -1846,7 +1846,7 @@ public class CtrlBackupApiCallHandler
                 data.dstRscName,
                 data.snapName,
                 data.metaData,
-                data.snapName.displayValue,
+                true,
                 resetData
             );
             SnapshotDefinition snapDfn;
@@ -2455,7 +2455,7 @@ public class CtrlBackupApiCallHandler
         String targetRscName,
         SnapshotName snapName,
         BackupMetaDataPojo metadata,
-        String metaName,
+        boolean isL2L,
         boolean resetData
     )
     {
@@ -2496,6 +2496,10 @@ public class CtrlBackupApiCallHandler
                         "A backup is currently being restored to resource definition " + targetRscName + "."
                     )
                 );
+            }
+            if (isL2L)
+            {
+                backupInfoMgr.restoreAddEntry(rscDfn, "");
             }
             if (resetData)
             {
@@ -3377,7 +3381,6 @@ public class CtrlBackupApiCallHandler
 
             Snapshot snap = snapDfn.getSnapshot(peerCtx, peerProvider.get().getNode().getName());
             snapDfn.getFlags().disableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
-            snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
             snap.getProps(peerCtx).removeProp(
                 InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
@@ -3400,6 +3403,7 @@ public class CtrlBackupApiCallHandler
             Snapshot nextSnap = backupInfoMgr.getNextBackupToDownload(snap);
             if (successRef && nextSnap != null)
             {
+                snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
                 backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
                 SnapshotDefinition nextSnapDfn = nextSnap.getSnapshotDefinition();
                 nextSnapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
@@ -3423,6 +3427,7 @@ public class CtrlBackupApiCallHandler
             {
                 if (successRef)
                 {
+                    snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
                     backupInfoMgr.abortRestoreDeleteAllEntries(rscNameRef);
                     backupInfoMgr.backupsToDownloadCleanUp(snap);
                     backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
@@ -3455,10 +3460,13 @@ public class CtrlBackupApiCallHandler
                     List<SnapshotDefinition> snapsToDelete = new ArrayList<>();
                     snapsToDelete.add(snapDfn);
                     backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
+                    backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
                     Snapshot nextSnapToDel = nextSnap;
                     while (nextSnapToDel != null)
                     {
                         snapsToDelete.add(nextSnapToDel.getSnapshotDefinition());
+                        nextSnapToDel.getSnapshotDefinition().getFlags()
+                            .enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING_ABORT);
                         backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, nextSnapToDel);
                         nextSnapToDel = backupInfoMgr.getNextBackupToDownload(nextSnapToDel);
                     }
@@ -3471,7 +3479,6 @@ public class CtrlBackupApiCallHandler
                     {
                         throw new ImplementationError("Not all restore-entries marked for abortion: " + leftovers);
                     }
-                    backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
                     flux = Flux.empty();
                     for (SnapshotDefinition snapDfnToDel : snapsToDelete)
                     {

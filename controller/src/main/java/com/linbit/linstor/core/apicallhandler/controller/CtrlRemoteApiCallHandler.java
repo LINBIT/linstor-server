@@ -709,6 +709,7 @@ public class CtrlRemoteApiCallHandler
             if (!(remote instanceof LinstorRemote))
             {
                 // satellites do not know about any linstor-remote, so updating them here would break stuff
+                // (as in, the satellite will ignore the update and not answer -> timeout)
                 flux = flux.concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote));
             }
             flux = flux.concatWith(deleteImpl(remote));

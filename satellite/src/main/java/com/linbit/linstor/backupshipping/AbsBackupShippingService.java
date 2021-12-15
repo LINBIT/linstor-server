@@ -142,12 +142,14 @@ public abstract class AbsBackupShippingService implements SystemService
         }
     }
 
-    public void abort(AbsStorageVlmData<Snapshot> snapVlmData)
+    public void abort(AbsStorageVlmData<Snapshot> snapVlmData, boolean sendPostShipping)
     {
         errorReporter.logDebug(
-            "[%s] aborting backup shipping: %s",
+            "[%s] aborting backup shipping: %s, RscSuffix: '%s', VlmNr: '%s'",
             remoteType.name(),
-            snapVlmData.getRscLayerObject().getAbsResource().toString()
+            snapVlmData.getRscLayerObject().getAbsResource().toString(),
+            snapVlmData.getRscLayerObject().getResourceNameSuffix(),
+            snapVlmData.getVlmNr()
         );
         Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
         ShippingInfo info = shippingInfoMap.get(snap);
@@ -156,7 +158,7 @@ public abstract class AbsBackupShippingService implements SystemService
             SnapVlmDataInfo snapVlmDataInfo = info.snapVlmDataInfoMap.get(snapVlmData);
             if (snapVlmDataInfo != null)
             {
-                snapVlmDataInfo.daemon.shutdown(false);
+                snapVlmDataInfo.daemon.shutdown(sendPostShipping);
             }
         }
         else
@@ -510,7 +512,6 @@ public abstract class AbsBackupShippingService implements SystemService
                                 shippingInfo.snapVlmDataFinishedShipping;
 
                             success = preCtrlNotifyBackupShipped(success, restoring, snap, shippingInfo);
-
                             controllerPeerConnector.getControllerPeer().sendMessage(
                                 interComSerializer.onewayBuilder(internalApiName)
                                     .notifyBackupShipped(

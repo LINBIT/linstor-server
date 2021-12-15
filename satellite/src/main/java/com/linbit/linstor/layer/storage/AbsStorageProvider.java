@@ -32,12 +32,12 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
-import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.storage.utils.DmStatCommands;
@@ -810,7 +810,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         AbsBackupShippingService backupShipService = backupShipMapper.getService(snapVlm);
                         if (backupShipService != null)
                         {
-                            backupShipService.abort(snapVlm);
+                            backupShipService.abort(snapVlm, false);
                         }
                     }
                 }
@@ -928,7 +928,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
-
                 if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
                     snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_CLEANUP)
                 )
@@ -946,13 +945,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                  * also be unset, preventing NPE
                  */
                 AbsBackupShippingService backupShippingService = backupShipMapper.getService(snapVlm);
-
                 if (
                     snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT) &&
                         backupShippingService != null
                 )
                 {
-                    backupShippingService.abort(snapVlm);
+                    backupShippingService.abort(snapVlm, true);
                 }
                 if (snapshotExists(snapVlm) &&
                     snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&

@@ -106,6 +106,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
             {
                 uploadIdRef = backupHandler.initMultipart(backupName, remote, accCtx, masterKey);
             }
+            uploadId = uploadIdRef;
             cmdProcess = handler.start();
             s3Thread.start();
         }
@@ -139,7 +140,6 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
             );
             shutdown(false);
         }
-        uploadId = uploadIdRef;
         return uploadIdRef;
     }
 

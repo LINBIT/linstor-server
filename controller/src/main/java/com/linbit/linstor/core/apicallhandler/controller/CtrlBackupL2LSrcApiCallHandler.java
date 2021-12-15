@@ -291,7 +291,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         Pair<Flux<ApiCallRc>, Snapshot> createSnapshot = ctrlBackupApiCallHandler.backupSnapshot(
             data.srcRscName,
             data.stltRemote.getName().displayValue,
-            data.dstNodeName,
+            data.srcNodeName,
             data.srcBackupName,
             data.now,
             false,
@@ -579,7 +579,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         Snapshot snap = dataRef.srcSnapshot;
         try
         {
-            snap.setTakeSnapshot(accCtx, true);
+            snap.setTakeSnapshot(accCtx, false);
             ctrlTransactionHelper.commit();
         }
         catch (AccessDeniedException exc)

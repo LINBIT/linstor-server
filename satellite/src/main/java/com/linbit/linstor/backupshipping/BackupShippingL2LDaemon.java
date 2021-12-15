@@ -89,6 +89,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     {
         errorReporter.logTrace("starting daemon: %s", Arrays.toString(command));
         boolean first = true;
+        boolean afterTerminationCalled = false;
         while (started)
         {
             Event event;
@@ -121,10 +122,6 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
                 if (event instanceof PoisonEvent)
                 {
                     errorReporter.logTrace("PoisonEvent");
-                    if (runAfterTermination)
-                    {
-                        afterTermination.accept(false, null);
-                    }
                     break;
                 }
                 else
@@ -139,6 +136,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
                             (alreadyInUse && exitCode == 0 ? " but port is already in use" : "")
                         );
                         afterTermination.accept(exitCode == 0 && !alreadyInUse, alreadyInUse ? port : null);
+                        afterTerminationCalled = true;
                     }
                     else
                     {
@@ -162,6 +160,10 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
                     )
                 );
             }
+        }
+        if (runAfterTermination && !afterTerminationCalled)
+        {
+            afterTermination.accept(false, null);
         }
     }
 
