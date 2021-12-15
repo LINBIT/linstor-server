@@ -68,31 +68,36 @@ public class BackupShippingMgr
         AbsBackupShippingService service = null;
         try
         {
-            String key;
+            String key = null;
             if (snapshotRef.getFlags().isSet(accCtx, Snapshot.Flags.BACKUP_SOURCE))
             {
                 // if the snapshot is the source, the remote is the target
                 key = InternalApiConsts.KEY_BACKUP_TARGET_REMOTE;
             }
-            else
+            else if (snapshotRef.getFlags().isSet(accCtx, Snapshot.Flags.BACKUP_TARGET))
             {
                 key = InternalApiConsts.KEY_BACKUP_SRC_REMOTE;
             }
 
-            String remoteNameStr = snapshotRef.getProps(accCtx).getProp(
-                key,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
-
-            if (remoteNameStr != null)
+            if (key != null)
             {
-                Remote remote = remoteMap.get(new RemoteName(remoteNameStr, true));
-                if (remote == null)
-                {
-                    throw new ImplementationError("Remote must not be null if the property is set");
-                }
+                String remoteNameStr = snapshotRef.getProps(accCtx).getProp(
+                    key,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
 
-                service = getService(remote);
+                if (remoteNameStr != null)
+                {
+                    Remote remote = remoteMap.get(new RemoteName(remoteNameStr, true));
+                    if (remote == null)
+                    {
+                        throw new ImplementationError(
+                            "Remote " + remoteNameStr + " must not be null if the property is set"
+                        );
+                    }
+
+                    service = getService(remote);
+                }
             }
         }
         catch (InvalidKeyException | InvalidNameException | AccessDeniedException exc)
