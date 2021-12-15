@@ -781,7 +781,8 @@ public class CtrlRscCrtApiHelper
 
     private Mono<ApiCallRc> makeRdyTimeoutApiRc(NodeName nodeName)
     {
-        final String msg = String.format("Resource did not became ready on node '%s' within" +
+        final String msg = String.format(
+            "Resource did not become ready on node '%s' within" +
             " reasonable time, check Satellite for errors.", nodeName);
         ApiCallRcImpl.ApiCallRcEntry apiEntry = ApiCallRcImpl.entryBuilder(
                 ApiConsts.MASK_ERROR | ApiConsts.MASK_RSC, msg)

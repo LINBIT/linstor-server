@@ -412,8 +412,14 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 Resource rsc = rscIt.next();
 
                 StateFlags<Resource.Flags> rscFlags = rsc.getStateFlags();
+
+                List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
+                boolean hasDrbdLayer = layerStack.contains(DeviceLayerKind.DRBD);
+                boolean hasNvmeLayer = layerStack.contains(DeviceLayerKind.NVME);
+                boolean countAsDrbd = !hasNvmeLayer ||
+                    (hasNvmeLayer && rscFlags.isSet(peerAccCtx, Resource.Flags.NVME_INITIATOR));
                 if (
-                    layerDataHelper.getLayerStack(rsc).contains(DeviceLayerKind.DRBD) &&
+                    hasDrbdLayer && countAsDrbd &&
                     rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE) &&
                     rscFlags.isUnset(peerAccCtx, Resource.Flags.INACTIVE)
                 )

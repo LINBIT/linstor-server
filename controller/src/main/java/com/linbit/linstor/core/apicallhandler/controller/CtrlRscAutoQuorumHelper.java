@@ -32,6 +32,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -234,19 +235,26 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
     {
         int diskfulDrbdCount = 0;
         int disklessDrbdCount = 0;
-        Iterator<Resource> rscIt = rscDfn.iterateResource(peerCtx.get());
+        AccessContext peerAccCtx = peerCtx.get();
+        Iterator<Resource> rscIt = rscDfn.iterateResource(peerAccCtx);
         while (rscIt.hasNext())
         {
             Resource rsc = rscIt.next();
 
             StateFlags<Resource.Flags> rscFlags = rsc.getStateFlags();
+            List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
+            boolean hasDrbdLayer = layerStack.contains(DeviceLayerKind.DRBD);
+            boolean hasNvmeLayer = layerStack.contains(DeviceLayerKind.NVME);
+            boolean countAsDrbd = !hasNvmeLayer ||
+                (hasNvmeLayer && rscFlags.isSet(peerAccCtx, Resource.Flags.NVME_INITIATOR));
+
             if (
-                layerDataHelper.getLayerStack(rsc).contains(DeviceLayerKind.DRBD) &&
-                    rscFlags.isUnset(peerCtx.get(), Resource.Flags.DELETE) &&
-                    rscFlags.isUnset(peerCtx.get(), Resource.Flags.INACTIVE)
+                hasDrbdLayer && countAsDrbd &&
+                    rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE) &&
+                    rscFlags.isUnset(peerAccCtx, Resource.Flags.INACTIVE)
             )
             {
-                if (rscFlags.isSet(peerCtx.get(), Resource.Flags.DRBD_DISKLESS))
+                if (rscFlags.isSet(peerAccCtx, Resource.Flags.DRBD_DISKLESS))
                 {
                     disklessDrbdCount++;
                 }
