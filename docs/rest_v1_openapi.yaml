@@ -23,6 +23,7 @@ info:
 
     * unreleased
       - Added use_zfs_clone to clone request
+      - Added /v1/events/nodes SSE node events stream
     * 1.12.0
        - Added /v1/nodes/{node}/evacuate
     * 1.11.0
@@ -168,7 +169,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.12.1
+  version: 1.13.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -5093,7 +5094,75 @@ paths:
             text/event-stream:
               schema:
                 oneOf:
-                  - $ref: '#/components/schemas/EventMayPromoteChange'
+                  - type: object
+                    description: may-promote-change
+                    properties:
+                      event:
+                        type: string
+                        enum: [ may-promote-change ]
+                      data:
+                        $ref: '#/components/schemas/EventMayPromoteChange'
+  /v1/events/nodes:
+    get:
+      tags:
+        - developers
+      summary: server sent event stream for nodes
+      description: Notifies clients about changes with nodes
+      responses:
+        '200':
+          description: linstor node events
+          content:
+            text/event-stream:
+              schema:
+                oneOf:
+                  - type: object
+                    description: node-create
+                    properties:
+                      event:
+                        type: string
+                        enum: [ node-create ]
+                      data:
+                        $ref: '#/components/schemas/EventNode'
+                  - type: object
+                    description: node-delete
+                    properties:
+                      event:
+                        type: string
+                        enum: [ node-delete ]
+                      data:
+                        $ref: '#/components/schemas/EventNode'
+                  - type: object
+                    description: node-evacuate
+                    properties:
+                      event:
+                        type: string
+                        enum: [ node-evacuate ]
+                      data:
+                        $ref: '#/components/schemas/EventNode'
+                  - type: object
+                    description: node-evicted
+                    properties:
+                      event:
+                        type: string
+                        enum: [ node-evicted ]
+                      data:
+                        $ref: '#/components/schemas/EventNode'
+                  - type: object
+                    description: node-restored
+                    properties:
+                      event:
+                        type: string
+                        enum: [ node-restored ]
+                      data:
+                        $ref: '#/components/schemas/EventNode'
+                  - type: object
+                    description: node-modified
+                    properties:
+                      event:
+                        type: string
+                        enum: [node-modified]
+                      data:
+                        $ref: '#/components/schemas/EventNodeModified'
   /v1/vendor/seagate/exos/defaults:
     get:
       tags:
@@ -7571,6 +7640,18 @@ components:
           type: string
         may_promote:
           type: boolean
+    EventNode:
+      type: object
+      properties:
+        node:
+          $ref: '#/components/schemas/Node'
+    EventNodeModified:
+      type: object
+      properties:
+        old_node:
+          $ref: '#/components/schemas/Node'
+        new_node:
+          $ref: '#/components/schemas/Node'
     ExosDefaults:
       type: object
       description: Default settings for EXOS enclosures

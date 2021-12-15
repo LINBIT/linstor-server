@@ -21,16 +21,19 @@ import org.glassfish.jersey.media.sse.SseFeature;
 public class Events
 {
     private final RequestHelper requestHelper;
-    private final EventHandlerBridge eventHandlerBridge;
+    private final EventDrbdHandlerBridge eventDrbdHandlerBridge;
+    private final EventNodeHandlerBridge eventNodeHandlerBridge;
 
     @Inject
     public Events(
         RequestHelper requestHelperRef,
-        EventHandlerBridge eventHandlerBridgeRef
+        EventDrbdHandlerBridge eventDrbdHandlerBridgeRef,
+        EventNodeHandlerBridge eventNodeHandlerBridgeRef
     )
     {
         requestHelper = requestHelperRef;
-        eventHandlerBridge = eventHandlerBridgeRef;
+        eventDrbdHandlerBridge = eventDrbdHandlerBridgeRef;
+        eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
     }
 
     @GET
@@ -45,8 +48,36 @@ public class Events
             requestHelper.createContext("Events-drbd-promotion", request),
             () ->
             {
-                eventHandlerBridge.registerResourceClient(
+                eventDrbdHandlerBridge.registerResourceClient(
                     eventOutput, lastEventId != null && lastEventId.equals("current"));
+                return null;
+            },
+            false
+        );
+
+        if (resp != null)
+        {
+            eventOutput.write(
+                new OutboundEvent.Builder()
+                    .name("error")
+                    .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                    .data(resp.getEntity()).build());
+            eventOutput.close();
+        }
+        return eventOutput;
+    }
+
+    @GET
+    @Produces(SseFeature.SERVER_SENT_EVENTS)
+    @Path("nodes")
+    public EventOutput nodeEvents(
+        @Context Request request) throws IOException
+    {
+        final EventOutput eventOutput = new EventOutput();
+        Response resp = requestHelper.doInScope(
+            requestHelper.createContext("Events-nodes", request),
+            () -> {
+                eventNodeHandlerBridge.registerResourceClient(eventOutput);
                 return null;
             },
             false

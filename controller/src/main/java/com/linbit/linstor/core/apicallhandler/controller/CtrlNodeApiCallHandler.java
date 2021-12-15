@@ -20,6 +20,7 @@ import com.linbit.linstor.api.pojo.ResourceWithPayloadPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.api.rest.v1.events.EventNodeHandlerBridge;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
@@ -96,7 +97,6 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -144,6 +144,7 @@ public class CtrlNodeApiCallHandler
     private final CtrlRscToggleDiskApiCallHandler rscToggleDiskApiCallHandler;
     private final Autoplacer autoplacer;
     private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
+    private final EventNodeHandlerBridge eventNodeHandlerBridge;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -175,7 +176,8 @@ public class CtrlNodeApiCallHandler
         CtrlSnapshotDeleteApiCallHandler snapDeleteHandlerRef,
         Autoplacer autoplacerRef,
         CtrlRscToggleDiskApiCallHandler rscToggleDiskApiCallHandlerRef,
-        CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef
+        CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
+        EventNodeHandlerBridge eventNodeHandlerBridgeRef
     )
     {
         apiCtx = apiCtxRef;
@@ -207,6 +209,7 @@ public class CtrlNodeApiCallHandler
         autoplacer = autoplacerRef;
         rscToggleDiskApiCallHandler = rscToggleDiskApiCallHandlerRef;
         ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
+        eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
     }
 
     Node createNodeImpl(
@@ -490,6 +493,7 @@ public class CtrlNodeApiCallHandler
                     "UUID-check failed"
                 ));
             }
+            NodeApi oldNodeData = node.getApiData(peerAccCtx.get(), null, null);
             if (nodeTypeStr != null)
             {
                 setNodeType(node, nodeTypeStr);
@@ -503,7 +507,7 @@ public class CtrlNodeApiCallHandler
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_NODE,
-                Arrays.asList(ApiConsts.NAMESPC_EXOS)
+                Collections.singletonList(ApiConsts.NAMESPC_EXOS)
             ) || notifyStlts;
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs, LinStorObject.NODE, props, deletePropKeys, deleteNamespaces) || notifyStlts;
@@ -511,6 +515,9 @@ public class CtrlNodeApiCallHandler
             flux = flux.concatWith(checkProperties(apiCallRcs, node, overrideProps, deletePropKeys, deleteNamespaces));
 
             ctrlTransactionHelper.commit();
+
+            eventNodeHandlerBridge.triggerNodeModified(oldNodeData,
+                node.getApiData(peerAccCtx.get(), null, null));
 
             responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultModifiedEntry(
                 node.getUuid(), getNodeDescriptionInline(node)));
@@ -1209,6 +1216,8 @@ public class CtrlNodeApiCallHandler
 
                     ctrlTransactionHelper.commit();
 
+                    eventNodeHandlerBridge.triggerNodeRestored(node.getApiData(peerCtx, null, null));
+
                     if (wasNodeEvicted)
                     {
                         reconnectorTask.add(
@@ -1293,6 +1302,7 @@ public class CtrlNodeApiCallHandler
                 {
                     node.markEvicted(apiCtx);
                     ctrlTransactionHelper.commit();
+                    eventNodeHandlerBridge.triggerNodeEvicted(node.getApiData(apiCtx, null, null));
                     Flux<ApiCallRc> flux = ctrlSatelliteUpdateCaller.updateSatellites(
                         node.getUuid(),
                         node.getName(),
@@ -1397,6 +1407,7 @@ public class CtrlNodeApiCallHandler
             }
             ctrlTransactionHelper.commit();
 
+            eventNodeHandlerBridge.triggerNodeEvacuate(nodeToEvacuate.getApiData(peerCtx, null, null));
             List<Flux<ApiCallRc>> fluxList = new ArrayList<>();
             for (ResourceDefinition rscDfn : affectedRscDfnList)
             {

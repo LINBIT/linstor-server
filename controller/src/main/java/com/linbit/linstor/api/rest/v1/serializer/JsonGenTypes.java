@@ -1434,6 +1434,19 @@ public class JsonGenTypes
         public Boolean may_promote;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class EventNode
+    {
+        public Node node;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class EventNodeModified
+    {
+        public Node old_node;
+        public Node new_node;
+    }
+
     /**
      * Default settings for EXOS enclosures
      */

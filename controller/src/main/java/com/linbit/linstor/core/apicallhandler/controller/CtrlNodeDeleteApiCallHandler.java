@@ -7,6 +7,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.events.EventNodeHandlerBridge;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
@@ -18,6 +19,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
+import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -73,6 +75,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandler;
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
+    private final EventNodeHandlerBridge eventNodeHandlerBridge;
 
     @Inject
     public CtrlNodeDeleteApiCallHandler(
@@ -87,7 +90,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef,
-        CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef
+        CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
+        EventNodeHandlerBridge eventNodeHandlerBridgeRef
     )
     {
         apiCtx = apiCtxRef;
@@ -102,6 +106,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         peerAccCtx = peerAccCtxRef;
         ctrlSnapshotDeleteApiCallHandler = ctrlSnapshotDeleteApiCallHandlerRef;
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
+        eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
     }
 
     @Override
@@ -223,7 +228,6 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         // End checks
         else
         {
-
             // store to avoid deleted node access
             UUID nodeUuid = node.getUuid();
             String nodeDescription = firstLetterCaps(getNodeDescriptionInline(node));
@@ -445,10 +449,12 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                         }
                     }
 
+                    final NodeApi nodeApi = node.getApiData(apiCtx, null, null);
                     NodeName nodeName = node.getName();
 
                     deletePrivileged(node);
                     removeNodePrivileged(nodeName);
+                    eventNodeHandlerBridge.triggerNodeDelete(nodeApi);
                 }
             }
         }

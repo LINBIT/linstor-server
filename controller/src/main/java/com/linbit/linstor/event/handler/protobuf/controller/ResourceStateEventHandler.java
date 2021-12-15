@@ -3,7 +3,7 @@ package com.linbit.linstor.event.handler.protobuf.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
-import com.linbit.linstor.api.rest.v1.events.EventHandlerBridge;
+import com.linbit.linstor.api.rest.v1.events.EventDrbdHandlerBridge;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -55,7 +55,7 @@ public class ResourceStateEventHandler implements EventHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final LockGuardFactory lockGuardFactory;
     private final AutoDiskfulTask autoDiskfulTask;
-    private final EventHandlerBridge eventHandlerBridge;
+    private final EventDrbdHandlerBridge eventDrbdHandlerBridge;
 
     @Inject
     public ResourceStateEventHandler(
@@ -66,7 +66,7 @@ public class ResourceStateEventHandler implements EventHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         LockGuardFactory lockGuardFactoryRef,
         AutoDiskfulTask autoDiskfulTaskRef,
-        EventHandlerBridge eventHandlerBridgeRef,
+        EventDrbdHandlerBridge eventDrbdHandlerBridgeRef,
         ErrorReporter errorReporterRef
     )
     {
@@ -77,7 +77,7 @@ public class ResourceStateEventHandler implements EventHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         lockGuardFactory = lockGuardFactoryRef;
         autoDiskfulTask = autoDiskfulTaskRef;
-        eventHandlerBridge = eventHandlerBridgeRef;
+        eventDrbdHandlerBridge = eventDrbdHandlerBridgeRef;
         errorReporter = errorReporterRef;
     }
 
@@ -216,7 +216,7 @@ public class ResourceStateEventHandler implements EventHandler
                     drbdRscData.setPromotionScore(promotionScore);
                     if (!Objects.equals(drbdRscData.mayPromote(), mayPromote))
                     {
-                        eventHandlerBridge.triggerMayPromote(rsc.getApiData(apiCtx, null, null), mayPromote);
+                        eventDrbdHandlerBridge.triggerMayPromote(rsc.getApiData(apiCtx, null, null), mayPromote);
                     }
                     drbdRscData.setMayPromote(mayPromote);
                 }

@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.events.EventNodeHandlerBridge;
 import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
@@ -62,6 +63,7 @@ public class CtrlNodeCrtApiCallHandler
     private final Provider<CtrlAuthenticator> ctrlAuthenticator;
     private final ReconnectorTask reconnectorTask;
     private final CtrlRscAutoHelper autoHelper;
+    private final EventNodeHandlerBridge eventNodeHandlerBridge;
 
     @Inject
     public CtrlNodeCrtApiCallHandler(
@@ -77,7 +79,8 @@ public class CtrlNodeCrtApiCallHandler
         ResourceDefinitionRepository rscDfnRepoRef,
         Provider<CtrlAuthenticator> ctrlAuthenticatorRef,
         ReconnectorTask reconnectorTaskRef,
-        CtrlRscAutoHelper autoHelperRef
+        CtrlRscAutoHelper autoHelperRef,
+        EventNodeHandlerBridge eventNodeHandlerBridgeRef
     )
     {
         errorReporter = errorReporterRef;
@@ -93,6 +96,7 @@ public class CtrlNodeCrtApiCallHandler
         ctrlAuthenticator = ctrlAuthenticatorRef;
         reconnectorTask = reconnectorTaskRef;
         autoHelper = autoHelperRef;
+        eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
     }
 
     /**
@@ -189,7 +193,9 @@ public class CtrlNodeCrtApiCallHandler
                 );
             }
 
-            flux = Flux.<ApiCallRc>just(responses);
+            eventNodeHandlerBridge.triggerNodeCreate(node.getApiData(apiCtx, null, null));
+
+            flux = Flux.just(responses);
 
             if (!Node.Type.CONTROLLER.equals(nodeType) &&
                 !Node.Type.AUXILIARY.equals(nodeType))
