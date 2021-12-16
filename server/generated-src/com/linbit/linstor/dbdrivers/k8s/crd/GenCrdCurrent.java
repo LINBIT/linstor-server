@@ -5067,11 +5067,15 @@ public class GenCrdCurrent
         public SatellitesCapacitySpec(
             @JsonProperty("node_name") String nodeNameRef,
             @JsonProperty("capacity") byte[] capacityRef,
+            @JsonProperty("allocated") byte[] allocatedRef,
+            @JsonProperty("usable") byte[] usableRef,
             @JsonProperty("fail_flag") boolean failFlagRef
         )
         {
             nodeName = nodeNameRef;
             capacity = capacityRef;
+            allocated = allocatedRef;
+            usable = usableRef;
             failFlag = failFlagRef;
 
             formattedPrimaryKey = String.format(
