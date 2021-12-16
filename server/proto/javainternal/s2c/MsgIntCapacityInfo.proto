@@ -10,4 +10,5 @@ message MsgIntCapacityInfo
 
     // Serialized BigInteger data
     bytes capacity  = 2;
+    bytes allocated = 3;
 }
