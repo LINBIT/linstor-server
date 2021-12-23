@@ -162,3 +162,7 @@ generate-db-constants:
 	rm -Rf ./controller/build/distributions/controller
 	tar -xf ./controller/build/distributions/controller.tar -C ./controller/build/distributions
 	java -cp "controller/build/distributions/controller/lib/*" com/linbit/linstor/dbcp/GenerateSql
+
+.PHONY: check-openapi
+check-openapi: docs/rest_v1_openapi.yaml
+	cd docs && docker run -it --rm -v `pwd`:/data jamescooke/openapi-validator:0.51.3 -e rest_v1_openapi.yaml

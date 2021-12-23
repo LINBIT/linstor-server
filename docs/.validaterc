@@ -71,8 +71,7 @@
       "enum_case_convention": [
         "warning",
         "lower_snake_case"
-      ],
-      "undefined_required_properties": "warning"
+      ]
     },
     "walker": {
       "no_empty_descriptions": "error",
