@@ -31,6 +31,8 @@ public class CryptSetupCommands implements Luks
     private static final String CRYPTSETUP = "cryptsetup";
     private static final String CRYPT_PREFIX = "Linstor-Crypt-";
     private static final Version V2_1_0 = new Version(2, 1, 0);
+    private static final Version V2_0_0 = new Version(2, 0, 0);
+    private static final String PBDKF_MAX_MEMORY_KIB = "262144";  // 256 MiB
 
     @SuppressWarnings("unused")
     private final ErrorReporter errorReporter;
@@ -71,17 +73,21 @@ public class CryptSetupCommands implements Luks
         {
             final ExtCmd extCommand = extCmdFactory.create();
 
-            // init
-            String[] command = new String[] {
-                CRYPTSETUP,
-                "-q",
-                "luksFormat",
-                dev
-            };
+            ArrayList<String> command = new ArrayList<>();
+            command.add(CRYPTSETUP);
+            command.add("-q");
+            command.add("luksFormat");
+            if (version.greaterOrEqual(V2_0_0))
+            {
+                command.add("--pbkdf-memory");
+                command.add(PBDKF_MAX_MEMORY_KIB); // in kib
+            }
+            command.add(dev);
+
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
                 null,
-                command
+                command.toArray(new String[0])
             );
             outputStream.write(cryptKey);
             outputStream.write('\n');
