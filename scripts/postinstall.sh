@@ -11,7 +11,7 @@ DEF_LINSTOR_CFG="${DEF_LINSTOR_CFG_DIR}/linstor.toml"
 DEF_DB_TYPE="h2"
 
 [ ! -d ${DEF_LINSTOR_CFG_DIR} ] && mkdir "$DEF_LINSTOR_CFG_DIR"
-[ ! -d ${DEF_VARLIB_LINSTOR} ] && mkdir "$DEF_VARLIB_LINSTOR"
+[ ! -d ${DEF_VARLIB_LINSTOR} ] && mkdir -m 750 "$DEF_VARLIB_LINSTOR"
 
 # always create a backup of the current DB
 CURRENT_DB=${DEF_DB}.mv.db
