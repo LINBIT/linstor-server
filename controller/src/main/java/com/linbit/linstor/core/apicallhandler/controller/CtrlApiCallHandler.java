@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.ControllerConfigApi;
 import com.linbit.linstor.core.apis.KvsApi;
@@ -24,6 +25,8 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
@@ -42,6 +45,7 @@ import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -79,6 +83,7 @@ public class CtrlApiCallHandler
     private final CtrlKvsApiCallHandler kvsApiCallHandler;
     private final CtrlRscGrpApiCallHandler rscGrpApiCallHandler;
     private final CtrlVlmGrpApiCallHandler vlmGrpApiCallHandler;
+    private final DbEngine dbEngine;
 
     private final LockGuardFactory lockGuardFactory;
 
@@ -104,6 +109,7 @@ public class CtrlApiCallHandler
         CtrlKvsApiCallHandler kvsApiCallHandlerRef,
         CtrlRscGrpApiCallHandler rscGrpApiCallHandlerRef,
         CtrlVlmGrpApiCallHandler vlmGrpApiCallHandlerRef,
+        DbEngine dbEngineRef,
         LockGuardFactory lockGuardFactoryRef
     )
     {
@@ -127,6 +133,7 @@ public class CtrlApiCallHandler
         kvsApiCallHandler = kvsApiCallHandlerRef;
         rscGrpApiCallHandler = rscGrpApiCallHandlerRef;
         vlmGrpApiCallHandler = vlmGrpApiCallHandlerRef;
+        dbEngine = dbEngineRef;
         lockGuardFactory = lockGuardFactoryRef;
     }
 
@@ -1477,5 +1484,20 @@ public class CtrlApiCallHandler
             );
         }
         return status;
+    }
+
+    public ApiCallRc backupDb(@Nonnull String backupPath)
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+
+        try
+        {
+            apiCallRc.addEntries(dbEngine.backupDb(backupPath));
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
+        }
+        return apiCallRc;
     }
 }

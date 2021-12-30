@@ -5,6 +5,9 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver.RawParameters;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -58,6 +61,13 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     public DatabaseType getType()
     {
         return DatabaseType.ETCD;
+    }
+
+    @Override
+    public ApiCallRc backupDb(String backupPath) throws DatabaseException
+    {
+        return ApiCallRcImpl.singleApiCallRc(
+            ApiConsts.FAIL_UNKNOWN_ERROR, "Only h2 database is currently supported for online backup.");
     }
 
     @Override

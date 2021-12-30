@@ -32,7 +32,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
+import java.util.Locale;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,6 +52,9 @@ public class Controller
     private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlConfig ctrlCfg;
     private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
+
+    public static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH_mm_ss", Locale.US);
+    public static final String DB_BACKUP_BASE_DIR = "/var/lib/linstor/";
 
     @Inject
     public Controller(
@@ -290,7 +296,7 @@ public class Controller
         return resp;
     }
 
-    private class ControllerConfigPojo implements ControllerConfigApi
+    private static class ControllerConfigPojo implements ControllerConfigApi
     {
         private final JsonGenTypes.ControllerConfig config;
 
@@ -357,5 +363,39 @@ public class Controller
                 .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(Flux.just(rc), Response.Status.UNAUTHORIZED));
         }
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+    }
+
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("backup/db")
+    public Response backupDB(
+        @Context Request request,
+        String jsonData
+    )
+    {
+        return requestHelper.doInScope("BackupDb", request, () ->
+        {
+            JsonGenTypes.DatabaseBackupRequest req = objectMapper
+                .readValue(jsonData, JsonGenTypes.DatabaseBackupRequest.class);
+
+            String backupPath = req.backup_name;
+
+            if (backupPath == null)
+            {
+                backupPath = DB_BACKUP_BASE_DIR + "linstordb-backup-" + TIMESTAMP_FORMAT.format(new Date()) + ".zip";
+            }
+            else
+            {
+                backupPath = DB_BACKUP_BASE_DIR + backupPath;
+            }
+
+            if (!backupPath.endsWith(".zip"))
+            {
+                backupPath += ".zip";
+            }
+
+            ApiCallRc apiCallRc = ctrlApiCallHandler.backupDb(backupPath);
+            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
+        }, true);
     }
 }

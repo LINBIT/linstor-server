@@ -26,6 +26,7 @@ info:
       - Added /v1/events/nodes SSE node events stream
       - Added ?cached=true option for all storage-pool list APIs
       - Added ?limit and ?offset to /v1/nodes/{node}/storage-pools/{storagepool}
+      - Added /v1/controller/backup/db to do an database online backup
     * 1.12.0
        - Added /v1/nodes/{node}/evacuate
     * 1.11.0
@@ -4115,6 +4116,27 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/ControllerConfig'
+  /v1/controller/backup/db:
+    post:
+      tags:
+        - developers
+      summary: create a database backup
+      operationId: controllerBackupDB
+      description: create a h2 database backup. Currently only H2(embedded) db is working.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DatabaseBackupRequest'
+      responses:
+        '201':
+          description: database backup created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
   /v1/controller/version:
     get:
       tags:
@@ -6981,6 +7003,11 @@ components:
         build_time:
           type: string
         rest_api_version:
+          type: string
+    DatabaseBackupRequest:
+      type: object
+      properties:
+        backup_name:
           type: string
     SatelliteConfig:
       type: object

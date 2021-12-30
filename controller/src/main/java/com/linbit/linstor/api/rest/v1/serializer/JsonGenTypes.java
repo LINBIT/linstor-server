@@ -922,6 +922,12 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class DatabaseBackupRequest
+    {
+        public String backup_name;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class SatelliteConfig
     {
         public ControllerConfigConfig config;

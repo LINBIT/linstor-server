@@ -4,6 +4,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.LUKSVolume;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -282,4 +283,6 @@ public interface DbEngine
         ValueOutOfRangeException, MdException;
 
     String getDbDump() throws DatabaseException;
+
+    ApiCallRc backupDb(String backupPath) throws DatabaseException;
 }

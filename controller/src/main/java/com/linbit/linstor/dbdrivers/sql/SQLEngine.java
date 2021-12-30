@@ -5,6 +5,10 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver.RawParameters;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -54,15 +58,18 @@ public class SQLEngine implements DbEngine
     private final HashMap<DatabaseTable, String> selectStatements;
     private final HashMap<DatabaseTable, String> insertStatements;
     private final HashMap<DatabaseTable, String> deleteStatements;
+    private final CtrlConfig ctrlCfg;
 
     @Inject
     public SQLEngine(
         ErrorReporter errorReporterRef,
-        Provider<TransactionMgrSQL> transMgrProviderRef
+        Provider<TransactionMgrSQL> transMgrProviderRef,
+        CtrlConfig ctrlCfgRef
     )
     {
         errorReporter = errorReporterRef;
         transMgrProvider = transMgrProviderRef;
+        ctrlCfg = ctrlCfgRef;
 
         selectStatements = new HashMap<>();
         insertStatements = new HashMap<>();
@@ -75,6 +82,31 @@ public class SQLEngine implements DbEngine
         return DatabaseType.SQL;
     }
 
+    @Override
+    public ApiCallRc backupDb(String backupPath) throws DatabaseException
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        if (ctrlCfg.getDbConnectionUrl().toLowerCase().startsWith("jdbc:h2"))
+        {
+            try (PreparedStatement stmt = getConnection().prepareStatement(String.format("BACKUP TO '%s'", backupPath)))
+            {
+                stmt.execute();
+                apiCallRc.addEntry(
+                    "Database backup created: " + backupPath, ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT);
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
+        }
+        else
+        {
+            apiCallRc.addEntry(
+                "Only h2 database is currently supported for online backup.", ApiConsts.FAIL_UNKNOWN_ERROR);
+        }
+
+        return apiCallRc;
+    }
 
     @Override
     public <DATA> void create(
