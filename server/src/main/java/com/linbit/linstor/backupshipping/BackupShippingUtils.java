@@ -4,16 +4,14 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
-import com.linbit.linstor.api.pojo.backups.BackupMetaInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
+import com.linbit.linstor.api.pojo.backups.BackupMetaInfoPojo;
 import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.RscDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.RscMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.identifier.ResourceName;
-import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -30,6 +28,7 @@ import com.linbit.utils.Base64;
 
 import java.text.ParseException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -170,53 +169,13 @@ public class BackupShippingUtils
         );
     }
 
-    public static String buildS3MetaKey(String rscName, String snapName, String s3Suffix)
+    public static String generateBackupName(Date now)
     {
-        return rscName + "_" + snapName + (s3Suffix == null ? "" : s3Suffix) + S3Consts.META_SUFFIX;
+        return S3Consts.BACKUP_PREFIX + S3Consts.DATE_FORMAT.format(now);
     }
 
-    public static String buildS3MetaKey(
-        ResourceName resourceNameRef,
-        SnapshotName snapshotNameRef,
-        String s3Suffix
-    )
+    public static String defaultEmpty(String s)
     {
-        return buildS3MetaKey(resourceNameRef.displayValue, snapshotNameRef.displayValue, s3Suffix);
-    }
-
-    public static String buildS3MetaKey(SnapshotDefinition snapDfn, String s3Suffix)
-    {
-        return buildS3MetaKey(
-            snapDfn.getResourceName().displayValue,
-            snapDfn.getName().displayValue,
-            s3Suffix
-        );
-    }
-
-    public static String buildS3MetaKey(Snapshot snap, String s3Suffix)
-    {
-        return buildS3MetaKey(
-            snap.getResourceName().displayValue,
-            snap.getSnapshotName().displayValue,
-            s3Suffix
-        );
-    }
-
-    public static String buildS3VolumeName(
-        String rscName,
-        String rscNameSuffix,
-        int vlmNr,
-        String snapName,
-        String s3Suffix
-    )
-    {
-        return String.format(
-            S3Consts.BACKUP_KEY_FORMAT,
-            rscName,
-            rscNameSuffix,
-            vlmNr,
-            snapName,
-            s3Suffix == null ? "" : s3Suffix
-        );
+        return (s == null) ? "" : s;
     }
 }

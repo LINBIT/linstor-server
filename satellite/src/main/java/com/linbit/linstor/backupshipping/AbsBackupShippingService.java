@@ -42,6 +42,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -185,18 +186,24 @@ public abstract class AbsBackupShippingService implements SystemService
     {
         if (RscLayerSuffixes.shouldSuffixBeShipped(rscNameSuffixRef))
         {
-            String backupName = BackupShippingUtils.buildS3VolumeName(
+            String remoteName = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshot().getProps(accCtx)
+                .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+            String s3Suffix = stltConfigAccessor.getReadonlyProps()
+                .getProp(ApiConsts.KEY_BACKUP_S3_SUFFIX, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+            String backupTimeRaw = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotDefinition()
+                .getProps(accCtx)
+                .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+            Date backupTime = new Date(Long.parseLong(backupTimeRaw));
+
+            String backupName = new S3VolumeNameInfo(
                 rscNameRef,
                 rscNameSuffixRef,
                 vlmNrRef,
-                snapNameRef,
-                stltConfigAccessor.getReadonlyProps().getProp(
-                    ApiConsts.KEY_BACKUP_S3_SUFFIX,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                )
-            );
-            String remoteName = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshot().getProps(accCtx)
-                .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                backupTime,
+                s3Suffix,
+                snapNameRef
+            ).toString();
+
             startDaemon(
                 cmdRef,
                 new String[]
@@ -414,20 +421,33 @@ public abstract class AbsBackupShippingService implements SystemService
                 info.remote = remote;
                 try
                 {
-                    String s3Suffix = stltConfigAccessor.getReadonlyProps().getProp(
-                        ApiConsts.KEY_BACKUP_S3_SUFFIX,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
-                    );
+                    String s3Suffix = stltConfigAccessor.getReadonlyProps()
+                        .getProp(ApiConsts.KEY_BACKUP_S3_SUFFIX, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                    String backupTimeRaw = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotDefinition()
+                        .getProps(accCtx)
+                        .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                    Date backupTime = new Date(Long.parseLong(backupTimeRaw));
 
-                    info.s3MetaKey = BackupShippingUtils.buildS3MetaKey(snap, s3Suffix);
+                    info.s3MetaKey = new S3MetafileNameInfo(
+                        snap.getResourceName().displayValue,
+                        backupTime,
+                        s3Suffix,
+                        snap.getSnapshotName().displayValue
+                    ).toString();
+
                     if (basedOnSnapVlmData != null && basedOnSnapVlmData != snapVlmData)
                     {
                         Snapshot basedOnSnap = basedOnSnapVlmData.getRscLayerObject().getAbsResource();
-                        String basedOnSnapSuffix = basedOnSnap.getSnapshotDefinition().getProps(accCtx).getProp(
-                            ApiConsts.KEY_BACKUP_S3_SUFFIX,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
-                        );
-                        info.basedOnS3MetaKey = BackupShippingUtils.buildS3MetaKey(basedOnSnap, basedOnSnapSuffix);
+                        String basedOnSnapSuffix = basedOnSnap.getSnapshotDefinition().getProps(accCtx).getProp(ApiConsts.KEY_BACKUP_S3_SUFFIX, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        String basedOnBackupTimeRaw = basedOnSnap.getSnapshotDefinition().getProps(accCtx).getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        Date basedOnBackupTime = new Date(Long.parseLong(basedOnBackupTimeRaw));
+
+                        info.basedOnS3MetaKey = new S3MetafileNameInfo(
+                            basedOnSnap.getResourceName().displayValue,
+                            basedOnBackupTime,
+                            basedOnSnapSuffix,
+                            basedOnSnap.getSnapshotName().displayValue
+                        ).toString();
                     }
                 }
                 catch (InvalidKeyException | AccessDeniedException exc)

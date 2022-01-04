@@ -28,8 +28,6 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.function.BiConsumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.amazonaws.SdkClientException;
 
@@ -37,9 +35,6 @@ import com.amazonaws.SdkClientException;
 public class BackupShippingS3Service extends AbsBackupShippingService
 {
     public static final String SERVICE_INFO = "BackupShippingS3Service";
-    private static final Pattern S3_BACKUP_NAME_PATTERN = Pattern.compile(
-        "^([a-zA-Z0-9_-]{2,48})_(back_[0-9]{8}_[0-9]{6})(:?.*)$"
-    );
 
     protected static final String CMD_FORMAT_SENDING =
         "set -o pipefail; " +
@@ -108,36 +103,31 @@ public class BackupShippingS3Service extends AbsBackupShippingService
     protected String getBackupNameForRestore(AbsStorageVlmData<Snapshot> snapVlmDataRef)
         throws InvalidKeyException, AccessDeniedException
     {
-        String ret;
-
         Snapshot snap = snapVlmDataRef.getVolume().getAbsResource();
-        String simpleBackupName = snap.getProps(accCtx).getProp(
+        String backupId = snap.getProps(accCtx).getProp(
             InternalApiConsts.KEY_BACKUP_TO_RESTORE,
             ApiConsts.NAMESPC_BACKUP_SHIPPING
         );
 
-        Matcher mtc = S3_BACKUP_NAME_PATTERN.matcher(simpleBackupName);
-        if (mtc.matches())
+        try
         {
-            ret = BackupShippingUtils.buildS3VolumeName(
-                mtc.group(1),
+            S3MetafileNameInfo info = new S3MetafileNameInfo(backupId);
+
+            return new S3VolumeNameInfo(
+                info.rscName,
                 snapVlmDataRef.getRscLayerObject().getResourceNameSuffix(),
                 snapVlmDataRef.getVlmNr().value,
-                mtc.group(2),
-                snap.getSnapshotDefinition().getProps(accCtx).getProp(
-                    ApiConsts.KEY_BACKUP_S3_SUFFIX,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                )
-            );
+                info.backupTime,
+                info.s3Suffix,
+                info.snapName
+            ).toString();
         }
-        else
+        catch (ParseException exc)
         {
             throw new ImplementationError(
-                "The simplified backup-name " + simpleBackupName + " does not conform to the expected format."
+                "The simplified backup-name " + backupId + " does not conform to the expected format."
             );
         }
-
-        return ret;
     }
 
     @Override

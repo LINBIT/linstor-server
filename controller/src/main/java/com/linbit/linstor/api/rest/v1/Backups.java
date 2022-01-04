@@ -11,6 +11,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.BackupShip;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LSrcApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
@@ -105,7 +106,8 @@ public class Backups
         {
             JsonGenTypes.BackupCreate data = objectMapper.readValue(jsonData, JsonGenTypes.BackupCreate.class);
             boolean incremental = data.incremental != null && data.incremental;
-            responses = backupApiCallHandler.createBackup(data.rsc_name, remoteName, data.node_name, incremental)
+            responses = backupApiCallHandler
+                .createBackup(data.rsc_name, data.snap_name, remoteName, data.node_name, incremental)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
@@ -136,42 +138,21 @@ public class Backups
         try
         {
             JsonGenTypes.BackupRestore data = objectMapper.readValue(jsonData, JsonGenTypes.BackupRestore.class);
-            boolean lastBackupNullOrEmpty = data.last_backup == null || data.last_backup.isEmpty();
-            boolean srcRscNameNullOrEmpty = data.src_rsc_name == null || data.src_rsc_name.isEmpty();
-            if (lastBackupNullOrEmpty == srcRscNameNullOrEmpty)
-            {
-                // either neither last_backup and src_rsc_name are given, or both
-                requestHelper
-                    .doFlux(
-                        asyncResponse,
-                        ApiCallRcRestUtils.mapToMonoResponse(
-                            Flux.just(
-                                ApiCallRcImpl.singleApiCallRc(
-                                    ApiConsts.FAIL_INVLD_REQUEST,
-                                    "Too many or too few parameters given. Either --id or -r is required, but not both!"
-                                )
-                            ),
-                            Response.Status.BAD_REQUEST
-                        )
-                    );
-            }
-            else
-            {
-                responses = backupApiCallHandler.restoreBackup(
-                    data.src_rsc_name,
-                    data.stor_pool_map,
-                    data.node_name,
-                    data.target_rsc_name,
-                    remoteName,
-                    data.passphrase,
-                    data.last_backup,
-                    data.download_only
-                ).subscriberContext(requestHelper.createContext(ApiConsts.API_RESTORE_BACKUP, request));
-                requestHelper.doFlux(
-                    asyncResponse,
-                    ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
-                );
-            }
+
+            validateBackupSelectionParams(data.last_backup, data.src_rsc_name, data.src_snap_name);
+
+            responses = backupApiCallHandler.restoreBackup(
+                data.src_rsc_name,
+                data.src_snap_name,
+                data.last_backup,
+                data.stor_pool_map,
+                data.node_name,
+                data.target_rsc_name,
+                remoteName,
+                data.passphrase,
+                data.download_only
+            ).subscriberContext(requestHelper.createContext(ApiConsts.API_RESTORE_BACKUP, request));
+                requestHelper.doFlux(asyncResponse,ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED));
         }
         catch (JsonProcessingException exc)
         {
@@ -295,6 +276,7 @@ public class Backups
     public Response listBackups(
         @Context Request request,
         @DefaultValue("") @QueryParam("rsc_name") String rscName,
+        @DefaultValue("") @QueryParam("snap_name") String snapName,
         @PathParam("remoteName") String remoteName
     )
     {
@@ -304,10 +286,9 @@ public class Backups
             () ->
             {
                 Pair<Map<String, BackupApi>, Set<String>> backups = backupApiCallHandler
-                    .listBackups(rscName, remoteName);
+                    .listBackups(rscName, snapName, remoteName);
                 JsonGenTypes.BackupList backupList = new JsonGenTypes.BackupList();
-                Map<String, JsonGenTypes.Backup> jsonBackups = Json.apiToBackup(backups.objA);
-                backupList.linstor = jsonBackups;
+                backupList.linstor = Json.apiToBackup(backups.objA);
                 backupList.other = new JsonGenTypes.BackupOther();
                 backupList.other.files = new ArrayList<>(backups.objB);
                 return Response.status(Response.Status.OK)
@@ -372,56 +353,33 @@ public class Backups
         {
             JsonGenTypes.BackupInfoRequest data = objectMapper
                 .readValue(jsonData, JsonGenTypes.BackupInfoRequest.class);
-            boolean lastBackupNullOrEmpty = data.last_backup == null || data.last_backup.isEmpty();
-            boolean srcRscNameNullOrEmpty = data.src_rsc_name == null || data.src_rsc_name.isEmpty();
+
+            validateBackupSelectionParams(data.last_backup, data.src_rsc_name, data.src_snap_name);
+
             boolean renameMapNullOrEmpty = data.stor_pool_map == null || data.stor_pool_map.isEmpty();
             boolean nodeNameNullOrEmpty = data.node_name == null || data.node_name.isEmpty();
-            if (lastBackupNullOrEmpty == srcRscNameNullOrEmpty)
+
+            if (!renameMapNullOrEmpty && nodeNameNullOrEmpty)
             {
-                // either neither last_backup and src_rsc_name are given, or both
-                requestHelper
-                    .doFlux(
-                        asyncResponse,
-                        ApiCallRcRestUtils.mapToMonoResponse(
-                            Flux.just(
-                                ApiCallRcImpl.singleApiCallRc(
-                                    ApiConsts.FAIL_INVLD_REQUEST,
-                                    "Too many or too few parameters given. Either --id or -r is required, but not both!"
-                                )
-                            ),
-                            Response.Status.BAD_REQUEST
-                        )
-                    );
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_REQUEST,
+                        "Too few parameters given. When using --storpool-rename, then --target-node is also needed."
+                    )
+                );
             }
-            else if (!renameMapNullOrEmpty && nodeNameNullOrEmpty)
-            {
-                // only one of stor_pool_map and node_name is given
-                requestHelper
-                    .doFlux(
-                        asyncResponse,
-                        ApiCallRcRestUtils.mapToMonoResponse(
-                            Flux.just(
-                                ApiCallRcImpl.singleApiCallRc(
-                                    ApiConsts.FAIL_INVLD_REQUEST,
-                                    "Too few parameters given. When using --storpool-rename, then --target-node is also needed."
-                                )
-                            ),
-                            Response.Status.BAD_REQUEST
-                        )
-                    );
-            }
-            else
-            {
-                Flux<BackupInfoPojo> backupInfoFlux = backupApiCallHandler.backupInfo(
+
+            Flux<BackupInfoPojo> backupInfoFlux = backupApiCallHandler
+                .backupInfo(
                     data.src_rsc_name,
+                    data.src_snap_name,
                     data.last_backup,
                     data.stor_pool_map,
                     data.node_name,
                     remoteName
                 )
-                    .subscriberContext(requestHelper.createContext(ApiConsts.API_BACKUP_INFO, request));
-                requestHelper.doFlux(asyncResponse, backupInfoPojoToResponse(backupInfoFlux, asyncResponse));
-            }
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_BACKUP_INFO, request));
+            requestHelper.doFlux(asyncResponse, backupInfoPojoToResponse(backupInfoFlux, asyncResponse));
         }
         catch (JsonProcessingException exc)
         {
@@ -451,5 +409,23 @@ public class Backups
             }
             return Mono.just(resp);
         }).next();
+    }
+
+    private static void validateBackupSelectionParams(String backupIdRef, String rscNameRef, String snapNameRef)
+        throws ApiRcException
+    {
+        String backupId = (backupIdRef == null) ? "" : backupIdRef;
+        String rscName = (rscNameRef == null) ? "" : rscNameRef;
+        String snapName = (snapNameRef == null) ? "" : snapNameRef;
+
+        if (backupId.isEmpty() && rscName.isEmpty() && snapName.isEmpty())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_REQUEST,
+                    "One of backup ID, resource name or snapshot name is required, but none was given"
+                )
+            );
+        }
     }
 }

@@ -1166,6 +1166,7 @@ public class Json
             jsonBackup.finished_time = backup.getFinishedTime();
             jsonBackup.finished_timestamp = backup.getFinishedTimestamp();
             jsonBackup.origin_rsc = backup.getResourceName();
+            jsonBackup.origin_snap = backup.getSnapKey();
             jsonBackup.origin_node = backup.getOriginNodeName();
             jsonBackup.success = backup.successful();
             jsonBackup.shipping = backup.isShipping();
@@ -1209,6 +1210,7 @@ public class Json
     {
         JsonGenTypes.BackupInfo json = new JsonGenTypes.BackupInfo();
         json.rsc = pojo.getRscName();
+        json.snap = pojo.getSnapName();
         json.full = pojo.getFullBackupName();
         json.latest = pojo.getLatestBackupName();
         json.count = pojo.getBackupCount();

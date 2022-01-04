@@ -4,9 +4,9 @@ This file was generated with rest-gen.py, do not modify directly, the chances ar
 
 package com.linbit.linstor.api.rest.v1.serializer;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Collections;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -1202,6 +1202,7 @@ public class JsonGenTypes
         public String finished_time;
         public Long finished_timestamp;
         public String origin_rsc;
+        public String origin_snap;
         public String origin_node;
         public String fail_messages;
         public List<BackupVolumes> vlms = Collections.emptyList();
@@ -1246,6 +1247,7 @@ public class JsonGenTypes
     public static class BackupRestore
     {
         public String src_rsc_name;
+        public String src_snap_name;
         public String last_backup;
         public Map<String, String> stor_pool_map = Collections.emptyMap();
         public String target_rsc_name;
@@ -1258,6 +1260,7 @@ public class JsonGenTypes
     public static class BackupCreate
     {
         public String rsc_name;
+        public String snap_name;
         public String node_name;
         public Boolean incremental;
     }
@@ -1287,6 +1290,7 @@ public class JsonGenTypes
     public static class BackupInfo
     {
         public String rsc;
+        public String snap;
         public String full;
         public String latest;
         public Integer count;
@@ -1299,6 +1303,7 @@ public class JsonGenTypes
     public static class BackupInfoRequest
     {
         public String src_rsc_name;
+        public String src_snap_name;
         public String last_backup;
         public Map<String, String> stor_pool_map = Collections.emptyMap();
         public String node_name;

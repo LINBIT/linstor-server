@@ -5,6 +5,7 @@ import java.util.List;
 public class BackupInfoPojo
 {
     private final String rscName;
+    private final String snapName;
     private final String fullBackupName;
     private final String latestBackupName;
     private final int backupCount;
@@ -14,6 +15,7 @@ public class BackupInfoPojo
 
     public BackupInfoPojo(
         String rscNameRef,
+        String snapNameRef,
         String fullBackupNameRef,
         String latestBackupNameRef,
         int backupCountRef,
@@ -23,6 +25,7 @@ public class BackupInfoPojo
     )
     {
         rscName = rscNameRef;
+        snapName = snapNameRef;
         fullBackupName = fullBackupNameRef;
         latestBackupName = latestBackupNameRef;
         backupCount = backupCountRef;
@@ -34,6 +37,11 @@ public class BackupInfoPojo
     public String getRscName()
     {
         return rscName;
+    }
+
+    public String getSnapName()
+    {
+        return snapName;
     }
 
     public String getFullBackupName()

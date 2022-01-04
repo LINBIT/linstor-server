@@ -197,8 +197,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             throw new ImplementationError(exc);
         }
 
-        long now = System.currentTimeMillis();
-        String backupName = CtrlBackupApiCallHandler.generateNewSnapshotName(new Date(now));
+        Date now = new Date();
+        String backupName = BackupShippingUtils.generateBackupName(now);
         BackupShippingData data = new BackupShippingData(
             srcClusterId,
             srcNodeNameRef,
@@ -514,12 +514,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                         );
                     }
 
-                    ctrlBackupApiCallHandler.setPropsIncremantaldependendProps(
-                        snap.getSnapshotDefinition().getName().displayValue,
-                        true,
-                        prevSnapDfn,
-                        snap
-                    );
+                    ctrlBackupApiCallHandler.setIncrementalDependentProps(snap, prevSnapDfn);
                 }
 
                 ctrlTransactionHelper.commit();
@@ -794,7 +789,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         private String srcNodeName;
         private final String srcRscName;
         private final String srcBackupName;
-        private final long now;
+        private final Date now;
         private Snapshot srcSnapshot;
         private final LinstorRemote linstorRemote;
         private boolean useZstd;
@@ -814,7 +809,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             String srcNodeNameRef,
             String srcRscNameRef,
             String srcBackupNameRef,
-            long nowRef,
+            Date nowRef,
             LinstorRemote linstorRemoteRef,
             String dstRscNameRef,
             String dstNodeNameRef,
