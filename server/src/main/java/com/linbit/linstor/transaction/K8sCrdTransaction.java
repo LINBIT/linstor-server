@@ -83,13 +83,17 @@ public class K8sCrdTransaction
     public void update(DatabaseTable dbTable, LinstorCrd<?> k8sRsc)
     {
         // System.out.println("updating " + dbTable.getName() + " " + k8sRsc);
-        lazyGet(rscsToChangeOrCreate, dbTable).put(k8sRsc.getKey(), k8sRsc);
+        String key = k8sRsc.getKey();
+        lazyGet(rscsToChangeOrCreate, dbTable).put(key, k8sRsc);
+        lazyGet(rscsToDelete, dbTable).remove(key);
     }
 
     public void delete(DatabaseTable dbTable, LinstorCrd<?> k8sRsc)
     {
         // System.out.println("deleting entry from " + dbTable.getName() + ": " + k8sRsc);
-        lazyGet(rscsToDelete, dbTable).put(k8sRsc.getKey(), k8sRsc);
+        String key = k8sRsc.getKey();
+        lazyGet(rscsToDelete, dbTable).put(key, k8sRsc);
+        lazyGet(rscsToChangeOrCreate, dbTable).remove(key);
     }
 
     private HashMap<String, LinstorCrd<?>> lazyGet(

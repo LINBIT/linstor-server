@@ -402,6 +402,7 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
     @Override
     public void delete(VlmProviderObject<?> vlmDataRef) throws DatabaseException
     {
+        errorReporter.logTrace("Deleting StorageVlmData %s", getId(vlmDataRef));
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         tx.delete(
             GeneratedDatabaseTables.LAYER_STORAGE_VOLUMES,
