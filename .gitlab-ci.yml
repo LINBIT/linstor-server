@@ -145,7 +145,7 @@ test-e2e:
     - echo "LINSTOR-TEST BRANCH = $TEST_BRANCH"
     - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
-    - ./linstor-test-bundle/virter/run-test.sh $VARIANTS $VMSHED_TORUN
+    - ./linstor-test-bundle/virter/run-test.py $VARIANTS $VMSHED_TORUN
   artifacts:
     # provide a convenient name so that the downloaded artifacts can be identified
     name: $CI_PROJECT_NAME-$CI_JOB_ID
