@@ -781,7 +781,7 @@ public class StateFlagBitsTest
                 Collections.singletonList(objProtRef),
                 new Object(),
                 validFlagsMask,
-                ((objProt, flags) -> {}),
+                ((objProt, oldFlagBits, newFlagBits) -> {}),
                 testTransMgrProvider
             );
             // as this test should not test persistence, this should be no problem.

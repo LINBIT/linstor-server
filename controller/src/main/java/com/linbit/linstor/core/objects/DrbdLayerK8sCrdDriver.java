@@ -112,7 +112,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
         tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
 
-        rscFlagsDriver = (rscData, ignored) -> update(rscData);
+        rscFlagsDriver = (rscData, ignored1, ignored2) -> update(rscData);
         rscNodeIdDriver = (rscData, ignored) -> update(rscData);
         vlmExtStorPoolDriver = (vlmData, ignored) -> update(vlmData);
         rscDfnUpdateDriver = (rscDfnData, ignored) -> update(rscDfnData);

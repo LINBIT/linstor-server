@@ -1120,52 +1120,45 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
     private class RscFlagsDriver implements StateFlagsPersistence<DrbdRscData<?>>
     {
         @Override
-        public void persist(DrbdRscData<?> drbdRscData, long flags)
+        public void persist(DrbdRscData<?> drbdRscData, long oldFlagBits, long newFlagBits)
             throws DatabaseException
         {
-            try
+            String fromFlags = StringUtils.join(
+                FlagsHelper.toStringList(
+                    DrbdRscObject.DrbdRscFlags.class,
+                    oldFlagBits
+                ),
+                ", "
+            );
+            String toFlags = StringUtils.join(
+                FlagsHelper.toStringList(
+                    DrbdRscObject.DrbdRscFlags.class,
+                    newFlagBits
+                ),
+                ", "
+            );
+            errorReporter.logTrace(
+                "Updating DrbdRscData's flags from [%s] to [%s] %s",
+                fromFlags,
+                toFlags,
+                getId(drbdRscData)
+            );
+            try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_RSC_FLAGS))
             {
-                String fromFlags = StringUtils.join(
-                    FlagsHelper.toStringList(
-                        DrbdRscObject.DrbdRscFlags.class,
-                        drbdRscData.getFlags().getFlagsBits(dbCtx)
-                    ),
-                    ", "
-                );
-                String toFlags = StringUtils.join(
-                    FlagsHelper.toStringList(
-                        DrbdRscObject.DrbdRscFlags.class,
-                        flags
-                    ),
-                    ", "
-                );
-                errorReporter.logTrace(
-                    "Updating DrbdRscData's flags from [%s] to [%s] %s",
-                    fromFlags,
-                    toFlags,
-                    getId(drbdRscData)
-                );
-                try (PreparedStatement stmt = getConnection().prepareStatement(UPDATE_RSC_FLAGS))
-                {
-                    stmt.setLong(1, flags);
-                    stmt.setLong(2, drbdRscData.getRscLayerId());
-                    stmt.executeUpdate();
-                }
-                catch (SQLException sqlExc)
-                {
-                    throw new DatabaseException(sqlExc);
-                }
-                errorReporter.logTrace(
-                    "DrbdRscData's flags updated from [%s] to [%s] %s",
-                    fromFlags,
-                    toFlags,
-                    getId(drbdRscData)
-                );
+                stmt.setLong(1, newFlagBits);
+                stmt.setLong(2, drbdRscData.getRscLayerId());
+                stmt.executeUpdate();
             }
-            catch (AccessDeniedException accDeniedExc)
+            catch (SQLException sqlExc)
             {
-                DatabaseLoader.handleAccessDeniedException(accDeniedExc);
+                throw new DatabaseException(sqlExc);
             }
+            errorReporter.logTrace(
+                "DrbdRscData's flags updated from [%s] to [%s] %s",
+                fromFlags,
+                toFlags,
+                getId(drbdRscData)
+            );
         }
     }
 

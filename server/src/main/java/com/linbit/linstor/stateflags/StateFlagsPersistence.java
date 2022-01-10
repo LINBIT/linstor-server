@@ -10,5 +10,5 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
  */
 public interface StateFlagsPersistence<PK>
 {
-    void persist(PK primaryKey, long flags) throws DatabaseException;
+    void persist(PK primaryKey, long oldFlagBits, long newFlagBits) throws DatabaseException;
 }

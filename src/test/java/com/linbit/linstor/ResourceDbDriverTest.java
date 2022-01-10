@@ -303,7 +303,7 @@ public class ResourceDbDriverTest extends GenericDbBase
         driver.create(res);
         commit();
         StateFlagsPersistence<AbsResource<Resource>> stateFlagPersistence = driver.getStateFlagPersistence();
-        stateFlagPersistence.persist(res, StateFlagsBits.getMask(Resource.Flags.DELETE));
+        stateFlagPersistence.persist(res, 0, StateFlagsBits.getMask(Resource.Flags.DELETE));
         commit();
 
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_RESOURCES);

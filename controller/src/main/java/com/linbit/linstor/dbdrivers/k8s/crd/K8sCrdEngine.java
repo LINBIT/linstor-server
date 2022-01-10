@@ -169,7 +169,7 @@ public class K8sCrdEngine implements DbEngine
     {
         final DatabaseTable table = colRef.getTable();
         // k8s cannot update single "columns" just the whole object. Map all drivers to a simple object-update
-        return (data, ignored) -> updateOrCreate(table, settersRef, data, dataIdToString);
+        return (data, ignored1, ignored2) -> updateOrCreate(table, settersRef, data, dataIdToString);
     }
 
     @Override

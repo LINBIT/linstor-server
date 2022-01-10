@@ -194,16 +194,16 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         DataToString<DATA> dataToString
     )
     {
-        return (data, flags) ->
+        return (data, oldFlagBits, newFlagBits) ->
         {
             try
             {
                 String fromFlags = StringUtils.join(
-                    FlagsHelper.toStringList(flagsClass, (long) setters.get(flagColumn).accept(data)),
+                    FlagsHelper.toStringList(flagsClass, oldFlagBits),
                     ", "
                 );
                 String toFlags = StringUtils.join(
-                    FlagsHelper.toStringList(flagsClass, flags),
+                    FlagsHelper.toStringList(flagsClass, newFlagBits),
                     ", "
                 );
                 String inlineId = dataToString.toString(data);
@@ -217,7 +217,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                         inlineId
                     );
                 namespace(flagColumn.getTable(), getPrimaryKeys(flagColumn.getTable(), data, setters))
-                    .put(flagColumn, Long.toString(flags));
+                    .put(flagColumn, Long.toString(newFlagBits));
             }
             catch (AccessDeniedException exc)
             {

@@ -292,51 +292,46 @@ public class NodeGenericDbDriver implements NodeDatabaseDriver
     private class NodeFlagPersistence implements StateFlagsPersistence<Node>
     {
         @Override
-        public void persist(Node node, long flags) throws DatabaseException
+        public void persist(Node node, long oldFlagBits, long newFlagBits) throws DatabaseException
         {
-            try
-            {
-                String fromFlags = StringUtils.join(
-                    FlagsHelper.toStringList(
-                        Node.Flags.class,
-                        node.getFlags().getFlagsBits(dbCtx)
-                    ),
-                    ", "
-                );
-                String toFlags = StringUtils.join(
-                    FlagsHelper.toStringList(
-                        Node.Flags.class,
-                        flags
-                    ),
-                    ", "
-                );
+            String fromFlags = StringUtils.join(
+                FlagsHelper.toStringList(
+                    Node.Flags.class,
+                    oldFlagBits
+                ),
+                ", "
+            );
+            String toFlags = StringUtils.join(
+                FlagsHelper.toStringList(
+                    Node.Flags.class,
+                    newFlagBits
+                ),
+                ", "
+            );
 
-                errorReporter.logTrace("Updating Node's flags from [%s] to [%s] %s",
-                    fromFlags,
-                    toFlags,
-                    getId(node)
-                );
-                try (PreparedStatement stmt = getConnection().prepareStatement(NODE_UPDATE_FLAGS))
-                {
-                    stmt.setLong(1, flags);
-                    stmt.setString(2, node.getName().value);
-
-                    stmt.executeUpdate();
-                }
-                catch (SQLException sqlExc)
-                {
-                    throw new DatabaseException(sqlExc);
-                }
-                errorReporter.logTrace("Node's flags updated from [%s] to [%s] %s",
-                    fromFlags,
-                    toFlags,
-                    getId(node)
-                );
-            }
-            catch (AccessDeniedException accDeniedExc)
+            errorReporter.logTrace(
+                "Updating Node's flags from [%s] to [%s] %s",
+                fromFlags,
+                toFlags,
+                getId(node)
+            );
+            try (PreparedStatement stmt = getConnection().prepareStatement(NODE_UPDATE_FLAGS))
             {
-                DatabaseLoader.handleAccessDeniedException(accDeniedExc);
+                stmt.setLong(1, newFlagBits);
+                stmt.setString(2, node.getName().value);
+
+                stmt.executeUpdate();
             }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(sqlExc);
+            }
+            errorReporter.logTrace(
+                "Node's flags updated from [%s] to [%s] %s",
+                fromFlags,
+                toFlags,
+                getId(node)
+            );
         }
     }
 

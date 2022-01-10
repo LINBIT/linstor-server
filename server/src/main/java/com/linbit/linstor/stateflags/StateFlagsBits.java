@@ -10,6 +10,7 @@ import com.linbit.linstor.transaction.AbsTransactionObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -244,11 +245,13 @@ public class StateFlagsBits<PRIMARY_KEY, FLAG extends Flags> extends AbsTransact
         return bitMask;
     }
 
-    private void setFlags(final long bits) throws DatabaseException
+    private void setFlags(final long newFlagBits) throws DatabaseException
     {
         activateTransMgr();
-        persistence.persist(pk, bits);
-        changedStateFlags = bits;
+        long oldFlagBits = changedStateFlags;
+        // k8s only persist whole object, so we MUST assign the flag-bits BEFORE calling .persist
+        changedStateFlags = newFlagBits;
+        persistence.persist(pk, oldFlagBits, newFlagBits);
     }
 
     public static <E extends Flags> Set<E> restoreFlags(E[] values, long mask)

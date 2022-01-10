@@ -50,16 +50,16 @@ class SQLFlagsDriver<DATA, FLAG extends Enum<FLAG> & Flags> implements StateFlag
     }
 
     @Override
-    public void persist(DATA data, long flagsRef) throws DatabaseException
+    public void persist(DATA data, long oldFlagBits, long newFlagBits) throws DatabaseException
     {
         try (PreparedStatement stmt = sqlEngine.getConnection().prepareStatement(updateStatement))
         {
             String fromFlags = StringUtils.join(
-                FlagsHelper.toStringList(flagsClass, (long) setters.get(flagColumn).accept(data)),
+                FlagsHelper.toStringList(flagsClass, oldFlagBits),
                 ", "
             );
             String toFlags = StringUtils.join(
-                FlagsHelper.toStringList(flagsClass, flagsRef),
+                FlagsHelper.toStringList(flagsClass, newFlagBits),
                 ", "
             );
             String inlineId = dataToString.toString(data);
@@ -72,7 +72,7 @@ class SQLFlagsDriver<DATA, FLAG extends Enum<FLAG> & Flags> implements StateFlag
                     toFlags,
                     inlineId
                 );
-            stmt.setLong(1, flagsRef);
+            stmt.setLong(1, newFlagBits);
             sqlEngine.setPrimaryValues(setters, stmt, 2, table, data);
 
             stmt.executeUpdate();

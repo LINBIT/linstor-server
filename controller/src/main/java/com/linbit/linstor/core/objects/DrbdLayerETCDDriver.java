@@ -934,38 +934,30 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
     private class RscFlagsDriver implements StateFlagsPersistence<DrbdRscData<?>>
     {
         @Override
-        public void persist(DrbdRscData<?> drbdRscData, long flags) throws DatabaseException
+        public void persist(DrbdRscData<?> drbdRscData, long oldFlagBits, long newFlagBits) throws DatabaseException
         {
-            try
-            {
-                String fromFlags = StringUtils.join(
-                    FlagsHelper.toStringList(
-                        DrbdRscObject.DrbdRscFlags.class,
-                        drbdRscData.getFlags().getFlagsBits(dbCtx)
-                    ),
-                    ", "
-                );
-                String toFlags = StringUtils.join(
-                    FlagsHelper.toStringList(DrbdRscObject.DrbdRscFlags.class, flags),
-                    ", "
-                );
-                String inlineId = getId(drbdRscData);
+            String fromFlags = StringUtils.join(
+                FlagsHelper.toStringList(
+                    DrbdRscObject.DrbdRscFlags.class,
+                    oldFlagBits
+                ),
+                ", "
+            );
+            String toFlags = StringUtils.join(
+                FlagsHelper.toStringList(DrbdRscObject.DrbdRscFlags.class, newFlagBits),
+                ", "
+            );
+            String inlineId = getId(drbdRscData);
 
-                errorReporter
-                    .logTrace(
-                        "Updating DrbdRscData's flags from [%s] to [%s] %s",
-                        fromFlags,
-                        toFlags,
-                        inlineId
-                    );
-                getNamespace(drbdRscData)
-                    .put(LayerDrbdResources.FLAGS, Long.toString(flags));
-            }
-            catch (AccessDeniedException exc)
-            {
-                DatabaseLoader.handleAccessDeniedException(exc);
-
-            }
+            errorReporter
+                .logTrace(
+                    "Updating DrbdRscData's flags from [%s] to [%s] %s",
+                    fromFlags,
+                    toFlags,
+                    inlineId
+                );
+            getNamespace(drbdRscData)
+                .put(LayerDrbdResources.FLAGS, Long.toString(newFlagBits));
         }
     }
 

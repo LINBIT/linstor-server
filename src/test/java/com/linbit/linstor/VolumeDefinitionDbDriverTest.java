@@ -277,7 +277,7 @@ public class VolumeDefinitionDbDriverTest extends GenericDbBase
         driver.create(volDfn);
         commit();
         long newFlagMask = 0;
-        driver.getStateFlagsPersistence().persist(volDfn, newFlagMask);
+        driver.getStateFlagsPersistence().persist(volDfn, 0, newFlagMask);
 
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();
