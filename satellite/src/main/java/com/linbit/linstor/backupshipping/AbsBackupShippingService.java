@@ -22,12 +22,15 @@ import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Remote.RemoteType;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StltRemote;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
@@ -466,9 +469,14 @@ public abstract class AbsBackupShippingService implements SystemService
     )
     {
         Snapshot snap = snapVlmData.getRscLayerObject().getAbsResource();
+        SnapshotDefinition.Key snapKey = null;
+        boolean success = false;
+        boolean done = false;
+        Set<Integer> portsUsed = null;
+        ShippingInfo shippingInfo = null;
         synchronized (snap)
         {
-            ShippingInfo shippingInfo = shippingInfoMap.get(snap);
+            shippingInfo = shippingInfoMap.get(snap);
             /*
              * shippingInfo might be already null as we delete it at the end of this method.
              */
@@ -508,26 +516,16 @@ public abstract class AbsBackupShippingService implements SystemService
                         }
                         else
                         {
-                            boolean success = shippingInfo.snapVlmDataFinishedSuccessfully ==
+                            success = shippingInfo.snapVlmDataFinishedSuccessfully ==
                                 shippingInfo.snapVlmDataFinishedShipping;
 
                             success = preCtrlNotifyBackupShipped(success, restoring, snap, shippingInfo);
-                            controllerPeerConnector.getControllerPeer().sendMessage(
-                                interComSerializer.onewayBuilder(internalApiName)
-                                    .notifyBackupShipped(
-                                        snap,
-                                        success,
-                                        shippingInfo.portsUsed == null ? new TreeSet<>() : shippingInfo.portsUsed
-                                    )
-                                    .build()
-                            );
+                            snapKey = new SnapshotDefinition.Key(snap.getSnapshotDefinition());
+                            portsUsed = shippingInfo.portsUsed;
                         }
                     }
+                    done = true;
 
-                    for (SnapVlmDataInfo snapVlmDataInfo : shippingInfo.snapVlmDataInfoMap.values())
-                    {
-                        snapVlmDataInfo.daemon.shutdown(false); // just make sure that everything is already stopped
-                    }
                     if (shippingInfo.alreadyInUse.isEmpty())
                     {
                         try
@@ -552,6 +550,73 @@ public abstract class AbsBackupShippingService implements SystemService
                 }
             }
         }
+        if (snapKey != null)
+        {
+            success = waitForSnapCreateFinished(snap) && success;
+            controllerPeerConnector.getControllerPeer().sendMessage(
+                interComSerializer.onewayBuilder(internalApiName)
+                    .notifyBackupShipped(
+                        snapKey,
+                        success,
+                        portsUsed == null ? new TreeSet<>() : portsUsed
+                    )
+                    .build()
+            );
+        }
+        if (shippingInfo != null && done)
+        {
+            for (SnapVlmDataInfo snapVlmDataInfo : shippingInfo.snapVlmDataInfoMap.values())
+            {
+                snapVlmDataInfo.daemon.shutdown(false); // just make sure that everything is already stopped
+            }
+        }
+    }
+
+    private boolean waitForSnapCreateFinished(Snapshot snap)
+    {
+        boolean success = false;
+        try
+        {
+            for (int i = 0; i < 300; i++)
+            {
+                synchronized (snap)
+                {
+                    if (snap.isDeleted() || snap.getSnapshotDefinition().isDeleted())
+                    {
+                        break;
+                    }
+                    StateFlags<Flags> snapDfnFlags = snap.getSnapshotDefinition().getFlags();
+                    if (snapDfnFlags.isSet(accCtx, SnapshotDefinition.Flags.SUCCESSFUL))
+                    {
+                        success = true;
+                        break;
+                    }
+                    if (
+                        snap.getFlags().isSet(accCtx, Snapshot.Flags.DELETE) ||
+                            snapDfnFlags.isSomeSet(
+                                accCtx,
+                                SnapshotDefinition.Flags.DELETE,
+                                SnapshotDefinition.Flags.FAILED_DEPLOYMENT,
+                                SnapshotDefinition.Flags.FAILED_DISCONNECT,
+                                SnapshotDefinition.Flags.SHIPPING_ABORT
+                            )
+                    )
+                    {
+                        break;
+                    }
+                }
+                Thread.sleep(1_000);
+            }
+        }
+        catch (InterruptedException exc)
+        {
+            errorReporter.reportError(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return success;
     }
 
     protected String fillPojo(Snapshot snap, String basedOnMetaName)

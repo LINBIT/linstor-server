@@ -9,6 +9,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.storage.LsBlkEntry;
@@ -138,7 +139,11 @@ public interface CtrlStltSerializer extends CommonSerializer
             boolean successRef
         );
 
-        CtrlStltSerializerBuilder notifyBackupShipped(Snapshot snap, boolean successRef, Set<Integer> ports);
+        CtrlStltSerializerBuilder notifyBackupShipped(
+            SnapshotDefinition.Key snapKey,
+            boolean successRef,
+            Set<Integer> ports
+        );
 
         CtrlStltSerializerBuilder notifyBackupShippingId(
             Snapshot snap,

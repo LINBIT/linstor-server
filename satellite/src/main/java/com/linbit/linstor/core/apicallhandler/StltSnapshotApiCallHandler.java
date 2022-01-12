@@ -35,6 +35,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
@@ -191,6 +192,11 @@ class StltSnapshotApiCallHandler
         snapshotDfnProps.keySet().retainAll(snapshotDfnApi.getProps().keySet());
 
         snapshotDfn.getFlags().resetFlagsTo(apiCtx, SnapshotDefinition.Flags.restoreFlags(snapshotDfnApi.getFlags()));
+        errorReporter.logTrace(
+            "resetting flags of local snapdfn (%s) to %s",
+            snapshotDfn,
+            FlagsHelper.toStringList(SnapshotDefinition.Flags.class, snapshotDfnApi.getFlags())
+        );
 
         // Merge satellite volume definitions
         Set<VolumeNumber> oldVolumeNumbers = snapshotDfn.getAllSnapshotVolumeDefinitions(apiCtx).stream()
@@ -255,7 +261,13 @@ class StltSnapshotApiCallHandler
         }
         checkUuid(snapshot, snapshotRaw);
         snapshot.getFlags().resetFlagsTo(apiCtx, snapshotFlags);
-
+        errorReporter.logTrace(
+            "resetting flags of local snapshot (%s) to %s, suspendIO: %b, takeSnapshot: %b",
+            snapshot,
+            FlagsHelper.toStringList(Snapshot.Flags.class, snapshotRaw.getFlags()),
+            snapshotRaw.getSuspendResource(),
+            snapshotRaw.getTakeSnapshot()
+        );
         snapshot.setSuspendResource(apiCtx, snapshotRaw.getSuspendResource());
         snapshot.setTakeSnapshot(apiCtx, snapshotRaw.getTakeSnapshot());
 

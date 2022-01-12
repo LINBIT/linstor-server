@@ -3373,169 +3373,177 @@ public class CtrlBackupApiCallHandler
             "Backup receiving for snapshot %s of resource %s %s", snapNameRef, rscNameRef,
             successRef ? "finished successfully" : "failed"
         );
-        Flux<ApiCallRc> flux;
-        SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, true);
-        try
+        Flux<ApiCallRc> flux = Flux.empty();
+        SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, false);
+        if (snapDfn != null)
         {
-            AccessContext peerCtx = peerAccCtx.get();
-
-            Snapshot snap = snapDfn.getSnapshot(peerCtx, peerProvider.get().getNode().getName());
-            snapDfn.getFlags().disableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
-            snap.getProps(peerCtx).removeProp(
-                InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
-            snap.getProps(peerCtx).removeProp(
-                InternalApiConsts.KEY_BACKUP_TO_RESTORE,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
-            snap.getFlags().disableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
-            for (Integer port : portsRef)
+            try
             {
-                if (port != null)
-                {
-                    snapshotShippingPortPool.deallocate(port);
-                }
-            }
+                AccessContext peerCtx = peerAccCtx.get();
 
-            boolean keepGoing;
-
-            Snapshot nextSnap = backupInfoMgr.getNextBackupToDownload(snap);
-            if (successRef && nextSnap != null)
-            {
-                snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
-                backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
-                SnapshotDefinition nextSnapDfn = nextSnap.getSnapshotDefinition();
-                nextSnapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
-                nextSnap.getFlags().enableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
-
-                ctrlTransactionHelper.commit();
-                flux = ctrlSatelliteUpdateCaller.updateSatellites(
-                    snapDfn,
-                    CtrlSatelliteUpdateCaller.notConnectedWarn()
-                ).transform(
-                    responses -> CtrlResponseUtils.combineResponses(
-                        responses,
-                        LinstorParsingUtils.asRscName(rscNameRef),
-                        "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
-                    )
-                )
-                    .concatWith(snapshotCrtHandler.postCreateSnapshot(nextSnapDfn));
-                keepGoing = true;
-            }
-            else
-            {
-                if (successRef)
+                Snapshot snap = snapDfn.getSnapshot(peerCtx, peerProvider.get().getNode().getName());
+                snapDfn.getFlags().disableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
+                Flux<ApiCallRc> l2lCleanupFlux = Flux.empty();
+                if (snap != null && !snap.isDeleted())
                 {
-                    snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
-                    backupInfoMgr.abortRestoreDeleteAllEntries(rscNameRef);
-                    backupInfoMgr.backupsToDownloadCleanUp(snap);
-                    backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
-                    // start snap-restore
-                    if (snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS))
-                    {
-                        // make sure to not restore it a second time
-                        snapDfn.getFlags().disableFlags(
-                            peerCtx,
-                            SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS
-                        );
-                        flux = ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
-                            Collections.emptyList(),
-                            snapNameRef,
-                            rscNameRef
-                        );
-                    }
-                    else
-                    {
-                        /*
-                         * no need for a "successfully downloaded" message, as this flux is triggered
-                         * by the satellite who does not care about this kind of ApiCallRc message
-                         */
-                        flux = Flux.empty();
-                    }
-                    keepGoing = false; // we received the last backup
-                }
-                else
-                {
-                    List<SnapshotDefinition> snapsToDelete = new ArrayList<>();
-                    snapsToDelete.add(snapDfn);
-                    backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
-                    backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
-                    Snapshot nextSnapToDel = nextSnap;
-                    while (nextSnapToDel != null)
-                    {
-                        snapsToDelete.add(nextSnapToDel.getSnapshotDefinition());
-                        nextSnapToDel.getSnapshotDefinition().getFlags()
-                            .enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING_ABORT);
-                        backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, nextSnapToDel);
-                        nextSnapToDel = backupInfoMgr.getNextBackupToDownload(nextSnapToDel);
-                    }
-                    Set<Snapshot> leftovers = backupInfoMgr.abortRestoreGetEntries(rscNameRef);
-                    if (leftovers != null && leftovers.isEmpty())
-                    {
-                        backupInfoMgr.abortRestoreDeleteAllEntries(rscNameRef);
-                    }
-                    else
-                    {
-                        throw new ImplementationError("Not all restore-entries marked for abortion: " + leftovers);
-                    }
-                    flux = Flux.empty();
-                    for (SnapshotDefinition snapDfnToDel : snapsToDelete)
-                    {
-                        flux = flux.concatWith(
-                            ctrlSnapDeleteApiCallHandler.deleteSnapshot(
-                            snapDfnToDel.getResourceName().displayValue,
-                            snapDfnToDel.getName().displayValue,
-                            null
-                            )
-                        );
-                    }
-                    keepGoing = false; // last backup failed.
-                }
-            }
-
-            Flux<ApiCallRc> l2lCleanupFlux = Flux.empty();
-            if (!keepGoing)
-            {
-                String remoteName = snap.getProps(peerAccCtx.get()).getProp(
-                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                );
-                Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-                if (remote != null && remote instanceof StltRemote)
-                {
-                    snap.getProps(peerAccCtx.get()).removeProp(
-                        InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                    snap.getProps(peerCtx).removeProp(
+                        InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
                         ApiConsts.NAMESPC_BACKUP_SHIPPING
                     );
-                    l2lCleanupFlux = cleanupStltRemote((StltRemote) remote)
-                        .concatWith(
-                            ctrlSatelliteUpdateCaller.updateSatellites(
-                                snapDfn,
-                                CtrlSatelliteUpdateCaller.notConnectedWarn()
-                            ).transform(
-                                responses -> CtrlResponseUtils.combineResponses(
-                                    responses,
-                                    LinstorParsingUtils.asRscName(rscNameRef),
-                                    "Removing remote property from snapshot '" + snapNameRef + "' of {1} on {0}"
-                                )
-                            )
-                        );
-                }
-            }
+                    snap.getProps(peerCtx).removeProp(
+                        InternalApiConsts.KEY_BACKUP_TO_RESTORE,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    );
+                    snap.getFlags().disableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
+                    for (Integer port : portsRef)
+                    {
+                        if (port != null)
+                        {
+                            snapshotShippingPortPool.deallocate(port);
+                        }
+                    }
 
-            ctrlTransactionHelper.commit();
-            startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
-            return l2lCleanupFlux.concatWith(flux);
+                    boolean keepGoing;
+
+                    Snapshot nextSnap = backupInfoMgr.getNextBackupToDownload(snap);
+                    if (successRef && nextSnap != null)
+                    {
+                        snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
+                        backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
+                        SnapshotDefinition nextSnapDfn = nextSnap.getSnapshotDefinition();
+                        nextSnapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
+                        nextSnap.getFlags().enableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
+
+                        ctrlTransactionHelper.commit();
+                        flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                            snapDfn,
+                            CtrlSatelliteUpdateCaller.notConnectedWarn()
+                        ).transform(
+                            responses -> CtrlResponseUtils.combineResponses(
+                                responses,
+                                LinstorParsingUtils.asRscName(rscNameRef),
+                                "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
+                            )
+                        )
+                            .concatWith(snapshotCrtHandler.postCreateSnapshot(nextSnapDfn));
+                        keepGoing = true;
+                    }
+                    else
+                    {
+                        if (successRef)
+                        {
+                            snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
+                            backupInfoMgr.abortRestoreDeleteAllEntries(rscNameRef);
+                            backupInfoMgr.backupsToDownloadCleanUp(snap);
+                            backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
+                            // start snap-restore
+                            if (snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS))
+                            {
+                                // make sure to not restore it a second time
+                                snapDfn.getFlags().disableFlags(
+                                    peerCtx,
+                                    SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS
+                                );
+                                flux = ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
+                                    Collections.emptyList(),
+                                    snapNameRef,
+                                    rscNameRef
+                                );
+                            }
+                            else
+                            {
+                                /*
+                                 * no need for a "successfully downloaded" message, as this flux is triggered
+                                 * by the satellite who does not care about this kind of ApiCallRc message
+                                 */
+                                flux = Flux.empty();
+                            }
+                            keepGoing = false; // we received the last backup
+                        }
+                        else
+                        {
+                            List<SnapshotDefinition> snapsToDelete = new ArrayList<>();
+                            snapsToDelete.add(snapDfn);
+                            backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
+                            backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
+                            Snapshot nextSnapToDel = nextSnap;
+                            while (nextSnapToDel != null)
+                            {
+                                snapsToDelete.add(nextSnapToDel.getSnapshotDefinition());
+                                nextSnapToDel.getSnapshotDefinition().getFlags()
+                                    .enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING_ABORT);
+                                backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, nextSnapToDel);
+                                nextSnapToDel = backupInfoMgr.getNextBackupToDownload(nextSnapToDel);
+                            }
+                            Set<Snapshot> leftovers = backupInfoMgr.abortRestoreGetEntries(rscNameRef);
+                            if (leftovers != null && leftovers.isEmpty())
+                            {
+                                backupInfoMgr.abortRestoreDeleteAllEntries(rscNameRef);
+                            }
+                            else
+                            {
+                                throw new ImplementationError(
+                                    "Not all restore-entries marked for abortion: " + leftovers
+                                );
+                            }
+                            flux = Flux.empty();
+                            for (SnapshotDefinition snapDfnToDel : snapsToDelete)
+                            {
+                                flux = flux.concatWith(
+                                    ctrlSnapDeleteApiCallHandler.deleteSnapshot(
+                                        snapDfnToDel.getResourceName().displayValue,
+                                        snapDfnToDel.getName().displayValue,
+                                        null
+                                    )
+                                );
+                            }
+                            keepGoing = false; // last backup failed.
+                        }
+                    }
+
+                    if (!keepGoing)
+                    {
+                        String remoteName = snap.getProps(peerAccCtx.get()).getProp(
+                            InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
+                        Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                        if (remote != null && remote instanceof StltRemote)
+                        {
+                            snap.getProps(peerAccCtx.get()).removeProp(
+                                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                            );
+                            l2lCleanupFlux = cleanupStltRemote((StltRemote) remote)
+                                .concatWith(
+                                    ctrlSatelliteUpdateCaller.updateSatellites(
+                                        snapDfn,
+                                        CtrlSatelliteUpdateCaller.notConnectedWarn()
+                                    ).transform(
+                                        responses -> CtrlResponseUtils.combineResponses(
+                                            responses,
+                                            LinstorParsingUtils.asRscName(rscNameRef),
+                                            "Removing remote property from snapshot '" + snapNameRef + "' of {1} on {0}"
+                                        )
+                                    )
+                                );
+                        }
+                    }
+                }
+                ctrlTransactionHelper.commit();
+                startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
+                flux = l2lCleanupFlux.concatWith(flux);
+            }
+            catch (AccessDeniedException | InvalidKeyException | InvalidNameException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (DatabaseException exc)
+            {
+                throw new ApiDatabaseException(exc);
+            }
         }
-        catch (AccessDeniedException | InvalidKeyException | InvalidNameException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
+        return flux;
     }
 
     public Flux<ApiCallRc> shippingSent(
@@ -3561,74 +3569,81 @@ public class CtrlBackupApiCallHandler
             "Backup shipping for snapshot %s of resource %s %s", snapNameRef, rscNameRef,
             successRef ? "finished successfully" : "failed"
         );
-        SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, true);
+        SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, false);
         Flux<ApiCallRc> cleanupFlux = Flux.empty();
-        try
+        if (snapDfn != null)
         {
-            NodeName nodeName = peerProvider.get().getNode().getName();
-            backupInfoMgr.abortCreateDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
-            if (!successRef && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
+            try
             {
-                // re-enable shipping-flag to make sure the abort-logic gets triggered later on
-                snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
-                ctrlTransactionHelper.commit();
-                startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
-                cleanupFlux = ctrlSnapShipAbortHandler.abortBackupShippingPrivileged(snapDfn.getResourceDefinition());
-            }
-            else
-            {
-                snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
-                if (successRef)
+                NodeName nodeName = peerProvider.get().getNode().getName();
+                backupInfoMgr.abortCreateDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
+                if (!successRef && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
                 {
-                    snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                    // re-enable shipping-flag to make sure the abort-logic gets triggered later on
+                    snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+                    ctrlTransactionHelper.commit();
+                    startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
+                    cleanupFlux = ctrlSnapShipAbortHandler
+                        .abortBackupShippingPrivileged(snapDfn.getResourceDefinition());
                 }
-                Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
-                String remoteName = snap.getProps(peerAccCtx.get()).removeProp(
-                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                );
-                snap.getProps(peerAccCtx.get()).removeProp(
-                    InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                );
-                if (successRef)
+                else
                 {
-                    ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
-                    rscDfn.getProps(peerAccCtx.get()).setProp(
-                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                        snapNameRef,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
-                    );
-
-                    Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-                    if (remote != null && remote instanceof StltRemote)
+                    snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+                    if (successRef)
                     {
-                        cleanupFlux = cleanupStltRemote((StltRemote) remote);
+                        snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
                     }
-                }
-                ctrlTransactionHelper.commit();
-                startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
-                cleanupFlux = cleanupFlux.concatWith(
-                    ctrlSatelliteUpdateCaller.updateSatellites(
-                        snapDfn,
-                        CtrlSatelliteUpdateCaller.notConnectedWarn()
-                    ).transform(
-                        responses -> CtrlResponseUtils.combineResponses(
-                            responses,
-                            LinstorParsingUtils.asRscName(rscNameRef),
-                            "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+                    Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
+                    if (snap != null && !snap.isDeleted())
+                    {
+                        String remoteName = snap.getProps(peerAccCtx.get()).removeProp(
+                            InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
+                        snap.getProps(peerAccCtx.get()).removeProp(
+                            InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
+                        if (successRef)
+                        {
+                            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
+                            rscDfn.getProps(peerAccCtx.get()).setProp(
+                                InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                                snapNameRef,
+                                ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
+                            );
+
+                            Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                            if (remote != null && remote instanceof StltRemote)
+                            {
+                                cleanupFlux = cleanupStltRemote((StltRemote) remote);
+                            }
+                        }
+                    }
+                    ctrlTransactionHelper.commit();
+                    startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
+                    cleanupFlux = cleanupFlux.concatWith(
+                        ctrlSatelliteUpdateCaller.updateSatellites(
+                            snapDfn,
+                            CtrlSatelliteUpdateCaller.notConnectedWarn()
+                        ).transform(
+                            responses -> CtrlResponseUtils.combineResponses(
+                                responses,
+                                LinstorParsingUtils.asRscName(rscNameRef),
+                                "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+                            )
                         )
-                    )
-                );
+                    );
+                }
             }
-        }
-        catch (AccessDeniedException | InvalidNameException | InvalidValueException | InvalidKeyException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
+            catch (AccessDeniedException | InvalidNameException | InvalidValueException | InvalidKeyException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (DatabaseException exc)
+            {
+                throw new ApiDatabaseException(exc);
+            }
         }
         return cleanupFlux;
     }

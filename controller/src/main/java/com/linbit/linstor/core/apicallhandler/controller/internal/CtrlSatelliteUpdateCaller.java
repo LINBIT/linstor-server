@@ -359,7 +359,6 @@ public class CtrlSatelliteUpdateCaller
                     )
 
                     .map(inputStream -> deserializeApiCallRc(nodeName, inputStream))
-
                     .onErrorResume(
                         PeerNotConnectedException.class,
                         ignored -> notConnectedHandler.handleNotConnected(nodeName)
