@@ -138,7 +138,8 @@ public class View
         @QueryParam("storage_pools") List<String> storagePools,
         @QueryParam("props") List<String> propFilters,
         @DefaultValue("0") @QueryParam("limit") int limit,
-        @DefaultValue("0") @QueryParam("offset") int offset
+        @DefaultValue("0") @QueryParam("offset") int offset,
+        @DefaultValue("false") @QueryParam("cached") boolean fromCache
     )
     {
         List<String> nodesFilter = nodes != null ? nodes : Collections.emptyList();
@@ -147,7 +148,7 @@ public class View
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
             Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
-                .listStorPools(nodesFilter, storagePoolsFilter, propFilters)
+                .listStorPools(nodesFilter, storagePoolsFilter, propFilters, fromCache)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
             requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, limit, offset));

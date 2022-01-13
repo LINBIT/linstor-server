@@ -24,6 +24,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.READ;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
+
 import java.util.Collections;
 import java.util.Map;
 
@@ -127,7 +128,11 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
             .subscribe();
 
         ctrlStorPoolListApiCallHandler.listStorPools(
-                Collections.emptyList(), Collections.emptyList(), Collections.emptyList())
+            Collections.emptyList(),
+            Collections.emptyList(),
+            Collections.emptyList(),
+            false
+        )
             .subscriberContext(Context.of(
                 ApiModule.API_CALL_NAME, "UpdateFreeSpaceInfo",
                 AccessContext.class, sysCtx))

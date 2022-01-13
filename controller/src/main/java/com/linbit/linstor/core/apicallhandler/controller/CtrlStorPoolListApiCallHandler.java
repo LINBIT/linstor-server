@@ -30,6 +30,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -69,24 +70,36 @@ public class CtrlStorPoolListApiCallHandler
     public Flux<List<StorPoolApi>> listStorPools(
         List<String> nodeNames,
         List<String> storPoolNames,
-        List<String> propFilters
+        List<String> propFilters,
+        boolean fromCache
     )
     {
         Flux<List<StorPoolApi>> flux;
-        final Set<StorPoolName> storPoolsFilter =
-            storPoolNames.stream().map(LinstorParsingUtils::asStorPoolName).collect(Collectors.toSet());
-        final Set<NodeName> nodesFilter =
-            nodeNames.stream().map(LinstorParsingUtils::asNodeName).collect(Collectors.toSet());
-
-        flux = freeCapacityFetcher.fetchThinFreeSpaceInfo(nodesFilter)
-            .flatMapMany(freeCapacityAnswers ->
-                scopeRunner.fluxInTransactionlessScope(
-                    "Assemble storage pool list",
-                    lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.STOR_POOL_DFN_MAP),
-                    () -> Flux.just(assembleList(nodesFilter, storPoolsFilter, propFilters, freeCapacityAnswers))
-                )
+        final Set<StorPoolName> storPoolsFilter = storPoolNames.stream()
+            .map(LinstorParsingUtils::asStorPoolName)
+            .collect(Collectors.toSet());
+        final Set<NodeName> nodesFilter = nodeNames.stream()
+            .map(LinstorParsingUtils::asNodeName)
+            .collect(Collectors.toSet());
+        if (fromCache)
+        {
+            flux = scopeRunner.fluxInTransactionlessScope(
+                "Assemble storage pool list from Cache",
+                lockGuardFactory.buildDeferred(READ, STOR_POOL_DFN_MAP),
+                () -> Flux.just(assembleList(nodesFilter, storPoolsFilter, propFilters, null))
             );
-
+        }
+        else
+        {
+            flux = freeCapacityFetcher.fetchThinFreeSpaceInfo(nodesFilter)
+                .flatMapMany(
+                    freeCapacityAnswers -> scopeRunner.fluxInTransactionlessScope(
+                        "Assemble storage pool list",
+                        lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.STOR_POOL_DFN_MAP),
+                        () -> Flux.just(assembleList(nodesFilter, storPoolsFilter, propFilters, freeCapacityAnswers))
+                    )
+                );
+        }
         return flux;
     }
 

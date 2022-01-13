@@ -24,6 +24,8 @@ info:
     * unreleased
       - Added use_zfs_clone to clone request
       - Added /v1/events/nodes SSE node events stream
+      - Added ?cached=true option for all storage-pool list APIs
+      - Added ?limit and ?offset to /v1/nodes/{node}/storage-pools/{storagepool}
     * 1.12.0
        - Added /v1/nodes/{node}/evacuate
     * 1.11.0
@@ -773,6 +775,7 @@ paths:
               type: string
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cached'
       responses:
         '200':
           description: Array list of all storage pools
@@ -820,6 +823,9 @@ paths:
     parameters:
       - $ref: '#/components/parameters/Node'
       - $ref: '#/components/parameters/StoragePool'
+      - $ref: '#/components/parameters/Offset'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Cached'
     put:
       tags:
         - developers
@@ -4647,6 +4653,7 @@ paths:
         - $ref: '#/components/parameters/Props'
         - $ref: '#/components/parameters/Offset'
         - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Cached'
       responses:
         '200':
           description: storage pool list
@@ -5624,6 +5631,12 @@ components:
         format: int32
         minimum: 0
         maximum: 50
+    Cached:
+      name: cached
+      in: query
+      description: query data from cache if available
+      schema:
+        type: boolean
     Props:
       name: props
       in: query

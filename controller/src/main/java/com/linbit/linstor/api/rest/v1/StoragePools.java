@@ -102,10 +102,11 @@ public class StoragePools
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
         @DefaultValue("0") @QueryParam("limit") int limit,
-        @DefaultValue("0") @QueryParam("offset") int offset
+        @DefaultValue("0") @QueryParam("offset") int offset,
+        @DefaultValue("false") @QueryParam("cached") boolean fromCache
     )
     {
-        listStoragePools(request, asyncResponse, nodeName, null, limit, offset);
+        listStoragePools(request, asyncResponse, nodeName, null, limit, offset, fromCache);
     }
 
     @GET
@@ -116,7 +117,8 @@ public class StoragePools
         @PathParam("nodeName") String nodeName,
         @PathParam("storPoolName") String storPoolName,
         @DefaultValue("0") @QueryParam("limit") int limit,
-        @DefaultValue("0") @QueryParam("offset") int offset
+        @DefaultValue("0") @QueryParam("offset") int offset,
+        @DefaultValue("false") @QueryParam("cached") boolean fromCache
     )
     {
         List<String> nodeNames = new ArrayList<>();
@@ -151,7 +153,7 @@ public class StoragePools
             if (nodeCheck == null)
             {
                 Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
-                    .listStorPools(nodeNames, storPoolNames, Collections.emptyList())
+                    .listStorPools(nodeNames, storPoolNames, Collections.emptyList(), fromCache)
                     .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
                 requestHelper.doFlux(
