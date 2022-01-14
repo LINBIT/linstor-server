@@ -127,7 +127,8 @@ public class CtrlAuth implements ApiCall
             apiCallAnswerer.answerBytes(
                 replyBytes,
                 InternalApiConsts.API_AUTH_RESPONSE
-            )
+            ),
+            InternalApiConsts.API_AUTH_RESPONSE
         );
     }
 }

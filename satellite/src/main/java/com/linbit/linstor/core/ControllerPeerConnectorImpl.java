@@ -114,8 +114,8 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
             if (controllerPeer != null)
             {
                 controllerPeer.sendMessage(
-                    commonSerializer.onewayBuilder(InternalApiConsts.API_OTHER_CONTROLLER)
-                        .build()
+                    commonSerializer.onewayBuilder(InternalApiConsts.API_OTHER_CONTROLLER).build(),
+                    InternalApiConsts.API_OTHER_CONTROLLER
                 );
                 // no need to close connection, controller will do so when it finished processing the OUTDATED message
             }

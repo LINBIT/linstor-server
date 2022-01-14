@@ -18,7 +18,6 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import org.reactivestreams.Publisher;
-
 import reactor.core.publisher.Flux;
 
 /**
@@ -104,6 +103,21 @@ public interface Peer
      * @return
      */
     boolean sendMessage(byte[] data);
+
+    /**
+     * Wraps the parameter into a {@link Message} which is created by {@link #createMessage()} and
+     * calls {@link #sendMessage(Message)}.
+     * Additionally logs which Peer is the target and apiCall it uses
+     *
+     * @param data
+     * @param apiCall
+     *
+     * @return
+     */
+    default boolean sendMessage(byte[] data, String apiCall)
+    {
+        return sendMessage(data);
+    }
 
     /**
      * Get a zero-based sequence number for this peer.

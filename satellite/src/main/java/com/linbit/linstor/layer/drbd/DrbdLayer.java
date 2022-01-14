@@ -1781,7 +1781,7 @@ public class DrbdLayer implements DeviceLayer
             .primaryRequest(rscName, rscUuid, alreadyInitialized)
             .build();
 
-        controllerPeerConnector.getControllerPeer().sendMessage(data);
+        controllerPeerConnector.getControllerPeer().sendMessage(data, InternalApiConsts.API_REQUEST_PRIMARY_RSC);
     }
 
     /*

@@ -1,8 +1,5 @@
 package com.linbit.linstor.netcom;
 
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
-
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiConsts;
@@ -46,6 +43,9 @@ import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.UnicastProcessor;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
+
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
  * Tracks the status of the communication with a peer
@@ -362,6 +362,16 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
+    public boolean sendMessage(byte[] data, String apiCall)
+    {
+        if (apiCall != null)
+        {
+            errorReporter.logTrace("Sending message to Peer '%s': %s", toString(), apiCall);
+        }
+        return sendMessage(data);
+    }
+
+    @Override
     public long getNextIncomingMessageSeq()
     {
         return nextIncomingMessageSeq.getAndIncrement();
@@ -403,7 +413,7 @@ public class TcpConnectorPeer implements Peer
                     else
                     {
                         errorReporter.logTrace("Peer %s, API call %d '%s' send", this, apiCallId, apiCallName);
-                        boolean isConnected = sendMessage(messageBytes);
+                    boolean isConnected = sendMessage(messageBytes);
                         if (!isConnected)
                         {
                             fluxSink.error(new PeerNotConnectedException());

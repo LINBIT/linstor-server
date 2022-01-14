@@ -669,7 +669,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                         interComSerializer
                             .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
                             .notifyResourceApplied(rsc, spaceInfoMap)
-                            .build()
+                            .build(),
+                        InternalApiConsts.API_NOTIFY_RSC_APPLIED
                     );
                 }
             }
@@ -962,7 +963,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                 interComSerializer
                     .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT)
                     .updateLocalProps(collectedChanged)
-                    .build()
+                    .build(),
+                InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT
             );
         }
     }
@@ -1005,7 +1007,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                     interComSerializer
                         .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT)
                         .updateLocalProps(pojo)
-                        .build()
+                        .build(),
+                    InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT
                 );
             }
         }

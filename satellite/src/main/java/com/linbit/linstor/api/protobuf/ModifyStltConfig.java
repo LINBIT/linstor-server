@@ -49,6 +49,6 @@ public class ModifyStltConfig implements ApiCall
         StltConfig stltConf = StltConfig.parseDelimitedFrom(msgDataIn);
         byte[] msg = interComSerializer.answerBuilder(InternalApiConsts.API_MOD_STLT_CONFIG_RESP, apiCallId.get())
             .stltConfigApplied(apiCallHandler.modifyStltConfig(stltConf)).build();
-        peerProvider.get().sendMessage(msg);
+        peerProvider.get().sendMessage(msg, InternalApiConsts.API_MOD_STLT_CONFIG_RESP);
     }
 }

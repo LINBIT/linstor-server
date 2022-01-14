@@ -91,7 +91,8 @@ public class CreateDevicePool implements ApiCall
         }
 
         peerProvider.get().sendMessage(
-            ctrlStltSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId.get()).apiCallRcSeries(apiCallRc).build()
+            ctrlStltSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId.get()).apiCallRcSeries(apiCallRc).build(),
+            ApiConsts.API_REPLY
         );
     }
 }

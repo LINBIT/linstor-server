@@ -34,6 +34,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPool
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -249,7 +250,7 @@ public class StorPoolInternalCallHandler
         StorPool storPool;
         try
         {
-            storPool = (StorPool) currentPeer.getNode().getStorPool(apiCtx, new StorPoolName(storPoolNameRef));
+            storPool = currentPeer.getNode().getStorPool(apiCtx, new StorPoolName(storPoolNameRef));
             storPool.setSupportsSnapshot(apiCtx, supportsSnapshotsRef);
         }
         catch (AccessDeniedException | InvalidNameException | DatabaseException exc)

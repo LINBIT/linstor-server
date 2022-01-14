@@ -336,7 +336,8 @@ public abstract class AbsBackupShippingService implements SystemService
                                                 uploadId,
                                                 remoteName
                                             )
-                                            .build()
+                                            .build(),
+                                        InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_ID
                                     );
                                 }
                                 catch (InvalidKeyException | AccessDeniedException exc)
@@ -511,7 +512,8 @@ public abstract class AbsBackupShippingService implements SystemService
                                     snap.getSnapshotName().displayValue,
                                     snap.getResourceName().displayValue,
                                     shippingInfo.alreadyInUse
-                                ).build()
+                                ).build(),
+                                InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_WRONG_PORTS
                             );
                         }
                         else
@@ -560,7 +562,8 @@ public abstract class AbsBackupShippingService implements SystemService
                         success,
                         portsUsed == null ? new TreeSet<>() : portsUsed
                     )
-                    .build()
+                    .build(),
+                internalApiName
             );
         }
         if (shippingInfo != null && done)

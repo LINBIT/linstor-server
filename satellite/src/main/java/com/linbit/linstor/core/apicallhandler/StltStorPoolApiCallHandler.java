@@ -257,7 +257,8 @@ class StltStorPoolApiCallHandler
                     ctrlStltSerializer
                         .onewayBuilder(InternalApiConsts.API_NOTIFY_STOR_POOL_APPLIED)
                         .storPoolApplied(storPool, spaceInfo, supportsSnapshots)
-                        .build()
+                        .build(),
+                    InternalApiConsts.API_NOTIFY_STOR_POOL_APPLIED
                 );
             }
 

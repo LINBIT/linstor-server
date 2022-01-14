@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.protobuf;
 
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
@@ -37,6 +38,9 @@ public class ReqSosReport implements ApiCall
     public void execute(InputStream msgDataIn) throws IOException
     {
         MsgReqSosReport reqSosReport = MsgReqSosReport.parseDelimitedFrom(msgDataIn);
-        peerProvider.get().sendMessage(apiCallHandler.listSosReport(new Date(reqSosReport.getSince())));
+        peerProvider.get().sendMessage(
+            apiCallHandler.listSosReport(new Date(reqSosReport.getSince())),
+            InternalApiConsts.API_RSP_SOS_REPORT
+        );
     }
 }

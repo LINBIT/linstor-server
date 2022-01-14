@@ -217,7 +217,8 @@ public class BackupShippingL2LService extends AbsBackupShippingService
                         snap.getResourceName().displayValue,
                         snap.getNodeName().displayValue
                     )
-                    .build()
+                    .build(),
+                InternalApiConsts.API_NOTIFY_BACKUP_RCV_READY
             );
         }
     }

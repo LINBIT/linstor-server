@@ -270,7 +270,8 @@ public class CloneService implements SystemService
                             cloneInfo.getResourceName().getDisplayName(),
                             cloneInfo.getVlmNr().value,
                             !anyFailed)
-                        .build()
+                        .build(),
+                    InternalApiConsts.API_NOTIFY_CLONE_UPDATE
                 );
 
                 volClones.forEach(activeClones::remove);

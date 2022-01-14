@@ -144,7 +144,8 @@ public class FullSync implements ApiCall
             apiCallAnswerer.answerBytes(
                 baos.toByteArray(),
                 InternalApiConsts.API_FULL_SYNC_RESPONSE
-            )
+            ),
+            InternalApiConsts.API_FULL_SYNC_RESPONSE
         );
     }
 

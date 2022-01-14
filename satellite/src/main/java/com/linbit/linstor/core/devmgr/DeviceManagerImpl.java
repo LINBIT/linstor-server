@@ -1882,7 +1882,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 interComSerializer
                     .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_APPLIED)
                     .notifyResourceApplied(rsc, spaceInfoMap)
-                    .build()
+                    .build(),
+                InternalApiConsts.API_NOTIFY_RSC_APPLIED
             );
         }
     }
@@ -1939,7 +1940,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 interComSerializer
                     .onewayBuilder(InternalApiConsts.API_UPDATE_FREE_CAPACITY)
                     .updateFreeCapacities(spaceInfoMap)
-                    .build()
+                    .build(),
+                InternalApiConsts.API_UPDATE_FREE_CAPACITY
             );
         }
     }
@@ -1954,7 +1956,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 interComSerializer
                     .onewayBuilder(InternalApiConsts.API_NOTIFY_RSC_FAILED)
                     .notifyResourceFailed(rsc, apiCallRc)
-                    .build()
+                    .build(),
+                InternalApiConsts.API_NOTIFY_RSC_FAILED
             );
         }
     }

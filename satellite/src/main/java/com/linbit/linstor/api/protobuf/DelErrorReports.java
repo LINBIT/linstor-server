@@ -9,6 +9,7 @@ import com.linbit.linstor.proto.requests.MsgDelErrorReportsOuterClass.MsgDelErro
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
@@ -49,6 +50,9 @@ public class DelErrorReports implements ApiCall
                 to,
                 reqErrorReport.hasException() ? reqErrorReport.getException() : null,
                 reqErrorReport.hasVersion() ? reqErrorReport.getVersion() : null,
-                reqErrorReport.getIdsList()));
+                reqErrorReport.getIdsList()
+            ),
+            ApiConsts.API_DEL_ERROR_REPORT
+        );
     }
 }

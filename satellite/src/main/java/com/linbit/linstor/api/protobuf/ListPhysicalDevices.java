@@ -70,7 +70,7 @@ public class ListPhysicalDevices implements ApiCall
                 .physicalDevices(entries)
                 .build();
 
-            peerProvider.get().sendMessage(answer);
+            peerProvider.get().sendMessage(answer, InternalApiConsts.API_ANSWER_PHYSICAL_DEVICES);
         }
         catch (StorageException stoExc)
         {

@@ -133,7 +133,7 @@ public class StltUpdateRequester
         if (requestData != null && requestData.length > 0)
         {
             Peer controllerPeer = controllerPeerConnector.getControllerPeer();
-            controllerPeer.sendMessage(requestData);
+            controllerPeer.sendMessage(requestData, InternalApiConsts.API_REQUEST_REMOTE);
         }
         else
         {

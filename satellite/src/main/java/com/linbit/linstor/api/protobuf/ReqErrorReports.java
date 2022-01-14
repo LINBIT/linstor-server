@@ -52,7 +52,9 @@ public class ReqErrorReports implements ApiCall
                     reqErrorReport.getWithContent(),
                     since,
                     to,
-                    new HashSet<>(reqErrorReport.getIdsList()))
+                    new HashSet<>(reqErrorReport.getIdsList())
+                ),
+            ApiConsts.API_LST_ERROR_REPORTS
         );
     }
 }
