@@ -9,8 +9,9 @@ message MsgIntCapacityInfo
     bool exc_flag   = 1;
 
     long  checksum  = 2;
+    bytes date      = 3;
 
     // Serialized BigInteger data
-    bytes capacity  = 3;
-    bytes allocated = 4;
+    bytes capacity  = 4;
+    bytes allocated = 5;
 }
