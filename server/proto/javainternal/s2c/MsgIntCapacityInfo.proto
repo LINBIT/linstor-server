@@ -8,7 +8,9 @@ message MsgIntCapacityInfo
     // Indicates whether any of the storage pools failed to report their capacity
     bool exc_flag   = 1;
 
+    long  checksum  = 2;
+
     // Serialized BigInteger data
-    bytes capacity  = 2;
-    bytes allocated = 3;
+    bytes capacity  = 3;
+    bytes allocated = 4;
 }
