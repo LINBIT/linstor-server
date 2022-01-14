@@ -9,7 +9,7 @@ import java.util.Calendar;
 
 public interface SpaceTrackingService extends SystemService
 {
-    void receiveSpaceTrackingReport(Node stltNode, AggregateCapacityInfo newCapInfo);
+    void receiveSpaceTrackingReport(Node stltNode, long checksum, byte[] msgQryDate, AggregateCapacityInfo newCapInfo);
     void cancelSpaceTrackingReport(Node stltNode);
     String querySpaceReport(Calendar startDateCal)
         throws DatabaseException, NoSuchAlgorithmException, DigestException;
