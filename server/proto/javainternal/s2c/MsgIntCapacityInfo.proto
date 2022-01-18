@@ -6,12 +6,12 @@ package com.linbit.linstor.proto.javainternal.s2c;
 message MsgIntCapacityInfo
 {
     // Indicates whether any of the storage pools failed to report their capacity
-    bool exc_flag   = 1;
+    bool exc_flag   	= 1;
 
-    long  checksum  = 2;
-    bytes date      = 3;
+    fixed64 checksum	= 2;
+    bytes date       	= 3;
 
     // Serialized BigInteger data
-    bytes capacity  = 4;
-    bytes allocated = 5;
+    bytes capacity   	= 4;
+    bytes allocated 	= 5;
 }
