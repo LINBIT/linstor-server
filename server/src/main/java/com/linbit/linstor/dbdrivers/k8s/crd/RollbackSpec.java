@@ -109,7 +109,7 @@ public class RollbackSpec implements LinstorSpec
     {
         HashMap<String, LinstorSpec> rbMap = rollbackMap.get(dbTableStr);
         HashSet<String> delSet = deleteMap.get(dbTableStr);
-        return (rbMap == null || !rbMap.containsKey(specKey)) && (delSet == null || !delSet.contains(specKey));
+        return (rbMap != null && rbMap.containsKey(specKey)) || (delSet != null && delSet.contains(specKey));
     }
 
     @JsonIgnore

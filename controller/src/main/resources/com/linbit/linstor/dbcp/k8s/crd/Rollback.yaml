@@ -10,22 +10,25 @@ spec:
     served: true
     storage: true
     additionalPrinterColumns:
-    - jsonPath: '.data'
-      name: Data
+    - jsonPath: '.spec'
+      name: Spec
       type: string
     schema:
       openAPIV3Schema:
         type: "object"
         properties:
-          rollback_map:
+          spec:
             type: "object"
-            x-kubernetes-preserve-unknown-fields: true
-          delete_map:
-            type: object
-            additionalProperties:
-              type: array
-              items:
-                type: string
+            properties:
+              rollback_map:
+                 type: "object"
+                 x-kubernetes-preserve-unknown-fields: true
+              delete_map:
+                 type: object
+                 additionalProperties:
+                    type: array
+                    items:
+                       type: string
   scope: "Cluster"
   names:
     plural: "rollback"
