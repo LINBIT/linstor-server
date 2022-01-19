@@ -32,7 +32,7 @@ import io.fabric8.kubernetes.model.annotation.Plural;
 import io.fabric8.kubernetes.model.annotation.Singular;
 import io.fabric8.kubernetes.model.annotation.Version;
 
-public class GenCrdCurrent
+public class GenCrdV1_17_0
 {
     public static final String VERSION = "v1-17-0";
     public static final String GROUP = "internal.linstor.linbit.com";
@@ -41,7 +41,7 @@ public class GenCrdCurrent
     private static final HashSet<String> USED_K8S_KEYS = new HashSet<>();
     private static final AtomicLong NEXT_ID = new AtomicLong();
 
-    private GenCrdCurrent()
+    private GenCrdV1_17_0()
     {
     }
 
@@ -1058,16 +1058,16 @@ public class GenCrdCurrent
     public static BaseControllerK8sCrdTransactionMgrContext createTxMgrContext()
     {
         return new BaseControllerK8sCrdTransactionMgrContext(
-            GenCrdCurrent::databaseTableToCustomResourceClass,
-            GenCrdCurrent::specToCrd
+            GenCrdV1_17_0::databaseTableToCustomResourceClass,
+            GenCrdV1_17_0::specToCrd
         );
     }
 
     public static K8sCrdSchemaUpdateContext createSchemaUpdateContext()
     {
         return new K8sCrdSchemaUpdateContext(
-            GenCrdCurrent::databaseTableToYamlLocation,
-            GenCrdCurrent::databaseTableToYamlName,
+            GenCrdV1_17_0::databaseTableToYamlLocation,
+            GenCrdV1_17_0::databaseTableToYamlName,
             "v1-17-0"
         );
     }
@@ -1175,8 +1175,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("files")
     @Singular("files")
     public static class Files extends CustomResource<FilesSpec, Void> implements LinstorCrd<FilesSpec>
@@ -1305,8 +1305,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("keyvaluestore")
     @Singular("keyvaluestore")
     public static class KeyValueStore extends CustomResource<KeyValueStoreSpec, Void> implements LinstorCrd<KeyValueStoreSpec>
@@ -1452,8 +1452,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layerbcachevolumes")
     @Singular("layerbcachevolumes")
     public static class LayerBcacheVolumes extends CustomResource<LayerBcacheVolumesSpec, Void> implements LinstorCrd<LayerBcacheVolumesSpec>
@@ -1599,8 +1599,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layercachevolumes")
     @Singular("layercachevolumes")
     public static class LayerCacheVolumes extends CustomResource<LayerCacheVolumesSpec, Void> implements LinstorCrd<LayerCacheVolumesSpec>
@@ -1753,8 +1753,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layerdrbdresources")
     @Singular("layerdrbdresources")
     public static class LayerDrbdResources extends CustomResource<LayerDrbdResourcesSpec, Void> implements LinstorCrd<LayerDrbdResourcesSpec>
@@ -1933,8 +1933,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layerdrbdresourcedefinitions")
     @Singular("layerdrbdresourcedefinitions")
     public static class LayerDrbdResourceDefinitions extends CustomResource<LayerDrbdResourceDefinitionsSpec, Void> implements LinstorCrd<LayerDrbdResourceDefinitionsSpec>
@@ -2072,8 +2072,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layerdrbdvolumes")
     @Singular("layerdrbdvolumes")
     public static class LayerDrbdVolumes extends CustomResource<LayerDrbdVolumesSpec, Void> implements LinstorCrd<LayerDrbdVolumesSpec>
@@ -2221,8 +2221,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layerdrbdvolumedefinitions")
     @Singular("layerdrbdvolumedefinitions")
     public static class LayerDrbdVolumeDefinitions extends CustomResource<LayerDrbdVolumeDefinitionsSpec, Void> implements LinstorCrd<LayerDrbdVolumeDefinitionsSpec>
@@ -2352,8 +2352,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layerluksvolumes")
     @Singular("layerluksvolumes")
     public static class LayerLuksVolumes extends CustomResource<LayerLuksVolumesSpec, Void> implements LinstorCrd<LayerLuksVolumesSpec>
@@ -2491,8 +2491,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layeropenflexresourcedefinitions")
     @Singular("layeropenflexresourcedefinitions")
     public static class LayerOpenflexResourceDefinitions extends CustomResource<LayerOpenflexResourceDefinitionsSpec, Void> implements LinstorCrd<LayerOpenflexResourceDefinitionsSpec>
@@ -2630,8 +2630,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layeropenflexvolumes")
     @Singular("layeropenflexvolumes")
     public static class LayerOpenflexVolumes extends CustomResource<LayerOpenflexVolumesSpec, Void> implements LinstorCrd<LayerOpenflexVolumesSpec>
@@ -2800,8 +2800,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layerresourceids")
     @Singular("layerresourceids")
     public static class LayerResourceIds extends CustomResource<LayerResourceIdsSpec, Void> implements LinstorCrd<LayerResourceIdsSpec>
@@ -2947,8 +2947,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layerstoragevolumes")
     @Singular("layerstoragevolumes")
     public static class LayerStorageVolumes extends CustomResource<LayerStorageVolumesSpec, Void> implements LinstorCrd<LayerStorageVolumesSpec>
@@ -3086,8 +3086,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("layerwritecachevolumes")
     @Singular("layerwritecachevolumes")
     public static class LayerWritecacheVolumes extends CustomResource<LayerWritecacheVolumesSpec, Void> implements LinstorCrd<LayerWritecacheVolumesSpec>
@@ -3248,8 +3248,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("linstorremotes")
     @Singular("linstorremotes")
     public static class LinstorRemotes extends CustomResource<LinstorRemotesSpec, Void> implements LinstorCrd<LinstorRemotesSpec>
@@ -3394,8 +3394,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("nodes")
     @Singular("nodes")
     public static class Nodes extends CustomResource<NodesSpec, Void> implements LinstorCrd<NodesSpec>
@@ -3525,8 +3525,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("nodeconnections")
     @Singular("nodeconnections")
     public static class NodeConnections extends CustomResource<NodeConnectionsSpec, Void> implements LinstorCrd<NodeConnectionsSpec>
@@ -3688,8 +3688,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("nodenetinterfaces")
     @Singular("nodenetinterfaces")
     public static class NodeNetInterfaces extends CustomResource<NodeNetInterfacesSpec, Void> implements LinstorCrd<NodeNetInterfacesSpec>
@@ -3851,8 +3851,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("nodestorpool")
     @Singular("nodestorpool")
     public static class NodeStorPool extends CustomResource<NodeStorPoolSpec, Void> implements LinstorCrd<NodeStorPoolSpec>
@@ -3982,8 +3982,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("propscontainers")
     @Singular("propscontainers")
     public static class PropsContainers extends CustomResource<PropsContainersSpec, Void> implements LinstorCrd<PropsContainersSpec>
@@ -4138,8 +4138,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("resources")
     @Singular("resources")
     public static class Resources extends CustomResource<ResourcesSpec, Void> implements LinstorCrd<ResourcesSpec>
@@ -4303,8 +4303,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("resourceconnections")
     @Singular("resourceconnections")
     public static class ResourceConnections extends CustomResource<ResourceConnectionsSpec, Void> implements LinstorCrd<ResourceConnectionsSpec>
@@ -4490,8 +4490,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("resourcedefinitions")
     @Singular("resourcedefinitions")
     public static class ResourceDefinitions extends CustomResource<ResourceDefinitionsSpec, Void> implements LinstorCrd<ResourceDefinitionsSpec>
@@ -4716,8 +4716,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("resourcegroups")
     @Singular("resourcegroups")
     public static class ResourceGroups extends CustomResource<ResourceGroupsSpec, Void> implements LinstorCrd<ResourceGroupsSpec>
@@ -4894,8 +4894,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("s3remotes")
     @Singular("s3remotes")
     public static class S3Remotes extends CustomResource<S3RemotesSpec, Void> implements LinstorCrd<S3RemotesSpec>
@@ -5024,8 +5024,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("satellitescapacity")
     @Singular("satellitescapacity")
     public static class SatellitesCapacity extends CustomResource<SatellitesCapacitySpec, Void> implements LinstorCrd<SatellitesCapacitySpec>
@@ -5146,8 +5146,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("secaccesstypes")
     @Singular("secaccesstypes")
     public static class SecAccessTypes extends CustomResource<SecAccessTypesSpec, Void> implements LinstorCrd<SecAccessTypesSpec>
@@ -5277,8 +5277,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("secaclmap")
     @Singular("secaclmap")
     public static class SecAclMap extends CustomResource<SecAclMapSpec, Void> implements LinstorCrd<SecAclMapSpec>
@@ -5407,8 +5407,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("secconfiguration")
     @Singular("secconfiguration")
     public static class SecConfiguration extends CustomResource<SecConfigurationSpec, Void> implements LinstorCrd<SecConfigurationSpec>
@@ -5529,8 +5529,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("secdfltroles")
     @Singular("secdfltroles")
     public static class SecDfltRoles extends CustomResource<SecDfltRolesSpec, Void> implements LinstorCrd<SecDfltRolesSpec>
@@ -5683,8 +5683,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("secidentities")
     @Singular("secidentities")
     public static class SecIdentities extends CustomResource<SecIdentitiesSpec, Void> implements LinstorCrd<SecIdentitiesSpec>
@@ -5806,8 +5806,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("secidrolemap")
     @Singular("secidrolemap")
     public static class SecIdRoleMap extends CustomResource<SecIdRoleMapSpec, Void> implements LinstorCrd<SecIdRoleMapSpec>
@@ -5944,8 +5944,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("secobjectprotection")
     @Singular("secobjectprotection")
     public static class SecObjectProtection extends CustomResource<SecObjectProtectionSpec, Void> implements LinstorCrd<SecObjectProtectionSpec>
@@ -6090,8 +6090,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("secroles")
     @Singular("secroles")
     public static class SecRoles extends CustomResource<SecRolesSpec, Void> implements LinstorCrd<SecRolesSpec>
@@ -6220,8 +6220,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("sectypes")
     @Singular("sectypes")
     public static class SecTypes extends CustomResource<SecTypesSpec, Void> implements LinstorCrd<SecTypesSpec>
@@ -6351,8 +6351,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("sectyperules")
     @Singular("sectyperules")
     public static class SecTypeRules extends CustomResource<SecTypeRulesSpec, Void> implements LinstorCrd<SecTypeRulesSpec>
@@ -6473,8 +6473,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("spacehistory")
     @Singular("spacehistory")
     public static class SpaceHistory extends CustomResource<SpaceHistorySpec, Void> implements LinstorCrd<SpaceHistorySpec>
@@ -6603,8 +6603,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("storpooldefinitions")
     @Singular("storpooldefinitions")
     public static class StorPoolDefinitions extends CustomResource<StorPoolDefinitionsSpec, Void> implements LinstorCrd<StorPoolDefinitionsSpec>
@@ -6718,8 +6718,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("trackingdate")
     @Singular("trackingdate")
     public static class TrackingDate extends CustomResource<TrackingDateSpec, Void> implements LinstorCrd<TrackingDateSpec>
@@ -6875,8 +6875,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("volumes")
     @Singular("volumes")
     public static class Volumes extends CustomResource<VolumesSpec, Void> implements LinstorCrd<VolumesSpec>
@@ -7033,8 +7033,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("volumeconnections")
     @Singular("volumeconnections")
     public static class VolumeConnections extends CustomResource<VolumeConnectionsSpec, Void> implements LinstorCrd<VolumeConnectionsSpec>
@@ -7189,8 +7189,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("volumedefinitions")
     @Singular("volumedefinitions")
     public static class VolumeDefinitions extends CustomResource<VolumeDefinitionsSpec, Void> implements LinstorCrd<VolumeDefinitionsSpec>
@@ -7328,8 +7328,8 @@ public class GenCrdCurrent
         }
     }
 
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
+    @Version(GenCrdV1_17_0.VERSION)
+    @Group(GenCrdV1_17_0.GROUP)
     @Plural("volumegroups")
     @Singular("volumegroups")
     public static class VolumeGroups extends CustomResource<VolumeGroupsSpec, Void> implements LinstorCrd<VolumeGroupsSpec>

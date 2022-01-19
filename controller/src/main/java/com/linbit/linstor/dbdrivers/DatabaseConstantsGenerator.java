@@ -451,17 +451,18 @@ public final class DatabaseConstantsGenerator
             "com.linbit.linstor.security.AccessDeniedException",
             "com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext",
             "com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext",
+            "com.linbit.linstor.utils.ByteUtils",
             "com.linbit.utils.ExceptionThrowingFunction",
             null, // empty line
-            "java.math.BigInteger",
             "java.nio.charset.StandardCharsets",
             "java.text.SimpleDateFormat",
             // "java.util.ArrayList",
             "java.util.Date",
-            // "java.util.HashMap",
-            // "java.util.HashSet",
+            "java.util.HashMap",
+            "java.util.HashSet",
             "java.util.Map",
             "java.util.TreeMap",
+            "java.util.concurrent.atomic.AtomicLong",
             null, // empty line
             "com.fasterxml.jackson.annotation.JsonCreator",
             "com.fasterxml.jackson.annotation.JsonIgnore",
@@ -472,6 +473,7 @@ public final class DatabaseConstantsGenerator
             // "io.fabric8.kubernetes.api.model.KubernetesResource",
             // "io.fabric8.kubernetes.api.model.Namespaced",
             // "io.fabric8.kubernetes.api.model.HasMetadata",
+            "io.fabric8.kubernetes.api.model.ObjectMeta",
             "io.fabric8.kubernetes.api.model.ObjectMetaBuilder",
             "io.fabric8.kubernetes.client.CustomResource",
             // "io.fabric8.kubernetes.client.CustomResourceList",
@@ -488,6 +490,9 @@ public final class DatabaseConstantsGenerator
             appendLine("public static final String VERSION = \"%s\";", asYamlVersionString(currentVersionRef));
             appendLine("public static final String GROUP = \"%s\";", CRD_GROUP);
             appendLine("private static final SimpleDateFormat RFC3339 = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ssXXX\");");
+            appendLine("private static final Map<String, String> KEY_LUT = new HashMap<>();");
+            appendLine("private static final HashSet<String> USED_K8S_KEYS = new HashSet<>();");
+            appendLine("private static final AtomicLong NEXT_ID = new AtomicLong();");
 
             appendEmptyLine();
             appendLine("private %s()", clazzName);
@@ -495,6 +500,7 @@ public final class DatabaseConstantsGenerator
             {
             }
 
+            // databaseTableToCustomResourceClass
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
             appendLine(
@@ -517,6 +523,39 @@ public final class DatabaseConstantsGenerator
                         try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
                         {
                             appendLine("return (Class<CRD>) %s.class;", tblNameCamelCase);
+                        }
+                    }
+                    appendLine("default:");
+                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine("throw new ImplementationError(\"Unknown database table: \" + table.getName());");
+                    }
+                }
+            }
+
+            // databaseTableToSpecClass
+            appendEmptyLine();
+            appendLine("@SuppressWarnings(\"unchecked\")");
+            appendLine(
+                "public static <SPEC extends LinstorSpec> Class<SPEC> databaseTableToSpecClass("
+            );
+            try (IndentLevel databaseTableToCrdIndent = new IndentLevel("", "", false, false))
+            {
+                appendLine("DatabaseTable table");
+            }
+            appendLine(")");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("switch(table.getName())");
+                try (IndentLevel switchIndent = new IndentLevel())
+                {
+                    for (Table tbl : tbls.values())
+                    {
+                        String tblNameCamelCase = toUpperCamelCase(tbl.name);
+                        appendLine("case \"%s\":", tbl.name);
+                        try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
+                        {
+                            appendLine("return (Class<SPEC>) %sSpec.class;", tblNameCamelCase);
                         }
                     }
                     appendLine("default:");
@@ -695,11 +734,35 @@ public final class DatabaseConstantsGenerator
             }
 
             appendEmptyLine();
-            appendLine("private static final String base32Encode(String format, Object... args)");
+            appendLine("public static final String deriveKey(String formattedPrimaryKey)");
             try (IndentLevel methodIndent = new IndentLevel())
             {
-                appendLine("String stringToEncode = String.format(format, args);");
-                appendLine("return new BigInteger(1, stringToEncode.getBytes(StandardCharsets.UTF_8)).toString(32);");
+                appendLine("String sha = KEY_LUT.get(formattedPrimaryKey);");
+                appendLine("if (sha == null)");
+                try (IndentLevel ifIndent = new IndentLevel())
+                {
+                    appendLine("synchronized (KEY_LUT)");
+                    try (IndentLevel synchIndent = new IndentLevel())
+                    {
+                        appendLine("if (sha == null)");
+                        try (IndentLevel secondIfIndent = new IndentLevel())
+                        {
+                            appendLine(
+                                "sha = ByteUtils.bytesToHex(ByteUtils.checksumSha256(formattedPrimaryKey.getBytes(StandardCharsets.UTF_8))).toLowerCase();"
+                            );
+                            appendLine("while (!USED_K8S_KEYS.add(sha))");
+                            try (IndentLevel whileIndent = new IndentLevel())
+                            {
+                                appendLine("String modifiedPk = formattedPrimaryKey + NEXT_ID.incrementAndGet();");
+                                appendLine(
+                                    "sha = ByteUtils.bytesToHex(ByteUtils.checksumSha256(modifiedPk.getBytes(StandardCharsets.UTF_8))).toLowerCase();"
+                                );
+                            }
+                            appendLine("KEY_LUT.put(formattedPrimaryKey, sha);");
+                        }
+                    }
+                }
+                appendLine("return sha;");
             }
         }
     }
@@ -869,7 +932,7 @@ public final class DatabaseConstantsGenerator
                         appendLine("%s = %sRef;", camelCaseClmName, camelCaseClmName);
                     }
                     appendEmptyLine();
-                    appendLine("formattedPrimaryKey = base32Encode(String.format(");
+                    appendLine("formattedPrimaryKey = String.format(");
                     try (IndentLevel argsIndent = new IndentLevel("", "", false, false))
                     {
                         appendLine("%s.PK_FORMAT,", specClassName);
@@ -890,41 +953,10 @@ public final class DatabaseConstantsGenerator
                         }
                         cutLastAndAppend(2, "\n");
                     }
-                    appendLine("));");
+                    appendLine(");");
                 }
             }
 
-            appendEmptyLine();
-            appendLine("public final <DATA> %s create(", specClassName);
-            try (IndentLevel createParamIndent = new IndentLevel("", "", false, false))
-            {
-                appendLine("Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,");
-                appendLine("DATA data");
-            }
-            appendLine(")");
-            try (IndentLevel genericCreateMethodThrowsDeclarations = new IndentLevel("", "", false, false))
-            {
-                appendLine("throws AccessDeniedException");
-            }
-            try (IndentLevel createMethodIndent = new IndentLevel())
-            {
-                appendLine("return new %s(", specClassName);
-                try (IndentLevel createParamIndent = new IndentLevel("", "", false, false))
-                {
-                    for (Column clm : tbl.columns)
-                    {
-                        appendLine(
-                            "(%s) setters.get(%s.%s.%s).accept(data),",
-                            getJavaType(clm),
-                            DFLT_GEN_DB_TABLES_CLASS_NAME,
-                            toUpperCamelCase(clm.tbl.name),
-                            clm.name
-                        );
-                    }
-                    cutLastAndAppend(2, "\n");
-                }
-                appendLine(");");
-            }
 
             appendEmptyLine();
             appendLine("@JsonIgnore");
@@ -970,11 +1002,12 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("@JsonIgnore");
             appendLine("@Override");
-            appendLine("public final String getKey()");
+            appendLine("public final String getLinstorKey()");
             try (IndentLevel ctorParamIndent = new IndentLevel())
             {
                 appendLine("return formattedPrimaryKey;");
             }
+
 
             appendEmptyLine();
             appendLine("@Override");
@@ -1004,8 +1037,10 @@ public final class DatabaseConstantsGenerator
         try (IndentLevel clazzIndent = new IndentLevel())
         {
             appendLine("private static final long serialVersionUID = %dL;", random.nextLong());
+            appendLine("String k8sKey = null;");
             appendEmptyLine();
 
+            appendLine("@JsonCreator");
             appendLine("public %s()", tblNameCamelCase);
             try (IndentLevel ctorIndent = new IndentLevel())
             {
@@ -1016,17 +1051,34 @@ public final class DatabaseConstantsGenerator
             appendLine("public %s(%s spec)", tblNameCamelCase, specClassName);
             try (IndentLevel ctorIndent = new IndentLevel())
             {
-                appendLine("setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());");
+                appendLine("setMetadata(new ObjectMetaBuilder().withName(deriveKey(spec.getLinstorKey())).build());");
                 appendLine("setSpec(spec);");
             }
 
             appendEmptyLine();
             appendLine("@Override");
-            appendLine("@JsonIgnore");
-            appendLine("public String getKey()");
+            appendLine("public void setMetadata(ObjectMeta metadataRef)");
             try (IndentLevel methodIndent = new IndentLevel())
             {
-                appendLine("return spec.getKey();");
+                appendLine("super.setMetadata(metadataRef);");
+                appendLine("k8sKey = metadataRef.getName();");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("@JsonIgnore");
+            appendLine("public String getLinstorKey()");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("return spec.getLinstorKey();");
+            }
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("@JsonIgnore");
+            appendLine("public String getK8sKey()");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("return k8sKey;");
             }
         }
     }

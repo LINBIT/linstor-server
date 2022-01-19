@@ -205,13 +205,18 @@ public abstract class BaseK8sCrdMigration
         );
         txTo = txMgrTo.getTransaction();
 
+        ControllerK8sCrdTransactionMgr txMgrFrom;
         if (upgradeFromTxMgrContext != null)
         {
-            ControllerK8sCrdTransactionMgr txMgrFrom = new ControllerK8sCrdTransactionMgr(
+            txMgrFrom = new ControllerK8sCrdTransactionMgr(
                 k8sDbRef,
                 upgradeFromTxMgrContext
             );
             txFrom = txMgrFrom.getTransaction();
+        }
+        else
+        {
+            txMgrFrom = null;
         }
 
         try
@@ -221,15 +226,38 @@ public abstract class BaseK8sCrdMigration
             {
                 throw new DatabaseException("Cannot perform Migration " + version + " while a rollback has to be done");
             }
-            migrateImpl();
+            MigrationResult result = migrateImpl();
+            if (result == null)
+            {
+                result = new MigrationResult();
+            }
+
             txMgrTo.commit();
+            if (txMgrFrom != null && (txMgrFrom.isDirty() || result.forceFromTxCommit))
+            {
+                txMgrFrom.commit();
+            }
         }
         catch (Exception exc)
         {
             txMgrTo.rollback();
+            if (txMgrFrom != null)
+            {
+                txMgrFrom.rollback();
+            }
             throw exc;
         }
     }
 
-    public abstract void migrateImpl() throws Exception;
+    public abstract MigrationResult migrateImpl() throws Exception;
+
+    protected static class MigrationResult
+    {
+        private boolean forceFromTxCommit = false;
+
+        public void setForceFromTxCommit(boolean forceFromTxCommitRef)
+        {
+            forceFromTxCommit = forceFromTxCommitRef;
+        }
+    }
 }

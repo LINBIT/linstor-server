@@ -18,7 +18,7 @@ public class Migration_2_v1_15_0_fixRollbackSpec extends BaseK8sCrdMigration
     }
 
     @Override
-    public void migrateImpl() throws Exception
+    public MigrationResult migrateImpl() throws Exception
     {
         // load data from database that needs to change
 
@@ -28,5 +28,7 @@ public class Migration_2_v1_15_0_fixRollbackSpec extends BaseK8sCrdMigration
         // write modified data to database
 
         // nothing to write, just update rollback-schema
+
+        return null;
     }
 }

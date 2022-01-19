@@ -19,7 +19,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     @Override
-    public void migrateImpl() throws Exception
+    public MigrationResult migrateImpl() throws Exception
     {
         // load data from database that needs to change
         // noop for initial migration
@@ -171,6 +171,8 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
         createPropsContainers("STLTCFG", "Cluster/LocalID", "4ac9438a-ead8-4503-846b-56440ce1412a");
         createPropsContainers("/CTRLCFG", "defaultPlainConSvc", "PlainConnector");
         createPropsContainers("/CTRLCFG", "defaultSslConSvc", "SslConnector");
+
+        return null;
     }
 
     private void createSecConfiguration(
