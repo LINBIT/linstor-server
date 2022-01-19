@@ -52,7 +52,7 @@ public class ResourceLayerIdK8sCrdDriver implements ResourceLayerIdCtrlDatabaseD
         List<RscLayerInfo> ret = new ArrayList<>();
 
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        Map<String, LayerResourceIdsSpec> map = tx.get(GeneratedDatabaseTables.LAYER_RESOURCE_IDS);
+        Map<String, LayerResourceIdsSpec> map = tx.getSpec(GeneratedDatabaseTables.LAYER_RESOURCE_IDS);
         try
         {
             for (LayerResourceIdsSpec lriSpec : map.values())

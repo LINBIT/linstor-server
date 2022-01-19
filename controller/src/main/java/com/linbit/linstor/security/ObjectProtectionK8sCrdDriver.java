@@ -108,9 +108,9 @@ public class ObjectProtectionK8sCrdDriver implements ObjectProtectionDatabaseDri
         errorReporter.logTrace("Loading ObjectProtection %s", getObjProtId(objectPathRef));
 
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        SecObjectProtectionSpec objProtSpec = tx.get(
+        SecObjectProtectionSpec objProtSpec = tx.getSpec(
             SEC_OBJECT_PROTECTION,
-            objProtCrdTmp -> objProtCrdTmp.objectPath.equals(objectPathRef),
+            objProtCrdTmp -> objProtCrdTmp.getSpec().objectPath.equals(objectPathRef),
             false,
             null
         );
@@ -133,9 +133,9 @@ public class ObjectProtectionK8sCrdDriver implements ObjectProtectionDatabaseDri
                 role = Role.get(new RoleName(objProtSpec.ownerRoleName));
                 secType = SecurityType.get(new SecTypeName(objProtSpec.securityTypeName));
 
-                GenCrdCurrent.SecRolesSpec loadedRoleSpec = tx.get(
+                GenCrdCurrent.SecRolesSpec loadedRoleSpec = tx.getSpec(
                     SEC_ROLES,
-                    roleTmp -> roleTmp.roleName.equals(objProtSpec.ownerRoleName),
+                    roleCrdTmp -> roleCrdTmp.getSpec().roleName.equals(objProtSpec.ownerRoleName),
                     true,
                     "Role " + objProtSpec.ownerRoleName + " not found in the Database"
                 );
@@ -182,9 +182,9 @@ public class ObjectProtectionK8sCrdDriver implements ObjectProtectionDatabaseDri
             errorReporter.logTrace("ObjectProtection instance created. %s", getObjProtId(objectPathRef));
             // restore ACL
 
-            HashMap<String, GenCrdCurrent.SecAclMapSpec> map = tx.get(
+            HashMap<String, GenCrdCurrent.SecAclMapSpec> map = tx.getSpec(
                 SEC_ACL_MAP,
-                aclTmp -> aclTmp.objectPath.equals(objectPathRef)
+                aclCrdTmp -> aclCrdTmp.getSpec().objectPath.equals(objectPathRef)
             );
             try
             {

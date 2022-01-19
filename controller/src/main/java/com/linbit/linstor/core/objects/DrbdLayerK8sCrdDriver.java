@@ -164,7 +164,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
         {
             K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
             {
-                Map<String, GenCrdCurrent.LayerDrbdResourcesSpec> drbdRscSpecList = tx.get(
+                Map<String, GenCrdCurrent.LayerDrbdResourcesSpec> drbdRscSpecList = tx.getSpec(
                     GeneratedDatabaseTables.LAYER_DRBD_RESOURCES
                 );
                 for (GenCrdCurrent.LayerDrbdResourcesSpec drbdRscSpec : drbdRscSpecList.values())
@@ -174,7 +174,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
             }
 
             {
-                Map<String, GenCrdCurrent.LayerDrbdVolumesSpec> drbdVlmSpecList = tx.get(
+                Map<String, GenCrdCurrent.LayerDrbdVolumesSpec> drbdVlmSpecList = tx.getSpec(
                     GeneratedDatabaseTables.LAYER_DRBD_VOLUMES
                 );
                 for (GenCrdCurrent.LayerDrbdVolumesSpec drbdVlmSpec : drbdVlmSpecList.values())
@@ -189,7 +189,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
                 }
             }
 
-            Map<String, GenCrdCurrent.LayerDrbdResourceDefinitionsSpec> drbdRscDfnSpecList = tx.get(
+            Map<String, GenCrdCurrent.LayerDrbdResourceDefinitionsSpec> drbdRscDfnSpecList = tx.getSpec(
                 GeneratedDatabaseTables.LAYER_DRBD_RESOURCE_DEFINITIONS
             );
 
@@ -258,7 +258,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
                 }
             }
 
-            Map<String, GenCrdCurrent.LayerDrbdVolumeDefinitionsSpec> drbdVlmDfnSpecMap = tx.get(
+            Map<String, GenCrdCurrent.LayerDrbdVolumeDefinitionsSpec> drbdVlmDfnSpecMap = tx.getSpec(
                 GeneratedDatabaseTables.LAYER_DRBD_VOLUME_DEFINITIONS
             );
 

@@ -45,7 +45,7 @@ public class ControllerK8sCrdRollbackMgr
             HashMap<String, LinstorCrd<?>> rscsToChangeOrCreate = entry.getValue();
 
             final Set<String> changedOrDeletedKeys = entry.getValue().keySet();
-            HashMap<String, LinstorSpec> map = currentTransactionRef.get(
+            HashMap<String, LinstorSpec> map = currentTransactionRef.getSpec(
                 dbTable,
                 spec -> changedOrDeletedKeys.contains(spec.getKey())
             );
@@ -144,7 +144,7 @@ public class ControllerK8sCrdRollbackMgr
         Function<SPEC, CRD> specToCrdRef
     )
     {
-        HashMap<String, SPEC> map = currentTransaction.get(
+        HashMap<String, SPEC> map = currentTransaction.getSpec(
             dbTable,
             spec -> keysToDelete.contains(spec.getKey())
         );

@@ -77,7 +77,7 @@ public class CacheLayerK8sCrdDriver implements CacheLayerCtrlDatabaseDriver
     public void fetchForLoadAll()
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        Map<String, GenCrdCurrent.LayerCacheVolumesSpec> cacheVlmSpecMap = tx.get(
+        Map<String, GenCrdCurrent.LayerCacheVolumesSpec> cacheVlmSpecMap = tx.getSpec(
             GeneratedDatabaseTables.LAYER_CACHE_VOLUMES
         );
         for (GenCrdCurrent.LayerCacheVolumesSpec cacheVlmSpec : cacheVlmSpecMap.values())

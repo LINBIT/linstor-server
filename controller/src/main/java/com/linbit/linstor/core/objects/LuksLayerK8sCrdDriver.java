@@ -79,7 +79,7 @@ public class LuksLayerK8sCrdDriver implements LuksLayerCtrlDatabaseDriver
     public void fetchForLoadAll()
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        Map<String, GenCrdCurrent.LayerLuksVolumesSpec> luksVlmSpecMap = tx.get(
+        Map<String, GenCrdCurrent.LayerLuksVolumesSpec> luksVlmSpecMap = tx.getSpec(
             GeneratedDatabaseTables.LAYER_LUKS_VOLUMES
         );
         for (GenCrdCurrent.LayerLuksVolumesSpec luksVlmSpec : luksVlmSpecMap.values())

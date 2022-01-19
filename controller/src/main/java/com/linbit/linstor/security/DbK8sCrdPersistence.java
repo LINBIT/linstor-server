@@ -128,10 +128,10 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
         List<TypeEnforcementRulePojo> ret = new ArrayList<>();
 
         ControllerK8sCrdTransactionMgr tx = txMgrGen.startTransaction();
-        Map<String, GenCrdCurrent.SecTypeRulesSpec> typeRulesMap = tx.getTransaction().get(
+        Map<String, GenCrdCurrent.SecTypeRulesSpec> typeRulesMap = tx.getTransaction().getSpec(
             GeneratedDatabaseTables.SEC_TYPE_RULES
         );
-        Map<String, GenCrdCurrent.SecAccessTypesSpec> typeAccessTypesMap = tx.getTransaction().get(
+        Map<String, GenCrdCurrent.SecAccessTypesSpec> typeAccessTypesMap = tx.getTransaction().getSpec(
             GeneratedDatabaseTables.SEC_ACCESS_TYPES
         );
 
@@ -218,9 +218,9 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     )
         throws DatabaseException
     {
-        return tx.getTransaction().get(
+        return tx.getTransaction().getSpec(
             GeneratedDatabaseTables.SEC_IDENTITIES,
-            idSpec -> idNameRef.value.equals(idSpec.identityName),
+            idCrd -> idNameRef.value.equals(idCrd.getSpec().identityName),
             failIfNull,
             "Identity with name '" + idNameRef + "' not found in database"
         );
@@ -233,9 +233,9 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     )
         throws DatabaseException
     {
-        return tx.getTransaction().get(
+        return tx.getTransaction().getSpec(
             GeneratedDatabaseTables.SEC_DFLT_ROLES,
-            dfltRoleSpec -> idNameRef.value.equals(dfltRoleSpec.identityName),
+            dfltRoleCrd -> idNameRef.value.equals(dfltRoleCrd.getSpec().identityName),
             failIfNull,
             "Identity with name '" + idNameRef + "' not found in database"
         );
@@ -248,9 +248,9 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     )
         throws DatabaseException
     {
-        return tx.getTransaction().get(
+        return tx.getTransaction().getSpec(
             GeneratedDatabaseTables.SEC_ROLES,
-            roleSpec -> roleNameRef.equalsIgnoreCase(roleSpec.roleName),
+            roleCrd -> roleNameRef.equalsIgnoreCase(roleCrd.getSpec().roleName),
             failIfNull,
             "Role with name '" + roleNameRef + "' not found in database"
         );
@@ -264,9 +264,10 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     )
         throws DatabaseException
     {
-        return tx.getTransaction().get(
+        return tx.getTransaction().getSpec(
             GeneratedDatabaseTables.SEC_ID_ROLE_MAP,
-            idRole -> idRole.identityName.equals(idName.value) && idRole.roleName.equals(roleName.value),
+            idRoleCrd -> idRoleCrd.getSpec().identityName.equals(idName.value) &&
+                idRoleCrd.getSpec().roleName.equals(roleName.value),
             failIfNull,
             "Id " + idName.displayValue + " has no Role " + roleName.displayValue + " defined"
         );
@@ -279,7 +280,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     {
         List<String> ret = new ArrayList<>();
 
-        Collection<LinstorSpec> list = tx.getTransaction().get(dspNameCol.getTable()).values();
+        Collection<LinstorSpec> list = tx.getTransaction().getSpec(dspNameCol.getTable()).values();
         for (LinstorSpec linstorSpec : list)
         {
             ret.add((String) linstorSpec.getByColumn(dspNameCol));
@@ -308,7 +309,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
     {
         SecConfigurationSpec spec = null;
 
-        Map<String, GenCrdCurrent.SecConfigurationSpec> configurationMap = tx.getTransaction().get(
+        Map<String, GenCrdCurrent.SecConfigurationSpec> configurationMap = tx.getTransaction().getSpec(
             GeneratedDatabaseTables.SEC_CONFIGURATION
         );
         for (GenCrdCurrent.SecConfigurationSpec configSpec : configurationMap.values())

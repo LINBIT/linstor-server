@@ -151,7 +151,7 @@ public class K8sCrdEngine implements DbEngine
         Map<DATA, INIT_MAPS> loadedObjectsMap = new TreeMap<>();
 
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        for (LinstorSpec linstorSpec : tx.get(table).values())
+        for (LinstorSpec linstorSpec : tx.getSpec(table).values())
         {
             Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(
                 new RawParameters(table, linstorSpec.asRawParameters()),
@@ -230,7 +230,7 @@ public class K8sCrdEngine implements DbEngine
         Map<String, Collection<LinstorSpec>> dump = new TreeMap<>();
         for (DatabaseTable table : GeneratedDatabaseTables.ALL_TABLES)
         {
-            dump.put(table.getName(), tx.get(table).values());
+            dump.put(table.getName(), tx.getSpec(table).values());
         }
         try
         {

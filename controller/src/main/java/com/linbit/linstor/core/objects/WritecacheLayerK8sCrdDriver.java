@@ -76,7 +76,7 @@ public class WritecacheLayerK8sCrdDriver implements WritecacheLayerCtrlDatabaseD
     public void fetchForLoadAll()
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        Map<String, GenCrdCurrent.LayerWritecacheVolumesSpec> writecacheVlmSpecMap = tx.get(
+        Map<String, GenCrdCurrent.LayerWritecacheVolumesSpec> writecacheVlmSpecMap = tx.getSpec(
             GeneratedDatabaseTables.LAYER_WRITECACHE_VOLUMES
         );
         for (GenCrdCurrent.LayerWritecacheVolumesSpec bcacheVlmSpec : writecacheVlmSpecMap.values())

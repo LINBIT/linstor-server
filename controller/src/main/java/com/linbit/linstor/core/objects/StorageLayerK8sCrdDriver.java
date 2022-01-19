@@ -102,7 +102,7 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
         cachedStorVlmInfoByRscLayerId = new HashMap<>();
 
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        Map<String, GenCrdCurrent.LayerStorageVolumesSpec> storageVlmSpecMap = tx.get(
+        Map<String, GenCrdCurrent.LayerStorageVolumesSpec> storageVlmSpecMap = tx.getSpec(
             GeneratedDatabaseTables.LAYER_STORAGE_VOLUMES
         );
 

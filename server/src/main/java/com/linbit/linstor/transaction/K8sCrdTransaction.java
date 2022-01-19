@@ -110,14 +110,14 @@ public class K8sCrdTransaction
         return ret;
     }
 
-    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, SPEC> get(DatabaseTable dbTable)
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, SPEC> getSpec(DatabaseTable dbTable)
     {
-        return this.<CRD, SPEC>get(dbTable, ignored -> true);
+        return this.<CRD, SPEC>getSpec(dbTable, ignored -> true);
     }
 
-    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, SPEC> get(
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, SPEC> getSpec(
         DatabaseTable dbTable,
-        Predicate<SPEC> matcher
+        Predicate<CRD> matcher
     )
     {
         HashMap<String, SPEC> ret = new HashMap<>();
@@ -127,25 +127,24 @@ public class K8sCrdTransaction
         KubernetesResourceList<CRD> list = client.list();
         for (CRD item : list.getItems())
         {
-            SPEC spec = item.getSpec();
-            if (matcher.test(spec))
+            if (matcher.test(item))
             {
-                ret.put(spec.getKey(), spec);
+                ret.put(item.getKey(), item.getSpec());
             }
         }
         return ret;
     }
 
-    public <SPEC extends LinstorSpec> SPEC get(
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> SPEC getSpec(
         DatabaseTable dbTable,
-        Predicate<SPEC> matcher,
+        Predicate<CRD> matcher,
         boolean failIfNullRef,
         String notFoundMessage
     )
         throws DatabaseException
     {
         SPEC ret = null;
-        HashMap<String, SPEC> map = get(dbTable, matcher);
+        HashMap<String, SPEC> map = getSpec(dbTable, matcher);
         if (map.isEmpty())
         {
             if (failIfNullRef)
@@ -160,6 +159,31 @@ public class K8sCrdTransaction
         else
         {
             ret = map.values().iterator().next();
+        }
+        return ret;
+    }
+
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, CRD> getCrd(DatabaseTable dbTable)
+    {
+        return this.<CRD, SPEC>getCrd(dbTable, ignored -> true);
+    }
+
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, CRD> getCrd(
+        DatabaseTable dbTable,
+        Predicate<CRD> matcher
+    )
+    {
+        HashMap<String, CRD> ret = new HashMap<>();
+        MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = getClient(
+            dbTable
+        );
+        KubernetesResourceList<CRD> list = client.list();
+        for (CRD item : list.getItems())
+        {
+            if (matcher.test(item))
+            {
+                ret.put(item.getKey(), item);
+            }
         }
         return ret;
     }

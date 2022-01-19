@@ -88,7 +88,7 @@ public class BCacheLayerK8sCrdDriver implements BCacheLayerCtrlDatabaseDriver
     public void fetchForLoadAll()
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        Map<String, GenCrdCurrent.LayerBcacheVolumesSpec> bcacheVlmSpecMap = tx.get(
+        Map<String, GenCrdCurrent.LayerBcacheVolumesSpec> bcacheVlmSpecMap = tx.getSpec(
             GeneratedDatabaseTables.LAYER_BCACHE_VOLUMES
         );
         for (GenCrdCurrent.LayerBcacheVolumesSpec bcacheVlmSpec : bcacheVlmSpecMap.values())

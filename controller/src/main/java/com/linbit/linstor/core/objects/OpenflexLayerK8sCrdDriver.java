@@ -124,7 +124,7 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         try
         {
-            Map<String, GenCrdCurrent.LayerOpenflexResourceDefinitionsSpec> openflexRscDfnSpecMap = tx.get(
+            Map<String, GenCrdCurrent.LayerOpenflexResourceDefinitionsSpec> openflexRscDfnSpecMap = tx.getSpec(
                 GeneratedDatabaseTables.LAYER_OPENFLEX_RESOURCE_DEFINITIONS
             );
             for (GenCrdCurrent.LayerOpenflexResourceDefinitionsSpec ofRscDfnSpec : openflexRscDfnSpecMap.values())
@@ -209,7 +209,7 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
     {
         cachedVlmInfoMap = new HashMap<>();
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        Map<String, GenCrdCurrent.LayerOpenflexVolumesSpec> openflexVlmSpecMap = tx.get(
+        Map<String, GenCrdCurrent.LayerOpenflexVolumesSpec> openflexVlmSpecMap = tx.getSpec(
             GeneratedDatabaseTables.LAYER_OPENFLEX_VOLUMES
         );
         int rscLayerId = -1;

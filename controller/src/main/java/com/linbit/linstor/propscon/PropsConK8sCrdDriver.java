@@ -39,9 +39,9 @@ public class PropsConK8sCrdDriver implements PropsConDatabaseDriver
         errorReporter.logTrace("Loading properties for instance %s", getId(instanceName));
 
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        HashMap<String, GenCrdCurrent.PropsContainersSpec> map = tx.get(
+        HashMap<String, GenCrdCurrent.PropsContainersSpec> map = tx.getSpec(
             GeneratedDatabaseTables.PROPS_CONTAINERS,
-            propEntry -> propEntry.propsInstance.equals(instanceName)
+            propEntry -> propEntry.getSpec().propsInstance.equals(instanceName)
         );
 
         Map<String, String> propsMap = new TreeMap<>();
@@ -91,9 +91,9 @@ public class PropsConK8sCrdDriver implements PropsConDatabaseDriver
 
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
 
-        HashMap<String, GenCrdCurrent.PropsContainersSpec> map = tx.get(
+        HashMap<String, GenCrdCurrent.PropsContainersSpec> map = tx.getSpec(
             GeneratedDatabaseTables.PROPS_CONTAINERS,
-            propEntry -> propEntry.propsInstance.equals(instanceName)
+            propEntry -> propEntry.getSpec().propsInstance.equals(instanceName)
         );
 
         for (GenCrdCurrent.PropsContainersSpec propsContainersSpec : map.values())
