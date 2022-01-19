@@ -9,7 +9,8 @@ public interface LinstorCrd<SPEC extends LinstorSpec> extends HasMetadata
     String VERSION = "v1_15_0_rc_2";
     String GROUP = "internal.linstor.linbit.com";
 
-    String getKey();
+    String getK8sKey();
+    String getLinstorKey();
 
     SPEC getSpec();
 }

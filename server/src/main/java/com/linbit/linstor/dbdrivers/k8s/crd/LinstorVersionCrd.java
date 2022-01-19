@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers.k8s.crd;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
@@ -24,6 +25,8 @@ public class LinstorVersionCrd extends CustomResource<LinstorVersionSpec, Void> 
     public static final String LINSTOR_CRD_NAME = "linstorversion";
     public static final String LINSTOR_CRD_KIND = "LinstorVersion";
 
+    private String k8sKey;
+
     public LinstorVersionCrd()
     {
         super();
@@ -31,20 +34,34 @@ public class LinstorVersionCrd extends CustomResource<LinstorVersionSpec, Void> 
 
     public LinstorVersionCrd(LinstorVersionSpec spec)
     {
-        setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+        setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
         setSpec(spec);
+    }
+
+    @Override
+    public void setMetadata(ObjectMeta metadataRef)
+    {
+        super.setMetadata(metadataRef);
+        k8sKey = metadataRef.getName();
+    }
+
+    @Override
+    @JsonIgnore
+    public String getLinstorKey()
+    {
+        return spec.getLinstorKey();
+    }
+
+    @Override
+    @JsonIgnore
+    public String getK8sKey()
+    {
+        return k8sKey;
     }
 
     @JsonIgnore
     public static String getYamlLocation()
     {
         return LinstorVersionSpec.getYamlLocation();
-    }
-
-    @Override
-    @JsonIgnore
-    public String getKey()
-    {
-        return spec.getKey();
     }
 }

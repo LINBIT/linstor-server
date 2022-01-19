@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers.k8s.crd;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
@@ -23,6 +24,8 @@ public class RollbackCrd extends CustomResource<RollbackSpec, Void> implements L
     public static final String ROLLBACK_CRD_NAME = "rollback";
     public static final String ROLLBACK_CRD_KIND = "Rollback";
 
+    private String k8sKey;
+
     public RollbackCrd()
     {
         super();
@@ -30,15 +33,36 @@ public class RollbackCrd extends CustomResource<RollbackSpec, Void> implements L
 
     public RollbackCrd(RollbackSpec spec)
     {
-        setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+        setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
         setSpec(spec);
     }
 
     @Override
-    @JsonIgnore
-    public String getKey()
+    public void setMetadata(ObjectMeta metadataRef)
     {
-        return spec.getKey();
+        super.setMetadata(metadataRef);
+        k8sKey = metadataRef.getName();
+    }
+
+    @Override
+    @JsonIgnore
+    public String getLinstorKey()
+    {
+        return spec.getLinstorKey();
+    }
+
+    @Override
+    @JsonIgnore
+    public String getK8sKey()
+    {
+        return k8sKey;
+    }
+
+    @Override
+    public void setSpec(RollbackSpec specRef)
+    {
+        super.setSpec(specRef);
+        // new Exception("setting spec: " + specRef).printStackTrace();
     }
 
     @JsonIgnore

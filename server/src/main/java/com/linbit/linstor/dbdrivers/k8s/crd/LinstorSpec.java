@@ -12,7 +12,7 @@ public interface LinstorSpec extends Serializable
 
     Object getByColumn(Column clm);
 
-    String getKey();
+    String getLinstorKey();
 
     DatabaseTable getDatabaseTable();
 }

@@ -47,12 +47,13 @@ public class ControllerK8sCrdRollbackMgr
             final Set<String> changedOrDeletedKeys = entry.getValue().keySet();
             HashMap<String, LinstorSpec> map = currentTransactionRef.getSpec(
                 dbTable,
-                spec -> changedOrDeletedKeys.contains(spec.getKey())
+                spec -> changedOrDeletedKeys.contains(spec.getK8sKey())
             );
 
             for (Entry<String, LinstorCrd<?>> rscToChangeOrCreate : rscsToChangeOrCreate.entrySet())
             {
                 String specKey = rscToChangeOrCreate.getKey();
+                LinstorCrd<?> crd = rscToChangeOrCreate.getValue();
                 LinstorSpec spec = map.get(specKey);
                 numberOfUpdates++;
 
@@ -63,7 +64,7 @@ public class ControllerK8sCrdRollbackMgr
                 }
                 else
                 {
-                    rollbackSpec.updatedOrDeleted(dbTable, spec);
+                    rollbackSpec.updatedOrDeleted(dbTable, crd);
                 }
             }
         }
@@ -74,7 +75,7 @@ public class ControllerK8sCrdRollbackMgr
             for (LinstorCrd<?> crd : entry.getValue().values())
             {
                 numberOfUpdates++;
-                rollbackSpec.updatedOrDeleted(dbTable, crd.getSpec());
+                rollbackSpec.updatedOrDeleted(dbTable, crd);
             }
         }
 
@@ -136,7 +137,6 @@ public class ControllerK8sCrdRollbackMgr
         // else empty list, no-op
     }
 
-    @SuppressWarnings("unchecked")
     private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void delete(
         K8sCrdTransaction currentTransaction,
         DatabaseTable dbTable,
@@ -146,7 +146,7 @@ public class ControllerK8sCrdRollbackMgr
     {
         HashMap<String, SPEC> map = currentTransaction.getSpec(
             dbTable,
-            spec -> keysToDelete.contains(spec.getKey())
+            spec -> keysToDelete.contains(spec.getK8sKey())
         );
 
         ArrayList<CRD> crdToDeleteList = new ArrayList<>();

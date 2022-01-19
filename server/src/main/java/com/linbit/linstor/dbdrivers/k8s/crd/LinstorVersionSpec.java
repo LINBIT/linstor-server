@@ -24,7 +24,7 @@ public class LinstorVersionSpec implements LinstorSpec
 
     @JsonIgnore
     @Override
-    public String getKey()
+    public String getLinstorKey()
     {
         return "version";
     }

@@ -56,12 +56,12 @@ public class RollbackSpec implements LinstorSpec
     }
 
     @JsonIgnore
-    public void updatedOrDeleted(DatabaseTable dbTable, LinstorSpec data)
+    public <SPEC extends LinstorSpec> void updatedOrDeleted(DatabaseTable dbTable, LinstorCrd<SPEC> crd)
     {
         synchronized (syncObject)
         {
             String dbTableStr = dbTable.toString();
-            String specKey = data.getKey();
+            String specKey = crd.getK8sKey();
             if (!alreadyKnown(dbTableStr, specKey))
             {
                 HashMap<String, LinstorSpec> rbMap = rollbackMap.get(dbTableStr);
@@ -70,7 +70,7 @@ public class RollbackSpec implements LinstorSpec
                     rbMap = new HashMap<>();
                     rollbackMap.put(dbTableStr, rbMap);
                 }
-                rbMap.put(specKey, data);
+                rbMap.put(specKey, crd.getSpec());
             }
         }
     }
@@ -114,7 +114,7 @@ public class RollbackSpec implements LinstorSpec
 
     @JsonIgnore
     @Override
-    public String getKey()
+    public String getLinstorKey()
     {
         return "rollback";
     }

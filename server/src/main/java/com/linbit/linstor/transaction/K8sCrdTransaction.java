@@ -83,7 +83,7 @@ public class K8sCrdTransaction
     public void update(DatabaseTable dbTable, LinstorCrd<?> k8sRsc)
     {
         // System.out.println("updating " + dbTable.getName() + " " + k8sRsc);
-        String key = k8sRsc.getKey();
+        String key = k8sRsc.getK8sKey();
         lazyGet(rscsToChangeOrCreate, dbTable).put(key, k8sRsc);
         lazyGet(rscsToDelete, dbTable).remove(key);
     }
@@ -91,7 +91,7 @@ public class K8sCrdTransaction
     public void delete(DatabaseTable dbTable, LinstorCrd<?> k8sRsc)
     {
         // System.out.println("deleting entry from " + dbTable.getName() + ": " + k8sRsc);
-        String key = k8sRsc.getKey();
+        String key = k8sRsc.getK8sKey();
         lazyGet(rscsToDelete, dbTable).put(key, k8sRsc);
         lazyGet(rscsToChangeOrCreate, dbTable).remove(key);
     }
@@ -129,7 +129,7 @@ public class K8sCrdTransaction
         {
             if (matcher.test(item))
             {
-                ret.put(item.getKey(), item.getSpec());
+                ret.put(item.getK8sKey(), item.getSpec());
             }
         }
         return ret;
@@ -182,7 +182,7 @@ public class K8sCrdTransaction
         {
             if (matcher.test(item))
             {
-                ret.put(item.getKey(), item);
+                ret.put(item.getK8sKey(), item);
             }
         }
         return ret;

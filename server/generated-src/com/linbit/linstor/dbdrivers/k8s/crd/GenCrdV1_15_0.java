@@ -1072,7 +1072,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -1100,15 +1100,21 @@ public class GenCrdV1_15_0
 
         public Files(FilesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -1199,7 +1205,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -1227,15 +1233,21 @@ public class GenCrdV1_15_0
 
         public KeyValueStore(KeyValueStoreSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -1345,7 +1357,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -1373,15 +1385,21 @@ public class GenCrdV1_15_0
 
         public LayerBcacheVolumes(LayerBcacheVolumesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -1491,7 +1509,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -1519,15 +1537,21 @@ public class GenCrdV1_15_0
 
         public LayerCacheVolumes(LayerCacheVolumesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -1645,7 +1669,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -1673,15 +1697,21 @@ public class GenCrdV1_15_0
 
         public LayerDrbdResources(LayerDrbdResourcesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -1828,7 +1858,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -1856,15 +1886,21 @@ public class GenCrdV1_15_0
 
         public LayerDrbdResourceDefinitions(LayerDrbdResourceDefinitionsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -1965,7 +2001,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -1993,15 +2029,21 @@ public class GenCrdV1_15_0
 
         public LayerDrbdVolumes(LayerDrbdVolumesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -2113,7 +2155,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -2141,15 +2183,21 @@ public class GenCrdV1_15_0
 
         public LayerDrbdVolumeDefinitions(LayerDrbdVolumeDefinitionsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -2241,7 +2289,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -2269,15 +2317,21 @@ public class GenCrdV1_15_0
 
         public LayerLuksVolumes(LayerLuksVolumesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -2378,7 +2432,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -2406,15 +2460,21 @@ public class GenCrdV1_15_0
 
         public LayerOpenflexResourceDefinitions(LayerOpenflexResourceDefinitionsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -2515,7 +2575,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -2543,15 +2603,21 @@ public class GenCrdV1_15_0
 
         public LayerOpenflexVolumes(LayerOpenflexVolumesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -2687,7 +2753,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -2715,15 +2781,21 @@ public class GenCrdV1_15_0
 
         public LayerResourceIds(LayerResourceIdsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -2833,7 +2905,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -2861,15 +2933,21 @@ public class GenCrdV1_15_0
 
         public LayerStorageVolumes(LayerStorageVolumesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -2970,7 +3048,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -2998,15 +3076,21 @@ public class GenCrdV1_15_0
 
         public LayerWritecacheVolumes(LayerWritecacheVolumesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -3133,7 +3217,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -3161,15 +3245,21 @@ public class GenCrdV1_15_0
 
         public LinstorRemotes(LinstorRemotesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -3278,7 +3368,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -3306,15 +3396,21 @@ public class GenCrdV1_15_0
 
         public Nodes(NodesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -3406,7 +3502,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -3434,15 +3530,21 @@ public class GenCrdV1_15_0
 
         public NodeConnections(NodeConnectionsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -3570,7 +3672,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -3598,15 +3700,21 @@ public class GenCrdV1_15_0
 
         public NodeNetInterfaces(NodeNetInterfacesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -3734,7 +3842,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -3762,15 +3870,21 @@ public class GenCrdV1_15_0
 
         public NodeStorPool(NodeStorPoolSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -3862,7 +3976,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -3890,15 +4004,21 @@ public class GenCrdV1_15_0
 
         public PropsContainers(PropsContainersSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -4018,7 +4138,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -4046,15 +4166,21 @@ public class GenCrdV1_15_0
 
         public Resources(ResourcesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -4184,7 +4310,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -4212,15 +4338,21 @@ public class GenCrdV1_15_0
 
         public ResourceConnections(ResourceConnectionsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -4375,7 +4507,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -4403,15 +4535,21 @@ public class GenCrdV1_15_0
 
         public ResourceDefinitions(ResourceDefinitionsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -4610,7 +4748,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -4638,15 +4776,21 @@ public class GenCrdV1_15_0
 
         public ResourceGroups(ResourceGroupsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -4791,7 +4935,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -4819,15 +4963,21 @@ public class GenCrdV1_15_0
 
         public S3Remotes(S3RemotesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -4918,7 +5068,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -4946,15 +5096,21 @@ public class GenCrdV1_15_0
 
         public SatellitesCapacity(SatellitesCapacitySpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -5036,7 +5192,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -5064,15 +5220,21 @@ public class GenCrdV1_15_0
 
         public SecAccessTypes(SecAccessTypesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -5164,7 +5326,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -5192,15 +5354,21 @@ public class GenCrdV1_15_0
 
         public SecAclMap(SecAclMapSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -5291,7 +5459,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -5319,15 +5487,21 @@ public class GenCrdV1_15_0
 
         public SecConfiguration(SecConfigurationSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -5409,7 +5583,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -5437,15 +5611,21 @@ public class GenCrdV1_15_0
 
         public SecDfltRoles(SecDfltRolesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -5563,7 +5743,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -5591,15 +5771,21 @@ public class GenCrdV1_15_0
 
         public SecIdentities(SecIdentitiesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -5682,7 +5868,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -5710,15 +5896,21 @@ public class GenCrdV1_15_0
 
         public SecIdRoleMap(SecIdRoleMapSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -5818,7 +6010,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -5846,15 +6038,21 @@ public class GenCrdV1_15_0
 
         public SecObjectProtection(SecObjectProtectionSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -5963,7 +6161,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -5991,15 +6189,21 @@ public class GenCrdV1_15_0
 
         public SecRoles(SecRolesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -6090,7 +6294,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -6118,15 +6322,21 @@ public class GenCrdV1_15_0
 
         public SecTypes(SecTypesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -6218,7 +6428,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -6246,15 +6456,21 @@ public class GenCrdV1_15_0
 
         public SecTypeRules(SecTypeRulesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -6336,7 +6552,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -6364,15 +6580,21 @@ public class GenCrdV1_15_0
 
         public SpaceHistory(SpaceHistorySpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -6463,7 +6685,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -6491,15 +6713,21 @@ public class GenCrdV1_15_0
 
         public StorPoolDefinitions(StorPoolDefinitionsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -6573,7 +6801,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -6601,15 +6829,21 @@ public class GenCrdV1_15_0
 
         public TrackingDate(TrackingDateSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -6730,7 +6964,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -6758,15 +6992,21 @@ public class GenCrdV1_15_0
 
         public Volumes(VolumesSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -6888,7 +7128,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -6916,15 +7156,21 @@ public class GenCrdV1_15_0
 
         public VolumeConnections(VolumeConnectionsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -7044,7 +7290,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -7072,15 +7318,21 @@ public class GenCrdV1_15_0
 
         public VolumeDefinitions(VolumeDefinitionsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
@@ -7181,7 +7433,7 @@ public class GenCrdV1_15_0
 
         @JsonIgnore
         @Override
-        public final String getKey()
+        public final String getLinstorKey()
         {
             return formattedPrimaryKey;
         }
@@ -7209,15 +7461,21 @@ public class GenCrdV1_15_0
 
         public VolumeGroups(VolumeGroupsSpec spec)
         {
-            setMetadata(new ObjectMetaBuilder().withName(spec.getKey()).build());
+            setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
             setSpec(spec);
         }
 
         @Override
         @JsonIgnore
-        public String getKey()
+        public String getK8sKey()
         {
-            return spec.getKey();
+            return spec.getLinstorKey();
+        }
+
+        @Override
+        public String getLinstorKey()
+        {
+            return spec.getLinstorKey();
         }
     }
 
