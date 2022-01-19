@@ -6,6 +6,7 @@ import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.k8s.crd.RollbackCrd;
 import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
@@ -13,6 +14,7 @@ import com.linbit.linstor.transaction.K8sCrdTransaction;
 
 import java.io.FileNotFoundException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -104,7 +106,11 @@ public abstract class BaseK8sCrdMigration
         HashSet<String> tablesToUpdate = new HashSet<>();
         for (DatabaseTable dbTable : GeneratedDatabaseTables.ALL_TABLES)
         {
-            tablesToUpdate.add(yamlKindNameFct.apply(dbTable));
+            String tableToUpdate = yamlKindNameFct.apply(dbTable);
+            if (tableToUpdate != null)
+            {
+                tablesToUpdate.add(tableToUpdate);
+            }
         }
         tablesToUpdate.add("rollback");
 
@@ -210,6 +216,11 @@ public abstract class BaseK8sCrdMigration
 
         try
         {
+            List<RollbackCrd> rollbackList = txFrom.getRollbackClient().list().getItems();
+            if (!rollbackList.isEmpty())
+            {
+                throw new DatabaseException("Cannot perform Migration " + version + " while a rollback has to be done");
+            }
             migrateImpl();
             txMgrTo.commit();
         }
