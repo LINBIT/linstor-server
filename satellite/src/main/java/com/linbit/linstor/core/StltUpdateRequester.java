@@ -44,7 +44,8 @@ public class StltUpdateRequester
             interComSerializer
                 .onewayBuilder(InternalApiConsts.API_REQUEST_CONTROLLER)
                 .requestControllerUpdate()
-                .build()
+                .build(),
+            InternalApiConsts.API_REQUEST_CONTROLLER
         );
     }
 
@@ -54,7 +55,8 @@ public class StltUpdateRequester
             interComSerializer
                 .onewayBuilder(InternalApiConsts.API_REQUEST_NODE)
                 .requestNodeUpdate(nodeUuid, nodeName.getDisplayName())
-                .build()
+                .build(),
+            InternalApiConsts.API_REQUEST_NODE
         );
     }
 
@@ -64,7 +66,8 @@ public class StltUpdateRequester
             interComSerializer
                 .onewayBuilder(InternalApiConsts.API_REQUEST_RSC)
                 .requestResourceUpdate(rscUuid, nodeName.getDisplayName(), rscName.getDisplayName())
-                .build()
+                .build(),
+            InternalApiConsts.API_REQUEST_RSC
         );
     }
 
@@ -74,7 +77,8 @@ public class StltUpdateRequester
             interComSerializer
                 .onewayBuilder(InternalApiConsts.API_REQUEST_STOR_POOL)
                 .requestStoragePoolUpdate(storPoolUuid, storPoolName.getDisplayName())
-                .build()
+                .build(),
+            InternalApiConsts.API_REQUEST_STOR_POOL
         );
     }
 
@@ -88,7 +92,8 @@ public class StltUpdateRequester
                     snapshotUuid,
                     snapshotKey.getSnapshotName().getDisplayName()
                 )
-                .build()
+                .build(),
+            InternalApiConsts.API_REQUEST_IN_PROGRESS_SNAPSHOT
         );
     }
 
@@ -98,7 +103,8 @@ public class StltUpdateRequester
             interComSerializer
                 .onewayBuilder(InternalApiConsts.API_REQUEST_SHARED_SP_LOCKS)
                 .requestSharedStorPoolLocks(sharedSPLocksRef)
-                .build()
+                .build(),
+            InternalApiConsts.API_REQUEST_SHARED_SP_LOCKS
         );
     }
 
@@ -111,7 +117,8 @@ public class StltUpdateRequester
                     externalFileUuidRef,
                     externalFileNameRef.extFileName
                 )
-                .build()
+                .build(),
+            InternalApiConsts.API_REQUEST_EXTERNAL_FILE
         );
     }
 
@@ -124,16 +131,17 @@ public class StltUpdateRequester
                     remoteUuidRef,
                     remoteNameRef.displayValue
                 )
-                .build()
+                .build(),
+            InternalApiConsts.API_REQUEST_REMOTE
         );
     }
 
-    private void sendRequest(byte[] requestData)
+    private void sendRequest(byte[] requestData, String apiCall)
     {
         if (requestData != null && requestData.length > 0)
         {
             Peer controllerPeer = controllerPeerConnector.getControllerPeer();
-            controllerPeer.sendMessage(requestData, InternalApiConsts.API_REQUEST_REMOTE);
+            controllerPeer.sendMessage(requestData, apiCall);
         }
         else
         {

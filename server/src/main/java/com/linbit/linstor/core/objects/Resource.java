@@ -501,6 +501,7 @@ public class Resource extends AbsResource<Resource>
         INACTIVE(1L << 10),
         REACTIVATE(1L << 11),
         INACTIVE_PERMANENTLY(INACTIVE.flagValue | 1L << 12),
+        @Deprecated
         BACKUP_RESTORE(1L << 13),
         EVICTED(INACTIVE.flagValue | 1L << 14),
         INACTIVE_BEFORE_EVICTION(1L << 15),

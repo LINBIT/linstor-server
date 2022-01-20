@@ -75,6 +75,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -665,6 +666,9 @@ public class DrbdLayer implements DeviceLayer
                                 /*
                                  * If a peer is getting deleted, we issue a forget-peer (which requires
                                  * a del-peer) so that the bitmap of that peer is reset to day0
+                                 *
+                                 * This gets important if a new node is created with a never seen node-id but we
+                                 * simply ran out of unused peer-slots (as those are already bound to old node-ids)
                                  */
                                 ExtCmdFailedException delPeerExc = null;
                                 try
@@ -739,21 +743,33 @@ public class DrbdLayer implements DeviceLayer
                         false
                     );
 
-                    if (drbdRscData.getAbsResource().getStateFlags().isSet(workerCtx, Resource.Flags.BACKUP_RESTORE))
+                    if (
+                        drbdRscData.getAbsResource().getStateFlags()
+                            .isSet(workerCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT)
+                    )
                     {
-                        // If a backup is restored, the bitmask is restored as well. When restored, no other peers exist
-                        // at first. As soon as new peers are added, things go wrong if we leave the bitmask as it is
-                        // since it most likely contains old tracking data.
+                        /*
+                         * Basically a similar scenario as "we have the current peer and ALL other peers were removed".
+                         * See delete-case's forget-peer comment
+                         */
                         String ids = drbdRscData.getAbsResource().getProps(workerCtx).getProp(
                             InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
-                        String[] nodeIds =
-                            ids == null ||
-                            ids.isEmpty() ? new String[0] : ids.split(InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR);
-                        for (int idx = 0; idx < nodeIds.length; idx++)
+                        List<String> nodeIds = new ArrayList<>();
+                        if (ids != null && !ids.isEmpty())
                         {
-                            int nodeId = Integer.parseInt(nodeIds[idx]);
+                            nodeIds.addAll(
+                                Arrays.asList(ids.split(InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR))
+                            );
+                        }
+                        for (DrbdRscData<Resource> rscData : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
+                        {
+                            nodeIds.remove("" + rscData.getNodeId().value);
+                        }
+                        for (String strId : nodeIds)
+                        {
+                            int nodeId = Integer.parseInt(strId);
                             if (drbdRscData.getNodeId().value != nodeId)
                             {
                                 try
@@ -1053,14 +1069,6 @@ public class DrbdLayer implements DeviceLayer
 
         boolean hasMetaData;
 
-        StateFlags<ResourceDefinition.Flags> rscDfnFlags = drbdVlmData.getRscLayerObject().getAbsResource()
-            .getDefinition().getFlags();
-        if (rscDfnFlags.isSet(workerCtx, ResourceDefinition.Flags.RESTORE_TARGET))
-        {
-            errorReporter.logTrace("RESTORE_TARGET flag is set. Ignoring existing metadata");
-            hasMetaData = false;
-        }
-        else
         if (drbdVlmData.checkMetaData() ||
             // when adding a disk, DRBD believes that it is diskless but we still need to create metadata
             !drbdVlmData.hasDisk())

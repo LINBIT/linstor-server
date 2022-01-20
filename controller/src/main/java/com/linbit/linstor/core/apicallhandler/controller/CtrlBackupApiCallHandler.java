@@ -3604,20 +3604,27 @@ public class CtrlBackupApiCallHandler
                             InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
-                        if (successRef)
+                        snap.getFlags().disableFlags(sysCtx, Snapshot.Flags.BACKUP_SOURCE);
+                        Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                        if (remote != null)
                         {
-                            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
-                            rscDfn.getProps(peerAccCtx.get()).setProp(
-                                InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                                snapNameRef,
-                                ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
-                            );
-
-                            Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-                            if (remote != null && remote instanceof StltRemote)
+                            if (successRef)
+                            {
+                                ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
+                                rscDfn.getProps(peerAccCtx.get()).setProp(
+                                    InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                                    snapNameRef,
+                                    ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
+                                );
+                            }
+                            if (remote instanceof StltRemote)
                             {
                                 cleanupFlux = cleanupStltRemote((StltRemote) remote);
                             }
+                        }
+                        else
+                        {
+                            throw new ImplementationError("Unknown remote. successRef: " + successRef);
                         }
                     }
                     ctrlTransactionHelper.commit();

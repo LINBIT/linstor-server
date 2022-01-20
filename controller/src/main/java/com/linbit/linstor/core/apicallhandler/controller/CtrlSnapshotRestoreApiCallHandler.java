@@ -212,11 +212,6 @@ public class CtrlSnapshotRestoreApiCallHandler
                 );
             }
 
-            if (!fromBackup && isFlagSet(fromSnapshotDfn, SnapshotDefinition.Flags.SHIPPED))
-            {
-                setFlags(toRscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
-            }
-
             if (!fromBackup && backupInfoMgr.restoreContainsRscDfn(toRscDfn))
             {
                 throw new ApiRcException(
@@ -241,7 +236,7 @@ public class CtrlSnapshotRestoreApiCallHandler
             {
                 for (Snapshot snapshot : fromSnapshotDfn.getAllSnapshots(peerAccCtx.get()))
                 {
-                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode(), fromBackup));
+                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode()));
                 }
             }
             else
@@ -249,7 +244,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 for (String nodeNameStr : nodeNameStrs)
                 {
                     Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, node, fromBackup));
+                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, node));
                 }
             }
 
@@ -398,11 +393,6 @@ public class CtrlSnapshotRestoreApiCallHandler
                     props.removeProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
                 }
             }
-            if (!restoredResourcesRef.isEmpty())
-            {
-                ResourceDefinition rscDfn = restoredResourcesRef.iterator().next().getResourceDefinition();
-                unsetFlags(rscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
-            }
             ctrlTransactionHelper.commit();
         }
         catch (AccessDeniedException exc)
@@ -423,8 +413,7 @@ public class CtrlSnapshotRestoreApiCallHandler
     private Resource restoreOnNode(
         SnapshotDefinition fromSnapshotDfn,
         ResourceDefinition toRscDfn,
-        Node node,
-        boolean fromBackup
+        Node node
     )
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, DatabaseException
     {
@@ -443,10 +432,6 @@ public class CtrlSnapshotRestoreApiCallHandler
             ctrlPropsHelper.getProps(rsc)
         );
         StateFlags<Flags> rscFlags = rsc.getStateFlags();
-        if (fromBackup)
-        {
-            rscFlags.enableFlags(peerAccCtx.get(), Resource.Flags.BACKUP_RESTORE);
-        }
         rscFlags.enableFlags(peerAccCtx.get(), Resource.Flags.RESTORE_FROM_SNAPSHOT);
 
         Iterator<VolumeDefinition> toVlmDfnIter = ctrlRscCrtApiHelper.getVlmDfnIterator(toRscDfn);

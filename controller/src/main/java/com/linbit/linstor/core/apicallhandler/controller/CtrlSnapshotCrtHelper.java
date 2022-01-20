@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
@@ -30,10 +31,17 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
@@ -54,6 +62,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Singleton
 public class CtrlSnapshotCrtHelper
@@ -144,7 +153,8 @@ public class CtrlSnapshotCrtHelper
 
                 if (!isDisklessPrivileged(rsc))
                 {
-                    createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
+                    Snapshot snap = createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
+                    setNodeIds(rsc, snap);
                     resourceFound = true;
                 }
             }
@@ -164,7 +174,8 @@ public class CtrlSnapshotCrtHelper
                         )
                     );
                 }
-                createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
+                Snapshot snap = createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
+                setNodeIds(rsc, snap);
                 resourceFound = true;
             }
         }
@@ -187,6 +198,65 @@ public class CtrlSnapshotCrtHelper
         }
 
         return snapshotDfn;
+    }
+
+    private void setNodeIds(Resource rsc, Snapshot snap)
+    {
+        List<Integer> nodeIds = new ArrayList<>();
+        try
+        {
+            Set<AbsRscLayerObject<Resource>> drbdLayers = LayerRscUtils
+                .getRscDataByProvider(rsc.getLayerData(apiCtx), DeviceLayerKind.DRBD);
+
+            if (drbdLayers.size() > 1)
+            {
+                throw new ImplementationError("Only one instance of DRBD-layer supported");
+            }
+
+            for (AbsRscLayerObject<Resource> layer : drbdLayers)
+            {
+                DrbdRscData<Resource> drbdLayer = (DrbdRscData<Resource>) layer;
+                boolean intMeta = false;
+                for (DrbdVlmData<Resource> drbdVlm : drbdLayer.getVlmLayerObjects().values())
+                {
+                    if (!drbdVlm.isUsingExternalMetaData())
+                    {
+                        intMeta = true;
+                    }
+                }
+                if (intMeta)
+                {
+                    for (DrbdRscData<Resource> rscData : drbdLayer.getRscDfnLayerObject().getDrbdRscDataList())
+                    {
+                        if (!rscData.isDiskless(apiCtx))
+                        {
+                            /*
+                             * diskless nodes do reserve a node-id for themselves, but the peer-slot is not used in the
+                             * metadata of diskfull peers
+                             */
+                            nodeIds.add(rscData.getNodeId().value);
+                        }
+                    }
+                }
+            }
+            snap.getProps(apiCtx).setProp(
+                InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
+                StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(exc, "create snapshot", ApiConsts.FAIL_ACC_DENIED_RSC);
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
+        }
+        catch (InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     private Snapshot createSnapshotOnNode(
