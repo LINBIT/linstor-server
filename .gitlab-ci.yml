@@ -139,7 +139,7 @@ test-e2e:
     - |
       case "$CI_COMMIT_BRANCH" in
        "jenkins") VARIANTS="--variant default --variant etcd --variant crd" ;;
-       *) VARIANTS=$VMSHED_VARIANTS ;;
+       *) VARIANTS=${VMSHED_VARIANTS:---variant default} ;;
       esac
     - echo "Running variants $VARIANTS"
     - echo "LINSTOR-TEST BRANCH = $TEST_BRANCH"
