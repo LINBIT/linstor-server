@@ -58,6 +58,7 @@
 
 [logging]
   level = "info" # minimal log level can be trace, debug, info, warning, error
+  linstor_level = "info" # minimal log level can be trace, debug, info, warning, error
 
   # path to the rest access log, if relative path it will be resolved to the linstor log directory
   rest_access_log_path = "rest-access.log"

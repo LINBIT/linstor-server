@@ -1,0 +1,17 @@
+[netcom]
+  type = "plain"
+  bind_address = "0.0.0.0"
+  port = 3367
+#  server_certificate="ssl/keystore.jks"
+#  trusted_certificates="ssl/certificates.jks"
+#  key_password="linstor"
+#  keystore_password="linstor"
+#  truststore_password="linstor"
+#  ssl_protocol="TLSv1.2"
+
+[logging]
+  level = "info" # minimal log level can be trace, debug, info, warning, error
+  linstor_level = "info" # minimal log level can be trace, debug, info, warning, error
+
+[files]
+#  allowExtFiles = ["/tmp"]  paths that are allow by linstor to create/edit files
