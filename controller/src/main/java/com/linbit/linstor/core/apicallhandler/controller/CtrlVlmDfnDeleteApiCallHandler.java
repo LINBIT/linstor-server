@@ -31,7 +31,6 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -185,45 +184,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         while (itVolumes.hasNext())
         {
             Volume vlm = itVolumes.next();
-
-            try
-            {
-                DeviceLayerKind layerKind = vlm.getAbsResource().getLayerData(peerAccCtx.get()).getLayerKind();
-                if (layerKind.equals(DeviceLayerKind.NVME))
-                {
-                    throw new ApiRcException(ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.MASK_VLM | ApiConsts.MASK_DEL | ApiConsts.FAIL_ACC_DENIED_VLM,
-                            String.format(
-                                "Linstor does not support the deletion of single NVMe-volumes!\n" + vlm
-                            )
-                        )
-                        .build()
-                    );
-                }
-                else
-                if (layerKind.equals(DeviceLayerKind.OPENFLEX))
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl
-                            .entryBuilder(
-                                ApiConsts.MASK_VLM | ApiConsts.MASK_DEL | ApiConsts.FAIL_ACC_DENIED_VLM,
-                                String.format(
-                                    "Linstor does not support the deletion of single Openflex-volumes!\n" + vlm
-                                )
-                            )
-                            .build()
-                    );
-                }
-                else
-                {
-                    markDeleted(vlm);
-                }
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
+            markDeleted(vlm);
         }
 
         markDeleted(vlmDfn);

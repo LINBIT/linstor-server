@@ -7,11 +7,13 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
-import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
@@ -140,10 +142,34 @@ public class NvmeLayer implements DeviceLayer
             }
             else
             {
-                errorReporter.logDebug(
-                    "NVMe Intiator resource '%s' already in expected state, nothing to be done.",
-                    nvmeRscData.getSuffixedResourceName()
-                );
+
+                boolean cleanedUpVlm = false;
+                for (NvmeVlmData<Resource> nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
+                {
+                    // if volumes-/definitions get deleted, nvme will take care of removing the device accordingly
+                    // however, we still need to set those vlmData to not exists so that the deviceHandler does not
+                    // complain about us not having properly cleaned up
+                    AbsVolume<Resource> vlm = nvmeVlmData.getVolume();
+                    VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+                    if (((Volume) vlm).getFlags().isSet(sysCtx, Volume.Flags.DELETE) ||
+                        vlmDfn.getFlags().isSet(sysCtx, VolumeDefinition.Flags.DELETE))
+                    {
+                        nvmeVlmData.setExists(false);
+                        errorReporter.logTrace(
+                            "NVMe volume '%d' of resource '%s' deleted",
+                            vlmDfn.getVolumeNumber().value,
+                            nvmeVlmData.getRscLayerObject().getSuffixedResourceName()
+                        );
+                        cleanedUpVlm = true;
+                    }
+                }
+                if (!cleanedUpVlm)
+                {
+                    errorReporter.logDebug(
+                        "NVMe Intiator resource '%s' already in expected state, nothing to be done.",
+                        nvmeRscData.getSuffixedResourceName()
+                    );
+                }
             }
             ret = LayerProcessResult.SUCCESS;
         }
