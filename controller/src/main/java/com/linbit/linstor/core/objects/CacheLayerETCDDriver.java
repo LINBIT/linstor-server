@@ -123,18 +123,23 @@ public class CacheLayerETCDDriver extends BaseEtcdDriver implements CacheLayerCt
                 VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);
 
                 AbsVolume<RSC> vlm = absRsc.getVolume(vlmNr);
-                StorPool cacheStorPool = tmpStorPoolMapRef.get(
-                    new Pair<>(
-                        nodeName,
-                        new StorPoolName(cacheStorPoolNameStr)
-                    )
-                ).objA;
-                StorPool metaStorPool = tmpStorPoolMapRef.get(
-                    new Pair<>(
-                        nodeName,
-                        new StorPoolName(metaStorPoolNameStr)
-                    )
-                ).objA;
+                StorPool cacheStorPool = null;
+                StorPool metaStorPool = null;
+                if (!cacheStorPoolNameStr.equals(DUMMY_NULL_VALUE) && !metaStorPoolNameStr.equals(DUMMY_NULL_VALUE))
+                {
+                    cacheStorPool = tmpStorPoolMapRef.get(
+                        new Pair<>(
+                            nodeName,
+                            new StorPoolName(cacheStorPoolNameStr)
+                        )
+                    ).objA;
+                    metaStorPool = tmpStorPoolMapRef.get(
+                        new Pair<>(
+                            nodeName,
+                            new StorPoolName(metaStorPoolNameStr)
+                        )
+                    ).objA;
+                }
 
                 vlmMap.put(
                     vlm.getVolumeNumber(),
@@ -189,10 +194,21 @@ public class CacheLayerETCDDriver extends BaseEtcdDriver implements CacheLayerCt
         errorReporter.logTrace("Creating CacheVlmData %s", getId(cacheVlmDataRef));
         StorPool cacheStorPool = cacheVlmDataRef.getCacheStorPool();
         StorPool metaStorPool = cacheVlmDataRef.getMetaStorPool();
+
+        String nodeName = DUMMY_NULL_VALUE;
+        String cachePoolName = DUMMY_NULL_VALUE;
+        String metaPoolName = DUMMY_NULL_VALUE;
+        if (cacheStorPool != null && metaStorPool != null)
+        {
+            nodeName = cacheStorPool.getNode().getName().value;
+            cachePoolName = cacheStorPool.getName().value;
+            metaPoolName = metaStorPool.getName().value;
+        }
+
         getNamespace(cacheVlmDataRef)
-            .put(LayerCacheVolumes.NODE_NAME, cacheStorPool.getNode().getName().value)
-            .put(LayerCacheVolumes.POOL_NAME_CACHE, cacheStorPool.getName().value)
-            .put(LayerCacheVolumes.POOL_NAME_META, metaStorPool.getName().value);
+            .put(LayerCacheVolumes.NODE_NAME, nodeName)
+            .put(LayerCacheVolumes.POOL_NAME_CACHE, cachePoolName)
+            .put(LayerCacheVolumes.POOL_NAME_META, metaPoolName);
     }
 
     @Override

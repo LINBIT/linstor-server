@@ -36,6 +36,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -141,12 +142,16 @@ public class WritecacheLayerSQLDbDriver implements WritecacheLayerCtrlDatabaseDr
                     vlmNr = new VolumeNumber(vlmNrInt);
 
                     AbsVolume<RSC> vlm = rsc.getVolume(vlmNr);
-                    StorPool cachedStorPool = tmpStorPoolMapRef.get(
-                        new Pair<>(
-                            nodeName,
-                            new StorPoolName(cacheStorPoolNameStr)
-                        )
-                    ).objA;
+                    StorPool cachedStorPool = null;
+                    if (cacheStorPoolNameStr != null)
+                    {
+                        cachedStorPool = tmpStorPoolMapRef.get(
+                            new Pair<>(
+                                nodeName,
+                                new StorPoolName(cacheStorPoolNameStr)
+                            )
+                        ).objA;
+                    }
 
                     vlmMap.put(
                         vlm.getVolumeNumber(),
@@ -200,8 +205,16 @@ public class WritecacheLayerSQLDbDriver implements WritecacheLayerCtrlDatabaseDr
             stmt.setInt(2, writecacheVlmDataRef.getVlmNr().value);
 
             StorPool cacheStorPool = writecacheVlmDataRef.getCacheStorPool();
-            stmt.setString(3, cacheStorPool.getNode().getName().value);
-            stmt.setString(4, cacheStorPool.getName().value);
+            if (cacheStorPool == null)
+            {
+                stmt.setNull(3, Types.VARCHAR);
+                stmt.setNull(4, Types.VARCHAR);
+            }
+            else
+            {
+                stmt.setString(3, cacheStorPool.getNode().getName().value);
+                stmt.setString(4, cacheStorPool.getName().value);
+            }
 
             stmt.executeUpdate();
             errorReporter.logTrace("WritecacheVlmData created %s", getId(writecacheVlmDataRef));

@@ -12,6 +12,8 @@ import java.util.Map;
 
 public abstract class BaseEtcdDriver
 {
+    protected static final String DUMMY_NULL_VALUE = ":null";
+
     protected final Provider<TransactionMgrETCD> transMgrProvider;
 
     public BaseEtcdDriver(Provider<TransactionMgrETCD> transMgrProviderRef)

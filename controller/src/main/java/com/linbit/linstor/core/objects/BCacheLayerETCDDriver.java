@@ -134,12 +134,16 @@ public class BCacheLayerETCDDriver extends BaseEtcdDriver implements BCacheLayer
                 VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);
 
                 AbsVolume<RSC> vlm = absRsc.getVolume(vlmNr);
-                StorPool cacheStorPool = tmpStorPoolMapRef.get(
-                    new Pair<>(
-                        nodeName,
-                        new StorPoolName(cacheStorPoolNameStr)
-                    )
-                ).objA;
+                StorPool cacheStorPool = null;
+                if (!cacheStorPoolNameStr.equals(DUMMY_NULL_VALUE))
+                {
+                    cacheStorPool = tmpStorPoolMapRef.get(
+                        new Pair<>(
+                            nodeName,
+                            new StorPoolName(cacheStorPoolNameStr)
+                        )
+                    ).objA;
+                }
 
                 vlmMap.put(
                     vlm.getVolumeNumber(),
@@ -190,9 +194,17 @@ public class BCacheLayerETCDDriver extends BaseEtcdDriver implements BCacheLayer
     {
         errorReporter.logTrace("Creating BCacheVlmData %s", getId(bcacheVlmDataRef));
         StorPool extStorPool = bcacheVlmDataRef.getCacheStorPool();
+
+        String nodeName = DUMMY_NULL_VALUE;
+        String poolName = DUMMY_NULL_VALUE;
+        if (extStorPool != null)
+        {
+            nodeName = extStorPool.getNode().getName().value;
+            poolName = extStorPool.getName().value;
+        }
         getNamespace(bcacheVlmDataRef)
-            .put(LayerBcacheVolumes.NODE_NAME, extStorPool.getNode().getName().value)
-            .put(LayerBcacheVolumes.POOL_NAME, extStorPool.getName().value);
+            .put(LayerBcacheVolumes.NODE_NAME, nodeName)
+            .put(LayerBcacheVolumes.POOL_NAME, poolName);
     }
 
     @Override

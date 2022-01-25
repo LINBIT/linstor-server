@@ -164,12 +164,16 @@ public class BCacheLayerK8sCrdDriver implements BCacheLayerCtrlDatabaseDriver
                 VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);
 
                 AbsVolume<RSC> vlm = absRsc.getVolume(vlmNr);
-                StorPool cacheStorPool = tmpStorPoolMapRef.get(
-                    new Pair<>(
-                        new NodeName(vlmSpec.nodeName),
-                        new StorPoolName(vlmSpec.poolName)
-                    )
-                ).objA;
+                StorPool cacheStorPool = null;
+                if (vlmSpec.nodeName != null && vlmSpec.poolName != null)
+                {
+                    cacheStorPool = tmpStorPoolMapRef.get(
+                        new Pair<>(
+                            new NodeName(vlmSpec.nodeName),
+                            new StorPoolName(vlmSpec.poolName)
+                        )
+                    ).objA;
+                }
 
                 vlmMap.put(
                     vlm.getVolumeNumber(),
@@ -230,13 +234,20 @@ public class BCacheLayerK8sCrdDriver implements BCacheLayerCtrlDatabaseDriver
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         StorPool extStorPool = bcacheVlmDataRef.getCacheStorPool();
+        String nodeName = null;
+        String poolName = null;
+        if (extStorPool != null)
+        {
+            nodeName = extStorPool.getNode().getName().value;
+            poolName = extStorPool.getName().value;
+        }
         tx.update(
             GeneratedDatabaseTables.LAYER_BCACHE_VOLUMES,
             GenCrdCurrent.createLayerBcacheVolumes(
                 bcacheVlmDataRef.getRscLayerId(),
                 bcacheVlmDataRef.getVlmNr().value,
-                extStorPool.getNode().getName().value,
-                extStorPool.getName().value,
+                nodeName,
+                poolName,
                 bcacheVlmDataRef.getDeviceUuid() == null ? null : bcacheVlmDataRef.getDeviceUuid().toString()
             )
         );

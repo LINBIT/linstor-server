@@ -121,12 +121,16 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
                 VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);
 
                 AbsVolume<RSC> vlm = absRsc.getVolume(vlmNr);
-                StorPool cacheStorPool = tmpStorPoolMapRef.get(
-                    new Pair<>(
-                        nodeName,
-                        new StorPoolName(cacheStorPoolNameStr)
-                    )
-                ).objA;
+                StorPool cacheStorPool = null;
+                if (!cacheStorPoolNameStr.equals(DUMMY_NULL_VALUE))
+                {
+                    cacheStorPool = tmpStorPoolMapRef.get(
+                        new Pair<>(
+                            nodeName,
+                            new StorPoolName(cacheStorPoolNameStr)
+                        )
+                    ).objA;
+                }
 
                 vlmMap.put(
                     vlm.getVolumeNumber(),
@@ -177,9 +181,17 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
     {
         errorReporter.logTrace("Creating WritecacheVlmData %s", getId(writecacheVlmDataRef));
         StorPool extStorPool = writecacheVlmDataRef.getCacheStorPool();
+
+        String nodeName = DUMMY_NULL_VALUE;
+        String poolName = DUMMY_NULL_VALUE;
+        if (extStorPool != null)
+        {
+            nodeName = extStorPool.getNode().getName().value;
+            poolName = extStorPool.getName().value;
+        }
         getNamespace(writecacheVlmDataRef)
-            .put(LayerWritecacheVolumes.NODE_NAME, extStorPool.getNode().getName().value)
-            .put(LayerWritecacheVolumes.POOL_NAME, extStorPool.getName().value);
+            .put(LayerWritecacheVolumes.NODE_NAME, nodeName)
+            .put(LayerWritecacheVolumes.POOL_NAME, poolName);
     }
 
     @Override

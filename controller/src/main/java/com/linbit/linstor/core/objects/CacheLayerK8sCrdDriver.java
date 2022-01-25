@@ -155,18 +155,23 @@ public class CacheLayerK8sCrdDriver implements CacheLayerCtrlDatabaseDriver
                 NodeName nodeName = new NodeName(cacheVlmSpec.nodeName);
 
                 AbsVolume<RSC> vlm = absRsc.getVolume(vlmNr);
-                StorPool cacheStorPool = tmpStorPoolMapRef.get(
-                    new Pair<>(
-                        nodeName,
-                        new StorPoolName(cacheStorPoolNameStr)
-                    )
-                ).objA;
-                StorPool metaStorPool = tmpStorPoolMapRef.get(
-                    new Pair<>(
-                        nodeName,
-                        new StorPoolName(metaStorPoolNameStr)
-                    )
-                ).objA;
+                StorPool cacheStorPool = null;
+                StorPool metaStorPool = null;
+                if (cacheStorPoolNameStr != null && metaStorPoolNameStr != null)
+                {
+                    cacheStorPool = tmpStorPoolMapRef.get(
+                        new Pair<>(
+                            nodeName,
+                            new StorPoolName(cacheStorPoolNameStr)
+                        )
+                    ).objA;
+                    metaStorPool = tmpStorPoolMapRef.get(
+                        new Pair<>(
+                            nodeName,
+                            new StorPoolName(metaStorPoolNameStr)
+                        )
+                    ).objA;
+                }
 
                 vlmMap.put(
                     vlm.getVolumeNumber(),
@@ -231,14 +236,23 @@ public class CacheLayerK8sCrdDriver implements CacheLayerCtrlDatabaseDriver
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         StorPool cacheStorPool = cacheVlmDataRef.getCacheStorPool();
         StorPool metaStorPool = cacheVlmDataRef.getMetaStorPool();
+        String nodeName = null;
+        String cachePoolName = null;
+        String metaPoolName = null;
+        if (cacheStorPool != null && metaStorPool != null)
+        {
+            nodeName = cacheStorPool.getNode().getName().value;
+            cachePoolName = cacheStorPool.getName().value;
+            metaPoolName = metaStorPool.getName().value;
+        }
         tx.update(
             GeneratedDatabaseTables.LAYER_CACHE_VOLUMES,
             GenCrdCurrent.createLayerCacheVolumes(
                 cacheVlmDataRef.getRscLayerId(),
                 cacheVlmDataRef.getVlmNr().value,
-                cacheStorPool.getNode().getName().value,
-                cacheStorPool.getName().value,
-                metaStorPool.getName().value
+                nodeName,
+                cachePoolName,
+                metaPoolName
             )
         );
     }

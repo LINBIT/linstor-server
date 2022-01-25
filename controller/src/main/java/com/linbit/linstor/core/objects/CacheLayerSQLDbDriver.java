@@ -37,6 +37,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -144,18 +145,23 @@ public class CacheLayerSQLDbDriver implements CacheLayerCtrlDatabaseDriver
                     vlmNr = new VolumeNumber(vlmNrInt);
 
                     AbsVolume<RSC> vlm = rsc.getVolume(vlmNr);
-                    StorPool cachedStorPool = tmpStorPoolMapRef.get(
-                        new Pair<>(
-                            nodeName,
-                            new StorPoolName(cacheStorPoolNameStr)
-                        )
-                    ).objA;
-                    StorPool metaStorPool = tmpStorPoolMapRef.get(
-                        new Pair<>(
-                            nodeName,
-                            new StorPoolName(metaStorPoolNameStr)
-                        )
-                    ).objA;
+                    StorPool cachedStorPool = null;
+                    StorPool metaStorPool = null;
+                    if (cacheStorPoolNameStr != null && metaStorPoolNameStr != null)
+                    {
+                        cachedStorPool = tmpStorPoolMapRef.get(
+                            new Pair<>(
+                                nodeName,
+                                new StorPoolName(cacheStorPoolNameStr)
+                            )
+                        ).objA;
+                        metaStorPool = tmpStorPoolMapRef.get(
+                            new Pair<>(
+                                nodeName,
+                                new StorPoolName(metaStorPoolNameStr)
+                            )
+                        ).objA;
+                    }
 
                     vlmMap.put(
                         vlm.getVolumeNumber(),
@@ -211,9 +217,25 @@ public class CacheLayerSQLDbDriver implements CacheLayerCtrlDatabaseDriver
 
             StorPool cacheStorPool = cacheVlmDataRef.getCacheStorPool();
             StorPool metaStorPool = cacheVlmDataRef.getMetaStorPool();
-            stmt.setString(3, cacheStorPool.getNode().getName().value);
-            stmt.setString(4, cacheStorPool.getName().value);
-            stmt.setString(5, metaStorPool.getName().value);
+            if (cacheStorPool != null)
+            {
+                stmt.setString(3, cacheStorPool.getNode().getName().value);
+                stmt.setString(4, cacheStorPool.getName().value);
+            }
+            else
+            {
+                stmt.setNull(3, Types.VARCHAR);
+                stmt.setNull(4, Types.VARCHAR);
+            }
+
+            if (metaStorPool != null)
+            {
+                stmt.setString(5, metaStorPool.getName().value);
+            }
+            else
+            {
+                stmt.setNull(5, Types.VARCHAR);
+            }
 
             stmt.executeUpdate();
             errorReporter.logTrace("CacheVlmData created %s", getId(cacheVlmDataRef));

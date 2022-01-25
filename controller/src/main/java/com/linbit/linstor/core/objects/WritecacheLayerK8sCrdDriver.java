@@ -152,12 +152,16 @@ public class WritecacheLayerK8sCrdDriver implements WritecacheLayerCtrlDatabaseD
                 VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);
 
                 AbsVolume<RSC> vlm = absRsc.getVolume(vlmNr);
-                StorPool cacheStorPool = tmpStorPoolMapRef.get(
-                    new Pair<>(
-                        new NodeName(writecacheVlmSpec.nodeName),
-                        new StorPoolName(cacheStorPoolNameStr)
-                    )
-                ).objA;
+                StorPool cacheStorPool = null;
+                if (cacheStorPoolNameStr != null)
+                {
+                    cacheStorPool = tmpStorPoolMapRef.get(
+                        new Pair<>(
+                            new NodeName(writecacheVlmSpec.nodeName),
+                            new StorPoolName(cacheStorPoolNameStr)
+                        )
+                    ).objA;
+                }
 
                 vlmMap.put(
                     vlm.getVolumeNumber(),
@@ -218,13 +222,23 @@ public class WritecacheLayerK8sCrdDriver implements WritecacheLayerCtrlDatabaseD
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         StorPool extStorPool = writecacheVlmDataRef.getCacheStorPool();
+
+        String nodeName = null;
+        String poolName = null;
+
+        if (extStorPool != null)
+        {
+            nodeName = extStorPool.getNode().getName().value;
+            poolName = extStorPool.getName().value;
+        }
+
         tx.update(
             GeneratedDatabaseTables.LAYER_WRITECACHE_VOLUMES,
             GenCrdCurrent.createLayerWritecacheVolumes(
                 writecacheVlmDataRef.getRscLayerId(),
                 writecacheVlmDataRef.getVlmNr().value,
-                extStorPool.getNode().getName().value,
-                extStorPool.getName().value
+                nodeName,
+                poolName
             )
         );
     }

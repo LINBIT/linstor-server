@@ -66,8 +66,6 @@ import java.util.TreeMap;
 @Singleton
 public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrlDatabaseDriver
 {
-    private static final String NULL = ":null";
-
     private static final int PK_RD_RSC_NAME_IDX = 0;
     private static final int PK_RD_RSC_NAME_SUFFIX_IDX = 1;
     private static final int PK_RD_SNAP_NAME_IDX = 2;
@@ -638,7 +636,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
                 VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);
 
                 StorPool extMetaDataStorPool = null;
-                if (extMetaStorPoolNameStr != null && !extMetaStorPoolNameStr.equalsIgnoreCase(NULL))
+                if (extMetaStorPoolNameStr != null && !extMetaStorPoolNameStr.equalsIgnoreCase(DUMMY_NULL_VALUE))
                 {
                     StorPoolName extStorPoolName = new StorPoolName(extMetaStorPoolNameStr);
                     extMetaDataStorPool = storPoolMapRef.get(
@@ -831,8 +829,8 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
         {
             // TODO: needs improvement
             getNamespace(drbdVlmDataRef)
-                .put(LayerDrbdVolumes.NODE_NAME, NULL)
-                .put(LayerDrbdVolumes.POOL_NAME, NULL);
+                .put(LayerDrbdVolumes.NODE_NAME, DUMMY_NULL_VALUE)
+                .put(LayerDrbdVolumes.POOL_NAME, DUMMY_NULL_VALUE);
         }
         else
         {
@@ -870,7 +868,7 @@ public class DrbdLayerETCDDriver extends BaseEtcdDriver implements DrbdLayerCtrl
         else
         {
             getNamespace(drbdVlmDfnDataRef)
-                .put(LayerDrbdVolumeDefinitions.VLM_MINOR_NR, NULL);
+                .put(LayerDrbdVolumeDefinitions.VLM_MINOR_NR, DUMMY_NULL_VALUE);
         }
     }
 
