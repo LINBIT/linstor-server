@@ -1,5 +1,7 @@
 package com.linbit.linstor.storage.kinds;
 
+import java.util.List;
+
 public enum DeviceLayerKind
 {
     DRBD(
@@ -74,5 +76,12 @@ public enum DeviceLayerKind
     public boolean isShrinkingSupported()
     {
         return isShrinkingSupported;
+    }
+
+    public boolean isAncestorOf(List<DeviceLayerKind> layerListRef, DeviceLayerKind otherRef)
+    {
+        int localIdx = layerListRef.indexOf(this);
+        int otherIdx = layerListRef.indexOf(otherRef);
+        return localIdx < otherIdx;
     }
 }
