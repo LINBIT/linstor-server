@@ -1617,6 +1617,15 @@ public class JsonGenTypes
         public String status;
     }
 
+    /**
+     * Clone status object
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ResourceDefinitionSyncStatus
+    {
+        public boolean synced_on_all = false;
+    }
+
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class RemoteList
     {

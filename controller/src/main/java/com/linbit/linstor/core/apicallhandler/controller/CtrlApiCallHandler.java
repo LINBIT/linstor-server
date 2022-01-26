@@ -1500,4 +1500,12 @@ public class CtrlApiCallHandler
         }
         return apiCallRc;
     }
+
+    public boolean isResourceSynced(String resourceName)
+    {
+        try (LockGuard ignored = lockGuardFactory.build(READ, NODES_MAP, RSC_DFN_MAP))
+        {
+            return rscDfnApiCallHandler.isResourceSynced(resourceName);
+        }
+    }
 }

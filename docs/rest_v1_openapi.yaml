@@ -28,6 +28,7 @@ info:
       - Added ?cached=true option for all storage-pool list APIs
       - Added ?limit and ?offset to /v1/nodes/{node}/storage-pools/{storagepool}
       - Added /v1/controller/backup/db to do an database online backup
+      - Added /v1/resource-definitions/{resource}/sync-status to check if resource is ready to be used
     * 1.12.0
        - Added /v1/nodes/{node}/evacuate
     * 1.11.0
@@ -1597,6 +1598,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ResourceDefinitionCloneStatus'
+        '404':
+          $ref: '#/components/responses/ObjectNotFound'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+
+  /v1/resource-definitions/{resource}/sync-status:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
+    get:
+      tags:
+        - developers
+      summary: check if a resource is currently synced on all nodes
+      operationId: resourceDefinitionSyncStatus
+      description: |
+        Get info if the resource is synced on all nodes
+      responses:
+        '200':
+          description: resource defintion sync status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceDefinitionSyncStatus'
         '404':
           $ref: '#/components/responses/ObjectNotFound'
         '500':
@@ -7845,7 +7868,7 @@ components:
         location:
           type: string
           description: Path for clone status
-          example: /v1/resource-defintions/testres/clone/clonedresource
+          example: /v1/resource-definitions/testres/clone/clonedresource
         source_name:
           type: string
           description: name of the source resource
@@ -7877,6 +7900,15 @@ components:
 #          description: total bytes to be cloned
 #        messages:
 #          $ref: '#/components/schemas/ApiCallRcList'
+    ResourceDefinitionSyncStatus:
+      type: object
+      description: Clone status object
+      required:
+        - synced_on_all
+      properties:
+        synced_on_all:
+          type: boolean
+          default: false
     RemoteList:
       type: object
       properties:

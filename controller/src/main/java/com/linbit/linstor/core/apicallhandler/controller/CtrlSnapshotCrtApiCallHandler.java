@@ -22,6 +22,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -50,6 +51,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
@@ -466,26 +468,10 @@ public class CtrlSnapshotCrtApiCallHandler
         SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
 
         Collection<Snapshot> snapshots = getAllSnapshotsPrivileged(snapshotDfn);
-        boolean allUpToDate = true;
-        for (Snapshot snapshot : snapshots)
-        {
-            try
-            {
-                boolean upToDate = SatelliteResourceStateDrbdUtils.allVolumesUpToDate(
-                    snapshot.getNode().getPeer(apiCtx),
-                    rscName
-                );
-                if (!upToDate)
-                {
-                    allUpToDate = false;
-                    break;
-                }
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-        }
+        boolean allUpToDate = SatelliteResourceStateDrbdUtils.allResourcesUpToDate(
+            snapshots.stream().map(AbsResource::getNode).collect(Collectors.toSet()),
+            snapshotDfn.getResourceName(),
+            apiCtx);
 
         if (allUpToDate)
         {

@@ -378,4 +378,25 @@ public class ResourceDefinitions
                     .build();
             }, false);
     }
+
+    @GET
+    @Path("{resource}/sync-status")
+    public Response getSyncStatus(
+        @Context Request request,
+        @PathParam("resource") String rscName
+    )
+    {
+        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_RSCDFN_SYNC_STATUS, request), () ->
+        {
+            JsonGenTypes.ResourceDefinitionSyncStatus status =
+                new JsonGenTypes.ResourceDefinitionSyncStatus();
+
+            status.synced_on_all = ctrlApiCallHandler.isResourceSynced(rscName);
+
+            return Response
+                .status(Response.Status.OK)
+                .entity(objectMapper.writeValueAsString(status))
+                .build();
+        }, false);
+    }
 }

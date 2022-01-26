@@ -25,6 +25,7 @@ import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
@@ -40,6 +41,7 @@ import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceControllerFactory;
@@ -1477,5 +1479,26 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return flux;
+    }
+
+    public boolean isResourceSynced(String resourceName)
+    {
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(resourceName, true);
+        try
+        {
+            return SatelliteResourceStateDrbdUtils.allResourcesUpToDate(
+                rscDfn.streamResource(peerAccCtx.get()).map(AbsResource::getNode).collect(Collectors.toSet()),
+                rscDfn.getName(),
+                peerAccCtx.get()
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "Access denied on " + getRscDfnDescription(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
     }
 }
