@@ -3,10 +3,7 @@ package com.linbit.linstor.layer.storage;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmdFactoryStlt;
-import com.linbit.fsevent.FileObserver;
 import com.linbit.fsevent.FileSystemWatch;
-import com.linbit.fsevent.FileSystemWatch.Event;
-import com.linbit.fsevent.FileSystemWatch.FileEntry;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
@@ -40,6 +37,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
+import com.linbit.linstor.layer.storage.utils.DeviceUtils;
 import com.linbit.linstor.layer.storage.utils.DmStatCommands;
 import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
 import com.linbit.linstor.layer.storage.utils.StltProviderUtils;
@@ -69,8 +67,6 @@ import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -1416,68 +1412,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private void waitUntilDeviceCreated(String devicePath, long waitTimeoutAfterCreateMillis)
         throws StorageException
     {
-        final Object syncObj = new Object();
-        FileObserver fileObserver = new FileObserver()
-        {
-            @Override
-            public void fileEvent(FileEntry watchEntry)
-            {
-                synchronized (syncObj)
-                {
-                    syncObj.notify();
-                }
-            }
-        };
-        try
-        {
-            synchronized (syncObj)
-            {
-                long start = System.currentTimeMillis();
-                fsWatch.addFileEntry(
-                    new FileEntry(
-                        Paths.get(devicePath),
-                        Event.CREATE,
-                        fileObserver
-                    )
-                );
-                try
-                {
-                    errorReporter.logTrace(
-                        "Waiting until device [%s] appears (up to %dms)",
-                        devicePath,
-                        waitTimeoutAfterCreateMillis
-                    );
-
-                    syncObj.wait(waitTimeoutAfterCreateMillis);
-                }
-                catch (InterruptedException interruptedExc)
-                {
-                    throw new StorageException(
-                        "Interrupted exception while waiting for device '" + devicePath + "' to show up",
-                        interruptedExc
-                    );
-                }
-                if (!Files.exists(Paths.get(devicePath)))
-                {
-                    throw new StorageException(
-                        "Device '" + devicePath + "' did not show up in " +
-                            waitTimeoutAfterCreateMillis + "ms"
-                    );
-                }
-                errorReporter.logTrace(
-                    "Device [%s] appeared after %sms",
-                    devicePath,
-                    System.currentTimeMillis() - start
-                );
-            }
-        }
-        catch (IOException exc)
-        {
-            throw new StorageException(
-                "Unable to register file watch event for device '" + devicePath + "' being created",
-                exc
-            );
-        }
+        DeviceUtils.waitUntilDeviceVisible(devicePath, waitTimeoutAfterCreateMillis, errorReporter, fsWatch);
     }
 
     protected final @Nonnull Resource getResource(LAYER_DATA vlmData, String rscName)

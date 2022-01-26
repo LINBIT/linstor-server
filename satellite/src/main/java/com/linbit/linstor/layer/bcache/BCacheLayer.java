@@ -13,11 +13,12 @@ import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
-import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
@@ -231,9 +232,17 @@ public class BCacheLayer implements DeviceLayer
             rscData.getAbsResource().getResourceDefinition().getFlags()
                 .isSet(storDriverAccCtx, ResourceDefinition.Flags.CLONING);
 
-        if (deleteFlagSet || inactiveFlagSet)
+        for (BCacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
-            for (BCacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
+            boolean vlmDeleteFlagSet = ((Volume) vlmData.getVolume()).getFlags().isSet(
+                storDriverAccCtx,
+                Volume.Flags.DELETE
+            );
+            boolean vlmDfnDeleteFlagSet = vlmData.getVolume().getVolumeDefinition().getFlags().isSet(
+                storDriverAccCtx,
+                VolumeDefinition.Flags.DELETE
+            );
+            if (deleteFlagSet || inactiveFlagSet || vlmDeleteFlagSet || vlmDfnDeleteFlagSet)
             {
                 if (vlmData.exists())
                 {
@@ -312,110 +321,133 @@ public class BCacheLayer implements DeviceLayer
         {
             for (BCacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
-                PriorityProps prioProps = getPrioProps(vlmData.getVolume());
-                if (!vlmData.exists())
+                boolean vlmDeleteFlagSet = ((Volume) vlmData.getVolume()).getFlags().isSet(
+                    storDriverAccCtx,
+                    Volume.Flags.DELETE
+                );
+                boolean vlmDfnDeleteFlagSet = vlmData.getVolume().getVolumeDefinition().getFlags().isSet(
+                    storDriverAccCtx,
+                    VolumeDefinition.Flags.DELETE
+                );
+                if (!vlmDeleteFlagSet && !vlmDfnDeleteFlagSet)
                 {
-                    VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-                    VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(
-                        RscLayerSuffixes.SUFFIX_BCACHE_CACHE
-                    );
 
-                    String backingDev = dataChild.getDevicePath();
-                    String cacheDev = cacheChild.getDevicePath();
-
-                    vlmData.setBackingDevice(backingDev);
-                    vlmData.setCacheDevice(cacheDev);
-
-                    ArrayList<String> options = getMakeBCacheOptions(prioProps);
-
-                    /*
-                     * check first if the two devices were not just inactive, i.e. already contain bcache headers + data
-                     */
-
-                    UUID bcacheUuid;
-                    String identifier;
-
-
-                    UUID backingUuid = BCacheUtils.getCSetUuidFromSuperBlock(extCmdFactory, backingDev);
-                    if (backingUuid == null || forceCreateMetaData)
+                    PriorityProps prioProps = getPrioProps(vlmData.getVolume());
+                    if (!vlmData.exists())
                     {
-                        if (forceCreateMetaData)
-                        {
-                            WipeHandler.wipeFs(extCmdFactory, backingDev);
-                        }
-                        backingUuid = BCacheUtils.makeBCache(extCmdFactory, backingDev, null, options);
-                        BCacheUtils.register(errorReporter, backingDev);
-                        identifier = waitUntilBackingDeviceIsRegistered(backingDev);
-                    }
-                    else
-                    {
-                        // basically checks if backing device is registered
-                        identifier = BCacheUtils.getIdentifierByBackingUuid(
-                            extCmdFactory,
-                            BCacheUtils.getBackingId(extCmdFactory, backingDev)
+                        VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+                        VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(
+                            RscLayerSuffixes.SUFFIX_BCACHE_CACHE
                         );
-                        if (identifier == null)
-                        {
-                            // not registered yet
-                            BCacheUtils.register(errorReporter, backingDev);
-                            identifier = waitUntilBackingDeviceIsRegistered(backingDev);
-                        }
-                    }
 
-                    UUID cacheUuid = BCacheUtils.getCSetUuidFromSuperBlock(extCmdFactory, cacheDev);
-                    if (cacheUuid == null || forceCreateMetaData)
-                    {
-                        if (forceCreateMetaData)
+                        String backingDev = dataChild.getDevicePath();
+                        String cacheDev = cacheChild.getDevicePath();
+
+                        vlmData.setBackingDevice(backingDev);
+                        vlmData.setCacheDevice(cacheDev);
+
+                        ArrayList<String> options = getMakeBCacheOptions(prioProps);
+
+                        /*
+                         * check first if the two devices were not just inactive, i.e. already contain bcache headers +
+                         * data
+                         */
+
+                        UUID bcacheUuid;
+                        String identifier;
+
+                        UUID backingUuid = BCacheUtils.getCSetUuidFromSuperBlock(extCmdFactory, backingDev);
+                        if (backingUuid == null || forceCreateMetaData)
                         {
-                            WipeHandler.wipeFs(extCmdFactory, cacheDev);
-                        }
-                        cacheUuid = BCacheUtils.makeBCache(extCmdFactory, null, cacheDev, options);
-                    }
-                    if (!isCacheDeviceRegistered(cacheUuid))
-                    {
-                        try
-                        {
-                            BCacheUtils.register(errorReporter, cacheDev);
-                        }
-                        catch (StorageException storExc)
-                        {
-                            /*
-                             * after creating a cache device and there is a small timeframe where the device might have
-                             * been registered already, but is not shown in the 'isCacheDeviceRegistered', which makes
-                             * Linstor to try to register it, but that might fail due to the race condition
-                             */
-                            if (!isCacheDeviceRegistered(cacheUuid))
+                            if (forceCreateMetaData)
                             {
-                                throw storExc;
+                                WipeHandler.wipeFs(extCmdFactory, backingDev);
+                            }
+                            backingUuid = BCacheUtils.makeBCache(extCmdFactory, backingDev, null, options);
+                            identifier = waitUntilBackingDeviceIsRegistered(
+                                backingDev,
+                                WAIT_FOR_BCACHE_TIMEOUT_MS,
+                                WAIT_FOR_BCACHE_RETRY_COUNT,
+                                false
+                            );
+                            if (identifier == null)
+                            {
+                                BCacheUtils.register(errorReporter, backingDev);
+                                identifier = waitUntilBackingDeviceIsRegistered(backingDev);
                             }
                         }
-                        waitForCacheDevice(cacheUuid);
+                        else
+                        {
+                            // basically checks if backing device is registered
+                            identifier = BCacheUtils.getIdentifierByBackingUuid(
+                                extCmdFactory,
+                                BCacheUtils.getBackingId(extCmdFactory, backingDev)
+                            );
+                            if (identifier == null)
+                            {
+                                // not registered yet
+                                BCacheUtils.register(errorReporter, backingDev);
+                                identifier = waitUntilBackingDeviceIsRegistered(backingDev);
+                            }
+                        }
+
+                        UUID cacheUuid = BCacheUtils.getCSetUuidFromSuperBlock(extCmdFactory, cacheDev);
+                        if (cacheUuid == null || forceCreateMetaData)
+                        {
+                            if (forceCreateMetaData)
+                            {
+                                WipeHandler.wipeFs(extCmdFactory, cacheDev);
+                            }
+                            cacheUuid = BCacheUtils.makeBCache(extCmdFactory, null, cacheDev, options);
+                        }
+                        if (!isCacheDeviceRegistered(cacheUuid))
+                        {
+                            try
+                            {
+                                BCacheUtils.register(errorReporter, cacheDev);
+                            }
+                            catch (StorageException storExc)
+                            {
+                                /*
+                                 * after creating a cache device and there is a small timeframe where the device might
+                                 * have been registered already, but is not shown in the 'isCacheDeviceRegistered',
+                                 * which makes Linstor to try to register it, but that might fail due to the race
+                                 * condition
+                                 */
+                                if (!isCacheDeviceRegistered(cacheUuid))
+                                {
+                                    throw storExc;
+                                }
+                            }
+                            waitForCacheDevice(cacheUuid);
+                        }
+
+                        if (!backingUuid.equals(cacheUuid))
+                        {
+                            // not attached
+                            identifier = BCacheUtils.getIdentifierByBackingUuid(
+                                extCmdFactory,
+                                BCacheUtils.getBackingId(extCmdFactory, backingDev)
+                            );
+                            BCacheUtils.attach(errorReporter, cacheUuid, identifier);
+                        }
+
+                        // identifier = getIdentifier(cacheUuid);
+                        bcacheUuid = cacheUuid;
+
+                        vlmData.setDeviceUuid(bcacheUuid);
+                        vlmData.setExists(true);
+                        vlmData.setIdentifier(identifier);
+                        vlmData.setDevicePath(buildDevicePath(vlmData.getIdentifier()));
+                        errorReporter.logDebug("BCache: device (%s) created", vlmData.getDevicePath());
                     }
 
-                    if (!backingUuid.equals(cacheUuid))
+                    if (forceCreateMetaData)
                     {
-                        // not attached
-                        identifier = BCacheUtils.getIdentifierByBackingUuid(
-                            extCmdFactory,
-                            BCacheUtils.getBackingId(extCmdFactory, backingDev)
-                        );
-                        BCacheUtils.attach(errorReporter, cacheUuid, identifier);
+                        // just in case something goes wrong later and we need to re-create the bcache metadata once
+                        // more
+                        vlmData.setDevicePath(null);
                     }
-
-                    // identifier = getIdentifier(cacheUuid);
-                    bcacheUuid = cacheUuid;
-
-                    vlmData.setDeviceUuid(bcacheUuid);
-                    vlmData.setExists(true);
-                    vlmData.setIdentifier(identifier);
-                    vlmData.setDevicePath(buildDevicePath(vlmData.getIdentifier()));
-                    errorReporter.logDebug("BCache: device (%s) created", vlmData.getDevicePath());
-                }
-
-                if (forceCreateMetaData)
-                {
-                    // just in case something goes wrong later and we need to re-create the bcache metadata once more
-                    vlmData.setDevicePath(null);
                 }
             }
             if (forceCreateMetaData)
@@ -467,27 +499,44 @@ public class BCacheLayer implements DeviceLayer
 
     private String waitUntilBackingDeviceIsRegistered(String backingDev) throws StorageException
     {
+        return waitUntilBackingDeviceIsRegistered(
+            backingDev,
+            WAIT_FOR_BCACHE_TIMEOUT_MS,
+            WAIT_FOR_BCACHE_RETRY_COUNT,
+            true
+        );
+    }
+
+    private String waitUntilBackingDeviceIsRegistered(
+        String backingDev,
+        long timeout,
+        long waitCount,
+        boolean throwIfNotRegistered
+    )
+        throws StorageException
+    {
         String identifier = null;
         UUID backingDevUuid = BCacheUtils.getBackingId(extCmdFactory, backingDev);
-        for (int retry = 0; identifier == null && retry < WAIT_FOR_BCACHE_RETRY_COUNT; retry++)
+        for (int retry = 0; identifier == null && retry < waitCount; retry++)
         {
             try
             {
-                Thread.sleep(WAIT_FOR_BCACHE_TIMEOUT_MS);
+                Thread.sleep(timeout);
                 identifier = BCacheUtils.getIdentifierByBackingUuid(extCmdFactory, backingDevUuid);
             }
             catch (InterruptedException ignored)
             {
             }
         }
-        if (identifier == null)
+        if (identifier == null && throwIfNotRegistered)
         {
             throw new StorageException(
                 "Backing device " + backingDev + " was not registered within " +
-                    WAIT_FOR_BCACHE_RETRY_COUNT * WAIT_FOR_BCACHE_TIMEOUT_MS + "ms"
+                    waitCount * timeout + "ms"
             );
         }
         return identifier;
+
     }
 
     private boolean isCacheDeviceRegistered(UUID cacheUuidRef) throws StorageException

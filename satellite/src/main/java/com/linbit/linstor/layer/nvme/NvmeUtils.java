@@ -7,6 +7,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdUtils;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
@@ -24,6 +25,7 @@ import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.layer.storage.spdk.AbsSpdkProvider;
 import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils;
+import com.linbit.linstor.layer.storage.utils.DeviceUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -74,6 +76,8 @@ import java.util.function.Function;
 @Singleton
 public class NvmeUtils
 {
+    private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 5000;
+
     public static final String NVME_SUBSYSTEM_PREFIX = "LS-NVMe_";
     public static final String STANDARD_NVME_SUBSYSTEM_PREFIX = "nqn.2018-02.linbit.linstor:"; // NQN format aligned to
                                                                                                // the NVMe Spec
@@ -91,19 +95,23 @@ public class NvmeUtils
     private final Props stltProps;
     private final ErrorReporter errorReporter;
     private final DeviceProviderMapper devProviderMapper;
+    private final FileSystemWatch fsWatch;
+
 
     @Inject
     public NvmeUtils(
         ErrorReporter errorReporterRef,
         ExtCmdFactory extCmdFactoryRef,
         @Named(LinStor.SATELLITE_PROPS) Props stltPropsRef,
-        DeviceProviderMapper devProviderMapperRef
+        DeviceProviderMapper devProviderMapperRef,
+        FileSystemWatch fsWatchRef
     )
     {
         errorReporter = errorReporterRef;
         extCmdFactory = extCmdFactoryRef;
         stltProps = stltPropsRef;
         devProviderMapper = devProviderMapperRef;
+        fsWatch = fsWatchRef;
     }
 
     /* compute methods */
@@ -720,7 +728,14 @@ public class NvmeUtils
                             nvmeNamespacePart.substring(nvmeNamespacePart.lastIndexOf('n') + 1)
                         );
 
-                        setDevPathVlmFunc.accept(vlmData, "/dev/nvme" + nvmeRscIdx + "n" + nvmeVlmIdx);
+                        String devicePath = "/dev/nvme" + nvmeRscIdx + "n" + nvmeVlmIdx;
+                        DeviceUtils.waitUntilDeviceVisible(
+                            devicePath,
+                            DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS,
+                            errorReporter,
+                            fsWatch
+                        );
+                        setDevPathVlmFunc.accept(vlmData, devicePath);
                         setExistsVlmFunc.accept(vlmData, true);
                     }
                 }

@@ -12,12 +12,12 @@ import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
-import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
@@ -241,9 +241,17 @@ public class CacheLayer implements DeviceLayer
         StateFlags<Flags> rscFlags = rscData.getAbsResource().getStateFlags();
         boolean deleteFlagSet = rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE) ||
             rscFlags.isSet(storDriverAccCtx, Resource.Flags.INACTIVE);
-        if (deleteFlagSet)
+        for (CacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
-            for (CacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
+            boolean vlmDeleteFlagSet = ((Volume) vlmData.getVolume()).getFlags().isSet(
+                storDriverAccCtx,
+                Volume.Flags.DELETE
+            );
+            boolean vlmDfnDeleteFlagSet = vlmData.getVolume().getVolumeDefinition().getFlags().isSet(
+                storDriverAccCtx,
+                VolumeDefinition.Flags.DELETE
+            );
+            if (deleteFlagSet || vlmDeleteFlagSet || vlmDfnDeleteFlagSet)
             {
                 if (vlmData.exists())
                 {
@@ -307,56 +315,67 @@ public class CacheLayer implements DeviceLayer
             for (CacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
                 Volume vlm = (Volume) vlmData.getVolume();
-                PriorityProps prioProps;
+                boolean vlmDeleteFlagSet = vlm.getFlags().isSet(
+                    storDriverAccCtx,
+                    Volume.Flags.DELETE
+                );
+                boolean vlmDfnDeleteFlagSet = vlm.getVolumeDefinition().getFlags().isSet(
+                    storDriverAccCtx,
+                    VolumeDefinition.Flags.DELETE
+                );
+                if (!vlmDeleteFlagSet && !vlmDfnDeleteFlagSet)
                 {
-                    ResourceDefinition rscDfn = vlm.getResourceDefinition();
-                    ResourceGroup rscGrp = rscDfn.getResourceGroup();
-                    prioProps = new PriorityProps(
-                        vlm.getProps(storDriverAccCtx),
-                        vlm.getVolumeDefinition().getProps(storDriverAccCtx),
-                        rscDfn.getProps(storDriverAccCtx),
-                        rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmData.getVlmNr()),
-                        rscGrp.getProps(storDriverAccCtx),
-                        localNodeProps,
-                        stltConfAccessor.getReadonlyProps()
-                    );
-                }
-                if (!vlmData.exists())
-                {
-                    VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-                    VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(
-                        RscLayerSuffixes.SUFFIX_CACHE_CACHE
-                    );
-                    VlmProviderObject<Resource> metaChild = vlmData.getChildBySuffix(
-                        RscLayerSuffixes.SUFFIX_CACHE_META
-                    );
+                    PriorityProps prioProps;
+                    {
+                        ResourceDefinition rscDfn = vlm.getResourceDefinition();
+                        ResourceGroup rscGrp = rscDfn.getResourceGroup();
+                        prioProps = new PriorityProps(
+                            vlm.getProps(storDriverAccCtx),
+                            vlm.getVolumeDefinition().getProps(storDriverAccCtx),
+                            rscDfn.getProps(storDriverAccCtx),
+                            rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmData.getVlmNr()),
+                            rscGrp.getProps(storDriverAccCtx),
+                            localNodeProps,
+                            stltConfAccessor.getReadonlyProps()
+                        );
+                    }
+                    if (!vlmData.exists())
+                    {
+                        VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+                        VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(
+                            RscLayerSuffixes.SUFFIX_CACHE_CACHE
+                        );
+                        VlmProviderObject<Resource> metaChild = vlmData.getChildBySuffix(
+                            RscLayerSuffixes.SUFFIX_CACHE_META
+                        );
 
-                    Map<String, String> dmsetupPolicyArgsMap = prioProps.renderRelativeMap(
-                        ApiConsts.NAMESPC_CACHE_POLICY_ARGS
-                    );
+                        Map<String, String> dmsetupPolicyArgsMap = prioProps.renderRelativeMap(
+                            ApiConsts.NAMESPC_CACHE_POLICY_ARGS
+                        );
 
-                    String policyArgStr = ""; // for now
-                    int policyArgsCount = MkfsUtils.shellSplit(policyArgStr).size();
-                    DmSetupUtils.createCache(
-                        extCmdFactory,
-                        vlmData.getIdentifier(),
-                        dataChild.getDevicePath(),
-                        cacheChild.getDevicePath(),
-                        metaChild.getDevicePath(),
-                        getBlocksize(vlm),
-                        getFeature(vlm),
-                        getPolicy(vlm),
-                        policyArgsCount + " " + policyArgStr
-                    );
+                        String policyArgStr = ""; // for now
+                        int policyArgsCount = MkfsUtils.shellSplit(policyArgStr).size();
+                        DmSetupUtils.createCache(
+                            extCmdFactory,
+                            vlmData.getIdentifier(),
+                            dataChild.getDevicePath(),
+                            cacheChild.getDevicePath(),
+                            metaChild.getDevicePath(),
+                            getBlocksize(vlm),
+                            getFeature(vlm),
+                            getPolicy(vlm),
+                            policyArgsCount + " " + policyArgStr
+                        );
 
-                    vlmData.setDevicePath(
-                        String.format(
-                            FORMAT_DEV_PATH,
-                            vlmData.getIdentifier()
-                        )
-                    );
-                    vlmData.setExists(true);
-                    errorReporter.logDebug("Cache: device (%s) created", vlmData.getDevicePath());
+                        vlmData.setDevicePath(
+                            String.format(
+                                FORMAT_DEV_PATH,
+                                vlmData.getIdentifier()
+                            )
+                        );
+                        vlmData.setExists(true);
+                        errorReporter.logDebug("Cache: device (%s) created", vlmData.getDevicePath());
+                    }
                 }
             }
             ret = LayerProcessResult.SUCCESS;

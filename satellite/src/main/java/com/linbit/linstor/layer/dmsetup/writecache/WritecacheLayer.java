@@ -135,14 +135,14 @@ public class WritecacheLayer implements DeviceLayer
                 if (!exists)
                 {
                     errorReporter.logTrace(
-                        "Writecache: device not found. Will be created for identifier: %s",
+                        "Writecache: device not found for identifier: %s",
                         identifier
                     );
                     vlmData.setDevicePath(null);
                 }
                 else
                 {
-                    errorReporter.logTrace("Writecache: device exists: %s, nothing to do", devName);
+                    errorReporter.logTrace("Writecache: device exists: %s", devName);
                     vlmData.setDevicePath(
                         String.format(
                             FORMAT_DEV_PATH,
@@ -242,11 +242,19 @@ public class WritecacheLayer implements DeviceLayer
         LayerProcessResult ret;
         WritecacheRscData<Resource> rscData = (WritecacheRscData<Resource>) rscLayerDataRef;
         StateFlags<Flags> rscFlags = rscData.getAbsResource().getStateFlags();
-        boolean deleteFlagSet = rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE) ||
+        boolean rscDeleteFlagSet = rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE) ||
             rscFlags.isSet(storDriverAccCtx, Resource.Flags.INACTIVE);
-        if (deleteFlagSet)
+        for (WritecacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
-            for (WritecacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
+            boolean vlmDeleteFlagSet = ((Volume) vlmData.getVolume()).getFlags().isSet(
+                storDriverAccCtx,
+                Volume.Flags.DELETE
+            );
+            boolean vlmDfnDeleteFlagSet = vlmData.getVolume().getVolumeDefinition().getFlags().isSet(
+                storDriverAccCtx,
+                VolumeDefinition.Flags.DELETE
+            );
+            if (rscDeleteFlagSet || vlmDeleteFlagSet || vlmDfnDeleteFlagSet)
             {
                 if (vlmData.exists())
                 {
@@ -350,138 +358,150 @@ public class WritecacheLayer implements DeviceLayer
             );
         }
 
-        if (!deleteFlagSet && dataResult == LayerProcessResult.SUCCESS && metaResult == LayerProcessResult.SUCCESS)
+        if (!rscDeleteFlagSet && dataResult == LayerProcessResult.SUCCESS && metaResult == LayerProcessResult.SUCCESS)
         {
             for (WritecacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
-                PriorityProps prioProps;
+                boolean vlmDeleteFlagSet = ((Volume) vlmData.getVolume()).getFlags().isSet(
+                    storDriverAccCtx,
+                    Volume.Flags.DELETE
+                );
+                boolean vlmDfnDeleteFlagSet = vlmData.getVolume().getVolumeDefinition().getFlags().isSet(
+                    storDriverAccCtx,
+                    VolumeDefinition.Flags.DELETE
+                );
+                if (!vlmDeleteFlagSet && !vlmDfnDeleteFlagSet)
                 {
-                    Volume vlm = (Volume) vlmData.getVolume();
-                    ResourceDefinition rscDfn = vlm.getResourceDefinition();
-                    ResourceGroup rscGrp = rscDfn.getResourceGroup();
-                    prioProps = new PriorityProps(
-                        vlm.getProps(storDriverAccCtx),
-                        vlm.getVolumeDefinition().getProps(storDriverAccCtx),
-                        rscDfn.getProps(storDriverAccCtx),
-                        rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmData.getVlmNr()),
-                        rscGrp.getProps(storDriverAccCtx),
-                        localNodeProps,
-                        stltConfAccessor.getReadonlyProps()
-                    );
-                }
-                if (!vlmData.exists())
-                {
-                    VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-                    VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(
-                        RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE
-                    );
-                    boolean considerCacheAsPmem = false;
+                    PriorityProps prioProps;
                     {
-                        boolean allStorPoolsPmem = true;
-                        boolean onePmem = false;
-                        Set<StorPool> storPoolSet = LayerVlmUtils.getStorPoolSet(cacheChild, storDriverAccCtx);
-                        for (StorPool storPool : storPoolSet)
-                        {
-                            if (storPool.isPmem())
-                            {
-                                onePmem = true;
-                            }
-                            else
-                            {
-                                allStorPoolsPmem = false;
-                            }
-                        }
-                        errorReporter.logTrace(
-                            "Writecache: at least one pmem: %s, all pmem: %s",
-                            onePmem,
-                            allStorPoolsPmem
-                        );
-
-                        if (!allStorPoolsPmem && onePmem)
-                        {
-                            apiCallRcRef.addEntries(
-                                ApiCallRcImpl.singleApiCallRc(
-                                    ApiConsts.MASK_VLM | ApiConsts.MASK_CRT | ApiConsts.WARN_MIXED_PMEM_AND_NON_PMEM,
-                                    "Some storage pools are based on pmem while others are not. " +
-                                        "Falling back to 's' mode."
-                                )
-                            );
-                        }
-                        if (allStorPoolsPmem)
-                        {
-                            considerCacheAsPmem = true;
-                        }
-                        errorReporter.logDebug(
-                            "Writecache: considering used storage pool%s as pmem: %s",
-                            storPoolSet.size() == 1 ?
-                               " [" + storPoolSet.iterator().next().getName().displayValue + "]" :
-                                "s " + storPoolSet,
-                            considerCacheAsPmem
+                        Volume vlm = (Volume) vlmData.getVolume();
+                        ResourceDefinition rscDfn = vlm.getResourceDefinition();
+                        ResourceGroup rscGrp = rscDfn.getResourceGroup();
+                        prioProps = new PriorityProps(
+                            vlm.getProps(storDriverAccCtx),
+                            vlm.getVolumeDefinition().getProps(storDriverAccCtx),
+                            rscDfn.getProps(storDriverAccCtx),
+                            rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmData.getVlmNr()),
+                            rscGrp.getProps(storDriverAccCtx),
+                            localNodeProps,
+                            stltConfAccessor.getReadonlyProps()
                         );
                     }
-
-                    Map<String, String> dmsetupOptsMap = prioProps.renderRelativeMap(
-                        ApiConsts.NAMESPC_WRITECACHE_OPTIONS
-                    );
-
-                    StringBuilder dmsetupOptsSb = new StringBuilder();
-                    for (Entry<String, String> entry : dmsetupOptsMap.entrySet())
+                    if (!vlmData.exists())
                     {
-                        String key = null;
-                        String value = null;
-                        switch (entry.getKey())
+                        VlmProviderObject<Resource> dataChild = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+                        VlmProviderObject<Resource> cacheChild = vlmData.getChildBySuffix(
+                            RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE
+                        );
+                        boolean considerCacheAsPmem = false;
                         {
-                            case ApiConsts.KEY_WRITECACHE_OPTION_ADDITIONAL:
-                                key = entry.getValue();
-                                // no value
-                                break;
-                            case ApiConsts.KEY_WRITECACHE_OPTION_FUA:
-                                if (entry.getValue().equals(ApiConsts.VAL_WRITECACHE_FUA_ON))
+                            boolean allStorPoolsPmem = true;
+                            boolean onePmem = false;
+                            Set<StorPool> storPoolSet = LayerVlmUtils.getStorPoolSet(cacheChild, storDriverAccCtx);
+                            for (StorPool storPool : storPoolSet)
+                            {
+                                if (storPool.isPmem())
                                 {
-                                    key = "fua";
+                                    onePmem = true;
                                 }
                                 else
                                 {
-                                    key = "nofua";
+                                    allStorPoolsPmem = false;
                                 }
-                                // no value
-                                break;
-                            default:
-                                key = OPTS_LUT.get(entry.getKey());
-                                value = entry.getValue();
-                                break;
+                            }
+                            errorReporter.logTrace(
+                                "Writecache: at least one pmem: %s, all pmem: %s",
+                                onePmem,
+                                allStorPoolsPmem
+                            );
+
+                            if (!allStorPoolsPmem && onePmem)
+                            {
+                                apiCallRcRef.addEntries(
+                                    ApiCallRcImpl.singleApiCallRc(
+                                        ApiConsts.MASK_VLM | ApiConsts.MASK_CRT |
+                                            ApiConsts.WARN_MIXED_PMEM_AND_NON_PMEM,
+                                        "Some storage pools are based on pmem while others are not. " +
+                                            "Falling back to 's' mode."
+                                    )
+                                );
+                            }
+                            if (allStorPoolsPmem)
+                            {
+                                considerCacheAsPmem = true;
+                            }
+                            errorReporter.logDebug(
+                                "Writecache: considering used storage pool%s as pmem: %s",
+                                storPoolSet.size() == 1 ?
+                                    " [" + storPoolSet.iterator().next().getName().displayValue + "]" :
+                                    "s " + storPoolSet,
+                                considerCacheAsPmem
+                            );
                         }
-                        dmsetupOptsSb.append(key).append(" ");
-                        if (value != null)
+
+                        Map<String, String> dmsetupOptsMap = prioProps.renderRelativeMap(
+                            ApiConsts.NAMESPC_WRITECACHE_OPTIONS
+                        );
+
+                        StringBuilder dmsetupOptsSb = new StringBuilder();
+                        for (Entry<String, String> entry : dmsetupOptsMap.entrySet())
                         {
-                            dmsetupOptsSb.append(value).append(" ");
+                            String key = null;
+                            String value = null;
+                            switch (entry.getKey())
+                            {
+                                case ApiConsts.KEY_WRITECACHE_OPTION_ADDITIONAL:
+                                    key = entry.getValue();
+                                    // no value
+                                    break;
+                                case ApiConsts.KEY_WRITECACHE_OPTION_FUA:
+                                    if (entry.getValue().equals(ApiConsts.VAL_WRITECACHE_FUA_ON))
+                                    {
+                                        key = "fua";
+                                    }
+                                    else
+                                    {
+                                        key = "nofua";
+                                    }
+                                    // no value
+                                    break;
+                                default:
+                                    key = OPTS_LUT.get(entry.getKey());
+                                    value = entry.getValue();
+                                    break;
+                            }
+                            dmsetupOptsSb.append(key).append(" ");
+                            if (value != null)
+                            {
+                                dmsetupOptsSb.append(value).append(" ");
+                            }
                         }
-                    }
-                    if (dmsetupOptsSb.length() > 0)
-                    {
-                        dmsetupOptsSb.setLength(dmsetupOptsSb.length() - 1); // cut the last " "
-                    }
-                    String dmsetupOptsStr = dmsetupOptsSb.toString();
-                    int dmsetupOpsCounts = MkfsUtils.shellSplit(dmsetupOptsStr).size();
+                        if (dmsetupOptsSb.length() > 0)
+                        {
+                            dmsetupOptsSb.setLength(dmsetupOptsSb.length() - 1); // cut the last " "
+                        }
+                        String dmsetupOptsStr = dmsetupOptsSb.toString();
+                        int dmsetupOpsCounts = MkfsUtils.shellSplit(dmsetupOptsStr).size();
 
-                    DmSetupUtils.createWritecache(
-                        extCmdFactory,
-                        vlmData.getIdentifier(),
-                        dataChild.getDevicePath(),
-                        cacheChild.getDevicePath(),
-                        considerCacheAsPmem,
-                        4096,
-                        dmsetupOpsCounts + " " + dmsetupOptsStr
-                    );
+                        DmSetupUtils.createWritecache(
+                            extCmdFactory,
+                            vlmData.getIdentifier(),
+                            dataChild.getDevicePath(),
+                            cacheChild.getDevicePath(),
+                            considerCacheAsPmem,
+                            4096,
+                            dmsetupOpsCounts + " " + dmsetupOptsStr
+                        );
 
-                    vlmData.setDevicePath(
-                        String.format(
-                            FORMAT_DEV_PATH,
-                            vlmData.getIdentifier()
-                        )
-                    );
-                    vlmData.setExists(true);
-                    errorReporter.logDebug("Writecache: device (%s) created", vlmData.getDevicePath());
+                        vlmData.setDevicePath(
+                            String.format(
+                                FORMAT_DEV_PATH,
+                                vlmData.getIdentifier()
+                            )
+                        );
+                        vlmData.setExists(true);
+                        errorReporter.logDebug("Writecache: device (%s) created", vlmData.getDevicePath());
+                    }
                 }
             }
             ret = LayerProcessResult.SUCCESS;
