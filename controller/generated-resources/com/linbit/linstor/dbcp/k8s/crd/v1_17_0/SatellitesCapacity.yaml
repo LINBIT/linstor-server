@@ -23,6 +23,12 @@ spec:
                 format: "byte"
               fail_flag:
                 type: "boolean"
+              allocated:
+                type: "string"
+                format: "byte"
+              usable:
+                type: "string"
+                format: "byte"
   - name: "v1-15-0"
     served: true
     storage: false

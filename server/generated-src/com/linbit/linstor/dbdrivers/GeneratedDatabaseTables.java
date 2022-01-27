@@ -105,8 +105,8 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
         public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, false);
-        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, true);
+        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, true);
         public static final ColumnImpl DEV_UUID = new ColumnImpl("DEV_UUID", Types.CHAR, false, true);
 
         public static final Column[] ALL = new Column[]
@@ -147,9 +147,9 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
         public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, false);
-        public static final ColumnImpl POOL_NAME_CACHE = new ColumnImpl("POOL_NAME_CACHE", Types.VARCHAR, false, false);
-        public static final ColumnImpl POOL_NAME_META = new ColumnImpl("POOL_NAME_META", Types.VARCHAR, false, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, true);
+        public static final ColumnImpl POOL_NAME_CACHE = new ColumnImpl("POOL_NAME_CACHE", Types.VARCHAR, false, true);
+        public static final ColumnImpl POOL_NAME_META = new ColumnImpl("POOL_NAME_META", Types.VARCHAR, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -573,8 +573,8 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
         public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
 
-        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, false);
-        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, true);
+        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1124,12 +1124,16 @@ public class GeneratedDatabaseTables
 
         public static final ColumnImpl CAPACITY = new ColumnImpl("CAPACITY", Types.BLOB, false, false);
         public static final ColumnImpl FAIL_FLAG = new ColumnImpl("FAIL_FLAG", Types.BOOLEAN, false, false);
+        public static final ColumnImpl ALLOCATED = new ColumnImpl("ALLOCATED", Types.BLOB, false, false);
+        public static final ColumnImpl USABLE = new ColumnImpl("USABLE", Types.BLOB, false, false);
 
         public static final Column[] ALL = new Column[]
         {
             NODE_NAME,
             CAPACITY,
-            FAIL_FLAG
+            FAIL_FLAG,
+            ALLOCATED,
+            USABLE
         };
 
         @Override
@@ -2061,6 +2065,8 @@ public class GeneratedDatabaseTables
         SatellitesCapacity.NODE_NAME.table = SATELLITES_CAPACITY;
         SatellitesCapacity.CAPACITY.table = SATELLITES_CAPACITY;
         SatellitesCapacity.FAIL_FLAG.table = SATELLITES_CAPACITY;
+        SatellitesCapacity.ALLOCATED.table = SATELLITES_CAPACITY;
+        SatellitesCapacity.USABLE.table = SATELLITES_CAPACITY;
         SecAccessTypes.ACCESS_TYPE_NAME.table = SEC_ACCESS_TYPES;
         SecAccessTypes.ACCESS_TYPE_VALUE.table = SEC_ACCESS_TYPES;
         SecAclMap.OBJECT_PATH.table = SEC_ACL_MAP;

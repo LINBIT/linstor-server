@@ -774,7 +774,9 @@ public class GenCrdV1_17_0
                     new SatellitesCapacitySpec(
                         (String) setters.get(GeneratedDatabaseTables.SatellitesCapacity.NODE_NAME).accept(data),
                         (byte[]) setters.get(GeneratedDatabaseTables.SatellitesCapacity.CAPACITY).accept(data),
-                        (boolean) setters.get(GeneratedDatabaseTables.SatellitesCapacity.FAIL_FLAG).accept(data)
+                        (boolean) setters.get(GeneratedDatabaseTables.SatellitesCapacity.FAIL_FLAG).accept(data),
+                        (byte[]) setters.get(GeneratedDatabaseTables.SatellitesCapacity.ALLOCATED).accept(data),
+                        (byte[]) setters.get(GeneratedDatabaseTables.SatellitesCapacity.USABLE).accept(data)
                     )
                 );
             }
@@ -5039,14 +5041,18 @@ public class GenCrdV1_17_0
     public static SatellitesCapacity createSatellitesCapacity(
         String nodeName,
         byte[] capacity,
-        boolean failFlag
+        boolean failFlag,
+        byte[] allocated,
+        byte[] usable
     )
     {
         return new SatellitesCapacity(
             new SatellitesCapacitySpec(
                 nodeName,
                 capacity,
-                failFlag
+                failFlag,
+                allocated,
+                usable
             )
         );
     }
@@ -5062,17 +5068,23 @@ public class GenCrdV1_17_0
         @JsonProperty("node_name") public final String nodeName; // PK
         @JsonProperty("capacity") public final byte[] capacity;
         @JsonProperty("fail_flag") public final boolean failFlag;
+        @JsonProperty("allocated") public final byte[] allocated;
+        @JsonProperty("usable") public final byte[] usable;
 
         @JsonCreator
         public SatellitesCapacitySpec(
             @JsonProperty("node_name") String nodeNameRef,
             @JsonProperty("capacity") byte[] capacityRef,
-            @JsonProperty("fail_flag") boolean failFlagRef
+            @JsonProperty("fail_flag") boolean failFlagRef,
+            @JsonProperty("allocated") byte[] allocatedRef,
+            @JsonProperty("usable") byte[] usableRef
         )
         {
             nodeName = nodeNameRef;
             capacity = capacityRef;
             failFlag = failFlagRef;
+            allocated = allocatedRef;
+            usable = usableRef;
 
             formattedPrimaryKey = String.format(
                 SatellitesCapacitySpec.PK_FORMAT,
@@ -5088,6 +5100,8 @@ public class GenCrdV1_17_0
             ret.put("NODE_NAME", nodeName);
             ret.put("CAPACITY", capacity);
             ret.put("FAIL_FLAG", failFlag);
+            ret.put("ALLOCATED", allocated);
+            ret.put("USABLE", usable);
             return ret;
         }
 
@@ -5103,6 +5117,10 @@ public class GenCrdV1_17_0
                     return capacity;
                 case "FAIL_FLAG":
                     return failFlag;
+                case "ALLOCATED":
+                    return allocated;
+                case "USABLE":
+                    return usable;
                 default:
                     throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
             }
