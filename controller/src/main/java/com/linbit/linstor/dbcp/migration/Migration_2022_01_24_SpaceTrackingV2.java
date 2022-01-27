@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.dbdrivers.SQLUtils;
+
 import java.sql.Connection;
 
 @Migration(
@@ -13,6 +14,7 @@ public class Migration_2022_01_24_SpaceTrackingV2 extends LinstorMigration
     @Override
     protected void migrate(Connection dbCon, DatabaseInfo.DbProduct dbProductRef) throws Exception
     {
-        SQLUtils.runSql(dbCon, "2022_01_16_SpaceTrackingV2.sql");
+        final String statements = MigrationUtils.loadResource("2022_01_16_SpaceTrackingV2.sql");
+        SQLUtils.runSql(dbCon, MigrationUtils.replaceTypesByDialect(dbProductRef, statements));
     }
 }
