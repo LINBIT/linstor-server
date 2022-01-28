@@ -228,6 +228,14 @@ public class StltExtToolsChecker
             checkModuleLoaded(loadedModulesRef, "nvme_rdma", modprobeFailures);
             if (!modprobeFailures.isEmpty())
             {
+                errorReporter.logTrace(
+                    "Checking support for %s: NOT supported ",
+                    ExtTools.NVME.name()
+                );
+                for (String reason : loadedModulesRef)
+                {
+                    errorReporter.logTrace("   %s", reason);
+                }
                 ret = new ExtToolsInfo(ExtTools.NVME, false, null, null, null, modprobeFailures);
             }
             else
