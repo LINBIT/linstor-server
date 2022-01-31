@@ -23,6 +23,7 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMapExtName;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
@@ -93,6 +94,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -138,6 +140,8 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
+    private final CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelper;
+    private final CtrlRscAutoQuorumHelper ctrlRscAutoQuorumHelper;
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final ResourceControllerFactory resourceControllerFactory;
     private final BackupInfoManager backupInfoMgr;
@@ -170,6 +174,8 @@ public class CtrlRscDfnApiCallHandler
         CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef,
         CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
+        CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelperRef,
+        CtrlRscAutoQuorumHelper ctrRscAutoQuorumHelperRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         ResourceControllerFactory resourceControllerFactoryRef,
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
@@ -202,6 +208,8 @@ public class CtrlRscDfnApiCallHandler
         ctrlRscAutoPlaceApiCallHandler = ctrlRscAutoPlaceApiCallHandlerRef;
         ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
+        ctrlRscAutoTiebreakerHelper = ctrlRscAutoTiebreakerHelperRef;
+        ctrlRscAutoQuorumHelper = ctrRscAutoQuorumHelperRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         resourceControllerFactory = resourceControllerFactoryRef;
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
@@ -488,7 +496,14 @@ public class CtrlRscDfnApiCallHandler
                 ) || notifyStlts;
 
                 autoFlux = autoFlux.concatWith(
-                    handleChangedProperties(rscDfn, overrideProps, deletePropKeys, deletePropNamespaces)
+                    handleChangedProperties(
+                        rscDfn,
+                        overrideProps,
+                        deletePropKeys,
+                        deletePropNamespaces,
+                        apiCallRcs,
+                        context
+                    )
                 );
 
             }
@@ -599,7 +614,9 @@ public class CtrlRscDfnApiCallHandler
         ResourceDefinition rscDfn,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
-        Set<String> deletePropNamespacesRef
+        Set<String> deletePropNamespacesRef,
+        ApiCallRcImpl responsesRef,
+        ResponseContext contextRef
     )
     {
         Flux<ApiCallRc> retFlux = Flux.empty();
@@ -644,6 +661,16 @@ public class CtrlRscDfnApiCallHandler
         if (overrideProps.containsKey(autoSnapKeepKey) || deletePropKeys.contains(autoSnapKeepKey))
         {
             retFlux = retFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldAutoSnapshots(rscDfn));
+        }
+
+        String autoTiebreakerKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
+        if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey))
+        {
+            AutoHelperContext autoHelperCtx = new AutoHelperContext(responsesRef, contextRef, rscDfn);
+            ctrlRscAutoTiebreakerHelper.manage(autoHelperCtx);
+            ctrlRscAutoQuorumHelper.manage(autoHelperCtx);
+
+            retFlux = retFlux.concatWith(Flux.merge(autoHelperCtx.additionalFluxList));
         }
 
         String autoDiskfulKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_DISKFUL;

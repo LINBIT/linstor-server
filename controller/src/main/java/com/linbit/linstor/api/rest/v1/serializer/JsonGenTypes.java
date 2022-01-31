@@ -4,9 +4,9 @@ This file was generated with rest-gen.py, do not modify directly, the chances ar
 
 package com.linbit.linstor.api.rest.v1.serializer;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -1260,8 +1260,8 @@ public class JsonGenTypes
     public static class BackupCreate
     {
         public String rsc_name;
-        public String snap_name;
         public String node_name;
+        public String snap_name;
         public Boolean incremental;
     }
 
@@ -1290,8 +1290,8 @@ public class JsonGenTypes
     public static class BackupInfo
     {
         public String rsc;
-        public String snap;
         public String full;
+        public String snap;
         public String latest;
         public Integer count;
         public long dl_size_kib;
