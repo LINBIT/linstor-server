@@ -36,7 +36,7 @@ public class ControllerK8sCrdRollbackMgr
     {
         RollbackSpec rollbackSpec = new RollbackSpec();
         RollbackCrd rollbackCrd = new RollbackCrd(rollbackSpec);
-        boolean hasContent = false;
+        int numberOfUpdates = 0;
 
         for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToChangeOrCreate
             .entrySet())
@@ -54,16 +54,16 @@ public class ControllerK8sCrdRollbackMgr
             {
                 String specKey = rscToChangeOrCreate.getKey();
                 LinstorSpec spec = map.get(specKey);
+                numberOfUpdates++;
+
                 if (spec == null)
                 {
                     // db does not know about this entry. this rsc needs to be created.
                     rollbackSpec.created(dbTable, specKey);
-                    hasContent = true;
                 }
                 else
                 {
                     rollbackSpec.updatedOrDeleted(dbTable, spec);
-                    hasContent = true;
                 }
             }
         }
@@ -73,20 +73,14 @@ public class ControllerK8sCrdRollbackMgr
             DatabaseTable dbTable = entry.getKey();
             for (LinstorCrd<?> crd : entry.getValue().values())
             {
+                numberOfUpdates++;
                 rollbackSpec.updatedOrDeleted(dbTable, crd.getSpec());
-                hasContent = true;
             }
         }
 
-        // try
-        // {
-        // System.out.println(new ObjectMapper(new YAMLFactory()).writeValueAsString(rollbackCrd));
-        // }
-        // catch (JsonProcessingException exc)
-        // {
-        // exc.printStackTrace();
-        // }
-        if (hasContent)
+        // We only create a rollback resource if it is actually required, i.e. if we need to create/modify/delete more
+        // than one resource in this transaction. Single object updates happen atomically, no need for rollback there.
+        if (numberOfUpdates > 1)
         {
             currentTransactionRef.getRollbackClient().createOrReplace(rollbackCrd);
         }
