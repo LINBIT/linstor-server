@@ -1514,7 +1514,17 @@ public class CtrlRscDfnApiCallHandler
         try
         {
             return SatelliteResourceStateDrbdUtils.allResourcesUpToDate(
-                rscDfn.streamResource(peerAccCtx.get()).map(AbsResource::getNode).collect(Collectors.toSet()),
+                rscDfn.streamResource(peerAccCtx.get()).filter(resource -> {
+                    try
+                    {
+                        return !resource.isDiskless(peerAccCtx.get());
+                    }
+                    catch (AccessDeniedException ignored)
+                    {
+                        return true;
+                    }
+                })
+                    .map(AbsResource::getNode).collect(Collectors.toSet()),
                 rscDfn.getName(),
                 peerAccCtx.get()
             );
