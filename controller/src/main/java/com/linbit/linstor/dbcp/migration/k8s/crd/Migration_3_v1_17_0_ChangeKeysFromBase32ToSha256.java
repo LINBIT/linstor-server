@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
+import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
@@ -8,6 +9,7 @@ import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,7 +30,7 @@ public class Migration_3_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCrd
     }
 
     @Override
-    public MigrationResult migrateImpl() throws Exception
+    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         // load data from database that needs to change
         HashMap<DatabaseTable, HashMap<String, LinstorCrd<LinstorSpec>>> loadedData = new HashMap<>();
@@ -36,10 +38,17 @@ public class Migration_3_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCrd
         {
             HashMap<String, LinstorCrd<LinstorSpec>> crdMap = txFrom.getCrd(dbTable);
             loadedData.put(dbTable, crdMap);
-            for (LinstorCrd<LinstorSpec> loadedCrd : crdMap.values())
-            {
-                txFrom.delete(dbTable, loadedCrd);
-            }
+            /*
+             * RollbackManager was BROKEN before this fix.
+             * The problem was that the RollbackManager stored a map of arbitrary LinstorSpec (which is an interface)
+             * references, but those implementations were missing the "@class" declaration which is required for
+             * deserialization.
+             *
+             * The K8sClient api also handles every create request by unmarshalling the response from k8s. That means,
+             * although the RollbackManager is now (hopefully) fixed, it cannot create any rollback instance because the
+             * old (1.15.0) data are missing critical deserialization-information.
+             */
+            txFrom.getClient(dbTable).delete();
         }
 
         // update CRD entries for all DatabaseTables
@@ -57,13 +66,19 @@ public class Migration_3_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCrd
                 // to make sure to use the correct constructors, we simply render the old spec to json and
                 // let jackson parse that json into the new version/format
                 String json = objMapper.writeValueAsString(oldCrd.getSpec());
-                LinstorSpec v1_17_0_spec = objMapper.readValue(json, v1_17_0SpecClass);
+                // however, the new json must include a "@class=..." entry, which is missing from the oldCrd.
+                // that means we need to add that entry
+                @SuppressWarnings("unchecked")
+                Map<String, Object> map = objMapper.readValue(json, Map.class);
+
+                // map.put("@c", v1_17_0SpecClass.getSimpleName());
+
+                LinstorSpec v1_17_0_spec = objMapper.readValue(objMapper.writeValueAsString(map), v1_17_0SpecClass);
                 txTo.update(dbTable, GenCrdV1_17_0.specToCrd(v1_17_0_spec));
             }
         }
 
         MigrationResult result = new MigrationResult();
-        result.setForceFromTxCommit(true);
         return result;
     }
 }

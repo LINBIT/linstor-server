@@ -11,6 +11,7 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 
 public class RollbackSpec implements LinstorSpec
 {
@@ -22,15 +23,15 @@ public class RollbackSpec implements LinstorSpec
 
     /** Contains original data for each modified or created Spec class */
     // HashMap<dbTable.toString(), HashMap<spec.getKey(), spec>>
-    @JsonProperty("rollbackMap")
-    public final HashMap<String, HashMap<String, LinstorSpec>> rollbackMap;
+    @JsonProperty("rollback_map")
+    public final HashMap<String, HashMap<String, GenericKubernetesResource>> rollbackMap;
 
     /**
      * Contains keys of instances that were created in this transaction.
      * A rollback causes deletion of these entries
      */
     // HashMap<dbTable.toString(), HashMap<spec.getKey(), spec>>
-    @JsonProperty("deleteMap")
+    @JsonProperty("delete_map")
     public final HashMap<String, HashSet<String>> deleteMap;
 
     public RollbackSpec()
@@ -41,8 +42,8 @@ public class RollbackSpec implements LinstorSpec
 
     @JsonCreator
     public RollbackSpec(
-        @JsonProperty("rollbackMap") HashMap<String, HashMap<String, LinstorSpec>> rollbackMapRef,
-        @JsonProperty("deleteMap") HashMap<String, HashSet<String>> deleteMapRef
+        @JsonProperty("rollback_map") HashMap<String, HashMap<String, GenericKubernetesResource>> rollbackMapRef,
+        @JsonProperty("delete_map") HashMap<String, HashSet<String>> deleteMapRef
     )
     {
         rollbackMap = rollbackMapRef == null ? new HashMap<>() : rollbackMapRef;
@@ -60,17 +61,22 @@ public class RollbackSpec implements LinstorSpec
     {
         synchronized (syncObject)
         {
-            String dbTableStr = dbTable.toString();
+            String dbTableStr = dbTable.getName();
             String specKey = crd.getK8sKey();
             if (!alreadyKnown(dbTableStr, specKey))
             {
-                HashMap<String, LinstorSpec> rbMap = rollbackMap.get(dbTableStr);
+                HashMap<String, GenericKubernetesResource> rbMap = rollbackMap.get(dbTableStr);
                 if (rbMap == null)
                 {
                     rbMap = new HashMap<>();
                     rollbackMap.put(dbTableStr, rbMap);
                 }
-                rbMap.put(specKey, crd.getSpec());
+                GenericKubernetesResource gkr = new GenericKubernetesResource();
+                gkr.setAdditionalProperty("spec", crd.getSpec());
+                gkr.setMetadata(crd.getMetadata());
+                gkr.setKind(crd.getKind());
+                gkr.setApiVersion(crd.getApiVersion());
+                rbMap.put(specKey, gkr);
             }
         }
     }
@@ -80,7 +86,7 @@ public class RollbackSpec implements LinstorSpec
     {
         synchronized (syncObject)
         {
-            String dbTableStr = dbTable.toString();
+            String dbTableStr = dbTable.getName();
             if (!alreadyKnown(dbTableStr, specKey))
             {
                 HashSet<String> delSet = deleteMap.get(dbTableStr);
@@ -94,7 +100,7 @@ public class RollbackSpec implements LinstorSpec
         }
     }
 
-    public HashMap<String, HashMap<String, LinstorSpec>> getRollbackMap()
+    public HashMap<String, HashMap<String, GenericKubernetesResource>> getRollbackMap()
     {
         return rollbackMap;
     }
@@ -107,7 +113,7 @@ public class RollbackSpec implements LinstorSpec
     @JsonIgnore
     private boolean alreadyKnown(String dbTableStr, String specKey)
     {
-        HashMap<String, LinstorSpec> rbMap = rollbackMap.get(dbTableStr);
+        HashMap<String, GenericKubernetesResource> rbMap = rollbackMap.get(dbTableStr);
         HashSet<String> delSet = deleteMap.get(dbTableStr);
         return (rbMap != null && rbMap.containsKey(specKey)) || (delSet != null && delSet.contains(specKey));
     }

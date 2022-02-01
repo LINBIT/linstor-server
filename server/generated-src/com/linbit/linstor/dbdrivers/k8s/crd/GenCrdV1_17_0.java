@@ -24,6 +24,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.fasterxml.jackson.databind.DatabindContext;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
+import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
+import com.fasterxml.jackson.databind.type.TypeFactory;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -40,6 +47,97 @@ public class GenCrdV1_17_0
     private static final Map<String, String> KEY_LUT = new HashMap<>();
     private static final HashSet<String> USED_K8S_KEYS = new HashSet<>();
     private static final AtomicLong NEXT_ID = new AtomicLong();
+    private static final HashMap<String, Class<?>> JSON_ID_TO_TYPE_CLASS_LUT = new HashMap<>();
+
+    static
+    {
+        JSON_ID_TO_TYPE_CLASS_LUT.put("Files", Files.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("FilesSpec", FilesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("KeyValueStore", KeyValueStore.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("KeyValueStoreSpec", KeyValueStoreSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerBcacheVolumes", LayerBcacheVolumes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerBcacheVolumesSpec", LayerBcacheVolumesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerCacheVolumes", LayerCacheVolumes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerCacheVolumesSpec", LayerCacheVolumesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerDrbdResources", LayerDrbdResources.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerDrbdResourcesSpec", LayerDrbdResourcesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerDrbdResourceDefinitions", LayerDrbdResourceDefinitions.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerDrbdResourceDefinitionsSpec", LayerDrbdResourceDefinitionsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerDrbdVolumes", LayerDrbdVolumes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerDrbdVolumesSpec", LayerDrbdVolumesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerDrbdVolumeDefinitions", LayerDrbdVolumeDefinitions.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerDrbdVolumeDefinitionsSpec", LayerDrbdVolumeDefinitionsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerLuksVolumes", LayerLuksVolumes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerLuksVolumesSpec", LayerLuksVolumesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerOpenflexResourceDefinitions", LayerOpenflexResourceDefinitions.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerOpenflexResourceDefinitionsSpec", LayerOpenflexResourceDefinitionsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerOpenflexVolumes", LayerOpenflexVolumes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerOpenflexVolumesSpec", LayerOpenflexVolumesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerResourceIds", LayerResourceIds.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerResourceIdsSpec", LayerResourceIdsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerStorageVolumes", LayerStorageVolumes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerStorageVolumesSpec", LayerStorageVolumesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerWritecacheVolumes", LayerWritecacheVolumes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerWritecacheVolumesSpec", LayerWritecacheVolumesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LinstorRemotes", LinstorRemotes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("LinstorRemotesSpec", LinstorRemotesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("Nodes", Nodes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("NodesSpec", NodesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("NodeConnections", NodeConnections.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("NodeConnectionsSpec", NodeConnectionsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("NodeNetInterfaces", NodeNetInterfaces.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("NodeNetInterfacesSpec", NodeNetInterfacesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("NodeStorPool", NodeStorPool.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("NodeStorPoolSpec", NodeStorPoolSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("PropsContainers", PropsContainers.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("PropsContainersSpec", PropsContainersSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("Resources", Resources.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("ResourcesSpec", ResourcesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("ResourceConnections", ResourceConnections.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("ResourceConnectionsSpec", ResourceConnectionsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("ResourceDefinitions", ResourceDefinitions.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("ResourceDefinitionsSpec", ResourceDefinitionsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("ResourceGroups", ResourceGroups.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("ResourceGroupsSpec", ResourceGroupsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("S3Remotes", S3Remotes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("S3RemotesSpec", S3RemotesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SatellitesCapacity", SatellitesCapacity.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SatellitesCapacitySpec", SatellitesCapacitySpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecAccessTypes", SecAccessTypes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecAccessTypesSpec", SecAccessTypesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecAclMap", SecAclMap.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecAclMapSpec", SecAclMapSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecConfiguration", SecConfiguration.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecConfigurationSpec", SecConfigurationSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecDfltRoles", SecDfltRoles.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecDfltRolesSpec", SecDfltRolesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecIdentities", SecIdentities.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecIdentitiesSpec", SecIdentitiesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecIdRoleMap", SecIdRoleMap.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecIdRoleMapSpec", SecIdRoleMapSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecObjectProtection", SecObjectProtection.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecObjectProtectionSpec", SecObjectProtectionSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecRoles", SecRoles.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecRolesSpec", SecRolesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecTypes", SecTypes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecTypesSpec", SecTypesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecTypeRules", SecTypeRules.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SecTypeRulesSpec", SecTypeRulesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SpaceHistory", SpaceHistory.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("SpaceHistorySpec", SpaceHistorySpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("StorPoolDefinitions", StorPoolDefinitions.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("StorPoolDefinitionsSpec", StorPoolDefinitionsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("TrackingDate", TrackingDate.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("TrackingDateSpec", TrackingDateSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("Volumes", Volumes.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("VolumesSpec", VolumesSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("VolumeConnections", VolumeConnections.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("VolumeConnectionsSpec", VolumeConnectionsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("VolumeDefinitions", VolumeDefinitions.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("VolumeDefinitionsSpec", VolumeDefinitionsSpec.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("VolumeGroups", VolumeGroups.class);
+        JSON_ID_TO_TYPE_CLASS_LUT.put("VolumeGroupsSpec", VolumeGroupsSpec.class);
+    }
 
     private GenCrdV1_17_0()
     {
@@ -1059,7 +1157,8 @@ public class GenCrdV1_17_0
     {
         return new BaseControllerK8sCrdTransactionMgrContext(
             GenCrdV1_17_0::databaseTableToCustomResourceClass,
-            GenCrdV1_17_0::specToCrd
+            GenCrdV1_17_0::specToCrd,
+            GenCrdV1_17_0.VERSION
         );
     }
 
@@ -7391,5 +7490,42 @@ public class GenCrdV1_17_0
             }
         }
         return sha;
+    }
+
+    public static class JsonTypeResolver extends TypeIdResolverBase
+    {
+        private JavaType baseType;
+
+        @Override
+        public void init(JavaType baseTypeRef)
+        {
+            super.init(baseTypeRef);
+            baseType = baseTypeRef;
+        }
+
+        @Override
+        public String idFromValue(Object valueRef)
+        {
+            return idFromValueAndType(valueRef, valueRef.getClass());
+        }
+
+        @Override
+        public String idFromValueAndType(Object ignored, Class<?> suggestedTypeRef)
+        {
+            return suggestedTypeRef.getSimpleName();
+        }
+
+        @Override
+        public Id getMechanism()
+        {
+            return Id.MINIMAL_CLASS;
+        }
+
+        @Override
+        public JavaType typeFromId(DatabindContext contextRef, String idRef)
+        {
+            Class<?> typeClass = JSON_ID_TO_TYPE_CLASS_LUT.get(idRef);
+            return TypeFactory.defaultInstance().constructSpecializedType(baseType, typeClass);
+        }
     }
 }

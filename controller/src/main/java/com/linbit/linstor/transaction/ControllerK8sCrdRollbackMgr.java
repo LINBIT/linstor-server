@@ -18,6 +18,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
+import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -45,19 +46,16 @@ public class ControllerK8sCrdRollbackMgr
             HashMap<String, LinstorCrd<?>> rscsToChangeOrCreate = entry.getValue();
 
             final Set<String> changedOrDeletedKeys = entry.getValue().keySet();
-            HashMap<String, LinstorSpec> map = currentTransactionRef.getSpec(
+            HashMap<String, LinstorCrd<LinstorSpec>> map = currentTransactionRef.getCrd(
                 dbTable,
-                spec -> changedOrDeletedKeys.contains(spec.getK8sKey())
+                crd -> changedOrDeletedKeys.contains(crd.getK8sKey())
             );
 
             for (Entry<String, LinstorCrd<?>> rscToChangeOrCreate : rscsToChangeOrCreate.entrySet())
             {
                 String specKey = rscToChangeOrCreate.getKey();
-                LinstorCrd<?> crd = rscToChangeOrCreate.getValue();
-                LinstorSpec spec = map.get(specKey);
-                numberOfUpdates++;
-
-                if (spec == null)
+                LinstorCrd<?> crd = map.get(specKey);
+                if (crd == null)
                 {
                     // db does not know about this entry. this rsc needs to be created.
                     rollbackSpec.created(dbTable, specKey);
@@ -83,7 +81,7 @@ public class ControllerK8sCrdRollbackMgr
         // than one resource in this transaction. Single object updates happen atomically, no need for rollback there.
         if (numberOfUpdates > 1)
         {
-            currentTransactionRef.getRollbackClient().createOrReplace(rollbackCrd);
+            currentTransactionRef.getRollbackClient().create(rollbackCrd);
         }
     }
 
@@ -110,19 +108,20 @@ public class ControllerK8sCrdRollbackMgr
                 delete(currentTransactionRef, dbTable, keysToDelete, specToCrdRef);
             }
 
-            for (Entry<String, HashMap<String, LinstorSpec>> entry : rollbackSpec.getRollbackMap().entrySet())
+            for (Entry<String, ? extends HashMap<String, GenericKubernetesResource>> entry : rollbackSpec
+                .getRollbackMap().entrySet())
             {
                 DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
-                ArrayList<SPEC> specList = new ArrayList<>();
-                for (LinstorSpec linstorSpec : entry.getValue().values())
+                ArrayList<GenericKubernetesResource> gkrList = new ArrayList<>();
+                for (GenericKubernetesResource gkr : entry.getValue().values())
                 {
-                    specList.add((SPEC) linstorSpec);
+                    gkrList.add(gkr);
                 }
 
                 restoreData(
                     currentTransactionRef,
                     dbTable,
-                    specList,
+                    gkrList,
                     specToCrdRef
                 );
             }
@@ -163,15 +162,17 @@ public class ControllerK8sCrdRollbackMgr
     private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void restoreData(
         K8sCrdTransaction currentTransaction,
         DatabaseTable dbTable,
-        Collection<SPEC> valuesToRestore,
+        Collection<GenericKubernetesResource> valuesToRestore,
         Function<SPEC, CRD> specToCrdRef
     )
     {
         MixedOperation<LinstorCrd<SPEC>, KubernetesResourceList<LinstorCrd<SPEC>>, Resource<LinstorCrd<SPEC>>> client = currentTransaction
             .getClient(dbTable);
-        for (SPEC linstorSpec : valuesToRestore)
+        Object typeEarasure = client;
+        MixedOperation<GenericKubernetesResource, KubernetesResourceList<GenericKubernetesResource>, Resource<GenericKubernetesResource>> gkrClient = (MixedOperation<GenericKubernetesResource, KubernetesResourceList<GenericKubernetesResource>, Resource<GenericKubernetesResource>>) typeEarasure;
+        for (GenericKubernetesResource gkr : valuesToRestore)
         {
-            client.createOrReplace(specToCrdRef.apply(linstorSpec));
+            gkrClient.createOrReplace(gkr);
         }
     }
 }

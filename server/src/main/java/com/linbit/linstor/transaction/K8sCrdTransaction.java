@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -22,6 +23,7 @@ public class K8sCrdTransaction
     private final Map<DatabaseTable, MixedOperation<?, ?, ?>> crdClientLut;
     private final MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClient;
     private final MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClient;
+    private final String crdVersion;
 
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToChangeOrCreate;
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToDelete;
@@ -29,12 +31,14 @@ public class K8sCrdTransaction
     public K8sCrdTransaction(
         Map<DatabaseTable, MixedOperation<?, ?, ?>> crdClientLutRef,
         MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClientRef,
-        MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClientRef
+        MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClientRef,
+        String crdVersionRef
     )
     {
         crdClientLut = crdClientLutRef;
         rollbackClient = rollbackClientRef;
         linstorVersionClient = linstorVersionClientRef;
+        crdVersion = crdVersionRef;
 
         rscsToChangeOrCreate = new HashMap<>();
         rscsToDelete = new HashMap<>();
@@ -124,7 +128,9 @@ public class K8sCrdTransaction
         MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = getClient(
             dbTable
         );
-        KubernetesResourceList<CRD> list = client.list();
+        ListOptionsBuilder builder = new ListOptionsBuilder();
+        // builder.withApiVersion(crdVersion);
+        KubernetesResourceList<CRD> list = client.list(builder.build());
         for (CRD item : list.getItems())
         {
             if (matcher.test(item))

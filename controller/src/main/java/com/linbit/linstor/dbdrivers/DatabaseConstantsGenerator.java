@@ -469,6 +469,13 @@ public final class DatabaseConstantsGenerator
             "com.fasterxml.jackson.annotation.JsonInclude",
             "com.fasterxml.jackson.annotation.JsonInclude.Include",
             "com.fasterxml.jackson.annotation.JsonProperty",
+            "com.fasterxml.jackson.annotation.JsonTypeInfo",
+            "com.fasterxml.jackson.annotation.JsonTypeInfo.Id",
+            "com.fasterxml.jackson.databind.DatabindContext",
+            "com.fasterxml.jackson.databind.JavaType",
+            "com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver",
+            "com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase",
+            "com.fasterxml.jackson.databind.type.TypeFactory",
             // "com.fasterxml.jackson.databind.annotation.JsonDeserialize",
             // "io.fabric8.kubernetes.api.model.KubernetesResource",
             // "io.fabric8.kubernetes.api.model.Namespaced",
@@ -493,6 +500,27 @@ public final class DatabaseConstantsGenerator
             appendLine("private static final Map<String, String> KEY_LUT = new HashMap<>();");
             appendLine("private static final HashSet<String> USED_K8S_KEYS = new HashSet<>();");
             appendLine("private static final AtomicLong NEXT_ID = new AtomicLong();");
+            appendLine("private static final HashMap<String, Class<?>> JSON_ID_TO_TYPE_CLASS_LUT = new HashMap<>();");
+
+            appendEmptyLine();
+            appendLine("static");
+            try (IndentLevel staticIndent = new IndentLevel())
+            {
+                for (Table tbl : tbls.values())
+                {
+                    String upperCamelCaseTblName = toUpperCamelCase(tbl.name);
+                    appendLine(
+                        "JSON_ID_TO_TYPE_CLASS_LUT.put(\"%s\", %s.class);",
+                        upperCamelCaseTblName,
+                        upperCamelCaseTblName
+                    );
+                    appendLine(
+                        "JSON_ID_TO_TYPE_CLASS_LUT.put(\"%sSpec\", %sSpec.class);",
+                        upperCamelCaseTblName,
+                        upperCamelCaseTblName
+                    );
+                }
+            }
 
             appendEmptyLine();
             appendLine("private %s()", clazzName);
@@ -708,7 +736,8 @@ public final class DatabaseConstantsGenerator
                 try (IndentLevel argsIndent = new IndentLevel("", "", false, false))
                 {
                     appendLine("%s::databaseTableToCustomResourceClass,", clazzName);
-                    appendLine("%s::specToCrd", clazzName);
+                    appendLine("%s::specToCrd,", clazzName);
+                    appendLine("%s.VERSION", clazzName);
                 }
                 appendLine(");");
             }
@@ -763,6 +792,61 @@ public final class DatabaseConstantsGenerator
                     }
                 }
                 appendLine("return sha;");
+            }
+
+            renderResolver("CrdResolver", "LinstorCrd<?>", "crdClass", "");
+            // renderResolver("SpecResolver", "LinstorSpec", "specClass", "Spec");
+        }
+    }
+
+    private void renderResolver(String className, String baseClass, String varName, String typeSuffix)
+    {
+        appendEmptyLine();
+        appendLine("public static class JsonTypeResolver extends TypeIdResolverBase");
+        try (IndentLevel clsIndent = new IndentLevel())
+        {
+            appendLine("private JavaType baseType;");
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public void init(JavaType baseTypeRef)");
+            try (IndentLevel methodIntend = new IndentLevel())
+            {
+                appendLine("super.init(baseTypeRef);");
+                appendLine("baseType = baseTypeRef;");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public String idFromValue(Object valueRef)");
+            try (IndentLevel methodIntend = new IndentLevel())
+            {
+                appendLine("return idFromValueAndType(valueRef, valueRef.getClass());");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public String idFromValueAndType(Object ignored, Class<?> suggestedTypeRef)");
+            try (IndentLevel methodIntend = new IndentLevel())
+            {
+                appendLine("return suggestedTypeRef.getSimpleName();");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public Id getMechanism()");
+            try (IndentLevel methodIntend = new IndentLevel())
+            {
+                appendLine("return Id.MINIMAL_CLASS;");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public JavaType typeFromId(DatabindContext contextRef, String idRef)");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("Class<?> typeClass = JSON_ID_TO_TYPE_CLASS_LUT.get(idRef);");
+                appendLine("return TypeFactory.defaultInstance().constructSpecializedType(baseType, typeClass);");
             }
         }
     }

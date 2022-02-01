@@ -37,6 +37,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     private final MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClient;
     private final Function<LinstorSpec, LinstorCrd<LinstorSpec>> specToCrd;
     private final KubernetesClient k8sClient;
+    private final String crdVersion;
 
     public ControllerK8sCrdTransactionMgr(ControllerK8sCrdDatabase controllerK8sCrdDatabaseRef)
     {
@@ -44,7 +45,8 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
             controllerK8sCrdDatabaseRef,
             new BaseControllerK8sCrdTransactionMgrContext(
                 GenCrdCurrent::databaseTableToCustomResourceClass,
-                GenCrdCurrent::specToCrd
+                GenCrdCurrent::specToCrd,
+                GenCrdCurrent.VERSION
             )
         );
     }
@@ -63,6 +65,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
         crdClientLut = new HashMap<>();
         Function<DatabaseTable, Class<? extends LinstorCrd<? extends LinstorSpec>>> dbTableToCrdClass = ctx
             .getDbTableToCrdClass();
+        crdVersion = ctx.getCrdVersion();
         for (DatabaseTable tbl : GeneratedDatabaseTables.ALL_TABLES)
         {
             crdClientLut.put(
@@ -78,7 +81,12 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
 
     private K8sCrdTransaction createNewTx()
     {
-        return new K8sCrdTransaction(crdClientLut, rollbackClient, linstorVersionClient);
+        return new K8sCrdTransaction(
+            crdClientLut,
+            rollbackClient,
+            linstorVersionClient,
+            crdVersion
+        );
     }
 
     public Integer getDbVersion()

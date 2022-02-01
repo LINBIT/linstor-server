@@ -31,11 +31,11 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 
 public abstract class BaseK8sCrdMigration
 {
-    private final int version;
-    private final String description;
-    private final BaseControllerK8sCrdTransactionMgrContext upgradeToTxMgrContext;
-    private final BaseControllerK8sCrdTransactionMgrContext upgradeFromTxMgrContext;
-    private final K8sCrdSchemaUpdateContext upgradeToSchemaUpdateCtx;
+    protected final int version;
+    protected final String description;
+    protected final BaseControllerK8sCrdTransactionMgrContext upgradeToTxMgrContext;
+    protected final BaseControllerK8sCrdTransactionMgrContext upgradeFromTxMgrContext;
+    protected final K8sCrdSchemaUpdateContext upgradeToSchemaUpdateCtx;
 
     private KubernetesClient k8sClient;
 
@@ -221,12 +221,17 @@ public abstract class BaseK8sCrdMigration
 
         try
         {
-            List<RollbackCrd> rollbackList = txFrom.getRollbackClient().list().getItems();
-            if (!rollbackList.isEmpty())
+            if (txFrom != null)
             {
-                throw new DatabaseException("Cannot perform Migration " + version + " while a rollback has to be done");
+                List<RollbackCrd> rollbackList = txFrom.getRollbackClient().list().getItems();
+                if (!rollbackList.isEmpty())
+                {
+                    throw new DatabaseException(
+                        "Cannot perform Migration " + version + " while a rollback has to be done"
+                    );
+                }
             }
-            MigrationResult result = migrateImpl();
+            MigrationResult result = migrateImpl(k8sDbRef);
             if (result == null)
             {
                 result = new MigrationResult();
@@ -249,7 +254,7 @@ public abstract class BaseK8sCrdMigration
         }
     }
 
-    public abstract MigrationResult migrateImpl() throws Exception;
+    public abstract MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception;
 
     protected static class MigrationResult
     {

@@ -29,6 +29,11 @@ spec:
                     type: array
                     items:
                        type: string
+            required:
+              - rollback_map
+              - delete_map
+        required:
+          - spec
   scope: "Cluster"
   names:
     plural: "rollback"

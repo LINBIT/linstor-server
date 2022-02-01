@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
+import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
 
@@ -19,7 +20,7 @@ public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
     }
 
     @Override
-    public MigrationResult migrateImpl() throws Exception
+    public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         // load data from database that needs to change
         // noop for initial migration
