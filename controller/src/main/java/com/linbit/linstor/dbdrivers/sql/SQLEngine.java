@@ -91,8 +91,12 @@ public class SQLEngine implements DbEngine
             try (PreparedStatement stmt = getConnection().prepareStatement(String.format("BACKUP TO '%s'", backupPath)))
             {
                 stmt.execute();
-                apiCallRc.addEntry(
-                    "Database backup created: " + backupPath, ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT);
+                final ApiCallRcImpl.ApiCallRcEntry rc = ApiCallRcImpl.entryBuilder(
+                        ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
+                        "Database backup created: " + backupPath)
+                    .putObjRef("backup_location", backupPath)
+                    .build();
+                apiCallRc.addEntry(rc);
             }
             catch (SQLException sqlExc)
             {
