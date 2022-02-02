@@ -939,7 +939,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         {
             try
             {
-                dbDriver.persist(rootContainer.instanceName, key, value);
+                dbDriver.persist(rootContainer.instanceName, key, value, oldValue == null);
             }
             catch (DatabaseException sqlExc)
             {

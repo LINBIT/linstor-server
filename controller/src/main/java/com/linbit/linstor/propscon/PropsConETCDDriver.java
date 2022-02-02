@@ -96,7 +96,7 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
     }
 
     @Override
-    public void persist(String instanceName, String key, String value) throws DatabaseException
+    public void persist(String instanceName, String key, String value, boolean isNew) throws DatabaseException
     {
         errorReporter.logTrace("Storing property %s", getId(instanceName, key, value));
         /*
@@ -110,15 +110,6 @@ public class PropsConETCDDriver extends BaseEtcdDriver implements PropsConDataba
          */
         namespace(getEtcdKey(instanceName, key))
             .put("", value);
-    }
-
-    @Override
-    public void persist(String instanceName, Map<String, String> props) throws DatabaseException
-    {
-        for (Entry<String, String> entry : props.entrySet())
-        {
-            persist(instanceName, entry.getKey(), entry.getValue());
-        }
     }
 
     @Override

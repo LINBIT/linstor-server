@@ -25,14 +25,7 @@ public interface PropsConDatabaseDriver
      *
      * @throws DatabaseException
      */
-    void persist(String instanceName, String key, String value) throws DatabaseException;
-
-    /**
-     * Performs an insert or update for the given key/value pairs
-     *
-     * @throws DatabaseException
-     */
-    void persist(String instanceName, Map<String, String> props) throws DatabaseException;
+    void persist(String instanceName, String key, String value, boolean isNew) throws DatabaseException;
 
     /**
      * Removes the given key from the database

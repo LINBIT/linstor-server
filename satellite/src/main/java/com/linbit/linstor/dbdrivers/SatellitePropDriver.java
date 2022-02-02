@@ -20,13 +20,7 @@ public class SatellitePropDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public void persist(String instanceName, String key, String value)
-    {
-        // no-op
-    }
-
-    @Override
-    public void persist(String instanceName, Map<String, String> props)
+    public void persist(String instanceName, String key, String value, boolean isNew)
     {
         // no-op
     }

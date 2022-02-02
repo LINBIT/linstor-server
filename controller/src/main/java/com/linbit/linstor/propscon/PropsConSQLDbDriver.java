@@ -15,7 +15,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -27,12 +26,15 @@ public class PropsConSQLDbDriver implements PropsConDatabaseDriver
     private static final String COL_KEY = DbConstants.PROP_KEY;
     private static final String COL_VALUE = DbConstants.PROP_VALUE;
 
-    private static final String SELECT_ENTRY_FOR_UPDATE =
-        " SELECT " + COL_INSTANCE + ", " + COL_KEY + ", " + COL_VALUE + "\n" +
-        " FROM " + TBL_PROP + "\n" +
-        " WHERE " + COL_INSTANCE + " = ? AND \n" +
-        "       " + COL_KEY +      " = ? \n" +
-        " FOR UPDATE";
+    private static final String INSERT_ENTRY =
+        " INSERT INTO " + TBL_PROP +
+        " ( " + COL_INSTANCE + ", " + COL_KEY + ", " + COL_VALUE + " ) " +
+        " VALUES ( ?, ?, ? )";
+    private static final String UPDATE_ENTRY =
+        " UPDATE " + TBL_PROP +
+        " SET " + COL_VALUE + " = ? " +
+        " WHERE " + COL_INSTANCE + " = ? AND " +
+                    COL_KEY + " = ?";
 
     private static final String SELECT_ALL_ENTRIES_BY_INSTANCE =
         " SELECT " + COL_KEY + ", " + COL_VALUE + "\n" +
@@ -62,51 +64,18 @@ public class PropsConSQLDbDriver implements PropsConDatabaseDriver
     }
 
     @Override
-    public void persist(String instanceName, String key, String value) throws DatabaseException
-    {
-        persistImpl(instanceName, key, value);
-    }
-
-    @Override
-    public void persist(String instanceName, Map<String, String> props) throws DatabaseException
-    {
-        for (Entry<String, String> entry : props.entrySet())
-        {
-            persistImpl(instanceName, entry.getKey(), entry.getValue());
-        }
-    }
-
-    @SuppressWarnings("checkstyle:magicnumber")
-    private void persistImpl(String instanceName, String key, String value) throws DatabaseException
+    public void persist(String instanceName, String key, String value, boolean isNew) throws DatabaseException
     {
         errorReporter.logTrace("Storing property %s", getId(instanceName, key, value));
-        try (
-            PreparedStatement stmt = getConnection().prepareStatement(
-                SELECT_ENTRY_FOR_UPDATE,
-                ResultSet.TYPE_SCROLL_SENSITIVE,
-                ResultSet.CONCUR_UPDATABLE
-            )
-        )
+        try
         {
-            String instanceUpper = instanceName.toUpperCase();
-            stmt.setString(1, instanceUpper);
-            stmt.setString(2, key);
-
-            try (ResultSet resultSet = stmt.executeQuery())
+            if (isNew)
             {
-                if (resultSet.next())
-                {
-                    resultSet.updateString(3, value);
-                    resultSet.updateRow();
-                }
-                else
-                {
-                    resultSet.moveToInsertRow();
-                    resultSet.updateString(1, instanceUpper);
-                    resultSet.updateString(2, key);
-                    resultSet.updateString(3, value);
-                    resultSet.insertRow();
-                }
+                insert(instanceName, key, value);
+            }
+            else
+            {
+                update(instanceName, key, value);
             }
         }
         catch (SQLException sqlExc)
@@ -114,6 +83,34 @@ public class PropsConSQLDbDriver implements PropsConDatabaseDriver
             throw new DatabaseException(sqlExc);
         }
         errorReporter.logTrace("Property stored %s", getId(instanceName, key, value));
+    }
+
+    private void insert(String instanceName, String key, String value) throws SQLException
+    {
+        try (
+            PreparedStatement stmt = getConnection().prepareStatement(INSERT_ENTRY);
+        )
+        {
+            stmt.setString(1, instanceName.toUpperCase());
+            stmt.setString(2, key);
+            stmt.setString(3, value);
+
+            stmt.executeUpdate();
+        }
+    }
+
+    private void update(String instanceName, String key, String value) throws SQLException
+    {
+        try (
+            PreparedStatement stmt = getConnection().prepareStatement(UPDATE_ENTRY);
+        )
+        {
+            stmt.setString(1, value);
+            stmt.setString(2, instanceName.toUpperCase());
+            stmt.setString(3, key);
+
+            stmt.executeUpdate();
+        }
     }
 
     @Override
