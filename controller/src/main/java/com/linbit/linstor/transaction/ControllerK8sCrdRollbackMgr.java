@@ -1,6 +1,5 @@
 package com.linbit.linstor.transaction;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -13,7 +12,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
@@ -102,42 +100,53 @@ public class ControllerK8sCrdRollbackMgr
         // than one resource in this transaction. Single object updates happen atomically, no need for rollback there.
         if (numberOfUpdates > 1)
         {
-            currentTransactionRef.getRollbackClient().create(rollbackCrd);
+            RollbackCrd oldRollback = currentTransactionRef.getRollback();
+            if (oldRollback != null)
+            {
+                // There might be an old rollback in some scenarios involving propsContainers
+                // In that case our new rollback will also rollback all the old stuff, so it is
+                // safe to replace
+                rollbackCrd.getMetadata().setResourceVersion(oldRollback.getMetadata().getResourceVersion());
+                RollbackCrd applied = currentTransactionRef.getRollbackClient().replace(rollbackCrd);
+                currentTransactionRef.setRollback(applied);
+            }
+            else
+            {
+                RollbackCrd applied = currentTransactionRef.getRollbackClient().create(rollbackCrd);
+                currentTransactionRef.setRollback(applied);
+            }
         }
     }
 
-    public static void cleanup(K8sCrdTransaction currentTransactionRef)
+    public static void cleanup(K8sCrdTransaction transactionToClean)
     {
-        currentTransactionRef.getRollbackClient().delete();
+        RollbackCrd rollback = transactionToClean.getRollback();
+        if (rollback != null)
+        {
+            transactionToClean.getRollbackClient().delete(rollback);
+        }
     }
 
-    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void rollbackIfNeeded(
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void rollback(
         K8sCrdTransaction currentTransactionRef,
         Function<SPEC, CRD> specToCrdRef
     )
     {
-        List<RollbackCrd> rollbackList = currentTransactionRef.getRollbackClient().list().getItems();
-        final int listSize = rollbackList.size();
-        if (listSize == 1)
+        RollbackCrd rollback = currentTransactionRef.getRollback();
+        if (rollback != null)
         {
-            RollbackSpec rollbackSpec = rollbackList.get(0).getSpec();
-
-            for (Entry<String, HashSet<String>> entry : rollbackSpec.getDeleteMap().entrySet())
+            for (Entry<String, HashSet<String>> entry : rollback.getSpec().getDeleteMap().entrySet())
             {
                 DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
                 HashSet<String> keysToDelete = entry.getValue();
                 delete(currentTransactionRef, dbTable, keysToDelete, specToCrdRef);
             }
 
-            for (Entry<String, ? extends HashMap<String, GenericKubernetesResource>> entry : rollbackSpec
+            for (Entry<String, ? extends HashMap<String, GenericKubernetesResource>> entry : rollback.getSpec()
                 .getRollbackMap().entrySet())
             {
                 DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
-                ArrayList<GenericKubernetesResource> gkrList = new ArrayList<>();
-                for (GenericKubernetesResource gkr : entry.getValue().values())
-                {
-                    gkrList.add(gkr);
-                }
+                ArrayList<GenericKubernetesResource> gkrList = new ArrayList<>(entry.getValue().values());
 
                 restoreData(
                     currentTransactionRef,
@@ -146,15 +155,9 @@ public class ControllerK8sCrdRollbackMgr
                     specToCrdRef
                 );
             }
+        }
 
-            cleanup(currentTransactionRef);
-        }
-        else
-        if (listSize > 1)
-        {
-            throw new ImplementationError("Unexpected count of rollback objects: " + rollbackList.size());
-        }
-        // else empty list, no-op
+        cleanup(currentTransactionRef);
     }
 
     private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void delete(

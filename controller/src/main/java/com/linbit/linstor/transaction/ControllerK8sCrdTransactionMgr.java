@@ -1,5 +1,6 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
@@ -11,6 +12,7 @@ import com.linbit.linstor.dbdrivers.k8s.crd.LinstorVersionCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.RollbackCrd;
 import com.linbit.linstor.transaction.manager.TransactionMgrK8sCrd;
 
+import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
@@ -154,9 +157,10 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
 
         clearTransactionObjects();
 
+        K8sCrdTransaction transactionToClean = currentTransaction;
         currentTransaction = createNewTx();
 
-        ControllerK8sCrdRollbackMgr.cleanup(currentTransaction);
+        ControllerK8sCrdRollbackMgr.cleanup(transactionToClean);
     }
 
     @SuppressWarnings("unchecked")
@@ -204,13 +208,41 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     @Override
     public void rollback() throws TransactionException
     {
-        ControllerK8sCrdRollbackMgr.rollbackIfNeeded(currentTransaction, specToCrd);
+        ControllerK8sCrdRollbackMgr.rollback(currentTransaction, specToCrd);
 
         transactionObjectCollection.rollbackAll();
 
         currentTransaction = createNewTx();
 
         clearTransactionObjects();
+    }
+
+    public void rollbackIfNeeded() throws TransactionException
+    {
+        try
+        {
+            KubernetesResourceList<RollbackCrd> rollbacks = currentTransaction.getRollbackClient().list();
+            int nrRollbacks = rollbacks.getItems().size();
+            if (nrRollbacks > 1)
+            {
+                throw new ImplementationError("Found more than 1 rollback in database");
+            }
+
+            if (nrRollbacks == 1)
+            {
+                currentTransaction.setRollback(rollbacks.getItems().get(0));
+
+                rollback();
+            }
+        }
+        catch (KubernetesClientException e)
+        {
+            // This could just mean that no rollback CRD was applied, so there can also be no rollback.
+            if (e.getCode() != HttpURLConnection.HTTP_NOT_FOUND)
+            {
+                throw e;
+            }
+        }
     }
 
     @Override

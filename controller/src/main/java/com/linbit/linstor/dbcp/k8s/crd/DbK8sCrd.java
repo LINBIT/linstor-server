@@ -101,6 +101,9 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     public void migrate(String dbTypeRef) throws InitializationException
     {
         ControllerK8sCrdTransactionMgr currentTx = k8sTxGenerator.startTransaction();
+
+        currentTx.rollbackIfNeeded();
+
         Integer dbVersion = currentTx.getDbVersion();
 
         ControllerK8sCrdDatabase k8sDb = controllerDatabaseProvider.get();

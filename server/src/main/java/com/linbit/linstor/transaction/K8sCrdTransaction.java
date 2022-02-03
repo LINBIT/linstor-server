@@ -29,6 +29,7 @@ public class K8sCrdTransaction
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToCreate;
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToReplace;
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToDelete;
+    private RollbackCrd rollback;
 
     public K8sCrdTransaction(
         Map<DatabaseTable, MixedOperation<?, ?, ?>> crdClientLutRef,
@@ -277,5 +278,15 @@ public class K8sCrdTransaction
             }
         }
         return ret;
+    }
+
+    public RollbackCrd getRollback()
+    {
+        return rollback;
+    }
+
+    public void setRollback(RollbackCrd rollbackRef)
+    {
+        rollback = rollbackRef;
     }
 }
