@@ -91,8 +91,6 @@ public class ObjectProtectionSQLDbDriver implements ObjectProtectionDatabaseDriv
         " FROM " +
         "     " + TBL_ACL + " AS ACL " +
         " WHERE " + ACL_OBJECT_PATH + " = ?";
-    private static final String ACL_DELETE_ALL =
-        " DELETE FROM " + TBL_ACL + " WHERE " + ACL_OBJECT_PATH + " = ?";
 
     private SingleColumnDatabaseDriver<ObjectProtection, Identity> identityDriver;
     private SingleColumnDatabaseDriver<ObjectProtection, Role> roleDriver;
@@ -144,16 +142,6 @@ public class ObjectProtectionSQLDbDriver implements ObjectProtectionDatabaseDriv
     public void deleteOp(String objectPath) throws DatabaseException
     {
         errorReporter.logTrace("Deleting ObjectProtection %s", getObjProtId(objectPath));
-        try (PreparedStatement stmt = getConnection().prepareStatement(ACL_DELETE_ALL))
-        {
-            stmt.setString(1, objectPath);
-
-            stmt.executeUpdate();
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new DatabaseException(sqlExc);
-        }
         try (PreparedStatement stmt = getConnection().prepareStatement(OP_DELETE))
         {
             stmt.setString(1, objectPath);

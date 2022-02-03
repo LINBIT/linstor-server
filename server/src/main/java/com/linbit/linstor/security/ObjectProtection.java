@@ -380,6 +380,10 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         requireAccess(accCtx, AccessType.CONTROL);
         activateTransMgr();
+        for (AccessControlEntry acEntry : objectAcl.getEntries().values())
+        {
+            dbDriver.deleteAcl(this, acEntry.subjectRole);
+        }
         dbDriver.deleteOp(objPath);
     }
 

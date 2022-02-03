@@ -90,8 +90,6 @@ public class ObjectProtectionEtcdDriver extends BaseEtcdDriver implements Object
     @Override
     public void deleteOp(String objectPathRef) throws DatabaseException
     {
-        namespace(SEC_ACL_MAP, objectPathRef)
-                .delete(true);
         namespace(SEC_OBJECT_PROTECTION, objectPathRef)
             .delete(true);
     }
