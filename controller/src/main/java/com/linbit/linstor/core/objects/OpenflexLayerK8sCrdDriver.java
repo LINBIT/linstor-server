@@ -82,7 +82,7 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
         transMgrProvider = transMgrProviderRef;
         nameShortener = nameShortenerRef;
 
-        nqnDriver = (nvmeRscDfnData, ignored) -> update(nvmeRscDfnData);
+        nqnDriver = (nvmeRscDfnData, ignored) -> insertOrUpdate(nvmeRscDfnData, false);
     }
 
     @Override
@@ -334,21 +334,20 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
     public void create(OpenflexRscDfnData<?> ofRscDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Creating OpenflexRscData %s", getId(ofRscDfnData));
-        update(ofRscDfnData);
+        insertOrUpdate(ofRscDfnData, true);
     }
 
-    private void update(OpenflexRscDfnData<?> ofRscDfnData)
+    private void insertOrUpdate(OpenflexRscDfnData<?> ofRscDfnData, boolean isNew)
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        tx.update(
-            GeneratedDatabaseTables.LAYER_OPENFLEX_RESOURCE_DEFINITIONS,
-            GenCrdCurrent.createLayerOpenflexResourceDefinitions(
-                ofRscDfnData.getResourceName().value,
-                ofRscDfnData.getSnapshotName() == null ? null : ofRscDfnData.getSnapshotName().value,
-                ofRscDfnData.getRscNameSuffix(),
-                ofRscDfnData.getNqn()
-            )
+        GenCrdCurrent.LayerOpenflexResourceDefinitions val = GenCrdCurrent.createLayerOpenflexResourceDefinitions(
+            ofRscDfnData.getResourceName().value,
+            ofRscDfnData.getSnapshotName() == null ? null : ofRscDfnData.getSnapshotName().value,
+            ofRscDfnData.getRscNameSuffix(),
+            ofRscDfnData.getNqn()
         );
+
+        tx.createOrReplace(GeneratedDatabaseTables.LAYER_OPENFLEX_RESOURCE_DEFINITIONS, val, isNew);
     }
 
     @Override
@@ -385,22 +384,18 @@ public class OpenflexLayerK8sCrdDriver implements OpenflexLayerCtrlDatabaseDrive
     public void persist(OpenflexVlmData<?> ofVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating OpenflexVlmData %s", getId(ofVlmDataRef));
-        update(ofVlmDataRef);
-    }
-
-    private void update(OpenflexVlmData<?> ofVlmDataRef)
-    {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         StorPool storPool = ofVlmDataRef.getStorPool();
-        tx.update(
-            GeneratedDatabaseTables.LAYER_OPENFLEX_VOLUMES,
-            GenCrdCurrent.createLayerOpenflexVolumes(
-                ofVlmDataRef.getRscLayerId(),
-                ofVlmDataRef.getVlmNr().value,
-                storPool.getNode().getName().value,
-                storPool.getName().value
-            )
-        );
+
+       tx.create(
+           GeneratedDatabaseTables.LAYER_OPENFLEX_VOLUMES,
+           GenCrdCurrent.createLayerOpenflexVolumes(
+               ofVlmDataRef.getRscLayerId(),
+               ofVlmDataRef.getVlmNr().value,
+               storPool.getNode().getName().value,
+               storPool.getName().value
+           )
+       );
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
@@ -25,7 +26,8 @@ public class K8sCrdTransaction
     private final MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClient;
     private final String crdVersion;
 
-    final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToChangeOrCreate;
+    final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToCreate;
+    final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToReplace;
     final HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> rscsToDelete;
 
     public K8sCrdTransaction(
@@ -40,7 +42,8 @@ public class K8sCrdTransaction
         linstorVersionClient = linstorVersionClientRef;
         crdVersion = crdVersionRef;
 
-        rscsToChangeOrCreate = new HashMap<>();
+        rscsToCreate = new HashMap<>();
+        rscsToReplace = new HashMap<>();
         rscsToDelete = new HashMap<>();
     }
 
@@ -84,20 +87,91 @@ public class K8sCrdTransaction
             .get(dbTable);
     }
 
-    public void update(DatabaseTable dbTable, LinstorCrd<?> k8sRsc)
+    public void createOrReplace(DatabaseTable dbTable, LinstorCrd<?> k8sRsc, boolean isNew)
     {
-        // System.out.println("updating " + dbTable.getName() + " " + k8sRsc);
+        if (isNew)
+        {
+            create(dbTable, k8sRsc);
+        }
+        else
+        {
+            replace(dbTable, k8sRsc);
+        }
+    }
+
+    public void create(DatabaseTable dbTable, LinstorCrd<?> k8sRsc)
+    {
         String key = k8sRsc.getK8sKey();
-        lazyGet(rscsToChangeOrCreate, dbTable).put(key, k8sRsc);
-        lazyGet(rscsToDelete, dbTable).remove(key);
+
+        boolean isCreated = lazyRemove(rscsToCreate, dbTable, key);
+        boolean isReplaced = lazyRemove(rscsToReplace, dbTable, key);
+        boolean isDeleted = lazyRemove(rscsToDelete, dbTable, key);
+
+        if (isCreated || isReplaced)
+        {
+            throw new ImplementationError(
+                "Tried to create resource " + k8sRsc.getKind() + "/" + key +
+                    " that was already created or updated in the same transaction"
+            );
+        }
+
+        if (isDeleted)
+        {
+            // Delete, then Create is merged to Update
+            lazyGet(rscsToReplace, dbTable).put(key, k8sRsc);
+        }
+        else
+        {
+            lazyGet(rscsToCreate, dbTable).put(key, k8sRsc);
+        }
+    }
+
+    public void replace(DatabaseTable dbTable, LinstorCrd<?> k8sRsc)
+    {
+        String key = k8sRsc.getK8sKey();
+
+        boolean isCreated = lazyRemove(rscsToCreate, dbTable, key);
+        boolean isReplaced = lazyRemove(rscsToReplace, dbTable, key);
+        boolean isDeleted = lazyRemove(rscsToDelete, dbTable, key);
+
+        if (isDeleted)
+        {
+            throw new ImplementationError(
+                "Tried to update resource " + k8sRsc.getKind() + "/" + key +
+                    " that was already deleted in the same transaction"
+            );
+        }
+
+        if (isCreated)
+        {
+            // Create, then Update is merged to Create
+            lazyGet(rscsToCreate, dbTable).put(key, k8sRsc);
+        }
+        else
+        {
+            lazyGet(rscsToReplace, dbTable).put(key, k8sRsc);
+        }
     }
 
     public void delete(DatabaseTable dbTable, LinstorCrd<?> k8sRsc)
     {
-        // System.out.println("deleting entry from " + dbTable.getName() + ": " + k8sRsc);
         String key = k8sRsc.getK8sKey();
-        lazyGet(rscsToDelete, dbTable).put(key, k8sRsc);
-        lazyGet(rscsToChangeOrCreate, dbTable).remove(key);
+
+        boolean isCreated = lazyRemove(rscsToCreate, dbTable, key);
+        boolean isReplaced = lazyRemove(rscsToReplace, dbTable, key);
+        boolean isDeleted = lazyRemove(rscsToDelete, dbTable, key);
+
+        // NB: deleting the same object multiple times is fine. As an example, properties might be deleted from multiple
+        // sources.
+
+        if (isCreated)
+        {
+            // Create, then Delete is a no-op
+        }
+        else
+        {
+            lazyGet(rscsToDelete, dbTable).put(key, k8sRsc);
+        }
     }
 
     private HashMap<String, LinstorCrd<?>> lazyGet(
@@ -105,13 +179,24 @@ public class K8sCrdTransaction
         DatabaseTable dbTableRef
     )
     {
-        HashMap<String, LinstorCrd<?>> ret = map.get(dbTableRef);
-        if (ret == null)
+        return map.computeIfAbsent(dbTableRef, (ignored) -> new HashMap<>());
+    }
+
+    private boolean lazyRemove(
+        HashMap<DatabaseTable, HashMap<String, LinstorCrd<?>>> map,
+        DatabaseTable dbTableRef,
+        String key
+    )
+    {
+        boolean removed = false;
+        HashMap<String, LinstorCrd<?>> table = map.get(dbTableRef);
+        if (table != null)
         {
-            ret = new HashMap<>();
-            map.put(dbTableRef, ret);
+            LinstorCrd<?> existing = table.remove(key);
+            removed = existing != null;
         }
-        return ret;
+
+        return removed;
     }
 
     public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, SPEC> getSpec(DatabaseTable dbTable)

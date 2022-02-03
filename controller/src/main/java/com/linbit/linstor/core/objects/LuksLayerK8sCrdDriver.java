@@ -64,7 +64,7 @@ public class LuksLayerK8sCrdDriver implements LuksLayerCtrlDatabaseDriver
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
 
-        vlmPwDriver = (luksVlm, ignored) -> update(luksVlm);
+        vlmPwDriver = (luksVlm, ignored) -> insertOrUpdate(luksVlm, false);
 
         vlmSpecCache = new HashMap<>();
     }
@@ -184,20 +184,19 @@ public class LuksLayerK8sCrdDriver implements LuksLayerCtrlDatabaseDriver
     public void persist(LuksVlmData<?> luksVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating LuksVlmData %s", getId(luksVlmDataRef));
-        update(luksVlmDataRef);
+        insertOrUpdate(luksVlmDataRef, true);
     }
 
-    private void update(LuksVlmData<?> luksVlmData)
+    private void insertOrUpdate(LuksVlmData<?> luksVlmData, boolean isNew)
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        tx.update(
-            GeneratedDatabaseTables.LAYER_LUKS_VOLUMES,
-            GenCrdCurrent.createLayerLuksVolumes(
-                luksVlmData.getRscLayerId(),
-                luksVlmData.getVlmNr().value,
-                Base64.encode(luksVlmData.getEncryptedKey())
-            )
+        GenCrdCurrent.LayerLuksVolumes val = GenCrdCurrent.createLayerLuksVolumes(
+            luksVlmData.getRscLayerId(),
+            luksVlmData.getVlmNr().value,
+            Base64.encode(luksVlmData.getEncryptedKey())
         );
+
+        tx.createOrReplace(GeneratedDatabaseTables.LAYER_LUKS_VOLUMES, val, isNew);
     }
 
     @Override

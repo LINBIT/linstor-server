@@ -74,7 +74,9 @@ public class Migration_3_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCrd
                 // map.put("@c", v1_17_0SpecClass.getSimpleName());
 
                 LinstorSpec v1_17_0_spec = objMapper.readValue(objMapper.writeValueAsString(map), v1_17_0SpecClass);
-                txTo.update(dbTable, GenCrdV1_17_0.specToCrd(v1_17_0_spec));
+
+                // Use create here, as we previously removed all values from the DB.
+                txTo.create(dbTable, GenCrdV1_17_0.specToCrd(v1_17_0_spec));
             }
         }
 

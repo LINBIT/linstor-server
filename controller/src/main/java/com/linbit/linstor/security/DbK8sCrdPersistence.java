@@ -180,7 +180,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
          */
         ControllerK8sCrdTransactionMgr txMgr = new ControllerK8sCrdTransactionMgr(k8sCrdDb);
         K8sCrdTransaction tx = txMgr.getTransaction();
-        tx.update(
+        tx.replace(
             GeneratedDatabaseTables.SEC_CONFIGURATION,
             GenCrdCurrent.createSecConfiguration(
                 SecurityDbConsts.KEY_SEC_LEVEL,
@@ -200,7 +200,7 @@ public class DbK8sCrdPersistence implements DbAccessor<ControllerK8sCrdDatabase>
          */
         ControllerK8sCrdTransactionMgr txMgr = new ControllerK8sCrdTransactionMgr(k8sCrdDb);
         K8sCrdTransaction tx = txMgr.getTransaction();
-        tx.update(
+        tx.replace(
             GeneratedDatabaseTables.SEC_CONFIGURATION,
             GenCrdCurrent.createSecConfiguration(
                 SecurityDbConsts.KEY_AUTH_REQ,

@@ -79,7 +79,7 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
         transObjFactory = transObjFactoryRef;
         rscIdDriver = rscIdDriverRef;
 
-        storPoolDriver = (parent, ignored) -> update(parent);
+        storPoolDriver = (parent, ignored) -> insertOrUpdate(parent, false);
     }
 
     @Override
@@ -380,23 +380,22 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
                     "! Use appropriate database driver"
             );
         }
-        update(vlmDataRef);
+        insertOrUpdate(vlmDataRef, true);
     }
 
-    private void update(VlmProviderObject<?> vlmDataRef)
+    private void insertOrUpdate(VlmProviderObject<?> vlmDataRef, boolean isNew)
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         StorPool sp = vlmDataRef.getStorPool();
-        tx.update(
-            GeneratedDatabaseTables.LAYER_STORAGE_VOLUMES,
-            GenCrdCurrent.createLayerStorageVolumes(
-                vlmDataRef.getRscLayerObject().getRscLayerId(),
-                vlmDataRef.getVlmNr().value,
-                vlmDataRef.getProviderKind().name(),
-                sp.getNode().getName().value,
-                sp.getName().value
-            )
+        GenCrdCurrent.LayerStorageVolumes val = GenCrdCurrent.createLayerStorageVolumes(
+            vlmDataRef.getRscLayerObject().getRscLayerId(),
+            vlmDataRef.getVlmNr().value,
+            vlmDataRef.getProviderKind().name(),
+            sp.getNode().getName().value,
+            sp.getName().value
         );
+
+        tx.createOrReplace(GeneratedDatabaseTables.LAYER_STORAGE_VOLUMES, val, isNew);
     }
 
     @Override

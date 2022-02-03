@@ -67,7 +67,7 @@ public class BCacheLayerK8sCrdDriver implements BCacheLayerCtrlDatabaseDriver
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
 
-        vlmDevUuidDriver = (bcacheVlmData, ignored) -> update(bcacheVlmData);
+        vlmDevUuidDriver = (bcacheVlmData, ignored) -> insertOrUpdate(bcacheVlmData, false);
 
         vlmSpecCache = new HashMap<>();
     }
@@ -227,10 +227,10 @@ public class BCacheLayerK8sCrdDriver implements BCacheLayerCtrlDatabaseDriver
     public void persist(BCacheVlmData<?> bcacheVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating BCacheVlmData %s", getId(bcacheVlmDataRef));
-        update(bcacheVlmDataRef);
+        insertOrUpdate(bcacheVlmDataRef, true);
     }
 
-    private void update(BCacheVlmData<?> bcacheVlmDataRef)
+    private void insertOrUpdate(BCacheVlmData<?> bcacheVlmDataRef, boolean isNew)
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         StorPool extStorPool = bcacheVlmDataRef.getCacheStorPool();
@@ -241,16 +241,16 @@ public class BCacheLayerK8sCrdDriver implements BCacheLayerCtrlDatabaseDriver
             nodeName = extStorPool.getNode().getName().value;
             poolName = extStorPool.getName().value;
         }
-        tx.update(
-            GeneratedDatabaseTables.LAYER_BCACHE_VOLUMES,
-            GenCrdCurrent.createLayerBcacheVolumes(
-                bcacheVlmDataRef.getRscLayerId(),
-                bcacheVlmDataRef.getVlmNr().value,
-                nodeName,
-                poolName,
-                bcacheVlmDataRef.getDeviceUuid() == null ? null : bcacheVlmDataRef.getDeviceUuid().toString()
-            )
+
+        GenCrdCurrent.LayerBcacheVolumes val = GenCrdCurrent.createLayerBcacheVolumes(
+            bcacheVlmDataRef.getRscLayerId(),
+            bcacheVlmDataRef.getVlmNr().value,
+            nodeName,
+            poolName,
+            bcacheVlmDataRef.getDeviceUuid() == null ? null : bcacheVlmDataRef.getDeviceUuid().toString()
         );
+
+        tx.createOrReplace(GeneratedDatabaseTables.LAYER_BCACHE_VOLUMES, val, isNew);
     }
 
     @Override

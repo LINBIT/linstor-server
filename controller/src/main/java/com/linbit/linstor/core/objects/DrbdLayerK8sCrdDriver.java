@@ -112,10 +112,10 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
         tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
 
-        rscFlagsDriver = (rscData, ignored1, ignored2) -> update(rscData);
-        rscNodeIdDriver = (rscData, ignored) -> update(rscData);
-        vlmExtStorPoolDriver = (vlmData, ignored) -> update(vlmData);
-        rscDfnUpdateDriver = (rscDfnData, ignored) -> update(rscDfnData);
+        rscFlagsDriver = (rscData, ignored1, ignored2) -> insertOrUpdate(rscData, false);
+        rscNodeIdDriver = (rscData, ignored) -> insertOrUpdate(rscData, false);
+        vlmExtStorPoolDriver = (vlmData, ignored) -> insertOrUpdate(vlmData, false);
+        rscDfnUpdateDriver = (rscDfnData, ignored) -> insertOrUpdate(rscDfnData, false);
 
         drbdRscCache = new HashMap<>();
         drbdVlmCache = new HashMap<>();
@@ -720,25 +720,24 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
     public void create(DrbdRscData<?> drbdRscData) throws DatabaseException
     {
         errorReporter.logTrace("Creating DrbdRscData %s", getId(drbdRscData));
-        update(drbdRscData);
+        insertOrUpdate(drbdRscData, true);
     }
 
-    private void update(DrbdRscData<?> drbdRscData)
+    private void insertOrUpdate(DrbdRscData<?> drbdRscData, boolean isNew)
     {
         try
         {
             K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-            tx.update(
-                GeneratedDatabaseTables.LAYER_DRBD_RESOURCES,
-                GenCrdCurrent.createLayerDrbdResources(
-                    drbdRscData.getRscLayerId(),
-                    drbdRscData.getPeerSlots(),
-                    drbdRscData.getAlStripes(),
-                    drbdRscData.getAlStripeSize(),
-                    drbdRscData.getFlags().getFlagsBits(dbCtx),
-                    drbdRscData.getNodeId().value
-                )
+            GenCrdCurrent.LayerDrbdResources val = GenCrdCurrent.createLayerDrbdResources(
+                drbdRscData.getRscLayerId(),
+                drbdRscData.getPeerSlots(),
+                drbdRscData.getAlStripes(),
+                drbdRscData.getAlStripeSize(),
+                drbdRscData.getFlags().getFlagsBits(dbCtx),
+                drbdRscData.getNodeId().value
             );
+
+            tx.createOrReplace(GeneratedDatabaseTables.LAYER_DRBD_RESOURCES, val, isNew);
         }
         catch (AccessDeniedException accessDeniedExc)
         {
@@ -780,26 +779,25 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
     public void persist(DrbdRscDfnData<?> drbdRscDfnData) throws DatabaseException
     {
         errorReporter.logTrace("Creating DrbdRscDfnData %s", getId(drbdRscDfnData));
-        update(drbdRscDfnData);
+        insertOrUpdate(drbdRscDfnData, true);
     }
 
-    private void update(DrbdRscDfnData<?> drbdRscDfnData)
+    private void insertOrUpdate(DrbdRscDfnData<?> drbdRscDfnData, boolean isNew)
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        tx.update(
-            GeneratedDatabaseTables.LAYER_DRBD_RESOURCE_DEFINITIONS,
-            GenCrdCurrent.createLayerDrbdResourceDefinitions(
-                drbdRscDfnData.getResourceName().value,
-                drbdRscDfnData.getRscNameSuffix(),
-                drbdRscDfnData.getSnapshotName() == null ? null : drbdRscDfnData.getSnapshotName().value,
-                drbdRscDfnData.getPeerSlots(),
-                drbdRscDfnData.getAlStripes(),
-                drbdRscDfnData.getAlStripeSize(),
-                drbdRscDfnData.getTcpPort() == null ? null : drbdRscDfnData.getTcpPort().value,
-                drbdRscDfnData.getTransportType().name(),
-                drbdRscDfnData.getSecret() == null ? null : drbdRscDfnData.getSecret()
-            )
+        GenCrdCurrent.LayerDrbdResourceDefinitions val = GenCrdCurrent.createLayerDrbdResourceDefinitions(
+            drbdRscDfnData.getResourceName().value,
+            drbdRscDfnData.getRscNameSuffix(),
+            drbdRscDfnData.getSnapshotName() == null ? null : drbdRscDfnData.getSnapshotName().value,
+            drbdRscDfnData.getPeerSlots(),
+            drbdRscDfnData.getAlStripes(),
+            drbdRscDfnData.getAlStripeSize(),
+            drbdRscDfnData.getTcpPort() == null ? null : drbdRscDfnData.getTcpPort().value,
+            drbdRscDfnData.getTransportType().name(),
+            drbdRscDfnData.getSecret() == null ? null : drbdRscDfnData.getSecret()
         );
+
+        tx.createOrReplace(GeneratedDatabaseTables.LAYER_DRBD_RESOURCE_DEFINITIONS, val, isNew);
     }
 
     @Override
@@ -855,10 +853,10 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
     public void persist(DrbdVlmData<?> drbdVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating DrbdVlmData %s", getId(drbdVlmDataRef));
-        update(drbdVlmDataRef);
+        insertOrUpdate(drbdVlmDataRef, true);
     }
 
-    private void update(DrbdVlmData<?> drbdVlmDataRef)
+    private void insertOrUpdate(DrbdVlmData<?> drbdVlmDataRef, boolean isNew)
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         StorPool extStorPool = drbdVlmDataRef.getExternalMetaDataStorPool();
@@ -869,15 +867,15 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
             nodeNameStr = extStorPool.getNode().getName().value;
             poolNameStr = extStorPool.getName().value;
         }
-        tx.update(
-            GeneratedDatabaseTables.LAYER_DRBD_VOLUMES,
-            GenCrdCurrent.createLayerDrbdVolumes(
-                drbdVlmDataRef.getRscLayerId(),
-                drbdVlmDataRef.getVlmNr().value,
-                nodeNameStr,
-                poolNameStr
-            )
+
+        GenCrdCurrent.LayerDrbdVolumes val = GenCrdCurrent.createLayerDrbdVolumes(
+            drbdVlmDataRef.getRscLayerId(),
+            drbdVlmDataRef.getVlmNr().value,
+            nodeNameStr,
+            poolNameStr
         );
+
+        tx.createOrReplace(GeneratedDatabaseTables.LAYER_DRBD_VOLUMES, val, isNew);
     }
 
     @Override
@@ -906,13 +904,8 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
     public void persist(DrbdVlmDfnData<?> drbdVlmDfnDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating DrbdVlmDfnData %s", getId(drbdVlmDfnDataRef));
-        update(drbdVlmDfnDataRef);
-    }
-
-    private void update(DrbdVlmDfnData<?> drbdVlmDfnDataRef)
-    {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        tx.update(
+        tx.create(
             GeneratedDatabaseTables.LAYER_DRBD_VOLUME_DEFINITIONS,
             GenCrdCurrent.createLayerDrbdVolumeDefinitions(
                 drbdVlmDfnDataRef.getResourceName().value,

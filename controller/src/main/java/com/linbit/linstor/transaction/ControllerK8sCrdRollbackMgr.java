@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
@@ -39,41 +38,63 @@ public class ControllerK8sCrdRollbackMgr
         RollbackCrd rollbackCrd = new RollbackCrd(rollbackSpec);
         int numberOfUpdates = 0;
 
-        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToChangeOrCreate
-            .entrySet())
+        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToCreate.entrySet())
         {
             DatabaseTable dbTable = entry.getKey();
-            HashMap<String, LinstorCrd<?>> rscsToChangeOrCreate = entry.getValue();
-
-            final Set<String> changedOrDeletedKeys = entry.getValue().keySet();
-            HashMap<String, LinstorCrd<LinstorSpec>> map = currentTransactionRef.getCrd(
-                dbTable,
-                crd -> changedOrDeletedKeys.contains(crd.getK8sKey())
-            );
-
-            for (Entry<String, LinstorCrd<?>> rscToChangeOrCreate : rscsToChangeOrCreate.entrySet())
+            for (String rscKey : entry.getValue().keySet())
             {
-                String specKey = rscToChangeOrCreate.getKey();
-                LinstorCrd<?> crd = map.get(specKey);
-                if (crd == null)
+                numberOfUpdates++;
+                rollbackSpec.created(dbTable, rscKey);
+            }
+        }
+
+        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToReplace.entrySet())
+        {
+            DatabaseTable dbTable = entry.getKey();
+            MixedOperation<LinstorCrd<LinstorSpec>, KubernetesResourceList<LinstorCrd<LinstorSpec>>, Resource<LinstorCrd<LinstorSpec>>> client = currentTransactionRef
+                .getClient(dbTable);
+
+            for (Entry<String, LinstorCrd<?>> rsc : entry.getValue().entrySet())
+            {
+                numberOfUpdates++;
+                LinstorCrd<?> updatedRsc = rsc.getValue();
+
+                LinstorCrd<?> resource = client.withName(updatedRsc.getK8sKey()).get();
+                if (resource == null)
                 {
-                    // db does not know about this entry. this rsc needs to be created.
-                    rollbackSpec.created(dbTable, specKey);
+                    throw new DatabaseException(
+                        "Resource " + updatedRsc.getKind() + "/" + updatedRsc.getK8sKey() + " not found"
+                    );
                 }
-                else
-                {
-                    rollbackSpec.updatedOrDeleted(dbTable, crd);
-                }
+                // Set the resource version so that we:
+                // a) replace the thing we expect.
+                // b) we can replace it in a single request.
+                rsc.getValue().getMetadata().setResourceVersion(resource.getMetadata().getResourceVersion());
+                rollbackSpec.updatedOrDeleted(dbTable, resource);
             }
         }
 
         for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToDelete.entrySet())
         {
             DatabaseTable dbTable = entry.getKey();
-            for (LinstorCrd<?> crd : entry.getValue().values())
+            MixedOperation<LinstorCrd<LinstorSpec>, KubernetesResourceList<LinstorCrd<LinstorSpec>>, Resource<LinstorCrd<LinstorSpec>>> client = currentTransactionRef
+                .getClient(dbTable);
+
+            for (Entry<String, LinstorCrd<?>> rsc : entry.getValue().entrySet())
             {
                 numberOfUpdates++;
-                rollbackSpec.updatedOrDeleted(dbTable, crd);
+                LinstorCrd<?> deletedRsc = rsc.getValue();
+
+                LinstorCrd<?> resource = client.withName(deletedRsc.getK8sKey()).get();
+                if (resource == null)
+                {
+                    throw new DatabaseException(
+                        "Resource " + deletedRsc.getKind() + "/" + deletedRsc.getK8sKey() + " not found"
+                    );
+                }
+                // Set the resource version so that we delete the thing we expect.
+                rsc.getValue().getMetadata().setResourceVersion(resource.getMetadata().getResourceVersion());
+                rollbackSpec.updatedOrDeleted(dbTable, resource);
             }
         }
 

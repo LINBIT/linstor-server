@@ -43,13 +43,14 @@ public class ObjectProtectionK8sCrdDriver implements ObjectProtectionDatabaseDri
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
 
-        updateDriver = (objProt, ignored) -> update(objProt);
+        updateDriver = (objProt, ignored) -> transMgrProvider.get().getTransaction()
+            .replace(SEC_OBJECT_PROTECTION, asCrd(objProt));
     }
 
     @Override
     public void insertOp(ObjectProtection objProtRef) throws DatabaseException
     {
-        update(objProtRef);
+        transMgrProvider.get().getTransaction().create(SEC_OBJECT_PROTECTION, asCrd(objProtRef));
     }
 
     @Override
@@ -70,14 +71,17 @@ public class ObjectProtectionK8sCrdDriver implements ObjectProtectionDatabaseDri
     public void insertAcl(ObjectProtection parent, Role role, AccessType accessType)
         throws DatabaseException
     {
-        updateAcl(parent, role, accessType);
+        transMgrProvider.get().getTransaction().create(
+            SEC_ACL_MAP,
+            asAclMapCrd(parent, role, accessType)
+        );
     }
 
     @Override
     public void updateAcl(ObjectProtection parent, Role role, AccessType accessType)
         throws DatabaseException
     {
-        transMgrProvider.get().getTransaction().update(
+        transMgrProvider.get().getTransaction().replace(
             SEC_ACL_MAP,
             asAclMapCrd(parent, role, accessType)
         );
@@ -236,14 +240,6 @@ public class ObjectProtectionK8sCrdDriver implements ObjectProtectionDatabaseDri
     public SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver()
     {
         return (SingleColumnDatabaseDriver<ObjectProtection, SecurityType>) updateDriver;
-    }
-
-    private void update(ObjectProtection objProt)
-    {
-        transMgrProvider.get().getTransaction().update(
-            SEC_OBJECT_PROTECTION,
-            asCrd(objProt)
-        );
     }
 
     private SecObjectProtection asCrd(ObjectProtection objProt)

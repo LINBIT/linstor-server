@@ -75,10 +75,29 @@ public class K8sCrdEngine implements DbEngine
     )
         throws DatabaseException, AccessDeniedException
     {
-        updateOrCreate(table, setters, data, dataIdToString);
+        try
+        {
+            K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
+            LinstorCrd<?> crd = GenCrdCurrent.dataToCrd(table, setters, data);
+            errorReporter.logTrace(
+                "Creating %s %s: %n%s",
+                table.getName(),
+                dataIdToString.toString(data),
+                objectMapper.writeValueAsString(crd)
+            );
+            tx.create(table, crd);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new DatabaseException(exc);
+        }
     }
 
-    private <DATA> void updateOrCreate(
+    private <DATA> void update(
         DatabaseTable table,
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
         DATA data,
@@ -91,12 +110,12 @@ public class K8sCrdEngine implements DbEngine
             K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
             LinstorCrd<?> crd = GenCrdCurrent.dataToCrd(table, setters, data);
             errorReporter.logTrace(
-                "Updating/Creating %s %s: %n%s",
+                "Updating %s %s: %n%s",
                 table.getName(),
                 dataIdToString.toString(data),
                 objectMapper.writeValueAsString(crd)
             );
-            tx.update(table, crd);
+            tx.replace(table, crd);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -179,7 +198,7 @@ public class K8sCrdEngine implements DbEngine
     {
         final DatabaseTable table = colRef.getTable();
         // k8s cannot update single "columns" just the whole object. Map all drivers to a simple object-update
-        return (data, ignored1, ignored2) -> updateOrCreate(table, settersRef, data, dataIdToString);
+        return (data, ignored1, ignored2) -> update(table, settersRef, data, dataIdToString);
     }
 
     @Override
@@ -193,7 +212,7 @@ public class K8sCrdEngine implements DbEngine
     {
         final DatabaseTable table = colRef.getTable();
         // k8s cannot update single "columns" just the whole object. Map all drivers to a simple object-update
-        return (data, ignored) -> updateOrCreate(table, setters, data, dataIdToString);
+        return (data, ignored) -> update(table, setters, data, dataIdToString);
     }
 
     @Override
@@ -211,14 +230,14 @@ public class K8sCrdEngine implements DbEngine
             public void insert(DATA parent, LIST_TYPE ignored, Collection<LIST_TYPE> ignoredBackingCollection)
                 throws DatabaseException
             {
-                updateOrCreate(table, settersRef, parent, dataIdToString);
+                update(table, settersRef, parent, dataIdToString);
             }
 
             @Override
             public void remove(DATA parent, LIST_TYPE ignoredType, Collection<LIST_TYPE> ignoredBackingCollection)
                 throws DatabaseException
             {
-                updateOrCreate(table, settersRef, parent, dataIdToString);
+                update(table, settersRef, parent, dataIdToString);
             }
         };
     }

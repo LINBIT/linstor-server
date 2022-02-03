@@ -57,9 +57,10 @@ public class PropsConK8sCrdDriver implements PropsConDatabaseDriver
     {
         errorReporter.logTrace("Storing property %s", getId(instanceName, key, value));
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        tx.update(
+        tx.createOrReplace(
             GeneratedDatabaseTables.PROPS_CONTAINERS,
-            GenCrdCurrent.createPropsContainers(instanceName, key, value)
+            GenCrdCurrent.createPropsContainers(instanceName, key, value),
+            isNew
         );
     }
 

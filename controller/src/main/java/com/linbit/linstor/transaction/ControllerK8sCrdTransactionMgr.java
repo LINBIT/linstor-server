@@ -137,10 +137,13 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
             throw new TransactionException("Error creating rollback entry", exc);
         }
 
-        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransaction.rscsToChangeOrCreate
-            .entrySet())
+        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransaction.rscsToCreate.entrySet())
         {
-            createOrReplace(entry.getKey(), entry.getValue());
+            create(entry.getKey(), entry.getValue());
+        }
+        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransaction.rscsToReplace.entrySet())
+        {
+            replace(entry.getKey(), entry.getValue());
         }
         for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransaction.rscsToDelete.entrySet())
         {
@@ -157,7 +160,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     }
 
     @SuppressWarnings("unchecked")
-    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void createOrReplace(
+    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void create(
         DatabaseTable dbTableRef,
         HashMap<String, LinstorCrd<?>> changedCrds
     )
@@ -166,7 +169,21 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
             .getClient(dbTableRef);
         for (LinstorCrd<?> linstorCrd : changedCrds.values())
         {
-            client.createOrReplace((CRD) linstorCrd);
+            client.create((CRD) linstorCrd);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void replace(
+        DatabaseTable dbTableRef,
+        HashMap<String, LinstorCrd<?>> changedCrds
+    )
+    {
+        MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = currentTransaction
+            .getClient(dbTableRef);
+        for (LinstorCrd<?> linstorCrd : changedCrds.values())
+        {
+            client.replace((CRD) linstorCrd);
         }
     }
 

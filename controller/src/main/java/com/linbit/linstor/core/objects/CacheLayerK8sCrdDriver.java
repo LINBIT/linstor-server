@@ -228,11 +228,6 @@ public class CacheLayerK8sCrdDriver implements CacheLayerCtrlDatabaseDriver
     public void persist(CacheVlmData<?> cacheVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating CacheVlmData %s", getId(cacheVlmDataRef));
-        update(cacheVlmDataRef);
-    }
-
-    private void update(CacheVlmData<?> cacheVlmDataRef)
-    {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         StorPool cacheStorPool = cacheVlmDataRef.getCacheStorPool();
         StorPool metaStorPool = cacheVlmDataRef.getMetaStorPool();
@@ -245,7 +240,7 @@ public class CacheLayerK8sCrdDriver implements CacheLayerCtrlDatabaseDriver
             cachePoolName = cacheStorPool.getName().value;
             metaPoolName = metaStorPool.getName().value;
         }
-        tx.update(
+        tx.create(
             GeneratedDatabaseTables.LAYER_CACHE_VOLUMES,
             GenCrdCurrent.createLayerCacheVolumes(
                 cacheVlmDataRef.getRscLayerId(),
@@ -262,7 +257,7 @@ public class CacheLayerK8sCrdDriver implements CacheLayerCtrlDatabaseDriver
     {
         errorReporter.logTrace("Deleting CacheVlmData %s", getId(cacheVlmDataRef));
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        tx.update(
+        tx.delete(
             GeneratedDatabaseTables.LAYER_CACHE_VOLUMES,
             GenCrdCurrent.createLayerCacheVolumes(
                 cacheVlmDataRef.getRscLayerId(),

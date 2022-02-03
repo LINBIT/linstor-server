@@ -43,7 +43,7 @@ public class ResourceLayerIdK8sCrdDriver implements ResourceLayerIdCtrlDatabaseD
         errorReporter = errorReporterRef;
         transMgrProvider = transMgrProviderRef;
 
-        updateDriver = (rscData, ignored) -> update(rscData);
+        updateDriver = (rscData, ignored) -> insertOrUpdate(rscData, false);
     }
 
     @Override
@@ -84,26 +84,26 @@ public class ResourceLayerIdK8sCrdDriver implements ResourceLayerIdCtrlDatabaseD
     public void persist(AbsRscLayerObject<?> rscData) throws DatabaseException
     {
         errorReporter.logTrace("Creating LayerResourceId %s", getId(rscData));
-        update(rscData);
+        insertOrUpdate(rscData, true);
     }
 
-    private void update(AbsRscLayerObject<?> rscData) throws DatabaseException
+    private void insertOrUpdate(AbsRscLayerObject<?> rscData, boolean isNew) throws DatabaseException
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         AbsResource<?> absRsc = rscData.getAbsResource();
 
-        tx.update(GeneratedDatabaseTables.LAYER_RESOURCE_IDS,
-            GenCrdCurrent.createLayerResourceIds(
-                rscData.getRscLayerId(),
-                absRsc.getNode().getName().value,
-                rscData.getResourceName().value,
-                absRsc instanceof Snapshot ? ((Snapshot) absRsc).getSnapshotName().value : null,
-                rscData.getLayerKind().name(),
-                rscData.getParent() != null ? rscData.getParent().getRscLayerId() : null,
-                rscData.getResourceNameSuffix(),
-                rscData.getSuspendIo()
-            )
+        GenCrdCurrent.LayerResourceIds val = GenCrdCurrent.createLayerResourceIds(
+            rscData.getRscLayerId(),
+            absRsc.getNode().getName().value,
+            rscData.getResourceName().value,
+            absRsc instanceof Snapshot ? ((Snapshot) absRsc).getSnapshotName().value : null,
+            rscData.getLayerKind().name(),
+            rscData.getParent() != null ? rscData.getParent().getRscLayerId() : null,
+            rscData.getResourceNameSuffix(),
+            rscData.getSuspendIo()
         );
+
+        tx.createOrReplace(GeneratedDatabaseTables.LAYER_RESOURCE_IDS, val, isNew);
     }
 
     @Override

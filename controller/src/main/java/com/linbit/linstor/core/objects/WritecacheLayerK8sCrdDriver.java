@@ -215,11 +215,6 @@ public class WritecacheLayerK8sCrdDriver implements WritecacheLayerCtrlDatabaseD
     public void persist(WritecacheVlmData<?> writecacheVlmDataRef) throws DatabaseException
     {
         errorReporter.logTrace("Creating WritecacheVlmData %s", getId(writecacheVlmDataRef));
-        update(writecacheVlmDataRef);
-    }
-
-    private void update(WritecacheVlmData<?> writecacheVlmDataRef)
-    {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         StorPool extStorPool = writecacheVlmDataRef.getCacheStorPool();
 
@@ -232,7 +227,7 @@ public class WritecacheLayerK8sCrdDriver implements WritecacheLayerCtrlDatabaseD
             poolName = extStorPool.getName().value;
         }
 
-        tx.update(
+        tx.create(
             GeneratedDatabaseTables.LAYER_WRITECACHE_VOLUMES,
             GenCrdCurrent.createLayerWritecacheVolumes(
                 writecacheVlmDataRef.getRscLayerId(),
@@ -248,7 +243,7 @@ public class WritecacheLayerK8sCrdDriver implements WritecacheLayerCtrlDatabaseD
     {
         errorReporter.logTrace("Deleting WritecacheVlmData %s", getId(writecacheVlmDataRef));
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        tx.update(
+        tx.delete(
             GeneratedDatabaseTables.LAYER_WRITECACHE_VOLUMES,
             GenCrdCurrent.createLayerWritecacheVolumes(
                 writecacheVlmDataRef.getRscLayerId(),
