@@ -265,7 +265,7 @@ public class ObjectProtectionK8sCrdDriver implements ObjectProtectionDatabaseDri
         return GenCrdCurrent.createSecAclMap(
             objProt.getObjectProtectionPath(),
             roleRef.name.value,
-            accessTypeRef == null ? null : accessTypeRef.getAccessMask()
+            accessTypeRef == null ? 0 : accessTypeRef.getAccessMask()
         );
     }
 }
