@@ -166,7 +166,9 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
         {
             rscLayerObject.delete(accCtx);
         }
-        for (VolumeNumber vlmNr : vlmMap.keySet())
+        // copy to avoid concurrentModificationException
+        List<VolumeNumber> vlmNrsToRemove = new ArrayList<>(vlmMap.keySet());
+        for (VolumeNumber vlmNr : vlmNrsToRemove)
         {
             remove(accCtx, vlmNr);
         }
