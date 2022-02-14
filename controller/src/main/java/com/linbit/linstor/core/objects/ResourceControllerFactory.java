@@ -71,14 +71,25 @@ public class ResourceControllerFactory
         Resource rscData = createEmptyResource(accCtx, rscDfn, node, initFlags, layerStackRef);
 
         List<DeviceLayerKind> layerStack = layerStackRef;
+        List<DeviceLayerKind> rscDfnLayerStack = rscDfn.getLayerStack(accCtx);
         if (layerStack.isEmpty())
         {
-            layerStack = rscDfn.getLayerStack(accCtx);
-            if (layerStack.isEmpty())
+            if (rscDfnLayerStack.isEmpty())
             {
-                layerStack = layerStackHelper.createDefaultStack(accCtx, rscData);
-                rscDfn.setLayerStack(accCtx, layerStack);
+                rscDfnLayerStack = layerStackHelper.createDefaultStack(accCtx, rscData);
+                rscDfn.setLayerStack(accCtx, rscDfnLayerStack);
+                layerStack = rscDfnLayerStack;
             }
+            else
+            {
+                layerStack = rscDfnLayerStack;
+            }
+        }
+        else
+        if (rscDfnLayerStack.isEmpty())
+        {
+            rscDfnLayerStack = layerStack;
+            rscDfn.setLayerStack(accCtx, rscDfnLayerStack);
         }
         DeviceLayerKind lowestLayer = layerStack.get(layerStack.size() - 1);
         if (!lowestLayer.equals(DeviceLayerKind.STORAGE) && !lowestLayer.equals(DeviceLayerKind.OPENFLEX))
