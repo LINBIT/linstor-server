@@ -23,7 +23,6 @@ import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.linstor.utils.ByteUtils;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
@@ -106,22 +105,22 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
             case ETCD:
                 accessKeyDriver = generateSingleColumnDriver(
                     ACCESS_KEY,
-                    remote -> ByteUtils.bytesToHex(remote.getAccessKey(dbCtx)),
-                    byteArr -> ByteUtils.bytesToHex(byteArr)
+                    ignored -> "do not log",
+                    byteArr -> Base64.encode(byteArr)
                 );
                 secretKeyDriver = generateSingleColumnDriver(
                     SECRET_KEY,
-                    remote -> ByteUtils.bytesToHex(remote.getSecretKey(dbCtx)),
-                    byteArr -> ByteUtils.bytesToHex(byteArr)
+                    ignored -> "do not log",
+                    byteArr -> Base64.encode(byteArr)
                 );
                 break;
             case SQL: // fall-through
             case K8S_CRD:
                 accessKeyDriver = generateSingleColumnDriver(
-                    ACCESS_KEY, remote -> ByteUtils.bytesToHex(remote.getAccessKey(dbCtx)), Function.identity()
+                    ACCESS_KEY, ignored -> "do not log", Function.identity()
                 );
                 secretKeyDriver = generateSingleColumnDriver(
-                    SECRET_KEY, remote -> ByteUtils.bytesToHex(remote.getSecretKey(dbCtx)), Function.identity()
+                    SECRET_KEY, ignored -> "do not log", Function.identity()
                 );
                 break;
             default:

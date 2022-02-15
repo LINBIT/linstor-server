@@ -78,21 +78,26 @@ public class ExternalFileDbDriver extends AbsDatabaseDriver<ExternalFile, Extern
         {
             case ETCD:
                 setColumnSetter(CONTENT, extFile -> Base64.encode(extFile.getContent(dbCtxRef)));
+                contentDriver = generateSingleColumnDriver(
+                    CONTENT,
+                    extFile -> new String(extFile.getContent(dbCtxRef)),
+                    Base64::encode
+                );
                 break;
             case SQL: // fall-through
             case K8S_CRD:
                 setColumnSetter(CONTENT, extFile -> extFile.getContent(dbCtxRef));
+                contentDriver = generateSingleColumnDriver(
+                    CONTENT,
+                    extFile -> new String(extFile.getContent(dbCtxRef)),
+                    Function.identity()
+                );
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
 
         flagsDriver = generateFlagDriver(FLAGS, ExternalFile.Flags.class);
-        contentDriver = generateSingleColumnDriver(
-            CONTENT,
-            extFile -> new String(extFile.getContent(dbCtxRef)),
-            Function.identity()
-        );
         contentChecksumDriver = generateSingleColumnDriver(
             CONTENT_CHECKSUM,
             extFile -> ByteUtils.bytesToHex(extFile.getContentCheckSum(dbCtxRef)),

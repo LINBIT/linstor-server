@@ -22,7 +22,6 @@ import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.linstor.utils.ByteUtils;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
@@ -33,6 +32,7 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemote
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.URL;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.UUID;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_EXTERNAL_NAME;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -89,7 +89,11 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
             case ETCD:
                 setColumnSetter(
                     ENCRYPTED_PASSPHRASE,
-                    remote -> Base64.encode(remote.getEncryptedRemotePassphrase(dbCtx))
+                    remote ->
+                    {
+                        byte[] passphrase = remote.getEncryptedRemotePassphrase(dbCtx);
+                        return passphrase != null ? Base64.encode(passphrase) : null;
+                    }
                 );
                 break;
             case SQL: // fall-through
@@ -107,15 +111,15 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
             case ETCD:
                 encryptedPassphraseDriver = generateSingleColumnDriver(
                     ENCRYPTED_PASSPHRASE,
-                    remote -> ByteUtils.bytesToHex(remote.getEncryptedRemotePassphrase(dbCtx)),
-                    byteArr -> ByteUtils.bytesToHex(byteArr)
+                    ignored -> "do not log",
+                    byteArr -> byteArr != null ? Base64.encode(byteArr) : null
                 );
                 break;
             case SQL: // fall-through
             case K8S_CRD:
                 encryptedPassphraseDriver = generateSingleColumnDriver(
                     ENCRYPTED_PASSPHRASE,
-                    remote -> ByteUtils.bytesToHex(remote.getEncryptedRemotePassphrase(dbCtx)),
+                    ingored -> "do not log",
                     Function.identity()
                 );
                 break;
@@ -167,7 +171,8 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
         {
             case ETCD:
                 initFlags = Long.parseLong(raw.get(FLAGS));
-                encryptedPassphrase = Base64.decode(raw.get(ENCRYPTED_PASSPHRASE));
+                String encPassphraseBase64 = raw.get(RESOURCE_EXTERNAL_NAME);
+                encryptedPassphrase = encPassphraseBase64 != null ? Base64.decode(encPassphraseBase64) : null;
                 break;
             case SQL: // fall-through
             case K8S_CRD:
