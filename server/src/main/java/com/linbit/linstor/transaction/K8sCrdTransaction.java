@@ -88,6 +88,15 @@ public class K8sCrdTransaction
             .get(dbTable);
     }
 
+    public void upsert(
+        DatabaseTable dbTable,
+        LinstorCrd<?> k8sRsc
+    )
+    {
+        LinstorCrd<LinstorSpec> existingCrd = getClient(dbTable).withName(k8sRsc.getK8sKey()).get();
+        createOrReplace(dbTable, k8sRsc, existingCrd == null);
+    }
+
     public void createOrReplace(DatabaseTable dbTable, LinstorCrd<?> k8sRsc, boolean isNew)
     {
         if (isNew)
