@@ -352,10 +352,6 @@ public class CtrlBackupL2LDstApiCallHandler
         Map<String, String> snapPropsFromSource = data.metaData.getRsc().getProps();
         snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_UUID, data.srcClusterId);
         snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_SHORT_HASH, clusterHash);
-        snapPropsFromSource.put(
-            ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-            stltRemote.getName().displayValue
-        );
 
         ctrlTransactionHelper.commit();
 

@@ -122,12 +122,15 @@ class Selector
                         rsc.getLayerData(apiCtx),
                         DeviceLayerKind.STORAGE
                     );
+                    // might be possible to skip this loop if rsc to be placed is diskless
                     for (AbsRscLayerObject<Resource> storageRscData : storageRscDataList)
                     {
                         if (storageRscData.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
                         {
-                            for (VlmProviderObject<Resource> storageVlmData :
-                                 storageRscData.getVlmLayerObjects().values())
+                            for (
+                                VlmProviderObject<Resource> storageVlmData : storageRscData.getVlmLayerObjects()
+                                    .values()
+                            )
                             {
                                 StorPool sp = storageVlmData.getStorPool();
                                 alreadyDeployedInSharedSPNames.add(sp.getSharedStorPoolName());
@@ -135,7 +138,9 @@ class Selector
                                 DeviceProviderKind storageVlmProviderKind = sp.getDeviceProviderKind();
                                 if (!storageVlmProviderKind.equals(DeviceProviderKind.DISKLESS))
                                 {
-                                    for (DeviceProviderKind alreadySelectedProviderKind : alreadySelectedProviderKindList)
+                                    for (
+                                        DeviceProviderKind alreadySelectedProviderKind : alreadySelectedProviderKindList
+                                    )
                                     {
                                         boolean isMixingAllowed = DeviceProviderKind.isMixingAllowed(
                                             alreadySelectedProviderKind,
@@ -359,7 +364,7 @@ class Selector
             selectFilter = selectFilterRef;
             alreadyDeployedOnNodes = alreadyDeployedOnNodesRef;
             alreadyDeployedInSharedSPNames = alreadyDeployedInSharedSPNamesRef;
-            selectedProviderKindList = new ArrayList<>(alreadySelectedProviderKindsRef);
+            selectedProviderKindList = new ArrayList<>();
             sortedStorPoolByScoreArr = sortedStorPoolByScoreArrRef;
 
             if (selectFilterRef.getDisklessType() == null)
