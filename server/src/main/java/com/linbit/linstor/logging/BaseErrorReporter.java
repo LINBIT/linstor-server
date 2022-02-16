@@ -2,7 +2,9 @@ package com.linbit.linstor.logging;
 
 import com.linbit.AutoIndent;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 
@@ -14,6 +16,9 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -347,6 +352,41 @@ public abstract class BaseErrorReporter
         {
             output.println("Error context:");
             AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, contextInfo);
+            output.println();
+        }
+
+        if (errorInfo instanceof ApiRcException)
+        {
+            output.println("ApiRcException entries: ");
+            int entryNr = 1;
+            ApiRcException apiRcException = (ApiRcException) errorInfo;
+
+            BiConsumer<String, String> logIfNotEmpty = (descr, content) ->
+            {
+                if (content != null && !content.isEmpty())
+                {
+                    output.println("  " + descr + ": " + content);
+                }
+            };
+
+            for (RcEntry entry : apiRcException.getApiCallRc().getEntries())
+            {
+                output.println("Nr: " + entryNr);
+                logIfNotEmpty.accept("Message", entry.getMessage());
+                logIfNotEmpty.accept("Details", entry.getDetails());
+                logIfNotEmpty.accept("Cause", entry.getCause());
+                logIfNotEmpty.accept("Correction", entry.getCorrection());
+                Map<String, String> objRefs = entry.getObjRefs();
+                if (objRefs != null && !objRefs.isEmpty())
+                {
+                    output.println("  Object References:");
+                    for (Entry<String, String> objRefEntry : objRefs.entrySet())
+                    {
+                        output.print("    " + objRefEntry.getKey() + ": " + objRefEntry.getValue());
+                    }
+                }
+                entryNr++;
+            }
             output.println();
         }
 
