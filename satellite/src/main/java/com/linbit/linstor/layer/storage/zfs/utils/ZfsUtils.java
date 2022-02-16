@@ -23,9 +23,10 @@ public class ZfsUtils
     private static final String DELIMITER = "\t"; // default for all "zfs -H ..." commands
 
     private static final int ZFS_LIST_COL_IDENTIFIER = 0;
-    private static final int ZFS_LIST_COL_ALLOCATED_SIZE = 1;
-    private static final int ZFS_LIST_COL_USABLE_SIZE = 2;
-    private static final int ZFS_LIST_COL_TYPE = 3;
+    private static final int ZFS_LIST_COL_USED_SIZE = 1;
+    private static final int ZFS_LIST_COL_REFER_SIZE = 2;
+    private static final int ZFS_LIST_COL_USABLE_SIZE = 3;
+    private static final int ZFS_LIST_COL_TYPE = 4;
 
     private static final int ZFS_LIST_FILESYSTEMS_COL_IDENTIFIER = 0;
     private static final int ZFS_LIST_FILESYSTEMS_COL_AVAILABLE_SIZE = 1;
@@ -34,8 +35,6 @@ public class ZfsUtils
     private static final String ZFS_TYPE_VOLUME = "volume";
     private static final String ZFS_TYPE_SNAPSHOT = "snapshot";
     private static final String ZFS_TYPE_FILESYSTEM = "filesystem";
-
-    private static final int ZFS_EXTENT_SIZE_COL_SIZE = 1;
 
     private ZfsUtils()
     {
@@ -131,7 +130,7 @@ public class ZfsUtils
         final HashMap<String, ZfsInfo> infoByIdentifier = new HashMap<>();
 
         final String[] lines = stdOut.split("\n");
-        final int expectedColCount = 4;
+        final int expectedColCount = 5;
         for (final String line : lines)
         {
             final String[] data = line.trim().split(DELIMITER);
@@ -140,14 +139,16 @@ public class ZfsUtils
                 if (data.length == expectedColCount)
                 {
                     final String identifier = data[ZFS_LIST_COL_IDENTIFIER];
-                    final String allocatedSizeStr = data[ZFS_LIST_COL_ALLOCATED_SIZE];
+                    final String snapSizeStr = data[ZFS_LIST_COL_USED_SIZE]; // USED size seems to be right for snapshot
+                    final String allocatedSizeStr = data[ZFS_LIST_COL_REFER_SIZE]; // volumes use REFER
                     final String usableSizeStr = data[ZFS_LIST_COL_USABLE_SIZE];
                     final String type = data[ZFS_LIST_COL_TYPE];
 
                     if (type.equals(ZFS_TYPE_VOLUME) || type.equals(ZFS_TYPE_SNAPSHOT))
                     {
+                        String allocateByteSizeStr = type.equals(ZFS_TYPE_SNAPSHOT) ? snapSizeStr : allocatedSizeStr;
                         long allocatedSize = SizeConv.convert(
-                            StorageUtils.parseDecimalAsLong(allocatedSizeStr.trim()),
+                            StorageUtils.parseDecimalAsLong(allocateByteSizeStr.trim()),
                             SizeUnit.UNIT_B,
                             SizeUnit.UNIT_KiB
                         );
@@ -187,11 +188,8 @@ public class ZfsUtils
     {
         final OutputData output = ZfsCommands.listZpools(extCmd);
         final String stdOut = new String(output.stdoutData);
-        final Set<String> ret = new TreeSet<>();
 
-        ret.addAll(Arrays.asList(stdOut.split("\n")));
-
-        return ret;
+        return new TreeSet<>(Arrays.asList(stdOut.split("\n")));
     }
 
 

@@ -26,7 +26,7 @@ public class ZfsCommands
                 "list",
                 "-H",   // no headers, single tab instead of spaces
                 "-p",   // sizes in bytes
-                "-o", "name,used,volsize,type", // columns: name, allocated space, available space, type
+                "-o", "name,used,refer,volsize,type", // columns: name, used space, refered space, available space, type
                 "-t", "volume,snapshot"
             },
             "Failed to list zfs volumes",
