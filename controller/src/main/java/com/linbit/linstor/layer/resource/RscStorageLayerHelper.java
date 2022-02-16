@@ -340,6 +340,10 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             VlmProviderObject<Resource> vlmData = vlmDataRef;
             if (!currentStorPool.getDeviceProviderKind().equals(newStorPool.getDeviceProviderKind()))
             {
+                VolumeNumber vlmNr = vlmData.getVlmNr();
+                // Remove the old data, which also ensures that createVlmLayerData doesn't just return the existing
+                // object.
+                storageRscData.remove(apiCtx, vlmNr);
                 // if the kind changes, we basically need a new vlmData
                 vlmData = createVlmLayerData(
                     storageRscData,
@@ -347,8 +351,6 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                     payloadRef,
                     layerListRef
                 );
-                VolumeNumber vlmNr = vlmData.getVlmNr();
-                storageRscData.remove(apiCtx, vlmNr);
                 storageRscData.getVlmLayerObjects().put(vlmNr, vlmData);
             }
             else

@@ -368,7 +368,6 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             }
         }
 
-        List<DeviceLayerKind> layerList = null;
         if (removeDisk)
         {
             // diskful -> diskless
@@ -423,7 +422,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
              * might be "DRBD,storage" while its diskfull peers actually have "DRBD,LUKS,storage".
              */
             removeLayerData(rsc);
-            layerList = CtrlRscCrtApiHelper.getLayerstackOrBuildDefault(
+            List<DeviceLayerKind> layerList = CtrlRscCrtApiHelper.getLayerstackOrBuildDefault(
                 peerAccCtx.get(),
                 ctrlLayerStackHelper,
                 errorReporter,
@@ -431,8 +430,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 responses,
                 rsc.getDefinition()
             );
+
+            ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
         }
-        ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
+
         try
         {
             List<DeviceLayerKind> unsupportedLayers = CtrlRscCrtApiHelper.getUnsupportedLayers(peerAccCtx.get(), rsc);
