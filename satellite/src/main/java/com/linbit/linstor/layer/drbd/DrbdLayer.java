@@ -376,6 +376,7 @@ public class DrbdLayer implements DeviceLayer
             if (
                 drbdRscData.getRscDfnLayerObject().isDown() ||
                     rscFlags.isSet(workerCtx, Resource.Flags.DELETE) ||
+                    rscFlags.isSet(workerCtx, Resource.Flags.DRBD_DELETE) ||
                     rscFlags.isSet(workerCtx, Resource.Flags.INACTIVE)
             )
             {
@@ -658,9 +659,10 @@ public class DrbdLayer implements DeviceLayer
                     {
                         for (DrbdRscData<Resource> otherRsc : drbdRscData.getRscDfnLayerObject().getDrbdRscDataList())
                         {
+                            StateFlags<Flags> otherRscFlags = otherRsc.getAbsResource().getStateFlags();
                             if (!otherRsc.equals(drbdRscData) && // skip local rsc
                                 !otherRsc.getAbsResource().isDrbdDiskless(workerCtx) && // skip remote diskless resources
-                                    otherRsc.getAbsResource().getStateFlags().isSet(workerCtx, Resource.Flags.DELETE)
+                                otherRscFlags.isSomeSet(workerCtx, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE)
                             )
                             {
                                 /*
@@ -798,7 +800,7 @@ public class DrbdLayer implements DeviceLayer
                     for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                     {
                         StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
-                        if (isDiskless && vlmFlags.isSet(workerCtx, Volume.Flags.DELETE))
+                        if (isDiskless && vlmFlags.isSomeSet(workerCtx, Volume.Flags.DELETE, Volume.Flags.DRBD_DELETE))
                         {
                             // `drbdadm adjust` just deleted that volume or an exception was thrown.
                             drbdVlmData.setExists(false);
@@ -897,7 +899,11 @@ public class DrbdLayer implements DeviceLayer
 
             for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
             {
-                if (((Volume) drbdVlmData.getVolume()).getFlags().isSet(workerCtx, Volume.Flags.DELETE))
+                if (((Volume) drbdVlmData.getVolume()).getFlags().isSomeSet(
+                    workerCtx,
+                    Volume.Flags.DELETE,
+                    Volume.Flags.DRBD_DELETE
+                ))
                 {
                     if (drbdVlmData.hasDisk() && !drbdVlmData.hasFailed())
                     {

@@ -151,7 +151,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         while (rscIt.hasNext())
                         {
                             Resource rsc = rscIt.next();
-                            if (isFlagSet(rsc, Resource.Flags.DELETE) && !isFlagSet(rsc.getNode(), Node.Flags.EVICTED))
+                            if (isSomeFlagSet(rsc, Resource.Flags.DRBD_DELETE, Resource.Flags.DELETE) &&
+                                !isFlagSet(rsc.getNode(), Node.Flags.EVICTED))
                             {
                                 if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
                                 {
@@ -219,7 +220,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                     }
                     else
                     {
-                        if (isFlagSet(tieBreaker, Resource.Flags.DELETE))
+                        if (isFlagSet(tieBreaker, Resource.Flags.DRBD_DELETE))
                         {
                             // user requested to delete tiebreaker.
                             tieBreaker.getDefinition().getProps(peerCtx.get()).setProp(
@@ -283,13 +284,13 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         AccessContext accCtx = peerCtx.get();
         try
         {
-            flags.disableFlags(accCtx, Resource.Flags.DELETE);
+            flags.disableFlags(accCtx, Resource.Flags.DRBD_DELETE, Resource.Flags.DELETE);
 
             Iterator<Volume> vlmsIt = rsc.iterateVolumes();
             while (vlmsIt.hasNext())
             {
                 Volume vlm = vlmsIt.next();
-                vlm.getFlags().disableFlags(accCtx, Volume.Flags.DELETE);
+                vlm.getFlags().disableFlags(accCtx, Volume.Flags.DRBD_DELETE, Volume.Flags.DELETE);
             }
 
             if (flags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS))
@@ -421,6 +422,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 if (
                     hasDrbdLayer && countAsDrbd &&
                     rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE) &&
+                        rscFlags.isUnset(peerAccCtx, Resource.Flags.DRBD_DELETE) &&
                     rscFlags.isUnset(peerAccCtx, Resource.Flags.INACTIVE)
                 )
                 {
@@ -559,6 +561,24 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         try
         {
             isFlagSet = rsc.getStateFlags().isSet(peerCtx.get(), flags);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "checking flag state of " + rsc,
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return isFlagSet;
+    }
+
+    private boolean isSomeFlagSet(Resource rsc, Resource.Flags... flags)
+    {
+        boolean isFlagSet;
+        try
+        {
+            isFlagSet = rsc.getStateFlags().isSomeSet(peerCtx.get(), flags);
         }
         catch (AccessDeniedException accDeniedExc)
         {

@@ -107,6 +107,32 @@ public class CtrlRscDeleteApiHelper
         }
     }
 
+    public void markDrbdDeletedWithVolumes(Resource rsc)
+    {
+        try
+        {
+            rsc.markDrbdDeleted(peerAccCtx.get());
+            Iterator<Volume> volumesIterator = rsc.iterateVolumes();
+            while (volumesIterator.hasNext())
+            {
+                Volume vlm = volumesIterator.next();
+                vlm.markDrbdDeleted(peerAccCtx.get());
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "mark " + getRscDescription(rsc) + " as deleted",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
+    }
+
     // Restart from here when connection established and DELETE flag set
     public Flux<ApiCallRc> updateSatellitesForResourceDelete(Set<NodeName> nodeNames, ResourceName rscName)
     {
@@ -140,9 +166,9 @@ public class CtrlRscDeleteApiHelper
                     updateResponses,
                     rscName,
                     nodeNames,
-                    "Deleted {1} on {0}",
-                    "Notified {0} that {1} is being deleted on Node(s): '" + nodeNames + "'"
-                    )
+                    "Cleaning up {1} on {0}",
+                    "Notified {0} that {1} is being cleaned up on Node(s): '" + nodeNames + "'"
+                )
                 )
                 .concatWith(nextStep)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());

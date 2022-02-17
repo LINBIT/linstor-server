@@ -268,7 +268,16 @@ public class Resource extends AbsResource<Resource>
     @Override
     public void markDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
         getStateFlags().enableFlags(accCtx, Flags.DELETE);
+    }
+
+    public void markDrbdDeleted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        getStateFlags().enableFlags(accCtx, Flags.DRBD_DELETE);
     }
 
     @Override
@@ -507,6 +516,7 @@ public class Resource extends AbsResource<Resource>
         INACTIVE_BEFORE_EVICTION(1L << 15),
         RESTORE_FROM_SNAPSHOT(1L << 16),
         EVACUATE(1L << 17),
+        DRBD_DELETE(1L << 18),
         ;
 
         public final long flagValue;

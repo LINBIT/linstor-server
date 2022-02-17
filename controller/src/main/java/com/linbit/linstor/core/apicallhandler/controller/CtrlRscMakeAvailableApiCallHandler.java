@@ -183,12 +183,12 @@ public class CtrlRscMakeAvailableApiCallHandler
                 );
             }
 
-            if (isFlagSet(rsc, Resource.Flags.DELETE))
+            if (isAnyFlagSet(rsc, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE))
             {
-                unsetFlag(rsc, Resource.Flags.DELETE);
+                unsetFlag(rsc, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE);
                 for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
                 {
-                    unsetFlag(vlm, Volume.Flags.DELETE);
+                    unsetFlag(vlm, Volume.Flags.DELETE, Volume.Flags.DRBD_DELETE);
                 }
             }
 
@@ -969,6 +969,20 @@ public class CtrlRscMakeAvailableApiCallHandler
         try
         {
             isSet = rsc.getStateFlags().isSet(peerCtxProvider.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(exc, "checking resource flags", ApiConsts.FAIL_ACC_DENIED_RSC);
+        }
+        return isSet;
+    }
+
+    private boolean isAnyFlagSet(Resource rsc, Resource.Flags... flags)
+    {
+        boolean isSet;
+        try
+        {
+            isSet = rsc.getStateFlags().isSomeSet(peerCtxProvider.get(), flags);
         }
         catch (AccessDeniedException exc)
         {

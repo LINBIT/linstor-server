@@ -227,6 +227,14 @@ public class Volume extends AbsVolume<Resource>
         getFlags().enableFlags(accCtx, Flags.DELETE);
     }
 
+    public void markDrbdDeleted(AccessContext accCtx)
+        throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        absRsc.getObjProt().requireAccess(accCtx, AccessType.USE);
+        getFlags().enableFlags(accCtx, Flags.DRBD_DELETE);
+    }
+
     public boolean isUsableSizeSet(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
@@ -440,7 +448,8 @@ public class Volume extends AbsVolume<Resource>
         DRBD_RESIZE(1L << 3),
         CLONING_START(1L << 4),
         CLONING(1L << 5),
-        CLONING_FINISHED(1L << 6);
+        CLONING_FINISHED(1L << 6),
+        DRBD_DELETE(1L << 7);
 
         public final long flagValue;
 

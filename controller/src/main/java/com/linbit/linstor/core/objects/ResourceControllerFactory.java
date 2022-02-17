@@ -169,7 +169,7 @@ public class ResourceControllerFactory
         else
         {
             StateFlags<Flags> rscFlags = rsc.getStateFlags();
-            if (rscFlags.isSet(accCtx, Resource.Flags.DELETE))
+            if (rscFlags.isSomeSet(accCtx, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE))
             {
                 List<DeviceLayerKind> layerStack = LayerRscUtils.getLayerStack(rsc, accCtx);
                 if (!layerStack.equals(expectedLayerStack))
@@ -180,10 +180,10 @@ public class ResourceControllerFactory
                         ", existing layerstack: " + layerStack
                     );
                 }
-                rscFlags.disableFlags(accCtx, Resource.Flags.DELETE);
+                rscFlags.disableFlags(accCtx, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE);
                 for (Volume vlm : rsc.streamVolumes().collect(Collectors.toList()))
                 {
-                    vlm.getFlags().disableFlags(accCtx, Volume.Flags.DELETE);
+                    vlm.getFlags().disableFlags(accCtx, Volume.Flags.DELETE, Volume.Flags.DRBD_DELETE);
                 }
             }
             else

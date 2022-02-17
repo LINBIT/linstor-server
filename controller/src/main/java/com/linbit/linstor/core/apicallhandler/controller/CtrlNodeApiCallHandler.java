@@ -1550,7 +1550,7 @@ public class CtrlNodeApiCallHandler
         int ret = 0;
         ResourceName rscName = rscDfnRef.getName();
         Iterator<Resource> rscIt = rscDfnRef.iterateResource(accCtx);
-        while(rscIt.hasNext())
+        while (rscIt.hasNext())
         {
             Resource rsc = rscIt.next();
             StateFlags<Flags> rscFlags = rsc.getStateFlags();
