@@ -1051,6 +1051,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                                 "encryption key is not known yet",
                                 rscDfn.getName().displayValue
                             );
+                            ApiCallRc apiCallRc = ApiCallRcImpl.singleApiCallRc(
+                                0,
+                                "Skipping processing resource: " + rscName,
+                                "Masterkey not available for decrypt"
+                            );
+                            notifyResourceDispatchResponse(rscName, apiCallRc);
                         }
                     }
                     else
@@ -1059,6 +1065,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                             "Dispatch request for resource definition '" + rscName.displayValue +
                             "' which is unknown to this satellite"
                         );
+                        ApiCallRc apiCallRc = ApiCallRcImpl.singleApiCallRc(
+                            0,
+                            "Skipping processing resource: " + rscName,
+                            "Resource is already deleted"
+                        );
+                        notifyResourceDispatchResponse(rscName, apiCallRc);
                     }
                     if (abortDevHndFlag)
                     {
