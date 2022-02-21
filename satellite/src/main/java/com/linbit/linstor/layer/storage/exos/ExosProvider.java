@@ -1041,22 +1041,20 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                     ExosRestPorts exosRestPorts = restClient.showPorts();
                     for (ExosRestPort exosRestPort : exosRestPorts.port)
                     {
+                        String enclosureName = restClient.getEnclosureName();
+                        String propKey = ApiConsts.NAMESPC_EXOS + "/" +
+                            enclosureName + "/" +
+                            exosRestPort.controller +
+                            "/Ports/" +
+                            exosRestPort.port.substring(1); // "A0" -> "0"
+
                         if (localScsiTargetIds.contains(exosRestPort.targetId))
                         {
-                            String enclosureName = restClient.getEnclosureName();
-                            String propKey = ApiConsts.NAMESPC_EXOS + "/" +
-                                enclosureName + "/" +
-                                exosRestPort.controller +
-                                "/Ports/" +
-                                exosRestPort.port.substring(1); // "A0" -> "0"
-
                             String currentValue = localNodePropsRef.getProp(propKey);
                             if (!Objects.equal(currentValue, ExosMappingManager.CONNECTED))
                             {
                                 ret.changedNodeProps.put(propKey, ExosMappingManager.CONNECTED);
                             }
-
-                            ret.deletedNodeProps.remove(propKey);
 
                             errorReporter.logDebug(
                                 "Found connected port to enclosure: %s, port: %s",
@@ -1064,6 +1062,10 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
                                 exosRestPort.port
                             );
                             exosCtrlNameMapByTargetIdNew.put(exosRestPort.targetId, exosRestPort.controller);
+                        }
+                        else
+                        {
+                            ret.deletedNodeProps.add(propKey);
                         }
                     }
                 }
