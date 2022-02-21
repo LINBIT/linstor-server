@@ -9,6 +9,9 @@ import com.linbit.linstor.dbdrivers.k8s.crd.LinstorVersionCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorVersionSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.RollbackCrd;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Predicate;
@@ -226,7 +229,8 @@ public class K8sCrdTransaction
         ListOptionsBuilder builder = new ListOptionsBuilder();
         // builder.withApiVersion(crdVersion);
         KubernetesResourceList<CRD> list = client.list(builder.build());
-        for (CRD item : list.getItems())
+        ArrayList<CRD> updatedList = updateK8sList(list, dbTable);
+        for (CRD item : updatedList)
         {
             if (matcher.test(item))
             {
@@ -279,7 +283,8 @@ public class K8sCrdTransaction
             dbTable
         );
         KubernetesResourceList<CRD> list = client.list();
-        for (CRD item : list.getItems())
+        ArrayList<CRD> updatedList = updateK8sList(list, dbTable);
+        for (CRD item : updatedList)
         {
             if (matcher.test(item))
             {
@@ -287,6 +292,53 @@ public class K8sCrdTransaction
             }
         }
         return ret;
+    }
+
+    @SuppressWarnings("unchecked")
+    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> ArrayList<CRD> updateK8sList(
+        KubernetesResourceList<CRD> list,
+        DatabaseTable dbTable
+    )
+    {
+        Map<String, LinstorCrd<?>> replaceMap = rscsToReplace.get(dbTable);
+        Map<String, LinstorCrd<?>> deleteMap = rscsToDelete.get(dbTable);
+        HashMap<String, LinstorCrd<?>> createMap = rscsToCreate.get(dbTable);
+        ArrayList<CRD> updatedList = new ArrayList<>();
+        if (createMap != null && !createMap.isEmpty())
+        {
+            updatedList.addAll((Collection<? extends CRD>) createMap.values());
+        }
+        if (replaceMap == null)
+        {
+            replaceMap = Collections.emptyMap();
+        }
+        if (deleteMap == null)
+        {
+            deleteMap = Collections.emptyMap();
+        }
+        for (CRD item : list.getItems())
+        {
+            String key = item.getK8sKey();
+            CRD rep = (CRD) replaceMap.get(key);
+            CRD del = (CRD) deleteMap.get(key);
+
+            /*
+             * This filtering assumes that one item is *never* in more than one list.
+             * In other words, any item is exclusively either in create, replace OR delete map (or none of them), but
+             * never in two or all three lists.
+             */
+
+            if (rep != null)
+            {
+                updatedList.add(rep);
+            }
+            else
+            if (del == null)
+            {
+                updatedList.add(item);
+            } // if del is != null, just don't add the item
+        }
+        return updatedList;
     }
 
     public RollbackCrd getRollback()
