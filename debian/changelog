@@ -1,3 +1,22 @@
+linstor-server (1.18.0~rc.2-1) experimental; urgency=medium
+
+  [ Robert Altnoeder ]
+  * Remove message field for usable capacity
+  * K8s CRD driver: adjust constructor
+  * Add checksum field to SpaceTracking protocol message
+  * Add tracking date field to SpaceTracking protocol message
+  * Extend SpaceTrackingService interface method receiveSpaceTrackingReport
+  * Fix type in protobuf message
+  * Add SQL database migrations
+  * Add etcd key/value-store migrations
+  * Fix SpaceTracking SQL migration
+  * Update generated resources
+
+  [ Gabor Hernadi ]
+  * SpaceTracking: Foundations for allocated/usable tracking
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 22 Feb 2022 15:25:20 +0000
+
 linstor-server (1.18.0~rc.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
