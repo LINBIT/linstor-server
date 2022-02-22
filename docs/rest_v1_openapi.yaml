@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.13.0
       - Added use_zfs_clone to clone request
       - Added snap_name to backup create
       - Added /v1/events/nodes SSE node events stream

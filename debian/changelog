@@ -1,3 +1,82 @@
+linstor-server (1.18.0~rc.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Autoplacer: Respect DevProvKind.isMixingAllowed
+  * DevProvKind: Allow mixing of LVM <-> EXOS
+  * Shipping: do not grep with -E
+  * Nvme,Tiebreaker: Fix counting of drbd diskful resources
+  * CRD,ToggleDisk: Fixed deleting and creating objects in same TX
+  * CRD,Flags: Fixed updating flags
+  * Sp,list: Add ?cached=true
+  * NVMe: Allow deleting volumedefinitions
+  * DB: Drop not null constraint from *Cache tables
+  * NVMe: Fixed needsCacheDevice check
+  * Nvme,*Cache: Fixed deletion check
+  * ExtToolsChecker: Add log message for NVMe
+  * Tiebreaker: fix reenable auto-tiebreaker
+  * Rsc,td,multi-vol: Fix ConcurrentModificationException
+  * Crd: Changed tx.get to tx.getSpec and added tx.getCrd method
+  * Crd: Split getKey into getK8sKey and getLinstorKey
+  * Crd,MigrationBase: Add null- and dirty-check
+  * Crd,Rollback: Fix broken rollback spec
+  * Crd: Changed base32 keys to sha256 keys
+  * CRD: fixing Rollback
+  * gitlab-nexus: also remove rhel7 packages before reupload
+  * Node,evac: Removed debug sysouts
+  * CRD: Added upsert method
+  * Rd,LayerStack: First resource should set RD's layer stack
+  * ErrorReporter: Print details of ApiCallRcExceptions
+  * DevMgr,Flux: Add response for noop
+  * Rsc,del: Add new DRBD_DELETE flag
+
+  [ Rene Peinthor ]
+  * clone: allow a new zfs-clone mode with zfs storage
+  * make/gitlab: improve openapi validator usage
+  * postinst: create var lib linstor dir non world readable
+  * cryptsetup: limit PBDKF algorithms max memory usage to 256MiB
+  * gitlab: use new python runner script
+  * node-events: Rework eventhandlerbridge and add node events
+  * rest-api: generate types, up API version
+  * h2-backup: allow the user to trigger a h2 online db backup
+  * gitlab: default variants to default if not set
+  * docs: add/update toml config examples
+  * gitlab/gradle: add support for unittest code coverage
+  * rsc-dfn-sync: Add endpoint if resources are uptodate
+  * gitlab-nexus: remove rhel8 packages before reupload
+  * rsc-dfn: fix wait-synced with diskless
+  * controller-backupdb: add backup location to apirc
+  * zfs-list: use refer for allocated size
+
+  [ Johanna Kucera ]
+  * BackupShipping: add pipefail to backup create and ship
+  * BackupShipping: only abort if ctrl-connection closes
+  * BackupShipping: remove unneccessary error-reports
+  * BackupShipping: fix deletion of linstor-remotes
+  * BackupShipping: make l2l abort work + some minor bugfixes
+  * BackupShipping: fix getting correct BackupShippingMgr
+  * BackupShipping: fix race condition if backup is faster than devMgr
+  * Satellite: add TRACE-logs when sending message
+  * BackupShipping: have restoreBackup and restoreSnap behave the same
+  * BackupShipping: make sure only the right prop is set
+  * BackupShipping: use only Base64 for remote keys in ETCD
+  * CRD: applying dirty tx when querying k8s
+
+  [ Yusuf Yildiz ]
+  * Readme: Adding soda eco description
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * backups: allow customizing the snapshot name
+  * Crd,Rollback: only create rollback when required
+  * docker: try to convert PEM keys/certs on startup
+  * props: pass update information to db drivers
+  * ObjProt: explicitly delete ACLs on protection deletion
+  * Crd: fix NPE when deleting ACLs
+  * Crd: have separate create/replace operations
+  * Crd: ensure rollback is in known state
+  * toggle-disk: fix inconsistent DB state
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 22 Feb 2022 09:25:22 +0000
+
 linstor-server (1.17.0-1) experimental; urgency=medium
 
   [ Moritz "WanzenBug" Wanzenböck ]
