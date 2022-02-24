@@ -10,7 +10,7 @@ ENV LINSTOR_TGZ ${LINSTOR_TGZNAME}-${LINSTOR_VERSION}.tar.gz
 USER root
 RUN echo "skip_missing_names_on_install=no" >> /etc/yum.conf
 
-RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical #! lbbuild
+RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Critical # !lbbuild
 
 RUN groupadd makepkg # !lbbuild
 RUN useradd -m -g makepkg makepkg # !lbbuild
