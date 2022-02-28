@@ -76,6 +76,8 @@ import com.linbit.linstor.storage.utils.LayerDataFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Objects;
+
 @Singleton
 public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
 {
@@ -929,16 +931,30 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         throws DatabaseException
     {
         AbsRscLayerObject<Resource> oldParent = child.getParent();
-        if (oldParent != null)
+        // doing the following operations will be a no-op if old and new parent are the same object
+        // however, those operations are still counted as modifications and can lead to a
+        // concurrentModificationException
+        // to prevent that, do not do those operations if the parent did not change
+        if (!Objects.equals(newParent, oldParent))
         {
-            oldParent.getChildren().remove(child);
+            if (oldParent != null)
+            {
+                oldParent.getChildren().remove(child);
+            }
+
+            child.setParent(newParent);
+
+            if (newParent != null)
+            {
+                newParent.getChildren().add(child);
+            }
         }
-
-        child.setParent(newParent);
-
-        if (newParent != null)
+        else
         {
-            newParent.getChildren().add(child);
+            if (newParent != null && !newParent.getChildren().contains(child))
+            {
+                newParent.getChildren().add(child);
+            }
         }
     }
 
