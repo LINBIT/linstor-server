@@ -34,6 +34,10 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 
@@ -62,6 +66,7 @@ public abstract class AbsBackupShippingService implements SystemService
     protected final ThreadGroup threadGroup;
     protected final AccessContext accCtx;
     protected final RemoteMap remoteMap;
+    protected final LockGuardFactory lockGuardFactory;
 
     private ServiceName instanceName;
     private boolean serviceStarted = false;
@@ -84,7 +89,8 @@ public abstract class AbsBackupShippingService implements SystemService
         StltSecurityObjects stltSecObjRef,
         StltConfigAccessor stltConfigAccessorRef,
         StltConnTracker stltConnTracker,
-        RemoteMap remoteMapRef
+        RemoteMap remoteMapRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -96,6 +102,7 @@ public abstract class AbsBackupShippingService implements SystemService
         stltSecObj = stltSecObjRef;
         stltConfigAccessor = stltConfigAccessorRef;
         remoteMap = remoteMapRef;
+        lockGuardFactory = lockGuardFactoryRef;
 
         try
         {
@@ -356,6 +363,10 @@ public abstract class AbsBackupShippingService implements SystemService
                         justStarted = true;
                         info.isStarted = true;
                     }
+                    else
+                    {
+                        errorReporter.logTrace("Backup shipping for snap %s already in progress", snap);
+                    }
                 }
             }
         }
@@ -522,7 +533,7 @@ public abstract class AbsBackupShippingService implements SystemService
                 {
                     if (updateCtrlRef)
                     {
-                        if(!shippingInfo.alreadyInUse.isEmpty())
+                        if (!shippingInfo.alreadyInUse.isEmpty())
                         {
                             controllerPeerConnector.getControllerPeer().sendMessage(
                                 interComSerializer.onewayBuilder(
@@ -538,10 +549,8 @@ public abstract class AbsBackupShippingService implements SystemService
                         }
                         else
                         {
-                            success = shippingInfo.snapVlmDataFinishedSuccessfully ==
-                                shippingInfo.snapVlmDataFinishedShipping;
+                            success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
 
-                            success = preCtrlNotifyBackupShipped(success, restoring, snap, shippingInfo);
                             snapKey = new SnapshotDefinition.Key(snap.getSnapshotDefinition());
                             portsUsed = shippingInfo.portsUsed;
                         }
@@ -572,8 +581,24 @@ public abstract class AbsBackupShippingService implements SystemService
                 }
             }
         }
+
         if (snapKey != null)
         {
+            try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.RSC_DFN_MAP, LockObj.NODES_MAP))
+            {
+                synchronized (snap)
+                {
+                    /*
+                     * we do not want this code in the above synchronized(snap) block as we MUST take the more general
+                     * locks. However, if we do take the general locks, a blocked port cannot be processed as the
+                     * DeviceManager is still holding the general locks.
+                     * This way, the blocked port is already processed in the synchronized block above. Additionally
+                     * "snapKey" should only be != null in case of success (preCtrlNotifyBackupShipped will upload the
+                     * s3 .meta file) so we should not even get into this then-case if a port was blocked
+                     */
+                    success = preCtrlNotifyBackupShipped(success, restoring, snap, shippingInfo);
+                }
+            }
             success = waitForSnapCreateFinished(snap) && success;
             controllerPeerConnector.getControllerPeer().sendMessage(
                 interComSerializer.onewayBuilder(internalApiName)
@@ -598,9 +623,11 @@ public abstract class AbsBackupShippingService implements SystemService
     private boolean waitForSnapCreateFinished(Snapshot snap)
     {
         boolean success = false;
+        final int secsToWait = 300;
         try
         {
-            for (int i = 0; i < 300; i++)
+            int i = 0;
+            for (i = 0; i < secsToWait; i++)
             {
                 synchronized (snap)
                 {
@@ -630,6 +657,10 @@ public abstract class AbsBackupShippingService implements SystemService
                 }
                 Thread.sleep(1_000);
             }
+            if (i == secsToWait)
+            {
+                errorReporter.logDebug("Snapshot %s was not taken successfully within %d seconds", snap, secsToWait);
+            }
         }
         catch (InterruptedException exc)
         {
@@ -642,11 +673,11 @@ public abstract class AbsBackupShippingService implements SystemService
         return success;
     }
 
-    protected String fillPojo(Snapshot snap, String basedOnMetaName)
+    protected String fillPojo(Snapshot snap, String basedOnMetaName, ShippingInfo info)
         throws AccessDeniedException, IOException, ParseException
     {
         Map<Integer, List<BackupMetaInfoPojo>> backupsRef = new TreeMap<>();
-        for (SnapVlmDataInfo snapInfo : shippingInfoMap.get(snap).snapVlmDataInfoMap.values())
+        for (SnapVlmDataInfo snapInfo : info.snapVlmDataInfoMap.values())
         {
             BackupMetaInfoPojo backInfo = new BackupMetaInfoPojo(
                 snapInfo.backupName,

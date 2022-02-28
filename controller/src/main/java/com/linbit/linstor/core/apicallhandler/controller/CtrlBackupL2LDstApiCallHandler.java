@@ -36,6 +36,7 @@ import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -52,6 +53,7 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.math.BigInteger;
@@ -84,6 +86,7 @@ public class CtrlBackupL2LDstApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final BackupInfoManager backupInfoMgr;
     private final CtrlBackupL2LSrcApiCallHandler.BackupShippingRestClient backupShippingRestClient;
+    private final Provider<Peer> peerProvider;
 
     @Inject
     public CtrlBackupL2LDstApiCallHandler(
@@ -101,7 +104,8 @@ public class CtrlBackupL2LDstApiCallHandler
         SystemConfRepository systemConfRepositoryRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         BackupInfoManager backupInfoMgrRef,
-        CtrlBackupL2LSrcApiCallHandler helperReference
+        CtrlBackupL2LSrcApiCallHandler helperReference,
+        Provider<Peer> peerProviderRef
     )
     {
         apiCtx = apiCtxRef;
@@ -118,6 +122,7 @@ public class CtrlBackupL2LDstApiCallHandler
         systemConfRepository = systemConfRepositoryRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         backupInfoMgr = backupInfoMgrRef;
+        peerProvider = peerProviderRef;
         backupShippingRestClient = helperReference.new BackupShippingRestClient(errorReporter);
     }
 
@@ -305,7 +310,10 @@ public class CtrlBackupL2LDstApiCallHandler
                 stltRemote.setAllPorts(apiCtx, newPorts);
                 ctrlTransactionHelper.commit();
                 SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapName, true);
+                final NodeName nodeName = peerProvider.get().getNode().getName();
+
                 return ctrlSatelliteUpdateCaller.updateSatellites(stltRemote)
+                    .concatWith(backupApiCallHandler.startStltCleanup(peerProvider.get(), rscName, snapName, nodeName))
                     .concatWith(
                         ctrlSatelliteUpdateCaller.updateSatellites(
                             snapDfn,

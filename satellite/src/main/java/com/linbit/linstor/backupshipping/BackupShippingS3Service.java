@@ -21,6 +21,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.locks.LockGuardFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -67,7 +68,8 @@ public class BackupShippingS3Service extends AbsBackupShippingService
         StltSecurityObjects stltSecObjRef,
         StltConfigAccessor stltConfigAccessorRef,
         StltConnTracker stltConnTracker,
-        RemoteMap remoteMapRef
+        RemoteMap remoteMapRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         super(
@@ -81,7 +83,8 @@ public class BackupShippingS3Service extends AbsBackupShippingService
             stltSecObjRef,
             stltConfigAccessorRef,
             stltConnTracker,
-            remoteMapRef
+            remoteMapRef,
+            lockGuardFactoryRef
         );
 
         backupHandler = backupHandlerRef;
@@ -174,7 +177,7 @@ public class BackupShippingS3Service extends AbsBackupShippingService
 
                 backupHandler.putObject(
                     shippingInfo.s3MetaKey,
-                    fillPojo(snap, shippingInfo.basedOnS3MetaKey),
+                    fillPojo(snap, shippingInfo.basedOnS3MetaKey, shippingInfo),
                     s3Remote,
                     accCtx,
                     stltSecObj.getCryptKey()

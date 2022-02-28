@@ -1,7 +1,10 @@
 package com.linbit.linstor.api.protobuf;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallReactive;
+import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntBackupShippingFinishedOuterClass.MsgIntBackupShippingFinished;
 
@@ -21,11 +24,13 @@ import reactor.core.publisher.Flux;
 public class BackupShippingFinished implements ApiCallReactive
 {
     private final StltApiCallHandler apiCallHandler;
+    private final ResponseSerializer responseSerializer;
 
     @Inject
-    public BackupShippingFinished(StltApiCallHandler apiCallHandlerRef)
+    public BackupShippingFinished(StltApiCallHandler apiCallHandlerRef, ResponseSerializer responseSerializerRef)
     {
         apiCallHandler = apiCallHandlerRef;
+        responseSerializer = responseSerializerRef;
     }
 
     @Override
@@ -36,7 +41,9 @@ public class BackupShippingFinished implements ApiCallReactive
         apiCallHandler
             .backupShippingFinished(backupShippingFinished.getRscName(), backupShippingFinished.getSnapName());
 
-        return Flux.empty();
+        return Flux.<ApiCallRc> just(
+            ApiCallRcImpl.singleApiCallRc(0 /* internal */, "Backup finished and cleaned up")
+        ).transform(responseSerializer::transform);
     }
 
 }

@@ -21,6 +21,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
+import com.linbit.locks.LockGuardFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -45,7 +46,8 @@ public class BackupShippingL2LService extends AbsBackupShippingService
         StltSecurityObjects stltSecObjRef,
         StltConfigAccessor stltConfigAccessorRef,
         StltConnTracker stltConnTrackerRef,
-        RemoteMap remoteMapRef
+        RemoteMap remoteMapRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         super(
@@ -59,7 +61,8 @@ public class BackupShippingL2LService extends AbsBackupShippingService
             stltSecObjRef,
             stltConfigAccessorRef,
             stltConnTrackerRef,
-            remoteMapRef
+            remoteMapRef,
+            lockGuardFactoryRef
         );
         extToolsChecker = extToolsCheckerRef;
     }
