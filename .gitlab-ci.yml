@@ -127,7 +127,7 @@ test-e2e:
     - TEST_BRANCH=latest
     - TEST_BUNDLE_BRANCH=master
     - |
-      SAFE_REF_NAME=${CI_COMMIT_REF_NAME//\//-}
+      SAFE_REF_NAME=${CI_COMMIT_REF_SLUG}
       if docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:$SAFE_REF_NAME ; then
           TEST_BRANCH=$SAFE_REF_NAME
           TEST_BUNDLE_BRANCH=$SAFE_REF_NAME
