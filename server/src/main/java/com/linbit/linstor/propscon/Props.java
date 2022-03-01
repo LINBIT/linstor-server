@@ -97,4 +97,16 @@ public interface Props extends TransactionObject, Iterable<Map.Entry<String, Str
         }
         return result;
     }
+
+    /**
+     * Checks if a boolean property is considered true.
+     *
+     * @param key property key
+     * @return true if the key value is "true" in any casing.
+     * @throws InvalidKeyException
+     */
+    default boolean isPropTrue(String key) throws InvalidKeyException
+    {
+        return getPropWithDefault(key, "false").equalsIgnoreCase("true");
+    }
 }

@@ -488,7 +488,10 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     {
         // ignoring allocatedSize
         // ignoring devicePath
-        // ignoring usableSize
+
+        // The local usable size is going to be recalculated (and will override the pojo's value),
+        // whereas the remote usable sizes will be used AbsStorageProvider#getSmallestCommonUsableStorageSize
+        vlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
     @Override
@@ -529,7 +532,10 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     {
         // ignoring allocatedSize
         // ignoring devicePath
-        // ignoring usableSize
+
+        // The local usable size is going to be recalculated (and will override the pojo's value),
+        // whereas the remote usable sizes will be used AbsStorageProvider#getSmallestCommonUsableStorageSize
+        vlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
     @Override
@@ -550,7 +556,10 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     {
         // ignoring allocatedSize
         // ignoring devicePath
-        // ignoring usableSize
+
+        // The local usable size is going to be recalculated (and will override the pojo's value),
+        // whereas the remote usable sizes will be used AbsStorageProvider#getSmallestCommonUsableStorageSize
+        vlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
     @Override
@@ -571,7 +580,10 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     {
         // ignoring allocatedSize
         // ignoring devicePath
-        // ignoring usableSize
+
+        // The local usable size is going to be recalculated (and will override the pojo's value),
+        // whereas the remote usable sizes will be used AbsStorageProvider#getSmallestCommonUsableStorageSize
+        vlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
     @Override

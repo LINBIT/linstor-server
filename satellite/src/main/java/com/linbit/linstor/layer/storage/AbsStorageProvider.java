@@ -492,6 +492,27 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         createLvWithCopyImpl(vlmData, srcRsc);
     }
 
+    private long getSmallestCommonUsableStorageSize(LAYER_DATA vlmData)
+        throws AccessDeniedException, StorageException
+    {
+        long smallest = Long.MAX_VALUE;
+        final Resource absResource = vlmData.getRscLayerObject().getAbsResource();
+        final NodeName localNode = absResource.getNode().getName();
+        final Set<NodeName> peerNodes = absResource.getResourceDefinition()
+            .streamResource(storDriverAccCtx)
+            .filter(r -> !r.getNode().getName().equals(localNode))
+            .map(r -> r.getNode().getName())
+            .collect(Collectors.toSet());
+        for (NodeName nodeName : peerNodes)
+        {
+            final Resource res = absResource.getResourceDefinition().getResource(storDriverAccCtx, nodeName);
+            final LAYER_DATA peerVlmData = getVlmDataFromResource(
+                res, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
+            smallest = Math.min(smallest, peerVlmData.getUsableSize());
+        }
+        return smallest;
+    }
+
     private void createVolumes(
         List<LAYER_DATA> vlmsToCreate,
         List<LAYER_SNAP_DATA> snapVlmDataList,
@@ -579,20 +600,31 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
+                final AbsRscLayerObject<Resource> absRscLayer = vlmData.getRscLayerObject();
+                final ResourceDefinition rscDfn = absRscLayer.getAbsResource().getDefinition();
                 if (cloneVolume)
                 {
                     if (!cloneService.isRunning(
-                            vlmData.getRscLayerObject().getResourceName(),
+                            absRscLayer.getResourceName(),
                             vlmData.getVlmNr(),
-                            vlmData.getRscLayerObject().getResourceNameSuffix()) &&
-                        !vlmData.getRscLayerObject().getAbsResource().getResourceDefinition()
-                            .getFlags().isSet(storDriverAccCtx, ResourceDefinition.Flags.FAILED))
+                            absRscLayer.getResourceNameSuffix()) &&
+                        !rscDfn.getFlags().isSet(storDriverAccCtx, ResourceDefinition.Flags.FAILED))
                     {
                         createLvWithCopy(vlmData);
                     }
                 }
                 else
                 {
+                    if (rscDfn.getProps(storDriverAccCtx).isPropTrue(ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND))
+                    {
+                        long smallest = getSmallestCommonUsableStorageSize(vlmData);
+                        errorReporter.logDebug("SmallestSize: %d", smallest);
+
+                        if (smallest != -1 && smallest != Long.MAX_VALUE)
+                        {
+                            vlmData.setExepectedSize(smallest);
+                        }
+                    }
                     createLvImpl(vlmData);
                 }
             }

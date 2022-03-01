@@ -23,6 +23,7 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
 import static com.linbit.linstor.api.ApiConsts.FAIL_NOT_FOUND_DFLT_STOR_POOL;
+import static com.linbit.linstor.api.ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND;
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_NAME;
 
 import javax.inject.Inject;
@@ -161,9 +162,12 @@ public class CtrlStorPoolResolveHelper
                     storPool = rsc.getNode().getStorPool(apiCtx, storPoolName);
                     if (storPool != null)
                     {
-                        if (storPool.getDeviceProviderKind().hasBackingDevice())
+                        if (storPool.getDeviceProviderKind().hasBackingDevice() &&
+                            rscDfnProps.getPropWithDefault(KEY_RSC_ALLOW_MIXING_DEVICE_KIND, "false")
+                                .equalsIgnoreCase("false"))
                         {
-                            // If the storage pool has backing storage, check that it is of the same kind as the peers
+                            // If the storage pool has backing storage,
+                            // check that it is of the same kind as the peers
                             checkSameKindAsPeers(vlmDfn, rsc.getNode().getName(), storPool);
                         }
                         break;
