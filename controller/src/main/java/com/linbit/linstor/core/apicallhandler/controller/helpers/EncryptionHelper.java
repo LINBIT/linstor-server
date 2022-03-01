@@ -129,8 +129,8 @@ public class EncryptionHelper
         // and store the encrypted key, the salt and a hash of the length padded key in the database
         byte[] salt = SecretGenerator.generateSecret(MASTER_KEY_SALT_BYTES);
         SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithPassword(
-            salt,
             newPassphrase.getBytes(StandardCharsets.UTF_8),
+            salt,
             CipherStrength.KEY_LENGTH_128 // TODO if MASTER_KEY_BYTES is configurable, this also has to be configurable
         );
 
@@ -192,8 +192,8 @@ public class EncryptionHelper
     {
         byte[] ret = null;
         SymmetricKeyCipher ciper = SymmetricKeyCipher.getInstanceWithPassword(
-            passphraseSalt,
             passphrase,
+            passphraseSalt,
             CipherStrength.KEY_LENGTH_128
         );
         // TODO: if MASTER_KEY_BYTES is configurable, the CipherStrength also has to be configurable

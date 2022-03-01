@@ -54,9 +54,21 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         }
     }
 
+    private static CipherStrength defaultCipherStrength = CipherStrength.KEY_LENGTH_128;
+
     private final Cipher crypto;
     private final SecretKey encryptionKey;
     private final SecureRandom rnd;
+
+    public static CipherStrength getDefaultCipherStrength()
+    {
+        return defaultCipherStrength;
+    }
+
+    public static void setDefaultCipherStrength(final CipherStrength keyLength)
+    {
+        defaultCipherStrength = keyLength;
+    }
 
     /**
      * Returns a new instance of the cipher utility using {@code key} as the encryption key
@@ -96,6 +108,27 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
      * the encryption key
      *
      * The encryption key is derived from the password by applying a password based key derivation function.
+     * The strength of the resulting key is specified by the currently selected default cipher strength.
+     *
+     * @param salt the salt value to combine with the password
+     * @param password the password to generate the encryption key from; this will be cleared by filling with zeros
+     * @return new instance of the cipher utility
+     * @throws LinStorException if the creation of a new instance of the cipher utility fails
+     */
+    public static SymmetricKeyCipher getInstanceWithPassword(
+        final byte[] password,
+        final byte[] salt
+    )
+        throws LinStorException
+    {
+        return getInstanceWithPassword(password, salt, defaultCipherStrength);
+    }
+
+    /**
+     * Returns a new instance of the cipher utility using a key derived from the specified salted password as
+     * the encryption key
+     *
+     * The encryption key is derived from the password by applying a password based key derivation function.
      * The strength of the resulting key is specified by the {@code csSpec} parameter.
      *
      * @param salt the salt value to combine with the password
@@ -105,8 +138,8 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
      * @throws LinStorException if the creation of a new instance of the cipher utility fails
      */
     public static SymmetricKeyCipher getInstanceWithPassword(
-        final byte[] salt,
         final byte[] password,
+        final byte[] salt,
         final CipherStrength csSpec
     )
         throws LinStorException
