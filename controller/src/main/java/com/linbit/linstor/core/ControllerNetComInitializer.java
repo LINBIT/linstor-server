@@ -15,6 +15,7 @@ import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.MessageProcessor;
 import com.linbit.linstor.netcom.NetComContainer;
@@ -80,6 +81,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
     private final Props ctrlConf;
     private final MessageProcessor msgProc;
     private final ConnectionObserver ctrlConnTracker;
+    private final ModularCryptoProvider cryptoProvider;
     private final NetComContainer netComContainer;
     private final Map<ServiceName, SystemService> systemServicesMap;
     private final LinStorScope initScope;
@@ -97,6 +99,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
         CommonMessageProcessor msgProcRef,
         CtrlConnTracker ctrlConnTrackerRef,
+        ModularCryptoProvider cryptoProviderRef,
         NetComContainer netComContainerRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
         LinStorScope initScopeRef,
@@ -111,6 +114,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
         ctrlConf = ctrlConfRef;
         msgProc = msgProcRef;
         ctrlConnTracker = ctrlConnTrackerRef;
+        cryptoProvider = cryptoProviderRef;
         netComContainer = netComContainerRef;
         systemServicesMap = systemServicesMapRef;
         initScope = initScopeRef;
@@ -421,6 +425,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
                         publicCtx,
                         initCtx,
                         ctrlConnTracker,
+                        cryptoProvider,
                         sslProtocol,
                         keyStoreFilePath.toString(),
                         keyStorePw.toCharArray(),
