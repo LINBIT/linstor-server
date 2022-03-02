@@ -8,7 +8,7 @@ import com.linbit.crypto.LengthPadding;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.modularcrypto.SecretGenerator;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -60,6 +61,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     private final Provider<RscNvmeLayerHelper> nvmeHelperProvider;
     private final SharedResourceManager sharedRscMgr;
 
+    ModularCryptoProvider cryptoProvider;
     private final EncryptionHelper encryptionHelper;
 
     @Inject
@@ -69,6 +71,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         LayerDataFactory layerDataFactoryRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
         CtrlSecurityObjects secObjsRef,
+        ModularCryptoProvider cryptoProviderRef,
         LengthPadding cryptoLenPadRef,
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
@@ -89,6 +92,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
             rscLayerDataFactory
         );
         secObjs = secObjsRef;
+        cryptoProvider = cryptoProviderRef;
         cryptoLenPad = cryptoLenPadRef;
         nvmeHelperProvider = nvmeHelperProviderRef;
         sharedRscMgr = sharedRscMgrRef;
@@ -252,7 +256,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         if (encryptedVlmKey == null)
         {
             errorReporter.logTrace("creating new encryptedVlmKey");
-            encryptedVlmKey = encryptionHelper.encrypt(SecretGenerator.generateSecretString(SECRET_KEY_BYTES));
+            final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
+            encryptedVlmKey = encryptionHelper.encrypt(secretGen.generateSecretString(SECRET_KEY_BYTES));
         }
 
         return layerDataFactory.createLuksVlmData(

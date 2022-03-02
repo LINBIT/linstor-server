@@ -15,7 +15,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.modularcrypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
@@ -41,6 +41,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Base64;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
@@ -77,6 +78,7 @@ class CtrlVlmDfnApiCallHandler
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
     private final LengthPadding cryptoLenPad;
+    private final ModularCryptoProvider cryptoProvider;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
@@ -99,6 +101,7 @@ class CtrlVlmDfnApiCallHandler
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         LengthPadding cryptoLenPadRef,
+        ModularCryptoProvider cryptoProviderRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
@@ -118,6 +121,7 @@ class CtrlVlmDfnApiCallHandler
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
         cryptoLenPad = cryptoLenPadRef;
+        cryptoProvider = cryptoProviderRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
@@ -317,7 +321,8 @@ class CtrlVlmDfnApiCallHandler
                     );
                 }
 
-                String vlmDfnKeyPlain = SecretGenerator.generateSecretString(SECRET_KEY_BYTES);
+                final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
+                String vlmDfnKeyPlain = secretGen.generateSecretString(SECRET_KEY_BYTES);
                 SymmetricKeyCipher cipher;
                 cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
 

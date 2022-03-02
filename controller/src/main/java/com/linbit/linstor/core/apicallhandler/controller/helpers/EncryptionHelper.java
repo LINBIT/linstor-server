@@ -10,7 +10,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.modularcrypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -51,6 +51,7 @@ public class EncryptionHelper
     private static MessageDigest sha512;
 
     private final SystemConfRepository systemConfRepository;
+    private final SecretGenerator secretGen;
     private final LengthPadding cryptoLenPad;
     private final ModularCryptoProvider cryptoProvider;
     private final Provider<TransactionMgr> transMgrProvider;
@@ -87,6 +88,8 @@ public class EncryptionHelper
         systemConfRepository = systemConfRepositoryRef;
         cryptoLenPad = cryptoLenPadRef;
         cryptoProvider = cryptoProviderRef;
+        secretGen = cryptoProviderRef.createSecretGenerator();
+        cryptoLenPad = cryptoLenPadRef;
         transMgrProvider = transMgrProviderRef;
         ctrlSecObj = ctrlSecObjRef;
         ctrlStltSrzl = ctrlStltSrzlRef;
@@ -102,7 +105,7 @@ public class EncryptionHelper
 
     public byte[] generateSecret()
     {
-        return SecretGenerator.generateSecret(MASTER_KEY_BYTES);
+        return secretGen.generateSecret(MASTER_KEY_BYTES);
     }
 
     public boolean passphraseExists(AccessContext peerAccCtxRef) throws AccessDeniedException
@@ -130,7 +133,7 @@ public class EncryptionHelper
 
         // Add length padding to the master key, encrypt with the new passphrase and a generated salt,
         // and store the encrypted key, the salt and a hash of the length padded key in the database
-        byte[] salt = SecretGenerator.generateSecret(MASTER_KEY_SALT_BYTES);
+        byte[] salt = secretGen.generateSecret(MASTER_KEY_SALT_BYTES);
         ByteArrayCipher cipher = cryptoProvider.createCipherWithPassword(
             newPassphrase.getBytes(StandardCharsets.UTF_8),
             salt

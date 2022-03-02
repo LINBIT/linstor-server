@@ -14,7 +14,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.modularcrypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -59,6 +59,7 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -82,6 +83,7 @@ public class RscDrbdLayerHelper extends
 {
     private final Props stltConf;
     private final ResourceDefinitionRepository rscDfnMap;
+    private final ModularCryptoProvider cryptoProvider;
 
     private final Provider<RscNvmeLayerHelper> nvmeHelperProvider;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
@@ -96,7 +98,8 @@ public class RscDrbdLayerHelper extends
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPool,
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
-        CtrlStorPoolResolveHelper storPoolResolveHelperRef
+        CtrlStorPoolResolveHelper storPoolResolveHelperRef,
+        ModularCryptoProvider cryptoProviderRef
     )
     {
         super(
@@ -115,6 +118,7 @@ public class RscDrbdLayerHelper extends
         stltConf = stltConfRef;
         nvmeHelperProvider = nvmeHelperProviderRef;
         storPoolResolveHelper = storPoolResolveHelperRef;
+        cryptoProvider = cryptoProviderRef;
     }
 
     @Override
@@ -136,7 +140,8 @@ public class RscDrbdLayerHelper extends
         Long alStripeSize = drbdRscDfnPayload.alStripeSize;
         if (secret == null)
         {
-            secret = SecretGenerator.generateSharedSecret();
+            final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
+            secret = secretGen.generateDrbdSharedSecret();
         }
         if (transportType == null)
         {
@@ -737,6 +742,7 @@ public class RscDrbdLayerHelper extends
             throw new ImplementationError("Unexpected AbsRsc Type");
         }
 
+        final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
         return layerDataFactory.createDrbdRscDfnData(
             rscDfnRef.getName(),
             null,
@@ -746,7 +752,7 @@ public class RscDrbdLayerHelper extends
             dfnData.getAlStripeSize(),
             null,
             dfnData.getTransportType(),
-            SecretGenerator.generateSharedSecret()
+            secretGen.generateDrbdSharedSecret()
         );
     }
 

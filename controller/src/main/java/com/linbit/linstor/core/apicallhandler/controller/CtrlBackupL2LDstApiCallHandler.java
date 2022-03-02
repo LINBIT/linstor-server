@@ -15,7 +15,8 @@ import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.SecretGenerator;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+import com.linbit.linstor.modularcrypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
@@ -80,6 +81,7 @@ public class CtrlBackupL2LDstApiCallHandler
     private final CtrlBackupApiCallHandler backupApiCallHandler;
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final DynamicNumberPool snapshotShippingPortPool;
+    private final ModularCryptoProvider cryptoProvider;
     private final StltRemoteControllerFactory stltRemoteControllerFactory;
     private final RemoteRepository remoteRepo;
     private final SystemConfRepository systemConfRepository;
@@ -99,6 +101,7 @@ public class CtrlBackupL2LDstApiCallHandler
         CtrlBackupApiCallHandler backupApiCallHandlerRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef,
+        ModularCryptoProvider cryptoProviderRef,
         StltRemoteControllerFactory stltRemoteControllerFactoryRef,
         RemoteRepository remoteRepoRef,
         SystemConfRepository systemConfRepositoryRef,
@@ -117,6 +120,7 @@ public class CtrlBackupL2LDstApiCallHandler
         backupApiCallHandler = backupApiCallHandlerRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         snapshotShippingPortPool = snapshotShippingPortPoolRef;
+        cryptoProvider = cryptoProviderRef;
         stltRemoteControllerFactory = stltRemoteControllerFactoryRef;
         remoteRepo = remoteRepoRef;
         systemConfRepository = systemConfRepositoryRef;
@@ -418,9 +422,10 @@ public class CtrlBackupL2LDstApiCallHandler
         return ret;
     }
 
-    public static String generateClusterShortId()
+    public String generateClusterShortId()
     {
-        return new BigInteger(SecretGenerator.generateSecret(5)).abs().toString(36);
+        final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
+        return new BigInteger(secretGen.generateSecret(5)).abs().toString(36);
     }
 
     private BackupShippingResponse snapshotToResponse(
