@@ -2,8 +2,6 @@ package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
 import com.linbit.ImplementationError;
 import com.linbit.crypto.LengthPadding;
-import com.linbit.crypto.SymmetricKeyCipher;
-import com.linbit.crypto.SymmetricKeyCipher.CipherStrength;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
@@ -37,6 +35,8 @@ import java.util.Arrays;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.linbit.crypto.ByteArrayCipher;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 @Singleton
 public class EncryptionHelper
@@ -52,6 +52,7 @@ public class EncryptionHelper
 
     private final SystemConfRepository systemConfRepository;
     private final LengthPadding cryptoLenPad;
+    private final ModularCryptoProvider cryptoProvider;
     private final Provider<TransactionMgr> transMgrProvider;
     private final CtrlSecurityObjects ctrlSecObj;
     private final CtrlStltSerializer ctrlStltSrzl;
@@ -74,6 +75,7 @@ public class EncryptionHelper
     public EncryptionHelper(
         SystemConfRepository systemConfRepositoryRef,
         LengthPadding cryptoLenPadRef,
+        ModularCryptoProvider cryptoProviderRef,
         Provider<TransactionMgr> transMgrProviderRef,
         CtrlSecurityObjects ctrlSecObjRef,
         CtrlStltSerializer ctrlStltSrzlRef,
@@ -84,6 +86,7 @@ public class EncryptionHelper
     {
         systemConfRepository = systemConfRepositoryRef;
         cryptoLenPad = cryptoLenPadRef;
+        cryptoProvider = cryptoProviderRef;
         transMgrProvider = transMgrProviderRef;
         ctrlSecObj = ctrlSecObjRef;
         ctrlStltSrzl = ctrlStltSrzlRef;
@@ -128,10 +131,9 @@ public class EncryptionHelper
         // Add length padding to the master key, encrypt with the new passphrase and a generated salt,
         // and store the encrypted key, the salt and a hash of the length padded key in the database
         byte[] salt = SecretGenerator.generateSecret(MASTER_KEY_SALT_BYTES);
-        SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithPassword(
+        ByteArrayCipher cipher = cryptoProvider.createCipherWithPassword(
             newPassphrase.getBytes(StandardCharsets.UTF_8),
-            salt,
-            CipherStrength.KEY_LENGTH_128 // TODO if MASTER_KEY_BYTES is configurable, this also has to be configurable
+            salt
         );
 
         byte[] encodedData = cryptoLenPad.conceal(masterKey);
@@ -191,10 +193,9 @@ public class EncryptionHelper
         throws LinStorException
     {
         byte[] ret = null;
-        SymmetricKeyCipher ciper = SymmetricKeyCipher.getInstanceWithPassword(
+        ByteArrayCipher ciper = cryptoProvider.createCipherWithPassword(
             passphrase,
-            passphraseSalt,
-            CipherStrength.KEY_LENGTH_128
+            passphraseSalt
         );
         // TODO: if MASTER_KEY_BYTES is configurable, the CipherStrength also has to be configurable
 
@@ -278,7 +279,7 @@ public class EncryptionHelper
 
     public byte[] encrypt(byte[] key, byte[] toEncrypt) throws LinStorException
     {
-        SymmetricKeyCipher cipher = SymmetricKeyCipher.getInstanceWithKey(key);
+        ByteArrayCipher cipher = cryptoProvider.createCipherWithKey(key);
 
         byte[] encodedData = cryptoLenPad.conceal(toEncrypt);
         return cipher.encrypt(encodedData);
