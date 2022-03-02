@@ -9,6 +9,7 @@ import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.netcom.MessageProcessor;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.netcom.TcpConnectorService;
@@ -40,6 +41,7 @@ public final class SatelliteNetComInitializer
     private final AccessContext publicCtx;
     private final MessageProcessor msgProc;
     private final StltConnTracker stltConnTracker;
+    private final ModularCryptoProvider cryptoProvider;
     private final Map<ServiceName, SystemService> systemServicesMap;
     private final StltConfig stltCfg;
 
@@ -52,6 +54,7 @@ public final class SatelliteNetComInitializer
         @PublicContext AccessContext publicCtxRef,
         CommonMessageProcessor msgProcRef,
         StltConnTracker stltConnTrackerRef,
+        ModularCryptoProvider cryptoProviderRef,
         Map<ServiceName, SystemService> systemServicesMapRef,
         StltConfig stltCfgRef
     )
@@ -61,6 +64,7 @@ public final class SatelliteNetComInitializer
         publicCtx = publicCtxRef;
         msgProc = msgProcRef;
         stltConnTracker = stltConnTrackerRef;
+        cryptoProvider = cryptoProviderRef;
         systemServicesMap = systemServicesMapRef;
         stltCfg = stltCfgRef;
     }
@@ -103,6 +107,7 @@ public final class SatelliteNetComInitializer
                         publicCtx,
                         initCtx,
                         stltConnTracker,
+                        cryptoProvider,
                         stltCfg.getNetSecureSslProtocol(),
                         stltCfg.getNetSecureServerCertificate(),
                         stltCfg.getNetSecureKeystorePassword().toCharArray(),
