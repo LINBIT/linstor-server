@@ -1,4 +1,4 @@
-package com.linbit.linstor.core;
+package com.linbit.linstor.modularcrypto;
 
 public interface SecretGenerator
 {
