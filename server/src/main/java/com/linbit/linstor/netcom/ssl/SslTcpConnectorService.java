@@ -9,7 +9,6 @@ import java.nio.channels.SocketChannel;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 
@@ -23,6 +22,7 @@ import com.linbit.ServiceName;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.netcom.ConnectionObserver;
 import com.linbit.linstor.netcom.MessageProcessor;
 import com.linbit.linstor.netcom.TcpConnectorService;
@@ -30,6 +30,7 @@ import com.linbit.linstor.security.AccessContext;
 
 public class SslTcpConnectorService extends TcpConnectorService
 {
+    private final ModularCryptoProvider cryptoProvider;
     private final SSLContext sslCtx;
 
     public SslTcpConnectorService(
@@ -40,6 +41,7 @@ public class SslTcpConnectorService extends TcpConnectorService
         final AccessContext peerAccCtxRef,
         final AccessContext privAccCtxRef,
         final ConnectionObserver connObserverRef,
+        final ModularCryptoProvider cryptoProviderRef,
         final String sslProtocol,
         final String keyStoreFile,
         final char[] keyStorePasswd,
@@ -59,7 +61,8 @@ public class SslTcpConnectorService extends TcpConnectorService
             privAccCtxRef,
             connObserverRef
         );
-        sslCtx = SSLContext.getInstance(sslProtocol);
+        cryptoProvider = cryptoProviderRef;
+        sslCtx = cryptoProviderRef.createSslContext(sslProtocol);
         initialize(keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
     }
 
@@ -88,10 +91,10 @@ public class SslTcpConnectorService extends TcpConnectorService
             );
         }
 
-        sslCtx.init(
-            SslTcpCommons.createKeyManagers(keyStoreFile, keyStorePasswd, keyPasswd),
-            SslTcpCommons.createTrustManagers(trustStoreFile, trustStorePasswd),
-            new SecureRandom()
+        cryptoProvider.initializeSslContext(
+            sslCtx,
+            keyStoreFile, keyStorePasswd, keyPasswd,
+            trustStoreFile, trustStorePasswd
         );
     }
 
