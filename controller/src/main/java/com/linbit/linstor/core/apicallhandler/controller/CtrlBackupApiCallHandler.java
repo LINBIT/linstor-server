@@ -3449,7 +3449,9 @@ public class CtrlBackupApiCallHandler
                     }
                 }
                 ctrlTransactionHelper.commit();
-                startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
+                flux = startStltCleanup(
+                    peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
+                ).concatWith(flux);
                 flux = l2lCleanupFlux.concatWith(flux);
             }
             catch (AccessDeniedException | InvalidKeyException | InvalidNameException exc)
@@ -3500,9 +3502,12 @@ public class CtrlBackupApiCallHandler
                     // re-enable shipping-flag to make sure the abort-logic gets triggered later on
                     snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                     ctrlTransactionHelper.commit();
-                    startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
-                    cleanupFlux = ctrlSnapShipAbortHandler
-                        .abortBackupShippingPrivileged(snapDfn.getResourceDefinition());
+                    cleanupFlux = startStltCleanup(
+                        peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
+                    ).concatWith(
+                        ctrlSnapShipAbortHandler
+                            .abortBackupShippingPrivileged(snapDfn.getResourceDefinition())
+                    );
                 }
                 else
                 {
@@ -3546,15 +3551,19 @@ public class CtrlBackupApiCallHandler
                         }
                     }
                     ctrlTransactionHelper.commit();
-                    startStltCleanup(peerProvider.get(), rscNameRef, snapNameRef);
-                    Flux<ApiCallRc> flux = ctrlSatelliteUpdateCaller.updateSatellites(
-                        snapDfn,
-                        CtrlSatelliteUpdateCaller.notConnectedWarn()
-                    ).transform(
-                        responses -> CtrlResponseUtils.combineResponses(
-                            responses,
-                            LinstorParsingUtils.asRscName(rscNameRef),
-                            "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+                    Flux<ApiCallRc> flux = startStltCleanup(
+                        peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
+                    )
+                        .concatWith(
+                            ctrlSatelliteUpdateCaller.updateSatellites(
+                                snapDfn,
+                                CtrlSatelliteUpdateCaller.notConnectedWarn()
+                            ).transform(
+                                responses -> CtrlResponseUtils.combineResponses(
+                                    responses,
+                                    LinstorParsingUtils.asRscName(rscNameRef),
+                                    "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+                                )
                         )
                     );
                     // cleanupFlux will not be executed if flux has an error - this issue is currently unavoidable.
@@ -3575,14 +3584,19 @@ public class CtrlBackupApiCallHandler
         return cleanupFlux;
     }
 
-    private void startStltCleanup(Peer peer, String rscNameRef, String snapNameRef)
+    public Flux<ApiCallRc> startStltCleanup(Peer peer, String rscNameRef, String snapNameRef, NodeName nodeNameRef)
     {
         // needed to remove snap from the "shipping started" list. This action
         // can't be done by the stlt itself because it might be to fast so that a second shipping is triggered by an
         // unrelated update
         byte[] msg = stltComSerializer.headerlessBuilder().notifyBackupShippingFinished(rscNameRef, snapNameRef)
             .build();
-        peer.apiCall(InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_FINISHED, msg);
+        return peer.apiCall(InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_FINISHED, msg).map(
+            inputStream -> CtrlSatelliteUpdateCaller.deserializeApiCallRc(
+                nodeNameRef,
+                inputStream
+            )
+        );
     }
 
     private Flux<ApiCallRc> cleanupStltRemote(StltRemote remote)
