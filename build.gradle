@@ -58,7 +58,7 @@ subprojects {
 //            compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
             compileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
-            implementation 'io.sentry:sentry:1.7.30'
+            implementation 'io.sentry:sentry:5.6.1'
             implementation 'info.picocli:picocli:3.9.5'
             implementation group: 'io.projectreactor', name: 'reactor-core', version: '3.3.12.RELEASE'
             compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'

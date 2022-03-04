@@ -112,7 +112,11 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         System.setProperty("sentry.servername", nodeName);
         System.setProperty("sentry.tags", "module:" + moduleName);
         System.setProperty("sentry.stacktrace.app.packages", "com.linbit");
-        Sentry.init();
+        Sentry.init(options -> {
+            options.setEnableExternalConfiguration(true);
+            options.setDsn(""); // disable by default, can still be set via ENV or properties
+            // https://docs.sentry.io/platforms/java/guides/spring-boot/configuration/#setting-the-dsn
+        });
     }
 
     @Override
@@ -343,7 +347,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                     break;
             }
 
-            Sentry.capture(errorInfo);
+            Sentry.captureException(errorInfo);
         }
         finally
         {
@@ -545,7 +549,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
 
                 output.println("\nEND OF ERROR REPORT.\n");
 
-                Sentry.capture(errorInfo);
+                Sentry.captureException(errorInfo);
             }
         }
         finally

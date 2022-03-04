@@ -46,10 +46,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.Predicate;
 
 import com.fasterxml.jackson.core.JsonParseException;
-import io.sentry.util.Objects;
 
 public class ExosRestClient
 {
