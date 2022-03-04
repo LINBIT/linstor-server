@@ -24,6 +24,25 @@ stages:
 
 .upload_nexus:
   script:
+# build spacetracking
+    - git checkout NOMERGE-SpaceTracking
+    - git checkout $CI_COMMIT_REF_NAME
+    - git clone --recursive . linstor-spacetracking
+    - cd linstor-spacetracking
+    - git checkout NOMERGE-SpaceTracking
+    - git config --global user.email "fake@example.com"
+    - git config --global user.name "Faker"
+    - git rebase $CI_COMMIT_REF_NAME
+    - ./gradlew getProtoc && ./gradlew installdist
+    - ./gradlew getproguard
+    - make obfuscate-spacetracking
+    - mkdir ../libs
+    - cp satellite-st/build/libs/satellite-st.jar ../libs/
+    - cp controller-st/build/libs/controller-st.jar ../libs/
+    - cp server-st/build/libs/server-st.jar ../libs/
+    - cd ..
+    - rm -Rf linstor-spacetracking
+# normal linstor build
     - LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - dummy-release.sh linstor-server $LINSTOR_VERSION 1 linstor.spec
     - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
@@ -87,7 +106,6 @@ deploy:
 
 deploy-nexus-master:
   stage: deploy
-  image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
   rules:
     - if: $CI_COMMIT_BRANCH == 'master'
   before_script:
@@ -104,7 +122,6 @@ deploy-nexus-master:
 
 deploy-nexus:
   stage: deploy
-  image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
