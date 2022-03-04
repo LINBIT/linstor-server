@@ -1,4 +1,4 @@
-image: $LINBIT_DOCKER_REGISTRY/linstor-build:latest
+image: $LINBIT_DOCKER_REGISTRY/build-helpers:latest
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
