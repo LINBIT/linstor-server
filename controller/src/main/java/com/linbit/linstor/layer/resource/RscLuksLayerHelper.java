@@ -4,7 +4,6 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.crypto.LengthPadding;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.CtrlSecurityObjects;
@@ -57,7 +56,6 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     private static final int SECRET_KEY_BYTES = 20;
 
     private final CtrlSecurityObjects secObjs;
-    private final LengthPadding cryptoLenPad;
     private final Provider<RscNvmeLayerHelper> nvmeHelperProvider;
     private final SharedResourceManager sharedRscMgr;
 
@@ -72,7 +70,6 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
         CtrlSecurityObjects secObjsRef,
         ModularCryptoProvider cryptoProviderRef,
-        LengthPadding cryptoLenPadRef,
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
         SharedResourceManager sharedRscMgrRef,
@@ -93,7 +90,6 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         );
         secObjs = secObjsRef;
         cryptoProvider = cryptoProviderRef;
-        cryptoLenPad = cryptoLenPadRef;
         nvmeHelperProvider = nvmeHelperProviderRef;
         sharedRscMgr = sharedRscMgrRef;
         encryptionHelper = encryptionHelperRef;

@@ -2,8 +2,6 @@ package com.linbit.linstor.core;
 
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
-import com.linbit.crypto.LengthPadding;
-import com.linbit.crypto.LengthPaddingImpl;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -102,7 +100,6 @@ public class CoreModule extends AbstractModule
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(REMOTE_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
-        bind(LengthPadding.class).to(LengthPaddingImpl.class);
     }
 
     @Provides

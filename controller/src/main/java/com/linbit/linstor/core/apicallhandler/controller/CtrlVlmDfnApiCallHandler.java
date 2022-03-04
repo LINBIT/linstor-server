@@ -100,7 +100,6 @@ class CtrlVlmDfnApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        LengthPadding cryptoLenPadRef,
         ModularCryptoProvider cryptoProviderRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
@@ -120,8 +119,8 @@ class CtrlVlmDfnApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-        cryptoLenPad = cryptoLenPadRef;
         cryptoProvider = cryptoProviderRef;
+        cryptoLenPad = cryptoProviderRef.createLengthPadding();
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;

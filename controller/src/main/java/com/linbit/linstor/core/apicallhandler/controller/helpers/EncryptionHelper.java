@@ -75,7 +75,6 @@ public class EncryptionHelper
     @Inject
     public EncryptionHelper(
         SystemConfRepository systemConfRepositoryRef,
-        LengthPadding cryptoLenPadRef,
         ModularCryptoProvider cryptoProviderRef,
         Provider<TransactionMgr> transMgrProviderRef,
         CtrlSecurityObjects ctrlSecObjRef,
@@ -86,10 +85,9 @@ public class EncryptionHelper
     )
     {
         systemConfRepository = systemConfRepositoryRef;
-        cryptoLenPad = cryptoLenPadRef;
         cryptoProvider = cryptoProviderRef;
         secretGen = cryptoProviderRef.createSecretGenerator();
-        cryptoLenPad = cryptoLenPadRef;
+        cryptoLenPad = cryptoProviderRef.createLengthPadding();
         transMgrProvider = transMgrProviderRef;
         ctrlSecObj = ctrlSecObjRef;
         ctrlStltSrzl = ctrlStltSrzlRef;

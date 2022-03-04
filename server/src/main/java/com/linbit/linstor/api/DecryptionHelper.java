@@ -16,12 +16,11 @@ public class DecryptionHelper
 
     @Inject
     public DecryptionHelper(
-        LengthPadding cryptoLenPadRef,
         ModularCryptoProvider cryptoProviderRef
     )
     {
-        cryptoLenPad = cryptoLenPadRef;
         cryptoProvider = cryptoProviderRef;
+        cryptoLenPad = cryptoProviderRef.createLengthPadding();
     }
 
     public byte[] decrypt(byte[] masterKey, byte[] encryptedKey) throws LinStorException
