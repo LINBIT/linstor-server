@@ -1,5 +1,6 @@
-package com.linbit.crypto;
+package com.linbit.linstor.modularcrypto;
 
+import com.linbit.crypto.LengthPadding;
 import com.linbit.linstor.LinStorException;
 import java.security.SecureRandom;
 import javax.inject.Inject;
