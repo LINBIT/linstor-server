@@ -21,11 +21,12 @@ public class LengthPaddingImpl implements LengthPadding
     public static final int SH_BYTE = 8;
     public static final int BYTE_MASK = 0xFF;
 
-    private SecureRandom rnd = new SecureRandom();
+    private SecureRandom rnd;
 
     @Inject
-    public LengthPaddingImpl()
+    LengthPaddingImpl(final SecureRandom rndRef)
     {
+        rnd = rndRef;
     }
 
     @Override
