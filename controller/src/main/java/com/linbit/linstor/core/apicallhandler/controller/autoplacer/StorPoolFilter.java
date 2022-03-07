@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -432,8 +433,9 @@ class StorPoolFilter
             {
                 if (diskful)
                 {
-                    storPoolMatches = sp.getFreeSpaceTracker().getFreeCapacityLastUpdated(apiAccCtx)
-                        .orElse(0L) >= sizeInKib;
+                    long freeCapacity = FreeCapacityAutoPoolSelectorUtils
+                        .getFreeCapacityCurrentEstimationPrivileged(apiAccCtx, null, sp).orElse(0L);
+                    storPoolMatches = freeCapacity >= sizeInKib;
                     if (!storPoolMatches)
                     {
                         errorReporter.logTrace(
