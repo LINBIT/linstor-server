@@ -3,12 +3,15 @@ package com.linbit.linstor.security;
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.crypto.KeyDerivation;
 import com.linbit.linstor.ControllerDatabase;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.pojo.SignInEntryPojo;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -18,9 +21,7 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 import java.util.Hashtable;
-import javax.crypto.SecretKeyFactory;
 
 import org.slf4j.event.Level;
 
@@ -34,18 +35,19 @@ public class CtrlAuthentication
 
     private CtrlConfig ctrlCfg;
 
-    private SecretKeyFactory keyFact;
+    private KeyDerivation keyDrv;
 
-    public CtrlAuthentication(
+    CtrlAuthentication(
         AccessContext initCtx,
         AccessContext sysCtxRef,
         AccessContext publicCtxRef,
         ControllerDatabase ctrlDbRef,
         DbAccessor dbDriverRef,
+        ModularCryptoProvider cryptoProvider,
         ErrorReporter errorLogRef,
         CtrlConfig ctrlCfgRef
     )
-        throws AccessDeniedException, NoSuchAlgorithmException
+        throws AccessDeniedException, LinStorException
     {
         ErrorCheck.ctorNotNull(CtrlAuthentication.class, AccessContext.class, initCtx);
         ErrorCheck.ctorNotNull(CtrlAuthentication.class, ControllerDatabase.class, ctrlDbRef);
@@ -61,7 +63,7 @@ public class CtrlAuthentication
 
         ctrlCfg = ctrlCfgRef;
 
-        keyFact = SecretKeyFactory.getInstance("PBKDF2WITHHMACSHA512");
+        keyDrv = cryptoProvider.createKeyDerivation();
     }
 
     private AccessContext signInLinstor(IdentityName idName, byte[] password)
@@ -86,7 +88,7 @@ public class CtrlAuthentication
                     throw new SignInException("Invalid password salt or hash value in database", exc);
                 }
 
-                if (Authentication.passwordMatches(keyFact, password, storedSalt, storedHash))
+                if (Authentication.passwordMatches(keyDrv, password, storedSalt, storedHash))
                 {
                     final IdentityName storedIdName = idIntegrityCheck(signInEntry, idName);
                     final Identity signInId = getIdentity(storedIdName);

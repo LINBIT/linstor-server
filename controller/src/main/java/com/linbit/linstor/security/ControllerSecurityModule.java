@@ -10,10 +10,10 @@ import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Singleton;
 
-import java.security.NoSuchAlgorithmException;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
+import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 public class ControllerSecurityModule extends AbstractModule
 {
@@ -50,6 +50,7 @@ public class ControllerSecurityModule extends AbstractModule
         ErrorReporter errorLogRef,
         ControllerDatabase dbConnPool,
         DbAccessor securityDbDriver,
+        ModularCryptoProvider cryptoProvider,
         CtrlConfig ctrlConfRef
     )
         throws InitializationException
@@ -65,6 +66,7 @@ public class ControllerSecurityModule extends AbstractModule
                 publicCtx,
                 dbConnPool,
                 securityDbDriver,
+                cryptoProvider,
                 errorLogRef,
                 ctrlConfRef
             );
@@ -77,13 +79,9 @@ public class ControllerSecurityModule extends AbstractModule
                 accExc
             );
         }
-        catch (NoSuchAlgorithmException algoExc)
+        catch (LinStorException exc)
         {
-            throw new InitializationException(
-                "Initialization of the authentication subsystem failed because the " +
-                    "required hashing algorithm is not supported on this platform",
-                algoExc
-            );
+            throw new InitializationException(exc);
         }
         return authentication;
     }

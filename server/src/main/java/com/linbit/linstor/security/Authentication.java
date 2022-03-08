@@ -1,18 +1,14 @@
 package com.linbit.linstor.security;
 
 import com.linbit.ErrorCheck;
-import com.linbit.ImplementationError;
+import com.linbit.crypto.KeyDerivation;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerSQLDatabase;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.utils.UnicodeConversion;
-import java.security.spec.InvalidKeySpecException;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
-import javax.crypto.spec.PBEKeySpec;
 
 /**
  * Identity authentication
@@ -115,7 +111,7 @@ public final class Authentication
      * @return True if the password matches (is correct), false otherwise
      */
     static boolean passwordMatches(
-        SecretKeyFactory keyFact,
+        KeyDerivation keyDrv,
         byte[] password,
         byte[] storedSalt,
         byte[] storedHash
@@ -129,8 +125,7 @@ public final class Authentication
         {
             if (storedHash != null)
             {
-                final SecretKey derivedKey = getPasswordHash(keyFact, password, storedSalt);
-                enteredPasswordHash = derivedKey.getEncoded();
+                enteredPasswordHash = keyDrv.passphraseToKey(password, storedSalt);
 
                 if (enteredPasswordHash != null)
                 {
@@ -153,6 +148,17 @@ public final class Authentication
                 }
             }
         }
+        catch (LinStorException exc)
+        {
+            throw new SignInException(
+                "Sign-in failed due to a password hashing error",
+                "Sign-in failed",
+                "The password hashing algorithm could not process the password",
+                exc.getCauseText(),
+                "Make sure the password does not contain any invalid Unicode sequences",
+                exc
+            );
+        }
         finally
         {
             clearDataFields(enteredPasswordHash);
@@ -160,59 +166,6 @@ public final class Authentication
         }
 
         return matchFlag;
-    }
-
-    static SecretKey getPasswordHash(
-        SecretKeyFactory keyFact,
-        byte[] password,
-        byte[] salt
-    )
-        throws SignInException
-    {
-        final SecretKey derivedKey;
-        try
-        {
-            if (keyFact != null && password != null && salt != null)
-            {
-                final char[] passwordChars;
-                try
-                {
-                    passwordChars = UnicodeConversion.utf8BytesToUtf16Chars(password, true);
-                }
-                catch (UnicodeConversion.InvalidSequenceException exc)
-                {
-                    throw new SignInException("The password contains a byte sequence that is not a " +
-                                              "valid UTF-8 sequence");
-                }
-                PBEKeySpec keySpec = new PBEKeySpec(passwordChars, salt, ITERATIONS, HASH_SIZE);
-
-                synchronized (keyFact)
-                {
-                    try
-                    {
-                        derivedKey = keyFact.generateSecret(keySpec);
-                    }
-                    catch (InvalidKeySpecException exc)
-                    {
-                        throw new ImplementationError(
-                            "The PBKDF2 key derivation generated an InvalidKeySpecException", exc
-                        );
-                    }
-                }
-            }
-            else
-            {
-                throw new ImplementationError(
-                    Authentication.class.getSimpleName() + " method getPasswordHash called " +
-                    "with a null pointer argument"
-                );
-            }
-        }
-        finally
-        {
-            clearDataFields(password, salt);
-        }
-        return derivedKey;
     }
 
     /**
