@@ -2,8 +2,8 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.crypto.ByteArrayCipher;
 import com.linbit.crypto.LengthPadding;
-import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.drbd.md.GidGenerator;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
@@ -323,8 +323,7 @@ class CtrlVlmDfnApiCallHandler
 
                 final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
                 String vlmDfnKeyPlain = secretGen.generateSecretString(SECRET_KEY_BYTES);
-                SymmetricKeyCipher cipher;
-                cipher = SymmetricKeyCipher.getInstanceWithKey(masterKey);
+                ByteArrayCipher cipher = cryptoProvider.createCipherWithKey(masterKey);
 
                 byte[] encodedData = cryptoLenPad.conceal(vlmDfnKeyPlain.getBytes());
                 byte[] encryptedVlmDfnKey = cipher.encrypt(encodedData);
