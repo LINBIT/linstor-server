@@ -169,20 +169,17 @@ public class EncryptionHelper
     )
         throws LinStorException
     {
-
         if (masterHashBase64 == null || encKeyBase64 == null || passSaltBase64 == null)
         {
             throw new MissingKeyPropertyException("Could not restore crypt passphrase as a property is not set");
         }
-        else
-        {
-            return getDecryptedMasterKey(
-                Base64.decode(masterHashBase64),
-                Base64.decode(encKeyBase64),
-                Base64.decode(passSaltBase64),
-                passphraseUtf8.getBytes(StandardCharsets.UTF_8)
-            );
-        }
+
+        return getDecryptedMasterKey(
+            Base64.decode(masterHashBase64),
+            Base64.decode(encKeyBase64),
+            Base64.decode(passSaltBase64),
+            passphraseUtf8.getBytes(StandardCharsets.UTF_8)
+        );
     }
 
     public byte[] getDecryptedMasterKey(
