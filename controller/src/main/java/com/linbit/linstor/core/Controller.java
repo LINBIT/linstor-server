@@ -73,6 +73,7 @@ import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.utils.NameShortenerModule;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.utils.InjectorLoader;
 
 import javax.inject.Inject;
@@ -581,6 +582,11 @@ public final class Controller
                     (System.currentTimeMillis() - startDepInjectionTime)
                 )
             );
+
+            {
+                final ModularCryptoProvider cryptoProvider = injector.getInstance(ModularCryptoProvider.class);
+                errorLog.logInfo("Cryptography provider: Using %s", cryptoProvider.getModuleIdentifier());
+            }
 
             instance = injector.getInstance(Controller.class);
             instance.start(injector, cfg);

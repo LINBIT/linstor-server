@@ -73,6 +73,7 @@ import java.util.stream.Stream;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import org.slf4j.event.Level;
 
 /**
@@ -499,6 +500,11 @@ public final class Satellite
                     (System.currentTimeMillis() - startDepInjectionTime)
                 )
             );
+
+            {
+                final ModularCryptoProvider cryptoProvider = injector.getInstance(ModularCryptoProvider.class);
+                errorLog.logInfo("Cryptography provider: Using %s", cryptoProvider.getModuleIdentifier());
+            }
 
             Satellite instance = injector.getInstance(Satellite.class);
             instance.start();
