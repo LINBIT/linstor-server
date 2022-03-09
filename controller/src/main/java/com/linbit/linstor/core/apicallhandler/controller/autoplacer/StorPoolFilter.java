@@ -1,12 +1,14 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
@@ -51,19 +53,22 @@ class StorPoolFilter
     private final Provider<AccessContext> peerAccCtx;
     private final StorPoolDefinitionMap storPoolDfnMap;
     private final ErrorReporter errorReporter;
+    private final CtrlPropsHelper ctrlPropsHelper;
 
     @Inject
     StorPoolFilter(
         @SystemContext AccessContext apiAccCtxRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         StorPoolDefinitionMap storPoolDfnMapRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        CtrlPropsHelper ctrlPropsHelperRef
     )
     {
         apiAccCtx = apiAccCtxRef;
         peerAccCtx = peerAccCtxRef;
         storPoolDfnMap = storPoolDfnMapRef;
         errorReporter = errorReporterRef;
+        ctrlPropsHelper = ctrlPropsHelperRef;
     }
 
     /**
@@ -277,6 +282,15 @@ class StorPoolFilter
             Boolean nodeMatches = nodeMatchesMap.get(node);
             if (nodeMatches == null)
             {
+                nodeMatches = !node.getFlags().isSet(apiAccCtx, Node.Flags.DELETE);
+                if (!nodeMatches)
+                {
+                    errorReporter.logTrace(
+                        "Autoplacer.Filter: Disqualifying node '%s' as it is currently being deleted",
+                        nodeDisplayValue,
+                        filterNodeNameList
+                    );
+                }
                 nodeMatches = !node.getFlags().isSet(apiAccCtx, Node.Flags.EVACUATE);
                 if (!nodeMatches)
                 {
@@ -366,6 +380,23 @@ class StorPoolFilter
                     }
                     nodeMatches = !anyMatch;
                 }
+
+                if (nodeMatches)
+                {
+                    PriorityProps prioProps = new PriorityProps(ctrlPropsHelper.getCtrlPropsForView(), nodeProps);
+                    String allowAutoPlace = prioProps.getProp(ApiConsts.KEY_AUTOPLACE_ALLOW_TARGET);
+                    if (allowAutoPlace != null && allowAutoPlace.equalsIgnoreCase("false"))
+                    {
+                        errorReporter.logTrace(
+                            "Autoplacer.Filter: Disqualifying node '%s' as the property '%s' (set on either this " +
+                                "node or on controller level) prevents this node from being targeted by the autoplacer",
+                            nodeDisplayValue,
+                            ApiConsts.KEY_AUTOPLACE_ALLOW_TARGET
+                        );
+                        nodeMatches = false;
+                    }
+                }
+
                 if (nodeMatches && filterLayerList != null && !filterLayerList.isEmpty())
                 {
                     ExtToolsManager extToolsManager = node.getPeer(apiAccCtx).getExtToolsManager();
@@ -485,6 +516,22 @@ class StorPoolFilter
                             sp.getName().displayValue,
                             sp.getNode().getName().displayValue
                         );
+                    }
+                }
+
+                if (storPoolMatches)
+                {
+                    String allowAutoPlace = sp.getProps(apiAccCtx).getProp(ApiConsts.KEY_AUTOPLACE_ALLOW_TARGET);
+                    if (allowAutoPlace != null && allowAutoPlace.equalsIgnoreCase("false"))
+                    {
+                        errorReporter.logTrace(
+                            "Autoplacer.Filter: Disqualifying storage pool '%s' on node '%s' as the property '%s' " +
+                                "(set on this storage pool) prevents this node from being targeted by the autoplacer",
+                            sp.getName().displayValue,
+                            sp.getNode().getName().displayValue,
+                            ApiConsts.KEY_AUTOPLACE_ALLOW_TARGET
+                        );
+                        storPoolMatches = false;
                     }
                 }
 

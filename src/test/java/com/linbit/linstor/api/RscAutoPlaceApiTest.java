@@ -1859,12 +1859,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         )
             .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
             .stltBuilder("stlt1")
-            .addStorPool("sp1", 100 * GB, ZFS)
-            .setExtToolSupported(ExtTools.ZSTD, true, 1, 0, 0)
-            .build()
+                .addStorPool("sp1", 100 * GB, ZFS)
+                .setExtToolSupported(ExtTools.ZSTD, true, 1, 0, 0)
+                .build()
             .stltBuilder("stlt2")
-            .addStorPool("sp1", 200 * GB, ZFS) // larger but no ZSTD support
-            .build()
+                .addStorPool("sp1", 200 * GB, ZFS) // larger but no ZSTD support
+                .build()
             .addRequiredExtTools(ExtTools.ZSTD, 0, 0, 0);
         evaluateTest(call);
 
@@ -1878,6 +1878,85 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         assertEquals(1, deployedRscs.size());
         assertEquals("stlt1", deployedRscs.get(0).getNode().getName().displayValue);
     }
+
+
+    @Test
+    public void autoPlaceAllowTargetNodePropTest() throws Exception
+    {
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            2,
+            true,
+            ApiConsts.CREATED,
+            ApiConsts.CREATED,
+            ApiConsts.CREATED
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("sp1", 100 * GB)
+                .setNodeProp(ApiConsts.KEY_AUTOPLACE_ALLOW_TARGET, "false")
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("sp1", 90 * GB)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("sp1", 50 * GB)
+                .build();
+
+        evaluateTest(call);
+
+        List<Node> deployedNodes = nodesMap.values().stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+            )
+            .map(rsc -> rsc.getNode())
+            .sorted()
+            .collect(Collectors.toList());
+
+        assertEquals(2, deployedNodes.size());
+        assertEquals("stlt2", deployedNodes.get(0).getName().displayValue);
+        assertEquals("stlt3", deployedNodes.get(1).getName().displayValue);
+    }
+
+    // @Test
+    // public void autoPlaceAllowTargetStorPoolPropTest() throws Exception
+    // {
+    // RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+    // TEST_RSC_NAME,
+    // 2,
+    // true,
+    // ApiConsts.CREATED,
+    // ApiConsts.CREATED,
+    // ApiConsts.CREATED
+    // )
+    // .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+    // .stltBuilder("stlt1")
+    // .addStorPool("sp1", 100 * GB)
+    // .setStorPoolProp("sp1", ApiConsts.KEY_AUTOPLACE_ALLOW_TARGET, "false")
+    // .build()
+    // .stltBuilder("stlt2")
+    // .addStorPool("sp1", 90 * GB)
+    // .build()
+    // .stltBuilder("stlt3")
+    // .addStorPool("sp1", 50 * GB)
+    // .build();
+    //
+    // evaluateTest(call);
+    //
+    // List<Node> deployedNodes = nodesMap.values().stream()
+    // .flatMap(this::streamResources)
+    // .filter(
+    // rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+    // )
+    // .map(rsc -> rsc.getNode())
+    // .sorted()
+    // .collect(Collectors.toList());
+    //
+    // assertEquals(2, deployedNodes.size());
+    // assertEquals("stlt2", deployedNodes.get(0).getName().displayValue);
+    // assertEquals("stlt3", deployedNodes.get(1).getName().displayValue);
+    // }
 
     private void expectDeployed(
         String storPoolNameStr,
