@@ -444,7 +444,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
-        return null;
+        return activeRsc;
     }
 
     private HashSet<SharedStorPoolName> getSharedSpNamesByRscCreateApi(
