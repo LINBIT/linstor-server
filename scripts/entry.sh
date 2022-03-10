@@ -7,8 +7,9 @@ try_import_key() {
   destcrtstore=$3
   tmpfile=$(mktemp)
 
+  rm -f "$destkeystore" "$destcrtstore"
   openssl pkcs12 -export -in "${indir}/tls.crt" -inkey "${indir}/tls.key" -out "$tmpfile" -name linstor -passin 'pass:linstor' -passout 'pass:linstor'
-  keytool -importkeystore -srcstorepass linstor -deststorepass linstor -keypass linstor -srckeystore "$tmpfile" -destkeystore "$destkeystore"
+  keytool -importkeystore -noprompt -srcstorepass linstor -deststorepass linstor -keypass linstor -srckeystore "$tmpfile" -destkeystore "$destkeystore"
   keytool -importcert -noprompt -deststorepass linstor -keypass linstor -file "${indir}/ca.crt" -alias ca -destkeystore "$destcrtstore"
   rm -f "$tmpfile"
 }
