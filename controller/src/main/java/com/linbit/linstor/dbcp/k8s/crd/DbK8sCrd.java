@@ -130,7 +130,7 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
         }
         else
         {
-            errorReporter.logTrace("Found database version %d", dbVersion);
+            errorReporter.logTrace("Found database version %d", dbVersion - 1);
         }
 
         ClassPathLoader classPathLoader = new ClassPathLoader(errorReporter);
@@ -175,7 +175,10 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
             {
                 BaseK8sCrdMigration migration = migrations.get(dbVersion);
                 errorReporter.logDebug(
-                    "Migration DB: " + dbVersion + " -> " + migration.getVersion() + ": " + migration.getDescription()
+                    "Migration DB: %d -> %d: %s",
+                    migration.getVersion() - 1,
+                    migration.getNextVersion() - 1,
+                    migration.getDescription()
                 );
                 migration.migrate(k8sDb);
 
