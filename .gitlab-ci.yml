@@ -26,13 +26,13 @@ stages:
   script:
 # build spacetracking
     - git checkout NOMERGE-SpaceTracking
-    - git checkout $CI_COMMIT_REF_NAME
+    - git checkout $CI_COMMIT_SHORT_SHA
     - git clone --recursive . linstor-spacetracking
     - cd linstor-spacetracking
     - git checkout NOMERGE-SpaceTracking
     - git config --global user.email "fake@example.com"
     - git config --global user.name "Faker"
-    - git rebase $CI_COMMIT_REF_NAME
+    - git rebase $CI_COMMIT_SHORT_SHA
     - ./gradlew getProtoc && ./gradlew installdist
     - ./gradlew getproguard
     - make obfuscate-spacetracking
