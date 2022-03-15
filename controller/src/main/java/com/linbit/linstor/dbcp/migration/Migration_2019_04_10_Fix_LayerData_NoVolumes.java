@@ -2,6 +2,7 @@ package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo;
 import com.linbit.crypto.SecretGenerator;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -108,6 +109,8 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
         Set<String> drbdRscDfns = new HashSet<>();
         Map<String, List<String>> drbdRscsPerDfn = new HashMap<>();
 
+        final ModularCryptoProvider cryptoProvider = getCryptoProvider();
+        final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
         try (PreparedStatement selectRscs = connection.prepareStatement(SELECT_ALL_RSCS))
         {
             try (ResultSet rscRs = selectRscs.executeQuery())
@@ -153,7 +156,7 @@ public class Migration_2019_04_10_Fix_LayerData_NoVolumes extends LinstorMigrati
                                 DEFAULT_DRBD_AL_STRIPE_SIZE,
                                 nextTcpPort++,
                                 "IP", // unfortunately we lost this information
-                                SecretGenerator.generateSharedSecret() // unfortunateley we lost this information
+                                secretGen.generateDrbdSharedSecret() // unfortunateley we lost this information
                             );
                         }
                         String peerSlotsStr = queryProp(
