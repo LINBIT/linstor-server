@@ -1,3 +1,28 @@
+linstor-server (1.18.0-1) experimental; urgency=medium
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * docker: fix lbbuild excludes
+  * autoplacer: account for over-provisioning
+  * docker: clean keystore before import
+
+  [ Rene Peinthor ]
+  * gitlab: use CI_COMMIT_REF_SLUG as in linstor-tests
+  * grade/sentry: upgrade library to work with java11
+  * gitlab: build spacetracking for CI builds
+  * gitlab: default image should use build-helpers
+  * gitlab-st: use git short SHA
+  * gitlab-st: reset to latest spacetracking branch
+
+  [ Gabor Hernadi ]
+  * Autoplacer: Added property to manually disqualify nodes as autoplacer-target
+  * MakeAvailable: Fix return null;
+  * K8s: Fixed migration nr from -> to
+
+  [ Robert Altnoeder ]
+  * Add SpaceTrackingV2 migration for Kubernetes CRD
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 15 Mar 2022 08:09:48 +0000
+
 linstor-server (1.18.0~rc.3-1) experimental; urgency=medium
 
   [ Robert Altnoeder ]
