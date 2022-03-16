@@ -10,7 +10,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.linstor.modularcrypto.SecretGenerator;
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;

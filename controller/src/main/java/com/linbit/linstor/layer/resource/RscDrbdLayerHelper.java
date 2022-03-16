@@ -14,7 +14,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.modularcrypto.SecretGenerator;
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;

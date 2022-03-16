@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo;
-import com.linbit.linstor.modularcrypto.SecretGenerator;
+import com.linbit.crypto.SecretGenerator;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;

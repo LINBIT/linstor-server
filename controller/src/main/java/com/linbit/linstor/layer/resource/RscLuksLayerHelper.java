@@ -7,7 +7,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.linstor.modularcrypto.SecretGenerator;
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;

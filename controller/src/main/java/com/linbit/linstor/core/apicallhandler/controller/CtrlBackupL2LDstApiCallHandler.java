@@ -16,7 +16,7 @@ import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
-import com.linbit.linstor.modularcrypto.SecretGenerator;
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;

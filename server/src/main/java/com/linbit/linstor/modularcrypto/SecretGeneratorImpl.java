@@ -1,5 +1,6 @@
 package com.linbit.linstor.modularcrypto;
 
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.utils.Base64;
 import java.security.SecureRandom;
 

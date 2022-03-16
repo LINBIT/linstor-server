@@ -1,5 +1,6 @@
 package com.linbit.linstor.modularcrypto;
 
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.crypto.ByteArrayCipher;
 import com.linbit.crypto.KeyDerivation;
 import com.linbit.crypto.LengthPadding;
