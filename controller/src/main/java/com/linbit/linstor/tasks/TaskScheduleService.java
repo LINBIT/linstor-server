@@ -320,4 +320,46 @@ public class TaskScheduleService implements SystemService, Runnable
             taskList.add(task);
         }
     }
+
+    /**
+     * Reschedules the given task regardless when it would have been scheduled normally.
+     * A negative newDelay will cancel the task completely.
+     * The task will *NOT* be executed when this method is called, especially not in the caller thread of this method.
+     * Even with newDelay = 0 the task is rescheduled in the internal map, which means that the TaskScheduler's internal
+     * thread will be notified to execute the task (if necessary)
+     *
+     * @param task
+     * @param newDelay
+     */
+    public void rescheduleAt(Task task, long newDelay)
+    {
+        synchronized (tasks)
+        {
+            Long deleteEntry = null;
+            for (Entry<Long, LinkedList<Task>> entry : tasks.entrySet())
+            {
+                if (entry.getValue().remove(task) && entry.getValue().isEmpty())
+                {
+                    deleteEntry = entry.getKey();
+                }
+            }
+            if (deleteEntry != null)
+            {
+                tasks.remove(deleteEntry);
+            }
+
+            if (newDelay >= 0)
+            {
+                long targetTime = newDelay + System.currentTimeMillis();
+                LinkedList<Task> taskList = tasks.get(targetTime);
+                if (taskList == null)
+                {
+                    taskList = new LinkedList<>();
+                    tasks.put(targetTime, taskList);
+                }
+                taskList.add(task);
+                tasks.notify();
+            }
+        }
+    }
 }
