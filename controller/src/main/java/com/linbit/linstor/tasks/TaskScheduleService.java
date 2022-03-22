@@ -10,7 +10,9 @@ import com.linbit.linstor.logging.ErrorReporter;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
@@ -203,44 +205,54 @@ public class TaskScheduleService implements SystemService, Runnable
                         while (execTask != null);
                     }
 
-                    Entry<Long, LinkedList<Task>> taskList = tasks.firstEntry();
-                    now = System.currentTimeMillis();
-                    // Default to a waitTime of zero if there are no task lists
-                    // to suspend this thread until new tasks are added
-                    long waitTime = 0;
-                    while (taskList != null)
+                    Long entryTime;
+                    synchronized (tasks)
                     {
-                        long entryTime = taskList.getKey();
+                        entryTime = tasks.firstKey();
+                    }
+                    now = System.currentTimeMillis();
+
+                    // If the task list's target time is in the past or is now,
+                    // remove the task list entry and run and reschedule all
+                    // tasks from the task list
+                    while (entryTime != null && entryTime <= now)
+                    {
+                        // The tasks list did not change since the firstEntry() call,
+                        // so this will remove the same entry that firstEntry() selected,
+                        // and it is probably faster than calling remove()
+                        List<Task> taskListCopy;
+                        synchronized (tasks)
+                        {
+                            LinkedList<Task> taskList = tasks.remove(entryTime);
+                            taskListCopy = taskList == null ? Collections.emptyList() : new LinkedList<>(taskList);
+                        }
+                        for (Task execTask : taskListCopy)
+                        {
+                            execute(execTask, now);
+                        }
+                        synchronized (tasks)
+                        {
+                            entryTime = tasks.firstKey();
+                        }
+
                         // Recheck the current time only if the task's entryTime
                         // is greater than the last known current time
                         if (entryTime > now)
                         {
                             now = System.currentTimeMillis();
                         }
-
-                        // If the task list's target time is in the past or is now,
-                        // remove the task list entry and run and reschedule all
-                        // tasks from the task list
-                        if (entryTime <= now)
-                        {
-                            // The tasks list did not change since the firstEntry() call,
-                            // so this will remove the same entry that firstEntry() selected,
-                            // and it is probably faster than calling remove()
-                            tasks.pollFirstEntry();
-                            for (Task execTask : taskList.getValue())
-                            {
-                                execute(execTask, now);
-                            }
-                        }
-                        else
-                        {
-                            // Set the waitTime to suspend this thread until the
-                            // next task list's target time is reached
-                            waitTime = entryTime - now;
-                            break;
-                        }
-                        taskList = tasks.firstEntry();
                     }
+
+                    // Default to a waitTime of zero if there are no task lists
+                    // to suspend this thread until new tasks are added
+                    long waitTime = 0;
+                    if (entryTime != null)
+                    {
+                        // Set the waitTime to suspend this thread until the
+                        // next task list's target time is reached
+                        waitTime = entryTime - now;
+                    }
+
                     // Suspend until new tasks are added or the target time of an
                     // existing task list is reached
                     synchronized (tasks)
