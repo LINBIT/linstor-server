@@ -3449,9 +3449,11 @@ public class CtrlBackupApiCallHandler
                     }
                 }
                 ctrlTransactionHelper.commit();
-                flux = startStltCleanup(
-                    peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
-                ).concatWith(flux);
+                flux = flux.concatWith(
+                    startStltCleanup(
+                        peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
+                    )
+                );
                 flux = l2lCleanupFlux.concatWith(flux);
             }
             catch (AccessDeniedException | InvalidKeyException | InvalidNameException exc)
@@ -3502,12 +3504,13 @@ public class CtrlBackupApiCallHandler
                     // re-enable shipping-flag to make sure the abort-logic gets triggered later on
                     snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                     ctrlTransactionHelper.commit();
-                    cleanupFlux = startStltCleanup(
-                        peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
-                    ).concatWith(
-                        ctrlSnapShipAbortHandler
-                            .abortBackupShippingPrivileged(snapDfn.getResourceDefinition())
-                    );
+                    cleanupFlux = ctrlSnapShipAbortHandler
+                        .abortBackupShippingPrivileged(snapDfn.getResourceDefinition())
+                        .concatWith(
+                            startStltCleanup(
+                                peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
+                            )
+                        );
                 }
                 else
                 {
@@ -3551,18 +3554,18 @@ public class CtrlBackupApiCallHandler
                         }
                     }
                     ctrlTransactionHelper.commit();
-                    Flux<ApiCallRc> flux = startStltCleanup(
-                        peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
-                    )
+                    Flux<ApiCallRc> flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                        snapDfn,
+                        CtrlSatelliteUpdateCaller.notConnectedWarn()
+                    ).transform(
+                        responses -> CtrlResponseUtils.combineResponses(
+                            responses,
+                            LinstorParsingUtils.asRscName(rscNameRef),
+                            "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+                        )
                         .concatWith(
-                            ctrlSatelliteUpdateCaller.updateSatellites(
-                                snapDfn,
-                                CtrlSatelliteUpdateCaller.notConnectedWarn()
-                            ).transform(
-                                responses -> CtrlResponseUtils.combineResponses(
-                                    responses,
-                                    LinstorParsingUtils.asRscName(rscNameRef),
-                                    "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+                                startStltCleanup(
+                                    peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
                                 )
                         )
                     );
