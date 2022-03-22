@@ -100,10 +100,10 @@ public class ExosEnclosurePingTask implements Task
     }
 
     @Override
-    public long run()
+    public long run(long scheduledAt)
     {
         recache();
-        return RETRY_MS;
+        return scheduledAt + RETRY_MS;
     }
 
     private void recache()

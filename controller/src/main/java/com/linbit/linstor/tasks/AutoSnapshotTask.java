@@ -214,7 +214,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
     }
 
     @Override
-    public long run()
+    public long run(long scheduleAt)
     {
         TreeSet<AutoSnapshotConfig> cfgSet = new TreeSet<>();
         long curTime = System.currentTimeMillis();
@@ -236,7 +236,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         {
             run(cfg);
         }
-        return TASK_TIMEOUT;
+        return scheduleAt + TASK_TIMEOUT;
     }
 
     private void run(AutoSnapshotConfig cfgRef)

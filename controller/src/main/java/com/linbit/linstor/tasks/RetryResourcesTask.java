@@ -114,7 +114,7 @@ public class RetryResourcesTask implements Task
     }
 
     @Override
-    public long run()
+    public long run(long scheduleAt)
     {
         List<RetryConfig> rscsToRetry;
         synchronized (syncObj)
@@ -191,7 +191,7 @@ public class RetryResourcesTask implements Task
                 remove(rsc);
             }
         }
-        return TASK_TIMEOUT;
+        return scheduleAt + TASK_TIMEOUT;
     }
 
     private List<RetryConfig> getResourcesToRetry()

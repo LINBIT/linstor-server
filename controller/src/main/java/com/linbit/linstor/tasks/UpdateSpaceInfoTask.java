@@ -66,7 +66,7 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
     }
 
     @Override
-    public long run()
+    public long run(long scheduleAt)
     {
         // TODO instead of doing 2 independent update calls to the satellites
         // we should merge both requests to a single proto request/response
@@ -151,6 +151,6 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
         {
             errRep.reportError(nfe);
         }
-        return nextUpdate * 1000;
+        return scheduleAt + (nextUpdate * 1000);
     }
 }

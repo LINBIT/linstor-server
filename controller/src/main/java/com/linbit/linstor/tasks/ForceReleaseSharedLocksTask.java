@@ -28,14 +28,14 @@ public class ForceReleaseSharedLocksTask implements Task
     }
 
     @Override
-    public long run()
+    public long run(long scheduleAt)
     {
         long ret;
         if (needsDelay)
         {
             needsDelay = false;
             sharedSPMgr.forgetRequests(node);
-            ret = delay;
+            ret = scheduleAt + delay;
         }
         else
         {

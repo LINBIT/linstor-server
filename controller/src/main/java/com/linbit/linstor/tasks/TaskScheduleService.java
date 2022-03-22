@@ -24,16 +24,24 @@ public class TaskScheduleService implements SystemService, Runnable
     public interface Task
     {
         long END_TASK = -1;
+
         /**
          * When a {@link Task} gets registered in {@link TaskScheduleService}, it will be
          * Immediately executed (calling {@link Task#run()}). <br>
          * <br>
-         * This method gets called again after approximately X milliseconds after the previous
-         * call (relative time, not absolute timestamp), where X is the return value of the previous call. <br>
+         * This method gets called again approximately at the given returned timestamp (unless delayed by other executed
+         * tasks) <br>
+         * If a tasks wants to be executed i.e. "every 10 seconds", the final return statement should include the
+         * parameter scheduledAt (i.e. <code> return scheduledAt + 10_000; </code>) to prevent small but additive
+         * delays caused by other tasks execution time or waiting-inaccuracies
          * <br>
-         * Any negative return value will cancel the Task.
+         * Any negative return value will prevent the task from being rescheduled.
+         *
+         * @param scheduledAt The timestamp when the current execution should have been run, but might have been delayed
+         *     through the execution of previous tasks. In other words, even at the very beginning of the call,
+         *     scheduledAt can largely differ (even seconds or more) from {@link System#currentTimeMillis()}
          */
-        long run();
+        long run(long scheduledAt);
 
         /**
          * Called once the TaskScheduleService has started. Can be used to populate internal data-structures with
@@ -228,7 +236,7 @@ public class TaskScheduleService implements SystemService, Runnable
                         }
                         for (Task execTask : taskListCopy)
                         {
-                            execute(execTask, now);
+                            execute(execTask, entryTime);
                         }
                         synchronized (tasks)
                         {
@@ -290,12 +298,12 @@ public class TaskScheduleService implements SystemService, Runnable
         }
     }
 
-    private void execute(Task task, long now)
+    private void execute(Task task, long scheduledAt)
     {
-        long delay = DEFAULT_RETRY_DELAY;
+        long delay = scheduledAt + DEFAULT_RETRY_DELAY;
         try
         {
-            delay = task.run();
+            delay = task.run(scheduledAt);
         }
         catch (Exception exc)
         {
@@ -314,20 +322,15 @@ public class TaskScheduleService implements SystemService, Runnable
         // Reschedule the task if a non-negative delay was requested
         if (delay >= 0)
         {
-            long targetTime = delay + now;
-            if (targetTime < 0)
-            {
-                targetTime = Long.MAX_VALUE;
-            }
             // If a task list exists for the calculated target time,
             // add the task to the existing task list; otherwise, register
             // a new task list for the calculated target time and
             // add the task to the newly registered task list
-            LinkedList<Task> taskList = tasks.get(targetTime);
+            LinkedList<Task> taskList = tasks.get(delay);
             if (taskList == null)
             {
                 taskList = new LinkedList<>();
-                tasks.put(targetTime, taskList);
+                tasks.put(delay, taskList);
             }
             taskList.add(task);
         }

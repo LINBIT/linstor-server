@@ -49,7 +49,7 @@ public class PingTask implements Task
     }
 
     @Override
-    public long run()
+    public long run(long scheduleAt)
     {
         final List<Peer> peersToRemove = new ArrayList<>();
 
@@ -100,6 +100,6 @@ public class PingTask implements Task
         {
             peerSet.removeAll(peersToRemove);
         }
-        return PING_SLEEP;
+        return scheduleAt + PING_SLEEP;
     }
 }

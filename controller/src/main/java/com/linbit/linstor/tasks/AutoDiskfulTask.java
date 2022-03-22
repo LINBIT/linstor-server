@@ -282,7 +282,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
     }
 
     @Override
-    public long run()
+    public long run(long scheduleAt)
     {
         long nextRunIn = TASK_TIMEOUT;
         ArrayList<AutoDiskfulConfig> cfgsToExecute = new ArrayList<>();
@@ -383,7 +383,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                 errorReporter.reportError(new ImplementationError(exc));
             }
         }
-        return Math.min(nextRunIn, TASK_TIMEOUT);
+        return scheduleAt + Math.min(nextRunIn, TASK_TIMEOUT);
     }
 
     private Mono<ApiCallRc> removeExcessFlux(Resource rsc) throws AccessDeniedException

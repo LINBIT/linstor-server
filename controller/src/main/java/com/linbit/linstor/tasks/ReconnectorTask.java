@@ -255,7 +255,7 @@ public class ReconnectorTask implements Task
     }
 
     @Override
-    public long run()
+    public long run(long scheduleAt)
     {
         Pair<ArrayList<ReconnectConfig>, ArrayList<Pair<Flux<ApiCallRc>, Peer>>> pair;
         try (LockGuard lockGuard = lockGuardFactory.build(LockType.READ, NODES_MAP))
@@ -373,7 +373,7 @@ public class ReconnectorTask implements Task
                 }
             }
         }
-        return RECONNECT_SLEEP;
+        return scheduleAt + RECONNECT_SLEEP;
     }
 
     private void runEvictionFluxes(ArrayList<Pair<Flux<ApiCallRc>, Peer>> fluxList)

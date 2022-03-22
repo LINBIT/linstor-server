@@ -48,7 +48,7 @@ public class LogArchiveTask implements TaskScheduleService.Task
     }
 
     @Override
-    public long run()
+    public long run(long scheduledAt)
     {
         errorReporter.archiveLogDirectory();
 
@@ -72,6 +72,6 @@ public class LogArchiveTask implements TaskScheduleService.Task
         // also clean up blacklisted ports for snapshot shipping
         snapshotShippingHandler.cleanBlacklistPorts();
 
-        return LOGARCHIVE_SLEEP;
+        return scheduledAt + LOGARCHIVE_SLEEP;
     }
 }
