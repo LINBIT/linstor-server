@@ -103,7 +103,7 @@ public class ExosEnclosurePingTask implements Task
     public long run(long scheduledAt)
     {
         recache();
-        return scheduledAt + RETRY_MS;
+        return getNextFutureReschedule(scheduledAt, RETRY_MS);
     }
 
     private void recache()

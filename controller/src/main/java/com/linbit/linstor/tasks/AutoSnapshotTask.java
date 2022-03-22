@@ -236,7 +236,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         {
             run(cfg);
         }
-        return scheduleAt + TASK_TIMEOUT;
+        return getNextFutureReschedule(scheduleAt, TASK_TIMEOUT);
     }
 
     private void run(AutoSnapshotConfig cfgRef)

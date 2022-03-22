@@ -72,6 +72,6 @@ public class LogArchiveTask implements TaskScheduleService.Task
         // also clean up blacklisted ports for snapshot shipping
         snapshotShippingHandler.cleanBlacklistPorts();
 
-        return scheduledAt + LOGARCHIVE_SLEEP;
+        return getNextFutureReschedule(scheduledAt, LOGARCHIVE_SLEEP);
     }
 }

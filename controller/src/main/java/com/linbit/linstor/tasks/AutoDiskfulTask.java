@@ -383,7 +383,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                 errorReporter.reportError(new ImplementationError(exc));
             }
         }
-        return scheduleAt + Math.min(nextRunIn, TASK_TIMEOUT);
+        return getNextFutureReschedule(scheduleAt, Math.min(nextRunIn, TASK_TIMEOUT));
     }
 
     private Mono<ApiCallRc> removeExcessFlux(Resource rsc) throws AccessDeniedException

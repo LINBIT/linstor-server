@@ -35,7 +35,7 @@ public class ForceReleaseSharedLocksTask implements Task
         {
             needsDelay = false;
             sharedSPMgr.forgetRequests(node);
-            ret = scheduleAt + delay;
+            ret = getNextFutureReschedule(scheduleAt, delay);
         }
         else
         {

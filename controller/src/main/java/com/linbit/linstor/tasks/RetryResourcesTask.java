@@ -191,7 +191,7 @@ public class RetryResourcesTask implements Task
                 remove(rsc);
             }
         }
-        return scheduleAt + TASK_TIMEOUT;
+        return getNextFutureReschedule(scheduleAt, TASK_TIMEOUT);
     }
 
     private List<RetryConfig> getResourcesToRetry()

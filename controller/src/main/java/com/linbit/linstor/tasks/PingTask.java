@@ -100,6 +100,6 @@ public class PingTask implements Task
         {
             peerSet.removeAll(peersToRemove);
         }
-        return scheduleAt + PING_SLEEP;
+        return getNextFutureReschedule(scheduleAt, PING_SLEEP);
     }
 }

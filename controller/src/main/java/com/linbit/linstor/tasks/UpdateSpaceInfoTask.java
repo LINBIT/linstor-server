@@ -151,6 +151,6 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
         {
             errRep.reportError(nfe);
         }
-        return scheduleAt + (nextUpdate * 1000);
+        return getNextFutureReschedule(scheduleAt, (nextUpdate * 1000));
     }
 }

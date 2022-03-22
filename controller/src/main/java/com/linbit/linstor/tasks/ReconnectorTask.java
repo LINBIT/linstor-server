@@ -373,7 +373,7 @@ public class ReconnectorTask implements Task
                 }
             }
         }
-        return scheduleAt + RECONNECT_SLEEP;
+        return getNextFutureReschedule(scheduleAt, RECONNECT_SLEEP);
     }
 
     private void runEvictionFluxes(ArrayList<Pair<Flux<ApiCallRc>, Peer>> fluxList)

@@ -50,6 +50,25 @@ public class TaskScheduleService implements SystemService, Runnable
         default void initialize()
         {
         }
+
+        /**
+         * Calculates the next scheduled timestamp pretending perfect previous scheduled timestamps in order to prevent
+         * future executions to get delayed additively. Example:
+         * If scheduleAt is 12, rescheduleInRelative is 10 and current timestamp is 41, the returned value would be 42
+         * as it is the next higher number that is X * rescheduledInRelative later than scheduleAt.
+         *
+         * @param scheduledAt
+         * @param rescheduleInRelative
+         *
+         * @return
+         */
+        default long getNextFutureReschedule(long scheduledAt, long rescheduleInRelative)
+        {
+            long now = System.currentTimeMillis();
+            // in order to prevent using Math.ceil and casting the result to long:
+            long ceil = (now - scheduledAt + (rescheduleInRelative - 1)) / rescheduleInRelative;
+            return ceil * rescheduleInRelative + scheduledAt;
+        }
     }
 
     private static final ServiceName SERVICE_NAME;
