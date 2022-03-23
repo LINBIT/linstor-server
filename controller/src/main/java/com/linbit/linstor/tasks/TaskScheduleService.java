@@ -10,11 +10,15 @@ import com.linbit.linstor.logging.ErrorReporter;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.event.Level;
 
@@ -97,6 +101,9 @@ public class TaskScheduleService implements SystemService, Runnable
     private boolean running = false;
     private boolean shutdown = false;
 
+    private final Lock tasksLock;
+    private final Condition tasksCond;
+
     private Thread workerThread;
 
     private final TreeMap<Long, LinkedList<Task>> tasks = new TreeMap<>();
@@ -108,6 +115,8 @@ public class TaskScheduleService implements SystemService, Runnable
     {
         errorReporter = errorReporterRef;
         serviceInstanceName = SERVICE_NAME;
+        tasksLock = new ReentrantLock();
+        tasksCond = tasksLock.newCondition();
     }
 
     @Override
@@ -155,8 +164,9 @@ public class TaskScheduleService implements SystemService, Runnable
     public void start() throws SystemServiceStartException
     {
         boolean needStart;
-        synchronized (tasks)
+        try
         {
+            tasksLock.lock();
             needStart = !running;
             running = true;
             shutdown = false;
@@ -166,6 +176,10 @@ public class TaskScheduleService implements SystemService, Runnable
             {
                 task.initialize();
             }
+        }
+        finally
+        {
+            tasksLock.unlock();
         }
         if (needStart)
         {
@@ -178,10 +192,15 @@ public class TaskScheduleService implements SystemService, Runnable
     @Override
     public void shutdown()
     {
-        synchronized (tasks)
+        try
         {
+            tasksLock.lock();
             shutdown = true;
-            tasks.notify();
+            tasksCond.signal();
+        }
+        finally
+        {
+            tasksLock.unlock();
         }
     }
 
@@ -196,10 +215,15 @@ public class TaskScheduleService implements SystemService, Runnable
 
     public void addTask(Task task)
     {
-        synchronized (tasks)
+        try
         {
+            tasksLock.lock();
             newTasks.add(task);
-            tasks.notify();
+            tasksCond.signal();
+        }
+        finally
+        {
+            tasksLock.unlock();
         }
     }
 
@@ -208,86 +232,71 @@ public class TaskScheduleService implements SystemService, Runnable
     {
         try
         {
+            tasksLock.lock();
             while (!shutdown)
             {
                 try
                 {
-                    long now = System.currentTimeMillis();
+                    // Handle new tasks
                     {
-                        // If there are new tasks to be added,
-                        // run the tasks and reschedule each task according
-                        // to the delay that the task requested
-                        Task execTask;
-                        do
+                        // Run any new tasks and reschedule each task according to
+                        // the delay that the task requested
+                        final List<Task> execTaskList = new LinkedList<>(newTasks);
+                        newTasks.clear();
+                        if (!execTaskList.isEmpty())
                         {
-                            synchronized (tasks)
-                            {
-                                execTask = newTasks.pollFirst();
-                            }
-                            if (execTask != null)
+                            long now = System.currentTimeMillis();
+                            tasksLock.unlock();
+                            for (Task execTask : execTaskList)
                             {
                                 execute(execTask, now);
                             }
-                        }
-                        while (execTask != null);
-                    }
-
-                    Long entryTime;
-                    synchronized (tasks)
-                    {
-                        entryTime = tasks.firstKey();
-                    }
-                    now = System.currentTimeMillis();
-
-                    // If the task list's target time is in the past or is now,
-                    // remove the task list entry and run and reschedule all
-                    // tasks from the task list
-                    while (entryTime != null && entryTime <= now)
-                    {
-                        // The tasks list did not change since the firstEntry() call,
-                        // so this will remove the same entry that firstEntry() selected,
-                        // and it is probably faster than calling remove()
-                        List<Task> taskListCopy;
-                        synchronized (tasks)
-                        {
-                            LinkedList<Task> taskList = tasks.remove(entryTime);
-                            taskListCopy = taskList == null ? Collections.emptyList() : new LinkedList<>(taskList);
-                        }
-                        for (Task execTask : taskListCopy)
-                        {
-                            execute(execTask, entryTime);
-                        }
-                        synchronized (tasks)
-                        {
-                            entryTime = tasks.firstKey();
-                        }
-
-                        // Recheck the current time only if the task's entryTime
-                        // is greater than the last known current time
-                        if (entryTime > now)
-                        {
-                            now = System.currentTimeMillis();
+                            tasksLock.lock();
                         }
                     }
 
-                    // Default to a waitTime of zero if there are no task lists
-                    // to suspend this thread until new tasks are added
-                    long waitTime = 0;
+                    // Handle existing tasks
+                    long waitTime;
+                    Long entryTime = tasks.firstKey();
                     if (entryTime != null)
                     {
+                        long now = System.currentTimeMillis();
+
+                        while (entryTime != null && entryTime <= now)
+                        {
+                            // Remove the task
+                            Entry<Long, LinkedList<Task>> taskEntry = tasks.pollFirstEntry();
+                            final List<Task> execTaskList = new LinkedList<>(taskEntry.getValue());
+
+                            tasksLock.unlock();
+                            for (Task execTask : execTaskList)
+                            {
+                                execute(execTask, entryTime);
+                            }
+                            tasksLock.lock();
+
+                            entryTime = tasks.firstKey();
+                            if (entryTime != null && entryTime > now)
+                            {
+                                now = System.currentTimeMillis();
+                            }
+                        }
+
                         // Set the waitTime to suspend this thread until the
-                        // next task list's target time is reached
-                        waitTime = entryTime - now;
+                        // next task list's target time is reached, or if there
+                        // are no more tasks, wait until a wakeup event occurs (0)
+                        waitTime = entryTime != null ? entryTime - now : 0;
+                    }
+                    else
+                    {
+                        waitTime = 0;
                     }
 
-                    // Suspend until new tasks are added or the target time of an
-                    // existing task list is reached
-                    synchronized (tasks)
+                    if (!shutdown && newTasks.isEmpty())
                     {
-                        if (!shutdown && newTasks.isEmpty())
-                        {
-                            tasks.wait(waitTime);
-                        }
+                        // Suspend until new tasks are added or the target time of an
+                        // existing task list is reached
+                        tasksCond.await(waitTime, TimeUnit.MILLISECONDS);
                     }
                 }
                 catch (InterruptedException ignored)
@@ -310,10 +319,8 @@ public class TaskScheduleService implements SystemService, Runnable
         }
         finally
         {
-            synchronized (tasks)
-            {
-                running = false;
-            }
+            running = false;
+            tasksLock.unlock();
         }
     }
 
@@ -345,13 +352,21 @@ public class TaskScheduleService implements SystemService, Runnable
             // add the task to the existing task list; otherwise, register
             // a new task list for the calculated target time and
             // add the task to the newly registered task list
-            LinkedList<Task> taskList = tasks.get(delay);
-            if (taskList == null)
+            try
             {
-                taskList = new LinkedList<>();
-                tasks.put(delay, taskList);
+                tasksLock.lock();
+                LinkedList<Task> taskList = tasks.get(delay);
+                if (taskList == null)
+                {
+                    taskList = new LinkedList<>();
+                    tasks.put(delay, taskList);
+                }
+                taskList.add(task);
             }
-            taskList.add(task);
+            finally
+            {
+                tasksLock.unlock();
+            }
         }
     }
 
@@ -367,8 +382,9 @@ public class TaskScheduleService implements SystemService, Runnable
      */
     public void rescheduleAt(Task task, long newDelay)
     {
-        synchronized (tasks)
+        try
         {
+            tasksLock.lock();
             Long deleteEntry = null;
             for (Entry<Long, LinkedList<Task>> entry : tasks.entrySet())
             {
@@ -392,8 +408,12 @@ public class TaskScheduleService implements SystemService, Runnable
                     tasks.put(targetTime, taskList);
                 }
                 taskList.add(task);
-                tasks.notify();
+                tasksCond.signal();
             }
+        }
+        finally
+        {
+            tasksLock.unlock();
         }
     }
 }
