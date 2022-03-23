@@ -100,6 +100,7 @@ public class ApplicationLifecycleManager
             catch (Exception unhandledExc)
             {
                 errorReporter.reportError(unhandledExc);
+                throw new SystemServiceStartException("Unhandled exception", unhandledExc, true);
             }
         }
     }
