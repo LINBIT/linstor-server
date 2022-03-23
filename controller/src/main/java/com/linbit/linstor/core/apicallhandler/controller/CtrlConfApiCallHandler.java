@@ -51,6 +51,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 import com.linbit.utils.UuidUtils;
 
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
@@ -61,7 +62,9 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +72,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 
 import com.google.inject.Provider;
@@ -102,6 +106,19 @@ public class CtrlConfApiCallHandler
     private final AutoDiskfulTask autoDiskfulTask;
     private final ReconnectorTask reconnectorTask;
 
+    @FunctionalInterface
+    private interface SpecialPropHandler
+    {
+        /**
+         * This method is expected to delete the entries of the input map/sets once those are handled and should NOT be
+         * passed through to the usual whitelisting mechanism
+         */
+        ApiCallRc handle(
+            HashMap<String, String> filteredOverrideProps,
+            HashSet<String> filteredDeletePropKeys,
+            HashSet<String> filteredDeleteNamespaces
+        );
+    }
 
     @Inject
     public CtrlConfApiCallHandler(
@@ -197,15 +214,41 @@ public class CtrlConfApiCallHandler
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        for (Entry<String, String> overrideProp : overridePropsRef.entrySet())
+
+        /*
+         * Some properties need to be considered in combination with other properties.
+         * Those other properties might already exist, but might also be part of the current modification.
+         *
+         * Therefore we copy the input map/sets, filter them by special rules if necessary,
+         * and the properties that were not filtered are passed to the usual whitelisting mechanism as before
+         */
+        HashMap<String, String> filteredOverrideProps = new HashMap<>(overridePropsRef);
+        HashSet<String> filteredDeletePropKeys = new HashSet<>(deletePropKeysRef);
+        HashSet<String> filteredDeleteNamespaces = new HashSet<>(deletePropNamespacesRef);
+
+        List<SpecialPropHandler> specialHandlers = Arrays.asList(this::handleNetComModifications);
+        for (SpecialPropHandler specialHandler : specialHandlers)
+        {
+            ApiCallRc handlersApiCallRc = specialHandler.handle(
+                filteredOverrideProps,
+                filteredDeletePropKeys,
+                filteredDeleteNamespaces
+            );
+            if (handlersApiCallRc != null)
+            {
+                apiCallRc.addEntries(handlersApiCallRc);
+            }
+        }
+
+        for (Entry<String, String> overrideProp : filteredOverrideProps.entrySet())
         {
             apiCallRc.addEntries(setProp(overrideProp.getKey(), null, overrideProp.getValue()));
         }
-        for (String deletePropKey : deletePropKeysRef)
+        for (String deletePropKey : filteredDeletePropKeys)
         {
             apiCallRc.addEntries(deleteProp(deletePropKey, null));
         }
-        for (String deleteNamespace : deletePropNamespacesRef)
+        for (String deleteNamespace : filteredDeleteNamespaces)
         {
             // we should not simply "drop" the namespace here, as we might have special cleanup logic
             // for some of the deleted keys.
@@ -725,6 +768,221 @@ public class CtrlConfApiCallHandler
             );
 
         }
+    }
+
+    private ApiCallRc handleNetComModifications(
+        HashMap<String, String> filteredOverrideProps,
+        HashSet<String> filteredDeletePropKeys,
+        HashSet<String> filteredDeleteNamespaces
+    )
+    {
+        // just apply all netcom props and perform sanity checks later
+        String currentKey = null;
+        String currentValue = null;
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        try
+        {
+            HashSet<String> connectorsToCheck = new HashSet<>();
+            Iterator<Entry<String, String>> overrideIterator = filteredOverrideProps.entrySet().iterator();
+            while (overrideIterator.hasNext())
+            {
+                Entry<String, String> overrideProp = overrideIterator.next();
+                currentKey = overrideProp.getKey();
+                currentValue = overrideProp.getValue();
+                String[] splitByNamespaces = currentKey.split("/");
+                if (currentKey.startsWith(ApiConsts.NAMESPC_NETCOM) && splitByNamespaces.length == 3)
+                {
+                    String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, currentKey, currentValue);
+                    setCtrlProp(peerAccCtx.get(), currentKey, normalized, null);
+                    connectorsToCheck.add(splitByNamespaces[1]);
+                    overrideIterator.remove(); // remove the prop to not being forwarded to the default handler
+                }
+            }
+            currentValue = null;
+            Iterator<String> deletePropIterator = filteredDeletePropKeys.iterator();
+            while (deletePropIterator.hasNext())
+            {
+                currentKey = deletePropIterator.next();
+                String[] splitByNamespaces = currentKey.split("/");
+                if (currentKey.startsWith(ApiConsts.NAMESPC_NETCOM) && splitByNamespaces.length == 3)
+                {
+                    systemConfRepository.removeCtrlProp(peerAccCtx.get(), currentKey, null);
+                    connectorsToCheck.add(splitByNamespaces[1]);
+                    deletePropIterator.remove(); // remove the prop to not being forwarded to the default handler
+                }
+            }
+
+            Iterator<String> deleteNamespaceIterator = filteredDeleteNamespaces.iterator();
+            while (deleteNamespaceIterator.hasNext())
+            {
+                currentKey = deleteNamespaceIterator.next();
+                String[] splitByNamespaces = currentKey.split("/");
+                if (currentKey.startsWith(ApiConsts.NAMESPC_NETCOM) && splitByNamespaces.length == 2)
+                {
+                    Optional<Props> optNamespace = systemConfRepository.getCtrlConfForChange(peerAccCtx.get())
+                        .getNamespace(currentKey);
+                    if (optNamespace.isPresent())
+                    {
+                        Iterator<String> keysIterator = optNamespace.get().keysIterator();
+                        while (keysIterator.hasNext())
+                        {
+                            String actualKey = keysIterator.next();
+                            systemConfRepository.removeCtrlProp(peerAccCtx.get(), actualKey, null);
+                        }
+                    }
+                    deleteNamespaceIterator.remove(); // remove the prop to not being forwarded to the default handler
+                }
+            }
+
+            boolean abort = false;
+            final String missingKeyFormat = "NetComConnector '%s' is missing '%s' key.";
+            if (!connectorsToCheck.isEmpty())
+            {
+                Optional<Props> optCtrlProps = systemConfRepository.getCtrlConfForView(peerAccCtx.get())
+                    .getNamespace(ApiConsts.NAMESPC_NETCOM);
+                if (optCtrlProps.isPresent())
+                {
+                    Props ctrlProps = optCtrlProps.get();
+                    for (String connectorToCheck : connectorsToCheck)
+                    {
+                        Optional<Props> optConnectorNamespace = ctrlProps.getNamespace(connectorToCheck);
+                        if (optConnectorNamespace.isPresent())
+                        {
+                            List<String> errorMessages = new ArrayList<>();
+
+                            BiConsumer<String, String> addErrorIfNull = (value, missingKey) ->
+                            {
+                                if (value == null)
+                                {
+                                    errorMessages.add(String.format(missingKeyFormat, connectorToCheck, missingKey));
+                                }
+                            };
+
+                            Props conNamespace = optConnectorNamespace.get();
+                            String enabled = conNamespace.getProp(ApiConsts.KEY_NETCOM_ENABLED);
+                            String bindAddress = conNamespace.getProp(ApiConsts.KEY_NETCOM_BIND_ADDRESS);
+                            String keyPasswd = conNamespace.getProp(ApiConsts.KEY_NETCOM_KEY_PASSWD);
+                            String keyStore = conNamespace.getProp(ApiConsts.KEY_NETCOM_KEY_STORE);
+                            String keyStorePasswd = conNamespace.getProp(ApiConsts.KEY_NETCOM_KEY_STORE_PASSWD);
+                            String port = conNamespace.getProp(ApiConsts.KEY_NETCOM_PORT);
+                            String sslProtocol = conNamespace.getProp(ApiConsts.KEY_NETCOM_SSL_PROTOCOL);
+                            String trustStore = conNamespace.getProp(ApiConsts.KEY_NETCOM_TRUST_STORE);
+                            String trustStorePasswd = conNamespace.getProp(ApiConsts.KEY_NETCOM_TRUST_STORE_PASSWD);
+                            String type = conNamespace.getProp(ApiConsts.KEY_NETCOM_TYPE);
+
+                            addErrorIfNull.accept(bindAddress, ApiConsts.KEY_NETCOM_BIND_ADDRESS);
+                            addErrorIfNull.accept(type, ApiConsts.KEY_NETCOM_TYPE);
+                            addErrorIfNull.accept(port, ApiConsts.KEY_NETCOM_PORT);
+                            addErrorIfNull.accept(enabled, ApiConsts.KEY_NETCOM_ENABLED);
+
+                            if (ApiConsts.VAL_NETCOM_TYPE_SSL.equalsIgnoreCase(type))
+                            {
+                                addErrorIfNull.accept(keyPasswd, ApiConsts.KEY_NETCOM_KEY_PASSWD);
+                                addErrorIfNull.accept(keyStore, ApiConsts.KEY_NETCOM_KEY_STORE);
+                                addErrorIfNull.accept(keyStorePasswd, ApiConsts.KEY_NETCOM_KEY_STORE_PASSWD);
+                                addErrorIfNull.accept(sslProtocol, ApiConsts.KEY_NETCOM_SSL_PROTOCOL);
+                                addErrorIfNull.accept(trustStore, ApiConsts.KEY_NETCOM_TRUST_STORE);
+                                addErrorIfNull.accept(trustStorePasswd, ApiConsts.KEY_NETCOM_TRUST_STORE_PASSWD);
+                            }
+
+                            // normalize the 'enabled' property. we cannot use the whitelist normialization as we have
+                            // no whitelist rule for these (special) netcom namespace
+                            boolean isEnabled;
+                            if (ApiConsts.VAL_TRUE.equalsIgnoreCase(enabled))
+                            {
+                                isEnabled = true;
+                                if (!ApiConsts.VAL_TRUE.equals(enabled))
+                                {
+                                    conNamespace.setProp(ApiConsts.KEY_NETCOM_ENABLED, ApiConsts.VAL_TRUE);
+                                }
+                            }
+                            else if (ApiConsts.VAL_FALSE.equalsIgnoreCase(enabled))
+                            {
+                                isEnabled = false;
+                                if (!ApiConsts.VAL_FALSE.equals(enabled))
+                                {
+                                    conNamespace.setProp(ApiConsts.KEY_NETCOM_ENABLED, ApiConsts.VAL_FALSE);
+                                }
+                            }
+                            else
+                            {
+                                // nothing valid
+                                isEnabled = false;
+                            }
+
+                            if (!errorMessages.isEmpty())
+                            {
+                                apiCallRc.addEntry(
+                                    ApiCallRcImpl.simpleEntry(
+                                        isEnabled ? ApiConsts.FAIL_INVLD_CONF : ApiConsts.WARN_INVLD_CONF,
+                                        StringUtils.join(errorMessages, "\n"),
+                                        true
+                                    )
+                                );
+                                abort &= isEnabled;
+                            }
+                        }
+                    }
+                }
+            }
+            if (abort)
+            {
+                transMgrProvider.get().rollback();
+                apiCallRc.addEntry(
+                    ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_CONF, "Invalid configurations were rolled back")
+                );
+            }
+            else
+            {
+                transMgrProvider.get().commit();
+                // TODO: restart valid but changed netCom services
+            }
+        }
+        catch (Exception exc)
+        {
+            String errorMsg;
+            long rc;
+            if (exc instanceof AccessDeniedException)
+            {
+                errorMsg = ResponseUtils.getAccDeniedMsg(
+                    peerAccCtx.get(),
+                    "set a netcom (controller) config property"
+                );
+                rc = ApiConsts.FAIL_ACC_DENIED_CTRL_CFG;
+            }
+            else if (exc instanceof InvalidKeyException)
+            {
+                errorMsg = "Invalid key: " + ((InvalidKeyException) exc).invalidKey;
+                rc = ApiConsts.FAIL_INVLD_PROP;
+            }
+            else if (exc instanceof InvalidValueException)
+            {
+                errorMsg = "Invalid value: " + currentValue + " for key: " + currentKey;
+                rc = ApiConsts.FAIL_INVLD_PROP;
+            }
+            else if (exc instanceof DatabaseException)
+            {
+                errorMsg = ResponseUtils.getSqlMsg(
+                    "Persisting controller config prop with key '" + currentKey + "' with value '" + currentValue + "'."
+                );
+                rc = ApiConsts.FAIL_SQL;
+            }
+            else
+            {
+                errorMsg = "An unknown error occurred while setting netcom (controller) config prop with key '" +
+                    currentKey + "' with value '" + currentValue + "'.";
+                rc = ApiConsts.FAIL_UNKNOWN_ERROR;
+            }
+
+            apiCallRc.addEntry(errorMsg, rc | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT);
+            errorReporter.reportError(
+                exc,
+                peerAccCtx.get(),
+                null,
+                errorMsg
+            );
+        }
+        return apiCallRc;
     }
 
     public Map<String, String> listProps()
