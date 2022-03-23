@@ -1,8 +1,11 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
 import com.linbit.linstor.transaction.EtcdTransaction;
-import java.util.TreeMap;
 
+@EtcdMigration(
+    description = "Migrate to SpaceTracking V2",
+    version = 46
+)
 public class Migration_19_SpaceTrackingV2 extends BaseEtcdMigration
 {
     @Override
