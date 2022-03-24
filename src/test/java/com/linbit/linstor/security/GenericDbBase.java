@@ -57,6 +57,7 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.layer.resource.AbsRscLayerHelper;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.modularcrypto.CryptoModule;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -331,7 +332,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             new CtrlConfigModule(new CtrlConfig(null)),
             additionalModule,
             BoundFieldModule.of(this),
-            new NameShortenerModule()
+            new NameShortenerModule(),
+            new CryptoModule()
         );
 
         injector.getInstance(DbCoreObjProtInitializer.class).initialize();

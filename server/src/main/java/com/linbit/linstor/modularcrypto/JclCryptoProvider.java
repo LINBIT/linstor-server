@@ -25,12 +25,12 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.inject.Inject;
 
+@Singleton
 public class JclCryptoProvider implements ModularCryptoProvider
 {
     private final SecretGenerator   secretGen;
     private final LengthPadding     cryptoLenPad;
 
-    @Singleton
     @Inject
     public JclCryptoProvider()
     {

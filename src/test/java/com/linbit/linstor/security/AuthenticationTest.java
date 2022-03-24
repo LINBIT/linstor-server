@@ -1,11 +1,9 @@
 package com.linbit.linstor.security;
 
-import com.linbit.linstor.security.Authentication;
 import com.linbit.linstor.modularcrypto.CryptoModule;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.crypto.KeyDerivation;
 
-import javax.crypto.SecretKeyFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
