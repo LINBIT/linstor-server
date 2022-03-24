@@ -16,8 +16,8 @@ import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.event.Level;
@@ -70,7 +70,15 @@ public class TaskScheduleService implements SystemService, Runnable
         {
             long now = System.currentTimeMillis();
             // in order to prevent using Math.ceil and casting the result to long:
-            long ceil = (now - scheduledAt + (rescheduleInRelative - 1)) / rescheduleInRelative;
+            long ceil;
+            if (now == scheduledAt)
+            {
+                ceil = 1;
+            }
+            else
+            {
+                ceil = (now - scheduledAt + (rescheduleInRelative - 1)) / rescheduleInRelative;
+            }
             return ceil * rescheduleInRelative + scheduledAt;
         }
     }
