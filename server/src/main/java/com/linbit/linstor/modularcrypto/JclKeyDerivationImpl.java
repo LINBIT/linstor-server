@@ -54,6 +54,11 @@ public class JclKeyDerivationImpl implements KeyDerivation
                 final char[] passphraseChars;
                 try
                 {
+                    // The JCL key derivation requires UTF-16 input, but other implementations require
+                    // byte sequences. To allow cleaning the input data (e.g., plaintext password) after
+                    // key derivation, UnicodeConversion is used to convert directly between array types,
+                    // so the memory location of the input data remains under the control of this function.
+                    // UnicodeConversion also cleans up its temporary buffers if the parameter secure == true.
                     passphraseChars = UnicodeConversion.utf8BytesToUtf16Chars(passphrase, true);
                 }
                 catch (UnicodeConversion.InvalidSequenceException exc)
