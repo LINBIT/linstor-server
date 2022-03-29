@@ -128,6 +128,7 @@ public class CtrlConfig extends LinstorConfig
         Path linstorConfigPath = Paths.get(configDir, LINSTOR_CTRL_CONFIG).normalize();
         if (Files.exists(linstorConfigPath))
         {
+            System.out.println("Loading configuration file \"" + linstorConfigPath.toString() + "\"");
             try
             {
                 CtrlTomlConfig linstorToml = new Toml().read(linstorConfigPath.toFile()).to(CtrlTomlConfig.class);

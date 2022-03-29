@@ -82,6 +82,7 @@ public class StltConfig extends LinstorConfig
         Path linstorConfigPath = Paths.get(configDir, LINSTOR_STLT_CONFIG).normalize();
         if (Files.exists(linstorConfigPath))
         {
+            System.out.println("Loading configuration file \"" + linstorConfigPath.toString() + "\"");
             try
             {
                 StltTomlConfig linstorToml = new Toml().read(linstorConfigPath.toFile()).to(StltTomlConfig.class);
