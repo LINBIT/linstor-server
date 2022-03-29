@@ -36,7 +36,9 @@ public class DbEtcdInitializer implements DbInitializer
 
         try
         {
-            dbEtcd.initializeDataSource(ctrlCfg.getDbConnectionUrl());
+            final String etcdConnectionUrl = ctrlCfg.getDbConnectionUrl();
+            errorLog.logInfo("etcd connection URL is \"%s\"", etcdConnectionUrl);
+            dbEtcd.initializeDataSource(etcdConnectionUrl);
 
             dbEtcd.migrate("etcd");
         }

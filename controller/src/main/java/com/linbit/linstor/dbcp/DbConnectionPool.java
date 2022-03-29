@@ -17,6 +17,7 @@ import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.SQLUtils;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.DatabaseInfo.DB2_MIN_VERSION;
@@ -79,6 +80,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
     private ThreadLocal<List<Connection>> threadLocalConnections;
 
     private final CtrlConfig linstorConfig;
+    private final ErrorReporter errorLog;
 
     static
     {
@@ -94,12 +96,14 @@ public class DbConnectionPool implements ControllerSQLDatabase
 
     @Inject
     public DbConnectionPool(
-        CtrlConfig linstorConfigRef
+        CtrlConfig linstorConfigRef,
+        ErrorReporter errorLogRef
     )
     {
         serviceNameInstance = SERVICE_NAME;
         threadLocalConnections = new ThreadLocal<>();
         linstorConfig = linstorConfigRef;
+        errorLog = errorLogRef;
     }
 
     @Override
@@ -133,6 +137,8 @@ public class DbConnectionPool implements ControllerSQLDatabase
     {
         ErrorCheck.ctorNotNull(DbConnectionPool.class, String.class, dbConnectionUrlRef);
         dbConnectionUrl = dbConnectionUrlRef;
+
+        errorLog.logInfo("SQL database connection URL is \"%s\"", dbConnectionUrl);
 
         try
         {
@@ -254,7 +260,8 @@ public class DbConnectionPool implements ControllerSQLDatabase
 
             // check if minimum version requirements of certain databases are satisfied
             int[] dbProductMinVersion = null;
-            switch (DatabaseInfo.getDbProduct(dbProductName, dbProductVersion))
+            final DatabaseInfo.DbProduct dbProd = DatabaseInfo.getDbProduct(dbProductName, dbProductVersion);
+            switch (dbProd)
             {
                 case H2:
                     dbProductMinVersion = H2_MIN_VERSION;
@@ -316,7 +323,11 @@ public class DbConnectionPool implements ControllerSQLDatabase
                             )
                         );
                     }
-                    // else: everything is fine so we can proceed with the migration process
+                    else
+                    {
+                        // Everything is fine so we can proceed with the migration process
+                        errorLog.logInfo("SQL database is %s", dbProd.displayName());
+                    }
                 }
                 else
                 {

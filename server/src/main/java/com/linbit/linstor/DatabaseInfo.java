@@ -1,5 +1,7 @@
 package com.linbit.linstor;
 
+import com.linbit.ImplementationError;
+
 
 public class DatabaseInfo
 {
@@ -18,7 +20,63 @@ public class DatabaseInfo
         MARIADB,
         INFORMIX,
         ASE,
-        ETCD
+        ETCD;
+
+        public String displayName()
+        {
+            String dspName;
+            switch (this)
+            {
+                case UNKNOWN:
+                    dspName = "unknown";
+                    break;
+                case H2:
+                    dspName = "H2";
+                    break;
+                case DERBY:
+                    dspName = "Apache Derby";
+                    break;
+                case DB2:
+                    dspName = "DB2/LUW";
+                    break;
+                case DB2_I:
+                    dspName = "DB2/System i";
+                    break;
+                case DB2_Z:
+                    dspName = "DB2/System z";
+                    break;
+                case POSTGRESQL:
+                    dspName = "PostgreSQL";
+                    break;
+                case ORACLE_RDBMS:
+                    dspName = "Oracle RDBMS";
+                    break;
+                case MSFT_SQLSERVER:
+                    dspName = "Microsoft SQLServer";
+                    break;
+                case MYSQL:
+                    dspName = "Oracle MySQL";
+                    break;
+                case MARIADB:
+                    dspName = "MariaDB";
+                    break;
+                case INFORMIX:
+                    dspName = "IBM Informix";
+                    break;
+                case ASE:
+                    dspName = "SAP Adaptive Server Enterprise (Sybase)";
+                    break;
+                case ETCD:
+                    dspName = "Non-SQL / etcd";
+                    break;
+                default:
+                    throw new ImplementationError(
+                        "Missing case statement for enum " + name() + " (" + ordinal() + ") in class " +
+                        getClass().getCanonicalName()
+                    );
+            }
+            return dspName;
+        }
     }
 
     public static final int[] H2_MIN_VERSION = {1, 2};

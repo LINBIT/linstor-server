@@ -36,7 +36,9 @@ public class DbK8sCrdInitializer implements DbInitializer
 
         try
         {
-            dbK8sCrd.initializeDataSource(ctrlCfg.getDbConnectionUrl());
+            final String crdConnectionUrl = ctrlCfg.getDbConnectionUrl();
+            errorLog.logInfo("Kubernetes-CRD connection URL is \"%s\"", crdConnectionUrl);
+            dbK8sCrd.initializeDataSource(crdConnectionUrl);
 
             dbK8sCrd.migrate("k8s");
         }
