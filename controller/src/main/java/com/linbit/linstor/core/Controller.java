@@ -482,6 +482,7 @@ public final class Controller
 
         // check database type
         DatabaseDriverInfo.DatabaseType dbType = checkDatabaseConfig(errorLog, cfg);
+        errorLog.logInfo("%s %s", "Database type is", dbType.displayName());
 
         boolean dbgCnsEnabled = false;
         Controller instance = null;

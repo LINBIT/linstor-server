@@ -1,5 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.ImplementationError;
+
 public interface DatabaseDriverInfo
 {
     enum DatabaseType
@@ -7,6 +9,29 @@ public interface DatabaseDriverInfo
         SQL,
         ETCD,
         K8S_CRD;
+
+        public String displayName()
+        {
+            String dspName;
+            switch (this)
+            {
+                case SQL:
+                    dspName = "SQL";
+                    break;
+                case ETCD:
+                    dspName = "etcd";
+                    break;
+                case K8S_CRD:
+                    dspName = "Kubernetes-CRD";
+                    break;
+                default:
+                    throw new ImplementationError(
+                        "Missing case statement for enum " + name() + " (" + ordinal() + ") in class " +
+                        getClass().getCanonicalName()
+                    );
+            }
+            return dspName;
+        }
     }
 
     static DatabaseDriverInfo createDriverInfo(final String dbType)
