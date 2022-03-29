@@ -456,6 +456,9 @@ public final class Controller
 
     public static void main(String[] args)
     {
+        System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.CONTROLLER_MODULE);
+        LinStor.printStartupInfo();
+        
         System.setSecurityManager(new DummySecurityManager());
         CtrlConfig cfg = new CtrlConfig(args);
 
@@ -464,9 +467,6 @@ public final class Controller
 
         Path sentryFilePath = Paths.get(cfg.getConfigDir(), "sentry.properties");
         System.setProperty("sentry.properties.file", sentryFilePath.toString());
-
-        System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.CONTROLLER_MODULE);
-        LinStor.printStartupInfo();
 
         EtcdUtils.linstorPrefix = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
 

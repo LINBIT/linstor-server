@@ -406,6 +406,9 @@ public final class Satellite
 
     public static void main(String[] args)
     {
+        System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.SATELLITE_MODULE);
+        LinStor.printStartupInfo();
+        
         StltConfig cfg = new StltConfig(args);
 
         System.setProperty("log.module", LinStor.SATELLITE_MODULE);
@@ -413,9 +416,6 @@ public final class Satellite
 
         Path sentryFilePath = Paths.get(cfg.getConfigDir(), "sentry.properties");
         System.setProperty("sentry.properties.file", sentryFilePath.toString());
-
-        System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.SATELLITE_MODULE);
-        LinStor.printStartupInfo();
 
         StdErrorReporter errorLog = new StdErrorReporter(
             LinStor.SATELLITE_MODULE,
