@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -97,6 +98,7 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -496,7 +498,11 @@ public class CtrlNodeApiCallHandler
             NodeApi oldNodeData = node.getApiData(peerAccCtx.get(), null, null);
             if (nodeTypeStr != null)
             {
-                setNodeType(node, nodeTypeStr);
+                boolean needsReconnect = setNodeType(node, nodeTypeStr);
+                if (needsReconnect)
+                {
+                    apiCallRcs.addEntries(reconnectNode(Arrays.asList(node.getName().displayValue)));
+                }
                 notifyStlts = true;
             }
 
@@ -768,11 +774,33 @@ public class CtrlNodeApiCallHandler
         return netIf;
     }
 
-    private void setNodeType(Node node, String nodeTypeStr)
+    private boolean setNodeType(Node node, String nodeTypeStr)
     {
+        boolean needsReconnect = false;
+
         Node.Type nodeType = LinstorParsingUtils.asNodeType(nodeTypeStr);
         try
         {
+            Node.Type oldType = node.getNodeType(apiCtx);
+
+            boolean allowed = true;
+            if (oldType.isSpecial() != nodeType.isSpecial())
+            {
+                allowed = false;
+            }
+
+            if (!allowed)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_INVLD_NODE_TYPE,
+                        "Failed to change node type"
+                    ).setCause(
+                        "Changing node types from " + oldType.name() + " to " + nodeType.name() + " is not allowed"
+                    ).build()
+                );
+            }
+
             if (!node.streamStorPools(apiCtx)
                 .map(StorPool::getDeviceProviderKind)
                 .allMatch(nodeType::isDeviceProviderKindAllowed)
@@ -802,6 +830,62 @@ public class CtrlNodeApiCallHandler
                         .build()
                 );
             }
+
+            NetInterface activeStltConn = node.getActiveStltConn(apiCtx);
+            EncryptionType stltConnEncryptionType = activeStltConn.getStltConnEncryptionType(apiCtx);
+            int currentStltPort = activeStltConn.getStltConnPort(apiCtx).value;
+
+            int newStltPort = currentStltPort;
+            EncryptionType encrType = null;
+
+            if (oldType.equals(Node.Type.CONTROLLER) &&
+                (nodeType.equals(Node.Type.SATELLITE) || nodeType.equals(Node.Type.COMBINED)))
+            {
+                switch (stltConnEncryptionType)
+                {
+                    case PLAIN:
+                        encrType = EncryptionType.PLAIN;
+                        newStltPort = ApiConsts.DFLT_STLT_PORT_PLAIN;
+                        break;
+                    case SSL:
+                        encrType = EncryptionType.SSL;
+                        newStltPort = ApiConsts.DFLT_STLT_PORT_SSL;
+                        break;
+                    default:
+                        throw new ImplementationError("Unexpected encryption type: " + stltConnEncryptionType);
+                }
+            }
+            else if ((oldType.equals(Node.Type.SATELLITE) || oldType.equals(Node.Type.COMBINED)) &&
+                nodeType.equals(Node.Type.CONTROLLER))
+            {
+                switch (stltConnEncryptionType)
+                {
+                    case PLAIN:
+                        encrType = EncryptionType.PLAIN;
+                        newStltPort = ApiConsts.DFLT_CTRL_PORT_PLAIN;
+                        break;
+                    case SSL:
+                        encrType = EncryptionType.SSL;
+                        newStltPort = ApiConsts.DFLT_CTRL_PORT_SSL;
+                        break;
+                    default:
+                        throw new ImplementationError("Unexpected encryption type: " + stltConnEncryptionType);
+                }
+            }
+            if (encrType != null)
+            {
+                try
+                {
+                    activeStltConn.setStltConn(apiCtx, new TcpPortNumber(newStltPort), encrType);
+                    needsReconnect = true;
+                }
+                catch (ValueOutOfRangeException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+                // update satellite port
+            }
+
             node.setNodeType(peerAccCtx.get(), nodeType);
         }
         catch (AccessDeniedException accDeniedExc)
@@ -816,6 +900,7 @@ public class CtrlNodeApiCallHandler
         {
             throw new ApiDatabaseException(sqlExc);
         }
+        return needsReconnect;
     }
 
     private void requireNodesMapChangeAccess()

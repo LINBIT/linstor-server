@@ -953,7 +953,11 @@ public class Node extends BaseTransactionObject
 
     public enum Type implements com.linbit.linstor.stateflags.Flags
     {
-        CONTROLLER(1, Collections.emptyList()),
+        CONTROLLER(
+            1,
+            Collections.emptyList(),
+            false
+        ),
         SATELLITE(
             2,
             Arrays.asList(
@@ -967,7 +971,8 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.SPDK,
                 DeviceProviderKind.OPENFLEX_TARGET,
                 DeviceProviderKind.EXOS
-            )
+            ),
+            false
         ),
         COMBINED(
             3,
@@ -982,31 +987,38 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.SPDK,
                 DeviceProviderKind.OPENFLEX_TARGET,
                 DeviceProviderKind.EXOS
-            )
+            ),
+            false
         ),
         AUXILIARY(
-            4, Collections.emptyList()
+            4,
+            Collections.emptyList(),
+            false
         ),
         OPENFLEX_TARGET(
             5,
             Arrays.asList(
                 DeviceProviderKind.OPENFLEX_TARGET
-            )
+            ),
+            true
         ),
         REMOTE_SPDK(
             6,
             Arrays.asList(
                 DeviceProviderKind.REMOTE_SPDK
-            )
+            ),
+            true
         );
 
         private final int flag;
         private final List<DeviceProviderKind> allowedKindClasses;
+        private boolean isSpecial;
 
-        Type(int flagValue, List<DeviceProviderKind> allowedKindClassesRef)
+        Type(int flagValue, List<DeviceProviderKind> allowedKindClassesRef, boolean isSpecialRef)
         {
 
             flag = flagValue;
+            isSpecial = isSpecialRef;
             allowedKindClasses = Collections.unmodifiableList(allowedKindClassesRef);
         }
 
@@ -1053,6 +1065,11 @@ public class Node extends BaseTransactionObject
         public boolean isDeviceProviderKindAllowed(DeviceProviderKind kindRef)
         {
             return allowedKindClasses.contains(kindRef);
+        }
+
+        public boolean isSpecial()
+        {
+            return isSpecial;
         }
     }
 }

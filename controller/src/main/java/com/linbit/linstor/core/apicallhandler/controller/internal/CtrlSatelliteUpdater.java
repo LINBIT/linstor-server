@@ -21,6 +21,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -53,7 +54,10 @@ public class CtrlSatelliteUpdater
 
         try
         {
-            nodesToContact.put(node.getName(), node);
+            if (!node.getNodeType(accCtx).equals(Node.Type.CONTROLLER))
+            {
+                nodesToContact.put(node.getName(), node);
+            }
             for (Resource rsc : node.streamResources(accCtx).collect(toList()))
             {
                 ResourceDefinition rscDfn = rsc.getDefinition();
