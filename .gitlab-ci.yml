@@ -25,7 +25,7 @@ stages:
 .upload_nexus:
   script:
 # build spacetracking
-    - git fetch origin NOMERGE-SpaceTracking
+    - git fetch --unshallow origin NOMERGE-SpaceTracking
     - git checkout NOMERGE-SpaceTracking
     - git reset --hard origin/NOMERGE-SpaceTracking
     - git checkout $CI_COMMIT_SHORT_SHA
