@@ -27,9 +27,7 @@ public class Migration_20_RenameNetComProps extends BaseEtcdMigration
 
             String valueNew = Migration_2022_03_23_RenameNetComProps.getNewValue(oldPropKey, entry.getValue());
 
-            System.out.println("removing old key: " + oldFullEtcdKey);
             tx.delete(oldFullEtcdKey, false);
-            System.out.println("adding new key: " + ctrlConfEtcdBaseKey + newPropkey + " " + valueNew);
             tx.put(ctrlConfEtcdBaseKey + newPropkey, valueNew);
         }
     }
