@@ -3,6 +3,8 @@ package com.linbit.linstor.dbcp.migration.etcd;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.transaction.EtcdTransaction;
+import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import static com.linbit.linstor.dbdrivers.etcd.EtcdUtils.PATH_DELIMITER;
 
@@ -60,6 +62,11 @@ public abstract class BaseEtcdMigration
     protected String getColumnName(String etcdKeyRef)
     {
         return etcdKeyRef.substring(etcdKeyRef.lastIndexOf(PATH_DELIMITER) + 1);
+    }
+
+    protected ModularCryptoProvider getCryptoProvider()
+    {
+        return Controller.getCryptoProvider();
     }
 
     public abstract void migrate(EtcdTransaction tx, String prefix) throws Exception;

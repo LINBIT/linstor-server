@@ -12,6 +12,8 @@ import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
 import com.linbit.linstor.transaction.K8sCrdTransaction;
 import com.linbit.timer.Delay;
+import com.linbit.linstor.core.Controller;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import java.io.FileNotFoundException;
 import java.util.HashSet;
@@ -248,6 +250,11 @@ public abstract class BaseK8sCrdMigration
             }
             throw exc;
         }
+    }
+
+    protected ModularCryptoProvider getCryptoProvider()
+    {
+        return Controller.getCryptoProvider();
     }
 
     public abstract MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception;
