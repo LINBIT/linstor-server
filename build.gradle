@@ -81,7 +81,7 @@ subprojects {
             // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
             implementation group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.18'
 
-            implementation group: 'io.fabric8', name: 'kubernetes-client', version: '5.8.0'
+            implementation group: 'io.fabric8', name: 'kubernetes-client', version: '5.12.2'
 
             testImplementation group: 'junit', name: 'junit', version: '4.+'
         }

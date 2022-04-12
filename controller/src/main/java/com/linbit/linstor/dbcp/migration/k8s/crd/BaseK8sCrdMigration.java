@@ -11,6 +11,7 @@ import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
 import com.linbit.linstor.transaction.K8sCrdTransaction;
+import com.linbit.timer.Delay;
 
 import java.io.FileNotFoundException;
 import java.util.HashSet;
@@ -18,14 +19,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
+import io.fabric8.kubernetes.api.model.APIResource;
+import io.fabric8.kubernetes.api.model.APIResourceList;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionCondition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionStatus;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.WatcherException;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
@@ -99,6 +98,8 @@ public abstract class BaseK8sCrdMigration
     {
         K8sCrdSchemaUpdateContext updateCtx = upgradeToYamlFileLocationsRef;
 
+        ensureRollbackCrdApplied();
+
         Function<DatabaseTable, String> dbTableToYamlLocation = updateCtx.getGetYamlLocations();
         Function<DatabaseTable, String> yamlKindNameFct = updateCtx.getGetYamlKindNameFunction();
         String targetVersion = updateCtx.getTargetVersion();
@@ -112,76 +113,70 @@ public abstract class BaseK8sCrdMigration
                 tablesToUpdate.add(tableToUpdate);
             }
         }
-        tablesToUpdate.add("rollback");
 
-        Watch watch = k8sClient.apiextensions().v1().customResourceDefinitions().watch(
-            new Watcher<CustomResourceDefinition>()
-            {
-                @Override
-                public void onClose(WatcherException causeRef)
-                {
-                    // ignored
-                }
-
-                @Override
-                public void eventReceived(Action actionRef, CustomResourceDefinition resourceRef)
-                {
-                    String tableName = resourceRef.getStatus().getAcceptedNames().getKind().toLowerCase();
-                    CustomResourceDefinitionStatus status = resourceRef.getStatus();
-                    boolean containsTargetVersion;
-                    if (tableName.equalsIgnoreCase("rollback"))
-                    {
-                        containsTargetVersion = true;
-                    }
-                    else
-                    {
-                        containsTargetVersion = status.getStoredVersions().contains(targetVersion);
-                    }
-                    if (status != null && status.getConditions() != null && containsTargetVersion)
-                    {
-                        for (CustomResourceDefinitionCondition condition : resourceRef.getStatus().getConditions())
-                        {
-                            if (condition.getType().equals("Established") &&
-                                condition.getStatus().equalsIgnoreCase("true"))
-                            {
-                                synchronized (tablesToUpdate)
-                                {
-                                    tablesToUpdate.remove(tableName);
-                                    tablesToUpdate.notify();
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        );
         for (DatabaseTable dbTable : GeneratedDatabaseTables.ALL_TABLES)
         {
             createOrReplaceCrdSchema(k8sClient, dbTableToYamlLocation.apply(dbTable));
         }
-        // createOrReplaceCrdSchema(k8sClient, rollbackYamlLocation.getRollbackYamlLocation());
-        createOrReplaceCrdSchema(k8sClient, "/com/linbit/linstor/dbcp/k8s/crd/Rollback.yaml");
 
-        synchronized (tablesToUpdate)
+        long maxWaitUntil = System.currentTimeMillis() + 30 * 1_000; // 30 seconds
+        long sleep = maxWaitUntil - System.currentTimeMillis();
+        while (!tablesToUpdate.isEmpty() && sleep > 0)
         {
-            long maxWaitUntil = System.currentTimeMillis() + 30 * 1_000; // 30 seconds
-            long sleep = maxWaitUntil - System.currentTimeMillis();
-            while (!tablesToUpdate.isEmpty() && sleep > 0)
+            try
             {
-                try
+                APIResourceList existing = k8sClient.getApiResources("internal.linstor.linbit.com/" + targetVersion);
+                for (APIResource res : existing.getResources())
                 {
-                    tablesToUpdate.wait(sleep);
+                    tablesToUpdate.remove(res.getName());
                 }
-                catch (InterruptedException ignored)
-                {
-                }
-                sleep = maxWaitUntil - System.currentTimeMillis();
             }
+            catch (KubernetesClientException exc)
+            {
+                if (exc.getCode() != 404)
+                {
+                    throw new DatabaseException("Failed to wait for updated CRDs", exc);
+                }
+            }
+
+            sleep = maxWaitUntil - System.currentTimeMillis();
+            Delay.sleep(2_000);
         }
-        watch.close();
         if (!tablesToUpdate.isEmpty())
         {
             throw new DatabaseException("Failed to update CRDs: " + tablesToUpdate);
+        }
+    }
+
+    protected void ensureRollbackCrdApplied() throws DatabaseException
+    {
+        createOrReplaceCrdSchema(k8sClient, "/com/linbit/linstor/dbcp/k8s/crd/Rollback.yaml");
+
+        long maxWaitUntil = System.currentTimeMillis() + 30 * 1_000; // 30 seconds
+        long sleep = maxWaitUntil - System.currentTimeMillis();
+        boolean isRollbackReady = false;
+        while (!isRollbackReady && sleep > 0)
+        {
+            try
+            {
+                k8sClient.resources(RollbackCrd.class).list();
+                isRollbackReady = true;
+            }
+            catch (KubernetesClientException exc)
+            {
+                if (exc.getCode() != 404)
+                {
+                    throw new DatabaseException("Failed to wait for updated Rollback", exc);
+                }
+            }
+
+            sleep = maxWaitUntil - System.currentTimeMillis();
+            Delay.sleep(2_000);
+        }
+
+        if (!isRollbackReady)
+        {
+            throw new DatabaseException("Failed to wait for Rollback: not ready after timeout");
         }
     }
 
