@@ -73,7 +73,9 @@ import java.util.stream.Stream;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Module;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+import java.util.LinkedList;
 import org.slf4j.event.Level;
 
 /**
@@ -409,7 +411,7 @@ public final class Satellite
     {
         System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.SATELLITE_MODULE);
         LinStor.printStartupInfo();
-        
+
         StltConfig cfg = new StltConfig(args);
 
         System.setProperty("log.module", LinStor.SATELLITE_MODULE);
@@ -431,6 +433,8 @@ public final class Satellite
         try
         {
             Thread.currentThread().setName("Main");
+
+            final boolean haveFipsInit = LinStor.initializeFips(errorLog);
 
             errorLog.logInfo("Loading API classes started.");
             long startAPIClassLoadingTime = System.currentTimeMillis();
@@ -472,28 +476,34 @@ public final class Satellite
 
             errorLog.logInfo("Dependency injection started.");
             long startDepInjectionTime = System.currentTimeMillis();
-            Injector injector = Guice.createInjector(
-                new GuiceConfigModule(),
-                new LoggingModule(errorLog),
-                new SecurityModule(),
-                new SatelliteSecurityModule(),
-                new SatelliteArgumentsModule(cfg),
-                new CoreTimerModule(),
-                new SatelliteLinstorModule(),
-                new LinStorModule(),
-                new CoreModule(),
-                new SatelliteCoreModule(),
-                new DevMgrModule(),
-                new SatelliteDbModule(),
-                new DrbdStateModule(),
-                new ApiModule(apiType, apiCalls),
-                new ApiCallHandlerModule(),
-                new EventModule(eventSerializers, Collections.emptyList()),
-                new DebugModule(),
-                new SatelliteDebugModule(),
-                new SatelliteTransactionMgrModule(),
-                new SatelliteNumberPoolModule()
+
+            final List<Module> injModList = new LinkedList<>(
+                Arrays.asList(
+                    new GuiceConfigModule(),
+                    new LoggingModule(errorLog),
+                    new SecurityModule(),
+                    new SatelliteSecurityModule(),
+                    new SatelliteArgumentsModule(cfg),
+                    new CoreTimerModule(),
+                    new SatelliteLinstorModule(),
+                    new LinStorModule(),
+                    new CoreModule(),
+                    new SatelliteCoreModule(),
+                    new DevMgrModule(),
+                    new SatelliteDbModule(),
+                    new DrbdStateModule(),
+                    new ApiModule(apiType, apiCalls),
+                    new ApiCallHandlerModule(),
+                    new EventModule(eventSerializers, Collections.emptyList()),
+                    new DebugModule(),
+                    new SatelliteDebugModule(),
+                    new SatelliteTransactionMgrModule(),
+                    new SatelliteNumberPoolModule()
+                )
             );
+            LinStor.loadModularCrypto(injModList, errorLog, haveFipsInit);
+            final Injector injector = Guice.createInjector(injModList);
+
             errorLog.logInfo(
                 String.format(
                     "Dependency injection finished: %dms",

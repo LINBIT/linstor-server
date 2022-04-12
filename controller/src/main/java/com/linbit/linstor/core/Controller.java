@@ -162,6 +162,7 @@ public final class Controller
 
     private final PreConnectInitializer preConnectCleanupInitializer;
 
+    private static ModularCryptoProvider cryptoProvider;
 
     @Inject
     public Controller(
@@ -459,7 +460,7 @@ public final class Controller
     {
         System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.CONTROLLER_MODULE);
         LinStor.printStartupInfo();
-        
+
         System.setSecurityManager(new DummySecurityManager());
         CtrlConfig cfg = new CtrlConfig(args);
 
@@ -492,6 +493,8 @@ public final class Controller
             Thread.currentThread().setName("Main");
 
             dbgCnsEnabled = cfg.isDebugConsoleEnabled();
+
+            final boolean haveFipsInit = LinStor.initializeFips(errorLog);
 
             errorLog.logInfo("Loading API classes started.");
             long startAPIClassLoadingTime = System.currentTimeMillis();
@@ -573,8 +576,9 @@ public final class Controller
                     new NameShortenerModule()
                 )
             );
+            LinStor.loadModularCrypto(injModList, errorLog, haveFipsInit);
             InjectorLoader.dynLoadInjModule(SPC_TRK_MODULE_NAME, injModList, errorLog, dbType);
-            Injector injector = Guice.createInjector(injModList);
+            final Injector injector = Guice.createInjector(injModList);
 
             errorLog.logInfo(
                 String.format(
@@ -584,7 +588,7 @@ public final class Controller
             );
 
             {
-                final ModularCryptoProvider cryptoProvider = injector.getInstance(ModularCryptoProvider.class);
+                cryptoProvider = injector.getInstance(ModularCryptoProvider.class);
                 errorLog.logInfo("Cryptography provider: Using %s", cryptoProvider.getModuleIdentifier());
             }
 
@@ -618,5 +622,10 @@ public final class Controller
         }
 
         System.out.println();
+    }
+
+    public static ModularCryptoProvider getCryptoProvider()
+    {
+        return cryptoProvider;
     }
 }
