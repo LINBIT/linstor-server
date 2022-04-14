@@ -4,7 +4,6 @@ import com.linbit.crypto.SecretGenerator;
 import com.linbit.crypto.ByteArrayCipher;
 import com.linbit.crypto.KeyDerivation;
 import com.linbit.crypto.LengthPadding;
-import com.linbit.crypto.SymmetricKeyCipher;
 import com.linbit.linstor.LinStorException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -60,14 +59,14 @@ public class JclCryptoProvider implements ModularCryptoProvider
     public ByteArrayCipher createCipherWithKey(byte[] key)
         throws LinStorException
     {
-        return SymmetricKeyCipher.getInstanceWithKey(key);
+        return JclSymmetricKeyCipher.getInstanceWithKey(key);
     }
 
     @Override
     public ByteArrayCipher createCipherWithPassword(byte[] password, byte[] salt)
         throws LinStorException
     {
-        return SymmetricKeyCipher.getInstanceWithPassword(password, salt);
+        return JclSymmetricKeyCipher.getInstanceWithPassword(password, salt);
     }
 
     @Override

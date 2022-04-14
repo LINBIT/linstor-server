@@ -1,5 +1,6 @@
-package com.linbit.crypto;
+package com.linbit.linstor.modularcrypto;
 
+import com.linbit.crypto.ByteArrayCipher;
 import com.linbit.linstor.LinStorException;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -22,7 +23,7 @@ import javax.crypto.spec.SecretKeySpec;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class SymmetricKeyCipher implements ByteArrayCipher
+public final class JclSymmetricKeyCipher implements ByteArrayCipher
 {
     // Specification of the cryptographic algorithm, encryption/decryption mode and block padding
     public static final String CIPHER_SPEC  = "AES";
@@ -79,7 +80,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
      * @return new instance of the cipher utility
      * @throws LinStorException if the creation of a new instance of the cipher utility fails
      */
-    public static SymmetricKeyCipher getInstanceWithKey(
+    public static JclSymmetricKeyCipher getInstanceWithKey(
         final byte[] key
     )
         throws LinStorException
@@ -100,7 +101,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
             );
         }
         SecretKeySpec cipherKey = new SecretKeySpec(key, CIPHER_SPEC);
-        return new SymmetricKeyCipher(cipherKey);
+        return new JclSymmetricKeyCipher(cipherKey);
     }
 
     /**
@@ -115,7 +116,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
      * @return new instance of the cipher utility
      * @throws LinStorException if the creation of a new instance of the cipher utility fails
      */
-    public static SymmetricKeyCipher getInstanceWithPassword(
+    public static JclSymmetricKeyCipher getInstanceWithPassword(
         final byte[] password,
         final byte[] salt
     )
@@ -137,14 +138,14 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
      * @return new instance of the cipher utility
      * @throws LinStorException if the creation of a new instance of the cipher utility fails
      */
-    public static SymmetricKeyCipher getInstanceWithPassword(
+    public static JclSymmetricKeyCipher getInstanceWithPassword(
         final byte[] password,
         final byte[] salt,
         final CipherStrength csSpec
     )
         throws LinStorException
     {
-        SymmetricKeyCipher instance;
+        JclSymmetricKeyCipher instance;
 
         // Key initialization expects a character array, however, many algorithms will
         // only use the low-order 8 bits of each character. For this reason, the password
@@ -160,7 +161,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         {
             SecretKey derivedKey = SecretKeyFactory.getInstance(KD_ALG_SPEC).generateSecret(keySpec);
             SecretKeySpec cipherKey = new SecretKeySpec(derivedKey.getEncoded(), CIPHER_SPEC);
-            instance = new SymmetricKeyCipher(cipherKey);
+            instance = new JclSymmetricKeyCipher(cipherKey);
         }
         catch (NoSuchAlgorithmException algExc)
         {
@@ -197,7 +198,7 @@ public final class SymmetricKeyCipher implements ByteArrayCipher
         return instance;
     }
 
-    private SymmetricKeyCipher(final SecretKey key)
+    private JclSymmetricKeyCipher(final SecretKey key)
         throws LinStorException
     {
         rnd = new SecureRandom();
