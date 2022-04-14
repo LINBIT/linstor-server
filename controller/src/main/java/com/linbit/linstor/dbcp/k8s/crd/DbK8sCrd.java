@@ -260,12 +260,9 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
         {
             throw new SystemServiceStartException("Not configured for kubernetes connection!", true);
         }
-        // final String origConUrl = ctrlCfg.getDbConnectionUrl();
-        // final String connectionUrl = origConUrl.toLowerCase().startsWith(K8S_SCHEME) ?
-        // origConUrl.substring(K8S_SCHEME.length()) :
-        // origConUrl;
 
         k8sClient = new DefaultKubernetesClient();
+        k8sClient.getConfiguration().setRequestRetryBackoffLimit(ctrlCfg.getK8sRequestRetries());
         atomicStarted.set(true);
     }
 

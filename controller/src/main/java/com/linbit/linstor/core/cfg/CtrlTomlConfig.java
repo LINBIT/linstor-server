@@ -79,6 +79,8 @@ public class CtrlTomlConfig
 
         private Etcd etcd = new Etcd();
 
+        private K8s k8s = new K8s();
+
         public void applyTo(CtrlConfig cfg)
         {
             cfg.setDbUser(user);
@@ -90,6 +92,7 @@ public class CtrlTomlConfig
             cfg.setDbClientKeyPassword(client_key_password);
 
             etcd.applyTo(cfg);
+            k8s.applyTo(cfg);
         }
 
         /**
@@ -152,6 +155,16 @@ public class CtrlTomlConfig
         {
             cfg.setEtcdOperationsPerTransaction(ops_per_transaction);
             cfg.setEtcdPrefix(prefix);
+        }
+    }
+
+    static class K8s
+    {
+        private Integer request_retries;
+
+        public void applyTo(CtrlConfig cfg)
+        {
+            cfg.setK8sRequestRetries(request_retries);
         }
     }
 

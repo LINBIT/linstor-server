@@ -871,6 +871,7 @@ public class JsonGenTypes
         public String in_memory;
         public Boolean version_check_disabled;
         public ControllerConfigDbEtcd etcd;
+        public ControllerConfigK8s k8s;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -878,6 +879,12 @@ public class JsonGenTypes
     {
         public Integer operations_per_transaction;
         public String prefix;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ControllerConfigK8s
+    {
+        public Integer request_retries;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

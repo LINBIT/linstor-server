@@ -36,6 +36,11 @@ public class CtrlConfig extends LinstorConfig
     private String etcdPrefix;
 
     /*
+     * Database.k8s
+     */
+    private int k8sRequestRetries = 3;
+
+    /*
      * Logging
      */
     private String logRestAccessLogPath;
@@ -233,6 +238,14 @@ public class CtrlConfig extends LinstorConfig
         if (etcdPrefixRef != null)
         {
             etcdPrefix = etcdPrefixRef;
+        }
+    }
+
+    public void setK8sRequestRetries(final Integer k8sRequestRetriesRef)
+    {
+        if (k8sRequestRetriesRef != null)
+        {
+            k8sRequestRetries = k8sRequestRetriesRef;
         }
     }
 
@@ -449,6 +462,11 @@ public class CtrlConfig extends LinstorConfig
     public String getEtcdPrefix()
     {
         return etcdPrefix;
+    }
+
+    public int getK8sRequestRetries()
+    {
+        return k8sRequestRetries;
     }
 
     public String getLogRestAccessLogPath()
