@@ -117,7 +117,7 @@ public class BackupToS3
 
         // make the buffer size (part size) as big as possible, without going over the limit of Integer.MAX_VALUE
         // while making sure to stay above the minimum part size of 5 MB and below 10000 parts
-        long bufferSize = Math.max(5 << 20, (long) (Math.ceil(maxSize / 10000.0) + 1.0));
+        long bufferSize = Math.max(5 << 20, (long) (Math.ceil((maxSize * 1024) / 10000.0) + 1.0));
         if (bufferSize > Integer.MAX_VALUE)
         {
             throw new StorageException(
