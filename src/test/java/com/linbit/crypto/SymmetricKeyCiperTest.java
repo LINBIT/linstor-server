@@ -1,6 +1,8 @@
 package com.linbit.crypto;
 
-import java.security.SecureRandom;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+import com.linbit.linstor.modularcrypto.JclCryptoProvider;
+import com.linbit.crypto.ByteArrayCipher;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -14,22 +16,18 @@ import static org.junit.Assert.assertEquals;
 
 @PowerMockIgnore({"com.sun.*", "javax.*"})
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(SymmetricKeyCipher.class)
 public class SymmetricKeyCiperTest
 {
     private static byte[] cipherKey = "1234567890123456".getBytes();
-    private SymmetricKeyCipher cipher;
 
-    private NotSoRandom random = new NotSoRandom();
-    private byte[] iv = new byte[SymmetricKeyCipher.IV_LENGTH];
+    private ModularCryptoProvider cryptoProvider;
+    private ByteArrayCipher cipher;
 
     @Before
     public void setUp() throws Exception
     {
-        // PowerMockito.whenNew(SecureRandom.class).withAnyArguments().thenReturn(random);
-        // Arrays.fill(iv, (byte) 0);
-
-        cipher = SymmetricKeyCipher.getInstanceWithKey(cipherKey);
+        cryptoProvider = new JclCryptoProvider();
+        cipher = cryptoProvider.createCipherWithKey(cipherKey);
     }
 
     @Test
@@ -52,9 +50,9 @@ public class SymmetricKeyCiperTest
         String inputProp = "Linstor property encryption test with longer input";
         try
         {
-            ByteArrayCipher encrypter = SymmetricKeyCipher.getInstanceWithKey(binaryKey);
+            ByteArrayCipher encrypter = cryptoProvider.createCipherWithKey(binaryKey);
             byte[] encryptedProp = encrypter.encrypt(inputProp.getBytes());
-            ByteArrayCipher decrypter = SymmetricKeyCipher.getInstanceWithKey(binaryKey);
+            ByteArrayCipher decrypter = cryptoProvider.createCipherWithKey(binaryKey);
             String decryptedProp = new String(decrypter.decrypt(encryptedProp));
 
             assertEquals(inputProp, decryptedProp);
@@ -62,17 +60,6 @@ public class SymmetricKeyCiperTest
         catch (Exception exc)
         {
             exc.printStackTrace(System.err);
-        }
-    }
-
-    private class NotSoRandom extends SecureRandom
-    {
-        private static final long serialVersionUID = -4562395783864498971L;
-
-        @Override
-        public void nextBytes(byte[] bytes)
-        {
-            System.arraycopy(iv, 0, bytes, 0, iv.length);
         }
     }
 }
