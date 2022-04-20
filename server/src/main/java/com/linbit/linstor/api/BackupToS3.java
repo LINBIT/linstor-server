@@ -110,6 +110,8 @@ public class BackupToS3
         byte[] masterKey
     ) throws AccessDeniedException, SdkClientException, AmazonServiceException, IOException, StorageException
     {
+        assert maxSize >= 0;
+
         final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
 
         String bucket = remote.getBucket(accCtx);

@@ -89,6 +89,10 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
         }
         else
         {
+            if (size < 0)
+            {
+                throw new ImplementationError("Creating a backup must have a positive size, but was: " + size);
+            }
             handler.setStdOutListener(false);
             s3Thread = new Thread(threadGroupRef, this::runShipping, "backup_" + threadName);
         }

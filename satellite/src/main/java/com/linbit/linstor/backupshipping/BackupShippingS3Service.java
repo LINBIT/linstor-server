@@ -153,7 +153,9 @@ public class BackupShippingS3Service extends AbsBackupShippingService
             (S3Remote) remote,
             backupHandler,
             restore,
-            snapVlmDataRef.getAllocatedSize(),
+            snapVlmDataRef.getAllocatedSize() == -1 && snapVlmDataRef.getSnapshotAllocatedSize() != null ?
+                snapVlmDataRef.getSnapshotAllocatedSize() :
+                snapVlmDataRef.getAllocatedSize(),
             postAction,
             accCtx,
             stltSecObj.getCryptKey()
