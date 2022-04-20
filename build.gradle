@@ -95,16 +95,16 @@ project(':server') {
 
     sourceSets {
         main {
-        java {
-            srcDirs = ["src/main/java", "generated-src"]
-        }
-        resources {
-            srcDirs = ["src/main/resources", "generated-resources"]
-        }
+            java {
+                srcDirs = ["src/main/java", "generated-src"]
+            }
+            resources {
+                srcDirs = ["src/main/resources", "generated-resources"]
+            }
         }
         test {
             java {
-            srcDirs = ["src/test/java"]
+                srcDirs = ["src/test/java"]
             }
         }
     }
@@ -179,7 +179,7 @@ project(':server') {
 
         inputs.files(fileTree("../linstor-common"))
         outputs.files(file("${projectDir}/generated-src/com/linbit/linstor/api/ApiConsts.java"),
-                "${projectDir}/generated-src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java"
+            "${projectDir}/generated-src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java"
         )
         dependsOn generateProto
     }
@@ -250,9 +250,31 @@ project(':satellite') {
     }
 }
 
+project(':jclcrypto') {
+    apply plugin: 'application'
+
+    dependencies {
+        implementation project(':server')
+    }
+
+    sourceSets {
+        main {
+            java {
+                srcDirs = ["src/main/java", "generated-src"]
+            }
+        }
+        test {
+            java {
+                srcDirs = ["src/test/java"]
+            }
+        }
+    }
+}
+
 version = project(':server').version
 project(':controller').version = version
 project(':satellite').version = version
+project(':jclcrypto').version = version
 
 def jerseyVersion = '2.31'
 
@@ -413,8 +435,8 @@ private excludedClassFilesForReport(classDirectories) {
 }
 
 dependencies {
-    implementation project(':server'), project(':controller'), project(':satellite')
-    testImplementation project(':server'), project(':controller'), project(':satellite')
+    implementation project(':server'), project(':controller'), project(':satellite'), project(':jclcrypto')
+    testImplementation project(':server'), project(':controller'), project(':satellite'), project(':jclcrypto')
 
     testCompileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
 
@@ -599,9 +621,9 @@ task copyToLibs(dependsOn: 'deleteLibs') {
 // this task is needed for RPM packaging
 // it creates a list of dependency jars needed for the server project
 task showServerRuntimeLibs() {
-	doLast {
-		project(':server').configurations.getByName('runtimeClasspath').files.each { f ->
-			print('/usr/share/linstor-server/lib/' + f.getName().toString() + '\n')
-		}
-	}
+        doLast {
+                project(':server').configurations.getByName('runtimeClasspath').files.each { f ->
+                        print('/usr/share/linstor-server/lib/' + f.getName().toString() + '\n')
+                }
+        }
 }

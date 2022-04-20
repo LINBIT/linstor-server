@@ -1,4 +1,4 @@
 rootProject.name = 'linstor-server'
 
-include 'server', 'satellite', 'controller'
+include 'server', 'satellite', 'controller', 'jclcrypto'
 
