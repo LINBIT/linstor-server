@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * Unreleased
+    * 1.13.1
       - Added k8s options to DB config
       - Added NetCom properties to whitelist
     * 1.13.0

@@ -1,3 +1,38 @@
+linstor-server (1.18.1~rc.1-1) experimental; urgency=medium
+
+  [ Johanna Kucera ]
+  * Layer: prevent possible ConcurrentModificationException
+  * BackupShipping: actually execute this cleanup-flux
+  * BackupShipping: add locking to postShipping
+  * BackupShipping: Use correct flux order
+  * DrbdOptions/AutoEvictAllowEviction: clarify prop description
+
+  [ Rene Peinthor ]
+  * git: use https for linstor-common
+  * applifecycle: per default exit, if unhandled exception occurred
+  * storage: Allow mixing storage pools with a property
+
+  [ Gabor Hernadi ]
+  * SpaceTrackingV2: Add annotation for ETCD migration
+  * NetCom: Renamed namespace and whitelisted
+  * Gitlab: Fix fetch depth for spacetracking rebase
+  * Migration: Remove debug prints
+
+  [ Robert Altnoeder ]
+  * Print which configuration file is being loaded
+  * Log the database type on startup
+  * Log persistence layer information
+  * Print generic startup information before doing anything else
+  * Supply an ErrorReporter instance to class TestDbConnectionPoolLoader
+  * SpaceTracking: Migrate existing etcd data to prefixed path
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * crds: fix check for updated CRDs on upgrades
+  * crd: set request retries for client
+  * update swagger docs + fix generated json types
+
+ -- Moritz Wanzenböck <moritz.wanzenboeck@linbit.com>  Mon, 25 Apr 2022 10:06:47 +0000
+
 linstor-server (1.18.0-1) experimental; urgency=medium
 
   [ Moritz "WanzenBug" Wanzenböck ]
