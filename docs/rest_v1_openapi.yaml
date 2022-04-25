@@ -21,6 +21,9 @@ info:
 
     Changelog:
 
+    * Unreleased
+      - Added k8s options to DB config
+      - Added NetCom properties to whitelist
     * 1.13.0
       - Added use_zfs_clone to clone request
       - Added snap_name to backup create
@@ -6971,6 +6974,8 @@ components:
           type: boolean
         etcd:
           $ref: '#/components/schemas/ControllerConfigDbEtcd'
+        k8s:
+          $ref: '#/components/schemas/ControllerConfigDbK8s'
     ControllerConfigDbEtcd:
       type: object
       properties:
@@ -6979,6 +6984,12 @@ components:
           format: int32
         prefix:
           type: string
+    ControllerConfigDbK8s:
+      type: object
+      properties:
+        request_retries:
+          type: integer
+          format: int32
     ControllerConfigHttp:
       type: object
       properties:

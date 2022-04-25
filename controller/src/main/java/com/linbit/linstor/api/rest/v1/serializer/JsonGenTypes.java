@@ -871,7 +871,7 @@ public class JsonGenTypes
         public String in_memory;
         public Boolean version_check_disabled;
         public ControllerConfigDbEtcd etcd;
-        public ControllerConfigK8s k8s;
+        public ControllerConfigDbK8s k8s;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -882,7 +882,7 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ControllerConfigK8s
+    public static class ControllerConfigDbK8s
     {
         public Integer request_retries;
     }

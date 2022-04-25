@@ -251,7 +251,7 @@ public class Controller
         controllerConfig.db.etcd.operations_per_transaction = ctrlCfg.getEtcdOperationsPerTransaction();
         controllerConfig.db.etcd.prefix = ctrlCfg.getEtcdPrefix();
 
-        controllerConfig.db.k8s = new JsonGenTypes.ControllerConfigK8s();
+        controllerConfig.db.k8s = new JsonGenTypes.ControllerConfigDbK8s();
         controllerConfig.db.k8s.request_retries = ctrlCfg.getK8sRequestRetries();
 
         controllerConfig.debug = new JsonGenTypes.ControllerConfigDebug();
