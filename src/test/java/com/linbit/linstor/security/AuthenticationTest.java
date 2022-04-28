@@ -1,7 +1,7 @@
 package com.linbit.linstor.security;
 
-import com.linbit.linstor.modularcrypto.JclCryptoProvider;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+import com.linbit.linstor.modularcrypto.CryptoProviderLoader;
 import com.linbit.crypto.KeyDerivation;
 
 import org.junit.After;
@@ -32,7 +32,7 @@ public class AuthenticationTest
     @SuppressWarnings("checkstyle:magicnumber")
     public void testPasswordsMatch() throws Exception
     {
-        final ModularCryptoProvider cryptoProvider = new JclCryptoProvider();
+        final ModularCryptoProvider cryptoProvider = CryptoProviderLoader.loadCryptoProvider();
         final KeyDerivation keyDrv = cryptoProvider.createKeyDerivation();
 
         {

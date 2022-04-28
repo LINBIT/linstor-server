@@ -1,7 +1,7 @@
 package com.linbit.crypto;
 
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
-import com.linbit.linstor.modularcrypto.JclCryptoProvider;
+import com.linbit.linstor.modularcrypto.CryptoProviderLoader;
 import com.linbit.crypto.ByteArrayCipher;
 
 import org.junit.Before;
@@ -26,7 +26,7 @@ public class SymmetricKeyCiperTest
     @Before
     public void setUp() throws Exception
     {
-        cryptoProvider = new JclCryptoProvider();
+        cryptoProvider = CryptoProviderLoader.loadCryptoProvider();
         cipher = cryptoProvider.createCipherWithKey(cipherKey);
     }
 
