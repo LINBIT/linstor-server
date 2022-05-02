@@ -1,3 +1,16 @@
+linstor-server (1.18.1~rc.2-1) experimental; urgency=medium
+
+  [ Aiden Grossman ]
+  * Fix s3 multipart upload bug involving unit mismatch
+
+  [ Gabor Hernadi ]
+  * BackupShipping: Fix correct allocatedSize parameter
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * update drbd-options for drbd-utils 9.21.1
+
+ -- Gabor Hernadi <gabor.hernadi@linbit.com>  Mon, 02 May 2022 09:56:17 +0000
+
 linstor-server (1.18.1~rc.1-1) experimental; urgency=medium
 
   [ Johanna Kucera ]
