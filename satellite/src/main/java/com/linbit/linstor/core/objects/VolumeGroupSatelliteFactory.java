@@ -75,6 +75,7 @@ public class VolumeGroupSatelliteFactory
                 transObjFactory,
                 transMgrProvider
             );
+            rscGrp.putVolumeGroup(sysCtx, vlmGrp);
         }
         return vlmGrp;
     }
