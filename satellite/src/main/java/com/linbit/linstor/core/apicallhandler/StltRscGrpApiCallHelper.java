@@ -119,6 +119,7 @@ class StltRscGrpApiCallHelper
             {
                 VolumeNumber vlmNr = new VolumeNumber(vlmGrpApi.getVolumeNr());
                 VolumeGroup vlmGrp = vlmGrpsToDelete.remove(vlmNr);
+                Props vlmGrpProps;
                 if (vlmGrp == null)
                 {
                     vlmGrp = volumeGroupFactory.getInstanceSatellite(
@@ -127,17 +128,18 @@ class StltRscGrpApiCallHelper
                         vlmNr,
                         vlmGrpApi.getFlags()
                     );
+                    vlmGrpProps = vlmGrp.getProps(apiCtx);
                 }
                 else
                 {
-                    Props vlmGrpProps = vlmGrp.getProps(apiCtx);
-                    vlmGrpProps.clear();
-                    vlmGrpProps.map().putAll(vlmGrpApi.getProps());
                     vlmGrp.getFlags().resetFlagsTo(
                         apiCtx,
                         VolumeGroup.Flags.restoreFlags(vlmGrpApi.getFlags())
                     );
+                    vlmGrpProps = vlmGrp.getProps(apiCtx);
+                    vlmGrpProps.clear();
                 }
+                vlmGrpProps.map().putAll(vlmGrpApi.getProps());
             }
 
             for (VolumeNumber vlmNr : vlmGrpsToDelete.keySet())
