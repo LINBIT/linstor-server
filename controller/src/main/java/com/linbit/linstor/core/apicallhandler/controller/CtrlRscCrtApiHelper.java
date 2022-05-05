@@ -6,6 +6,7 @@ import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -534,7 +535,8 @@ public class CtrlRscCrtApiHelper
     {
         try
         {
-            AbsRscLayerObject<Resource> rscLayerObj = vlmRef.getAbsResource().getLayerData(peerAccCtx.get());
+            AccessContext peerCtx = peerAccCtx.get();
+            AbsRscLayerObject<Resource> rscLayerObj = vlmRef.getAbsResource().getLayerData(peerCtx);
             if (LayerUtils.hasLayer(rscLayerObj, DeviceLayerKind.DRBD))
             {
                 boolean hasThinStorPool = false;
@@ -629,8 +631,14 @@ public class CtrlRscCrtApiHelper
 
                 //TODO: make these default drbd-properties configurable (provider-specific?)
 
-                Props props = vlmRef.getVolumeDefinition().getProps(peerAccCtx.get());
-                if (props.getProp("rs-discard-granularity", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
+                ResourceDefinition rscDfn = vlmRef.getVolumeDefinition().getResourceDefinition();
+                Props vlmDfnProps = vlmRef.getVolumeDefinition().getProps(peerCtx);
+                PriorityProps prioProps = new PriorityProps(vlmDfnProps,
+                    rscDfn.getProps(peerCtx),
+                    rscDfn.getResourceGroup().getVolumeGroupProps(peerCtx, vlmRef.getVolumeNumber()),
+                    rscDfn.getResourceGroup().getProps(peerCtx)
+                );
+                if (prioProps.getProp("rs-discard-granularity", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
                 {
                     String granularity = Long.toString(
                         SizeConv.convert(
@@ -639,11 +647,11 @@ public class CtrlRscCrtApiHelper
                             SizeUnit.UNIT_B
                         )
                     );
-                    props.setProp("rs-discard-granularity", granularity,  ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
+                    vlmDfnProps.setProp("rs-discard-granularity", granularity,  ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
                 }
-                if (props.getProp("discard-zeroes-if-aligned", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
+                if (prioProps.getProp("discard-zeroes-if-aligned", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
                 {
-                    props.setProp(
+                    vlmDfnProps.setProp(
                         "discard-zeroes-if-aligned",
                         discardZerosIfAligned ? "yes" : "no",
                         ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
