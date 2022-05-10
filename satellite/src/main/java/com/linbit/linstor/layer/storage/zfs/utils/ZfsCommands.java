@@ -175,11 +175,8 @@ public class ZfsCommands
     )
         throws StorageException
     {
-        String fullQualifiedSourceSnapId =
-            zPool + File.separator +
-            sourceLvName + "@" +
-            sourceSnapName;
-        return restoreSnapshotFullName(extCmd, zPool, fullQualifiedSourceSnapId, targetLvName);
+        String sourceSnapId = sourceLvName + "@" + sourceSnapName;
+        return restoreSnapshotFullName(extCmd, zPool, sourceSnapId, targetLvName);
     }
 
     public static OutputData restoreSnapshotFullName(
