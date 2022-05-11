@@ -147,6 +147,7 @@ public class CtrlNodeApiCallHandler
     private final Autoplacer autoplacer;
     private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
+    private final Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProvider;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -179,7 +180,8 @@ public class CtrlNodeApiCallHandler
         Autoplacer autoplacerRef,
         CtrlRscToggleDiskApiCallHandler rscToggleDiskApiCallHandlerRef,
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
-        EventNodeHandlerBridge eventNodeHandlerBridgeRef
+        EventNodeHandlerBridge eventNodeHandlerBridgeRef,
+        Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProviderRef
     )
     {
         apiCtx = apiCtxRef;
@@ -212,6 +214,7 @@ public class CtrlNodeApiCallHandler
         rscToggleDiskApiCallHandler = rscToggleDiskApiCallHandlerRef;
         ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
+        ctrlNodeCrtApiCallHandlerProvider = ctrlNodeCrtApiCallHandlerProviderRef;
     }
 
     Node createNodeImpl(
@@ -501,7 +504,7 @@ public class CtrlNodeApiCallHandler
                 boolean needsReconnect = setNodeType(node, nodeTypeStr);
                 if (needsReconnect)
                 {
-                    apiCallRcs.addEntries(reconnectNode(Arrays.asList(node.getName().displayValue)));
+                    flux = flux.concatWith(reconnectNode(Arrays.asList(node.getName().displayValue)));
                 }
                 notifyStlts = true;
             }
@@ -547,10 +550,11 @@ public class CtrlNodeApiCallHandler
         return Flux.just((ApiCallRc) apiCallRcs).concatWith(flux);
     }
 
-    public ApiCallRc reconnectNode(
+    public Flux<ApiCallRc> reconnectNode(
         List<String> nodes
     )
     {
+        Flux<ApiCallRc> waitForConnectFlux = Flux.empty();
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = new ResponseContext(
             ApiOperation.makeModifyOperation(),
@@ -567,25 +571,25 @@ public class CtrlNodeApiCallHandler
             for (String nodeStr : nodes)
             {
                 Node node = ctrlApiDataLoader.loadNode(new NodeName(nodeStr), true);
-                Peer crtNodePeer = node.getPeer(apiCtx); // check for access
+                node.getPeer(apiCtx); // check for access
 
                 if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                 {
-                    reconnectorTask.add(crtNodePeer, false);
+                    waitForConnectFlux = waitForConnectFlux
+                        .concatWith(ctrlNodeCrtApiCallHandlerProvider.get().connectNow(context, node));
+
                     // the close connection has to run in its own thread
                     // otherwise we will get re-entering scope problems (Error report)
                     scheduler.schedule(() ->
+                    {
+                        try
                         {
-                            {
-                                try
-                                {
-                                    node.getPeer(apiCtx).closeConnection(true);
-                                }
-                                catch (Exception | ImplementationError ignored)
-                                {
-                                }
-                            }
+                            node.getPeer(apiCtx).closeConnection(true);
                         }
+                        catch (Exception | ImplementationError ignored)
+                        {
+                        }
+                    }
                     );
                     reconNodes.add(nodeStr);
                 }
@@ -619,7 +623,7 @@ public class CtrlNodeApiCallHandler
         {
             responses = responseConverter.reportException(peer.get(), context, exc);
         }
-        return responses;
+        return Flux.<ApiCallRc>just(responses).concatWith(waitForConnectFlux);
     }
 
     ArrayList<NodeApi> listNodes(List<String> nodeNames, List<String> propFilters)

@@ -235,19 +235,17 @@ public class Nodes
 
     @PUT
     @Path("{nodeName}/reconnect")
-    public Response reconnectNode(
+    public void reconnectNode(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName
     )
     {
-        return requestHelper.doInScope(requestHelper.createContext(ApiConsts.API_NODE_RECONNECT, request), () ->
-        {
-            List<String> nodes = new ArrayList<>();
-            nodes.add(nodeName);
-            ApiCallRc apiCallRc = ctrlApiCallHandler.reconnectNode(nodes);
-
-            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
-        }, false);
+        List<String> nodes = new ArrayList<>();
+        nodes.add(nodeName);
+        Flux<ApiCallRc> flux = ctrlApiCallHandler.reconnectNode(nodes)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_NODE_RECONNECT, request));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @PUT

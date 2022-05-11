@@ -196,25 +196,7 @@ public class CtrlNodeCrtApiCallHandler
             eventNodeHandlerBridge.triggerNodeCreate(node.getApiData(apiCtx, null, null));
 
             flux = Flux.just(responses);
-
-            if (!Node.Type.CONTROLLER.equals(nodeType) &&
-                !Node.Type.AUXILIARY.equals(nodeType))
-            {
-                flux = flux
-                    .concatWith(
-                        ctrlSatelliteUpdateCaller.attemptConnecting(
-                            peerAccCtx.get(),
-                            node,
-                            FIRST_CONNECT_TIMEOUT_MILLIS
-                        )
-                        .concatMap(connected -> processConnectingResponse(node, connected))
-                    )
-                    .concatWith(runAutoMagic(context));
-            }
-            else
-            {
-                node.setOfflinePeer(apiCtx);
-            }
+            flux = flux.concatWith(connectNow(context, node));
         }
         catch (AccessDeniedException exc)
         {
@@ -223,6 +205,31 @@ public class CtrlNodeCrtApiCallHandler
                 "create " + getNodeDescriptionInline(nodeNameStr),
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
+        }
+        return flux;
+    }
+
+    public Flux<ApiCallRc> connectNow(ResponseContext context, Node node)
+        throws AccessDeniedException
+    {
+        Flux<ApiCallRc> flux;
+        Node.Type nodeType = node.getNodeType(apiCtx);
+
+        if (!Node.Type.CONTROLLER.equals(nodeType) &&
+            !Node.Type.AUXILIARY.equals(nodeType))
+        {
+            flux = ctrlSatelliteUpdateCaller.attemptConnecting(
+                peerAccCtx.get(),
+                node,
+                FIRST_CONNECT_TIMEOUT_MILLIS
+            )
+                .concatMap(connected -> processConnectingResponse(node, connected))
+                .concatWith(runAutoMagic(context));
+        }
+        else
+        {
+            node.setOfflinePeer(apiCtx);
+            flux = Flux.empty();
         }
         return flux;
     }

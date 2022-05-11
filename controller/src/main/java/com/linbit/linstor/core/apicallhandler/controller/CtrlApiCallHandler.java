@@ -49,6 +49,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -178,11 +179,11 @@ public class CtrlApiCallHandler
         return flux;
     }
 
-    public ApiCallRc reconnectNode(
+    public Flux<ApiCallRc> reconnectNode(
         List<String> nodes
     )
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> apiCallRc;
         try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP))
         {
             apiCallRc = nodeApiCallHandler.reconnectNode(
