@@ -3,6 +3,7 @@ package com.linbit.linstor.dbcp.migration.k8s.crd;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
+import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -12,8 +13,6 @@ import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
 import com.linbit.linstor.transaction.K8sCrdTransaction;
 import com.linbit.timer.Delay;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import java.io.FileNotFoundException;
 import java.util.HashSet;
@@ -30,7 +29,7 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
-public abstract class BaseK8sCrdMigration
+public abstract class BaseK8sCrdMigration extends AbsMigration
 {
     protected final int version;
     protected final String description;
@@ -250,11 +249,6 @@ public abstract class BaseK8sCrdMigration
             }
             throw exc;
         }
-    }
-
-    protected ModularCryptoProvider getCryptoProvider()
-    {
-        return Controller.getCryptoProvider();
     }
 
     public abstract MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception;

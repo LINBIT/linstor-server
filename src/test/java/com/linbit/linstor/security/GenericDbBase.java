@@ -50,6 +50,7 @@ import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbcp.DbConnectionPool;
 import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
+import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.TestDbModule;
@@ -57,6 +58,7 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.layer.resource.AbsRscLayerHelper;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.modularcrypto.CryptoProviderLoader;
 import com.linbit.linstor.modularcrypto.JclCryptoModule;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -271,11 +273,14 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
     @BeforeClass
     public static void setUpBeforeClass()
-        throws DatabaseException, SQLException, InvalidNameException, InitializationException, AccessDeniedException
+        throws DatabaseException, SQLException, InvalidNameException, InitializationException, AccessDeniedException,
+        ClassNotFoundException
     {
         if (dbConnPool == null)
         {
             errorReporter.logTrace("Performing DB initialization");
+
+            AbsMigration.setModularCryptoProvider(CryptoProviderLoader.loadCryptoProvider());
 
             TestDbConnectionPoolLoader dbConnectionPoolLoader = new TestDbConnectionPoolLoader();
             dbConnPool = dbConnectionPoolLoader.loadDbConnectionPool();

@@ -23,6 +23,7 @@ import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlConfigModule;
 import com.linbit.linstor.core.exos.ExosEnclosurePingTask;
 import com.linbit.linstor.dbcp.DbInitializer;
+import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
@@ -43,6 +44,7 @@ import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventS
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.netcom.NetComModule;
 import com.linbit.linstor.numberpool.DbNumberPoolInitializer;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -73,7 +75,6 @@ import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.utils.NameShortenerModule;
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.utils.InjectorLoader;
 
 import javax.inject.Inject;
@@ -161,8 +162,6 @@ public final class Controller
     private final PassphraseInitializer passphraseInitializer;
 
     private final PreConnectInitializer preConnectCleanupInitializer;
-
-    private static ModularCryptoProvider cryptoProvider;
 
     @Inject
     public Controller(
@@ -588,7 +587,8 @@ public final class Controller
             );
 
             {
-                cryptoProvider = injector.getInstance(ModularCryptoProvider.class);
+                ModularCryptoProvider cryptoProvider = injector.getInstance(ModularCryptoProvider.class);
+                AbsMigration.setModularCryptoProvider(cryptoProvider);
                 errorLog.logInfo("Cryptography provider: Using %s", cryptoProvider.getModuleIdentifier());
             }
 
@@ -622,10 +622,5 @@ public final class Controller
         }
 
         System.out.println();
-    }
-
-    public static ModularCryptoProvider getCryptoProvider()
-    {
-        return cryptoProvider;
     }
 }

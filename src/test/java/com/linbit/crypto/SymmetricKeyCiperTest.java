@@ -1,14 +1,12 @@
 package com.linbit.crypto;
 
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.modularcrypto.CryptoProviderLoader;
-import com.linbit.crypto.ByteArrayCipher;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.junit.Assert.assertArrayEquals;

@@ -10,8 +10,8 @@ public class CryptoProviderLoader
 {
     private static final String[] PROVIDER_CLASSES =
     {
-        "FipsCryptoProvider",
-        "JclCryptoProvider"
+        "com.linbit.linstor.modularcrypto.FipsCryptoProvider",
+        "com.linbit.linstor.modularcrypto.JclCryptoProvider"
     };
 
     public static ModularCryptoProvider loadCryptoProvider()

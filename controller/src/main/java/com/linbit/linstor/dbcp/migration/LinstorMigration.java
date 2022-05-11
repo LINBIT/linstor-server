@@ -1,14 +1,12 @@
 package com.linbit.linstor.dbcp.migration;
 
 import com.linbit.linstor.DatabaseInfo;
-import com.linbit.linstor.core.Controller;
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+
+import java.sql.Connection;
 
 import org.flywaydb.core.api.MigrationVersion;
 import org.flywaydb.core.api.migration.Context;
 import org.flywaydb.core.api.migration.JavaMigration;
-
-import java.sql.Connection;
 
 /**
  * Base migration class to enable the individual migration classes to be as simple as possible.
@@ -20,7 +18,7 @@ import java.sql.Connection;
  * <p>
  * Under normal circumstances migrations should not be changed once they have been released.
  */
-public abstract class LinstorMigration implements JavaMigration
+public abstract class LinstorMigration extends AbsMigration implements JavaMigration
 {
     public static final String PLACEHOLDER_KEY_DB_TYPE = "dbType";
 
@@ -72,12 +70,6 @@ public abstract class LinstorMigration implements JavaMigration
     {
         // FIXME: May want to use DatabaseInfo.DbProduct instead in the future
         return dbType;
-    }
-
-    protected ModularCryptoProvider getCryptoProvider()
-    {
-
-        return Controller.getCryptoProvider();
     }
 
     protected abstract void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
