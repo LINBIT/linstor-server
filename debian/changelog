@@ -1,3 +1,31 @@
+linstor-server (1.18.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * LocalIP: Fix finding the local IP
+  * zfs,snap-restore: Fix duplicate zpool
+  * VlmGrp: Add to RG on Stlt
+  * VG,Stlt: Update properties properly
+  * Extend checks for automatic rs-discard-granularity and discard-zeroes- [...]
+  * ConfFileBuilder: Add Vlm-props to prioProps
+  * Node,modify: also update port if nodeType changes
+  * Node,Modify: Make reconnect asynchron
+  * TaskScheduler: Add reschedule method
+  * TaskScheduleService: Fixed possible concurrentModExc
+  * TaskScheduler: Changed returned long from relative to absolute timestamp
+  * TaskSchedule: Added new next execution-time-calculation
+  * TaskScheduleService: fixed new execution-time-calculation
+
+  [ Matt Kereczman ]
+  * docs: add prometheus metrics to docs
+
+  [ Robert Altnoeder ]
+  * Experimental/review: New main loop, supposed to fix synchronization is [...]
+
+  [ Rene Peinthor ]
+  * rest: update rest-api-version
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 12 May 2022 05:39:55 +0000
+
 linstor-server (1.18.1~rc.2-1) experimental; urgency=medium
 
   [ Aiden Grossman ]
