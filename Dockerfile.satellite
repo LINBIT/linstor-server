@@ -99,8 +99,7 @@ ENV INTERNAL_REPO=/etc/yum.repos.d/linbit-internal.repo
 # =lbbuild RUN curl -fsSL https://nexus.at.linbit.com/repository/lbbuild/from_rhel_repos.sh | bash -s -- cryptsetup nvme-cli zstd xfsprogs e2fsprogs device-mapper-multipath lsscsi
 
 # package post inst config
-RUN sed -i 's/udev_rules.*=.*/udev_rules=0/' /etc/lvm/lvm.conf
-RUN sed -i '/^devices {/a global_filter = [ "r|^/dev/drbd|" ]' /etc/lvm/lvm.conf
+RUN lvmconfig --type current --mergedconfig --config 'activation { udev_rules = 0 } devices { global_filter = [ "r|^/dev/drbd|" ] }' > /etc/lvm/lvm.conf.new && mv /etc/lvm/lvm.conf.new /etc/lvm/lvm.conf
 # Ensure we log to files in containers, otherwise SOS reports won't show any logs at all
 RUN sed -i 's#<!-- <appender-ref ref="FILE" /> -->#<appender-ref ref="FILE" />#' /usr/share/linstor-server/lib/conf/logback.xml
 
