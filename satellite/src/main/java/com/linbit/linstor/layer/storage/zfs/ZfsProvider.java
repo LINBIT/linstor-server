@@ -531,7 +531,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         }
     }
 
-    protected String getZpoolOnlyName(StorPool storPoolRef) throws AccessDeniedException, StorageException
+    protected String getZpoolOnlyName(StorPool storPoolRef) throws StorageException
     {
         String zpoolName = getZPool(storPoolRef);
         if (zpoolName == null)
@@ -539,12 +539,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             throw new StorageException("Unset zfs dataset for " + storPoolRef);
         }
 
-        int idx = zpoolName.indexOf(File.separator);
-        if (idx == -1)
-        {
-            idx = zpoolName.length();
-        }
-        return zpoolName.substring(0, idx);
+        return ZfsUtils.getZPoolRootName(zpoolName);
     }
 
     @Override
@@ -555,18 +550,11 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         {
             throw new StorageException("Unset zfs dataset for " + storPool);
         }
-        int idx = zPool.indexOf(File.separator);
-        if (idx == -1)
-        {
-            idx = zPool.length();
-        }
-        String rootPoolName = zPool.substring(0, idx);
 
-        // do not use sub pool, we have to ask the actual zpool, not the sub dataset
         long capacity = ZfsUtils.getZPoolTotalSize(
             extCmdFactory.create(),
-            Collections.singleton(rootPoolName)
-        ).get(rootPoolName);
+            Collections.singleton(zPool)
+        ).get(zPool);
         long freeSpace = ZfsUtils.getZPoolFreeSize(
             extCmdFactory.create(),
             Collections.singleton(zPool)

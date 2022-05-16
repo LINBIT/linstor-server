@@ -12,6 +12,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -232,26 +233,52 @@ public class ZfsUtils
         );
     }
 
+    public static String getZPoolRootName(String zpoolDatasetName)
+    {
+        int idx = zpoolDatasetName.indexOf(File.separator);
+        if (idx == -1)
+        {
+            idx = zpoolDatasetName.length();
+        }
+        return zpoolDatasetName.substring(0, idx);
+    }
+
     public static Map<String, Long> getZPoolTotalSize(ExtCmd extCmd, Set<String> zPools) throws StorageException
     {
+        final Map<String, Long> quotaSizes = ParseUtils.parseSimpleTable(
+            ZfsCommands.getQuotaSize(extCmd, zPools),
+            DELIMITER,
+            "quota size",
+            0, // field for name
+            1 // field for value
+        );
+
+        Set<String> zpoolRoots = new HashSet<>();
+        for (String zpoolName : zPools)
+        {
+            zpoolRoots.add(getZPoolRootName(zpoolName));
+        }
+
         Map<String, Long> totalSizes = ParseUtils.parseSimpleTable(
-            ZfsCommands.getZPoolTotalSize(extCmd, zPools),
+            ZfsCommands.getZPoolTotalSize(extCmd, zpoolRoots),
             DELIMITER,
             "free size",
             0, // field for name
             2 // field for value
         );
-        for (Entry<String, Long> entry : totalSizes.entrySet())
+        for (Entry<String, Long> entry : quotaSizes.entrySet())
         {
+            Long sizeValue = entry.getValue() == 0L ?
+                totalSizes.get(getZPoolRootName(entry.getKey())) : entry.getValue();
             entry.setValue(
                 SizeConv.convert(
-                    entry.getValue(),
+                    sizeValue,
                     SizeUnit.UNIT_B,
                     SizeUnit.UNIT_KiB
                 )
             );
         }
-        return totalSizes;
+        return quotaSizes;
     }
 
     public static List<String> getPhysicalVolumes(ExtCmd extCmd, String zPoolRef) throws StorageException

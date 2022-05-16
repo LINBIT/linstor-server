@@ -125,22 +125,20 @@ public class ZfsThinProvider extends ZfsProvider
     @Override
     public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        String zPoolName = getZpoolOnlyName(storPool);
-
-        // do not use the thin version, we have to ask the actual zpool, not the thin "pool"
-        long capacity = ZfsUtils.getZPoolTotalSize(
-            extCmdFactory.create(),
-            Collections.singleton(zPoolName)
-        ).get(zPoolName);
-
-        String thinZpoolName = getZPool(storPool);
-        if (thinZpoolName == null)
+        String zPool = getZPool(storPool);
+        if (zPool == null)
         {
             throw new StorageException("Unset thin zfs dataset for " + storPool);
         }
+
+        long capacity = ZfsUtils.getZPoolTotalSize(
+            extCmdFactory.create(),
+            Collections.singleton(zPool)
+        ).get(zPool);
+
         long freeSpace = ZfsUtils.getThinZPoolsList(
             extCmdFactory.create()
-        ).get(thinZpoolName).usableSize;
+        ).get(zPool).usableSize;
 
         return new SpaceInfo(capacity, freeSpace);
     }

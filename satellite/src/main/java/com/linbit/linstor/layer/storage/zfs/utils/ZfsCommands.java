@@ -256,6 +256,27 @@ public class ZfsCommands
         );
     }
 
+    public static OutputData getQuotaSize(ExtCmd extCmd, Set<String> zPools)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd,
+            StringUtils.concat(
+                new String[]
+                    {
+                        "zfs",
+                        "get",
+                        "quota",
+                        "-o", "name,value",
+                        "-Hp"
+                    },
+                zPools
+            ),
+            "Failed to query quota size of zPool(s) " + zPools,
+            "Failed to query quota size of zPools(s) " + zPools
+        );
+    }
+
     public static OutputData getZPoolFreeSize(ExtCmd extCmd, Set<String> zPools)
         throws StorageException
     {
