@@ -59,16 +59,28 @@ public class DaemonHandler
         return process;
     }
 
+    /**
+     * Starts the process and produces events splitting after {@link OutputProxy#DFLT_BUFFER_SIZE} bytes
+     *
+     * @return
+     *
+     * @throws IOException
+     */
     public Process startUndelimited() throws IOException
+    {
+        return startUndelimited(OutputProxy.DFLT_BUFFER_SIZE);
+    }
+
+    public Process startUndelimited(int bufferSize) throws IOException
     {
         stop(true);
 
         process = processBuilder.start();
-        errProxy = new OutputProxy(process.getErrorStream(), deque, false);
+        errProxy = new OutputProxy(process.getErrorStream(), deque, false, bufferSize);
         errThread = new Thread(errProxy);
         if (stdOut)
         {
-            outProxy = new OutputProxy(process.getInputStream(), deque, true);
+            outProxy = new OutputProxy(process.getInputStream(), deque, true, bufferSize);
             outThread = new Thread(outProxy);
             outThread.start();
         }

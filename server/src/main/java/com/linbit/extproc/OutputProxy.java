@@ -11,7 +11,8 @@ public class OutputProxy implements Runnable
     }
 
     public static final int EOF = -1;
-    public static final int DFLT_BUFFER_SIZE = 1 << 20; // 1MiB
+    /** 1MiB */
+    public static final int DFLT_BUFFER_SIZE = 1 << 20;
 
     protected final InputStream dataIn;
     protected final BlockingDeque<Event> deque;
@@ -70,7 +71,7 @@ public class OutputProxy implements Runnable
                 else
                 {
                     byte[] trimmedData = new byte[dataPos];
-                    System.arraycopy(data, dataPos, trimmedData, 0, dataPos);
+                    System.arraycopy(data, 0, trimmedData, 0, dataPos);
                     addToDeque(trimmedData);
                     addEofToDeque();
                 }
@@ -103,7 +104,7 @@ public class OutputProxy implements Runnable
 
     protected void addEofToDeque() throws InterruptedException
     {
-        addToDeque(new EOFEvent());
+        addToDeque(new EOFEvent(useOut));
     }
 
     protected void addToDeque(Event eventRef) throws InterruptedException
@@ -167,9 +168,14 @@ public class OutputProxy implements Runnable
 
     public static class EOFEvent implements Event
     {
-        public EOFEvent()
+        /**
+         * True if EOF comes from stdOut stream, false if EOF comes from stdErr stream
+         */
+        public final boolean stdOut;
+
+        public EOFEvent(boolean useOutRef)
         {
-            // simple event to show EOF occurred
+            stdOut = useOutRef;
         }
     }
 

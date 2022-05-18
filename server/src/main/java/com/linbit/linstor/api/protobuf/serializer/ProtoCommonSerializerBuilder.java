@@ -55,7 +55,6 @@ import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.BCacheRscOuterClass.BCacheRsc;
@@ -702,18 +701,29 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder sosReport(String nodeName, Set<LinstorFile> errorReports)
+    public CommonSerializer.CommonSerializerBuilder sosReport(
+        String nodeNameRef,
+        String relativeFileNameRef,
+        long timestampRef,
+        long offsetRef,
+        byte[] dataRef,
+        boolean eofRef
+    )
     {
         try
         {
-            MsgSosReport.Builder bld = MsgSosReport.newBuilder();
-            File.Builder fileBld = File.newBuilder();
-            for (LinstorFile errReport : errorReports)
-            {
-                fileBld.setTitle(errReport.getFileName()).setTime(errReport.getDateTime().getTime())
-                    .setText(errReport.getText().orElse(""));
-                bld.setFile(fileBld).setNodeName(nodeName).build().writeDelimitedTo(baos);
-            }
+            MsgSosReport.newBuilder()
+                .setNodeName(nodeNameRef)
+                .setFile(
+                    File.newBuilder()
+                        .setRelativeTitle(relativeFileNameRef)
+                        .setTime(timestampRef)
+                        .setContent(ByteString.copyFrom(dataRef))
+                        .setOffset(offsetRef)
+                        .build()
+                )
+                .build()
+                .writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {

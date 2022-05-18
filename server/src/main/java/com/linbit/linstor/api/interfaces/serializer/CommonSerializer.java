@@ -8,7 +8,6 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.logging.ErrorReport;
-import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import javax.annotation.Nullable;
@@ -94,14 +93,19 @@ public interface CommonSerializer
 
         CommonSerializerBuilder errorReports(List<ErrorReport> errorReports);
 
-        CommonSerializerBuilder sosReport(String text, Set<LinstorFile> errorReports);
+        CommonSerializerBuilder sosReport(
+            String nodeNameRef,
+            String relativeFileNameRef,
+            long timestampRef,
+            long offsetRef,
+            byte[] dataRef,
+            boolean eofRef
+        );
 
         CommonSerializerBuilder filter(
             Set<NodeName> nodesFilter,
             Set<StorPoolName> storPoolFilter,
             Set<ResourceName> resourceFilter
         );
-
-
     }
 }

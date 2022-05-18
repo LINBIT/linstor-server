@@ -1,10 +1,17 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.extproc.DaemonHandler;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
+import com.linbit.extproc.OutputProxy.EOFEvent;
+import com.linbit.extproc.OutputProxy.Event;
+import com.linbit.extproc.OutputProxy.ExceptionEvent;
+import com.linbit.extproc.OutputProxy.StdErrEvent;
+import com.linbit.extproc.OutputProxy.StdOutEvent;
+import com.linbit.linstor.SosReportType;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -12,13 +19,13 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
+import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.responses.FileOuterClass;
@@ -30,28 +37,31 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
-import com.linbit.utils.BiExceptionThrowingBiConsumer;
 import com.linbit.utils.FileCollector;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -63,10 +73,12 @@ import reactor.util.function.Tuples;
 @Singleton
 public class CtrlSosReportApiCallHandler
 {
+    private static final int DFLT_DEQUE_CAPACITY = 10;
+
     private static final String SOS_PREFIX = "sos_";
     private static final String SOS_SUFFIX = ".tar.gz";
-    private static final DateFormat SDF = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-    private static final DateFormat SDF_UTC = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+    private final DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+    private final DateFormat sdfUtc = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
     private final Provider<AccessContext> peerAccCtx;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
@@ -100,7 +112,7 @@ public class CtrlSosReportApiCallHandler
         extCmdFactory = extCmdFactoryRef;
         ctrlCfg = ctrlCfgRef;
         db = dbRef;
-        SDF_UTC.setTimeZone(TimeZone.getTimeZone("UTC"));
+        sdfUtc.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
     public Flux<String> getSosReport(
@@ -114,18 +126,27 @@ public class CtrlSosReportApiCallHandler
             final Path tmpDir = Files.createTempDirectory("sos");
             makeDir(tmpDir.resolve("tmp"));
 
-            ret = scopeRunner
-                .fluxInTransactionlessScope(
-                    "Collect SOS Report", lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
-                    () -> assembleRequests(nodes, tmpDir, since)
-                ).collectList()
-                .flatMapMany(
-                    sosReportAnswers -> scopeRunner
-                        .fluxInTransactionalScope(
-                            "Assemble SOS Report", lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
-                            () -> assembleReport(nodes, sosReportAnswers, tmpDir, since)
-                        )
-                );
+            ret = scopeRunner.fluxInTransactionlessScope(
+                "Send SOS report queries",
+                lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
+                () -> sendRequests(nodes, tmpDir, since)
+            ).flatMap(
+                sosReportAnswer -> scopeRunner.fluxInTransactionalScope(
+                    "Receiving SOS report",
+                    lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
+                    () ->
+                    {
+                        deserializeErrorReportsInto(sosReportAnswer.getT2(), tmpDir);
+                        return Flux.<String>empty();
+                    }
+                )
+            ).concatWith(
+                scopeRunner.fluxInTransactionalScope(
+                    "Finishing SOS report",
+                    lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
+                    () -> finishReport(nodes, tmpDir, since)
+                )
+            );
         }
         catch (IOException exc)
         {
@@ -135,7 +156,7 @@ public class CtrlSosReportApiCallHandler
         return ret;
     }
 
-    private Flux<Tuple2<NodeName, ByteArrayInputStream>> assembleRequests(
+    private Flux<Tuple2<NodeName, ByteArrayInputStream>> sendRequests(
         Set<String> nodes,
         Path tmpDir,
         Date since
@@ -144,11 +165,13 @@ public class CtrlSosReportApiCallHandler
     {
         HashSet<String> copyNodes = new HashSet<>();
         nodes.forEach(node -> copyNodes.add(node.toLowerCase()));
-        Stream<Node> nodeStream = nodeRepository.getMapForView(peerAccCtx.get()).values().stream()
-            .filter(
-                node -> copyNodes.isEmpty() ||
-                    copyNodes.contains(node.getName().getDisplayName().toLowerCase())
+        Stream<Node> nodeStream = nodeRepository.getMapForView(peerAccCtx.get()).values().stream();
+        if (!copyNodes.isEmpty())
+        {
+            nodeStream = nodeStream.filter(
+                node -> copyNodes.contains(node.getName().getDisplayName().toLowerCase())
             );
+        }
 
         List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> namesAndRequests = nodeStream
             .map(node -> Tuples.of(node.getName(), prepareSosRequestApi(node, tmpDir, since)))
@@ -194,9 +217,8 @@ public class CtrlSosReportApiCallHandler
         return peer;
     }
 
-    private Flux<String> assembleReport(
+    private Flux<String> finishReport(
         Set<String> nodes,
-        List<Tuple2<NodeName, ByteArrayInputStream>> sosReportAnswers,
         Path tmpDir,
         Date since
     )
@@ -206,13 +228,8 @@ public class CtrlSosReportApiCallHandler
         {
             createControllerFilesInto(tmpDir, since);
         }
-        for (Tuple2<NodeName, ByteArrayInputStream> sosReportAnswer : sosReportAnswers)
-        {
-            ByteArrayInputStream sosReportMsgDataIn = sosReportAnswer.getT2();
-            deserializeErrorReportsInto(sosReportMsgDataIn, tmpDir);
-        }
 
-        String fileName = errorReporter.getLogDirectory() + "/" + SOS_PREFIX + SDF_UTC.format(new Date()) + SOS_SUFFIX;
+        String fileName = errorReporter.getLogDirectory() + "/" + SOS_PREFIX + sdfUtc.format(new Date()) + SOS_SUFFIX;
         HashSet<String> copyNodes = new HashSet<>();
         nodes.forEach(node -> copyNodes.add(node.toLowerCase()));
         Stream<Node> nodeStream = nodeRepository.getMapForView(peerAccCtx.get()).values().stream()
@@ -271,99 +288,88 @@ public class CtrlSosReportApiCallHandler
 
     private void createControllerFilesInto(Path tmpDir, Date since) throws IOException
     {
+        long nowMillis = System.currentTimeMillis();
+        Date now = new Date(nowMillis);
+
         String nodeName = "_" + LinStor.CONTROLLER_MODULE;
         Path sosDir = tmpDir.resolve("tmp/" + nodeName);
         String infoContent = LinStor.linstorInfo() + "\n\nuname -a:           " + LinStor.getUname("-a");
-        makeFile(sosDir.resolve("linstorInfo"), infoContent, System.currentTimeMillis());
-        Date now = new Date();
-        String timeContent = "Local Time: " + SDF.format(now) + "\nUTC Time:   " + SDF_UTC.format(now);
-        makeFile(sosDir.resolve("timeInfo"), timeContent, now.getTime());
+        append(sosDir.resolve("linstorInfo"), infoContent.getBytes(), nowMillis);
+
+        String timeContent = "Local Time: " + sdf.format(now) + "\nUTC Time:   " + sdfUtc.format(now);
+        append(sosDir.resolve("timeInfo"), timeContent.getBytes(), nowMillis);
         getDbDump(sosDir);
 
-        String tomlPath = ctrlCfg.getConfigDir() + CtrlConfig.LINSTOR_CTRL_CONFIG;
+        String tomlPath = ctrlCfg.getConfigDir() + LinstorConfig.LINSTOR_CTRL_CONFIG;
         CommandHelper[] commands = new CommandHelper[]
         {
             new CommandHelper(
-                sosDir.resolve(CtrlConfig.LINSTOR_CTRL_CONFIG),
+                sosDir.resolve(LinstorConfig.LINSTOR_CTRL_CONFIG),
                 new String[]
                 {
                     "cp", "-p", tomlPath, sosDir.toString()
-                },
-                this::makeFileFromCmdIfFailed
+                }
             ),
             new CommandHelper(
                 sosDir.resolve("journalctl"),
                 new String[]
                 {
                     "journalctl", "-u", "linstor-controller", "--since", LinStor.JOURNALCTL_DF.format(since)
-                },
-                this::makeFileFromCmd
+                }
             ),
             new CommandHelper(
                 sosDir.resolve("ip-a"),
                 new String[]
                 {
                     "ip", "a"
-                },
-                this::makeFileFromCmd
+                }
             ),
             new CommandHelper(
                 sosDir.resolve("log-syslog"),
                 new String[]
                 {
                     "cp", "-p", "/var/log/syslog", sosDir.toString() + "/log-syslog"
-                },
-                this::makeFileFromCmdIfFailed
+                }
             ),
             new CommandHelper(
                 sosDir.resolve("log-kern.log"),
                 new String[]
                 {
                     "cp", "-p", "/var/log/kern.log", sosDir.toString() + "/log-kern.log"
-                },
-                this::makeFileFromCmdIfFailed
+                }
             ),
             new CommandHelper(
                 sosDir.resolve("log-messages"),
                 new String[]
                 {
                     "cp", "-p", "/var/log/messages", sosDir.toString() + "/log-messages"
-                },
-                this::makeFileFromCmdIfFailed
+                }
             ),
             new CommandHelper(
                 sosDir.resolve("release"),
                 new String[]
                 {
                     "cat", "/etc/redhat-release", "/etc/lsb-release", "/etc/os-release"
-                },
-                this::makeFileFromCmdNoFailed
+                }
             ),
         };
         for (CommandHelper cmd : commands)
         {
-            try
-            {
-                cmd.handleExitCode.accept(cmd.file, cmd.cmd);
-            }
-            catch (IOException | ChildProcessTimeoutException exc)
-            {
-                makeFile(
-                    Paths.get(cmd.file.toString() + ".failed"),
-                    exc.getClass().getCanonicalName() + ": " + exc.getMessage() + "\ncommand: " +
-                        Arrays.toString(cmd.cmd),
-                    System.currentTimeMillis()
-                );
-            }
+            makeFileFromCmdNoFailed(cmd.file, nowMillis, cmd.cmd);
         }
 
-        FileCollector collector = new FileCollector(nodeName, errorReporter.getLogDirectory());
+        FileCollector collector = new FileCollector(errorReporter.getLogDirectory());
         Files.walkFileTree(errorReporter.getLogDirectory(), collector);
-        Set<LinstorFile> errorReports = collector.getFiles();
-        for (LinstorFile err : errorReports)
+        Set<SosReportType> errorReports = collector.getFiles();
+        for (SosReportType err : errorReports)
         {
-            makeFile(
-                sosDir.resolve(err.getFileName()), err.getText().orElse("No content found"), err.getDateTime().getTime()
+            Path erroReportPath = sosDir.resolve("logs/" + Paths.get(err.getRelativeFileName()).getFileName());
+            makeFileFromCmdNoFailed(
+                addExtension(erroReportPath, ".out"),
+                nowMillis,
+                "cp", "-p",
+                errorReporter.getLogDirectory().resolve(err.getRelativeFileName()).toString(),
+                erroReportPath.toString()
             );
         }
     }
@@ -377,7 +383,11 @@ public class CtrlSosReportApiCallHandler
             String nodeName = msgSosReport.getNodeName();
             Path sosDir = tmpDir.resolve("tmp/" + nodeName);
             FileOuterClass.File file = msgSosReport.getFile();
-            makeFile(sosDir.resolve(file.getTitle()), file.getText(), file.getTime());
+            append(
+                sosDir.resolve(file.getRelativeTitle()),
+                file.getContent().toByteArray(),
+                file.getTime()
+            );
             msgSosReport = MsgSosReportOuterClass.MsgSosReport.parseDelimitedFrom(msgDataIn);
         }
     }
@@ -390,85 +400,150 @@ public class CtrlSosReportApiCallHandler
         }
     }
 
-    private void makeFile(Path filePath, String contents, long time) throws IOException
-    {
-        String text = contents;
-        if (text == null || text.isEmpty())
-        {
-            text = "No content found";
-        }
-        Files.createDirectories(filePath.getParent());
-        Files.write(
-            filePath,
-            text.getBytes()
-        );
-        Files.setAttribute(
-            filePath,
-            "lastModifiedTime",
-            FileTime.fromMillis(time)
-        );
-    }
-
-    // make file with stderr & stdout if failed, make file with stdout if successful
-    private void makeFileFromCmd(Path filePath, String[] command) throws ChildProcessTimeoutException, IOException
-    {
-        OutputData output = extCmdFactory.create().exec(command);
-        if (output.exitCode != 0)
-        {
-            makeFile(
-                Paths.get(filePath.toString() + ".failed"),
-                new String(output.stdoutData) + "\n\n" + new String(output.stderrData),
-                System.currentTimeMillis()
-            );
-        }
-        else
-        {
-            makeFile(filePath, new String(output.stdoutData), System.currentTimeMillis());
-        }
-    }
-
     // make file with stderr & stdout if failed, but don't mark it as failed, make file with stdout if successful
-    private void makeFileFromCmdNoFailed(Path filePath, String[] command)
-        throws ChildProcessTimeoutException, IOException
+    private void makeFileFromCmdNoFailed(Path filePath, long timestamp, String... command)
     {
-        OutputData output = extCmdFactory.create().exec(command);
-        if (output.exitCode != 0)
+        LinkedBlockingDeque<Event> deque = new LinkedBlockingDeque<>(DFLT_DEQUE_CAPACITY);
+        DaemonHandler dh = new DaemonHandler(deque, command);
+
+        Path outFile = filePath;
+        Path errFile = addExtension(filePath, ".err");
+
+        boolean running;
+        try
         {
-            makeFile(
-                filePath, new String(output.stdoutData) + "\n\n" + new String(output.stderrData),
-                System.currentTimeMillis()
-            );
+            dh.startUndelimited();
+            running = true;
         }
-        else
+        catch (IOException exc)
         {
-            makeFile(filePath, new String(output.stdoutData), System.currentTimeMillis());
+            running = false;
+
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            exc.printStackTrace(new PrintWriter(baos));
+            byte[] data = baos.toByteArray();
+
+            append(addExtension(filePath, ".ioexc"), data, timestamp, command);
+        }
+
+        while (running)
+        {
+            Event event;
+
+            byte[] data = null;
+            Path file = null;
+            try
+            {
+                event = deque.take();
+
+                if (event instanceof StdOutEvent)
+                {
+                    StdOutEvent stdOutEvent = (StdOutEvent) event;
+                    data = stdOutEvent.data;
+                    file = outFile;
+                }
+                else if (event instanceof StdErrEvent)
+                {
+                    StdErrEvent stdErrEvent = (StdErrEvent) event;
+                    data = stdErrEvent.data;
+                    file = errFile;
+                }
+                else if (event instanceof EOFEvent)
+                {
+                    running = false;
+                }
+                else if (event instanceof ExceptionEvent)
+                {
+                    running = false;
+
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    ((ExceptionEvent) event).exc.printStackTrace(new PrintWriter(baos));
+                    data = baos.toByteArray();
+
+                    file = addExtension(filePath, ".exc");
+                }
+                else
+                {
+                    errorReporter.logError(
+                        "Unknown event type during SOS report: %s while processing command %s",
+                        event.getClass().getCanonicalName(),
+                        StringUtils.join(" ", command)
+                    );
+                }
+            }
+            catch (InterruptedException exc)
+            {
+                running = false;
+                data = "Interrupted".getBytes();
+                file = outFile;
+
+                Thread.currentThread().interrupt();
+            }
+            if (file != null && data != null)
+            {
+                append(file, data, timestamp, command);
+            }
         }
     }
 
-    // make file with stderr & stdout if failed, no action if successful
-    private void makeFileFromCmdIfFailed(Path filePath, String[] command)
-        throws ChildProcessTimeoutException, IOException
+    private Path addExtension(Path pathRef, String extensionRef)
     {
-        OutputData output = extCmdFactory.create().exec(command);
-        if (output.exitCode != 0)
+        return pathRef.getParent().resolve(pathRef.getFileName() + extensionRef);
+    }
+
+    private void append(Path file, byte[] data, long timestampRef, String... command)
+    {
+        try
         {
-            makeFile(
-                Paths.get(filePath.toString() + ".failed"), new String(output.stdoutData) + "\n\n" +
-                    new String(output.stderrData), System.currentTimeMillis()
+            if (!Files.exists(file.getParent()))
+            {
+                Files.createDirectories(file.getParent());
+            }
+            Files.write(file, data, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+            errorReporter.logTrace("Written %d bytes to file %s", data.length, file.toString());
+            Files.setAttribute(
+                file,
+                "lastModifiedTime",
+                FileTime.fromMillis(timestampRef)
             );
         }
+        catch (IOException exc)
+        {
+            if (command != null && command.length > 0)
+            {
+                errorReporter.logError(
+                    "IOException occured while writing to %s from the command '%s'",
+                    file.toString(),
+                    StringUtils.join(" ", command)
+                );
+            }
+            else
+            {
+                errorReporter.logError(
+                    "IOException occured while writing to %s",
+                    file.toString()
+                );
+            }
+            errorReporter.reportError(exc);
+        }
+
     }
 
     private void getDbDump(Path dirPath) throws IOException
     {
         try
         {
-            Files.write(Paths.get(dirPath + "/dbDump"), db.getDbDump().getBytes());
+            Path dbDump = dirPath.resolve("dbDump");
+            Files.write(dbDump, db.getDbDump().getBytes());
         }
         catch (DatabaseException exc)
         {
             String reportName = errorReporter.reportError(exc);
-            makeFile(dirPath.resolve("dbDump.failed"), "ErrorReport-" + reportName, System.currentTimeMillis());
+            append(
+                dirPath.resolve("dbDump.failed"),
+                ("ErrorReport-" + reportName).getBytes(),
+                System.currentTimeMillis()
+            );
         }
     }
 
@@ -503,19 +578,16 @@ public class CtrlSosReportApiCallHandler
 
     private static class CommandHelper
     {
-        Path file;
-        String[] cmd;
-        BiExceptionThrowingBiConsumer<Path, String[], IOException, ChildProcessTimeoutException> handleExitCode;
+        private final Path file;
+        private final String[] cmd;
 
-        CommandHelper(
+        private CommandHelper(
             Path fileRef,
-            String[] cmdRef,
-            BiExceptionThrowingBiConsumer<Path, String[], IOException, ChildProcessTimeoutException> handleExitCodeRef
+            String[] cmdRef
         )
         {
             file = fileRef;
             cmd = cmdRef;
-            handleExitCode = handleExitCodeRef;
         }
     }
 

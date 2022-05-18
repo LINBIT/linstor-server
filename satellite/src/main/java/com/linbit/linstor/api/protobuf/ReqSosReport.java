@@ -1,13 +1,10 @@
 package com.linbit.linstor.api.protobuf;
 
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
-import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.core.apicallhandler.StltSosReportApiCallHandler;
 import com.linbit.linstor.proto.requests.MsgReqSosReportOuterClass.MsgReqSosReport;
 
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.IOException;
@@ -24,23 +21,18 @@ import com.google.inject.Inject;
 @Singleton
 public class ReqSosReport implements ApiCall
 {
-    private final StltApiCallHandler apiCallHandler;
-    private final Provider<Peer> peerProvider;
+    private final StltSosReportApiCallHandler sosApiCallHandler;
 
     @Inject
-    public ReqSosReport(StltApiCallHandler apiCallHandlerRef, Provider<Peer> peerProviderRefProvider)
+    public ReqSosReport(StltSosReportApiCallHandler sosApiCallHandlerRef)
     {
-        apiCallHandler = apiCallHandlerRef;
-        peerProvider = peerProviderRefProvider;
+        sosApiCallHandler = sosApiCallHandlerRef;
     }
 
     @Override
     public void execute(InputStream msgDataIn) throws IOException
     {
         MsgReqSosReport reqSosReport = MsgReqSosReport.parseDelimitedFrom(msgDataIn);
-        peerProvider.get().sendMessage(
-            apiCallHandler.listSosReport(new Date(reqSosReport.getSince())),
-            InternalApiConsts.API_RSP_SOS_REPORT
-        );
+        sosApiCallHandler.handleSosReportRequest(new Date(reqSosReport.getSince()));
     }
 }

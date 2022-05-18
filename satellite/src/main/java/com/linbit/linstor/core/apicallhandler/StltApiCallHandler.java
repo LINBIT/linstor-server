@@ -1,12 +1,9 @@
 package com.linbit.linstor.core.apicallhandler;
 
-import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ChildProcessHandler;
-import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -51,7 +48,6 @@ import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.logging.ErrorReport;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -62,7 +58,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
-import com.linbit.utils.FileCollector;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -70,14 +65,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Arrays;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +75,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.stream.Stream;
 
 import org.slf4j.event.Level;
 
@@ -851,235 +838,6 @@ public class StltApiCallHandler
         return successFlag;
     }
 
-    public byte[] listSosReport(Date since)
-    {
-        String nodeName = controllerPeerConnector.getLocalNode().getName().getDisplayName();
-        Set<LinstorFile> reports = new HashSet<>();
-        reports.add(
-            new LinstorFile(
-                nodeName,
-                "linstorInfo",
-                new Date(System.currentTimeMillis()),
-                LinStor.linstorInfo() + "\n\nuname -a:           " + LinStor.getUname("-a")
-            )
-        );
-
-        try (Stream<Path> files = Files.list(Paths.get("/var/lib/linstor.d/")))
-        {
-            CommandHelper[] commands = new CommandHelper[]
-            {
-                new CommandHelper(
-                    "drbd-status",
-                    new String[]
-                    {"drbdsetup", "status", "-vvv"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "drbd-events2",
-                    new String[]
-                    {"drbdsetup", "events2", "all", "--now"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "modinfo",
-                    new String[]
-                    {"modinfo", "drbd"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "proc-drbd",
-                    new String[]
-                    {"cat", "/proc/drbd"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "lvm.conf",
-                    new String[]
-                    {"cat", "/etc/lvm/lvm.conf"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    StltConfig.LINSTOR_STLT_CONFIG,
-                    new String[]
-                    {"cat", stltCfg.getConfigDir() + StltConfig.LINSTOR_STLT_CONFIG},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "dmesg",
-                    new String[]
-                    {"dmesg", "-H"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "journalctl",
-                    new String[]
-                    {"journalctl", "-u", "linstor-satellite", "--since", LinStor.JOURNALCTL_DF.format(since)},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "ip-a",
-                    new String[]
-                    {"ip", "a"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "drbdadm-version",
-                    new String[]
-                    {"drbdadm", "--version"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "log-syslog",
-                    new String[]
-                    {"cat", "/var/log/syslog"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "log-kern.log",
-                    new String[]
-                    {"cat", "/var/log/kern.log"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "log-messages",
-                    new String[]
-                    {"cat", "/var/log/messages"},
-                    this::makeFileFromCmd
-                ),
-                new CommandHelper(
-                    "release",
-                    new String[]
-                    {"cat", "/etc/redhat-release", "/etc/lsb-release", "/etc/os-release"},
-                    this::makeFileFromCmdNoFailed
-                )
-            };
-            for (CommandHelper cmd : commands)
-            {
-                reports.add(cmd.handleExitCode.accept(nodeName, cmd.cmd, cmd.file));
-            }
-
-            files.filter(file -> file.getFileName().toString().endsWith(".res"))
-                .forEach(file ->
-                {
-                    try
-                    {
-                        BasicFileAttributes attr = Files.readAttributes(file, BasicFileAttributes.class);
-                        String content = "";
-                        try
-                        {
-                            content = new String(Files.readAllBytes(file));
-                        }
-                        catch (IOException ignored)
-                        {
-                        }
-                        reports.add(
-                            new LinstorFile(
-                                nodeName,
-                                "res/" + file.getFileName().toString(),
-                                new Date(attr.creationTime().toMillis()),
-                                content
-                            )
-                        );
-                    }
-                    catch (IOException exc)
-                    {
-                        reports.add(
-                            new LinstorFile(
-                                nodeName,
-                                file.getFileName().toString() + ".failed",
-                                new Date(System.currentTimeMillis()),
-                                exc.getClass().getCanonicalName() + ": " + exc.getMessage()
-                            )
-                        );
-                    }
-                });
-            FileCollector collector = new FileCollector(nodeName, errorReporter.getLogDirectory());
-            Files.walkFileTree(errorReporter.getLogDirectory(), collector);
-            reports.addAll(collector.getFiles());
-        }
-        catch (IOException ignored)
-        {
-        }
-        return interComSerializer.answerBuilder(InternalApiConsts.API_RSP_SOS_REPORT, apiCallId.get())
-            .sosReport(nodeName, reports)
-            .build();
-    }
-
-    // write stdout & stderr in file if failed, but don't mark as failed, write stdout if successful
-    private LinstorFile makeFileFromCmdNoFailed(String nodeName, String[] command, String fileName)
-    {
-        LinstorFile file;
-        try
-        {
-            OutputData output = extCmdFactory.create().exec(command);
-            if (output.exitCode != 0)
-            {
-                file = new LinstorFile(
-                    nodeName,
-                    fileName,
-                    new Date(System.currentTimeMillis()),
-                    new String(output.stdoutData) + "\n\n" + new String(output.stderrData)
-                );
-            }
-            else
-            {
-                file = new LinstorFile(
-                    nodeName,
-                    fileName,
-                    new Date(System.currentTimeMillis()),
-                    new String(output.stdoutData)
-                );
-            }
-        }
-        catch (IOException | ChildProcessTimeoutException exc)
-        {
-            file = new LinstorFile(
-                nodeName,
-                fileName + ".failed",
-                new Date(System.currentTimeMillis()),
-                exc.getClass().getCanonicalName() + ": " + exc.getMessage() + "\ncommand: " + Arrays.toString(command)
-            );
-        }
-        return file;
-    }
-
-    // write stderr & stdout in file if failed, write stdout if successful
-    private LinstorFile makeFileFromCmd(String nodeName, String[] command, String fileName)
-    {
-        LinstorFile file;
-        try
-        {
-            OutputData output = extCmdFactory.create().exec(command);
-            if (output.exitCode != 0)
-            {
-                file = new LinstorFile(
-                    nodeName,
-                    fileName + ".failed",
-                    new Date(System.currentTimeMillis()),
-                    new String(output.stdoutData) + "\n\n" + new String(output.stderrData)
-                );
-            }
-            else
-            {
-                file = new LinstorFile(
-                    nodeName,
-                    fileName,
-                    new Date(System.currentTimeMillis()),
-                    new String(output.stdoutData)
-                );
-            }
-        }
-        catch (IOException | ChildProcessTimeoutException exc)
-        {
-            file = new LinstorFile(
-                nodeName,
-                fileName + ".failed",
-                new Date(System.currentTimeMillis()),
-                exc.getClass().getCanonicalName() + ": " + exc.getMessage() + "\ncommand: " + Arrays.toString(command)
-            );
-        }
-        return file;
-    }
 
     private interface ApplyData
     {
@@ -1092,29 +850,6 @@ public class StltApiCallHandler
         }
 
         void applyChange();
-    }
-
-    private interface TriFunction<T, U, V, W>
-    {
-        W accept(T arg1, U arg2, V arg3);
-    }
-
-    private class CommandHelper
-    {
-        String file;
-        String[] cmd;
-        TriFunction<String, String[], String, LinstorFile> handleExitCode;
-
-        CommandHelper(
-            String fileRef,
-            String[] cmdRef,
-            TriFunction<String, String[], String, LinstorFile> handleExitCodeRef
-        )
-        {
-            file = fileRef;
-            cmd = cmdRef;
-            handleExitCode = handleExitCodeRef;
-        }
     }
 
     private class ApplyControllerData implements ApplyData
