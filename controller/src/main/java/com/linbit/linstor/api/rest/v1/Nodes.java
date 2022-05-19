@@ -243,7 +243,7 @@ public class Nodes
     {
         List<String> nodes = new ArrayList<>();
         nodes.add(nodeName);
-        Flux<ApiCallRc> flux = ctrlApiCallHandler.reconnectNode(nodes)
+        Flux<ApiCallRc> flux = ctrlNodeApiCallHandler.reconnectNode(nodes)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_NODE_RECONNECT, request));
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }

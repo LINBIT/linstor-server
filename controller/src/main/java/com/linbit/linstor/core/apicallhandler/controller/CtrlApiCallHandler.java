@@ -179,20 +179,6 @@ public class CtrlApiCallHandler
         return flux;
     }
 
-    public Flux<ApiCallRc> reconnectNode(
-        List<String> nodes
-    )
-    {
-        Flux<ApiCallRc> apiCallRc;
-        try (LockGuard lg = lockGuardFactory.build(WRITE, NODES_MAP))
-        {
-            apiCallRc = nodeApiCallHandler.reconnectNode(
-                nodes
-            );
-        }
-        return apiCallRc;
-    }
-
     public ArrayList<NodeApi> listNodes(List<String> nodeNames, List<String> propFilters)
     {
         ArrayList<NodeApi> nodeList;

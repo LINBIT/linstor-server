@@ -85,6 +85,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.api.ApiConsts.DEFAULT_NETIF;
 import static com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater.findNodesToContact;
@@ -99,6 +100,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -553,6 +555,25 @@ public class CtrlNodeApiCallHandler
     public Flux<ApiCallRc> reconnectNode(
         List<String> nodes
     )
+    {
+        ResponseContext context = makeNodeContext(
+            ApiOperation.makeModifyOperation(),
+            StringUtils.join(nodes, ", ")
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Reconnect node(s)",
+                lockGuardFactory.buildDeferred(WRITE, NODES_MAP),
+                () -> reconnectNodesInTransaction(
+                    nodes,
+                    context
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    public Flux<ApiCallRc> reconnectNodesInTransaction(Collection<String> nodes, ResponseContext contextRef)
     {
         Flux<ApiCallRc> waitForConnectFlux = Flux.empty();
         ApiCallRcImpl responses = new ApiCallRcImpl();
