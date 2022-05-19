@@ -87,6 +87,7 @@ Linstor shared components between linstor-controller and linstor-satellite
 %package controller
 Summary: Linstor controller specific files
 Requires: linstor-common = %{version}
+Requires(post): jre-headless
 
 %description controller
 Linstor controller manages linstor satellites and persistant data storage.
@@ -104,7 +105,7 @@ Linstor controller manages linstor satellites and persistant data storage.
 %{FIREWALLD_SERVICES}/linstor-controller.xml
 %{_sysconfdir}/linstor/linstor.toml-example
 
-%post controller
+%posttrans controller
 %{LS_PREFIX}/bin/controller.postinst.sh
 %systemd_post linstor-controller.service
 test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
