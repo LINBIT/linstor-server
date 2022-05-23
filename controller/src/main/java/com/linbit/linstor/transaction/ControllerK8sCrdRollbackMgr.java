@@ -192,10 +192,12 @@ public class ControllerK8sCrdRollbackMgr
     {
         MixedOperation<LinstorCrd<SPEC>, KubernetesResourceList<LinstorCrd<SPEC>>, Resource<LinstorCrd<SPEC>>> client = currentTransaction
             .getClient(dbTable);
-        Object typeEarasure = client;
-        MixedOperation<GenericKubernetesResource, KubernetesResourceList<GenericKubernetesResource>, Resource<GenericKubernetesResource>> gkrClient = (MixedOperation<GenericKubernetesResource, KubernetesResourceList<GenericKubernetesResource>, Resource<GenericKubernetesResource>>) typeEarasure;
+        Object typeErasure = client;
+        MixedOperation<GenericKubernetesResource, KubernetesResourceList<GenericKubernetesResource>, Resource<GenericKubernetesResource>> gkrClient = (MixedOperation<GenericKubernetesResource, KubernetesResourceList<GenericKubernetesResource>, Resource<GenericKubernetesResource>>) typeErasure;
         for (GenericKubernetesResource gkr : valuesToRestore)
         {
+            // Reset resource version, otherwise we incur extra requests while solving conflicts
+            gkr.getMetadata().setResourceVersion("");
             gkrClient.createOrReplace(gkr);
         }
     }
