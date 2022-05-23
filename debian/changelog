@@ -1,3 +1,17 @@
+linstor-server (1.18.2-1) experimental; urgency=medium
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * docker: fix lvm config manipulation
+
+  [ Rene Peinthor ]
+  * zfs: check if a quota is set on a DS and use it
+  * linstor.spec: controller use %posttrans instead of %post
+
+  [ Gabor Hernadi ]
+  * Node,reconnect: Fix out-of-scope bug
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 23 May 2022 06:47:31 +0000
+
 linstor-server (1.18.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
