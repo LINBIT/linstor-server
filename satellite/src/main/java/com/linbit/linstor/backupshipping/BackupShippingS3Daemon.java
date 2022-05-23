@@ -111,7 +111,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
                 uploadIdRef = backupHandler.initMultipart(backupName, remote, accCtx, masterKey);
             }
             uploadId = uploadIdRef;
-            cmdProcess = handler.start();
+            cmdProcess = handler.startDelimited();
             s3Thread.start();
         }
         catch (IOException exc)

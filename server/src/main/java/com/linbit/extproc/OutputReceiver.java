@@ -10,7 +10,7 @@ import java.io.InputStream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class OutputReceiver implements Runnable
+public class OutputReceiver implements OutputHandler
 {
     // Buffer size 64 kiB
     public static final int OF_BUFFER_SIZE = 0x10000;
@@ -173,6 +173,7 @@ public class OutputReceiver implements Runnable
      *     this instance's buffer, if an IOException was encountered while
      *     reading the data, or if I/O on the data is still in progress
      */
+    @Override
     public byte[] getData() throws IOException
     {
         // If I/O on the data is unfinished, generate an IOException
@@ -199,6 +200,7 @@ public class OutputReceiver implements Runnable
      * A waiting thread can be interrupted to unblock a wait
      * in this method
      */
+    @Override
     public void finish()
     {
         synchronized (this)

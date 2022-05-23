@@ -184,7 +184,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
             {
                 errorReporter.logTrace("Clearing eventDeque and starting DRBD 'events2' demonHandler");
                 eventDeque.clear();
-                demonHandler.start();
+                demonHandler.startDelimited();
             }
             catch (IOException exc1)
             {
@@ -265,7 +265,7 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
         thread.start();
         try
         {
-            demonHandler.start();
+            demonHandler.startDelimited();
         }
         catch (IOException exc)
         {

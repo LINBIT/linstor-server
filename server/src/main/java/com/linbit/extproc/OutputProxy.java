@@ -10,42 +10,36 @@ public class OutputProxy implements Runnable
     {
     }
 
-    // Initial data buffer size 64 kiB
-    public static final int INIT_DATA_SIZE = 0x10000;
-
-    // Data buffer size increment 512 kiB
-    public static final int DATA_SIZE_INC = 0x80000;
-
-    // Maximum data size 4 MiB
-    public static final int MAX_DATA_SIZE = 0x400000;
-
     public static final int EOF = -1;
+    public static final int DFLT_BUFFER_SIZE = 1 << 20; // 1MiB
 
-    private final InputStream dataIn;
-    private byte[] data;
-    private int dataPos;
-    private int dataLimit;
+    protected final InputStream dataIn;
+    protected final BlockingDeque<Event> deque;
+    protected final boolean useOut;
+    protected boolean shutdown;
 
-    private final BlockingDeque<Event> deque;
-    private final byte delimiter;
-    private final boolean useOut;
-
-    private boolean shutdown;
+    private int bufferSize;
 
     public OutputProxy(
-        final InputStream in,
+        final InputStream dataInRef,
         final BlockingDeque<Event> dequeRef,
-        final byte delimiterPrm,
-        final boolean useOutPrm
+        final boolean useOutRef
     )
     {
-        dataIn = in;
+        this(dataInRef, dequeRef, useOutRef, DFLT_BUFFER_SIZE);
+    }
+
+    public OutputProxy(
+        final InputStream dataInRef,
+        final BlockingDeque<Event> dequeRef,
+        final boolean useOutRef,
+        final int bufferSizeRef
+    )
+    {
+        dataIn = dataInRef;
         deque = dequeRef;
-        delimiter = delimiterPrm;
-        useOut = useOutPrm;
-        data = new byte[INIT_DATA_SIZE];
-        dataPos = 0;
-        dataLimit = 0;
+        useOut = useOutRef;
+        bufferSize = bufferSizeRef;
 
         shutdown = false;
     }
@@ -54,6 +48,8 @@ public class OutputProxy implements Runnable
     public void run()
     {
         int read = 0;
+        byte[] data = new byte[bufferSize];
+        int dataPos = 0;
         while (read != EOF && !shutdown)
         {
             // First read from the InputStream
@@ -63,56 +59,20 @@ public class OutputProxy implements Runnable
 
                 if (read != EOF)
                 {
-                    dataLimit += read;
-                    // Search for the delimiter starting from dataPos
-                    while (dataPos < dataLimit)
+                    dataPos += read;
+                    if (dataPos == bufferSize)
                     {
-                        if (data[dataPos] == delimiter)
-                        {
-                            // Put the found data into the deque
-                            byte[] delimitedData = new byte[dataPos];
-                            System.arraycopy(data, 0, delimitedData, 0, dataPos);
-                            addToDeque(delimitedData);
-
-                            // Skip the delimiter
-                            dataPos += 1;
-
-                            if (dataPos == dataLimit)
-                            {
-                                // no need to copy, all data will be overridden anyways
-                                dataLimit = 0;
-                            }
-                            else
-                            {
-                                // Copy all remaining data to the start of our array
-                                System.arraycopy(data, dataPos, data, 0, dataLimit - dataPos);
-                                dataLimit -= dataPos;
-                            }
-                            dataPos = 0;
-                        }
-                        else
-                        {
-                            ++dataPos;
-                        }
-                    }
-
-                    if (dataLimit == data.length)
-                    {
-                        if (dataLimit < MAX_DATA_SIZE)
-                        {
-                            byte[] enlarged = new byte[data.length + DATA_SIZE_INC];
-                            System.arraycopy(data, 0, enlarged, 0, data.length);
-                            data = enlarged;
-                        }
-                        else
-                        {
-                            addToDeque(new MaxBufferSizeReached());
-                        }
+                        addToDeque(data);
+                        data = new byte[bufferSize];
+                        dataPos = 0;
                     }
                 }
                 else
                 {
-                    deque.add(new EOFEvent());
+                    byte[] trimmedData = new byte[dataPos];
+                    System.arraycopy(data, dataPos, trimmedData, 0, dataPos);
+                    addToDeque(trimmedData);
+                    addEofToDeque();
                 }
             }
             catch (IOException ioExc)
@@ -141,7 +101,17 @@ public class OutputProxy implements Runnable
         }
     }
 
-    private void addToDeque(byte[] delimitedData) throws InterruptedException
+    protected void addEofToDeque() throws InterruptedException
+    {
+        addToDeque(new EOFEvent());
+    }
+
+    protected void addToDeque(Event eventRef) throws InterruptedException
+    {
+        deque.put(eventRef);
+    }
+
+    protected void addToDeque(byte[] delimitedData) throws InterruptedException
     {
         Event event;
         if (useOut)
@@ -152,12 +122,12 @@ public class OutputProxy implements Runnable
         {
             event = new StdErrEvent(delimitedData);
         }
-        deque.put(event); // may block
+        addToDeque(event);
     }
 
-    private void addToDeque(Exception exc) throws InterruptedException
+    protected void addToDeque(Exception exc) throws InterruptedException
     {
-        deque.put(new ExceptionEvent(exc));
+        addToDeque(new ExceptionEvent(exc));
     }
 
     public void expectShutdown()
@@ -167,11 +137,7 @@ public class OutputProxy implements Runnable
 
     public static class StdOutEvent implements Event
     {
-        public byte[] data;
-
-        public StdOutEvent()
-        {
-        }
+        public final byte[] data;
 
         public StdOutEvent(byte[] dataRef)
         {
@@ -181,11 +147,7 @@ public class OutputProxy implements Runnable
 
     public static class StdErrEvent implements Event
     {
-        public byte[] data;
-
-        public StdErrEvent()
-        {
-        }
+        public final byte[] data;
 
         public StdErrEvent(byte[] dataRef)
         {
@@ -195,11 +157,7 @@ public class OutputProxy implements Runnable
 
     public static class ExceptionEvent implements Event
     {
-        public Exception exc;
-
-        public ExceptionEvent()
-        {
-        }
+        public final Exception exc;
 
         public ExceptionEvent(Exception excRef)
         {
@@ -211,11 +169,8 @@ public class OutputProxy implements Runnable
     {
         public EOFEvent()
         {
+            // simple event to show EOF occurred
         }
     }
 
-    public static class MaxBufferSizeReached extends Exception
-    {
-        private static final long serialVersionUID = 3479687941054839688L;
-    }
 }

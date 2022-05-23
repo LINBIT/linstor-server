@@ -50,7 +50,7 @@ public class CloneDaemon implements Runnable
         thread.start();
         try
         {
-            handler.start();
+            handler.startDelimited();
         }
         catch (IOException exc)
         {

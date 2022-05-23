@@ -56,7 +56,7 @@ public class SnapshotShippingDaemon implements Runnable
         thread.start();
         try
         {
-            handler.start();
+            handler.startDelimited();
         }
         catch (IOException exc)
         {

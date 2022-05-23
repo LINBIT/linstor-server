@@ -37,16 +37,38 @@ public class DaemonHandler
         stdOut = stdOutRef;
     }
 
-    public Process start() throws IOException
+    public Process startDelimited() throws IOException
+    {
+        return startDelimited(DELIMITER);
+    }
+
+    public Process startDelimited(byte delimiterRef) throws IOException
     {
         stop(true);
 
         process = processBuilder.start();
-        errProxy = new OutputProxy(process.getErrorStream(), deque, DELIMITER, false);
+        errProxy = new OutputProxyDelimited(process.getErrorStream(), deque, delimiterRef, false);
         errThread = new Thread(errProxy);
         if (stdOut)
         {
-            outProxy = new OutputProxy(process.getInputStream(), deque, DELIMITER, true);
+            outProxy = new OutputProxyDelimited(process.getInputStream(), deque, delimiterRef, true);
+            outThread = new Thread(outProxy);
+            outThread.start();
+        }
+        errThread.start();
+        return process;
+    }
+
+    public Process startUndelimited() throws IOException
+    {
+        stop(true);
+
+        process = processBuilder.start();
+        errProxy = new OutputProxy(process.getErrorStream(), deque, false);
+        errThread = new Thread(errProxy);
+        if (stdOut)
+        {
+            outProxy = new OutputProxy(process.getInputStream(), deque, true);
             outThread = new Thread(outProxy);
             outThread.start();
         }

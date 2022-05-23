@@ -63,7 +63,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
         thread.start();
         try
         {
-            handler.start();
+            handler.startDelimited();
         }
         catch (IOException exc)
         {
