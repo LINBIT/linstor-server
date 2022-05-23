@@ -20,6 +20,7 @@ override_dh_install:
 	# common
 	mkdir -p $(CURDIR)/debian/linstor-common/$(LS_PREFIX)
 	cp -r $(CURDIR)/server/build/install/server/lib $(CURDIR)/debian/linstor-common/$(LS_PREFIX)
+	cp -r $(CURDIR)/jclcrypto/build/libs/jclcrypto-*.jar $(CURDIR)/debian/linstor-common/$(LS_PREFIX)/lib
 	if [ -f "$(CURDIR)/libs/server-st.jar" ]; then cp "$(CURDIR)/libs/server-st.jar" $(CURDIR)/debian/linstor-common/$(LS_PREFIX)/lib; fi
 	# controller
 	cp $(CURDIR)/scripts/linstor-controller.service $(CURDIR)/debian/

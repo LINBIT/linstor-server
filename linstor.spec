@@ -39,7 +39,7 @@ TODO.
 %build
 rm -rf ./build/install
 gradle %{GRADLE_TASKS} %{GRADLE_FLAGS}
-for p in server satellite controller; do echo "%{LS_PREFIX}/.$p" >> "%{_builddir}/%{NAME_VERS}/$p/jar.deps"; done
+for p in server satellite controller jclcrypto; do echo "%{LS_PREFIX}/.$p" >> "%{_builddir}/%{NAME_VERS}/$p/jar.deps"; done
 
 %install
 mkdir -p %{buildroot}/%{LS_PREFIX}
@@ -80,6 +80,7 @@ Linstor shared components between linstor-controller and linstor-satellite
 %dir %{LS_PREFIX}
 %dir %{LS_PREFIX}/lib
 %{LS_PREFIX}/lib/server-%{FILE_VERSION}.jar
+%{LS_PREFIX}/lib/jclcrypto-%{FILE_VERSION}.jar
 %dir %{LS_PREFIX}/lib/conf
 %{LS_PREFIX}/lib/conf/logback.xml
 

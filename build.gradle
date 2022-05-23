@@ -251,7 +251,7 @@ project(':satellite') {
 }
 
 project(':jclcrypto') {
-    apply plugin: 'application'
+    apply plugin: 'java-library'
 
     dependencies {
         implementation project(':server')
