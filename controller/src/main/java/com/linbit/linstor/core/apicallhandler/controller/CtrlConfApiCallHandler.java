@@ -226,6 +226,7 @@ public class CtrlConfApiCallHandler
         HashSet<String> filteredDeletePropKeys = new HashSet<>(deletePropKeysRef);
         HashSet<String> filteredDeleteNamespaces = new HashSet<>(deletePropNamespacesRef);
 
+        // this list might get expanded so don't convert to Collections.singleton
         List<SpecialPropHandler> specialHandlers = Arrays.asList(this::handleNetComModifications);
         for (SpecialPropHandler specialHandler : specialHandlers)
         {
@@ -270,6 +271,7 @@ public class CtrlConfApiCallHandler
             if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
             {
                 hasKeyInDrbdOptions = true;
+                break;
             }
         }
         for (String key : deletePropKeysRef)
@@ -277,6 +279,7 @@ public class CtrlConfApiCallHandler
             if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
             {
                 hasKeyInDrbdOptions = true;
+                break;
             }
         }
         hasKeyInDrbdOptions |= deletePropNamespacesRef.contains(ApiConsts.NAMESPC_DRBD_OPTIONS);
@@ -296,7 +299,6 @@ public class CtrlConfApiCallHandler
     public Flux<ApiCallRc> setCtrlConfig(
         ControllerConfigApi config
     )
-        throws AccessDeniedException
     {
         return scopeRunner
             .fluxInTransactionlessScope(
@@ -425,7 +427,7 @@ public class CtrlConfApiCallHandler
         return flux.transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private class SatelliteConfigPojo implements SatelliteConfigApi
+    private static class SatelliteConfigPojo implements SatelliteConfigApi
     {
         private final SatelliteConfig config;
 
@@ -1469,20 +1471,12 @@ public class CtrlConfApiCallHandler
             if (exc instanceof NumberFormatException)
             {
                 errorMsg = "The given tcp port number is not a valid integer: '" + strTcpPort + "'.";
-                rc = ApiConsts.FAIL_INVLD_TCP_PORT;
             }
             else
-            if (exc instanceof ValueOutOfRangeException)
             {
                 errorMsg = "The given tcp port number is not valid: '" + strTcpPort + "'.";
-                rc = ApiConsts.FAIL_INVLD_TCP_PORT;
             }
-            else
-            {
-                errorMsg = "An unknown exception occurred verifying the given TCP port '" + strTcpPort +
-                    "'.";
-                rc = ApiConsts.FAIL_UNKNOWN_ERROR;
-            }
+            rc = ApiConsts.FAIL_INVLD_TCP_PORT;
 
             apiCallRc.addEntry(
                 errorMsg,
@@ -1550,20 +1544,12 @@ public class CtrlConfApiCallHandler
             if (exc instanceof NumberFormatException)
             {
                 errorMsg = "The given minor number is not a valid integer: '" + strMinorNr + "'.";
-                rc = ApiConsts.FAIL_INVLD_MINOR_NR;
             }
             else
-            if (exc instanceof ValueOutOfRangeException)
             {
                 errorMsg = "The given minor number is not valid: '" + strMinorNr + "'.";
-                rc = ApiConsts.FAIL_INVLD_MINOR_NR;
             }
-            else
-            {
-                errorMsg = "An unknown exception occurred verifying the given minor number'" + strMinorNr +
-                    "'.";
-                rc = ApiConsts.FAIL_UNKNOWN_ERROR;
-            }
+            rc = ApiConsts.FAIL_INVLD_MINOR_NR;
 
             apiCallRc.addEntry(
                 errorMsg,
