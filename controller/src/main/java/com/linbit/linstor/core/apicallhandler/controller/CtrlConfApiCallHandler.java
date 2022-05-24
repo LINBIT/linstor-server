@@ -241,19 +241,56 @@ public class CtrlConfApiCallHandler
             }
         }
 
+        boolean notifyStlts = false;
         for (Entry<String, String> overrideProp : filteredOverrideProps.entrySet())
         {
-            apiCallRc.addEntries(setProp(overrideProp.getKey(), null, overrideProp.getValue()));
+            Pair<ApiCallRc, Boolean> result = setProp(overrideProp.getKey(), null, overrideProp.getValue());
+            if (result.objA.hasErrors())
+            {
+                throw new ApiRcException(result.objA);
+            }
+            apiCallRc.addEntries(result.objA);
+            notifyStlts |= result.objB;
         }
         for (String deletePropKey : filteredDeletePropKeys)
         {
-            apiCallRc.addEntries(deleteProp(deletePropKey, null));
+            Pair<ApiCallRc, Boolean> result = deleteProp(deletePropKey, null);
+            if (result.objA.hasErrors())
+            {
+                throw new ApiRcException(result.objA);
+            }
+            apiCallRc.addEntries(result.objA);
+            notifyStlts |= result.objB;
         }
         for (String deleteNamespace : filteredDeleteNamespaces)
         {
             // we should not simply "drop" the namespace here, as we might have special cleanup logic
             // for some of the deleted keys.
-            apiCallRc.addEntries(deleteNamespace(deleteNamespace));
+            Pair<ApiCallRc, Boolean> result = deleteNamespace(deleteNamespace);
+            if (result.objA.hasErrors())
+            {
+                throw new ApiRcException(result.objA);
+            }
+            apiCallRc.addEntries(result.objA);
+            notifyStlts |= result.objB;
+        }
+
+        transMgrProvider.get().commit();
+        if (notifyStlts)
+        {
+            try
+            {
+                updateSatelliteConf();
+            }
+            catch (AccessDeniedException accExc)
+            {
+                throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
+                    ResponseUtils.getAccDeniedMsg(
+                        peerAccCtx.get(),
+                        "set a controller config property"
+                )));
+            }
         }
 
         String autoDiskfulKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_DISKFUL;
@@ -464,9 +501,10 @@ public class CtrlConfApiCallHandler
         );
     }
 
-    private ApiCallRcImpl deleteNamespace(String deleteNamespaceRef)
+    private Pair<ApiCallRc, Boolean> deleteNamespace(String deleteNamespaceRef)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        boolean notifyStlts = false;
         try
         {
             Optional<Props> optNamespace = systemConfRepository.getCtrlConfForChange(peerAccCtx.get()).getNamespace(
@@ -477,13 +515,17 @@ public class CtrlConfApiCallHandler
                 Iterator<String> keysIterator = optNamespace.get().keysIterator();
                 while (keysIterator.hasNext())
                 {
-                    apiCallRc.addEntries(deleteProp(keysIterator.next(), deleteNamespaceRef));
+                    Pair<ApiCallRc, Boolean> result = deleteProp(keysIterator.next(), deleteNamespaceRef);
+                    apiCallRc.addEntries(result.objA);
+                    notifyStlts |= result.objB;
                 }
 
                 Iterator<String> iterateNamespaces = optNamespace.get().iterateNamespaces();
                 while (iterateNamespaces.hasNext())
                 {
-                    apiCallRc.addEntries(deleteNamespace(deleteNamespaceRef + "/" + iterateNamespaces.next()));
+                    Pair<ApiCallRc, Boolean> result = deleteNamespace(deleteNamespaceRef + "/" + iterateNamespaces.next());
+                    apiCallRc.addEntries(result.objA);
+                    notifyStlts |= result.objB;
                 }
             }
         }
@@ -504,7 +546,7 @@ public class CtrlConfApiCallHandler
                 errorMsg
             );
         }
-        return apiCallRc;
+        return new Pair<>(apiCallRc, notifyStlts);
     }
 
     private boolean setCtrlProp(AccessContext accCtx, String key, String value, String namespace)
@@ -539,9 +581,10 @@ public class CtrlConfApiCallHandler
         return changed;
     }
 
-    public ApiCallRc setProp(String key, String namespace, String value)
+    public Pair<ApiCallRc, Boolean> setProp(String key, String namespace, String value)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        boolean notifyStlts = false;
         try
         {
             String fullKey;
@@ -572,7 +615,6 @@ public class CtrlConfApiCallHandler
             else
             if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
             {
-                boolean notifyStlts = false;
                 String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, fullKey, value);
                 if (fullKey.startsWith(ApiConsts.NAMESPC_REST + '/') ||
                     fullKey.startsWith(ApiConsts.NAMESPC_AUTOPLACER + "/"))
@@ -643,12 +685,6 @@ public class CtrlConfApiCallHandler
                             break;
                     }
                 }
-                transMgrProvider.get().commit();
-
-                if (notifyStlts)
-                {
-                    updateSatelliteConf();
-                }
 
                 apiCallRc.addEntry(
                     "Successfully set property '" + fullKey + "' to value '" + normalized + "'",
@@ -670,6 +706,7 @@ public class CtrlConfApiCallHandler
                     entry.setMessage("The key '" + fullKey + "' is not whitelisted");
                 }
                 entry.setReturnCode(ApiConsts.FAIL_INVLD_PROP | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT);
+                entry.setSkipErrorReport(true);
                 apiCallRc.addEntry(entry);
             }
         }
@@ -677,6 +714,7 @@ public class CtrlConfApiCallHandler
         {
             String errorMsg;
             long rc;
+            boolean createErrorReport = false;
             if (exc instanceof AccessDeniedException)
             {
                 errorMsg = ResponseUtils.getAccDeniedMsg(
@@ -705,23 +743,29 @@ public class CtrlConfApiCallHandler
                     "' with value '" + value + "'."
                 );
                 rc = ApiConsts.FAIL_SQL;
+                createErrorReport = true;
             }
             else
             {
                 errorMsg = "An unknown error occurred while setting controller config prop with key '" +
                     key + "' in namespace '" + namespace + "' with value '" + value + "'.";
                 rc = ApiConsts.FAIL_UNKNOWN_ERROR;
+                createErrorReport = true;
             }
 
-            apiCallRc.addEntry(errorMsg, rc | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT);
-            errorReporter.reportError(
-                exc,
-                peerAccCtx.get(),
-                null,
-                errorMsg
-            );
+            apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
+                rc | ApiConsts.MASK_CTRL_CONF | ApiConsts.MASK_CRT, errorMsg, !createErrorReport));
+            if (createErrorReport)
+            {
+                errorReporter.reportError(
+                    exc,
+                    peerAccCtx.get(),
+                    null,
+                    errorMsg
+                );
+            }
         }
-        return apiCallRc;
+        return new Pair<>(apiCallRc, notifyStlts);
     }
 
     private void handleClusterRemoteNamespace(ApiCallRcImpl apiCallRc, String fullKey, String value)
@@ -1002,9 +1046,33 @@ public class CtrlConfApiCallHandler
         return mergedMap;
     }
 
-    public ApiCallRc deleteProp(String key, String namespace)
+    public ApiCallRc deletePropWithCommit(String key, String namespace)
+    {
+        Pair<ApiCallRc, Boolean> result = deleteProp(key, namespace);
+        transMgrProvider.get().commit();
+        if (result.objB)
+        {
+            try
+            {
+                updateSatelliteConf();
+            }
+            catch (AccessDeniedException e)
+            {
+                throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
+                    ResponseUtils.getAccDeniedMsg(
+                        peerAccCtx.get(),
+                        "delete a controller config property"
+                    )));
+            }
+        }
+        return result.objA;
+    }
+
+    private Pair<ApiCallRc, Boolean> deleteProp(String key, String namespace)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        boolean notifyStlts = false;
         try
         {
             String fullKey;
@@ -1033,7 +1101,6 @@ public class CtrlConfApiCallHandler
             );
             if (isPropWhitelisted)
             {
-                boolean notifyStlts = false;
                 String oldValue = systemConfRepository.removeCtrlProp(peerAccCtx.get(), key, namespace);
                 notifyStlts = systemConfRepository.removeStltProp(peerAccCtx.get(), key, namespace) != null;
 
@@ -1055,13 +1122,6 @@ public class CtrlConfApiCallHandler
                         default:
                             // ignore - for now
                     }
-                }
-
-                transMgrProvider.get().commit();
-
-                if (notifyStlts)
-                {
-                    updateSatelliteConf();
                 }
 
                 apiCallRc.addEntry(
@@ -1096,15 +1156,6 @@ public class CtrlConfApiCallHandler
                 rc = ApiConsts.FAIL_INVLD_PROP;
             }
             else
-            if (exc instanceof DatabaseException)
-            {
-                errorMsg = ResponseUtils.getSqlMsg(
-                    "Deleting controller config prop with key '" + key + "' in namespace '" + namespace +
-                    "'."
-                );
-                rc = ApiConsts.FAIL_SQL;
-            }
-            else
             {
                 errorMsg = "An unknown error occurred while deleting controller config prop with key '" +
                     key + "' in namespace '" + namespace + "'.";
@@ -1119,7 +1170,7 @@ public class CtrlConfApiCallHandler
                 errorMsg
             );
         }
-        return apiCallRc;
+        return new Pair<>(apiCallRc, notifyStlts);
     }
 
     public ApiCallRc enterPassphrase(String passphrase)

@@ -965,7 +965,7 @@ public class CtrlApiCallHandler
         ApiCallRc apiCallRc;
         try (LockGuard lg = lockGuardFactory.build(WRITE, CTRL_CONFIG))
         {
-            apiCallRc = ctrlConfApiCallHandler.deleteProp(key, namespace);
+            apiCallRc = ctrlConfApiCallHandler.deletePropWithCommit(key, namespace);
         }
         return apiCallRc;
     }
