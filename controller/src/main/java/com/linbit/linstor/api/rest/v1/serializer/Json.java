@@ -33,6 +33,8 @@ import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupInfoStorPoolPojo;
 import com.linbit.linstor.api.pojo.backups.BackupInfoVlmPojo;
+import com.linbit.linstor.api.pojo.backups.ScheduleDetailsPojo;
+import com.linbit.linstor.api.pojo.backups.ScheduledRscsPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ExosDefaults;
 import com.linbit.linstor.core.apis.BackupApi;
@@ -1272,6 +1274,33 @@ public class Json
         json.keep_remote = pojo.getKeepRemote();
         json.on_failure = pojo.getOnFailure();
 
+        return json;
+    }
+
+    public static JsonGenTypes.ScheduledRscs apiToScheduledRscs(ScheduledRscsPojo pojo)
+    {
+        JsonGenTypes.ScheduledRscs json = new JsonGenTypes.ScheduledRscs();
+        json.rsc_name = pojo.rsc_name;
+        json.remote = pojo.remote;
+        json.schedule = pojo.schedule;
+        json.reason = pojo.reason;
+        json.last_snap_time = pojo.last_snap_time;
+        json.last_snap_inc = pojo.last_snap_inc;
+        json.next_exec_time = pojo.next_exec_time;
+        json.next_exec_inc = pojo.next_exec_inc;
+        json.next_planned_full = pojo.next_planned_full;
+        json.next_planned_inc = pojo.next_planned_inc;
+        return json;
+    }
+
+    public static JsonGenTypes.ScheduleDetails apiToScheduleDetails(ScheduleDetailsPojo pojo)
+    {
+        JsonGenTypes.ScheduleDetails json = new JsonGenTypes.ScheduleDetails();
+        json.schedule = pojo.getSchedule();
+        json.remote = pojo.getRemote();
+        json.rsc_dfn = pojo.getRscDfn();
+        json.rsc_grp = pojo.getRscGrp();
+        json.ctrl = pojo.getCtrl();
         return json;
     }
 

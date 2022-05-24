@@ -21,6 +21,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -107,7 +108,7 @@ public class Backups
             JsonGenTypes.BackupCreate data = objectMapper.readValue(jsonData, JsonGenTypes.BackupCreate.class);
             boolean incremental = data.incremental != null && data.incremental;
             responses = backupApiCallHandler
-                .createBackup(data.rsc_name, data.snap_name, remoteName, data.node_name, incremental)
+                .createBackup(data.rsc_name, data.snap_name, remoteName, data.node_name, null, incremental)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
@@ -326,7 +327,8 @@ public class Backups
                 data.dst_net_if_name,
                 data.dst_stor_pool,
                 data.stor_pool_rename,
-                data.download_only
+                data.download_only,
+                null
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_SHIP_BACKUP, request));
             requestHelper.doFlux(
@@ -385,6 +387,83 @@ public class Backups
         {
             ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
         }
+    }
+
+    @PUT
+    @Path("schedule/{scheduleName}/enable")
+    public void enableSchedule(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("remoteName") String remoteName,
+        @PathParam("scheduleName") String scheduleName,
+        String jsonData
+    )
+    {
+        Flux<ApiCallRc> responses;
+        try
+        {
+            JsonGenTypes.BackupSchedule data = objectMapper.readValue(jsonData, JsonGenTypes.BackupSchedule.class);
+            responses = backupApiCallHandler
+                .enableSchedule(data.rsc_name, data.grp_name, remoteName, scheduleName, data.node_name)
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
+            requestHelper.doFlux(
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.OK)
+            );
+        }
+        catch (JsonProcessingException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
+    }
+
+    @PUT
+    @Path("schedule/{scheduleName}/disable")
+    public void disable(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("remoteName") String remoteName,
+        @PathParam("scheduleName") String scheduleName,
+        String jsonData
+    )
+    {
+        Flux<ApiCallRc> responses;
+        try
+        {
+            JsonGenTypes.BackupSchedule data = objectMapper.readValue(jsonData, JsonGenTypes.BackupSchedule.class);
+            responses = backupApiCallHandler
+                .disableSchedule(data.rsc_name, data.grp_name, remoteName, scheduleName, data.node_name)
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
+            requestHelper.doFlux(
+                asyncResponse,
+                ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.OK)
+            );
+        }
+        catch (JsonProcessingException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
+    }
+
+    @DELETE
+    @Path("schedule/{scheduleName}/delete")
+    public void deleteSchedule(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("remoteName") String remoteName,
+        @PathParam("scheduleName") String scheduleName,
+        @DefaultValue("") @QueryParam("rsc_dfn_name") String rscName,
+        @DefaultValue("") @QueryParam("rsc_grp_name") String grpName
+    )
+    {
+        Flux<ApiCallRc> responses;
+        responses = backupApiCallHandler
+            .deleteSchedule(rscName, grpName, remoteName, scheduleName)
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
+        requestHelper.doFlux(
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.OK)
+        );
     }
 
     private Mono<Response> backupInfoPojoToResponse(

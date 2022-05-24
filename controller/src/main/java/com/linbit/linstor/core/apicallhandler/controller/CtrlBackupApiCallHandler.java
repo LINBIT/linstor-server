@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -59,7 +60,9 @@ import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Remote.RemoteType;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.S3Remote;
+import com.linbit.linstor.core.objects.Schedule;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
@@ -70,6 +73,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -93,6 +97,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
@@ -170,6 +175,8 @@ public class CtrlBackupApiCallHandler
     private final Autoplacer autoplacer;
     private final CtrlStltSerializer stltComSerializer;
     private final DynamicNumberPool snapshotShippingPortPool;
+    private final SystemConfRepository systemConfRepository;
+    private final Provider<ScheduleBackupService> scheduleService;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -200,7 +207,9 @@ public class CtrlBackupApiCallHandler
         ResourceDefinitionRepository rscDfnRepoRef,
         Autoplacer autoplacerRef,
         CtrlStltSerializer ctrlComSerializerRef,
-        @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef
+        @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef,
+        SystemConfRepository systemConfRepositoryRef,
+        Provider<ScheduleBackupService> scheduleServiceRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -231,6 +240,8 @@ public class CtrlBackupApiCallHandler
         autoplacer = autoplacerRef;
         stltComSerializer = ctrlComSerializerRef;
         snapshotShippingPortPool = snapshotShippingPortPoolRef;
+        systemConfRepository = systemConfRepositoryRef;
+        scheduleService = scheduleServiceRef;
     }
 
     public Flux<ApiCallRc> createBackup(
@@ -238,6 +249,7 @@ public class CtrlBackupApiCallHandler
         String snapNameRef,
         String remoteNameRef,
         String nodeNameRef,
+        String scheduleNameRef,
         boolean incremental
     )
         throws AccessDeniedException
@@ -258,7 +270,8 @@ public class CtrlBackupApiCallHandler
                 incremental,
                 Collections.singletonMap(ExtTools.ZSTD, null),
                 null,
-                RemoteType.S3
+                RemoteType.S3,
+                scheduleNameRef
             ).objA
         );
     }
@@ -273,7 +286,8 @@ public class CtrlBackupApiCallHandler
         boolean allowIncremental,
         Map<ExtTools, ExtToolsInfo.Version> requiredExtTools,
         Map<ExtTools, ExtToolsInfo.Version> optionalExtTools,
-        RemoteType remoteTypeRef
+        RemoteType remoteTypeRef,
+        String scheduleNameRef
     )
     {
         String snapName = snapNameRef;
@@ -369,6 +383,26 @@ public class CtrlBackupApiCallHandler
                 Long.toString(nowRef.getTime()),
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
+            if (scheduleNameRef != null)
+            {
+                snapDfn.getProps(peerAccCtx.get()).setProp(
+                    InternalApiConsts.KEY_BACKUP_SHIPPED_BY_SCHEDULE,
+                    scheduleNameRef,
+                    InternalApiConsts.NAMESPC_SCHEDULE
+                );
+                rscDfn.getProps(peerAccCtx.get()).setProp(
+                    remoteName + Props.PATH_SEPARATOR + scheduleNameRef + Props.PATH_SEPARATOR
+                        + InternalApiConsts.KEY_LAST_BACKUP_TIME,
+                    Long.toString(nowRef.getTime()),
+                    InternalApiConsts.NAMESPC_SCHEDULE
+                );
+                rscDfn.getProps(peerAccCtx.get()).setProp(
+                    remoteName + Props.PATH_SEPARATOR + scheduleNameRef + Props.PATH_SEPARATOR
+                        + InternalApiConsts.KEY_LAST_BACKUP_INC,
+                    prevSnapDfn == null ? ApiConsts.VAL_FALSE : ApiConsts.VAL_TRUE,
+                    InternalApiConsts.NAMESPC_SCHEDULE
+                );
+            }
 
             // save the s3 suffix as prop so that when restoring the satellite can reconstruct the .meta name
             // (s3 suffix is NOT part of snapshot name)
@@ -3492,6 +3526,9 @@ public class CtrlBackupApiCallHandler
             successRef ? "finished successfully" : "failed"
         );
         SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, false);
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
+        boolean forceSkip = false;
+        Remote remote = null;
         Flux<ApiCallRc> cleanupFlux = Flux.empty();
         if (snapDfn != null)
         {
@@ -3511,6 +3548,17 @@ public class CtrlBackupApiCallHandler
                                 peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
                             )
                         );
+                    Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
+                    if (snap != null && !snap.isDeleted())
+                    {
+                        // no idea how snap could be null or deleted here, but keep check just in case
+                        String remoteName = snap.getProps(peerAccCtx.get()).removeProp(
+                            InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
+                        remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                        forceSkip = true;
+                    }
                 }
                 else
                 {
@@ -3531,12 +3579,11 @@ public class CtrlBackupApiCallHandler
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
                         snap.getFlags().disableFlags(sysCtx, Snapshot.Flags.BACKUP_SOURCE);
-                        Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                        remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
                         if (remote != null)
                         {
                             if (successRef)
                             {
-                                ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
                                 rscDfn.getProps(peerAccCtx.get()).setProp(
                                     InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
                                     snapNameRef,
@@ -3573,6 +3620,46 @@ public class CtrlBackupApiCallHandler
                     // This will be fixed with the linstor2 issue 19 (Combine Changed* proto messages for atomic
                     // updates)
                     cleanupFlux = flux.concatWith(cleanupFlux);
+                }
+
+                String scheduleName = snapDfn.getProps(peerAccCtx.get())
+                    .getProp(InternalApiConsts.KEY_BACKUP_SHIPPED_BY_SCHEDULE, InternalApiConsts.NAMESPC_SCHEDULE);
+                // if scheduleName == null the backup did not originate from a scheduled shipping
+                if (scheduleName != null)
+                {
+                    Schedule schedule = ctrlApiDataLoader.loadSchedule(scheduleName, false);
+                    if (schedule != null)
+                    {
+                        boolean lastBackupIncremental = false;
+                        Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
+                        if (snap != null && !snap.isDeleted())
+                        {
+                            lastBackupIncremental = snap.getProps(peerAccCtx.get())
+                                .getProp(
+                                    InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                ) != null;
+                        }
+                        String backupTimeRaw = snapDfn.getProps(peerAccCtx.get())
+                            .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        scheduleService.get().addTaskAgain(
+                            rscDfn,
+                            schedule,
+                            remote,
+                            Long.parseLong(backupTimeRaw),
+                            successRef,
+                            forceSkip,
+                            lastBackupIncremental,
+                            peerAccCtx.get()
+                        );
+                    }
+                    else
+                    {
+                        errorReporter.logWarning(
+                            "Could not reschedule resource definition %s as schedule %s was not found",
+                            rscDfn.getName().displayValue, scheduleName
+                        );
+                    }
                 }
             }
             catch (AccessDeniedException | InvalidNameException | InvalidValueException | InvalidKeyException exc)
@@ -3657,6 +3744,261 @@ public class CtrlBackupApiCallHandler
             throw new ImplementationError(exc);
         }
         return Flux.empty();
+    }
+
+    public Flux<ApiCallRc> enableSchedule(
+        String rscNameRef,
+        String grpNameRef,
+        String remoteNameRef,
+        String scheduleNameRef,
+        String nodeNameRef
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Enable backup schedule",
+            lockGuardFactory.create().write(LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP, LockObj.CTRL_CONFIG)
+                .read(LockObj.REMOTE_MAP, LockObj.SCHEDULE_MAP)
+                .buildDeferred(),
+            () -> setScheduleInTransaction(rscNameRef, grpNameRef, remoteNameRef, scheduleNameRef, nodeNameRef, true)
+        );
+    }
+
+    public Flux<ApiCallRc> disableSchedule(
+        String rscNameRef,
+        String grpNameRef,
+        String remoteNameRef,
+        String scheduleNameRef,
+        String nodeNameRef
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Disable backup schedule",
+            lockGuardFactory.create().write(LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP, LockObj.CTRL_CONFIG)
+                .read(LockObj.REMOTE_MAP, LockObj.SCHEDULE_MAP)
+                .buildDeferred(),
+            () -> setScheduleInTransaction(rscNameRef, grpNameRef, remoteNameRef, scheduleNameRef, nodeNameRef, false)
+        );
+    }
+
+    private Flux<ApiCallRc> setScheduleInTransaction(
+        String rscNameRef,
+        String grpNameRef,
+        String remoteNameRef,
+        String scheduleNameRef,
+        String nodeNameRef,
+        boolean add
+    ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
+    {
+        Remote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
+        Schedule schedule = ctrlApiDataLoader.loadSchedule(scheduleNameRef, true);
+        String msg = "";
+        List<ResourceDefinition> rscDfnsToCheck = new ArrayList<>();
+        if (rscNameRef != null && !rscNameRef.isEmpty())
+        {
+            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
+            Props propsRef = rscDfn.getProps(peerAccCtx.get());
+            propsRef.setProp(
+                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
+                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
+                    + InternalApiConsts.KEY_TRIPLE_ENABLED,
+                add ? ApiConsts.VAL_TRUE : ApiConsts.VAL_FALSE
+            );
+            if (nodeNameRef != null && !nodeNameRef.isEmpty())
+            {
+                propsRef.setProp(
+                    InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
+                        + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
+                        + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                    nodeNameRef
+                );
+            }
+            rscDfnsToCheck.add(rscDfn);
+            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully " + (add ? "enabled" : "disabled") +
+                " for resource definition '" + rscNameRef + "' to remote '" + remoteNameRef + "'.";
+        }
+        else if (grpNameRef != null && !grpNameRef.isEmpty())
+        {
+            ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(grpNameRef, true);
+            Props propsRef = rscGrp.getProps(peerAccCtx.get());
+            propsRef.setProp(
+                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
+                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
+                    + InternalApiConsts.KEY_TRIPLE_ENABLED,
+                add ? ApiConsts.VAL_TRUE : ApiConsts.VAL_FALSE
+            );
+            if (nodeNameRef != null && !nodeNameRef.isEmpty())
+            {
+                propsRef.setProp(
+                    InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
+                        + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
+                        + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                    nodeNameRef
+                );
+            }
+            rscDfnsToCheck.addAll(rscGrp.getRscDfns(peerAccCtx.get()));
+            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully " + (add ? "enabled" : "disabled") +
+                " for resource group '" + rscNameRef + "' to remote '" + remoteNameRef + "'.";
+        }
+        else
+        {
+            systemConfRepository.setCtrlProp(
+                peerAccCtx.get(),
+                remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
+                    + Props.PATH_SEPARATOR + InternalApiConsts.KEY_TRIPLE_ENABLED,
+                add ? ApiConsts.VAL_TRUE : ApiConsts.VAL_FALSE,
+                InternalApiConsts.NAMESPC_SCHEDULE
+            );
+            if (nodeNameRef != null && !nodeNameRef.isEmpty())
+            {
+                systemConfRepository.setCtrlProp(
+                    peerAccCtx.get(),
+                    remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
+                        + Props.PATH_SEPARATOR + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                    nodeNameRef,
+                    InternalApiConsts.NAMESPC_SCHEDULE
+                );
+            }
+            rscDfnsToCheck.addAll(rscDfnRepo.getMapForView(peerAccCtx.get()).values());
+            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully " + (add ? "enabled" : "disabled") +
+                " on controller to remote '" + remoteNameRef + "'.";
+        }
+        ctrlTransactionHelper.commit();
+        addOrRemoveTasks(schedule, remote, rscDfnsToCheck);
+        // no update stlt, since schedule information is of no concern to the stlts
+        ApiCallRcImpl response = new ApiCallRcImpl();
+        response.addEntry(
+            ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.MODIFIED,
+                    msg
+                )
+                .build()
+        );
+        return Flux.<ApiCallRc> just(response);
+    }
+
+    private void addOrRemoveTasks(Schedule schedule, Remote remote, List<ResourceDefinition> rscDfnsToCheck)
+        throws AccessDeniedException
+    {
+        Props ctrlProps = systemConfRepository.getCtrlConfForView(peerAccCtx.get());
+        for (ResourceDefinition rscDfn : rscDfnsToCheck)
+        {
+            PriorityProps prioProps = new PriorityProps(
+                rscDfn.getProps(peerAccCtx.get()),
+                rscDfn.getResourceGroup().getProps(peerAccCtx.get()),
+                ctrlProps
+            );
+            String prop = prioProps.getProp(
+                remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
+                    + Props.PATH_SEPARATOR + InternalApiConsts.KEY_TRIPLE_ENABLED,
+                InternalApiConsts.NAMESPC_SCHEDULE
+            );
+
+            if (prop != null && Boolean.parseBoolean(prop))
+            {
+                scheduleService.get().addNewTask(rscDfn, schedule, remote, false, peerAccCtx.get());
+            }
+            else
+            {
+                scheduleService.get().removeSingleTask(schedule, remote, rscDfn);
+            }
+        }
+    }
+
+    public Flux<ApiCallRc> deleteSchedule(
+        String rscNameRef,
+        String grpNameRef,
+        String remoteNameRef,
+        String scheduleNameRef
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Delete backup schedule",
+            lockGuardFactory.create().write(LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP, LockObj.CTRL_CONFIG)
+                .read(LockObj.REMOTE_MAP, LockObj.SCHEDULE_MAP)
+                .buildDeferred(),
+            () -> deleteScheduleInTransaction(rscNameRef, grpNameRef, remoteNameRef, scheduleNameRef)
+        );
+    }
+
+    private Flux<ApiCallRc> deleteScheduleInTransaction(
+        String rscNameRef,
+        String grpNameRef,
+        String remoteNameRef,
+        String scheduleNameRef
+    ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
+    {
+        Remote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
+        Schedule schedule = ctrlApiDataLoader.loadSchedule(scheduleNameRef, true);
+        String msg = "";
+        List<ResourceDefinition> rscDfnsToCheck = new ArrayList<>();
+        if (rscNameRef != null && !rscNameRef.isEmpty())
+        {
+            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
+            Props propsRef = rscDfn.getProps(peerAccCtx.get());
+            propsRef.removeProp(
+                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
+                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
+                    + InternalApiConsts.KEY_TRIPLE_ENABLED
+            );
+            propsRef.removeProp(
+                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
+                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
+                    + InternalApiConsts.KEY_SCHEDULE_PREF_NODE
+            );
+            rscDfnsToCheck.add(rscDfn);
+            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully deleted for resource definition '" +
+                rscNameRef + "' to remote '" + remoteNameRef + "'.";
+        }
+        else if (grpNameRef != null && !grpNameRef.isEmpty())
+        {
+            ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(grpNameRef, true);
+            Props propsRef = rscGrp.getProps(peerAccCtx.get());
+            propsRef.removeProp(
+                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
+                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
+                    + InternalApiConsts.KEY_TRIPLE_ENABLED
+            );
+            propsRef.removeProp(
+                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
+                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
+                    + InternalApiConsts.KEY_SCHEDULE_PREF_NODE
+            );
+            rscDfnsToCheck.addAll(rscGrp.getRscDfns(peerAccCtx.get()));
+            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully deleted for resource group '" +
+                grpNameRef + "' to remote '" + remoteNameRef + "'.";
+        }
+        else
+        {
+            systemConfRepository.removeCtrlProp(
+                peerAccCtx.get(),
+                remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
+                    + Props.PATH_SEPARATOR + InternalApiConsts.KEY_TRIPLE_ENABLED,
+                InternalApiConsts.NAMESPC_SCHEDULE
+            );
+            systemConfRepository.removeCtrlProp(
+                peerAccCtx.get(),
+                remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
+                    + Props.PATH_SEPARATOR + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                InternalApiConsts.NAMESPC_SCHEDULE
+            );
+            rscDfnsToCheck.addAll(rscDfnRepo.getMapForView(peerAccCtx.get()).values());
+            msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully deleted on controller to remote '" +
+                remoteNameRef + "'.";
+        }
+        ctrlTransactionHelper.commit();
+        addOrRemoveTasks(schedule, remote, rscDfnsToCheck);
+        // no update stlt, since schedule information is of no concern to the stlts
+        ApiCallRcImpl response = new ApiCallRcImpl();
+        response.addEntry(
+            ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.DELETED,
+                    msg
+                )
+                .build()
+        );
+        return Flux.<ApiCallRc> just(response);
     }
 
     private ApiCallRcImpl backupShippingSupported(Resource rsc) throws AccessDeniedException

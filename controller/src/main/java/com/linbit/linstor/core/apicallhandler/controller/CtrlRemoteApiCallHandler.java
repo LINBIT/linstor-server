@@ -32,8 +32,10 @@ import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.core.objects.S3RemoteControllerFactory;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -77,6 +79,8 @@ public class CtrlRemoteApiCallHandler
     private final BackupToS3 backupHandler;
     private final CtrlSecurityObjects ctrlSecObj;
 
+    private final ScheduleBackupService scheduleService;
+
     @Inject
     public CtrlRemoteApiCallHandler(
         @SystemContext AccessContext apiCtxRef,
@@ -92,7 +96,8 @@ public class CtrlRemoteApiCallHandler
         RemoteRepository remoteRepositoryRef,
         EncryptionHelper encryptionHelperRef,
         BackupToS3 backupHandlerRef,
-        CtrlSecurityObjects ctrlSecObjRef
+        CtrlSecurityObjects ctrlSecObjRef,
+        ScheduleBackupService scheduleServiceRef
     )
     {
         apiCtx = apiCtxRef;
@@ -109,6 +114,7 @@ public class CtrlRemoteApiCallHandler
         encryptionHelper = encryptionHelperRef;
         backupHandler = backupHandlerRef;
         ctrlSecObj = ctrlSecObjRef;
+        scheduleService = scheduleServiceRef;
     }
 
     public List<S3RemotePojo> listS3()
@@ -668,10 +674,12 @@ public class CtrlRemoteApiCallHandler
             ApiOperation.makeModifyOperation(),
             remoteNameStrRef
         );
-
+        // take extra locks because schedule-related props might need to be deleted as well
         return scopeRunner.fluxInTransactionalScope(
             "Delete remote",
-            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.REMOTE_MAP),
+            lockGuardFactory.buildDeferred(
+                LockType.WRITE, LockObj.REMOTE_MAP, LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP, LockObj.CTRL_CONFIG
+            ),
             () -> deleteInTransaction(remoteNameStrRef)
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -694,8 +702,27 @@ public class CtrlRemoteApiCallHandler
         }
         else
         {
-
             enableFlags(remote, Remote.Flags.DELETE);
+            try
+            {
+                scheduleService.removeTasks(remote, peerAccCtx.get());
+            }
+            catch (InvalidKeyException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ApiAccessDeniedException(
+                    exc,
+                    "while trying to remove props",
+                    ApiConsts.FAIL_ACC_DENIED_REMOTE
+                );
+            }
+            catch (DatabaseException exc)
+            {
+                throw new ApiDatabaseException(exc);
+            }
             ctrlTransactionHelper.commit();
             ApiCallRcImpl responses = new ApiCallRcImpl();
             responses.addEntry(

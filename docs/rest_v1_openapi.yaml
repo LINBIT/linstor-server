@@ -23,6 +23,9 @@ info:
 
     * unreleased
       - Added /v1/physical-storage/{node} to view devices for a single node
+      - Added /v1/schedules/ and /v1/schedules/{scheduleName} endpoints as well as Schedule to create, delete, modify and list schedules
+      - Added /v1/remotes/{remote_name}/backups/schedule/{schedule_name}/enable, disable and delete to create, delete and modify schedule-remote-rscDfn-triples
+      - Added /v1/schedules/list and /v1/schedules/list/{rscName} endpoints as well as ScheduledRscs and ScheduleDetails to list schedule-remote-rscDfn-triples
     * 1.13.1
       - Added k8s options to DB config
       - Added NetCom properties to whitelist
@@ -179,7 +182,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.13.1
+  version: 1.14.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -5164,7 +5167,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupInfoRequest'
-  /v1/remotes/{remote_name}/backups/schedule/enable:
+  /v1/remotes/{remote_name}/backups/schedule/{schedule_name}/enable:
     put:
       tags:
         - developers
@@ -5177,9 +5180,15 @@ paths:
           description: The remote to ship the backup to
           schema:
             type: string
+        - name: schedule_name
+          in: path
+          required: true
+          description: the schedule with which the backup should be shipped
+          schema:
+            type: string
       responses:
         '200':
-          description: backup schedule set sucessfully or error messages
+          description: backup schedule enabled sucessfully or error messages
           content:
             application/json:
               schema:
@@ -5189,7 +5198,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupSchedule'
-  /v1/remotes/{remote_name}/backups/schedule/disable:
+  /v1/remotes/{remote_name}/backups/schedule/{schedule_name}/disable:
     put:
       tags:
         - developers
@@ -5202,9 +5211,15 @@ paths:
           description: The remote to ship the backup to
           schema:
             type: string
+        - name: schedule_name
+          in: path
+          required: true
+          description: the schedule with which the backup is being shipped
+          schema:
+            type: string
       responses:
         '200':
-          description: backup schedule set sucessfully or error messages
+          description: backup schedule disabled sucessfully or error messages
           content:
             application/json:
               schema:
@@ -5214,7 +5229,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupSchedule'
-  /v1/remotes/{remote_name}/backups/schedule/delete:
+  /v1/remotes/{remote_name}/backups/schedule/{schedule_name}/delete:
     delete:
       tags:
         - developers
@@ -5225,6 +5240,12 @@ paths:
           in: path
           required: true
           description: The remote to ship the backup to
+          schema:
+            type: string
+        - name: schedule_name
+          in: path
+          required: true
+          description: the schedule with which the backup is being shipped
           schema:
             type: string
         - name: rsc_dfn_name
@@ -5247,7 +5268,7 @@ paths:
             type: string
       responses:
         '200':
-          description: backup schedule set sucessfully or error messages
+          description: backup schedule deleted sucessfully or error messages
           content:
             application/json:
               schema:
@@ -5658,28 +5679,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Schedule'
-    delete:
-      tags:
-        - developers
-      summary: delete a schedule
-      description: delete the given schedule
-      parameters:
-        - name: schedule_name
-          in: query
-          required: true
-          description: name of the schedule
-          schema:
-            type: string
-      responses:
-        '200':
-          description: schedule successfully deleted
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ApiCallRcList'
+                $ref: '#/components/schemas/ScheduleList'
     post:
       tags:
         - developers
@@ -5721,7 +5721,77 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Schedule'
+              $ref: '#/components/schemas/ScheduleModify'
+    delete:
+      tags:
+        - developers
+      summary: delete a schedule
+      description: delete the given schedule
+      responses:
+        '200':
+          description: schedule successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+  /v1/schedules/list:
+    parameters:
+      - name: rsc
+        in: query
+        required: false
+        description: filter by rsc-name
+        schema:
+          type: string
+      - name: remote
+        in: query
+        required: false
+        description: filter by remote-name
+        schema:
+          type: string
+      - name: schedule
+        in: query
+        required: false
+        description: filter by schedule-name
+        schema:
+          type: string
+      - name: active-only
+        in: query
+        required: false
+        description: only list active schedules
+        schema:
+          type: string
+    get:
+      tags:
+        - developers
+      summary: list rscDfn-schedule-remote-triples
+      description: list all schedule-remote-rscDfn-triples
+      responses:
+        '200':
+          description: list of triples
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledRscsList'
+  /v1/schedules/list/{rscName}:
+    parameters:
+      - name: rscName
+        in: path
+        required: true
+        description: the rscDfn you want to see the schedule-details from
+        schema:
+          type: string
+    get:
+      tags:
+        - developers
+      summary: list schedule-details
+      description: list the details of all schedules set on a specific rscDfn
+      responses:
+        '200':
+          description: list of schedule-details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleDetailsList'
   /v1/files:
     parameters:
       - in: query
@@ -7780,10 +7850,91 @@ components:
           type: string
         grp_name:
           type: string
-        schedule_name:
-          type: string
         node_name:
           type: string
+    ScheduleDetailsList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleDetails'
+    ScheduleDetails:
+      type: object
+      required:
+        - remote
+        - schedule
+      properties:
+        remote:
+          type: string
+        schedule:
+          type: string
+        ctrl:
+          type: boolean
+        rsc_grp:
+          type: boolean
+        rsc_dfn:
+          type: boolean
+    ScheduledRscsList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduledRscs'
+    ScheduledRscs:
+      type: object
+      required:
+        - rsc_name
+        - remote
+        - schedule
+      properties:
+        rsc_name:
+          type: string
+        remote:
+          type: string
+        schedule:
+          type: string
+        reason:
+          type: string
+          description: |
+            The reason for why this rscDfn has no active schedules.
+            If this is set, ignore all long and boolean parameters.
+        last_snap_time:
+          type: integer
+          format: int64
+          description: |
+            The time at which the last scheduled shipping was shipped.
+            If negative, no scheduled shipping has happened yet.
+        last_snap_inc:
+          type: boolean
+          description: |
+            Whether the last shipping was incremental or not.
+            Ignore this value if last_snap_time is negative.
+        next_exec_time:
+          type: integer
+          format: int64
+          description: |
+            The time at which the next scheduled shipping will happen.
+            If negative, the shipping is currently running.
+        next_exec_inc:
+          type: boolean
+          description: |
+            Whether the next scheduled shipping will be incremental or not.
+            Ignore if next_exec_time is negative
+        next_planned_full:
+          type: integer
+          format: int64
+          description: |
+            The time at which the next scheduled full backup should happen.
+            If negative, the time could not be computed
+        next_planned_inc:
+          type: integer
+          format: int64
+          description: |
+            The time at which the next scheduled incremental backup should happen.
+            If negative, either there is no cron for incremental backups or
+            the time could not be computed
     PassPhraseCreate:
       type: object
       properties:
@@ -8173,8 +8324,18 @@ components:
           type: string
         cluster_id:
           type: string
+    ScheduleList:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Schedule'
     Schedule:
       type: object
+      required:
+        - schedule_name
+        - full_cron
       properties:
         schedule_name:
           type: string
@@ -8185,11 +8346,37 @@ components:
         keep_local:
           type: integer
           format: int32
+          description: the number of snapshots that are basis for a full backup to keep locally
         keep_remote:
           type: integer
           format: int32
+          description: the number of full backups to keep at the remote
         on_failure:
           type: string
+          enum:
+            - SKIP
+            - RETRY
+          default: SKIP
+    ScheduleModify:
+      type: object
+      properties:
+        full_cron:
+          type: string
+        inc_cron:
+          type: string
+        keep_local:
+          type: integer
+          format: int32
+          description: the number of snapshots that are basis for a full backup to keep locally
+        keep_remote:
+          type: integer
+          format: int32
+          description: the number of full backups to keep at the remote
+        on_failure:
+          type: string
+          enum:
+            - SKIP
+            - RETRY
     NodeStats:
       type: object
       required:

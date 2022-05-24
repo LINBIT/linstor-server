@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.13.1";
+    public static final String REST_API_VERSION = "1.14.0";
 
     /**
      * Common api reply structure
@@ -1341,8 +1341,73 @@ public class JsonGenTypes
     {
         public String rsc_name;
         public String grp_name;
-        public String schedule_name;
         public String node_name;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ScheduleDetailsList
+    {
+        public List<ScheduleDetails> data = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ScheduleDetails
+    {
+        public String remote;
+        public String schedule;
+        public Boolean ctrl;
+        public Boolean rsc_grp;
+        public Boolean rsc_dfn;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ScheduledRscsList
+    {
+        public List<ScheduledRscs> data = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ScheduledRscs
+    {
+        public String rsc_name;
+        public String remote;
+        public String schedule;
+        /**
+         * The reason for why this rscDfn has no active schedules.
+         * If this is set, ignore all long and boolean parameters.
+         */
+        public String reason;
+        /**
+         * The time at which the last scheduled shipping was shipped.
+         * If negative, no scheduled shipping has happened yet.
+         */
+        public Long last_snap_time;
+        /**
+         * Whether the last shipping was incremental or not.
+         * Ignore this value if last_snap_time is negative.
+         */
+        public Boolean last_snap_inc;
+        /**
+         * The time at which the next scheduled shipping will happen.
+         * If negative, the shipping is currently running.
+         */
+        public Long next_exec_time;
+        /**
+         * Whether the next scheduled shipping will be incremental or not.
+         * Ignore if next_exec_time is negative
+         */
+        public Boolean next_exec_inc;
+        /**
+         * The time at which the next scheduled full backup should happen.
+         * If negative, the time could not be computed
+         */
+        public Long next_planned_full;
+        /**
+         * The time at which the next scheduled incremental backup should happen.
+         * If negative, either there is no cron for incremental backups or
+         * the time could not be computed
+         */
+        public Long next_planned_inc;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1682,12 +1747,40 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ScheduleList
+    {
+        public List<Schedule> data = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class Schedule
     {
         public String schedule_name;
         public String full_cron;
         public String inc_cron;
+        /**
+         * the number of snapshots that are basis for a full backup to keep locally
+         */
         public Integer keep_local;
+        /**
+         * the number of full backups to keep at the remote
+         */
+        public Integer keep_remote;
+        public String on_failure = "SKIP";
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ScheduleModify
+    {
+        public String full_cron;
+        public String inc_cron;
+        /**
+         * the number of snapshots that are basis for a full backup to keep locally
+         */
+        public Integer keep_local;
+        /**
+         * the number of full backups to keep at the remote
+         */
         public Integer keep_remote;
         public String on_failure;
     }

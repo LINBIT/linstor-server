@@ -64,6 +64,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Pair;
@@ -114,6 +115,7 @@ public class CtrlRscCrtApiHelper
     private final Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelper;
     private final SharedResourceManager sharedRscMgr;
     private final BackupInfoManager backupInfoMgr;
+    private final ScheduleBackupService scheduleBackupService;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -133,7 +135,8 @@ public class CtrlRscCrtApiHelper
         Provider<CtrlRscAutoHelper> autoHelperRef,
         Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelperRef,
         SharedResourceManager sharedRscMgrRef,
-        BackupInfoManager backupInfoMgrRef
+        BackupInfoManager backupInfoMgrRef,
+        ScheduleBackupService scheduleBackupServiceRef
     )
     {
         apiCtx = apiCtxRef;
@@ -153,6 +156,7 @@ public class CtrlRscCrtApiHelper
         toggleDiskHelper = toggleDiskHelperRef;
         sharedRscMgr = sharedRscMgrRef;
         backupInfoMgr = backupInfoMgrRef;
+        scheduleBackupService = scheduleBackupServiceRef;
     }
 
     /**
@@ -773,7 +777,8 @@ public class CtrlRscCrtApiHelper
 
         return ctrlSatelliteUpdateCaller.updateSatellites(
             rscDfn,
-            Flux.empty() // if failed, there is no need for the retry-task to wait for readyState
+            scheduleBackupService.fluxAllNewTasks(rscDfn, peerAccCtx.get())
+            // if failed, there is no need for the retry-task to wait for readyState
             // this is only true as long as there is no other flux concatenated after readyResponses
         )
             .transform(updateResponses -> CtrlResponseUtils.combineResponses(
@@ -784,7 +789,8 @@ public class CtrlRscCrtApiHelper
                 "Added peer(s) " + nodeNamesStr + " to resource {1} on {0}"
                 )
             )
-            .concatWith(readyResponses);
+            .concatWith(readyResponses)
+            .concatWith(scheduleBackupService.fluxAllNewTasks(rscDfn, peerAccCtx.get()));
     }
 
     private Mono<ApiCallRc> makeRdyTimeoutApiRc(NodeName nodeName)

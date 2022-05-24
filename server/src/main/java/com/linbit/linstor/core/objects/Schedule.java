@@ -20,6 +20,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -61,9 +62,9 @@ public class Schedule extends BaseTransactionObject
         ScheduleName scheduleNameRef,
         long initialFlags,
         Cron fullCronRef,
-        Cron incCronRef,
-        Integer keepLocalRef,
-        Integer keepRemoteRef,
+        @Nullable Cron incCronRef,
+        @Nullable Integer keepLocalRef,
+        @Nullable Integer keepRemoteRef,
         OnFailure onFailureRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider

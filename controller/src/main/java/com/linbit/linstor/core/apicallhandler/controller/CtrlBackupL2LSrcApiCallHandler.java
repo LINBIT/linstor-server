@@ -138,7 +138,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable String dstNetIfNameRef,
         @Nullable String dstStorPoolRef,
         @Nullable Map<String, String> storPoolRenameRef,
-        boolean downloadOnly
+        boolean downloadOnly,
+        String scheduleNameRef
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -155,7 +156,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 dstNetIfNameRef,
                 dstStorPoolRef,
                 storPoolRenameRef,
-                downloadOnly
+                downloadOnly,
+                scheduleNameRef
             )
         );
     }
@@ -169,7 +171,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         String dstNetIfNameRef,
         String dstStorPoolRef,
         Map<String, String> storPoolRenameRef,
-        boolean downloadOnly
+        boolean downloadOnly,
+        String scheduleNameRef
     )
     {
 
@@ -211,7 +214,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             dstNetIfNameRef,
             dstStorPoolRef,
             storPoolRenameRef,
-            downloadOnly
+            downloadOnly,
+            scheduleNameRef
         );
 
         /*
@@ -298,7 +302,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             false,
             requiredExtTools,
             optionalExtTools,
-            RemoteType.LINSTOR
+            RemoteType.LINSTOR,
+            data.scheduleName
         );
         data.srcSnapshot = createSnapshot.objB;
         data.srcNodeName = data.srcSnapshot.getNode().getName().displayValue;
@@ -801,6 +806,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         private String dstNetIfName;
         private String dstStorPool;
         private final Map<String, String> storPoolRename;
+        private String scheduleName;
 
         private StltRemote stltRemote;
 
@@ -816,7 +822,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             String dstNetIfNameRef,
             String dstStorPoolRef,
             Map<String, String> storPoolRenameRef,
-            boolean downloadOnlyRef
+            boolean downloadOnlyRef,
+            String scheduleNameRef
         )
         {
             srcClusterId = srcClusterIdRef;
@@ -831,6 +838,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             dstStorPool = dstStorPoolRef;
             storPoolRename = storPoolRenameRef;
             downloadOnly = downloadOnlyRef;
+            scheduleName = scheduleNameRef;
         }
     }
 }

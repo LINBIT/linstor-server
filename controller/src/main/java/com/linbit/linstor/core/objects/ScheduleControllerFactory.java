@@ -13,6 +13,7 @@ import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -52,9 +53,9 @@ public class ScheduleControllerFactory
         AccessContext accCtxRef,
         ScheduleName nameRef,
         String fullCron,
-        String incCron,
-        int keepLocal,
-        int keepRemote,
+        @Nullable String incCron,
+        @Nullable Integer keepLocal,
+        @Nullable Integer keepRemote,
         OnFailure onFailure
     )
         throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
@@ -75,7 +76,7 @@ public class ScheduleControllerFactory
             nameRef,
             0,
             parser.parse(fullCron),
-            parser.parse(incCron),
+            incCron == null ? null : parser.parse(incCron),
             keepLocal,
             keepRemote,
             onFailure,

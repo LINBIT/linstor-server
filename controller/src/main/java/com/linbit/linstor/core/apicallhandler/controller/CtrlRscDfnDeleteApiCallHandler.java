@@ -30,6 +30,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
+import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
@@ -65,6 +66,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final LockGuardFactory lockGuardFactory;
     private final SharedResourceManager sharedRscMgr;
     private final AutoSnapshotTask autoSnapshotTask;
+    private final ScheduleBackupService scheduleService;
 
     @Inject
     public CtrlRscDfnDeleteApiCallHandler(
@@ -78,7 +80,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         SharedResourceManager sharedRscMgrRef,
-        AutoSnapshotTask autoSnapshotTaskRef
+        AutoSnapshotTask autoSnapshotTaskRef,
+        ScheduleBackupService scheduleServiceRef
     )
     {
         apiCtx = apiCtxRef;
@@ -92,6 +95,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         peerAccCtx = peerAccCtxRef;
         sharedRscMgr = sharedRscMgrRef;
         autoSnapshotTask = autoSnapshotTaskRef;
+        scheduleService = scheduleServiceRef;
     }
 
     @Override
@@ -172,7 +176,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         if (rscDfn.getResourceCount() > 0)
         {
             markDeleted(rscDfn);
-
+            scheduleService.removeTasks(rscDfn);
             ctrlTransactionHelper.commit();
 
             ApiCallRc responses = ApiCallRcImpl.singletonApiCallRc(
@@ -188,6 +192,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
         else
         {
+            scheduleService.removeTasks(rscDfn);
             flux = Flux.just(commitDeleteRscDfnData(rscDfn));
         }
 

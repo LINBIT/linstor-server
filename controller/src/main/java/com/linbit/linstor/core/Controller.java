@@ -69,6 +69,7 @@ import com.linbit.linstor.tasks.LogArchiveTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.tasks.RetryResourcesTask;
+import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.tasks.UpdateSpaceInfoTask;
 import com.linbit.linstor.timer.CoreTimer;
@@ -162,6 +163,7 @@ public final class Controller
     private final PassphraseInitializer passphraseInitializer;
 
     private final PreConnectInitializer preConnectCleanupInitializer;
+    private final ScheduleBackupService scheduleBackupService;
 
     @Inject
     public Controller(
@@ -195,7 +197,8 @@ public final class Controller
         WhitelistProps whitelistPropsRef,
         CtrlConfig ctrlCfgRef,
         PassphraseInitializer passphraseInitializerRef,
-        PreConnectInitializer preConnectCleanupInitializerRef
+        PreConnectInitializer preConnectCleanupInitializerRef,
+        ScheduleBackupService scheduleBackupServiceRef
     )
     {
         errorReporter = errorReporterRef;
@@ -228,6 +231,7 @@ public final class Controller
         ctrlCfg = ctrlCfgRef;
         passphraseInitializer = passphraseInitializerRef;
         preConnectCleanupInitializer = preConnectCleanupInitializerRef;
+        scheduleBackupService = scheduleBackupServiceRef;
     }
 
     public void start(Injector injector, CtrlConfig linstorCfgRef)
@@ -284,6 +288,7 @@ public final class Controller
 
             systemServicesMap.put(controllerDb.getInstanceName(), controllerDb);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
+            systemServicesMap.put(scheduleBackupService.getInstanceName(), scheduleBackupService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
             SystemService spaceTrackingService = null;
             try
@@ -343,6 +348,7 @@ public final class Controller
             {
                 startOrderlist.add(new ServiceStarter(spaceTrackingService));
             }
+            startOrderlist.add(new ServiceStarter(scheduleBackupService));
             startOrderlist.add(grizzlyInit);
 
             applicationLifecycleManager.startSystemServices(startOrderlist);
