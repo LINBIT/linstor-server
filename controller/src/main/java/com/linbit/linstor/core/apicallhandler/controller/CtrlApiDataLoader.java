@@ -13,6 +13,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -24,6 +25,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.Schedule;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
@@ -38,6 +40,7 @@ import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
+import com.linbit.linstor.core.repository.ScheduleRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -65,6 +68,7 @@ public class CtrlApiDataLoader
     private final ResourceGroupRepository resourceGroupRepository;
     private final ExternalFileRepository extFileRepository;
     private final RemoteRepository remoteRepository;
+    private final ScheduleRepository scheduleRepository;
 
     @Inject
     public CtrlApiDataLoader(
@@ -77,7 +81,8 @@ public class CtrlApiDataLoader
         SystemConfRepository systemConfRepositoryRef,
         ResourceGroupRepository resourceGroupRepositoryRef,
         ExternalFileRepository extFileRepositoryRef,
-        RemoteRepository remoteRepositoryRef
+        RemoteRepository remoteRepositoryRef,
+        ScheduleRepository scheduleRepositoryRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -90,6 +95,7 @@ public class CtrlApiDataLoader
         resourceGroupRepository = resourceGroupRepositoryRef;
         extFileRepository = extFileRepositoryRef;
         remoteRepository = remoteRepositoryRef;
+        scheduleRepository = scheduleRepositoryRef;
     }
 
     public final Node loadNode(String nodeNameStr, boolean failIfNull)
@@ -799,5 +805,51 @@ public class CtrlApiDataLoader
             );
         }
         return remote;
+    }
+
+    public final Schedule loadSchedule(String scheduleNameStr, boolean failIfNull)
+    {
+        return loadSchedule(LinstorParsingUtils.asScheduleName(scheduleNameStr), failIfNull);
+    }
+
+    public final Schedule loadSchedule(
+        ScheduleName scheduleName,
+        boolean failIfNull
+    )
+    {
+        Schedule schedule;
+        try
+        {
+            schedule = scheduleRepository.get(
+                peerAccCtx.get(),
+                scheduleName
+            );
+
+            if (failIfNull && schedule == null)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl
+                        .entryBuilder(
+                            ApiConsts.FAIL_NOT_FOUND_SCHEDULE,
+                            "Schedule '" + scheduleName.displayValue + "' not registered."
+                        )
+                        .setCause(
+                            "The specified schedule '" + scheduleName.displayValue +
+                                "' could not be found in the database"
+                        )
+                        .setCorrection("Create a schedule with the name '" + scheduleName.displayValue + "' first.")
+                        .build()
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access " + getRscDfnDescriptionInline(scheduleName.displayValue),
+                ApiConsts.FAIL_ACC_DENIED_SCHEDULE
+            );
+        }
+        return schedule;
     }
 }

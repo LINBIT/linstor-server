@@ -14,6 +14,8 @@ import com.linbit.linstor.core.repository.ResourceDefinitionProtectionRepository
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupProtectionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
+import com.linbit.linstor.core.repository.ScheduleProtectionRepository;
+import com.linbit.linstor.core.repository.ScheduleRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionProtectionRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
@@ -35,5 +37,6 @@ public class ControllerLinstorModule extends AbstractModule
         bind(KeyValueStoreRepository.class).to(KeyValueStoreProtectionRepository.class);
         bind(ExternalFileRepository.class).to(ExternalFileProtectionRepository.class);
         bind(RemoteRepository.class).to(RemoteProtectionRepository.class);
+        bind(ScheduleRepository.class).to(ScheduleProtectionRepository.class);
     }
 }

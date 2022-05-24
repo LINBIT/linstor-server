@@ -7,6 +7,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1298,11 +1299,15 @@ public final class DatabaseConstantsGenerator
         JsonNode versionsObj = null;
         try
         {
-            File file = new File(getClass().getResource(yamlLocation).toURI());
-            if (file.exists())
+            URL url = getClass().getResource(yamlLocation);
+            if (url != null)
             {
-                // System.out.println("loading: " + file);
-                versionsObj = YAML_MAPPER.readTree(file).get("spec").get("versions");
+                File file = new File(url.toURI());
+                if (file.exists())
+                {
+                    // System.out.println("loading: " + file);
+                    versionsObj = YAML_MAPPER.readTree(file).get("spec").get("versions");
+                }
             }
         }
         catch (IOException | URISyntaxException exc)

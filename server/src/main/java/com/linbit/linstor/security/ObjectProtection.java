@@ -8,6 +8,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -44,6 +45,7 @@ public final class ObjectProtection extends BaseTransactionObject
     private static final String PATH_KVS                     = "/keyvaluestores/";
     private static final String PATH_EXT_FILES               = "/extfiles/";
     private static final String PATH_REMOTE = "/remote/";
+    private static final String PATH_SCHEDULE = "/schedule/";
 
     private static final String PATH_SYS                     = "/sys/";
     private static final String PATH_CONTROLLER              = PATH_SYS + "controller/";
@@ -579,6 +581,18 @@ public final class ObjectProtection extends BaseTransactionObject
     public static String buildPath(RemoteName remoteName)
     {
         return PATH_REMOTE + remoteName.value;
+    }
+
+    /**
+     * ObjProt-Path for Schedules
+     *
+     * @param scheduleName
+     *
+     * @return
+     */
+    public static String buildPath(ScheduleName scheduleName)
+    {
+        return PATH_SCHEDULE + scheduleName.value;
     }
 
     String getObjectProtectionPath()

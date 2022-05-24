@@ -26,6 +26,7 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
+import com.linbit.linstor.api.pojo.SchedulePojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
@@ -1257,6 +1258,19 @@ public class Json
         json.remote_name = pojo.getRemoteName();
         json.url = pojo.getUrl();
         // encrypted passphrase intentionally not serialized
+
+        return json;
+    }
+
+    public static JsonGenTypes.Schedule apiToSchedule(SchedulePojo pojo)
+    {
+        JsonGenTypes.Schedule json = new JsonGenTypes.Schedule();
+        json.schedule_name = pojo.getScheduleName();
+        json.full_cron = pojo.getFullCron();
+        json.inc_cron = pojo.getIncCron();
+        json.keep_local = pojo.getKeepLocal();
+        json.keep_remote = pojo.getKeepRemote();
+        json.on_failure = pojo.getOnFailure();
 
         return json;
     }

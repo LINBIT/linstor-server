@@ -1337,6 +1337,15 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupSchedule
+    {
+        public String rsc_name;
+        public String grp_name;
+        public String schedule_name;
+        public String node_name;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PassPhraseCreate
     {
         public String new_passphrase;
@@ -1670,6 +1679,17 @@ public class JsonGenTypes
         public String url;
         public String passphrase;
         public String cluster_id;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class Schedule
+    {
+        public String schedule_name;
+        public String full_cron;
+        public String inc_cron;
+        public Integer keep_local;
+        public Integer keep_remote;
+        public String on_failure;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

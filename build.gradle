@@ -15,6 +15,7 @@ def protobufVersion = '3.12.0'
 def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
 def logbackConfig = "logback.xml"
 def jvmOpts = ["-Xms32M", "-XX:MinHeapFreeRatio=40", "-XX:MaxHeapFreeRatio=70"]
+def cronVersion = '9.1.6'
 
 // workaround to force gradle to download not just the dependencies for --offline use
 // but also the plugins
@@ -74,6 +75,8 @@ subprojects {
 
             implementation platform('com.amazonaws:aws-java-sdk-bom:1.11.932')
             implementation 'com.amazonaws:aws-java-sdk-s3'
+
+            implementation group: 'com.cronutils', name: 'cron-utils', version: cronVersion
 
             // toml parsing library
             implementation group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
@@ -450,6 +453,8 @@ dependencies {
     testCompileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
     testImplementation group: 'org.assertj', name: 'assertj-core', version: '3.18.+'
     testImplementation group: 'pl.pragmatists', name: 'JUnitParams', version: '1.1.1'
+
+    testImplementation group: 'com.cronutils', name: 'cron-utils', version: cronVersion
 
     testImplementation group: 'com.google.inject.extensions', name: 'guice-testlib', version: '5.0.1'
     testImplementation group: 'io.projectreactor', name: 'reactor-test', version: '3.3.12.RELEASE'

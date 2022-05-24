@@ -36,6 +36,7 @@ import com.linbit.linstor.core.objects.ResourceLayerIdETCDDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdK8sCrdDriver;
 import com.linbit.linstor.core.objects.ResourceLayerIdSQLDbDriver;
 import com.linbit.linstor.core.objects.S3RemoteDbDriver;
+import com.linbit.linstor.core.objects.ScheduleDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDbDriver;
@@ -97,6 +98,8 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.S3RemoteCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.S3RemoteDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ScheduleCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.ScheduleDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionCtrlDatabaseDriver;
@@ -191,6 +194,8 @@ public class ControllerDbModule extends AbstractModule
         bind(S3RemoteDatabaseDriver.class).to(S3RemoteDbDriver.class);
         bind(LinstorRemoteCtrlDatabaseDriver.class).to(LinstorRemoteDbDriver.class);
         bind(LinstorRemoteDatabaseDriver.class).to(LinstorRemoteDbDriver.class);
+        bind(ScheduleCtrlDatabaseDriver.class).to(ScheduleDbDriver.class);
+        bind(ScheduleDatabaseDriver.class).to(ScheduleDbDriver.class);
         switch (dbType)
         {
             case SQL:

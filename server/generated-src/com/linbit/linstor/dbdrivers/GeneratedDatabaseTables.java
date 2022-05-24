@@ -1155,6 +1155,56 @@ public class GeneratedDatabaseTables
         }
     }
 
+    public static class Schedules implements DatabaseTable
+    {
+        private Schedules()
+        {
+        }
+
+        // Primary Key
+        public static final ColumnImpl NAME = new ColumnImpl("NAME", Types.VARCHAR, true, false);
+
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl DSP_NAME = new ColumnImpl("DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl FULL_CRON = new ColumnImpl("FULL_CRON", Types.VARCHAR, false, false);
+        public static final ColumnImpl INC_CRON = new ColumnImpl("INC_CRON", Types.VARCHAR, false, true);
+        public static final ColumnImpl KEEP_LOCAL = new ColumnImpl("KEEP_LOCAL", Types.INTEGER, false, true);
+        public static final ColumnImpl KEEP_REMOTE = new ColumnImpl("KEEP_REMOTE", Types.INTEGER, false, true);
+        public static final ColumnImpl ON_FAILURE = new ColumnImpl("ON_FAILURE", Types.BIGINT, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            UUID,
+            NAME,
+            DSP_NAME,
+            FLAGS,
+            FULL_CRON,
+            INC_CRON,
+            KEEP_LOCAL,
+            KEEP_REMOTE,
+            ON_FAILURE
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "SCHEDULES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table SCHEDULES";
+        }
+    }
+
     public static class SecAccessTypes implements DatabaseTable
     {
         private SecAccessTypes()
@@ -1847,6 +1897,7 @@ public class GeneratedDatabaseTables
     public static final ResourceGroups RESOURCE_GROUPS = new ResourceGroups();
     public static final S3Remotes S3_REMOTES = new S3Remotes();
     public static final SatellitesCapacity SATELLITES_CAPACITY = new SatellitesCapacity();
+    public static final Schedules SCHEDULES = new Schedules();
     public static final SecAccessTypes SEC_ACCESS_TYPES = new SecAccessTypes();
     public static final SecAclMap SEC_ACL_MAP = new SecAclMap();
     public static final SecConfiguration SEC_CONFIGURATION = new SecConfiguration();
@@ -1894,6 +1945,7 @@ public class GeneratedDatabaseTables
             RESOURCE_GROUPS,
             S3_REMOTES,
             SATELLITES_CAPACITY,
+            SCHEDULES,
             SEC_ACCESS_TYPES,
             SEC_ACL_MAP,
             SEC_CONFIGURATION,
@@ -2067,6 +2119,15 @@ public class GeneratedDatabaseTables
         SatellitesCapacity.FAIL_FLAG.table = SATELLITES_CAPACITY;
         SatellitesCapacity.ALLOCATED.table = SATELLITES_CAPACITY;
         SatellitesCapacity.USABLE.table = SATELLITES_CAPACITY;
+        Schedules.UUID.table = SCHEDULES;
+        Schedules.NAME.table = SCHEDULES;
+        Schedules.DSP_NAME.table = SCHEDULES;
+        Schedules.FLAGS.table = SCHEDULES;
+        Schedules.FULL_CRON.table = SCHEDULES;
+        Schedules.INC_CRON.table = SCHEDULES;
+        Schedules.KEEP_LOCAL.table = SCHEDULES;
+        Schedules.KEEP_REMOTE.table = SCHEDULES;
+        Schedules.ON_FAILURE.table = SCHEDULES;
         SecAccessTypes.ACCESS_TYPE_NAME.table = SEC_ACCESS_TYPES;
         SecAccessTypes.ACCESS_TYPE_VALUE.table = SEC_ACCESS_TYPES;
         SecAclMap.OBJECT_PATH.table = SEC_ACL_MAP;
@@ -2244,6 +2305,8 @@ public class GeneratedDatabaseTables
                 return S3_REMOTES;
             case "SATELLITES_CAPACITY":
                 return SATELLITES_CAPACITY;
+            case "SCHEDULES":
+                return SCHEDULES;
             case "SEC_ACCESS_TYPES":
                 return SEC_ACCESS_TYPES;
             case "SEC_ACL_MAP":

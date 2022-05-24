@@ -13,6 +13,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -514,6 +515,26 @@ public class LinstorParsingUtils
             );
         }
         return remoteName;
+    }
+
+    public static ScheduleName asScheduleName(String scheduleNameStr)
+    {
+        ScheduleName scheduleName;
+        try
+        {
+            scheduleName = new ScheduleName(scheduleNameStr);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_SCHEDULE_NAME,
+                    "The given schedule name '" + scheduleNameStr + "' is invalid."
+                ),
+                invalidNameExc
+            );
+        }
+        return scheduleName;
     }
 
     public static Level asLogLevel(String logLevelRef)

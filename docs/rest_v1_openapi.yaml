@@ -5164,6 +5164,94 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/BackupInfoRequest'
+  /v1/remotes/{remote_name}/backups/schedule/enable:
+    put:
+      tags:
+        - developers
+      summary: enable backup schedule
+      description: enable backups to be scheduled to a specific remote
+      parameters:
+        - name: remote_name
+          in: path
+          required: true
+          description: The remote to ship the backup to
+          schema:
+            type: string
+      responses:
+        '200':
+          description: backup schedule set sucessfully or error messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupSchedule'
+  /v1/remotes/{remote_name}/backups/schedule/disable:
+    put:
+      tags:
+        - developers
+      summary: disable backup schedule
+      description: disable backups to be scheduled to a specific remote
+      parameters:
+        - name: remote_name
+          in: path
+          required: true
+          description: The remote to ship the backup to
+          schema:
+            type: string
+      responses:
+        '200':
+          description: backup schedule set sucessfully or error messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackupSchedule'
+  /v1/remotes/{remote_name}/backups/schedule/delete:
+    delete:
+      tags:
+        - developers
+      summary: delete backup schedule
+      description: delete backups to be scheduled to a specific remote
+      parameters:
+        - name: remote_name
+          in: path
+          required: true
+          description: The remote to ship the backup to
+          schema:
+            type: string
+        - name: rsc_dfn_name
+          in: query
+          required: false
+          description: the resource definition the schedule is assigned to
+          schema:
+            type: string
+        - name: rsc_grp_name
+          in: query
+          required: false
+          description: the resource group the schedule is assigned to
+          schema:
+            type: string
+        - name: schedule_name
+          in: query
+          required: true
+          description: the assigned schedule
+          schema:
+            type: string
+      responses:
+        '200':
+          description: backup schedule set sucessfully or error messages
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
   /v1/events/drbd/promotion:
     get:
       tags:
@@ -5558,6 +5646,82 @@ paths:
 #          application/json:
 #            schema:
 #              $ref: '#/components/schemas/LinstorRemote'
+  /v1/schedules:
+    get:
+      tags:
+        - developers
+      summary: list all schedules
+      description: list of all known schedules on this cluster
+      responses:
+        '200':
+          description: list of schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Schedule'
+    delete:
+      tags:
+        - developers
+      summary: delete a schedule
+      description: delete the given schedule
+      parameters:
+        - name: schedule_name
+          in: query
+          required: true
+          description: name of the schedule
+          schema:
+            type: string
+      responses:
+        '200':
+          description: schedule successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+    post:
+      tags:
+        - developers
+      summary: creates a new schedule
+      description: Creates a new schedule unless it already exists
+      responses:
+        '200':
+          description: schedule successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Schedule'
+  /v1/schedules/{scheduleName}:
+    parameters:
+      - name: scheduleName
+        in: path
+        required: true
+        description: name of the schedule
+        schema:
+          type: string
+    put:
+      tags:
+        - developers
+      summary: modify a schedule
+      description: modify an existing schedule
+      responses:
+        '200':
+          description: schedule modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Schedule'
   /v1/files:
     parameters:
       - in: query
@@ -7609,6 +7773,17 @@ components:
         usable_size_kib:
           type: integer
           format: int64
+    BackupSchedule:
+      type: object
+      properties:
+        rsc_name:
+          type: string
+        grp_name:
+          type: string
+        schedule_name:
+          type: string
+        node_name:
+          type: string
     PassPhraseCreate:
       type: object
       properties:
@@ -7997,6 +8172,23 @@ components:
         passphrase:
           type: string
         cluster_id:
+          type: string
+    Schedule:
+      type: object
+      properties:
+        schedule_name:
+          type: string
+        full_cron:
+          type: string
+        inc_cron:
+          type: string
+        keep_local:
+          type: integer
+          format: int32
+        keep_remote:
+          type: integer
+          format: int32
+        on_failure:
           type: string
     NodeStats:
       type: object

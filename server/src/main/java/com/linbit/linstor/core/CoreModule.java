@@ -8,6 +8,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.KeyValueStore;
@@ -15,6 +16,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.Schedule;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -52,6 +54,7 @@ public class CoreModule extends AbstractModule
     public static final String RSC_GROUP_MAP_LOCK = "rscGrpMapLock";
     public static final String EXT_FILE_MAP_LOCK = "extFileMapLock";
     public static final String REMOTE_MAP_LOCK = "remoteMapLock";
+    public static final String SCHEDULE_MAP_LOCK = "scheduleMapLock";
 
     private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
 
@@ -72,6 +75,7 @@ public class CoreModule extends AbstractModule
         bind(ResourceGroupMap.class).to(ResourceGroupMapImpl.class);
         bind(ExternalFileMap.class).to(ExternalFilesMapImpl.class);
         bind(RemoteMap.class).to(RemoteMapImpl.class);
+        bind(ScheduleMap.class).to(ScheduleMapImpl.class);
 
         bind(PeerMap.class).toInstance(new PeerMapImpl());
 
@@ -94,6 +98,8 @@ public class CoreModule extends AbstractModule
         bind(ReadWriteLock.class).annotatedWith(Names.named(EXT_FILE_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
         bind(ReadWriteLock.class).annotatedWith(Names.named(REMOTE_MAP_LOCK))
+            .toInstance(new ReentrantReadWriteLock(true));
+        bind(ReadWriteLock.class).annotatedWith(Names.named(SCHEDULE_MAP_LOCK))
             .toInstance(new ReentrantReadWriteLock(true));
     }
 
@@ -138,6 +144,10 @@ public class CoreModule extends AbstractModule
     }
 
     public interface RemoteMap extends Map<RemoteName, Remote>
+    {
+    }
+
+    public interface ScheduleMap extends Map<ScheduleName, Schedule>
     {
     }
 
@@ -280,6 +290,18 @@ public class CoreModule extends AbstractModule
     {
         @Inject
         public RemoteMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(new TreeMap<>(), null, transMgrProvider);
+        }
+    }
+
+    @Singleton
+    public static class ScheduleMapImpl
+        extends TransactionMap<ScheduleName, Schedule>
+        implements ScheduleMap
+    {
+        @Inject
+        public ScheduleMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
             super(new TreeMap<>(), null, transMgrProvider);
         }
