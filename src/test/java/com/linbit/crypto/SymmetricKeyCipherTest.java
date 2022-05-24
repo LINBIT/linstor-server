@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 
 @PowerMockIgnore({"com.sun.*", "javax.*"})
 @RunWith(PowerMockRunner.class)
-public class SymmetricKeyCiperTest
+public class SymmetricKeyCipherTest
 {
     private static byte[] cipherKey = "1234567890123456".getBytes();
 
