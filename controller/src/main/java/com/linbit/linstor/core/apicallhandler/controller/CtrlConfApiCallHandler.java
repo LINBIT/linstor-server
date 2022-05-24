@@ -919,7 +919,7 @@ public class CtrlConfApiCallHandler
                                         true
                                     )
                                 );
-                                abort &= isEnabled;
+                                abort = isEnabled;
                             }
                         }
                     }
