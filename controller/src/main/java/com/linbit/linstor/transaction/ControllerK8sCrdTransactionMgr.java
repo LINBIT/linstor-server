@@ -38,7 +38,6 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     private final Map<DatabaseTable, MixedOperation<?, ?, ?>> crdClientLut;
     private final MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClient;
     private final MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClient;
-    private final Function<LinstorSpec, LinstorCrd<LinstorSpec>> specToCrd;
     private final KubernetesClient k8sClient;
     private final String crdVersion;
 
@@ -48,7 +47,6 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
             controllerK8sCrdDatabaseRef,
             new BaseControllerK8sCrdTransactionMgrContext(
                 GenCrdCurrent::databaseTableToCustomResourceClass,
-                GenCrdCurrent::specToCrd,
                 GenCrdCurrent.VERSION
             )
         );
@@ -60,7 +58,6 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     )
     {
         controllerK8sCrdDatabase = controllerK8sCrdDatabaseRef;
-        specToCrd = ctx.getSpecToCrd();
         transactionObjectCollection = new TransactionObjectCollection();
 
         k8sClient = controllerK8sCrdDatabaseRef.getClient();
@@ -208,7 +205,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     @Override
     public void rollback() throws TransactionException
     {
-        ControllerK8sCrdRollbackMgr.rollback(currentTransaction, specToCrd);
+        ControllerK8sCrdRollbackMgr.rollback(currentTransaction);
 
         transactionObjectCollection.rollbackAll();
 

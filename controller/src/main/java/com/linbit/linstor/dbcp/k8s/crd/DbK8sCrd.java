@@ -165,7 +165,7 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
         }
         catch (InstantiationException | IllegalAccessException exc)
         {
-            throw new InitializationException("Failed to migrate ETCD server", exc);
+            throw new InitializationException("Failed to migrate", exc);
         }
 
         try

@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
-import java.util.function.Function;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -128,8 +127,7 @@ public class ControllerK8sCrdRollbackMgr
     }
 
     public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void rollback(
-        K8sCrdTransaction currentTransactionRef,
-        Function<SPEC, CRD> specToCrdRef
+        K8sCrdTransaction currentTransactionRef
     )
     {
         RollbackCrd rollback = currentTransactionRef.getRollback();
@@ -139,7 +137,7 @@ public class ControllerK8sCrdRollbackMgr
             {
                 DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
                 HashSet<String> keysToDelete = entry.getValue();
-                delete(currentTransactionRef, dbTable, keysToDelete, specToCrdRef);
+                delete(currentTransactionRef, dbTable, keysToDelete);
             }
 
             for (Entry<String, ? extends HashMap<String, GenericKubernetesResource>> entry : rollback.getSpec()
@@ -151,8 +149,7 @@ public class ControllerK8sCrdRollbackMgr
                 restoreData(
                     currentTransactionRef,
                     dbTable,
-                    gkrList,
-                    specToCrdRef
+                    gkrList
                 );
             }
         }
@@ -163,31 +160,22 @@ public class ControllerK8sCrdRollbackMgr
     private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void delete(
         K8sCrdTransaction currentTransaction,
         DatabaseTable dbTable,
-        HashSet<String> keysToDelete,
-        Function<SPEC, CRD> specToCrdRef
+        HashSet<String> keysToDelete
     )
     {
-        HashMap<String, SPEC> map = currentTransaction.getSpec(
-            dbTable,
-            spec -> keysToDelete.contains(spec.getK8sKey())
-        );
-
-        ArrayList<CRD> crdToDeleteList = new ArrayList<>();
-        for (SPEC spec : map.values())
-        {
-            crdToDeleteList.add(specToCrdRef.apply(spec));
-        }
         MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = currentTransaction
             .getClient(dbTable);
-        client.delete(crdToDeleteList);
+        for (String name : keysToDelete)
+        {
+            client.withName(name).delete();
+        }
     }
 
     @SuppressWarnings("unchecked")
     private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void restoreData(
         K8sCrdTransaction currentTransaction,
         DatabaseTable dbTable,
-        Collection<GenericKubernetesResource> valuesToRestore,
-        Function<SPEC, CRD> specToCrdRef
+        Collection<GenericKubernetesResource> valuesToRestore
     )
     {
         MixedOperation<LinstorCrd<SPEC>, KubernetesResourceList<LinstorCrd<SPEC>>, Resource<LinstorCrd<SPEC>>> client = currentTransaction

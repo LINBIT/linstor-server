@@ -1159,7 +1159,6 @@ public class GenCrdV1_17_0
     {
         return new BaseControllerK8sCrdTransactionMgrContext(
             GenCrdV1_17_0::databaseTableToCustomResourceClass,
-            GenCrdV1_17_0::specToCrd,
             GenCrdV1_17_0.VERSION
         );
     }
