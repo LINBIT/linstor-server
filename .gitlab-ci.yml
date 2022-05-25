@@ -26,7 +26,8 @@ stages:
   - build
   - test
   - deploy
-  - test-e2e
+  - integration
+  - integration-all
 
 .upload_nexus:
   script:
@@ -173,7 +174,7 @@ deploy-nexus:
   extends: .upload_nexus
 
 test-e2e-all:
-  stage: test-e2e
+  stage: integration-all
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: manual
@@ -196,7 +197,7 @@ test-e2e-all:
       junit: tests-out/test-results/*.xml
 
 test-e2e:
-  stage: test-e2e
+  stage: integration
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
