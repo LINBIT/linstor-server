@@ -148,31 +148,42 @@ public class ScopeRunner
         }
         finally
         {
-            lockGuard.unlock();
-            apiCallScope.exit();
-            if (transMgr != null)
+            try
             {
-                if (transMgr.isDirty())
+                apiCallScope.exit();
+                if (transMgr != null)
                 {
-                    try
+                    if (transMgr.isDirty())
                     {
-                        transMgr.rollback();
+                        try
+                        {
+                            transMgr.rollback();
+                        }
+                        catch (TransactionException transExc)
+                        {
+                            errorLog.reportError(
+                                Level.ERROR,
+                                transExc,
+                                accCtx,
+                                peer,
+                                "A database error occurred while trying to rollback '" + apiCallName + "'"
+                            );
+                        }
                     }
-                    catch (TransactionException transExc)
-                    {
-                        errorLog.reportError(
-                            Level.ERROR,
-                            transExc,
-                            accCtx,
-                            peer,
-                            "A database error occurred while trying to rollback '" + apiCallName + "'"
-                        );
-                    }
+                    transMgr.returnConnection();
                 }
-                transMgr.returnConnection();
+                errorLog.logTrace(
+                    "%s%s '%s' scope '%s' end",
+                    peerDescription,
+                    apiCallDescription,
+                    apiCallName,
+                    scopeDescription
+                );
             }
-            errorLog.logTrace(
-                "%s%s '%s' scope '%s' end", peerDescription, apiCallDescription, apiCallName, scopeDescription);
+            finally
+            {
+                lockGuard.unlock();
+            }
         }
 
         return ret;
