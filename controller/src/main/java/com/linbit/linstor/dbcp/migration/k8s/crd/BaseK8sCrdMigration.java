@@ -7,6 +7,8 @@ import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.RollbackCrd;
 import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgr;
@@ -15,13 +17,13 @@ import com.linbit.linstor.transaction.K8sCrdTransaction;
 import com.linbit.timer.Delay;
 
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 
-import io.fabric8.kubernetes.api.model.APIResource;
-import io.fabric8.kubernetes.api.model.APIResourceList;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -102,34 +104,28 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
         ensureRollbackCrdApplied();
 
         Function<DatabaseTable, String> dbTableToYamlLocation = updateCtx.getGetYamlLocations();
-        Function<DatabaseTable, String> yamlKindNameFct = updateCtx.getGetYamlKindNameFunction();
-        String targetVersion = updateCtx.getTargetVersion();
 
-        HashSet<String> tablesToUpdate = new HashSet<>();
-        for (DatabaseTable dbTable : GeneratedDatabaseTables.ALL_TABLES)
-        {
-            String tableToUpdate = yamlKindNameFct.apply(dbTable);
-            if (tableToUpdate != null)
-            {
-                tablesToUpdate.add(tableToUpdate);
-            }
-        }
+        HashSet<DatabaseTable> tablesToUpdate = new HashSet<>(Arrays.asList(GeneratedDatabaseTables.ALL_TABLES));
 
         for (DatabaseTable dbTable : GeneratedDatabaseTables.ALL_TABLES)
         {
             createOrReplaceCrdSchema(k8sClient, dbTableToYamlLocation.apply(dbTable));
         }
 
+        Function<DatabaseTable, Class<? extends LinstorCrd<? extends LinstorSpec>>> tableMap = upgradeToTxMgrContext
+            .getDbTableToCrdClass();
+
         long maxWaitUntil = System.currentTimeMillis() + 30 * 1_000; // 30 seconds
         long sleep = maxWaitUntil - System.currentTimeMillis();
         while (!tablesToUpdate.isEmpty() && sleep > 0)
         {
+            ArrayList<DatabaseTable> updatedTables = new ArrayList<>();
             try
             {
-                APIResourceList existing = k8sClient.getApiResources("internal.linstor.linbit.com/" + targetVersion);
-                for (APIResource res : existing.getResources())
+                for (DatabaseTable table: tablesToUpdate)
                 {
-                    tablesToUpdate.remove(res.getName());
+                    k8sClient.resources(tableMap.apply(table)).list();
+                    updatedTables.add(table);
                 }
             }
             catch (KubernetesClientException exc)
@@ -139,6 +135,8 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
                     throw new DatabaseException("Failed to wait for updated CRDs", exc);
                 }
             }
+
+            tablesToUpdate.removeAll(updatedTables);
 
             sleep = maxWaitUntil - System.currentTimeMillis();
             Delay.sleep(2_000);
