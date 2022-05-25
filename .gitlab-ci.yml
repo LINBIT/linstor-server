@@ -9,6 +9,12 @@ variables:
   VIRTER_VERSION: v0.16.0
   VMSHED_VERSION: v0.14.5
   BUILD_HELPERS_VERSION: cd83ef398a7748c4660c3f2db29241973bd1c897
+  VMSHED_TORUN:
+    value: all
+    description: list of named tests to run, `all` means all :D
+  VMSHED_VARIANTS:
+    value: --variant default
+    description: "which variant to run: [standard, default, crd, etcd]; e.g. `--variant crd --variant etcd`"
 
 cache:
   paths:
@@ -164,17 +170,18 @@ test-e2e:
       ci_fetch_rq
       ci_fetch_binary virter virter-$VIRTER_VERSION https://github.com/LINBIT/virter/releases/download/$VIRTER_VERSION/virter-linux-amd64
       ci_fetch_binary vmshed vmshed-$VMSHED_VERSION https://github.com/LINBIT/vmshed/releases/download/$VMSHED_VERSION/vmshed-linux-amd64
+    - if [[ "$CI_PIPELINE_SOURCE" == "web" ]]; then TMP_VARIANTS=$VMSHED_VARIANTS; fi
     - |
       case "$CI_COMMIT_BRANCH" in
        "jenkins") VARIANTS="--variant default --variant etcd --variant crd" ;;
-       "master") VARIANTS=${VMSHED_VARIANTS:---variant default} ;;
-       *) VARIANTS=${VMSHED_VARIANTS:---variant standard} ;;
+       "master") VARIANTS=${TMP_VARIANTS:---variant default} ;;
+       *) VARIANTS=${TMP_VARIANTS:---variant standard} ;;
       esac
     - echo "Running variants $VARIANTS"
     - echo "LINSTOR-TEST BRANCH = $TEST_BRANCH"
     - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
-    - ./linstor-test-bundle/virter/run-test.py $VARIANTS $VMSHED_TORUN
+    - ./linstor-test-bundle/virter/run-test.py $VARIANTS --torun $VMSHED_TORUN
   artifacts:
     # provide a convenient name so that the downloaded artifacts can be identified
     name: $CI_PROJECT_NAME-$CI_JOB_ID
