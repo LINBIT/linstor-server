@@ -195,8 +195,6 @@ public class CtrlAuthResponseApiCallHandler
                 }
                 errorReporter.logDebug("Satellite '" + peer.getNode().getName() + "' authenticated");
 
-                pingTask.add(peer);
-
                 flux = ctrlFullSyncApiCallHandler.sendFullSync(
                     peer.getNode(),
                     expectedFullSyncId,

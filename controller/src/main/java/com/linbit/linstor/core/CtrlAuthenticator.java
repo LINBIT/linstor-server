@@ -18,6 +18,7 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.netcom.TcpConnectorPeer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -42,6 +43,7 @@ public class CtrlAuthenticator
     private final AccessContext apiCtx;
     private final IntAuthResponse intAuthResponse;
     private final ReconnectorTask reconnectorTask;
+    private final PingTask pingTask;
 
     @Inject
     CtrlAuthenticator(
@@ -52,7 +54,8 @@ public class CtrlAuthenticator
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         @SystemContext AccessContext apiCtxRef,
         IntAuthResponse intAuthResponseRef,
-        ReconnectorTask reconnectorTaskRef
+        ReconnectorTask reconnectorTaskRef,
+        PingTask pingTaskRef
     )
     {
         errorReporter = errorReporterRef;
@@ -63,6 +66,7 @@ public class CtrlAuthenticator
         apiCtx = apiCtxRef;
         intAuthResponse = intAuthResponseRef;
         reconnectorTask = reconnectorTaskRef;
+        pingTask = pingTaskRef;
     }
 
     public void sendAuthentication(Peer peer)
@@ -112,6 +116,8 @@ public class CtrlAuthenticator
                 Peer peer = node.getPeer(peerAccCtx.get());
                 if (peer instanceof TcpConnectorPeer)
                 {
+                    errorReporter.logDebug("Adding peer to PingTask: '" + node.getName() + "'");
+                    pingTask.add(peer);
                     flux = ((TcpConnectorPeer) peer).apiCall(
                         InternalApiConsts.API_AUTH,
                         serializer
