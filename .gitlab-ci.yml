@@ -106,6 +106,8 @@ check-openapi:
     name: jamescooke/openapi-validator:0.51.3
     entrypoint: [""] # force empty entrypoint to workaround a gitlab issue
   rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+    - if: $CI_COMMIT_BRANCH == 'jenkins'
     - changes:
         - docs/rest_v1_openapi.yaml
         - docs/.spectral.yaml
@@ -119,7 +121,8 @@ check-openapi:
 test:
   stage: test
   rules:
-    - when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+    - if: $CI_COMMIT_BRANCH == 'jenkins'
   script:
     - ./gradlew -PversionOverride= checkstyleMain
     - ./gradlew -PversionOverride= assemble
