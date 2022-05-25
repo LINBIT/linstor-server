@@ -65,6 +65,40 @@ stages:
     - lbbuildctl build linstor-server --arch amd64 --ci -v "$LINSTOR_VERSION" -l -e LINBIT_REGISTRY_USER=$LINBIT_REGISTRY_USER -e LINBIT_REGISTRY_PASSWORD=$LINBIT_REGISTRY_PASSWORD -e LINBIT_REGISTRY_URL=$LINBIT_REGISTRY_URL -d ubuntu-bionic,ubuntu-focal,rhel7.0,rhel8.0
     - rm linstor-server-$LINSTOR_VERSION.tar.gz
 
+.common_e2e:
+  script:
+    - |
+      SAFE_REF_NAME=${CI_COMMIT_REF_SLUG}
+      if docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:$SAFE_REF_NAME ; then
+          TEST_BRANCH=$SAFE_REF_NAME
+          TEST_BUNDLE_BRANCH=$SAFE_REF_NAME
+      else
+          docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:latest
+      fi
+    - mkdir -p linstor-test-bundle
+    - curl -sSL $LINBIT_REGISTRY_URL/repository/test-suite/linstor-test-bundle-$TEST_BUNDLE_BRANCH.tgz | tar -C linstor-test-bundle -xvzf -
+    - |
+      mkdir build-helpers
+      curl -sSfL $LINBIT_REGISTRY_URL/repository/test-suite/build-helpers-$BUILD_HELPERS_VERSION.tar.gz | tar -xvz -C ./build-helpers
+      . build-helpers/gitlab-utils.sh
+    - |
+      ci_prepare_tools
+      ci_fetch_rq
+      ci_fetch_binary virter virter-$VIRTER_VERSION https://github.com/LINBIT/virter/releases/download/$VIRTER_VERSION/virter-linux-amd64
+      ci_fetch_binary vmshed vmshed-$VMSHED_VERSION https://github.com/LINBIT/vmshed/releases/download/$VMSHED_VERSION/vmshed-linux-amd64
+    - |
+      case "$CI_COMMIT_BRANCH" in
+       "jenkins") VARIANTS="--variant default --variant etcd --variant crd" ;;
+       "master") VARIANTS=${TMP_VARIANTS:---variant default} ;;
+       *) VARIANTS=${TMP_VARIANTS:---variant standard} ;;
+      esac
+# --- is used because of bash
+    - echo "Running variants $VARIANTS"
+    - echo "LINSTOR-TEST BRANCH = $TEST_BRANCH"
+    - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
+    - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
+    - ./linstor-test-bundle/virter/run-test.py $VARIANTS --torun $VMSHED_TORUN
+
 check-openapi:
   stage: build
   image:
@@ -131,17 +165,40 @@ deploy-nexus-master:
 deploy-nexus:
   stage: deploy
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
   before_script:
     - curl -sSL $LINBIT_REGISTRY_URL/repository/lbbuild/lbbuildctl-latest -o /usr/local/bin/lbbuildctl
     - chmod +x /usr/local/bin/lbbuildctl
   extends: .upload_nexus
 
-test-e2e:
+test-e2e-all:
   stage: test-e2e
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: manual
+  tags:
+    - libvirt
+  before_script:
+    - echo "no before"
+  script:
+    - TEST_BRANCH=latest
+    - TEST_BUNDLE_BRANCH=master
+    - TMP_VARIANTS="--variant default"
+    - !reference [.common_e2e, script]
+  artifacts:
+    # provide a convenient name so that the downloaded artifacts can be identified
+    name: $CI_PROJECT_NAME-$CI_JOB_ID
+    paths:
+      - tests-out/
+    when: always
+    reports:
+      junit: tests-out/test-results/*.xml
+
+test-e2e:
+  stage: test-e2e
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
     - if: $CI_COMMIT_BRANCH == 'master'
   tags:
@@ -151,37 +208,8 @@ test-e2e:
   script:
     - TEST_BRANCH=latest
     - TEST_BUNDLE_BRANCH=master
-    - |
-      SAFE_REF_NAME=${CI_COMMIT_REF_SLUG}
-      if docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:$SAFE_REF_NAME ; then
-          TEST_BRANCH=$SAFE_REF_NAME
-          TEST_BUNDLE_BRANCH=$SAFE_REF_NAME
-      else
-          docker image pull $LINBIT_DOCKER_REGISTRY/linstor-tests:latest
-      fi
-    - mkdir -p linstor-test-bundle
-    - curl -sSL $LINBIT_REGISTRY_URL/repository/test-suite/linstor-test-bundle-$TEST_BUNDLE_BRANCH.tgz | tar -C linstor-test-bundle -xvzf -
-    - |
-      mkdir build-helpers
-      curl -sSfL $LINBIT_REGISTRY_URL/repository/test-suite/build-helpers-$BUILD_HELPERS_VERSION.tar.gz | tar -xvz -C ./build-helpers
-      . build-helpers/gitlab-utils.sh
-    - |
-      ci_prepare_tools
-      ci_fetch_rq
-      ci_fetch_binary virter virter-$VIRTER_VERSION https://github.com/LINBIT/virter/releases/download/$VIRTER_VERSION/virter-linux-amd64
-      ci_fetch_binary vmshed vmshed-$VMSHED_VERSION https://github.com/LINBIT/vmshed/releases/download/$VMSHED_VERSION/vmshed-linux-amd64
     - if [[ "$CI_PIPELINE_SOURCE" == "web" ]]; then TMP_VARIANTS=$VMSHED_VARIANTS; fi
-    - |
-      case "$CI_COMMIT_BRANCH" in
-       "jenkins") VARIANTS="--variant default --variant etcd --variant crd" ;;
-       "master") VARIANTS=${TMP_VARIANTS:---variant default} ;;
-       *) VARIANTS=${TMP_VARIANTS:---variant standard} ;;
-      esac
-    - echo "Running variants $VARIANTS"
-    - echo "LINSTOR-TEST BRANCH = $TEST_BRANCH"
-    - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
-    - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
-    - ./linstor-test-bundle/virter/run-test.py $VARIANTS --torun $VMSHED_TORUN
+    - !reference [.common_e2e, script]
   artifacts:
     # provide a convenient name so that the downloaded artifacts can be identified
     name: $CI_PROJECT_NAME-$CI_JOB_ID
