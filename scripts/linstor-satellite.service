@@ -2,6 +2,9 @@
 Description=LINSTOR Satellite Service
 Wants=network-online.target
 After=network-online.target
+# if these exist, and are enabled, we want to be scheduled before them
+# proxmox:
+Before=pvedaemon.service
 
 [Service]
 Type=simple
