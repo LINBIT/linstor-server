@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ErrorReporterContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiModule;
@@ -124,6 +125,8 @@ public class ScopeRunner
 
         TransactionMgr transMgr = transactional ? transactionMgrGenerator.startTransaction() : null;
 
+        Exception caughtExc = null;
+        ImplementationError caughtImplError = null;
         apiCallScope.enter();
         lockGuard.lock();
         try
@@ -146,32 +149,22 @@ public class ScopeRunner
 
             ret = callable.call();
         }
+        catch (Exception exc)
+        {
+            ret = null; // suppress not initialized error
+            caughtExc = exc;
+        }
+        catch (ImplementationError implErr)
+        {
+            ret = null; // suppress not initialized error
+            caughtImplError = implErr;
+        }
         finally
         {
             try
             {
                 apiCallScope.exit();
-                if (transMgr != null)
-                {
-                    if (transMgr.isDirty())
-                    {
-                        try
-                        {
-                            transMgr.rollback();
-                        }
-                        catch (TransactionException transExc)
-                        {
-                            errorLog.reportError(
-                                Level.ERROR,
-                                transExc,
-                                accCtx,
-                                peer,
-                                "A database error occurred while trying to rollback '" + apiCallName + "'"
-                            );
-                        }
-                    }
-                    transMgr.returnConnection();
-                }
+                rollbackIfNeeded(apiCallName, accCtx, peer, transMgr);
                 errorLog.logTrace(
                     "%s%s '%s' scope '%s' end",
                     peerDescription,
@@ -180,12 +173,54 @@ public class ScopeRunner
                     scopeDescription
                 );
             }
+            catch (Exception | ImplementationError exc)
+            {
+                if (caughtExc != null)
+                {
+                    exc.addSuppressed(caughtExc);
+                }
+                throw exc;
+            }
             finally
             {
                 lockGuard.unlock();
             }
+
+            if (caughtExc != null)
+            {
+                throw caughtExc;
+            }
+            if (caughtImplError != null)
+            {
+                throw caughtImplError;
+            }
         }
 
         return ret;
+    }
+
+    private void rollbackIfNeeded(String apiCallName, AccessContext accCtx, Peer peer, TransactionMgr transMgr)
+    {
+        if (transMgr != null)
+        {
+            if (transMgr.isDirty())
+            {
+                try
+                {
+                    transMgr.rollback();
+                }
+                catch (TransactionException transExc)
+                {
+                    errorLog.reportError(
+                        Level.ERROR,
+                        transExc,
+                        accCtx,
+                        peer,
+                        "A database error occurred while trying to rollback '" + apiCallName + "'"
+                    );
+                }
+            }
+            transMgr.returnConnection();
+        }
     }
 }
