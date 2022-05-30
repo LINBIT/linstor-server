@@ -131,7 +131,9 @@ test:
   artifacts:
     reports:
       junit: build/test-results/test/TEST-*.xml
-      cobertura: build/reports/jacoco/test/jacocoTestReport.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: build/reports/jacoco/test/jacocoTestReport.xml
     paths:
       - build/distributions/linstor-server.tar
     expire_in: 4 days
