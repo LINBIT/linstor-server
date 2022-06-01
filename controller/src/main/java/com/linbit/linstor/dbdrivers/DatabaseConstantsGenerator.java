@@ -736,7 +736,6 @@ public final class DatabaseConstantsGenerator
                 try (IndentLevel argsIndent = new IndentLevel("", "", false, false))
                 {
                     appendLine("%s::databaseTableToCustomResourceClass,", clazzName);
-                    appendLine("%s::specToCrd,", clazzName);
                     appendLine("%s.VERSION", clazzName);
                 }
                 appendLine(");");
