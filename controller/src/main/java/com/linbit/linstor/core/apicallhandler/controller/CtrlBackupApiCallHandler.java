@@ -330,17 +330,17 @@ public class CtrlBackupApiCallHandler
                     )
                 );
             }
-
+            Remote remote = null;
             if (remoteTypeRef.equals(RemoteType.S3))
             {
                 // check if encryption is possible
                 getLocalMasterKey();
-
-                // check if remote exists
-                getS3Remote(remoteName);
             }
 
-            SnapshotDefinition prevSnapDfn = getIncrementalBase(rscDfn, remoteName, allowIncremental);
+                // check if remote exists
+                remote = getRemote(remoteName);
+
+                SnapshotDefinition prevSnapDfn = getIncrementalBase(rscDfn, remoteName, remote, allowIncremental);
 
             Pair<Node, List<String>> chooseNodeResult = chooseNode(
                 rscDfn,
@@ -538,6 +538,7 @@ public class CtrlBackupApiCallHandler
     private SnapshotDefinition getIncrementalBase(
         ResourceDefinition rscDfn,
         String remoteName,
+        Remote remote,
         boolean allowIncremental
     )
         throws AccessDeniedException,
@@ -564,19 +565,61 @@ public class CtrlBackupApiCallHandler
                 }
                 else
                 {
-                    for (SnapshotVolumeDefinition snapVlmDfn : prevSnapDfn.getAllSnapshotVolumeDefinitions(sysCtx))
+                    if (remote instanceof S3Remote)
                     {
-                        long vlmDfnSize = snapVlmDfn.getVolumeDefinition().getVolumeSize(sysCtx);
-                        long prevSnapVlmDfnSize = snapVlmDfn.getVolumeSize(sysCtx);
-                        if (prevSnapVlmDfnSize != vlmDfnSize)
+                        S3Remote s3remote = (S3Remote) remote;
+                        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+                        List<S3ObjectSummary> objects = backupHandler.listObjects(
+                            null,
+                            s3remote,
+                            peerAccCtx.get(),
+                            getLocalMasterKey()
+                        );
+                        // get ALL s3 keys of the given bucket, including possibly not linstor related ones
+                        Set<String> allS3Keys = objects.stream()
+                            .map(S3ObjectSummary::getKey)
+                            .collect(Collectors.toCollection(TreeSet::new));
+                        Map<String, S3ObjectInfo> s3LinstorObjects = loadAllLinstorS3Objects(
+                            allS3Keys,
+                            s3remote,
+                            apiCallRc
+                        );
+                        boolean found = false;
+                        for (S3ObjectInfo s3obj : s3LinstorObjects.values())
                         {
-                            errorReporter.logDebug(
-                                "Current vlmDfn size (%d) does not match with prev snapDfn (%s) size (%d). Forcing full backup.",
-                                vlmDfnSize,
-                                snapVlmDfn,
-                                prevSnapVlmDfnSize
+                            if (s3obj.snapDfn.getUuid().equals(prevSnapDfn.getUuid()))
+                            {
+                                found = true;
+                            }
+                        }
+                        if (!found)
+                        {
+                            errorReporter.logWarning(
+                                "Could not create an incremental backup for resource %s as the previous backup created by snapshot %s has already been deleted. Creating a full backup instead.",
+                                rscDfn.getName(),
+                                prevSnapName
                             );
+                            // theoretically we could look for the backup before prevSnapDfn and then the one before
+                            // that and so on...
                             prevSnapDfn = null;
+                        }
+                    }
+                    if (prevSnapDfn != null)
+                    {
+                        for (SnapshotVolumeDefinition snapVlmDfn : prevSnapDfn.getAllSnapshotVolumeDefinitions(sysCtx))
+                        {
+                            long vlmDfnSize = snapVlmDfn.getVolumeDefinition().getVolumeSize(sysCtx);
+                            long prevSnapVlmDfnSize = snapVlmDfn.getVolumeSize(sysCtx);
+                            if (prevSnapVlmDfnSize != vlmDfnSize)
+                            {
+                                errorReporter.logDebug(
+                                    "Current vlmDfn size (%d) does not match with prev snapDfn (%s) size (%d). Forcing full backup.",
+                                    vlmDfnSize,
+                                    snapVlmDfn,
+                                    prevSnapVlmDfnSize
+                                );
+                                prevSnapDfn = null;
+                            }
                         }
                     }
                 }
@@ -775,7 +818,8 @@ public class CtrlBackupApiCallHandler
         boolean all,
         String s3Key,
         String remoteName,
-        boolean dryRun
+        boolean dryRun,
+        boolean keepSnaps
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -795,7 +839,8 @@ public class CtrlBackupApiCallHandler
                 all,
                 s3Key,
                 remoteName,
-                dryRun
+                dryRun,
+                keepSnaps
             )
         );
     }
@@ -811,7 +856,8 @@ public class CtrlBackupApiCallHandler
         boolean all,
         String s3Key,
         String remoteName,
-        boolean dryRun
+        boolean dryRun,
+        boolean keepSnaps
     ) throws AccessDeniedException, InvalidNameException
     {
         S3Remote s3Remote = getS3Remote(remoteName);
@@ -909,6 +955,10 @@ public class CtrlBackupApiCallHandler
 
         Flux<ApiCallRc> deleteSnapFlux = Flux.empty();
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        if (keepSnaps)
+        {
+            toDelete.snapKeys.clear();
+        }
 
         if (dryRun)
         {
@@ -4113,6 +4163,21 @@ public class CtrlBackupApiCallHandler
 
     private S3Remote getS3Remote(String remoteName) throws AccessDeniedException, InvalidNameException
     {
+        Remote remote = getRemote(remoteName);
+        if (!(remote instanceof S3Remote))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_REMOTE_NAME | ApiConsts.MASK_BACKUP,
+                    "The remote " + remoteName + " is not an s3 remote."
+                )
+            );
+        }
+        return (S3Remote) remote;
+    }
+
+    private Remote getRemote(String remoteName) throws AccessDeniedException, InvalidNameException
+    {
         if (remoteName == null || remoteName.isEmpty())
         {
             throw new ApiRcException(
@@ -4122,13 +4187,23 @@ public class CtrlBackupApiCallHandler
                 )
             );
         }
-        S3Remote remote = remoteRepo.getS3(peerAccCtx.get(), new RemoteName(remoteName));
+        Remote remote = null;
+        remote = remoteRepo.get(peerAccCtx.get(), new RemoteName(remoteName));
         if (remote == null)
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_REMOTE_NAME | ApiConsts.MASK_BACKUP,
+                    ApiConsts.FAIL_NOT_FOUND_REMOTE | ApiConsts.MASK_BACKUP,
                     "The remote " + remoteName + " does not exist. Please provide a valid remote or create a new one."
+                )
+            );
+        }
+        if (remote.getType().equals(RemoteType.SATELLTE))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_REMOTE_NAME | ApiConsts.MASK_BACKUP,
+                    "The remote " + remoteName + " is not a valid backup target."
                 )
             );
         }

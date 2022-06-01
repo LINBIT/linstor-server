@@ -5036,6 +5036,11 @@ paths:
           description: does not delete anything but returns an ApiCallRc with all entries that would be deleted
           schema:
             type: boolean
+        - name: keep_snaps
+          in: query
+          description: makes sure the snapshots the backups originated from are not deleted
+          schema:
+            type: boolean
       responses:
         '200':
           description: backups deleted or error messages

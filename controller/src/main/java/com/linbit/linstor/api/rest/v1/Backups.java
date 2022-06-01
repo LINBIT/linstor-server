@@ -175,7 +175,8 @@ public class Backups
         @DefaultValue("") @QueryParam("s3key") String s3key,
         @DefaultValue("") @QueryParam("timestamp") String timestamp,
         @DefaultValue("") @QueryParam("resource_name") String rscName,
-        @DefaultValue("false") @QueryParam("dryrun") boolean dryRun
+        @DefaultValue("false") @QueryParam("dryrun") boolean dryRun,
+        @DefaultValue("false") @QueryParam("keep_snaps") boolean keepSnaps
     )
     {
         /*
@@ -230,7 +231,8 @@ public class Backups
                 all,
                 s3key,
                 remoteName,
-                dryRun
+                dryRun,
+                keepSnaps
             ).subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
