@@ -1,11 +1,13 @@
 package com.linbit.linstor.dbcp;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbcp.migration.LinstorMigration;
 import com.linbit.linstor.dbdrivers.DatabaseConstantsGenerator;
 import com.linbit.linstor.dbdrivers.DatabaseConstantsGenerator.GeneratedCrdJavaClass;
 import com.linbit.linstor.dbdrivers.DatabaseConstantsGenerator.GeneratedCrdResult;
 import com.linbit.linstor.dbdrivers.DatabaseConstantsGenerator.GeneratedResources;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.DATABASE_SCHEMA_NAME;
 
@@ -14,6 +16,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -76,6 +81,8 @@ public class GenerateSql
 
         PoolingDataSource<PoolableConnection> dataSource = new PoolingDataSource<>(connPool);
 
+        initJclCrypto();
+
         Flyway flyway = Flyway.configure()
             .schemas(DATABASE_SCHEMA_NAME)
             .dataSource(dataSource)
@@ -96,6 +103,33 @@ public class GenerateSql
         renderGeneratedKubernetesCustomResourceDefinitions(gen, gitRoot);
 
         dataSource.close();
+
+        System.out.println("Classes generated successfully.");
+    }
+
+    private static void initJclCrypto()
+        throws URISyntaxException, IOException, ClassNotFoundException, InstantiationException, IllegalAccessException
+    {
+        Path jclPrjPath = Paths.get(GenerateSql.class.getProtectionDomain().getCodeSource().getLocation().toURI())
+            .getParent() // undo "main"
+            .getParent() // undo "bin"
+            .getParent() // undo "controller"
+            .resolve(Paths.get("jclcrypto", "bin", "main"));
+
+        try (
+            URLClassLoader cl = new URLClassLoader(
+                new URL[]
+                {
+                    jclPrjPath.toUri().toURL()
+                }
+            );
+        )
+        {
+            Class<?> jclCryptoProviderCls = cl.loadClass("com.linbit.linstor.modularcrypto.JclCryptoProvider");
+            ModularCryptoProvider jclCryptoProvider = (ModularCryptoProvider) jclCryptoProviderCls.newInstance();
+
+            AbsMigration.setModularCryptoProvider(jclCryptoProvider);
+        }
     }
 
     private static void renderGeneratedDatabaseTables(DatabaseConstantsGenerator generator, String gitRoot)
