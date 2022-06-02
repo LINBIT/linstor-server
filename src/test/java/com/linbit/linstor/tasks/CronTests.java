@@ -47,13 +47,21 @@ public class CronTests
         Schedule schedule = Mockito.mock(Schedule.class);
         Mockito.when(schedule.getFullCron(Mockito.any())).thenReturn(CRON_PARSER.parse(input.fullExec));
         Mockito.when(schedule.getIncCron(Mockito.any())).thenReturn(CRON_PARSER.parse(input.incExec));
+        if (input.skip)
+        {
+            Mockito.when(schedule.getOnFailure(Mockito.any())).thenReturn(Schedule.OnFailure.SKIP);
+        }
+        else
+        {
+            Mockito.when(schedule.getOnFailure(Mockito.any())).thenReturn(Schedule.OnFailure.RETRY);
+        }
         Pair<Long, Boolean> res = ScheduleBackupService.getTimeoutAndType(
             schedule,
             TestAccessContextProvider.PUBLIC_CTX,
             ZonedDateTime.ofInstant(Instant.ofEpochMilli(input.now), ZoneId.systemDefault()),
             input.lastStart,
             input.lastBackupSuccess,
-            input.skip,
+            false,
             input.prevIncr
         );
         assertEquals(

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.BiConsumer;
 
+import com.amazonaws.SdkBaseException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 
@@ -51,6 +52,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     private final AccessContext accCtx;
 
     private final BiConsumer<Boolean, Integer> afterTermination;
+    private final ThreadGroup threadGroup;
 
     public BackupShippingS3Daemon(
         ErrorReporter errorReporterRef,
@@ -68,6 +70,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     )
     {
         errorReporter = errorReporterRef;
+        threadGroup = threadGroupRef;
         command = commandRef;
         remote = remoteRef;
         afterTermination = postActionRef;
@@ -127,7 +130,7 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
                     false
                 )
             );
-            shutdown(false);
+            shutdown(true);
         }
         catch (AccessDeniedException exc)
         {
@@ -142,7 +145,22 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
                     false
                 )
             );
-            shutdown(false);
+            shutdown(true);
+        }
+        catch (SdkBaseException exc)
+        {
+            errorReporter.reportError(
+                new SystemServiceStartException(
+                    "Unable to daemon for SnapshotShipping",
+                    "Amazon exception attempting to start '" + Arrays.toString(command) + "'",
+                    exc.getMessage(),
+                    null,
+                    null,
+                    exc,
+                    false
+                )
+            );
+            shutdown(true);
         }
         return uploadIdRef;
     }
@@ -372,20 +390,32 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
     }
 
     @Override
-    public void shutdown(boolean ignored)
+    public void shutdown(boolean needsExtraThread)
     {
-        threadFinished(false, false);
-        running = false;
-        handler.stop(false);
-        if (cmdThread != null)
+        Runnable run = () ->
         {
-            cmdThread.interrupt();
-        }
-        if (s3Thread != null)
+            threadFinished(false, false);
+            running = false;
+            handler.stop(false);
+            if (cmdThread != null)
+            {
+                cmdThread.interrupt();
+            }
+            if (s3Thread != null)
+            {
+                s3Thread.interrupt();
+            }
+            deque.addFirst(new PoisonEvent());
+        };
+        if (needsExtraThread)
         {
-            s3Thread.interrupt();
+            // needed to prevent deadlock with deviceManager-thread
+            new Thread(threadGroup, run, "shutdown_" + backupName).start();
         }
-        deque.addFirst(new PoisonEvent());
+        else
+        {
+            run.run();
+        }
     }
 
     @Override

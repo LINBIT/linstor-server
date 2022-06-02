@@ -261,18 +261,39 @@ public class CtrlScheduleApiCallHandler
                 schedule.setFullCron(peerAccCtx.get(), fullCronRef);
                 modifyTask = true;
             }
-            if (incCronRef != null && !incCronRef.isEmpty())
+            if (incCronRef != null)
             {
-                schedule.setIncCron(peerAccCtx.get(), incCronRef);
+                if (incCronRef.isEmpty())
+                {
+                    schedule.setIncCron(peerAccCtx.get(), null);
+                }
+                else
+                {
+                    schedule.setIncCron(peerAccCtx.get(), incCronRef);
+                }
                 modifyTask = true;
             }
             if (keepLocalRef != null)
             {
-                schedule.setKeepLocal(peerAccCtx.get(), keepLocalRef);
+                if (keepLocalRef < 0)
+                {
+                    schedule.setKeepLocal(peerAccCtx.get(), null);
+                }
+                else
+                {
+                    schedule.setKeepLocal(peerAccCtx.get(), keepLocalRef);
+                }
             }
             if (keepRemoteRef != null)
             {
-                schedule.setKeepRemote(peerAccCtx.get(), keepRemoteRef);
+                if (keepLocalRef < 0)
+                {
+                    schedule.setKeepRemote(peerAccCtx.get(), null);
+                }
+                else
+                {
+                    schedule.setKeepRemote(peerAccCtx.get(), keepRemoteRef);
+                }
             }
             if (onFailureRef != null && !onFailureRef.isEmpty())
             {

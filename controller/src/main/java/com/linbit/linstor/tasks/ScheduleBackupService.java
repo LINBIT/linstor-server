@@ -384,7 +384,13 @@ public class ScheduleBackupService implements SystemService
                 );
                 boolean incremental = infoPair.objB;
                 Long timeout = infoPair.objA;
-
+                errorReporter.logDebug(
+                    "ResourceDefinition %s to remote %s scheduled to ship %s backup in %d milliseconds.",
+                    rscDfn.getName(),
+                    remote.getName(),
+                    incremental ? "incremental" : "full",
+                    timeout
+                );
 
                 ScheduledShippingConfig config = new ScheduledShippingConfig(
                     schedule,
@@ -479,6 +485,8 @@ public class ScheduleBackupService implements SystemService
         throws AccessDeniedException
     {
         boolean incExists = schedule.getIncCron(accCtx) != null;
+        // skip: whether we retry or not; forceSkip: always skip
+        boolean skip = schedule.getOnFailure(accCtx).equals(Schedule.OnFailure.SKIP) || forceSkip;
         ExecutionTime fullExec = ExecutionTime.forCron(schedule.getFullCron(accCtx));
         ExecutionTime incrExec = null;
         if (incExists)
@@ -524,11 +532,11 @@ public class ScheduleBackupService implements SystemService
                 // equal to nextIncrFromNow. Use plusYears to make sure no rounding can undo this change
                 nextIncrExecFromLastStart = nextIncrFromNow.plusYears(1);
             }
-            if (lastFullExecFromNow.isEqual(lastFullExecFromLastStart) || (!lastBackupSucceeded && forceSkip))
+            if (lastFullExecFromNow.isEqual(lastFullExecFromLastStart) || (!lastBackupSucceeded && skip))
             {
-                if (nextIncrFromNow.isEqual(nextIncrExecFromLastStart) || (!lastBackupSucceeded && forceSkip))
+                if (nextIncrFromNow.isEqual(nextIncrExecFromLastStart) || !incExists || (!lastBackupSucceeded && skip))
                 {
-                    // we are on schedule
+                    // we are on schedule or we do not have an incremental schedule
                     Pair<Long, Boolean> result = earlier(nextFullFromNow, nextIncrFromNow, nowMillis);
                     timeout = result.objA;
                     incr = result.objB;
@@ -536,6 +544,7 @@ public class ScheduleBackupService implements SystemService
                 else
                 {
                     // we missed an incremental. start asap
+                    // could also be that now == nextIncrExecFromLastStart, but then we also want to start asap
                     timeout = 0;
                     incr = true;
                 }
@@ -546,7 +555,7 @@ public class ScheduleBackupService implements SystemService
                 timeout = 0;
                 incr = false;
             }
-            if (!lastBackupSucceeded && !forceSkip)
+            if (!lastBackupSucceeded && !skip)
             {
                 timeout = 60000L; // TODO: make retry-timeout configurable
                 incr = incr && lastIncr;

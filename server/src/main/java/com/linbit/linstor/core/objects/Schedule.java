@@ -152,7 +152,14 @@ public class Schedule extends BaseTransactionObject
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
-        incCron.set(parser.parse(incCronRef));
+        if (incCronRef == null)
+        {
+            incCron.set(null);
+        }
+        else
+        {
+            incCron.set(parser.parse(incCronRef));
+        }
     }
 
     public Integer getKeepLocal(AccessContext accCtx) throws AccessDeniedException
@@ -219,7 +226,7 @@ public class Schedule extends BaseTransactionObject
             scheduleName.displayValue,
             flags.getFlagsBits(accCtx),
             fullCron.get().asString(),
-            incCron.get().asString(),
+            incCron.get() == null ? null : incCron.get().asString(),
             keepLocal.get(),
             keepRemote.get(),
             onFailure.get().name(),
@@ -234,7 +241,14 @@ public class Schedule extends BaseTransactionObject
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         fullCron.set(parser.parse(apiData.getFullCron()));
-        incCron.set(parser.parse(apiData.getIncCron()));
+        if (apiData.getIncCron() != null)
+        {
+            incCron.set(parser.parse(apiData.getIncCron()));
+        }
+        else
+        {
+            incCron.set(null);
+        }
         keepLocal.set(apiData.getKeepLocal());
         keepRemote.set(apiData.getKeepRemote());
         onFailure.set(OnFailure.valueOfIgnoreCase(apiData.getOnFailure()));

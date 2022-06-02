@@ -105,19 +105,17 @@ public class CtrlSnapshotShippingAbortHandler
         Flux<ApiCallRc> flux = Flux.empty();
         try
         {
+            flux = abortBackupShippings(nodeRef);
 
             for (Snapshot snap : nodeRef.getSnapshots(apiCtx))
             {
                 SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
                 if (
                     snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.SHIPPING) &&
-                        !snap.getFlags().isSet(apiCtx, Snapshot.Flags.BACKUP_TARGET)
+                        !snap.getFlags().isSet(apiCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                        snapDfn.getFlags().isUnset(apiCtx, SnapshotDefinition.Flags.BACKUP)
                 )
                 {
-                    if (snapDfn.getFlags().isSet(apiCtx, SnapshotDefinition.Flags.BACKUP))
-                    {
-                        abortBackupShippings(nodeRef);
-                    }
                     flux = flux.concatWith(snapDelHandlerProvider.get()
                         .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue, null)
                     );
@@ -214,6 +212,7 @@ public class CtrlSnapshotShippingAbortHandler
                                         null
                                     )
                             );
+                            // return value ignored on purpose
                             abortBackupShippings(snap.getNode());
                         }
                     }
@@ -270,9 +269,10 @@ public class CtrlSnapshotShippingAbortHandler
         }
     }
 
-    private void abortBackupShippings(Node nodeRef)
+    private Flux<ApiCallRc> abortBackupShippings(Node nodeRef)
     {
         Map<SnapshotDefinition.Key, AbortInfo> abortEntries = backupInfoMgr.abortCreateGetEntries(nodeRef.getName());
+        Flux<ApiCallRc> flux = Flux.empty();
         if (abortEntries != null && !abortEntries.isEmpty())
         {
             for (Entry<SnapshotDefinition.Key, AbortInfo> abortEntry : abortEntries.entrySet())
@@ -332,17 +332,25 @@ public class CtrlSnapshotShippingAbortHandler
 
                     SnapshotDefinition.Key snapDfnkey = abortEntry.getKey();
                     backupInfoMgr.abortCreateDeleteEntries(nodeRef.getName(), snapDfnkey);
+                    SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(
+                        snapDfnkey.getResourceName(),
+                        snapDfnkey.getSnapshotName(),
+                        true
+                    );
                     enableFlagsPrivileged(
-                        ctrlApiDataLoader.loadSnapshotDfn(
-                            snapDfnkey.getResourceName(),
-                            snapDfnkey.getSnapshotName(),
-                            true
-                        ),
+                        snapDfn,
                         SnapshotDefinition.Flags.SHIPPING_ABORT
+                    );
+                    flux = flux.concatWith(
+                        snapDelHandlerProvider.get()
+                            .deleteSnapshot(
+                                snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue, null
+                            )
                     );
                 }
             }
         }
+        return flux;
     }
 
     private void enableFlagsPrivileged(SnapshotDefinition snapDfn, SnapshotDefinition.Flags... snapDfnFlags)

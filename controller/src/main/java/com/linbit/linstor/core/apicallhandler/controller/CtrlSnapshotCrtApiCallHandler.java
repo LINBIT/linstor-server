@@ -414,6 +414,8 @@ public class CtrlSnapshotCrtApiCallHandler
                     SnapshotDefinition.Flags.FAILED_DEPLOYMENT;
 
             enableFlagPrivileged(snapshotDfn, flag);
+            // make sure backup shipping does not recognize the failed snap as "in progress"
+            disableFlagsPrivileged(snapshotDfn, SnapshotDefinition.Flags.SHIPPING);
             unsetInCreationPrivileged(snapshotDfn);
             ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
             resumeIoPrivileged(rscDfn);
@@ -661,6 +663,22 @@ public class CtrlSnapshotCrtApiCallHandler
         try
         {
             snapshotDfn.getFlags().enableFlags(apiCtx, flag);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
+    }
+
+    private void disableFlagsPrivileged(SnapshotDefinition snapshotDfn, SnapshotDefinition.Flags... flags)
+    {
+        try
+        {
+            snapshotDfn.getFlags().disableFlags(apiCtx, flags);
         }
         catch (AccessDeniedException accDeniedExc)
         {

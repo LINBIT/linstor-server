@@ -5265,12 +5265,6 @@ paths:
           description: the resource group the schedule is assigned to
           schema:
             type: string
-        - name: schedule_name
-          in: query
-          required: true
-          description: the assigned schedule
-          schema:
-            type: string
       responses:
         '200':
           description: backup schedule deleted sucessfully or error messages

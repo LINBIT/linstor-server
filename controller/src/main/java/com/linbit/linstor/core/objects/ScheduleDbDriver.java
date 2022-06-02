@@ -94,12 +94,12 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
         setColumnSetter(ON_FAILURE, schedule -> schedule.getOnFailure(dbCtx).value);
 
         fullCronDriver = generateSingleColumnDriver(
-            FULL_CRON, schedule -> schedule.getFullCron(dbCtx).asString(), Function.identity()
+            FULL_CRON, schedule -> schedule.getFullCron(dbCtx).asString(), Cron::asString
         );
         incCronDriver = generateSingleColumnDriver(
             INC_CRON,
             schedule -> schedule.getIncCron(dbCtx) == null ? null : schedule.getIncCron(dbCtx).asString(),
-            Function.identity()
+            Cron::asString
         );
         keepLocalDriver = generateSingleColumnDriver(
             KEEP_LOCAL, schedule -> "" + schedule.getKeepLocal(dbCtx), Function.identity()
