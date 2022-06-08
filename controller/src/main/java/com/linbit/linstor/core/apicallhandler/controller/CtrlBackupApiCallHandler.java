@@ -140,6 +140,8 @@ import java.util.stream.Collectors;
 import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import com.amazonaws.services.s3.model.MultiObjectDeleteException;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import reactor.core.publisher.Flux;
 import reactor.util.function.Tuple2;
@@ -147,6 +149,13 @@ import reactor.util.function.Tuple2;
 @Singleton
 public class CtrlBackupApiCallHandler
 {
+    private static final String SCHEDULE_KEY = InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR
+        + InternalApiConsts.KEY_BACKUP_SHIPPED_BY_SCHEDULE;
+    private static final String REMOTE_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + Props.PATH_SEPARATOR
+        + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE;
+    private static final String PREV_FULL_BACKUP_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + Props.PATH_SEPARATOR
+        + InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP;
+
     private final Provider<AccessContext> peerAccCtx;
     private final AccessContext sysCtx;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -487,6 +496,12 @@ public class CtrlBackupApiCallHandler
                 remoteName,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
+            // needed twice for scheduled shippings
+            snapDfn.getProps(peerAccCtx.get()).setProp(
+                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                remoteName,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
 
             setIncrementalDependentProps(createdSnapshot, prevSnapDfn);
 
@@ -587,9 +602,10 @@ public class CtrlBackupApiCallHandler
                         boolean found = false;
                         for (S3ObjectInfo s3obj : s3LinstorObjects.values())
                         {
-                            if (s3obj.snapDfn.getUuid().equals(prevSnapDfn.getUuid()))
+                            if (s3obj.snapDfn != null && s3obj.snapDfn.getUuid().equals(prevSnapDfn.getUuid()))
                             {
                                 found = true;
+                                break;
                             }
                         }
                         if (!found)
@@ -3702,6 +3718,140 @@ public class CtrlBackupApiCallHandler
                             lastBackupIncremental,
                             peerAccCtx.get()
                         );
+                        // delete snaps & backups if needed (only check if last backup was full
+                        if (!lastBackupIncremental)
+                        {
+                            Flux<ApiCallRc> deleteFlux = Flux.empty();
+                            List<SnapshotDefinition> snapDfnsToCheck = getFullBackupBaseSnaps(
+                                rscDfn, scheduleName, remote.getName().displayValue
+                            );
+                            Map<Date, String> backupsToCheck = new TreeMap<>();
+                            if (remote instanceof S3Remote)
+                            {
+                                backupsToCheck = getFullBackupS3Keys(rscNameRef, (S3Remote) remote, scheduleName);
+                            }
+                            Integer keepRemote = schedule.getKeepRemote(peerAccCtx.get());
+                            Integer keepLocal = schedule.getKeepLocal(peerAccCtx.get());
+                            if (keepLocal != null && keepLocal < snapDfnsToCheck.size())
+                            {
+                                int numToDelete = snapDfnsToCheck.size() - keepLocal;
+                                snapDfnsToCheck.sort((a, b) ->
+                                {
+                                    String ts1 = "";
+                                    String ts2 = "";
+                                    boolean success1 = false;
+                                    boolean success2 = false;
+                                    try
+                                    {
+                                        ts1 = a.getProps(peerAccCtx.get())
+                                            .getProp(
+                                                InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+                                                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                            );
+                                        success1 = a.getFlags()
+                                            .isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                                        ts2 = b.getProps(peerAccCtx.get())
+                                            .getProp(
+                                                InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+                                                ApiConsts.NAMESPC_BACKUP_SHIPPING
+                                            );
+                                        success2 = b.getFlags()
+                                            .isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                                    }
+                                    catch (AccessDeniedException exc)
+                                    {
+                                        // since the list we are trying to sort only contains items which already went
+                                        // through an accessCtx-check, we can assume something went majorly wrong here
+                                        throw new ImplementationError(exc);
+                                    }
+                                    int successComp = Boolean.compare(success1, success2);
+                                    return successComp == 0 ? Long.compare(Long.parseLong(ts1), Long.parseLong(ts2))
+                                        : successComp;
+                                });
+
+                                List<SnapshotDefinition> fullSnapsToDel = new ArrayList<>();
+                                // sorted: failed from oldest to newest, then successful from oldest to newest
+                                for (SnapshotDefinition snapDfnToCheck : snapDfnsToCheck)
+                                {
+                                    if (numToDelete > 0)
+                                    {
+                                        numToDelete--;
+                                        errorReporter.logTrace(
+                                            "SnapDfn %s and all snapDfns dependant on it will be deletetd due to schedule %s",
+                                            snapDfnToCheck.getName(),
+                                            schedule.getName()
+                                        );
+                                        fullSnapsToDel.add(snapDfnToCheck);
+                                    }
+                                }
+                                Map<SnapshotDefinition, List<SnapshotDefinition>> chains = getAllSnapshotChains(
+                                    rscDfn, scheduleName, remote.getName().displayValue
+                                );
+                                for (SnapshotDefinition fullSnapToDel : fullSnapsToDel)
+                                {
+                                    List<SnapshotDefinition> chain = chains.get(fullSnapToDel);
+                                    if (chain != null)
+                                    {
+                                        for (SnapshotDefinition incSnapToDel : chain)
+                                        {
+                                            deleteFlux = deleteFlux.concatWith(
+                                                ctrlSnapDeleteApiCallHandler.deleteSnapshot(
+                                                    incSnapToDel.getResourceName().displayValue,
+                                                    incSnapToDel.getName().displayValue,
+                                                    null
+                                                )
+                                            );
+                                        }
+                                    }
+                                    deleteFlux = deleteFlux.concatWith(
+                                        ctrlSnapDeleteApiCallHandler.deleteSnapshot(
+                                            fullSnapToDel.getResourceName().displayValue,
+                                            fullSnapToDel.getName().displayValue,
+                                            null
+                                        )
+                                    );
+                                }
+                            }
+                            if (keepRemote != null && keepRemote < backupsToCheck.size())
+                            {
+                                int numToDelete = backupsToCheck.size() - keepRemote;
+                                // backupsToCheck: Date sorts from oldest to newest
+                                for (String s3key : backupsToCheck.values())
+                                {
+                                    if (numToDelete > 0)
+                                    {
+                                        numToDelete--;
+                                        errorReporter.logTrace(
+                                            "Backup %s and all backups dependant on it will be deletetd on remote %s due to schedule %s",
+                                            s3key,
+                                            remote.getName(),
+                                            schedule.getName()
+                                        );
+                                        deleteFlux = deleteFlux.concatWith(
+                                            deleteBackup(
+                                                rscNameRef,
+                                                s3key,
+                                                null,
+                                                null,
+                                                null,
+                                                true,
+                                                false,
+                                                false,
+                                                null,
+                                                remote.getName().displayValue,
+                                                false,
+                                                true
+                                            )
+                                        );
+                                    }
+                                    else
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+                            cleanupFlux = cleanupFlux.concatWith(deleteFlux);
+                        }
                     }
                     else
                     {
@@ -3712,7 +3862,7 @@ public class CtrlBackupApiCallHandler
                     }
                 }
             }
-            catch (AccessDeniedException | InvalidNameException | InvalidValueException | InvalidKeyException exc)
+            catch (AccessDeniedException | InvalidNameException | InvalidValueException | InvalidKeyException | IOException exc)
             {
                 throw new ImplementationError(exc);
             }
@@ -3722,6 +3872,179 @@ public class CtrlBackupApiCallHandler
             }
         }
         return cleanupFlux;
+    }
+
+    private Map<SnapshotDefinition, List<SnapshotDefinition>> getAllSnapshotChains(
+        ResourceDefinition rscDfn,
+        String scheduleName,
+        String remoteName
+    ) throws AccessDeniedException
+    {
+        TreeMap<String, SnapshotDefinition> sourceSnaps = new TreeMap<>();
+        for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
+        {
+            Props props = snapDfn.getProps(peerAccCtx.get());
+            String schedule = props.getProp(SCHEDULE_KEY);
+            String remote = props.getProp(REMOTE_KEY);
+            if (schedule != null && schedule.equals(scheduleName) && remote != null && remote.equals(remoteName))
+            {
+                sourceSnaps.put(snapDfn.getName().displayValue, snapDfn);
+            }
+        }
+        Map<SnapshotDefinition, List<SnapshotDefinition>> chains = new TreeMap<>();
+        final String PREV_BACKUP_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + Props.PATH_SEPARATOR
+            + remoteName + Props.PATH_SEPARATOR + InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT;
+        while (!sourceSnaps.isEmpty())
+        {
+            List<SnapshotDefinition> chain = new ArrayList<>();
+            SnapshotDefinition startSnap = sourceSnaps.pollFirstEntry().getValue();
+            String prevFullSnap = startSnap.getProps(peerAccCtx.get()).getProp(PREV_FULL_BACKUP_KEY);
+            String prevSnap = startSnap.getProps(peerAccCtx.get()).getProp(PREV_BACKUP_KEY);
+            if (!prevFullSnap.equalsIgnoreCase(startSnap.getName().value))
+            {
+                while (prevSnap != null)
+                {
+                    chain.add(startSnap);
+                    startSnap = sourceSnaps.remove(prevSnap);
+                    if (startSnap == null)
+                    {
+                        for (Entry<SnapshotDefinition, List<SnapshotDefinition>> chainEntry : chains.entrySet())
+                        {
+                            if (
+                                !chainEntry.getValue().isEmpty() &&
+                                    chainEntry.getValue().get(0).getName().value.equalsIgnoreCase(prevSnap)
+                            )
+                            {
+                                // we previously started in the middle of the chain and need to add both chains together
+                                prevSnap = null;
+                                startSnap = chainEntry.getKey();
+                                chain.addAll(chainEntry.getValue());
+                                break;
+                            }
+                            else if (
+                                chainEntry.getValue().isEmpty() &&
+                                    chainEntry.getKey().getName().value.equalsIgnoreCase(prevSnap)
+                            )
+                            {
+                                // we previously found only the full-base, and need to overwrite the empty list we added
+                                // to it
+                                prevSnap = null;
+                                startSnap = chainEntry.getKey();
+                                break;
+                            }
+                        }
+                        if (startSnap == null)
+                        {
+                            // we have a part-chain that has a deleted snap as next element, ignore this chain and start
+                            // with a new one
+                            prevSnap = null;
+                        }
+                    }
+                    else
+                    {
+                        if (prevFullSnap.equalsIgnoreCase(startSnap.getName().value))
+                        {
+                            // we reached a full-base, stop the loop
+                            prevSnap = null;
+                        }
+                        else
+                        {
+                            prevSnap = startSnap.getProps(peerAccCtx.get()).getProp(PREV_BACKUP_KEY);
+                            prevFullSnap = startSnap.getProps(peerAccCtx.get()).getProp(PREV_FULL_BACKUP_KEY);
+                        }
+                    }
+                }
+            }
+            if (startSnap != null)
+            {
+                chains.put(startSnap, chain);
+            }
+        }
+        return chains;
+    }
+
+    private List<SnapshotDefinition> getFullBackupBaseSnaps(
+        ResourceDefinition rscDfn,
+        String scheduleName,
+        String remoteName
+    ) throws AccessDeniedException
+    {
+        List<SnapshotDefinition> snapDfns = new ArrayList<>();
+        for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
+        {
+            try
+            {
+                Props props = snapDfn.getProps(peerAccCtx.get());
+                if (
+                    isFullBackupOfSchedule(
+                        snapDfn.getProps(peerAccCtx.get()).map(), scheduleName, remoteName,
+                        snapDfn.getName().displayValue
+                    ) && props.getProp(
+                        InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    ) != null
+                )
+                {
+                    snapDfns.add(snapDfn);
+                }
+            }
+            catch (AccessDeniedException ignored)
+            {
+                // user has no access, so don't add to list
+            }
+        }
+        return snapDfns;
+    }
+
+    private Map<Date, String> getFullBackupS3Keys(String rscNameRef, S3Remote remote, String scheduleName)
+        throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
+    {
+        Map<Date, String> s3keysRet = new TreeMap<>();
+        List<S3ObjectSummary> objects = backupHandler.listObjects(
+            rscNameRef,
+            remote,
+            peerAccCtx.get(),
+            getLocalMasterKey()
+        );
+        Set<String> s3keys = objects.stream()
+            .map(S3ObjectSummary::getKey)
+            .collect(Collectors.toCollection(TreeSet::new));
+        for (String s3key : s3keys)
+        {
+            try
+            {
+                S3MetafileNameInfo info = new S3MetafileNameInfo(s3key);
+                BackupMetaDataPojo s3MetaFile = backupHandler
+                    .getMetaFile(s3key, remote, peerAccCtx.get(), getLocalMasterKey());
+                if (
+                    isFullBackupOfSchedule(
+                        s3MetaFile.getRscDfn().getProps(), scheduleName, remote.getName().displayValue, info.snapName
+                    )
+                )
+                {
+                    s3keysRet.put(info.backupTime, s3key);
+                }
+            }
+            catch (ParseException ignored)
+            {
+                // not a metafile
+            }
+        }
+        return s3keysRet;
+    }
+
+    private boolean isFullBackupOfSchedule(
+        Map<String, String> props,
+        String scheduleName,
+        String remoteName,
+        String snapName
+    )
+    {
+        String schedule = props.get(SCHEDULE_KEY);
+        String remote = props.get(REMOTE_KEY);
+        // if PREV_BACKUP_KEY == snapName it is a full backup
+        return schedule != null && schedule.equals(scheduleName) && remote != null && remote.equals(remoteName) &&
+            props.get(PREV_FULL_BACKUP_KEY).equalsIgnoreCase(snapName);
     }
 
     public Flux<ApiCallRc> startStltCleanup(Peer peer, String rscNameRef, String snapNameRef, NodeName nodeNameRef)
