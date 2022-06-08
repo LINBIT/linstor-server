@@ -1273,6 +1273,7 @@ public class Json
         json.keep_local = pojo.getKeepLocal();
         json.keep_remote = pojo.getKeepRemote();
         json.on_failure = pojo.getOnFailure();
+        json.max_retries = pojo.getMaxRetries();
 
         return json;
     }
@@ -1281,8 +1282,8 @@ public class Json
     {
         JsonGenTypes.ScheduledRscs json = new JsonGenTypes.ScheduledRscs();
         json.rsc_name = pojo.rsc_name;
-        json.remote = pojo.remote;
-        json.schedule = pojo.schedule;
+        json.remote_name = pojo.remote;
+        json.schedule_name = pojo.schedule;
         json.reason = pojo.reason;
         json.last_snap_time = pojo.last_snap_time;
         json.last_snap_inc = pojo.last_snap_inc;
@@ -1296,8 +1297,8 @@ public class Json
     public static JsonGenTypes.ScheduleDetails apiToScheduleDetails(ScheduleDetailsPojo pojo)
     {
         JsonGenTypes.ScheduleDetails json = new JsonGenTypes.ScheduleDetails();
-        json.schedule = pojo.getSchedule();
-        json.remote = pojo.getRemote();
+        json.schedule_name = pojo.getSchedule();
+        json.remote_name = pojo.getRemote();
         json.rsc_dfn = pojo.getRscDfn();
         json.rsc_grp = pojo.getRscGrp();
         json.ctrl = pojo.getCtrl();

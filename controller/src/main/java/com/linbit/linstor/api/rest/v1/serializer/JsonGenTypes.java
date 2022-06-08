@@ -1353,8 +1353,8 @@ public class JsonGenTypes
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ScheduleDetails
     {
-        public String remote;
-        public String schedule;
+        public String remote_name;
+        public String schedule_name;
         public Boolean ctrl;
         public Boolean rsc_grp;
         public Boolean rsc_dfn;
@@ -1370,8 +1370,8 @@ public class JsonGenTypes
     public static class ScheduledRscs
     {
         public String rsc_name;
-        public String remote;
-        public String schedule;
+        public String remote_name;
+        public String schedule_name;
         /**
          * The reason for why this rscDfn has no active schedules.
          * If this is set, ignore all long and boolean parameters.
@@ -1767,6 +1767,10 @@ public class JsonGenTypes
          */
         public Integer keep_remote;
         public String on_failure = "SKIP";
+        /**
+         * how many times a failed backup should be retried if on_failure == RETRY
+         */
+        public Integer max_retries;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1783,6 +1787,10 @@ public class JsonGenTypes
          */
         public Integer keep_remote;
         public String on_failure;
+        /**
+         * how many times a failed backup should be retried if on_failure == RETRY
+         */
+        public Integer max_retries;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

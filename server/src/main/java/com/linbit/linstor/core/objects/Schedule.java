@@ -51,6 +51,7 @@ public class Schedule extends BaseTransactionObject
     private final TransactionSimpleObject<Schedule, Integer> keepLocal;
     private final TransactionSimpleObject<Schedule, Integer> keepRemote;
     private final TransactionSimpleObject<Schedule, OnFailure> onFailure;
+    private final TransactionSimpleObject<Schedule, Integer> maxRetries;
     private final TransactionSimpleObject<Schedule, Boolean> deleted;
     private final StateFlags<Flags> flags;
     private final CronParser parser;
@@ -66,6 +67,7 @@ public class Schedule extends BaseTransactionObject
         @Nullable Integer keepLocalRef,
         @Nullable Integer keepRemoteRef,
         OnFailure onFailureRef,
+        @Nullable Integer maxRetriesRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -82,6 +84,7 @@ public class Schedule extends BaseTransactionObject
         keepLocal = transObjFactory.createTransactionSimpleObject(this, keepLocalRef, driver.getKeepLocalDriver());
         keepRemote = transObjFactory.createTransactionSimpleObject(this, keepRemoteRef, driver.getKeepRemoteDriver());
         onFailure = transObjFactory.createTransactionSimpleObject(this, onFailureRef, driver.getOnFailureDriver());
+        maxRetries = transObjFactory.createTransactionSimpleObject(this, maxRetriesRef, driver.getKeepRemoteDriver());
 
         flags = transObjFactory
             .createStateFlagsImpl(objProt, this, Flags.class, driver.getStateFlagsPersistence(), initialFlags);
@@ -206,6 +209,21 @@ public class Schedule extends BaseTransactionObject
         onFailure.set(OnFailure.valueOfIgnoreCase(onFailureRef));
     }
 
+    public Integer getMaxRetries(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return maxRetries.get();
+    }
+
+    public void setMaxRetries(AccessContext accCtx, Integer maxRetriesRef)
+        throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        maxRetries.set(maxRetriesRef);
+    }
+
     public StateFlags<Flags> getFlags()
     {
         checkDeleted();
@@ -230,6 +248,7 @@ public class Schedule extends BaseTransactionObject
             keepLocal.get(),
             keepRemote.get(),
             onFailure.get().name(),
+            maxRetries.get(),
             fullSyncId,
             updateId
         );
@@ -252,6 +271,7 @@ public class Schedule extends BaseTransactionObject
         keepLocal.set(apiData.getKeepLocal());
         keepRemote.set(apiData.getKeepRemote());
         onFailure.set(OnFailure.valueOfIgnoreCase(apiData.getOnFailure()));
+        maxRetries.set(apiData.getMaxRetries());
 
         flags.resetFlagsTo(accCtx, Flags.restoreFlags(apiData.getFlags()));
     }

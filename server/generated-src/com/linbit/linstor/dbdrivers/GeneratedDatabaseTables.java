@@ -1172,6 +1172,7 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl KEEP_LOCAL = new ColumnImpl("KEEP_LOCAL", Types.INTEGER, false, true);
         public static final ColumnImpl KEEP_REMOTE = new ColumnImpl("KEEP_REMOTE", Types.INTEGER, false, true);
         public static final ColumnImpl ON_FAILURE = new ColumnImpl("ON_FAILURE", Types.BIGINT, false, false);
+        public static final ColumnImpl MAX_RETRIES = new ColumnImpl("MAX_RETRIES", Types.INTEGER, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1183,7 +1184,8 @@ public class GeneratedDatabaseTables
             INC_CRON,
             KEEP_LOCAL,
             KEEP_REMOTE,
-            ON_FAILURE
+            ON_FAILURE,
+            MAX_RETRIES
         };
 
         @Override
@@ -2128,6 +2130,7 @@ public class GeneratedDatabaseTables
         Schedules.KEEP_LOCAL.table = SCHEDULES;
         Schedules.KEEP_REMOTE.table = SCHEDULES;
         Schedules.ON_FAILURE.table = SCHEDULES;
+        Schedules.MAX_RETRIES.table = SCHEDULES;
         SecAccessTypes.ACCESS_TYPE_NAME.table = SEC_ACCESS_TYPES;
         SecAccessTypes.ACCESS_TYPE_VALUE.table = SEC_ACCESS_TYPES;
         SecAclMap.OBJECT_PATH.table = SEC_ACL_MAP;

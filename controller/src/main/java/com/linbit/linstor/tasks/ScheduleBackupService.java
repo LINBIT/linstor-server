@@ -100,6 +100,7 @@ public class ScheduleBackupService implements SystemService
     private Map<ResourceDefinition, Set<ScheduledShippingConfig>> rscDfnLookupMap = new TreeMap<>();
     private Map<Remote, Set<ScheduledShippingConfig>> remoteLookupMap = new TreeMap<>();
     // so far this is only used to list all scheduled shippings, running or waiting
+    // as well as to count retries
     // DO NOT try to do anything with the task in these config-objects, as it most likely does not exist anymore
     private Set<ScheduledShippingConfig> activeShippings = new TreeSet<>();
 
@@ -223,11 +224,11 @@ public class ScheduleBackupService implements SystemService
             Set<ScheduledShippingConfig> ret = new TreeSet<>();
             for (ScheduledShippingConfig conf : activeShippings)
             {
-                boolean add = rscName != null && !rscName.isEmpty() ||
+                boolean add = rscName == null || rscName.isEmpty() ||
                     conf.rscDfn.getName().value.equalsIgnoreCase(rscName);
-                add |= remoteName != null && !remoteName.isEmpty() ||
+                add &= remoteName == null || remoteName.isEmpty() ||
                     conf.remote.getName().value.equalsIgnoreCase(remoteName);
-                add |= scheduleName != null && !scheduleName.isEmpty() ||
+                add &= scheduleName == null || scheduleName.isEmpty() ||
                     conf.schedule.getName().value.equalsIgnoreCase(scheduleName);
 
                 if (add)
@@ -314,7 +315,7 @@ public class ScheduleBackupService implements SystemService
     )
         throws AccessDeniedException
     {
-        addTaskAgain(rscDfn, schedule, remote, NOT_STARTED_YET, false, false, lastInc, accCtx);
+        addTaskAgain(rscDfn, schedule, remote, NOT_STARTED_YET, true, false, lastInc, accCtx);
     }
 
     /**
@@ -380,7 +381,13 @@ public class ScheduleBackupService implements SystemService
                 }
                 ZonedDateTime now = ZonedDateTime.now();
                 Pair<Long, Boolean> infoPair = getTimeoutAndType(
-                    schedule, accCtx, now, lastStartTime, lastBackupSucceeded, forceSkip, lastInc
+                    schedule,
+                    accCtx,
+                    now,
+                    lastStartTime,
+                    lastBackupSucceeded,
+                    forceSkip || tooManyRetries(lastBackupSucceeded, schedule, accCtx),
+                    lastInc
                 );
                 boolean incremental = infoPair.objB;
                 Long timeout = infoPair.objA;
@@ -418,14 +425,22 @@ public class ScheduleBackupService implements SystemService
                     scheduleLookupMap.computeIfAbsent(schedule, ignored -> new HashSet<>()).add(config);
                     remoteLookupMap.computeIfAbsent(remote, ignored -> new HashSet<>()).add(config);
                 }
-                if (timeout == null)
+                if (timeout != null)
                 {
-                    activeShippings.add(config);
-                    taskScheduleService.addTask(task);
-                }
-                else
-                {
-                    taskScheduleService.rescheduleAt(task, timeout);
+                    // it should not be possible for timeout to be null here...
+                    if (timeout == 0)
+                    {
+                        taskScheduleService.addTask(task);
+                    }
+                    else
+                    {
+                        taskScheduleService.rescheduleAt(task, timeout);
+                    }
+                    if (!activeShippings.contains(config))
+                    {
+                        // DO NOT overwrite with a new config if an entry already exists!
+                        activeShippings.add(config);
+                    }
                 }
             }
         }
@@ -435,11 +450,15 @@ public class ScheduleBackupService implements SystemService
     public ScheduledShippingConfig getConfig(ResourceDefinition rscDfn, Remote remote, Schedule schedule)
     {
         ScheduledShippingConfig ret = null;
-        for (ScheduledShippingConfig conf : rscDfnLookupMap.get(rscDfn))
+        Set<ScheduledShippingConfig> confs = rscDfnLookupMap.get(rscDfn);
+        if (confs != null)
         {
-            if (conf.schedule.equals(schedule) && conf.remote.equals(remote))
+            for (ScheduledShippingConfig conf : confs)
             {
-                ret = conf;
+                if (conf.schedule.equals(schedule) && conf.remote.equals(remote))
+                {
+                    ret = conf;
+                }
             }
         }
         return ret;
@@ -471,6 +490,58 @@ public class ScheduleBackupService implements SystemService
                 }
             }
         }
+    }
+
+    private boolean tooManyRetries(boolean lastBackupSucceeded, Schedule schedule, AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        boolean ret = false;
+        if (!lastBackupSucceeded && schedule.getOnFailure(accCtx).equals(Schedule.OnFailure.RETRY))
+        {
+            // the schedule has already been run at least once, otherwise lastBackupSucceeded couldn't be false
+            for (ScheduledShippingConfig conf : activeShippings)
+            {
+                if (conf.schedule.equals(schedule))
+                {
+                    Integer maxRetries = schedule.getMaxRetries(accCtx);
+                    if (maxRetries != null)
+                    {
+                        if (maxRetries <= conf.retryCt)
+                        {
+                            errorReporter.logWarning(
+                                "Shipping of resource %s to remote %s has already been retried %d time(s). Retry attempts stopped.",
+                                conf.rscDfn.getName().displayValue,
+                                conf.remote.getName().displayValue,
+                                conf.retryCt
+                            );
+                            conf.retryCt = 0;
+                            ret = true;
+                        }
+                        else
+                        {
+                            conf.retryCt++;
+                            errorReporter.logWarning(
+                                "Shipping of resource %s to remote %s will be retried for the %d. time. Max retries: %d",
+                                conf.rscDfn.getName().displayValue,
+                                conf.remote.getName().displayValue,
+                                conf.retryCt,
+                                maxRetries
+                            );
+                        }
+                    }
+                    else
+                    {
+                        errorReporter.logWarning(
+                            "Shipping of resource %s to remote %s will be retried. Max retries: infinite",
+                            conf.rscDfn.getName().displayValue,
+                            conf.remote.getName().displayValue
+                        );
+                    }
+                    break;
+                }
+            }
+        }
+        return ret;
     }
 
     static Pair<Long, Boolean> getTimeoutAndType(
@@ -557,7 +628,7 @@ public class ScheduleBackupService implements SystemService
             }
             if (!lastBackupSucceeded && !skip)
             {
-                timeout = 60000L; // TODO: make retry-timeout configurable
+                timeout = 60000L;
                 incr = incr && lastIncr;
             }
         }
@@ -615,18 +686,21 @@ public class ScheduleBackupService implements SystemService
         {
             for (ScheduledShippingConfig conf : confsToRemove)
             {
-                removeSingleTask(conf);
+                removeSingleTask(conf, false);
             }
         }
     }
 
-    void removeSingleTask(ScheduledShippingConfig conf)
+    void removeSingleTask(ScheduledShippingConfig conf, boolean fromTask)
     {
         if (conf != null)
         {
             synchronized (syncObj)
             {
-                activeShippings.remove(conf);
+                if (!fromTask)
+                {
+                    activeShippings.remove(conf);
+                }
                 removeFromSingleMap(remoteLookupMap, conf.remote, conf);
                 removeFromSingleMap(scheduleLookupMap, conf.schedule, conf);
                 removeFromSingleMap(rscDfnLookupMap, conf.rscDfn, conf);
@@ -636,7 +710,7 @@ public class ScheduleBackupService implements SystemService
 
     public void removeSingleTask(Schedule schedule, Remote remote, ResourceDefinition rscDfn)
     {
-        removeSingleTask(new ScheduledShippingConfig(schedule, remote, rscDfn, false, new Pair<>()));
+        removeSingleTask(new ScheduledShippingConfig(schedule, remote, rscDfn, false, new Pair<>()), false);
     }
 
     /**
@@ -754,6 +828,7 @@ public class ScheduleBackupService implements SystemService
         public final Pair<Long, Boolean> timeoutAndType;
 
         private BackupShippingTask task;
+        public int retryCt;
 
         ScheduledShippingConfig(
             Schedule scheduleRef,
@@ -768,6 +843,7 @@ public class ScheduleBackupService implements SystemService
             rscDfn = rscDfnRef;
             lastInc = lastIncRef;
             timeoutAndType = timeoutAndTypeRef;
+            retryCt = 0;
         }
 
         @Override

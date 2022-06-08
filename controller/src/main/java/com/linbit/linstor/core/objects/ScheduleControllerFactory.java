@@ -56,7 +56,8 @@ public class ScheduleControllerFactory
         @Nullable String incCron,
         @Nullable Integer keepLocal,
         @Nullable Integer keepRemote,
-        OnFailure onFailure
+        OnFailure onFailure,
+        @Nullable Integer maxRetries
     )
         throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {
@@ -80,6 +81,7 @@ public class ScheduleControllerFactory
             keepLocal,
             keepRemote,
             onFailure,
+            maxRetries,
             transObjFactory,
             transMgrProvider
         );

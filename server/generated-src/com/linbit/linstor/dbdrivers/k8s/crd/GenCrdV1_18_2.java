@@ -800,7 +800,8 @@ public class GenCrdV1_18_2
                         (String) setters.get(GeneratedDatabaseTables.Schedules.INC_CRON).accept(data),
                         (Integer) setters.get(GeneratedDatabaseTables.Schedules.KEEP_LOCAL).accept(data),
                         (Integer) setters.get(GeneratedDatabaseTables.Schedules.KEEP_REMOTE).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.Schedules.ON_FAILURE).accept(data)
+                        (long) setters.get(GeneratedDatabaseTables.Schedules.ON_FAILURE).accept(data),
+                        (Integer) setters.get(GeneratedDatabaseTables.Schedules.MAX_RETRIES).accept(data)
                     )
                 );
             }
@@ -5220,7 +5221,8 @@ public class GenCrdV1_18_2
         String incCron,
         Integer keepLocal,
         Integer keepRemote,
-        long onFailure
+        long onFailure,
+        Integer maxRetries
     )
     {
         return new Schedules(
@@ -5233,7 +5235,8 @@ public class GenCrdV1_18_2
                 incCron,
                 keepLocal,
                 keepRemote,
-                onFailure
+                onFailure,
+                maxRetries
             )
         );
     }
@@ -5255,6 +5258,7 @@ public class GenCrdV1_18_2
         @JsonProperty("keep_local") public final Integer keepLocal;
         @JsonProperty("keep_remote") public final Integer keepRemote;
         @JsonProperty("on_failure") public final long onFailure;
+        @JsonProperty("max_retries") public final Integer maxRetries;
 
         @JsonCreator
         public SchedulesSpec(
@@ -5266,7 +5270,8 @@ public class GenCrdV1_18_2
             @JsonProperty("inc_cron") String incCronRef,
             @JsonProperty("keep_local") Integer keepLocalRef,
             @JsonProperty("keep_remote") Integer keepRemoteRef,
-            @JsonProperty("on_failure") long onFailureRef
+            @JsonProperty("on_failure") long onFailureRef,
+            @JsonProperty("max_retries") Integer maxRetriesRef
         )
         {
             uuid = uuidRef;
@@ -5278,6 +5283,7 @@ public class GenCrdV1_18_2
             keepLocal = keepLocalRef;
             keepRemote = keepRemoteRef;
             onFailure = onFailureRef;
+            maxRetries = maxRetriesRef;
 
             formattedPrimaryKey = String.format(
                 SchedulesSpec.PK_FORMAT,
@@ -5299,6 +5305,7 @@ public class GenCrdV1_18_2
             ret.put("KEEP_LOCAL", keepLocal);
             ret.put("KEEP_REMOTE", keepRemote);
             ret.put("ON_FAILURE", onFailure);
+            ret.put("MAX_RETRIES", maxRetries);
             return ret;
         }
 
@@ -5326,6 +5333,8 @@ public class GenCrdV1_18_2
                     return keepRemote;
                 case "ON_FAILURE":
                     return onFailure;
+                case "MAX_RETRIES":
+                    return maxRetries;
                 default:
                     throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
             }

@@ -32,6 +32,7 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.FUL
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.INC_CRON;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.KEEP_LOCAL;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.KEEP_REMOTE;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.MAX_RETRIES;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.ON_FAILURE;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Schedules.UUID;
@@ -60,6 +61,7 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
     protected final SingleColumnDatabaseDriver<Schedule, Integer> keepLocalDriver;
     protected final SingleColumnDatabaseDriver<Schedule, Integer> keepRemoteDriver;
     protected final SingleColumnDatabaseDriver<Schedule, OnFailure> onFailureDriver;
+    protected final SingleColumnDatabaseDriver<Schedule, Integer> maxRetriesDriver;
     protected final StateFlagsPersistence<Schedule> flagsDriver;
     protected final AccessContext dbCtx;
 
@@ -92,6 +94,7 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
         setColumnSetter(KEEP_LOCAL, schedule -> schedule.getKeepLocal(dbCtx));
         setColumnSetter(KEEP_REMOTE, schedule -> schedule.getKeepRemote(dbCtx));
         setColumnSetter(ON_FAILURE, schedule -> schedule.getOnFailure(dbCtx).value);
+        setColumnSetter(MAX_RETRIES, schedule -> schedule.getMaxRetries(dbCtx));
 
         fullCronDriver = generateSingleColumnDriver(
             FULL_CRON, schedule -> schedule.getFullCron(dbCtx).asString(), Cron::asString
@@ -109,6 +112,9 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
         );
         onFailureDriver = generateSingleColumnDriver(
             ON_FAILURE, schedule -> schedule.getOnFailure(dbCtx).name(), Schedule.OnFailure::getValue
+        );
+        maxRetriesDriver = generateSingleColumnDriver(
+            MAX_RETRIES, schedule -> "" + schedule.getMaxRetries(dbCtx), Function.identity()
         );
 
         flagsDriver = generateFlagDriver(FLAGS, Schedule.Flags.class);
@@ -143,6 +149,12 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
     public SingleColumnDatabaseDriver<Schedule, OnFailure> getOnFailureDriver()
     {
         return onFailureDriver;
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<Schedule, Integer> getMaxRetriesDriver()
+    {
+        return maxRetriesDriver;
     }
 
     @Override
@@ -185,6 +197,7 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
                 raw.get(KEEP_LOCAL),
                 raw.get(KEEP_REMOTE),
                 OnFailure.getByValueOrNull(onFailureLong),
+                raw.get(MAX_RETRIES),
                 transObjFactory,
                 transMgrProvider
             ),

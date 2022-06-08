@@ -38,6 +38,9 @@ spec:
               on_failure:
                 type: "integer"
                 format: "int64"
+              max_retries:
+                type: "integer"
+                format: "int32"
   scope: "Cluster"
   names:
     plural: "schedules"

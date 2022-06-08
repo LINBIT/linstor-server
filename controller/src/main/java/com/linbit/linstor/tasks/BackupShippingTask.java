@@ -64,7 +64,7 @@ public class BackupShippingTask implements TaskScheduleService.Task
         synchronized (syncObj)
         {
             final Flux<ApiCallRc> flux;
-            scheduleBackupService.removeSingleTask(conf);
+            scheduleBackupService.removeSingleTask(conf, true);
             Peer peer = new PeerTask("BackupShippingTaskPeer", accCtx);
             if (conf.remote instanceof S3Remote)
             {

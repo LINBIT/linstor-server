@@ -141,7 +141,8 @@ public class CtrlScheduleApiCallHandler
         @Nullable String incCronRef,
         @Nullable Integer keepLocalRef,
         @Nullable Integer keepRemoteRef,
-        @Nullable String onFailureRef
+        @Nullable String onFailureRef,
+        @Nullable Integer maxRetriesRef
     )
     {
         ResponseContext context = makeScheduleContext(
@@ -153,7 +154,7 @@ public class CtrlScheduleApiCallHandler
             "Create schedule",
             lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.SCHEDULE_MAP),
             () -> createScheduleInTransaction(
-                scheduleName, fullCronRef, incCronRef, keepLocalRef, keepRemoteRef, onFailureRef
+                scheduleName, fullCronRef, incCronRef, keepLocalRef, keepRemoteRef, onFailureRef, maxRetriesRef
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -164,7 +165,8 @@ public class CtrlScheduleApiCallHandler
         @Nullable String incCronRef,
         @Nullable Integer keepLocalRef,
         @Nullable Integer keepRemoteRef,
-        @Nullable String onFailureRef
+        @Nullable String onFailureRef,
+        @Nullable Integer maxRetriesRef
     )
     {
         ScheduleName scheduleName = LinstorParsingUtils.asScheduleName(scheduleNameStr);
@@ -185,7 +187,10 @@ public class CtrlScheduleApiCallHandler
         try
         {
             schedule = scheduleFactory
-                .create(peerAccCtx.get(), scheduleName, fullCronRef, incCronRef, keepLocalRef, keepRemoteRef, failureType);
+                .create(
+                    peerAccCtx.get(), scheduleName, fullCronRef, incCronRef, keepLocalRef, keepRemoteRef, failureType,
+                    maxRetriesRef
+                );
             scheduleRepository.put(apiCtx, schedule);
             scheduleDescription = getDetailedScheduleDescription(schedule);
         }
@@ -224,7 +229,8 @@ public class CtrlScheduleApiCallHandler
         String incCronRef,
         Integer keepLocalRef,
         Integer keepRemoteRef,
-        String onFailureRef
+        String onFailureRef,
+        Integer maxRetriesRef
     )
     {
         ResponseContext context = makeScheduleContext(
@@ -236,7 +242,7 @@ public class CtrlScheduleApiCallHandler
             "Modify schedule",
             lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.SCHEDULE_MAP),
             () -> changeScheduleInTransaction(
-                scheduleNameStr, fullCronRef, incCronRef, keepLocalRef, keepRemoteRef, onFailureRef
+                scheduleNameStr, fullCronRef, incCronRef, keepLocalRef, keepRemoteRef, onFailureRef, maxRetriesRef
             )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -247,7 +253,8 @@ public class CtrlScheduleApiCallHandler
         String incCronRef,
         Integer keepLocalRef,
         Integer keepRemoteRef,
-        String onFailureRef
+        String onFailureRef,
+        Integer maxRetriesRef
     )
     {
         ScheduleName scheduleName = LinstorParsingUtils.asScheduleName(scheduleNameStr);
@@ -298,6 +305,17 @@ public class CtrlScheduleApiCallHandler
             if (onFailureRef != null && !onFailureRef.isEmpty())
             {
                 schedule.setOnFailure(peerAccCtx.get(), onFailureRef);
+            }
+            if (maxRetriesRef != null)
+            {
+                if (maxRetriesRef < 0)
+                {
+                    schedule.setMaxRetries(peerAccCtx.get(), null);
+                }
+                else
+                {
+                    schedule.setMaxRetries(peerAccCtx.get(), maxRetriesRef);
+                }
             }
             ctrlTransactionHelper.commit();
             if (modifyTask)

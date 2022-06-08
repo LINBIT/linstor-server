@@ -7860,12 +7860,12 @@ components:
     ScheduleDetails:
       type: object
       required:
-        - remote
-        - schedule
+        - remote_name
+        - schedule_name
       properties:
-        remote:
+        remote_name:
           type: string
-        schedule:
+        schedule_name:
           type: string
         ctrl:
           type: boolean
@@ -7884,14 +7884,14 @@ components:
       type: object
       required:
         - rsc_name
-        - remote
-        - schedule
+        - remote_name
+        - schedule_name
       properties:
         rsc_name:
           type: string
-        remote:
+        remote_name:
           type: string
-        schedule:
+        schedule_name:
           type: string
         reason:
           type: string
@@ -8355,6 +8355,10 @@ components:
             - SKIP
             - RETRY
           default: SKIP
+        max_retries:
+          type: integer
+          format: int32
+          description: how many times a failed backup should be retried if on_failure == RETRY
     ScheduleModify:
       type: object
       properties:
@@ -8375,6 +8379,10 @@ components:
           enum:
             - SKIP
             - RETRY
+        max_retries:
+          type: integer
+          format: int32
+          description: how many times a failed backup should be retried if on_failure == RETRY
     NodeStats:
       type: object
       required:

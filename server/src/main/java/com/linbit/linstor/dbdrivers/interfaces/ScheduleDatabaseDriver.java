@@ -38,5 +38,7 @@ public interface ScheduleDatabaseDriver
 
     SingleColumnDatabaseDriver<Schedule, OnFailure> getOnFailureDriver();
 
+    SingleColumnDatabaseDriver<Schedule, Integer> getMaxRetriesDriver();
+
     StateFlagsPersistence<Schedule> getStateFlagsPersistence();
 }

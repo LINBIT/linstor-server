@@ -12,6 +12,7 @@ public class SchedulePojo implements Comparable<SchedulePojo>
     private final Integer keepLocal;
     private final Integer keepRemote;
     private final String onFailure;
+    private final Integer maxRetries;
     private final Long fullSyncId;
     private final Long updateId;
 
@@ -24,6 +25,7 @@ public class SchedulePojo implements Comparable<SchedulePojo>
         Integer keepLocalRef,
         Integer keepRemoteRef,
         String onFailureRef,
+        Integer maxRetriesRef,
         Long fullSyncIdRef,
         Long updateIdRef
     )
@@ -36,6 +38,7 @@ public class SchedulePojo implements Comparable<SchedulePojo>
         keepLocal = keepLocalRef;
         keepRemote = keepRemoteRef;
         onFailure = onFailureRef;
+        maxRetries = maxRetriesRef;
         fullSyncId = fullSyncIdRef;
         updateId = updateIdRef;
     }
@@ -78,6 +81,11 @@ public class SchedulePojo implements Comparable<SchedulePojo>
     public String getOnFailure()
     {
         return onFailure;
+    }
+
+    public Integer getMaxRetries()
+    {
+        return maxRetries;
     }
 
     public Long getFullSyncId()

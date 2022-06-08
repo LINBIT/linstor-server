@@ -88,7 +88,8 @@ public class Schedules
                 scheduleJson.inc_cron,
                 scheduleJson.keep_local,
                 scheduleJson.keep_remote,
-                scheduleJson.on_failure
+                scheduleJson.on_failure,
+                scheduleJson.max_retries
             ).subscriberContext(
                 requestHelper.createContext(ApiConsts.API_CRT_SCHEDULE, request)
             );
@@ -121,7 +122,8 @@ public class Schedules
                 scheduleJson.inc_cron,
                 scheduleJson.keep_local,
                 scheduleJson.keep_remote,
-                scheduleJson.on_failure
+                scheduleJson.on_failure,
+                scheduleJson.max_retries
             ).subscriberContext(
                 requestHelper.createContext(ApiConsts.API_MOD_SCHEDULE, request)
             );
