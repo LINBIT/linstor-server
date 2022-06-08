@@ -1,9 +1,12 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.backups.ScheduleDetailsPojo;
+import com.linbit.linstor.api.pojo.backups.ScheduledRscsPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlScheduleApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
@@ -16,6 +19,7 @@ import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
@@ -24,6 +28,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -44,19 +49,22 @@ public class View
     private final CtrlVlmListApiCallHandler ctrlVlmListApiCallHandler;
     private final CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandler;
     private final ObjectMapper objectMapper;
+    private final CtrlScheduleApiCallHandler ctrlScheduleApiCallHandler;
 
     @Inject
     View(
         RequestHelper requestHelperRef,
         CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef,
-        CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef
+        CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef,
+        CtrlScheduleApiCallHandler ctrlScheduleApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         ctrlApiCallHandler = ctrlApiCallHandlerRef;
         ctrlVlmListApiCallHandler = ctrlVlmListApiCallHandlerRef;
         ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
+        ctrlScheduleApiCallHandler = ctrlScheduleApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -274,5 +282,62 @@ public class View
 
             return response;
         }, false);
+    }
+
+    @GET
+    @Path("schedules-by-resource")
+    public Response listActiveRscs(
+        @Context Request request,
+        @QueryParam("rsc") String rscName,
+        @QueryParam("remote") String remoteName,
+        @QueryParam("schedule") String scheduleName,
+        @QueryParam("activeOnly") @DefaultValue("false") boolean activeOnly
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_SCHEDULE,
+            request,
+            () ->
+            {
+                List<ScheduledRscsPojo> activeList = ctrlScheduleApiCallHandler
+                    .listScheduledRscs(rscName, remoteName, scheduleName, activeOnly);
+                List<JsonGenTypes.ScheduledRscs> jsonList = new ArrayList<>();
+                for (ScheduledRscsPojo pojo : activeList)
+                {
+                    jsonList.add(Json.apiToScheduledRscs(pojo));
+                }
+                JsonGenTypes.ScheduledRscsList json = new JsonGenTypes.ScheduledRscsList();
+                json.data = jsonList;
+                return Response.status(Response.Status.OK).entity(objectMapper.writeValueAsString(json))
+                    .build();
+            },
+            false
+        );
+    }
+
+    @GET
+    @Path("schedules-by-resource/{rscName}")
+    public Response listScheduleDetails(
+        @Context Request request,
+        @PathParam("rscName") String rscName
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_SCHEDULE,
+            request,
+            () ->
+            {
+                List<ScheduleDetailsPojo> detailsList = ctrlScheduleApiCallHandler.listScheduleDetails(rscName);
+                List<JsonGenTypes.ScheduleDetails> jsonList = new ArrayList<>();
+                for (ScheduleDetailsPojo detail : detailsList)
+                {
+                    jsonList.add(Json.apiToScheduleDetails(detail));
+                }
+                JsonGenTypes.ScheduleDetailsList json = new JsonGenTypes.ScheduleDetailsList();
+                json.data = jsonList;
+                return Response.status(Response.Status.OK).entity(objectMapper.writeValueAsString(json)).build();
+            },
+            false
+        );
     }
 }

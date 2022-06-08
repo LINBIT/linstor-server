@@ -3,8 +3,6 @@ package com.linbit.linstor.api.rest.v1;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.SchedulePojo;
-import com.linbit.linstor.api.pojo.backups.ScheduleDetailsPojo;
-import com.linbit.linstor.api.pojo.backups.ScheduledRscsPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
@@ -13,14 +11,12 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlScheduleApiCallHand
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
@@ -28,7 +24,6 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -150,62 +145,5 @@ public class Schedules
         Flux<ApiCallRc> flux = scheduleHandler.delete(scheduleName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_SCHEDULE, request));
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
-    }
-
-    @GET
-    @Path("list")
-    public Response listActiveRscs(
-        @Context Request request,
-        @QueryParam("rsc") String rscName,
-        @QueryParam("remote") String remoteName,
-        @QueryParam("schedule") String scheduleName,
-        @QueryParam("activeOnly") @DefaultValue("false") boolean activeOnly
-    )
-    {
-        return requestHelper.doInScope(
-            ApiConsts.API_LST_SCHEDULE,
-            request,
-            () ->
-            {
-                List<ScheduledRscsPojo> activeList = scheduleHandler
-                    .listScheduledRscs(rscName, remoteName, scheduleName, activeOnly);
-                List<JsonGenTypes.ScheduledRscs> jsonList = new ArrayList<>();
-                for (ScheduledRscsPojo pojo : activeList)
-                {
-                    jsonList.add(Json.apiToScheduledRscs(pojo));
-                }
-                JsonGenTypes.ScheduledRscsList json = new JsonGenTypes.ScheduledRscsList();
-                json.data = jsonList;
-                return Response.status(Response.Status.OK).entity(objectMapper.writeValueAsString(json))
-                    .build();
-            },
-            false
-        );
-    }
-
-    @GET
-    @Path("list/{rscName}")
-    public Response listScheduleDetails(
-        @Context Request request,
-        @PathParam("rscName") String rscName
-    )
-    {
-        return requestHelper.doInScope(
-            ApiConsts.API_LST_SCHEDULE,
-            request,
-            () ->
-            {
-                List<ScheduleDetailsPojo> detailsList = scheduleHandler.listScheduleDetails(rscName);
-                List<JsonGenTypes.ScheduleDetails> jsonList = new ArrayList<>();
-                for (ScheduleDetailsPojo detail : detailsList)
-                {
-                    jsonList.add(Json.apiToScheduleDetails(detail));
-                }
-                JsonGenTypes.ScheduleDetailsList json = new JsonGenTypes.ScheduleDetailsList();
-                json.data = jsonList;
-                return Response.status(Response.Status.OK).entity(objectMapper.writeValueAsString(json)).build();
-            },
-            false
-        );
     }
 }

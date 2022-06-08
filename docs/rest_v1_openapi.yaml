@@ -4786,7 +4786,64 @@ paths:
                   $ref: '#/components/schemas/SnapshotShippingStatus'
         '500':
           $ref: '#/components/responses/OperationFailed'
-
+  /v1/view/schedules-by-resource:
+    parameters:
+      - name: rsc
+        in: query
+        required: false
+        description: filter by rsc-name
+        schema:
+          type: string
+      - name: remote
+        in: query
+        required: false
+        description: filter by remote-name
+        schema:
+          type: string
+      - name: schedule
+        in: query
+        required: false
+        description: filter by schedule-name
+        schema:
+          type: string
+      - name: active-only
+        in: query
+        required: false
+        description: only list active schedules
+        schema:
+          type: string
+    get:
+      tags:
+        - developers
+      summary: list rscDfn-schedule-remote-triples
+      description: list all schedule-remote-rscDfn-triples
+      responses:
+        '200':
+          description: list of triples
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledRscsList'
+  /v1/schedules-by-resource/{rscName}:
+    parameters:
+      - name: rscName
+        in: path
+        required: true
+        description: the rscDfn you want to see the schedule-details from
+        schema:
+          type: string
+    get:
+      tags:
+        - developers
+      summary: list schedule-details
+      description: list the details of all schedules set on a specific rscDfn
+      responses:
+        '200':
+          description: list of schedule-details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleDetailsList'
   /v1/stats/resources:
     get:
       tags:
@@ -5733,64 +5790,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
-  /v1/schedules/list:
-    parameters:
-      - name: rsc
-        in: query
-        required: false
-        description: filter by rsc-name
-        schema:
-          type: string
-      - name: remote
-        in: query
-        required: false
-        description: filter by remote-name
-        schema:
-          type: string
-      - name: schedule
-        in: query
-        required: false
-        description: filter by schedule-name
-        schema:
-          type: string
-      - name: active-only
-        in: query
-        required: false
-        description: only list active schedules
-        schema:
-          type: string
-    get:
-      tags:
-        - developers
-      summary: list rscDfn-schedule-remote-triples
-      description: list all schedule-remote-rscDfn-triples
-      responses:
-        '200':
-          description: list of triples
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ScheduledRscsList'
-  /v1/schedules/list/{rscName}:
-    parameters:
-      - name: rscName
-        in: path
-        required: true
-        description: the rscDfn you want to see the schedule-details from
-        schema:
-          type: string
-    get:
-      tags:
-        - developers
-      summary: list schedule-details
-      description: list the details of all schedules set on a specific rscDfn
-      responses:
-        '200':
-          description: list of schedule-details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ScheduleDetailsList'
   /v1/files:
     parameters:
       - in: query
