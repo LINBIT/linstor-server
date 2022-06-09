@@ -7,7 +7,7 @@ import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
-import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -74,7 +74,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
 
     private static final String FORMAT_ID_WIPE_IN_PROGRESS = "%s_linstor_wiping_in_progress";
 
-    private static final String LODEV_FILE = CoreModule.CONFIG_PATH + "/loop_device_mapping";
+    private static final String LODEV_FILE = LinStor.CONFIG_PATH + "/loop_device_mapping";
     private static final String LODEV_FILE_TMP = LODEV_FILE + ".tmp";
 
     private static final Map<String, String> LOSETUP_DEVICES = new TreeMap<>();

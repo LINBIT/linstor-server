@@ -17,7 +17,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.ControllerPeerConnector;
-import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.SysBlockUtils;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
@@ -1805,7 +1805,7 @@ public class DrbdLayer implements DeviceLayer
     private Path asResourceFile(DrbdRscData<Resource> drbdRscData, boolean temp)
     {
         return Paths.get(
-            CoreModule.CONFIG_PATH,
+            LinStor.CONFIG_PATH,
             drbdRscData.getSuffixedResourceName() + (temp ? DRBD_CONFIG_TMP_SUFFIX : DRBD_CONFIG_SUFFIX)
         );
     }
@@ -1813,7 +1813,7 @@ public class DrbdLayer implements DeviceLayer
     private Path asBackupResourceFile(DrbdRscData<Resource> drbdRscData)
     {
         return Paths.get(
-            CoreModule.BACKUP_PATH,
+            LinStor.BACKUP_PATH,
             drbdRscData.getSuffixedResourceName() + DRBD_CONFIG_SUFFIX
         );
     }

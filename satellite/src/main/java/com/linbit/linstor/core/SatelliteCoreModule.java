@@ -30,7 +30,7 @@ public class SatelliteCoreModule extends AbstractModule
         //    .build(DeviceManagerImpl.DeviceHandlerInvocationFactory.class));
 
         bind(Path.class).annotatedWith(Names.named(DRBD_CONFIG_PATH)).toInstance(
-            FileSystems.getDefault().getPath(CoreModule.CONFIG_PATH)
+            FileSystems.getDefault().getPath(LinStor.CONFIG_PATH)
         );
     }
 

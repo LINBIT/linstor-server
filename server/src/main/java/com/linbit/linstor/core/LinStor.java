@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.InjectorLoader;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+
 import com.google.inject.Module;
 
 /**
@@ -28,6 +30,11 @@ public abstract class LinStor
     public static final String FIPS_CRYPTO_MODULE_NAME  = "com.linbit.linstor.modularcrypto.FipsCryptoModule";
     public static final String JCL_CRYPTO_MODULE_NAME   = "com.linbit.linstor.modularcrypto.JclCryptoModule";
     public static final String FIPS_INIT_MODULE_NAME    = "com.linbit.linstor.modularcrypto.FipsInit";
+
+    // Path to the DRBD configuration files; this should be replaced by some meaningful constant or possibly
+    // a value configurable in the cluster configuration
+    public static final String CONFIG_PATH = "/var/lib/linstor.d";
+    public static final String BACKUP_PATH = CONFIG_PATH + "/.backup";
 
     private static final int MEGA_BYTE = 1048576;
 
