@@ -2,6 +2,9 @@ package com.linbit.linstor.api.interfaces.serializer;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.pojo.FileInfoPojo;
+import com.linbit.linstor.api.pojo.FilePojo;
+import com.linbit.linstor.api.pojo.RequestFilePojo;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -12,6 +15,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -89,17 +93,26 @@ public interface CommonSerializer
             @Nullable List<String> ids
         );
 
-        CommonSerializerBuilder requestSosReport(Date since);
+        CommonSerializerBuilder requestSosReport(String sosReportNameRef, Date since);
+
+        CommonSerializerBuilder requestSosReportFiles(
+            String sosReportNameRef,
+            ArrayList<RequestFilePojo> nextBatchToRequestRef
+        );
 
         CommonSerializerBuilder errorReports(List<ErrorReport> errorReports);
 
-        CommonSerializerBuilder sosReport(
+        CommonSerializerBuilder sosReportFileInfoList(
             String nodeNameRef,
-            String relativeFileNameRef,
-            long timestampRef,
-            long offsetRef,
-            byte[] dataRef,
-            boolean eofRef
+            String sosReportNameRef,
+            @Nullable List<FileInfoPojo> fileListRef,
+            @Nullable String errorMsgRef
+        );
+
+        CommonSerializerBuilder sosReportFiles(
+            String nodeNameRef,
+            String sosReportNameRef,
+            List<FilePojo> filesRef
         );
 
         CommonSerializerBuilder filter(

@@ -18,6 +18,8 @@ import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdRscDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmDfnPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
+import com.linbit.linstor.api.pojo.FileInfoPojo;
+import com.linbit.linstor.api.pojo.FilePojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
@@ -25,6 +27,7 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
+import com.linbit.linstor.api.pojo.RequestFilePojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -119,12 +122,16 @@ import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
 import com.linbit.linstor.proto.requests.MsgDelErrorReportsOuterClass.MsgDelErrorReports;
 import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqErrorReport;
-import com.linbit.linstor.proto.requests.MsgReqSosReportOuterClass.MsgReqSosReport;
+import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.MsgReqSosReportFiles;
+import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.ReqFile;
+import com.linbit.linstor.proto.requests.MsgReqSosReportListOuterClass.MsgReqSosReportList;
 import com.linbit.linstor.proto.responses.FileOuterClass.File;
 import com.linbit.linstor.proto.responses.MsgApiRcResponseOuterClass.MsgApiRcResponse;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.responses.MsgEventOuterClass;
-import com.linbit.linstor.proto.responses.MsgSosReportOuterClass.MsgSosReport;
+import com.linbit.linstor.proto.responses.MsgSosReportFilesReplyOuterClass.MsgSosReportFilesReply;
+import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.FileInfo;
+import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.MsgSosReportListReply;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -686,12 +693,15 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder requestSosReport(Date since)
+    public CommonSerializer.CommonSerializerBuilder requestSosReport(String sosReportNameRef, Date since)
     {
         try
         {
-            MsgReqSosReport.Builder bld = MsgReqSosReport.newBuilder();
-            bld.setSince(since.getTime()).build().writeDelimitedTo(baos);
+            MsgReqSosReportList.newBuilder()
+                .setSosReportName(sosReportNameRef)
+                .setSince(since.getTime())
+                .build()
+                .writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {
@@ -701,27 +711,16 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder sosReport(
-        String nodeNameRef,
-        String relativeFileNameRef,
-        long timestampRef,
-        long offsetRef,
-        byte[] dataRef,
-        boolean eofRef
+    public CommonSerializerBuilder requestSosReportFiles(
+        String sosReportNameRef,
+        ArrayList<RequestFilePojo> requestedFilesRef
     )
     {
         try
         {
-            MsgSosReport.newBuilder()
-                .setNodeName(nodeNameRef)
-                .setFile(
-                    File.newBuilder()
-                        .setRelativeTitle(relativeFileNameRef)
-                        .setTime(timestampRef)
-                        .setContent(ByteString.copyFrom(dataRef))
-                        .setOffset(offsetRef)
-                        .build()
-                )
+            MsgReqSosReportFiles.newBuilder()
+                .setSosReportName(sosReportNameRef)
+                .addAllFiles(serializeRequestedFiles(requestedFilesRef))
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -730,6 +729,110 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             handleIOException(exc);
         }
         return this;
+    }
+
+    private List<ReqFile> serializeRequestedFiles(ArrayList<RequestFilePojo> requestedFilesRef)
+    {
+        List<ReqFile> ret = new ArrayList<>();
+        for (RequestFilePojo pojo : requestedFilesRef)
+        {
+            ret.add(
+                ReqFile.newBuilder()
+                    .setName(pojo.name)
+                    .setLength(pojo.length)
+                    .setOffset(pojo.offset)
+                    .build()
+            );
+        }
+        return ret;
+    }
+
+    @Override
+    public CommonSerializerBuilder sosReportFileInfoList(
+        String nodeNameRef,
+        String sosReportNameRef,
+        @Nullable List<FileInfoPojo> fileListRef,
+        @Nullable String errorMsg
+    )
+    {
+        try
+        {
+            MsgSosReportListReply.Builder builder = MsgSosReportListReply.newBuilder()
+                .setNodeName(nodeNameRef)
+                .setSosReportName(sosReportNameRef);
+            if (fileListRef != null)
+            {
+                builder.addAllFiles(serializeSosFileList(fileListRef));
+            }
+            if (errorMsg != null)
+            {
+                builder.setErrorMessage(errorMsg);
+            }
+
+            builder
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    private List<FileInfo> serializeSosFileList(List<FileInfoPojo> fileListRef)
+    {
+        List<FileInfo> ret = new ArrayList<>();
+        for (FileInfoPojo pojo : fileListRef)
+        {
+            ret.add(
+                FileInfo.newBuilder()
+                    .setName(pojo.relativeName)
+                    .setSize(pojo.size)
+                    .build()
+            );
+        }
+        return ret;
+    }
+
+    @Override
+    public CommonSerializer.CommonSerializerBuilder sosReportFiles(
+        String nodeNameRef,
+        String sosReportNameRef,
+        List<FilePojo> filesRef
+    )
+    {
+        try
+        {
+            MsgSosReportFilesReply.newBuilder()
+                .setNodeName(nodeNameRef)
+                .setSosReportName(sosReportNameRef)
+                .addAllFiles(serializeFiles(filesRef))
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
+    }
+
+    private Iterable<File> serializeFiles(List<FilePojo> filesRef)
+    {
+        List<File> ret = new ArrayList<>();
+        for (FilePojo pojo : filesRef)
+        {
+            ret.add(
+                File.newBuilder()
+                    .setRelativeTitle(pojo.relativeName)
+                    .setOffset(pojo.offset)
+                    .setTime(pojo.timestamp)
+                    .setContent(ByteString.copyFrom(pojo.content))
+                    .build()
+            );
+        }
+        return ret;
     }
 
     @Override

@@ -1,12 +1,6 @@
 package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
-import com.linbit.extproc.DaemonHandler;
-import com.linbit.extproc.OutputProxy.EOFEvent;
-import com.linbit.extproc.OutputProxy.Event;
-import com.linbit.extproc.OutputProxy.ExceptionEvent;
-import com.linbit.extproc.OutputProxy.StdErrEvent;
-import com.linbit.extproc.OutputProxy.StdOutEvent;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.SosReportType;
 import com.linbit.linstor.SosReportType.SosCommandType;
@@ -14,8 +8,12 @@ import com.linbit.linstor.SosReportType.SosFileType;
 import com.linbit.linstor.SosReportType.SosInfoType;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.pojo.FileInfoPojo;
+import com.linbit.linstor.api.pojo.FilePojo;
+import com.linbit.linstor.api.pojo.RequestFilePojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.FileCollector;
@@ -25,27 +23,32 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.RandomAccessFile;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
-import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.stream.Stream;
 
 @Singleton
 public class StltSosReportApiCallHandler
 {
-    private static final int DFLT_DEQUE_CAPACITY = 10;
+    private static final Path SOS_REPORTS_DIR = Paths.get(LinStor.CONFIG_PATH + "/sos-reports/");
+
+    private static final String SUFFIX_CMD_STDERR = ".err";
+    private static final String SUFFIX_FILE_NOT_FOUND = ".file_not_found";
+    private static final String SUFFIX_IO_EXC = ".io_exc";
+
     private final ErrorReporter errorReporter;
     private final ControllerPeerConnector controllerPeerConnector;
     private final CtrlStltSerializer interComSerializer;
@@ -69,285 +72,279 @@ public class StltSosReportApiCallHandler
     }
 
     /**
-     * Collects a list of local reports and sends them to the controller. <br />
-     * Collected reports:
-     * <ul>
-     * <li>test</li>
-     * </ul>
+     * Collects a list of local reports, stores them in the linstor.d directory and replies the controller the list of
+     * files with their sizes, but without their content. The files with content have to be requested separately.
+     * The list of collected Reports can be found in {@link #listSosReport(Date)}
      *
      * @param since
      */
-    public void handleSosReportRequest(Date since)
+    public void handleSosReportRequestFileList(String sosReportName, Date since)
     {
-        Set<SosReportType> reports = listSosReport(since);
+        StringBuilder errors = new StringBuilder();
+        List<FileInfoPojo> fileList = new ArrayList<>();
 
-        final int splitAfterBytes = 10 * 1024 * 1024; // 10MiB
-
-        for (SosReportType report : reports)
-        {
-            String fileName = report.getRelativeFileName();
-            long now = report.getTimestamp();
-            InputStream is;
-            if ((report instanceof SosReportType.SosFileType) || (report instanceof SosReportType.SosInfoType))
-            {
-                if (report instanceof SosReportType.SosInfoType)
-                {
-                    is = new ByteArrayInputStream(((SosInfoType) report).getInfo().getBytes());
-                }
-                else if (report instanceof SosReportType.SosFileType)
-                {
-                    try
-                    {
-                        is = new FileInputStream(((SosFileType) report).getPath().toFile());
-                    }
-                    catch (FileNotFoundException notFoundExc)
-                    {
-                        is = new ByteArrayInputStream(new byte[0]);
-                        fileName += ".file_not_found";
-                    }
-                }
-                else
-                {
-                    throw new ImplementationError("Unknown SosReportType: " + report.getClass().getCanonicalName());
-                }
-
-                sendReportByInputStream(splitAfterBytes, fileName, is, now);
-            }
-            else if (report instanceof SosReportType.SosCommandType)
-            {
-                SosCommandType sosCommandType = (SosCommandType) report;
-                String[] command = sosCommandType.getCommand();
-
-                // limits the deque to max 10MiB of contents of the events in the deque
-                BlockingDeque<Event> deque = new LinkedBlockingDeque<>(DFLT_DEQUE_CAPACITY);
-                DaemonHandler dh = new DaemonHandler(deque, command);
-                try
-                {
-                    dh.startUndelimited();
-                    sendReportByOutputProxyDeque(fileName, splitAfterBytes, deque, now);
-                }
-                catch (IOException exc)
-                {
-                    exc.printStackTrace();
-                }
-            }
-        }
-    }
-
-    private void sendReportByInputStream(
-        final int splitAfterBytes,
-        final String fileName,
-        final InputStream is,
-        final long timepstampRef
-    )
-    {
-        int offset = 0; // global offset so the controller knows which offset to append the attached data within the
-                        // target file
-        byte[] buffer = new byte[splitAfterBytes]; // the data (-chunk) to send
-        int bytesToSend = 0; // the used length of buffer (everything after should be considered garbage)
-        int lastRead; // byte count of the last inputstream.read(..) call
-
-        boolean keepReading = true;
+        Path sosReportDir = SOS_REPORTS_DIR.resolve(sosReportName);
         try
         {
-            do
-            {
-                lastRead = is.read(buffer, bytesToSend, splitAfterBytes - bytesToSend);
-                keepReading = lastRead >= 0;
-                if (keepReading)
-                {
-                    bytesToSend += lastRead;
-                    offset += splitAfterBytes - bytesToSend;
-                }
-                if (bytesToSend == splitAfterBytes)
-                {
-                    sendReport(fileName, timepstampRef, offset, bytesToSend, buffer, !keepReading);
-                    bytesToSend = 0;
-                }
-            }
-            while (keepReading);
-            if (bytesToSend > 0)
-            {
-                sendReport(fileName, timepstampRef, offset, bytesToSend, buffer, !keepReading);
-            }
+            Files.createDirectories(sosReportDir);
         }
         catch (IOException exc)
         {
-            StringBuilder errMsgBuilder = new StringBuilder(exc.getLocalizedMessage()).append("\n\n");
-
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            exc.printStackTrace(pw);
-
-            errMsgBuilder.append(sw.getBuffer());
-
-            byte[] errMsgData = errMsgBuilder.toString().getBytes();
-
-            sendReport(fileName + ".ioexc", timepstampRef, 0, errMsgData.length, errMsgData, true);
+            appendExcToStringBuilder(errors, exc);
         }
+
+        if (errors.length() == 0)
+        {
+            Set<SosReportType> reports = listSosReport(sosReportDir, since);
+
+            for (SosReportType report : reports)
+            {
+                String fileName = report.getRelativeFileName();
+                long timestamp = report.getTimestamp();
+                if ((report instanceof SosReportType.SosFileType) || (report instanceof SosReportType.SosInfoType))
+                {
+                    Path targetPath = sosReportDir.resolve(fileName);
+                    if (report instanceof SosReportType.SosInfoType)
+                    {
+                        try
+                        {
+                            Files.write(targetPath, ((SosInfoType) report).getInfo().getBytes());
+                            fileList.add(new FileInfoPojo(fileName, targetPath.toFile().length()));
+                        }
+                        catch (IOException exc)
+                        {
+                            appendExcToStringBuilder(errors, exc);
+                        }
+                    }
+                    else if (report instanceof SosReportType.SosFileType)
+                    {
+                        Path sourcePath = ((SosFileType) report).getPath();
+                        try
+                        {
+                            if (Files.exists(sourcePath))
+                            {
+                                if (!Files.exists(targetPath.getParent()))
+                                {
+                                    Files.createDirectories(targetPath.getParent());
+                                }
+                                Files.copy(
+                                    sourcePath,
+                                    targetPath,
+                                    StandardCopyOption.COPY_ATTRIBUTES
+                                );
+                                fileList.add(new FileInfoPojo(fileName, targetPath.toFile().length()));
+                            }
+                            else
+                            {
+                                String fileNameNotFound = fileName + SUFFIX_FILE_NOT_FOUND;
+                                Files.createFile(sosReportDir.resolve(fileNameNotFound));
+                                fileList.add(new FileInfoPojo(fileNameNotFound, 0));
+                            }
+                        }
+                        catch (IOException exc)
+                        {
+                            byte[] exceptionData = exceptionToString(exc).getBytes();
+                            try
+                            {
+                                String fileNameIoExc = fileName + SUFFIX_IO_EXC;
+                                Files.write(sosReportDir.resolve(fileNameIoExc), exceptionData);
+                                fileList.add(new FileInfoPojo(fileNameIoExc, exceptionData.length));
+                            }
+                            catch (IOException exc1)
+                            {
+                                appendExcToStringBuilder(errors, exc);
+                                appendExcToStringBuilder(errors, exc1);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        throw new ImplementationError("Unknown SosReportType: " + report.getClass().getCanonicalName());
+                    }
+                }
+                else if (report instanceof SosReportType.SosCommandType)
+                {
+                    SosCommandType sosCommandType = (SosCommandType) report;
+                    String[] command = sosCommandType.getCommand();
+
+                    try
+                    {
+                        File outFile = sosReportDir.resolve(fileName).toFile();
+                        String errFileName = fileName + SUFFIX_CMD_STDERR;
+                        File errFile = sosReportDir.resolve(errFileName).toFile();
+
+                        boolean hasErrFile = copy(
+                            outFile,
+                            errFile,
+                            command,
+                            timestamp
+                        );
+                        fileList.add(new FileInfoPojo(fileName, outFile.length()));
+
+                        if (hasErrFile)
+                        {
+                            fileList.add(new FileInfoPojo(errFileName, errFile.length()));
+                        }
+                    }
+                    catch (IOException | InterruptedException exc)
+                    {
+                        byte[] exceptionData = exceptionToString(exc).getBytes();
+                        try
+                        {
+                            String fileNameIoExc = fileName + SUFFIX_IO_EXC;
+                            Files.write(sosReportDir.resolve(fileNameIoExc), exceptionData);
+                            fileList.add(new FileInfoPojo(fileNameIoExc, exceptionData.length));
+                        }
+                        catch (IOException exc1)
+                        {
+                            appendExcToStringBuilder(errors, exc);
+                            appendExcToStringBuilder(errors, exc1);
+                        }
+                    }
+                }
+            }
+        }
+
+        controllerPeerConnector.getControllerPeer().sendMessage(
+            interComSerializer.answerBuilder(InternalApiConsts.API_RSP_SOS_REPORT_FILE_LIST, apiCallId.get())
+                .sosReportFileInfoList(
+                    controllerPeerConnector.getLocalNodeName().displayValue,
+                    sosReportName,
+                    fileList,
+                    errors.toString()
+                )
+                .build(),
+            InternalApiConsts.API_RSP_SOS_REPORT_FILE_LIST
+        );
     }
 
-    private void sendReportByOutputProxyDeque(
-        final String fileName,
-        final int splitAfterBytes,
-        final BlockingDeque<Event> deque,
+    private void appendExcToStringBuilder(StringBuilder errors, Exception exc)
+    {
+        errors.append(exceptionToString(exc));
+    }
+
+    private String exceptionToString(Exception exc)
+    {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        exc.printStackTrace(pw);
+        return sw.toString();
+    }
+
+    private boolean copy(
+        final File outFileRef,
+        final File errFileRef,
+        final String[] commandRef,
         final long timepstampRef
     )
+        throws IOException, InterruptedException
     {
-        boolean running = true;
-        DequeDataHolder stdOutHolder = new DequeDataHolder(fileName, timepstampRef, splitAfterBytes, true);
-        DequeDataHolder stdErrHolder = new DequeDataHolder(fileName + ".err", timepstampRef, splitAfterBytes, false);
+        ProcessBuilder pb = new ProcessBuilder(commandRef);
+        pb.redirectOutput(outFileRef);
+        pb.redirectError(errFileRef);
 
-        while (running)
+        Process proc = pb.start();
+        proc.waitFor();
+
+        outFileRef.setLastModified(timepstampRef);
+        boolean errFileExists;
+        if (errFileRef.length() == 0)
         {
-            Event event;
-            try
-            {
-                event = deque.take();
-
-                if (event instanceof StdOutEvent)
-                {
-                    StdOutEvent stdOutEvent = (StdOutEvent) event;
-                    stdOutHolder.consumeEvent(stdOutEvent.data);
-                }
-                else if (event instanceof StdErrEvent)
-                {
-                    StdErrEvent stdErrEvent = (StdErrEvent) event;
-                    stdErrHolder.consumeEvent(stdErrEvent.data);
-                }
-                else if (event instanceof EOFEvent)
-                {
-                    running = false;
-                    stdOutHolder.flush(true);
-                    stdErrHolder.flush(true);
-                }
-                else if (event instanceof ExceptionEvent)
-                {
-                    running = false;
-                }
-            }
-            catch (InterruptedException exc)
-            {
-                running = false;
-                byte[] data = "Interrupted".getBytes();
-                stdOutHolder.consumeEvent(data);
-                stdOutHolder.flush(true);
-
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    private class DequeDataHolder
-    {
-        private final long timestamp;
-        private final String relativeFileName;
-
-        private final boolean sendEmptyFile;
-        private final byte[] buffer;
-
-        private int offset;
-
-        private int targetOffset;
-
-        private boolean sent = false;
-
-        private DequeDataHolder(
-            String relativeFileNameRef,
-            long timestampRef,
-            int bufferSize,
-            boolean sendEmptyFileRef
-        )
-        {
-            relativeFileName = relativeFileNameRef;
-            timestamp = timestampRef;
-            sendEmptyFile = sendEmptyFileRef;
-            buffer = new byte[bufferSize];
-            offset = 0;
-            targetOffset = 0;
-        }
-
-        private void consumeEvent(
-            byte[] eventDataRef
-        )
-        {
-            int bytesNotCopied = eventDataRef.length;
-            do
-            {
-                bytesNotCopied = copy(eventDataRef, eventDataRef.length - bytesNotCopied);
-
-                if (offset == buffer.length)
-                {
-                    flush(false);
-                    offset = 0;
-                    targetOffset += buffer.length;
-                }
-            }
-            while (bytesNotCopied > 0);
-        }
-
-        public int copy(byte[] data, int dataOffset)
-        {
-            int len = Math.min(data.length, buffer.length - offset);
-            System.arraycopy(data, dataOffset, buffer, offset, len);
-            offset += len;
-            return data.length - len;
-        }
-
-        public void flush(boolean eof)
-        {
-            System.out.println(
-                "flushing " + relativeFileName + ": eof: " + eof + ", offset: " + offset + ", sent: " + sent +
-                    ", sendEmptyFile: " + sendEmptyFile
-            );
-            if (offset > 0 || (!sent && sendEmptyFile))
-            {
-                sendReport(relativeFileName, timestamp, targetOffset, offset, buffer, eof);
-                sent = true;
-            }
-        }
-    }
-
-    private void sendReport(
-        String relativeFileNameRef,
-        long timestampRef,
-        int offsetRef,
-        int bytesToSendRef,
-        byte[] dataRef,
-        boolean eofRef
-    )
-    {
-        byte[] trimmedData;
-        if (bytesToSendRef == dataRef.length)
-        {
-            trimmedData = dataRef;
+            Files.delete(errFileRef.toPath());
+            errFileExists = false;
         }
         else
         {
-            trimmedData = new byte[bytesToSendRef];
-            System.arraycopy(dataRef, 0, trimmedData, 0, bytesToSendRef);
+            errFileRef.setLastModified(timepstampRef);
+            errFileExists = true;
         }
-        errorReporter.logTrace(
-            "Sending %d bytes for relative file: %s %s",
-            trimmedData.length,
-            relativeFileNameRef,
-            eofRef ? " (EOF)" : ""
-        );
+        return errFileExists;
+    }
+
+    public void handleSosReportRequestedFiles(String sosReportName, List<RequestFilePojo> listRef)
+    {
+        Path sosReportDir = SOS_REPORTS_DIR.resolve(sosReportName);
+
+        List<FilePojo> filesToRespond = new ArrayList<>();
+        long now = System.currentTimeMillis();
+
+        for (RequestFilePojo reqFile : listRef)
+        {
+            String relativeFileName = reqFile.name;
+            String fileName = sosReportDir.resolve(relativeFileName).toString();
+            File file = new File(fileName);
+
+            try (RandomAccessFile raf = new RandomAccessFile(file, "r");)
+            {
+                if (reqFile.offset != 0)
+                {
+                    raf.seek(reqFile.offset);
+                }
+                int len = (int) reqFile.length;
+
+                byte[] buf = new byte[len];
+                errorReporter
+                    .logTrace("Reading %d bytes from file %s from offset %d.", len, reqFile.name, reqFile.offset);
+                raf.readFully(buf, 0, buf.length);
+
+                filesToRespond.add(new FilePojo(relativeFileName, file.lastModified(), buf, reqFile.offset));
+            }
+            catch (IOException exc)
+            {
+                String errorSuffix = SUFFIX_IO_EXC;
+                if (exc instanceof FileNotFoundException)
+                {
+                    errorSuffix = SUFFIX_FILE_NOT_FOUND;
+                }
+                filesToRespond.add(
+                    new FilePojo(
+                        relativeFileName + errorSuffix,
+                        now,
+                        exceptionToString(exc).getBytes(),
+                        0
+                    )
+                );
+            }
+        }
+        byte[] build = interComSerializer.answerBuilder(InternalApiConsts.API_RSP_SOS_REPORT_FILE_LIST, apiCallId.get())
+            .sosReportFiles(controllerPeerConnector.getLocalNodeName().displayValue, sosReportName, filesToRespond)
+            .build();
+        errorReporter.logTrace("Responding (partial) sos-report %s, bytes: %d", sosReportName, build.length);
         controllerPeerConnector.getControllerPeer().sendMessage(
-            interComSerializer.answerBuilder(InternalApiConsts.API_RSP_SOS_REPORT, apiCallId.get())
-                .sosReport(
-                    controllerPeerConnector.getLocalNodeName().displayValue,
-                    relativeFileNameRef,
-                    timestampRef,
-                    offsetRef,
-                    trimmedData,
-                    eofRef
-                )
-                .build(),
-            InternalApiConsts.API_RSP_SOS_REPORT
+            build,
+            InternalApiConsts.API_RSP_SOS_REPORT_FILE_LIST
         );
     }
-    private Set<SosReportType> listSosReport(Date since)
+
+    /**
+     *
+     * Returns a list of files to collect (does not collect anything, just builds and returns the list).
+     * Collected reports:
+     *
+     * <table>
+     * <style>table tr td { padding-right: 10px; }</style>
+     * <tr><th>Filename</th><th>Content</th></tr>
+     * <tr><td>linstorInfo</td><td>'uname -a' + Linstor internal information</td></tr>
+     * <tr><td>drbd-status</td><td>'drbdset status -vvv'</td></tr>
+     * <tr><td>drbd-events2</td><td>'drbdset status -vvv'</td></tr>
+     * <tr><td>modinfo</td><td>'modinfo drbd'</td></tr>
+     * <tr><td>proc-drbd</td><td>'cat /proc/drbd'</td></tr>
+     * <tr><td>lvm.conf</td><td>'cat /etc/lvm/lvm.conf'</td></tr>
+     * <tr><td>linstor_satellite.toml</td><td>'cat $configDir/lisntor_satellite.toml'</td></tr>
+     * <tr><td>journalctl</td><td>'journalctl -u linstor-satellite --since $since'</td></tr>
+     * <tr><td>ip-a</td><td>'ip a'</td></tr>
+     * <tr><td>drbdadm-version</td><td>'drbdadm --version'</td></tr>
+     * <tr><td>log-syslog</td><td>'cat /var/log/syslog'</td></tr>
+     * <tr><td>log-kern.log</td><td>'cat /var/log/kern.log'</td></tr>
+     * <tr><td>log-messages</td><td>'cat /var/log/messages'</td></tr>
+     * <tr><td>release</td><td>'cat /etc/redhat-release /etc/lsb-release /etc/os-release'</td></tr>
+     * <tr><td>res/*.res</td><td>All files from /var/lib/linstor.d/*.res</td></tr>
+     * <tr><td>logs/*</td><td>All '*{mv.db,log}' from /var/log/linstor (unless overridden) </td></tr>
+     * </table>
+     * @param sosReportDir
+     * @param since
+     */
+    private Set<SosReportType> listSosReport(Path sosReportDir, Date since)
     {
         Set<SosReportType> reportTypes = new HashSet<>();
 
@@ -368,10 +365,10 @@ public class StltSosReportApiCallHandler
         reportTypes.add(new SosCommandType("lvm.conf",  now, "cat", "/etc/lvm/lvm.conf"));
         reportTypes.add(
             new SosCommandType(
-                StltConfig.LINSTOR_STLT_CONFIG,
+                LinstorConfig.LINSTOR_STLT_CONFIG,
                 now,
                 "cat",
-                stltCfg.getConfigDir() + StltConfig.LINSTOR_STLT_CONFIG
+                stltCfg.getConfigDir() + LinstorConfig.LINSTOR_STLT_CONFIG
             )
         );
         reportTypes.add(new SosCommandType("dmesg", now, "dmesg", "-H"));
@@ -402,13 +399,6 @@ public class StltSosReportApiCallHandler
             )
         );
 
-        reportTypes.add(
-            new SosInfoType(
-                "linstorInfo",
-                now,
-                LinStor.linstorInfo() + "\n\nuname -a:           " + LinStor.getUname("-a")
-            )
-        );
 
         String linstorDDir = LinStor.CONFIG_PATH;
         try (
@@ -430,8 +420,21 @@ public class StltSosReportApiCallHandler
             Files.walkFileTree(errorReporter.getLogDirectory(), collector);
             reportTypes.addAll(collector.getFiles());
         }
-        catch (IOException ignored)
+        catch (IOException ioExc)
         {
+            try
+            {
+                String fileNameIoExc = "res/error_reports_list" + SUFFIX_IO_EXC;
+                byte[] exceptionData = exceptionToString(ioExc).getBytes();
+                Files.write(sosReportDir.resolve(fileNameIoExc), exceptionData);
+                reportTypes.add(new SosFileType("error_reports_list_io_exc", fileNameIoExc, now));
+                errorReporter.reportError(ioExc);
+            }
+            catch (IOException exc1)
+            {
+                // nothing more we can do here...
+                errorReporter.reportError(exc1);
+            }
         }
         return reportTypes;
     }

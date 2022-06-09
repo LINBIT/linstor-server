@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package com.linbit.linstor.proto.requests;
+
+// request an SOS report
+
+// ApiConsts.API_REQ_SOS_REPORT_FILES
+// replied with: a list of MsgSosReportFiles
+message MsgReqSosReportFiles
+{
+    required string sos_report_name = 1;
+    repeated ReqFile files = 2;
+}
+
+message ReqFile
+{
+    required string name = 1;
+    required uint64 offset = 2;
+    required uint64 length = 3;
+}

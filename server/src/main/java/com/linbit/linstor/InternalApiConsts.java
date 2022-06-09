@@ -69,7 +69,10 @@ public class InternalApiConsts
     public static final String API_MOD_STLT_CONFIG = "ModifyStltConfig";
     public static final String API_MOD_STLT_CONFIG_RESP = "ModifyStltConfigResp";
 
-    public static final String API_RSP_SOS_REPORT = "ResponseSosReport";
+    public static final String API_REQ_SOS_REPORT_FILE_LIST = "RequestSosReportFileList";
+    public static final String API_REQ_SOS_REPORT_FILES = "RequestSosReportFiles";
+    public static final String API_RSP_SOS_REPORT_FILE_LIST = "ResponseSosReportFileList";
+    public static final String API_RSP_SOS_REPORT_FILES = "ResponseSosReportFiles";
 
     public static final String API_CHANGED_EXTERNAL_FILE = "ChangedExternalFile";
     public static final String API_REQUEST_EXTERNAL_FILE = "RequestExternalFile";

@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.pojo.RequestFilePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
@@ -18,6 +19,7 @@ import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
 import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
+import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.ReqFile;
 import com.linbit.linstor.proto.responses.MsgApiRcResponseOuterClass.MsgApiRcResponse;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -424,4 +426,15 @@ public class ProtoDeserializationUtils
         }
         return tool;
     }
+
+    public static List<RequestFilePojo> parseRequestedSosFiles(List<ReqFile> filesListRef)
+    {
+        List<RequestFilePojo> ret = new ArrayList<>();
+        for (ReqFile proto : filesListRef)
+        {
+            ret.add(new RequestFilePojo(proto.getName(), proto.getOffset(), proto.getLength()));
+        }
+        return ret;
+    }
+
 }

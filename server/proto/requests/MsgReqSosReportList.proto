@@ -6,7 +6,8 @@ package com.linbit.linstor.proto.requests;
 
 // ApiConsts.API_REQ_SOS_REPORT
 // replied with: a list of MsgSosReport
-message MsgReqSosReport
+message MsgReqSosReportList
 {
-    required uint64 since = 1;
+    required string sos_report_name = 1;
+    required uint64 since = 2;
 }

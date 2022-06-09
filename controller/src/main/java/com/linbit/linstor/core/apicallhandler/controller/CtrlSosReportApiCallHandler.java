@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.extproc.DaemonHandler;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
@@ -11,13 +13,17 @@ import com.linbit.extproc.OutputProxy.Event;
 import com.linbit.extproc.OutputProxy.ExceptionEvent;
 import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.SosReportType;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.pojo.RequestFilePojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -28,8 +34,10 @@ import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
-import com.linbit.linstor.proto.responses.FileOuterClass;
-import com.linbit.linstor.proto.responses.MsgSosReportOuterClass;
+import com.linbit.linstor.proto.responses.FileOuterClass.File;
+import com.linbit.linstor.proto.responses.MsgSosReportFilesReplyOuterClass.MsgSosReportFilesReply;
+import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.FileInfo;
+import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.MsgSosReportListReply;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -46,7 +54,6 @@ import javax.inject.Singleton;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -58,17 +65,17 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.inject.Inject;
 import reactor.core.publisher.Flux;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
 @Singleton
 public class CtrlSosReportApiCallHandler
@@ -77,6 +84,9 @@ public class CtrlSosReportApiCallHandler
 
     private static final String SOS_PREFIX = "sos_";
     private static final String SOS_SUFFIX = ".tar.gz";
+
+    /** 10MiB */
+    private static final long MAX_PACKET_SIZE = 10 * (1 << 20);
     private final DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
     private final DateFormat sdfUtc = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
     private final Provider<AccessContext> peerAccCtx;
@@ -126,25 +136,24 @@ public class CtrlSosReportApiCallHandler
             final Path tmpDir = Files.createTempDirectory("sos");
             makeDir(tmpDir.resolve("tmp"));
 
+            String sosReportName = SOS_PREFIX + sdfUtc.format(new Date());
+
             ret = scopeRunner.fluxInTransactionlessScope(
                 "Send SOS report queries",
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
-                () -> sendRequests(nodes, tmpDir, since)
+                () -> sendRequests(nodes, tmpDir, sosReportName, since)
             ).flatMap(
-                sosReportAnswer -> scopeRunner.fluxInTransactionalScope(
-                    "Receiving SOS report",
+                sosFileList -> scopeRunner.fluxInTransactionalScope(
+                    "Receiving SOS FileList",
                     lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
-                    () ->
-                    {
-                        deserializeErrorReportsInto(sosReportAnswer.getT2(), tmpDir);
-                        return Flux.<String>empty();
-                    }
+                    () -> handleSosFileList(tmpDir, sosReportName, sosFileList)
                 )
-            ).concatWith(
+            ).transform(ignore -> ignore.thenMany(Flux.<String>empty()))
+                .concatWith(
                 scopeRunner.fluxInTransactionalScope(
                     "Finishing SOS report",
                     lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
-                    () -> finishReport(nodes, tmpDir, since)
+                    () -> finishReport(nodes, tmpDir, sosReportName, since)
                 )
             );
         }
@@ -156,9 +165,10 @@ public class CtrlSosReportApiCallHandler
         return ret;
     }
 
-    private Flux<Tuple2<NodeName, ByteArrayInputStream>> sendRequests(
+    private Flux<ByteArrayInputStream> sendRequests(
         Set<String> nodes,
         Path tmpDir,
+        String sosReportName,
         Date since
     )
         throws AccessDeniedException
@@ -173,18 +183,19 @@ public class CtrlSosReportApiCallHandler
             );
         }
 
-        List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> namesAndRequests = nodeStream
-            .map(node -> Tuples.of(node.getName(), prepareSosRequestApi(node, tmpDir, since)))
+        List<Flux<ByteArrayInputStream>> namesAndRequests = nodeStream
+            .map(node -> prepareSosRequestApi(node, tmpDir, sosReportName, since))
             .collect(Collectors.toList());
 
-        return Flux.fromIterable(namesAndRequests)
-            .flatMap(
-                nameAndRequest -> nameAndRequest.getT2()
-                    .map(byteStream -> Tuples.of(nameAndRequest.getT1(), byteStream))
-            );
+        return Flux.fromIterable(namesAndRequests).flatMap(Function.identity());
     }
 
-    private Flux<ByteArrayInputStream> prepareSosRequestApi(Node node, Path tmpDir, Date since)
+    private Flux<ByteArrayInputStream> prepareSosRequestApi(
+        Node node,
+        Path tmpDir,
+        String sosReportName,
+        Date since
+    )
     {
         Peer peer = getPeer(node);
         Flux<ByteArrayInputStream> fluxReturn = Flux.empty();
@@ -192,8 +203,8 @@ public class CtrlSosReportApiCallHandler
         {
             // already create the extTools file here, because you need the peer
             createExtToolsInfo(tmpDir.resolve("tmp/" + node.getName().displayValue), peer);
-            byte[] msg = stltComSerializer.headerlessBuilder().requestSosReport(since).build();
-            fluxReturn = peer.apiCall(ApiConsts.API_REQ_SOS_REPORT, msg)
+            byte[] msg = stltComSerializer.headerlessBuilder().requestSosReport(sosReportName, since).build();
+            fluxReturn = peer.apiCall(InternalApiConsts.API_REQ_SOS_REPORT_FILE_LIST, msg)
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
         }
         return fluxReturn;
@@ -217,9 +228,182 @@ public class CtrlSosReportApiCallHandler
         return peer;
     }
 
+    private Flux<ByteArrayInputStream> handleSosFileList(
+        Path tmpDirRef,
+        String sosReportName,
+        ByteArrayInputStream sosFileListInputStreamRef
+    )
+    {
+        MsgSosReportListReply msgSosReportListReply;
+        Peer peer;
+        try
+        {
+            msgSosReportListReply = MsgSosReportListReply.parseDelimitedFrom(sosFileListInputStreamRef);
+            peer = getPeer(nodeRepository.get(peerAccCtx.get(), new NodeName(msgSosReportListReply.getNodeName())));
+        }
+        catch (IOException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An IOException occurred while parsing SosFileList"
+                ),
+                exc
+            );
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(accDeniedExc, "accessing node", ApiConsts.FAIL_ACC_DENIED_NODE);
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        Flux<ByteArrayInputStream> flux;
+        if (peer == null)
+        {
+            flux = Flux.empty();
+        }
+        else
+        {
+            LinkedList<RequestFilePojo> filesToRequest = new LinkedList<>();
+            for (FileInfo fileInfo : msgSosReportListReply.getFilesList())
+            {
+                filesToRequest.add(new RequestFilePojo(fileInfo.getName(), 0, fileInfo.getSize()));
+            }
+            flux = requestNextBatch(tmpDirRef, sosReportName, peer, filesToRequest);
+        }
+
+        return flux;
+    }
+
+    private Flux<ByteArrayInputStream> requestNextBatch(
+        Path tmpDirRef,
+        String sosReportNameRef,
+        Peer stltPeerRef,
+        LinkedList<RequestFilePojo> filesToRequestRef
+    )
+    {
+        long sumFileSizes = 0;
+        ArrayList<RequestFilePojo> nextBatchToRequest = new ArrayList<>();
+        while (!filesToRequestRef.isEmpty())
+        {
+            RequestFilePojo next = filesToRequestRef.removeFirst();
+            long nextSize = next.length - next.offset;
+            if (nextSize + sumFileSizes <= MAX_PACKET_SIZE)
+            {
+                // the request fits, but it might be the last part of an split request.
+                RequestFilePojo lastPartialRequestFile = new RequestFilePojo(next.name, next.offset, nextSize);
+                nextBatchToRequest.add(lastPartialRequestFile);
+                sumFileSizes += nextSize;
+                if (lastPartialRequestFile.offset == 0)
+                {
+                    errorReporter.logTrace(
+                        "Requesting %s for file %s (total size: %d)",
+                        stltPeerRef.getNode().getName().displayValue,
+                        lastPartialRequestFile.name,
+                        lastPartialRequestFile.length
+                    );
+                }
+                else
+                {
+                    errorReporter.logTrace(
+                        "Requesting %s for last part of file %s (offset: %d, length: %d, total size: %d)",
+                        stltPeerRef.getNode().getName().displayValue,
+                        lastPartialRequestFile.name,
+                        lastPartialRequestFile.offset,
+                        lastPartialRequestFile.length,
+                        next.length
+                    );
+                }
+            }
+            else
+            {
+                long partSize = MAX_PACKET_SIZE - sumFileSizes;
+
+                RequestFilePojo partialRequestFile = new RequestFilePojo(next.name, next.offset, partSize);
+                nextBatchToRequest.add(partialRequestFile);
+                errorReporter.logTrace(
+                    "Requesting %s for file %s (offset: %d, length: %d, total size: %d)",
+                    stltPeerRef.getNode().getName().displayValue,
+                    partialRequestFile.name,
+                    partialRequestFile.offset,
+                    partialRequestFile.length,
+                    next.length
+                );
+
+                // safe the partially requested file for next iteration
+                RequestFilePojo nextContinueFrom = new RequestFilePojo(next.name, next.offset + partSize, next.length);
+                filesToRequestRef.addFirst(nextContinueFrom);
+                break;
+            }
+        }
+
+        Flux<ByteArrayInputStream> ret;
+        if (!nextBatchToRequest.isEmpty())
+        {
+            ret = stltPeerRef.apiCall(
+                InternalApiConsts.API_REQ_SOS_REPORT_FILES,
+                stltComSerializer.headerlessBuilder()
+                    .requestSosReportFiles(
+                        sosReportNameRef,
+                        nextBatchToRequest
+                    )
+                    .build()
+            ).flatMap(
+                response -> handleReceivedFiles(tmpDirRef, sosReportNameRef, stltPeerRef, filesToRequestRef, response)
+            )
+                .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
+        }
+        else
+        {
+            ret = Flux.empty(); // we are done with requests to this satellite
+        }
+        return ret;
+    }
+
+    private Flux<ByteArrayInputStream> handleReceivedFiles(
+        Path tmpDirRef,
+        String sosReportNameRef,
+        Peer stltPeerRef,
+        LinkedList<RequestFilePojo> filesToRequestRef,
+        ByteArrayInputStream responseRef
+    )
+    {
+        MsgSosReportFilesReply protoFilesReply;
+        try
+        {
+            protoFilesReply = MsgSosReportFilesReply.parseDelimitedFrom(responseRef);
+        }
+        catch (IOException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An IOException occurred while parsing SosFileReply"
+                ),
+                exc
+            );
+        }
+
+        String nodeName = protoFilesReply.getNodeName();
+        Path sosDir = tmpDirRef.resolve("tmp/" + nodeName);
+        for (File file : protoFilesReply.getFilesList())
+        {
+            append(
+                sosDir.resolve(file.getRelativeTitle()),
+                file.getContent().toByteArray(),
+                file.getTime()
+            );
+        }
+        return requestNextBatch(tmpDirRef, sosReportNameRef, stltPeerRef, filesToRequestRef);
+    }
+
     private Flux<String> finishReport(
         Set<String> nodes,
         Path tmpDir,
+        String sosReportName,
         Date since
     )
         throws IOException, AccessDeniedException, ChildProcessTimeoutException, ExtCmdFailedException
@@ -228,8 +412,27 @@ public class CtrlSosReportApiCallHandler
         {
             createControllerFilesInto(tmpDir, since);
         }
+        nodes.stream()
+            .filter(nodeName -> !LinStor.CONTROLLER_MODULE.equalsIgnoreCase(nodeName))
+            .forEach(nodeName -> {
+                try
+                {
+                    makeDir(tmpDir.resolve(nodeName));
+                }
+                catch (IOException exc)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            "Failed to create directory: " + tmpDir.resolve(nodeName)
+                        ),
+                        exc
+                    );
+                }
+            });
 
-        String fileName = errorReporter.getLogDirectory() + "/" + SOS_PREFIX + sdfUtc.format(new Date()) + SOS_SUFFIX;
+        String fileName = errorReporter.getLogDirectory() + "/" + sosReportName + SOS_SUFFIX;
+
         HashSet<String> copyNodes = new HashSet<>();
         nodes.forEach(node -> copyNodes.add(node.toLowerCase()));
         Stream<Node> nodeStream = nodeRepository.getMapForView(peerAccCtx.get()).values().stream()
@@ -374,24 +577,6 @@ public class CtrlSosReportApiCallHandler
         }
     }
 
-    private void deserializeErrorReportsInto(InputStream msgDataIn, Path tmpDir) throws IOException
-    {
-        MsgSosReportOuterClass.MsgSosReport msgSosReport = MsgSosReportOuterClass.MsgSosReport
-            .parseDelimitedFrom(msgDataIn);
-        while (msgSosReport != null)
-        {
-            String nodeName = msgSosReport.getNodeName();
-            Path sosDir = tmpDir.resolve("tmp/" + nodeName);
-            FileOuterClass.File file = msgSosReport.getFile();
-            append(
-                sosDir.resolve(file.getRelativeTitle()),
-                file.getContent().toByteArray(),
-                file.getTime()
-            );
-            msgSosReport = MsgSosReportOuterClass.MsgSosReport.parseDelimitedFrom(msgDataIn);
-        }
-    }
-
     private void makeDir(Path dirPath) throws IOException
     {
         if (!Files.exists(dirPath))
@@ -479,7 +664,7 @@ public class CtrlSosReportApiCallHandler
 
                 Thread.currentThread().interrupt();
             }
-            if (file != null && data != null)
+            if (file != null && data != null && data.length > 0)
             {
                 append(file, data, timestamp, command);
             }
@@ -576,6 +761,11 @@ public class CtrlSosReportApiCallHandler
         }
     }
 
+    private boolean containsController(Set<String> nodes)
+    {
+        return nodes.isEmpty() || nodes.stream().anyMatch(LinStor.CONTROLLER_MODULE::equalsIgnoreCase);
+    }
+
     private static class CommandHelper
     {
         private final Path file;
@@ -589,10 +779,5 @@ public class CtrlSosReportApiCallHandler
             file = fileRef;
             cmd = cmdRef;
         }
-    }
-
-    private boolean containsController(Set<String> nodes)
-    {
-        return nodes.isEmpty() || nodes.stream().anyMatch(LinStor.CONTROLLER_MODULE::equalsIgnoreCase);
     }
 }

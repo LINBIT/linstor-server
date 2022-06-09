@@ -4,10 +4,11 @@ package com.linbit.linstor.proto.responses;
 
 import "responses/File.proto";
 
-// Contains an SOS report
+// Contains the requested SOS report files
 // Requested by: MsgReqSosReport, ApiConsts.API_REQ_SOS_REPORT
-message MsgSosReport
+message MsgSosReportFilesReply
 {
     required string node_name = 1;
-    required File file = 2;
+    required string sos_report_name = 2;
+    repeated File files = 3;
 }
