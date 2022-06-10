@@ -208,7 +208,7 @@ project(':satellite') {
     apply plugin: 'application'
 
     dependencies {
-        implementation project(':server')
+        implementation project(':server'), project(':jclcrypto')
     }
 
     sourceSets {
@@ -282,8 +282,8 @@ project(':controller') {
     apply plugin: 'application'
 
     dependencies {
-        implementation project(':server')
-        testImplementation project(':server')
+        implementation project(':server'), project(':jclcrypto')
+        testImplementation project(':server'), project(':jclcrypto')
 
         if (gradle.startParameter.isOffline()) {
             compileOnly fileTree(dir: "libs/compileOnly")

@@ -33,6 +33,7 @@ override_dh_install:
 	mkdir -p $(CURDIR)/debian/linstor-controller/etc/linstor
 	cp $(CURDIR)/docs/linstor.toml-example $(CURDIR)/debian/linstor-controller/etc/linstor/
 	# diff and copy additional controller jars
+	rm $(CURDIR)/controller/build/install/controller/lib/jclcrypto*.jar  # comes already in linstor-common
 	$(CURDIR)/scripts/diffcopy.py $(CURDIR)/controller/build/install/controller/lib $(CURDIR)/server/build/install/server/lib/ $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/lib
 	cp $(CURDIR)/scripts/postinstall.sh $(CURDIR)/debian/linstor-controller.postinst
 	# satellite
@@ -45,6 +46,7 @@ override_dh_install:
 	cp $(CURDIR)/satellite/build/libs/* $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
 	if [ -f "$(CURDIR)/libs/satellite-st.jar" ]; then cp "$(CURDIR)/libs/satellite-st.jar" $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib; fi
 	# diff and copy additional satellite jars
+	rm $(CURDIR)/satellite/build/install/satellite/lib/jclcrypto*.jar  # comes already in linstor-common
 	$(CURDIR)/scripts/diffcopy.py $(CURDIR)/satellite/build/install/satellite/lib $(CURDIR)/server/build/install/server/lib/ $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
 	# dh_install
 	dh_install
