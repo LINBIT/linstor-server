@@ -53,7 +53,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
         super(
             errorReporterRef,
             SERVICE_INFO,
-            RemoteType.SATELLTE,
+            RemoteType.SATELLITE,
             extCmdFactoryRef,
             controllerPeerConnectorRef,
             interComSerializerRef,

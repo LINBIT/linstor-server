@@ -330,7 +330,8 @@ public class Backups
                 data.dst_stor_pool,
                 data.stor_pool_rename,
                 data.download_only,
-                null
+                null,
+                data.allow_incremental
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_SHIP_BACKUP, request));
             requestHelper.doFlux(

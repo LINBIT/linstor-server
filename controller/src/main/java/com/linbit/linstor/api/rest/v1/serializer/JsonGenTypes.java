@@ -1291,6 +1291,7 @@ public class JsonGenTypes
         public String dst_stor_pool;
         public Map<String, String> stor_pool_rename = Collections.emptyMap();
         public boolean download_only = false;
+        public boolean allow_incremental = true;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

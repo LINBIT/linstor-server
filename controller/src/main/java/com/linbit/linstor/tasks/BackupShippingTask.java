@@ -89,7 +89,7 @@ public class BackupShippingTask implements TaskScheduleService.Task
                 flux = backupL2LSrcApiCallHandler
                     .shipBackup(
                         nodeName, rscName, conf.remote.getName().displayValue, rscName, null, null, null, null, true,
-                        conf.schedule.getName().displayValue
+                        conf.schedule.getName().displayValue, incremental
                     );
             }
             else

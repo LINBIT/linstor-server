@@ -340,16 +340,27 @@ public class CtrlBackupApiCallHandler
                 );
             }
             Remote remote = null;
+            RemoteName linstorRemoteName = null;
+            SnapshotDefinition prevSnapDfn = null;
             if (remoteTypeRef.equals(RemoteType.S3))
             {
                 // check if encryption is possible
                 getLocalMasterKey();
-            }
 
-                // check if remote exists
+                // check if remote exists (only needed for s3, other option here is stlt, which is created right before
+                // this method is called)
                 remote = getRemote(remoteName);
-
-                SnapshotDefinition prevSnapDfn = getIncrementalBase(rscDfn, remoteName, remote, allowIncremental);
+                prevSnapDfn = getIncrementalBase(rscDfn, remoteName, remote, allowIncremental);
+            }
+            else if (remoteTypeRef.equals(RemoteType.SATELLITE))
+            {
+                remote = getRemote(remoteName);
+                if (remote instanceof StltRemote)
+                {
+                    linstorRemoteName = ((StltRemote) remote).getLinstorRemoteName();
+                    prevSnapDfn = getIncrementalBase(rscDfn, linstorRemoteName.displayValue, remote, allowIncremental);
+                }
+            }
 
             Pair<Node, List<String>> chooseNodeResult = chooseNode(
                 rscDfn,
@@ -399,18 +410,24 @@ public class CtrlBackupApiCallHandler
                     scheduleNameRef,
                     InternalApiConsts.NAMESPC_SCHEDULE
                 );
-                rscDfn.getProps(peerAccCtx.get()).setProp(
-                    remoteName + Props.PATH_SEPARATOR + scheduleNameRef + Props.PATH_SEPARATOR
-                        + InternalApiConsts.KEY_LAST_BACKUP_TIME,
-                    Long.toString(nowRef.getTime()),
-                    InternalApiConsts.NAMESPC_SCHEDULE
-                );
-                rscDfn.getProps(peerAccCtx.get()).setProp(
-                    remoteName + Props.PATH_SEPARATOR + scheduleNameRef + Props.PATH_SEPARATOR
-                        + InternalApiConsts.KEY_LAST_BACKUP_INC,
-                    prevSnapDfn == null ? ApiConsts.VAL_FALSE : ApiConsts.VAL_TRUE,
-                    InternalApiConsts.NAMESPC_SCHEDULE
-                );
+                if (linstorRemoteName != null)
+                {
+                    rscDfn.getProps(peerAccCtx.get()).setProp(
+                        linstorRemoteName + Props.PATH_SEPARATOR + scheduleNameRef + Props.PATH_SEPARATOR
+                            + InternalApiConsts.KEY_LAST_BACKUP_TIME,
+                        Long.toString(nowRef.getTime()),
+                        InternalApiConsts.NAMESPC_SCHEDULE
+                    );
+                }
+                else
+                {
+                    rscDfn.getProps(peerAccCtx.get()).setProp(
+                        remoteName + Props.PATH_SEPARATOR + scheduleNameRef + Props.PATH_SEPARATOR
+                            + InternalApiConsts.KEY_LAST_BACKUP_TIME,
+                        Long.toString(nowRef.getTime()),
+                        InternalApiConsts.NAMESPC_SCHEDULE
+                    );
+                }
             }
 
             // save the s3 suffix as prop so that when restoring the satellite can reconstruct the .meta name
@@ -496,14 +513,29 @@ public class CtrlBackupApiCallHandler
                 remoteName,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
-            // needed twice for scheduled shippings
-            snapDfn.getProps(peerAccCtx.get()).setProp(
-                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                remoteName,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
+            // also needed on snapDfn only for scheduled shippings
+            if (linstorRemoteName != null)
+            {
+                snapDfn.getProps(peerAccCtx.get()).setProp(
+                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                    linstorRemoteName.getDisplayName(),
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
+            }
+            else
+            {
+                snapDfn.getProps(peerAccCtx.get()).setProp(
+                    InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                    remoteName,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING
+                );
+            }
 
-            setIncrementalDependentProps(createdSnapshot, prevSnapDfn);
+            if (linstorRemoteName == null)
+            {
+                // we do not have a linstorRemoteName, so this is not a stltRemote
+                setIncrementalDependentProps(createdSnapshot, prevSnapDfn, remoteName, scheduleNameRef);
+            }
 
             ctrlTransactionHelper.commit();
 
@@ -791,7 +823,12 @@ public class CtrlBackupApiCallHandler
         return ret;
     }
 
-    void setIncrementalDependentProps(Snapshot snap, SnapshotDefinition prevSnapDfn)
+    void setIncrementalDependentProps(
+        Snapshot snap,
+        SnapshotDefinition prevSnapDfn,
+        String remoteName,
+        String scheduleName
+    )
         throws InvalidValueException, AccessDeniedException, DatabaseException
     {
         SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
@@ -803,6 +840,13 @@ public class CtrlBackupApiCallHandler
                     snap.getSnapshotName().displayValue,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
                 );
+
+            snapDfn.getResourceDefinition().getProps(peerAccCtx.get()).setProp(
+                remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR
+                    + InternalApiConsts.KEY_LAST_BACKUP_INC,
+                ApiConsts.VAL_FALSE,
+                InternalApiConsts.NAMESPC_SCHEDULE
+            );
         }
         else
         {
@@ -819,6 +863,12 @@ public class CtrlBackupApiCallHandler
                 InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
                 prevSnapDfn.getName().displayValue,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            snapDfn.getResourceDefinition().getProps(peerAccCtx.get()).setProp(
+                remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR
+                    + InternalApiConsts.KEY_LAST_BACKUP_INC,
+                ApiConsts.VAL_TRUE,
+                InternalApiConsts.NAMESPC_SCHEDULE
             );
         }
     }
@@ -3595,6 +3645,7 @@ public class CtrlBackupApiCallHandler
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
         boolean forceSkip = false;
         Remote remote = null;
+        Remote remoteForSchedule = null;
         Flux<ApiCallRc> cleanupFlux = Flux.empty();
         if (snapDfn != null)
         {
@@ -3648,17 +3699,33 @@ public class CtrlBackupApiCallHandler
                         remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
                         if (remote != null)
                         {
-                            if (successRef)
-                            {
-                                rscDfn.getProps(peerAccCtx.get()).setProp(
-                                    InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                                    snapNameRef,
-                                    ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
-                                );
-                            }
                             if (remote instanceof StltRemote)
                             {
-                                cleanupFlux = cleanupStltRemote((StltRemote) remote);
+                                StltRemote stltRemote = (StltRemote) remote;
+                                cleanupFlux = cleanupStltRemote(stltRemote);
+                                // get the linstor-remote instead, needed for scheduled shipping
+                                remoteForSchedule = remoteRepo.get(sysCtx, stltRemote.getLinstorRemoteName());
+                                if (successRef)
+                                {
+                                    rscDfn.getProps(peerAccCtx.get()).setProp(
+                                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                                        snapNameRef,
+                                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" +
+                                            remoteForSchedule.getName().displayValue
+                                    );
+                                }
+                            }
+                            else
+                            {
+                                remoteForSchedule = remote;
+                                if (successRef)
+                                {
+                                    rscDfn.getProps(peerAccCtx.get()).setProp(
+                                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                                        snapNameRef,
+                                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
+                                    );
+                                }
                             }
                         }
                         else
@@ -3711,7 +3778,7 @@ public class CtrlBackupApiCallHandler
                         scheduleService.get().addTaskAgain(
                             rscDfn,
                             schedule,
-                            remote,
+                            remoteForSchedule,
                             Long.parseLong(backupTimeRaw),
                             successRef,
                             forceSkip,
@@ -3723,12 +3790,14 @@ public class CtrlBackupApiCallHandler
                         {
                             Flux<ApiCallRc> deleteFlux = Flux.empty();
                             List<SnapshotDefinition> snapDfnsToCheck = getFullBackupBaseSnaps(
-                                rscDfn, scheduleName, remote.getName().displayValue
+                                rscDfn, scheduleName, remoteForSchedule.getName().displayValue
                             );
                             Map<Date, String> backupsToCheck = new TreeMap<>();
-                            if (remote instanceof S3Remote)
+                            if (remoteForSchedule instanceof S3Remote)
                             {
-                                backupsToCheck = getFullBackupS3Keys(rscNameRef, (S3Remote) remote, scheduleName);
+                                backupsToCheck = getFullBackupS3Keys(
+                                    rscNameRef, (S3Remote) remoteForSchedule, scheduleName
+                                );
                             }
                             Integer keepRemote = schedule.getKeepRemote(peerAccCtx.get());
                             Integer keepLocal = schedule.getKeepLocal(peerAccCtx.get());
@@ -3785,7 +3854,7 @@ public class CtrlBackupApiCallHandler
                                     }
                                 }
                                 Map<SnapshotDefinition, List<SnapshotDefinition>> chains = getAllSnapshotChains(
-                                    rscDfn, scheduleName, remote.getName().displayValue
+                                    rscDfn, scheduleName, remoteForSchedule.getName().displayValue
                                 );
                                 for (SnapshotDefinition fullSnapToDel : fullSnapsToDel)
                                 {
@@ -3824,7 +3893,7 @@ public class CtrlBackupApiCallHandler
                                         errorReporter.logTrace(
                                             "Backup %s and all backups dependant on it will be deletetd on remote %s due to schedule %s",
                                             s3key,
-                                            remote.getName(),
+                                            remoteForSchedule.getName(),
                                             schedule.getName()
                                         );
                                         deleteFlux = deleteFlux.concatWith(
@@ -3838,7 +3907,7 @@ public class CtrlBackupApiCallHandler
                                                 false,
                                                 false,
                                                 null,
-                                                remote.getName().displayValue,
+                                                remoteForSchedule.getName().displayValue,
                                                 false,
                                                 true
                                             )
@@ -3977,7 +4046,7 @@ public class CtrlBackupApiCallHandler
                 Props props = snapDfn.getProps(peerAccCtx.get());
                 if (
                     isFullBackupOfSchedule(
-                        snapDfn.getProps(peerAccCtx.get()).map(), scheduleName, remoteName,
+                        props.map(), scheduleName, remoteName,
                         snapDfn.getName().displayValue
                     ) && props.getProp(
                         InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
@@ -4511,22 +4580,13 @@ public class CtrlBackupApiCallHandler
             );
         }
         Remote remote = null;
-        remote = remoteRepo.get(peerAccCtx.get(), new RemoteName(remoteName));
+        remote = remoteRepo.get(peerAccCtx.get(), new RemoteName(remoteName, true));
         if (remote == null)
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_NOT_FOUND_REMOTE | ApiConsts.MASK_BACKUP,
                     "The remote " + remoteName + " does not exist. Please provide a valid remote or create a new one."
-                )
-            );
-        }
-        if (remote.getType().equals(RemoteType.SATELLTE))
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_REMOTE_NAME | ApiConsts.MASK_BACKUP,
-                    "The remote " + remoteName + " is not a valid backup target."
                 )
             );
         }

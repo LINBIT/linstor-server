@@ -88,7 +88,7 @@ public interface Remote
     enum RemoteType
     {
         S3,
-        SATELLTE,
+        SATELLITE,
         LINSTOR // controller only, should never be sent to satellite
     }
 }

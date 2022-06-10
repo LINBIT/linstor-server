@@ -139,7 +139,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable String dstStorPoolRef,
         @Nullable Map<String, String> storPoolRenameRef,
         boolean downloadOnly,
-        String scheduleNameRef
+        String scheduleNameRef,
+        boolean allowIncremental
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -157,7 +158,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 dstStorPoolRef,
                 storPoolRenameRef,
                 downloadOnly,
-                scheduleNameRef
+                scheduleNameRef,
+                allowIncremental
             )
         );
     }
@@ -172,7 +174,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         String dstStorPoolRef,
         Map<String, String> storPoolRenameRef,
         boolean downloadOnly,
-        String scheduleNameRef
+        String scheduleNameRef,
+        boolean allowIncremental
     )
     {
 
@@ -215,7 +218,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             dstStorPoolRef,
             storPoolRenameRef,
             downloadOnly,
-            scheduleNameRef
+            scheduleNameRef,
+            allowIncremental
         );
 
         /*
@@ -259,7 +263,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             peerAccCtx.get(),
             data.srcRscName,
             data.srcBackupName,
-            new TreeMap<>()
+            new TreeMap<>(),
+            data.linstorRemote.getName()
         );
 
         data.stltRemote = stltRemote;
@@ -299,10 +304,10 @@ public class CtrlBackupL2LSrcApiCallHandler
             data.srcBackupName,
             data.now,
             false,
-            false,
+            data.allowIncremental,
             requiredExtTools,
             optionalExtTools,
-            RemoteType.LINSTOR,
+            RemoteType.SATELLITE,
             data.scheduleName
         );
         data.srcSnapshot = createSnapshot.objB;
@@ -331,7 +336,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         AccessContext accCtxRef,
         String rscNameRef,
         String snapshotNameRef,
-        Map<String, Integer> snapShipPortsRef
+        Map<String, Integer> snapShipPortsRef,
+        RemoteName linstorRemoteNameRef
     )
     {
         StltRemote stltRemote;
@@ -342,7 +348,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 // add random uuid to avoid naming conflict
                 RemoteName.createInternal(rscNameRef + "_" + snapshotNameRef + "_" + UUID.randomUUID().toString()),
                 null,
-                snapShipPortsRef
+                snapShipPortsRef,
+                linstorRemoteNameRef
             );
             remoteRepoRef.put(accCtxRef, stltRemote);
         }
@@ -499,9 +506,11 @@ public class CtrlBackupL2LSrcApiCallHandler
                 snap.getFlags().enableFlags(accCtx, Snapshot.Flags.BACKUP_SOURCE);
                 snap.setTakeSnapshot(accCtx, true); // needed by source-satellite to actually start sending
 
-                if (responseRef.srcSnapDfnUuid != null && !responseRef.srcSnapDfnUuid.isEmpty())
+                SnapshotDefinition prevSnapDfn = null;
+                if (
+                    responseRef.srcSnapDfnUuid != null && !responseRef.srcSnapDfnUuid.isEmpty() && data.allowIncremental
+                )
                 {
-                    SnapshotDefinition prevSnapDfn = null;
                     UUID prevSnapUuid = UUID.fromString(responseRef.srcSnapDfnUuid);
                     for (SnapshotDefinition snapDfn : snap.getResourceDefinition().getSnapshotDfns(accCtx))
                     {
@@ -519,8 +528,11 @@ public class CtrlBackupL2LSrcApiCallHandler
                         );
                     }
 
-                    ctrlBackupApiCallHandler.setIncrementalDependentProps(snap, prevSnapDfn);
                 }
+
+                ctrlBackupApiCallHandler.setIncrementalDependentProps(
+                    snap, prevSnapDfn, data.linstorRemote.getName().displayValue, data.scheduleName
+                );
 
                 ctrlTransactionHelper.commit();
                 flux = flux.concatWith(
@@ -799,6 +811,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         private final LinstorRemote linstorRemote;
         private boolean useZstd;
         private boolean downloadOnly;
+        private boolean allowIncremental;
 
         private BackupMetaDataPojo metaDataPojo;
         private final String dstRscName;
@@ -823,7 +836,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             String dstStorPoolRef,
             Map<String, String> storPoolRenameRef,
             boolean downloadOnlyRef,
-            String scheduleNameRef
+            String scheduleNameRef,
+            boolean allowIncrementalRef
         )
         {
             srcClusterId = srcClusterIdRef;
@@ -839,6 +853,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             storPoolRename = storPoolRenameRef;
             downloadOnly = downloadOnlyRef;
             scheduleName = scheduleNameRef;
+            allowIncremental = allowIncrementalRef;
         }
     }
 }

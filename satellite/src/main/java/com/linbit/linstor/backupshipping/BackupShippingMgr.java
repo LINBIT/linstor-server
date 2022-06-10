@@ -45,7 +45,7 @@ public class BackupShippingMgr
         services = new HashMap<>();
 
         services.put(RemoteType.S3, backupShippingS3Ref);
-        services.put(RemoteType.SATELLTE, backupShippingL2LRef);
+        services.put(RemoteType.SATELLITE, backupShippingL2LRef);
     }
 
     public AbsBackupShippingService getService(RemoteType remoteType)

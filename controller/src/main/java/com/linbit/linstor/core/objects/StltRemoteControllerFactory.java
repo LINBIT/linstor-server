@@ -47,7 +47,8 @@ public class StltRemoteControllerFactory
         AccessContext accCtxRef,
         RemoteName nameRef,
         String ipRef,
-        Map<String, Integer> portsRef
+        Map<String, Integer> portsRef,
+        RemoteName linstorRemoteNameRef
     )
         throws AccessDeniedException, DatabaseException
     {
@@ -68,6 +69,7 @@ public class StltRemoteControllerFactory
             ipRef,
             portsRef,
             null,
+            linstorRemoteNameRef,
             (StateFlagsPersistence<StltRemote>) stateFlagsDriver,
             transObjFactory,
             transMgrProvider

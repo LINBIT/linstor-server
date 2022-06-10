@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Temporary object storing ip+port other other informations of the target satellite.
+ * Temporary object storing ip+port and other information of the target satellite.
  * This object will NOT be persisted.
  * This object is expected to be deleted after a backup shipping.
  */
@@ -47,6 +47,8 @@ public class StltRemote extends BaseTransactionObject
     private final TransactionSimpleObject<StltRemote, Boolean> useZstd;
     private final TransactionSimpleObject<StltRemote, Boolean> deleted;
     private final StateFlags<Flags> flags;
+    // this remoteName references the complete cluster instead of only the stlt the shipping should go to
+    private final RemoteName linstorRemoteName;
 
     public StltRemote(
         ObjectProtection objProtRef,
@@ -56,6 +58,7 @@ public class StltRemote extends BaseTransactionObject
         String ipRef,
         Map<String, Integer> portRef,
         Boolean useZstdRef,
+        RemoteName linstorRemoteNameRef,
         StateFlagsPersistence<StltRemote> stateFlagsDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
@@ -64,6 +67,7 @@ public class StltRemote extends BaseTransactionObject
         super(transMgrProvider);
         objProt = objProtRef;
         objId = objIdRef;
+        linstorRemoteName = linstorRemoteNameRef;
         dbgInstanceId = UUID.randomUUID();
         remoteName = remoteNameRef;
 
@@ -116,6 +120,12 @@ public class StltRemote extends BaseTransactionObject
     {
         checkDeleted();
         return remoteName;
+    }
+
+    public RemoteName getLinstorRemoteName()
+    {
+        checkDeleted();
+        return linstorRemoteName;
     }
 
     public String getIp(AccessContext accCtx) throws AccessDeniedException
@@ -192,7 +202,7 @@ public class StltRemote extends BaseTransactionObject
     @Override
     public RemoteType getType()
     {
-        return RemoteType.SATELLTE;
+        return RemoteType.SATELLITE;
     }
 
     public StltRemotePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId) throws AccessDeniedException

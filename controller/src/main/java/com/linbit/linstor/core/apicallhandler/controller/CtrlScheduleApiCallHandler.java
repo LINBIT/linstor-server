@@ -596,8 +596,27 @@ public class CtrlScheduleApiCallHandler
             if (currentConf != null)
             {
                 Pair<Long, Boolean> pair = currentConf.timeoutAndType;
-                nextExecTime = pair.objA != null ? pair.objA : -1;
+                Long pairCalculatedFrom = currentConf.timeoutAndTypeCalculatedFrom;
+                if (pair.objA != null)
+                {
+                    if (pairCalculatedFrom != null)
+                    {
+                        nextExecTime = pairCalculatedFrom + pair.objA;
+                    }
+                    else
+                    {
+                        throw new ImplementationError(
+                            "timeoutAndType of conf " + currentConf +
+                                " was set without also setting timeoutAndTypeCalculatedFrom"
+                        );
+                    }
+                }
+                else
+                {
+                    nextExecTime = -1;
+                }
                 nextExecInc = pair.objB != null && pair.objB;
+
             }
             ScheduledRscsPojo pojo = new ScheduledRscsPojo(
                 conf.rscDfn.getName().displayValue,
@@ -646,7 +665,10 @@ public class CtrlScheduleApiCallHandler
                     Boolean ctrl = null;
                     Boolean grp = null;
                     Boolean dfn = null;
-                    for (ValueWithDescription entry : prop.getValue().conflictingList)
+                    // first needs to be checked, but is not part of conflictingList
+                    List<ValueWithDescription> allValsToCheck = new ArrayList<>(prop.getValue().conflictingList);
+                    allValsToCheck.add(prop.getValue().first);
+                    for (ValueWithDescription entry : allValsToCheck)
                     {
                         switch (entry.propsDescription)
                         {

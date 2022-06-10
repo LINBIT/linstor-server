@@ -404,7 +404,8 @@ public class ScheduleBackupService implements SystemService
                     remote,
                     rscDfn,
                     lastInc,
-                    infoPair
+                    infoPair,
+                    now.toEpochSecond() * 1000
                 );
                 BackupShippingTask task = new BackupShippingTask(
                     accCtx,
@@ -710,7 +711,7 @@ public class ScheduleBackupService implements SystemService
 
     public void removeSingleTask(Schedule schedule, Remote remote, ResourceDefinition rscDfn)
     {
-        removeSingleTask(new ScheduledShippingConfig(schedule, remote, rscDfn, false, new Pair<>()), false);
+        removeSingleTask(new ScheduledShippingConfig(schedule, remote, rscDfn, false, new Pair<>(), null), false);
     }
 
     /**
@@ -826,6 +827,7 @@ public class ScheduleBackupService implements SystemService
         public final ResourceDefinition rscDfn;
         public final boolean lastInc;
         public final Pair<Long, Boolean> timeoutAndType;
+        public final Long timeoutAndTypeCalculatedFrom;
 
         private BackupShippingTask task;
         public int retryCt;
@@ -835,7 +837,8 @@ public class ScheduleBackupService implements SystemService
             Remote remoteRef,
             ResourceDefinition rscDfnRef,
             boolean lastIncRef,
-            Pair<Long, Boolean> timeoutAndTypeRef
+            Pair<Long, Boolean> timeoutAndTypeRef,
+            Long timeoutAndTypeCalculatedFromRef
         )
         {
             schedule = scheduleRef;
@@ -844,6 +847,7 @@ public class ScheduleBackupService implements SystemService
             lastInc = lastIncRef;
             timeoutAndType = timeoutAndTypeRef;
             retryCt = 0;
+            timeoutAndTypeCalculatedFrom = timeoutAndTypeCalculatedFromRef;
         }
 
         @Override

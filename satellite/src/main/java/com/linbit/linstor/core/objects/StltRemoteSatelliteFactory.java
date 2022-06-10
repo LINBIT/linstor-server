@@ -67,6 +67,7 @@ public class StltRemoteSatelliteFactory
                     ipRef,
                     portsRef,
                     useZstdRef,
+                    null,
                     (StateFlagsPersistence<StltRemote>) noopFlagDriver,
                     transObjFactory,
                     transMgrProvider

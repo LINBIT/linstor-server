@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.SystemContext;
@@ -15,8 +16,6 @@ import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
-import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
@@ -37,6 +36,7 @@ import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -355,7 +355,8 @@ public class CtrlBackupL2LDstApiCallHandler
             apiCtx,
             data.dstRscName,
             snapName.displayValue,
-            data.snapShipPorts
+            data.snapShipPorts,
+            null    // needed for scheduled shipping which does not concern dst
         );
 
         data.snapName = snapName;

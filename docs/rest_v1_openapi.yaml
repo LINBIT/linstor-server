@@ -7758,6 +7758,9 @@ components:
         download_only:
           type: boolean
           default: false
+        allow_incremental:
+          type: boolean
+          default: true
     BackupInfo:
       type: object
       required:
