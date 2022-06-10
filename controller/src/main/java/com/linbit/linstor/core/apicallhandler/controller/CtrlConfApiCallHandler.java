@@ -31,6 +31,7 @@ import com.linbit.linstor.core.apis.ControllerConfigApi;
 import com.linbit.linstor.core.apis.SatelliteConfigApi;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.core.types.MinorNumber;
 import com.linbit.linstor.core.types.TcpPortNumber;
@@ -95,6 +96,7 @@ public class CtrlConfApiCallHandler
 
     private final CtrlStltSerializer ctrlStltSrzl;
     private final NodesMap nodesMap;
+    private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final WhitelistProps whitelistProps;
     private final EncryptionHelper encHelper;
     private final CtrlConfig ctrlCfg;
@@ -105,6 +107,7 @@ public class CtrlConfApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final AutoDiskfulTask autoDiskfulTask;
     private final ReconnectorTask reconnectorTask;
+    private final CtrlRscDfnAutoVerfiyAlgoHelper ctrlRscDfnAutoVerfiyAlgoHelper;
 
     @FunctionalInterface
     private interface SpecialPropHandler
@@ -142,7 +145,9 @@ public class CtrlConfApiCallHandler
         ResponseConverter responseConverterRef,
         CtrlNodeApiCallHandler ctrlNodeApiCallHandlerRef,
         AutoDiskfulTask autoDiskfulTaskRef,
-        ReconnectorTask reconnectorTaskRef
+        ReconnectorTask reconnectorTaskRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        CtrlRscDfnAutoVerfiyAlgoHelper ctrlRscDfnAutoVerfiyAlgoHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -155,6 +160,7 @@ public class CtrlConfApiCallHandler
         transMgrProvider = transMgrProviderRef;
 
         nodesMap = nodesMapRef;
+        rscDfnMap = rscDfnMapRef;
         ctrlStltSrzl = ctrlStltSrzlRef;
         whitelistProps = whitelistPropsRef;
         encHelper = encHelperRef;
@@ -165,6 +171,7 @@ public class CtrlConfApiCallHandler
         ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
         autoDiskfulTask = autoDiskfulTaskRef;
         reconnectorTask = reconnectorTaskRef;
+        ctrlRscDfnAutoVerfiyAlgoHelper = ctrlRscDfnAutoVerfiyAlgoHelperRef;
     }
 
     public void updateSatelliteConf() throws AccessDeniedException
@@ -581,6 +588,16 @@ public class CtrlConfApiCallHandler
         return changed;
     }
 
+    private ApiCallRc updateRscDfns()
+    {
+        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        for (ResourceDefinition rscDfn : rscDfnMap.values())
+        {
+            apiCallRc.addEntries(ctrlRscDfnAutoVerfiyAlgoHelper.updateVerifyAlgorithm(rscDfn));
+        }
+        return apiCallRc;
+    }
+
     public Pair<ApiCallRc, Boolean> setProp(String key, String namespace, String value)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -640,6 +657,10 @@ public class CtrlConfApiCallHandler
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM:
                             notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                            break;
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_USER:
+                            notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                            updateRscDfns();
                             break;
                         case ApiConsts.KEY_UPDATE_CACHE_INTERVAL:
                             // fall-through

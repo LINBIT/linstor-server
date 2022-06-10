@@ -135,7 +135,7 @@ public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHel
      * @throws ApiDatabaseException if setProp fails
      * @throws ApiAccessDeniedException if apiCtx doesn't have access to resource definition
      */
-    private ApiCallRc updateVerifyAlgorithm(ResourceDefinition rscDfn)
+    public ApiCallRc updateVerifyAlgorithm(ResourceDefinition rscDfn)
     {
         final ApiCallRcImpl rc = new ApiCallRcImpl();
 
@@ -163,7 +163,7 @@ public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                     Arrays.asList(allowedAutoAlgosString.trim().split(";"))
                 );
 
-                final String allowedAutoAlgosUserString = rscDfn.getProps(peerCtx).getPropWithDefault(
+                final String allowedAutoAlgosUserString = prioProps.getProp(
                     ApiConsts.KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_USER, ApiConsts.NAMESPC_DRBD_OPTIONS, ""
                 );
                 allowedAlgos.addAll(Arrays.asList(allowedAutoAlgosUserString.trim().split(";")));
@@ -191,17 +191,17 @@ public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                             ApiConsts.NAMESPC_DRBD_OPTIONS
                         );
                         rc.addEntry(
-                            String.format("Updated DRBD auto verify algorithm to '%s'", commonHashAlgo.getDriver()),
+                            String.format("Updated %s DRBD auto verify algorithm to '%s'",
+                                rscDfn.getName(), commonHashAlgo.getDriver()),
                             ApiConsts.MASK_INFO
                         );
                     }
                 }
                 else
                 {
-                    errorReporter.logInfo(
-                        "No common DRBD verify algorithm found for '%s'",
-                        rscDfn.getName()
-                    );
+                    final String msg = String.format("No common DRBD verify algorithm found for '%s', clearing prop",
+                        rscDfn.getName());
+                    errorReporter.logInfo(msg);
                     final Props rscDfnProps = rscDfn.getProps(peerCtx);
                     rscDfnProps.removeProp(InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS);
                 }
