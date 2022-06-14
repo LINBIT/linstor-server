@@ -21,4 +21,5 @@ message FileInfo
 {
     required string name = 1;
     required uint64 size = 2;
+    required uint64 time = 3;
 }

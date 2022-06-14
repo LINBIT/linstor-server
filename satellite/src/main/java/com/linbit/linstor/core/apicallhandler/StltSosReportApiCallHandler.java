@@ -109,7 +109,7 @@ public class StltSosReportApiCallHandler
                         try
                         {
                             Files.write(targetPath, ((SosInfoType) report).getInfo().getBytes());
-                            fileList.add(new FileInfoPojo(fileName, targetPath.toFile().length()));
+                            fileList.add(new FileInfoPojo(fileName, targetPath.toFile().length(), timestamp));
                         }
                         catch (IOException exc)
                         {
@@ -132,13 +132,13 @@ public class StltSosReportApiCallHandler
                                     targetPath,
                                     StandardCopyOption.COPY_ATTRIBUTES
                                 );
-                                fileList.add(new FileInfoPojo(fileName, targetPath.toFile().length()));
+                                fileList.add(new FileInfoPojo(fileName, targetPath.toFile().length(), timestamp));
                             }
                             else
                             {
                                 String fileNameNotFound = fileName + SUFFIX_FILE_NOT_FOUND;
                                 Files.createFile(sosReportDir.resolve(fileNameNotFound));
-                                fileList.add(new FileInfoPojo(fileNameNotFound, 0));
+                                fileList.add(new FileInfoPojo(fileNameNotFound, 0, timestamp));
                             }
                         }
                         catch (IOException exc)
@@ -148,7 +148,7 @@ public class StltSosReportApiCallHandler
                             {
                                 String fileNameIoExc = fileName + SUFFIX_IO_EXC;
                                 Files.write(sosReportDir.resolve(fileNameIoExc), exceptionData);
-                                fileList.add(new FileInfoPojo(fileNameIoExc, exceptionData.length));
+                                fileList.add(new FileInfoPojo(fileNameIoExc, exceptionData.length, timestamp));
                             }
                             catch (IOException exc1)
                             {
@@ -179,11 +179,11 @@ public class StltSosReportApiCallHandler
                             command,
                             timestamp
                         );
-                        fileList.add(new FileInfoPojo(fileName, outFile.length()));
+                        fileList.add(new FileInfoPojo(fileName, outFile.length(), timestamp));
 
                         if (hasErrFile)
                         {
-                            fileList.add(new FileInfoPojo(errFileName, errFile.length()));
+                            fileList.add(new FileInfoPojo(errFileName, errFile.length(), timestamp));
                         }
                     }
                     catch (IOException | InterruptedException exc)
@@ -193,7 +193,7 @@ public class StltSosReportApiCallHandler
                         {
                             String fileNameIoExc = fileName + SUFFIX_IO_EXC;
                             Files.write(sosReportDir.resolve(fileNameIoExc), exceptionData);
-                            fileList.add(new FileInfoPojo(fileNameIoExc, exceptionData.length));
+                            fileList.add(new FileInfoPojo(fileNameIoExc, exceptionData.length, timestamp));
                         }
                         catch (IOException exc1)
                         {

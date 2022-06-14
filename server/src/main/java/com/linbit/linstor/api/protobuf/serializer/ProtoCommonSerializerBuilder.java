@@ -789,6 +789,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 FileInfo.newBuilder()
                     .setName(pojo.relativeName)
                     .setSize(pojo.size)
+                    .setTime(pojo.timestamp)
                     .build()
             );
         }

@@ -267,9 +267,19 @@ public class CtrlSosReportApiCallHandler
         }
         else
         {
+            Path sosDir = tmpDirRef.resolve("tmp/" + msgSosReportListReply.getNodeName());
             LinkedList<RequestFilePojo> filesToRequest = new LinkedList<>();
             for (FileInfo fileInfo : msgSosReportListReply.getFilesList())
             {
+                if (fileInfo.getSize() == 0)
+                {
+                    // do not request files with 0 bytes. instead, just create the corresponding file right now
+                    append(
+                        sosDir.resolve(fileInfo.getName()),
+                        new byte[0],
+                        fileInfo.getTime()
+                    );
+                }
                 filesToRequest.add(new RequestFilePojo(fileInfo.getName(), 0, fileInfo.getSize()));
             }
             flux = requestNextBatch(tmpDirRef, sosReportName, peer, filesToRequest);
