@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler;
 
+import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.SosReportType;
 import com.linbit.linstor.SosReportType.SosCommandType;
@@ -54,6 +56,7 @@ public class StltSosReportApiCallHandler
     private final CtrlStltSerializer interComSerializer;
     private final Provider<Long> apiCallId;
     private final StltConfig stltCfg;
+    private final ExtCmdFactory extCmdFactory;
 
     @Inject
     public StltSosReportApiCallHandler(
@@ -61,7 +64,8 @@ public class StltSosReportApiCallHandler
         final ControllerPeerConnector controllerPeerConnectorRef,
         final CtrlStltSerializer interComSerializerRef,
         final @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
-        final StltConfig stltCfgRef
+        final StltConfig stltCfgRef,
+        final ExtCmdFactory extCmdFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -69,6 +73,7 @@ public class StltSosReportApiCallHandler
         interComSerializer = interComSerializerRef;
         apiCallId = apiCallIdRef;
         stltCfg = stltCfgRef;
+        extCmdFactory = extCmdFactoryRef;
     }
 
     /**
@@ -316,6 +321,11 @@ public class StltSosReportApiCallHandler
         );
     }
 
+    private Path getSosReportDir(String sosReportName)
+    {
+        return SOS_REPORTS_DIR.resolve(sosReportName);
+    }
+
     /**
      *
      * Returns a list of files to collect (does not collect anything, just builds and returns the list).
@@ -437,5 +447,18 @@ public class StltSosReportApiCallHandler
             }
         }
         return reportTypes;
+    }
+
+    public void handleSosReportCleanup(String sosReportNameRef)
+    {
+        Path sosReportDir = getSosReportDir(sosReportNameRef);
+        try
+        {
+            extCmdFactory.create().exec("rm", "-rf", sosReportDir.toString());
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            errorReporter.reportError(exc);
+        }
     }
 }

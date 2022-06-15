@@ -129,6 +129,7 @@ import com.linbit.linstor.proto.responses.FileOuterClass.File;
 import com.linbit.linstor.proto.responses.MsgApiRcResponseOuterClass.MsgApiRcResponse;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.responses.MsgEventOuterClass;
+import com.linbit.linstor.proto.responses.MsgReqSosCleanupOuterClass.MsgReqSosCleanup;
 import com.linbit.linstor.proto.responses.MsgSosReportFilesReplyOuterClass.MsgSosReportFilesReply;
 import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.FileInfo;
 import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.MsgSosReportListReply;
@@ -834,6 +835,23 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             );
         }
         return ret;
+    }
+
+    @Override
+    public CommonSerializerBuilder cleanupSosReport(String sosReportNameRef)
+    {
+        try
+        {
+            MsgReqSosCleanup.newBuilder()
+                .setSosReportName(sosReportNameRef)
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        return this;
     }
 
     @Override

@@ -115,6 +115,8 @@ public interface CommonSerializer
             List<FilePojo> filesRef
         );
 
+        CommonSerializerBuilder cleanupSosReport(String sosReportNameRef);
+
         CommonSerializerBuilder filter(
             Set<NodeName> nodesFilter,
             Set<StorPoolName> storPoolFilter,

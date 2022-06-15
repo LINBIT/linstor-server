@@ -16,12 +16,14 @@ import com.linbit.extproc.OutputProxy.StdOutEvent;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.SosReportType;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.RequestFilePojo;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
@@ -459,13 +461,31 @@ public class CtrlSosReportApiCallHandler
                 node -> copyNodes.isEmpty() ||
                     copyNodes.contains(node.getName().getDisplayName().toLowerCase())
             );
-        List<String> names = nodeStream.map(node -> node.getName().displayValue).collect(Collectors.toList());
+        List<Node> nodeList = nodeStream.collect(Collectors.toList());
+        List<String> names = nodeList.stream().map(node -> node.getName().displayValue).collect(Collectors.toList());
         if (containsController(nodes))
         {
             names.add("_" + LinStor.CONTROLLER_MODULE);
         }
         createTar(tmpDir, fileName, names);
-        return Flux.just(fileName);
+
+        Flux<ApiCallRc> ret = Flux.empty();
+
+        for (Node node : nodeList)
+        {
+            ret = ret.concatWith(
+                node.getPeer(peerAccCtx.get()).apiCall(
+                    InternalApiConsts.API_REQ_SOS_REPORT_CLEANUP,
+                    stltComSerializer.headerlessBuilder()
+                        .cleanupSosReport(sosReportName)
+                        .build()
+                ).map(
+                    answer -> CtrlSatelliteUpdateCaller.deserializeApiCallRc(node.getName(), answer)
+                )
+            );
+        }
+
+        return ret.thenMany(Flux.just(fileName));
     }
 
     private void createExtToolsInfo(Path dirPath, Peer peer)
