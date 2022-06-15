@@ -29,6 +29,7 @@ import java.util.List;
 @Singleton
 public class CreateDevicePool implements ApiCall
 {
+    private static final String VDO_POOL_SUFFIX = "-vdobase";
     private final Provider<Peer> peerProvider;
     private Provider<Long> apiCallId;
     private final CtrlStltSerializer ctrlStltSerializer;
@@ -66,27 +67,32 @@ public class CreateDevicePool implements ApiCall
             ArrayList<String> lvmDevicePaths = new ArrayList<>(devicePaths);
             if (msgCreateDevicePool.hasVdoArguments())
             {
-                lvmDevicePaths.clear();
-                for (final String rawDevicePath : devicePaths)
+                apiCallRc.addEntries(
+                    devicePoolHandler.createDevicePool(
+                        DeviceProviderKind.LVM,
+                        devicePaths,
+                        RaidLevel.valueOf(msgCreateDevicePool.getRaidLevel().name()),
+                        msgCreateDevicePool.getPoolName() + VDO_POOL_SUFFIX));
+
+                devicePoolHandler.createVdoDevice(
+                    apiCallRc,
+                    msgCreateDevicePool.getPoolName() + VDO_POOL_SUFFIX,
+                    msgCreateDevicePool.getPoolName(),
+                    msgCreateDevicePool.getLogicalSizeKib(),
+                    msgCreateDevicePool.getVdoArguments().getSlabSizeKib()
+                );
+            }
+            else
+            {
+                if (!lvmDevicePaths.isEmpty() && !apiCallRc.hasErrors())
                 {
-                    lvmDevicePaths.add(devicePoolHandler.createVdoDevice(
-                        apiCallRc,
-                        rawDevicePath,
-                        msgCreateDevicePool.getPoolName(),
-                        msgCreateDevicePool.getLogicalSizeKib(),
-                        msgCreateDevicePool.getVdoArguments().getSlabSizeKib()
+                    apiCallRc.addEntries(devicePoolHandler.createDevicePool(
+                        kind,
+                        lvmDevicePaths,
+                        RaidLevel.valueOf(msgCreateDevicePool.getRaidLevel().name()),
+                        msgCreateDevicePool.getPoolName()
                     ));
                 }
-            }
-
-            if (!lvmDevicePaths.isEmpty() && !apiCallRc.hasErrors())
-            {
-                apiCallRc.addEntries(devicePoolHandler.createDevicePool(
-                    kind,
-                    lvmDevicePaths,
-                    RaidLevel.valueOf(msgCreateDevicePool.getRaidLevel().name()),
-                    msgCreateDevicePool.getPoolName()
-                ));
             }
         }
 

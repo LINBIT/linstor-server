@@ -38,7 +38,7 @@ public class DevicePoolHandler
 
     public String createVdoDevice(
         final ApiCallRcImpl apiCallRc,
-        final String devicePath,
+        final String vgName,
         final String poolName,
         long logicalSizeKib,
         long slabSizeKib
@@ -48,22 +48,26 @@ public class DevicePoolHandler
         try
         {
             List<String> cmd = new ArrayList<>();
+            cmd.add("lvcreate");
+            cmd.add("-y");
+            cmd.add("--type");
             cmd.add("vdo");
-            cmd.add("create");
             cmd.add("--name");
             cmd.add(poolName);
-            cmd.add("--device");
-            cmd.add(devicePath);
+            cmd.add("--extents");
+            cmd.add("100%FREE");
             if (logicalSizeKib > 0)
             {
-                cmd.add("--vdoLogicalSize");
+                cmd.add("--virtualsize");
                 cmd.add(logicalSizeKib + "K");
             }
             if (slabSizeKib > 0)
             {
-                cmd.add("--vdoSlabSize");
-                cmd.add(slabSizeKib + "K");
+                cmd.add("--config");
+                cmd.add("allocation/vdo_slap_size_mb=" + (slabSizeKib / 1024));
             }
+            cmd.add(vgName);
+
             final String failMsg = "Unable to create VDO device: " + poolName;
             Commands.genericExecutor(
                 extCmdFactory.create(),
@@ -74,8 +78,8 @@ public class DevicePoolHandler
 
             apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
                 ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
-                String.format("VDO '%s' on device '%s' created.", poolName, devicePath)));
-            vdoDevicePath = "/dev/mapper/" + poolName;
+                String.format("VDO '%s' on VG '%s' created.", poolName, vgName)));
+            vdoDevicePath = "/dev/" + vgName + "/" + poolName;
         }
         catch (StorageException storExc)
         {
