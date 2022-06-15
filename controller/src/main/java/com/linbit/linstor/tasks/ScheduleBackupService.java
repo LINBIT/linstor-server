@@ -93,16 +93,16 @@ public class ScheduleBackupService implements SystemService
     private final ScopeRunner scopeRunner;
 
     private final Object syncObj = new Object();
-
-    private ServiceName serviceInstanceName;
-    private boolean running = false;
-    private Map<Schedule, Set<ScheduledShippingConfig>> scheduleLookupMap = new TreeMap<>();
-    private Map<ResourceDefinition, Set<ScheduledShippingConfig>> rscDfnLookupMap = new TreeMap<>();
-    private Map<Remote, Set<ScheduledShippingConfig>> remoteLookupMap = new TreeMap<>();
+    private final Map<Schedule, Set<ScheduledShippingConfig>> scheduleLookupMap = new TreeMap<>();
+    private final Map<ResourceDefinition, Set<ScheduledShippingConfig>> rscDfnLookupMap = new TreeMap<>();
+    private final Map<Remote, Set<ScheduledShippingConfig>> remoteLookupMap = new TreeMap<>();
     // so far this is only used to list all scheduled shippings, running or waiting
     // as well as to count retries
     // DO NOT try to do anything with the task in these config-objects, as it most likely does not exist anymore
-    private Set<ScheduledShippingConfig> activeShippings = new TreeSet<>();
+    private final Set<ScheduledShippingConfig> activeShippings = new TreeSet<>();
+
+    private ServiceName serviceInstanceName;
+    private boolean running = false;
 
     @Inject
     public ScheduleBackupService(
@@ -343,7 +343,9 @@ public class ScheduleBackupService implements SystemService
         AccessContext accCtx
     ) throws AccessDeniedException
     {
-        if (running && schedule != null && remote != null && rscDfn != null)
+        if (
+            running && schedule != null && remote != null && rscDfn != null && rscDfn.notDeletedDiskfulCount(accCtx) > 0
+        )
         {
             boolean isNew = true;
             synchronized (syncObj)
@@ -480,14 +482,26 @@ public class ScheduleBackupService implements SystemService
             {
                 // only check in one map, since they have the same values, just different key-objects
                 Set<ScheduledShippingConfig> configSet = scheduleLookupMap.get(scheduleRef);
-                ZonedDateTime now = ZonedDateTime.now();
-                for (ScheduledShippingConfig config : configSet)
+                if (configSet != null)
                 {
-                    Pair<Long, Boolean> infoPair = getTimeoutAndType(
-                        scheduleRef, accCtx, now, config.task.getPreviousTaskStartTime(), true, false, config.lastInc
-                    );
-                    config.task.setIncremental(infoPair.objB);
-                    taskScheduleService.rescheduleAt(config.task, infoPair.objA);
+                    ZonedDateTime now = ZonedDateTime.now();
+                    for (ScheduledShippingConfig config : configSet)
+                    {
+                        Pair<Long, Boolean> infoPair = getTimeoutAndType(
+                            scheduleRef, accCtx, now, config.task.getPreviousTaskStartTime(), true, false,
+                            config.lastInc
+                        );
+                        config.task.setIncremental(infoPair.objB);
+                        for (ScheduledShippingConfig conf : activeShippings)
+                        {
+                            if (conf.equals(config))
+                            {
+                                conf.timeoutAndType = infoPair;
+                                conf.timeoutAndTypeCalculatedFrom = now.toEpochSecond() * 1000;
+                            }
+                        }
+                        taskScheduleService.rescheduleAt(config.task, infoPair.objA);
+                    }
                 }
             }
         }
@@ -701,6 +715,18 @@ public class ScheduleBackupService implements SystemService
                 if (!fromTask)
                 {
                     activeShippings.remove(conf);
+                    // find config with current task and reschedule with negative delay to cancel task
+                    Set<ScheduledShippingConfig> confs = rscDfnLookupMap.get(conf.rscDfn);
+                    if (confs != null)
+                    {
+                        for (ScheduledShippingConfig config : confs)
+                        {
+                            if (config.equals(conf))
+                            {
+                                taskScheduleService.rescheduleAt(config.task, NOT_STARTED_YET);
+                            }
+                        }
+                    }
                 }
                 removeFromSingleMap(remoteLookupMap, conf.remote, conf);
                 removeFromSingleMap(scheduleLookupMap, conf.schedule, conf);
@@ -752,7 +778,8 @@ public class ScheduleBackupService implements SystemService
         Optional<Props> namespaceProps = props.getNamespace(InternalApiConsts.NAMESPC_SCHEDULE);
         if (namespaceProps.isPresent())
         {
-            for (String propKey : namespaceProps.get().map().keySet())
+            Set<String> copySet = new HashSet<>(namespaceProps.get().map().keySet());
+            for (String propKey : copySet)
             {
                 // key for activating scheduled shipping is namespace/{remoteName}/{scheduleName}/Enabled
                 String[] splitKey = propKey.split(Props.PATH_SEPARATOR);
@@ -774,10 +801,13 @@ public class ScheduleBackupService implements SystemService
     )
     {
         Set<ScheduledShippingConfig> set = lookupMap.get(key);
-        set.remove(conf);
-        if (set.isEmpty())
+        if (set != null)
         {
-            lookupMap.remove(key);
+            set.remove(conf);
+            if (set.isEmpty())
+            {
+                lookupMap.remove(key);
+            }
         }
     }
 
@@ -826,9 +856,9 @@ public class ScheduleBackupService implements SystemService
         public final Remote remote;
         public final ResourceDefinition rscDfn;
         public final boolean lastInc;
-        public final Pair<Long, Boolean> timeoutAndType;
-        public final Long timeoutAndTypeCalculatedFrom;
 
+        public Pair<Long, Boolean> timeoutAndType;
+        public Long timeoutAndTypeCalculatedFrom;
         private BackupShippingTask task;
         public int retryCt;
 
@@ -864,5 +894,69 @@ public class ScheduleBackupService implements SystemService
             }
             return cmp;
         }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((remote == null) ? 0 : remote.getName().hashCode());
+            result = prime * result + ((rscDfn == null) ? 0 : rscDfn.getName().hashCode());
+            result = prime * result + ((schedule == null) ? 0 : schedule.getName().hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+            {
+                return true;
+            }
+            if (obj == null)
+            {
+                return false;
+            }
+            if (getClass() != obj.getClass())
+            {
+                return false;
+            }
+            ScheduledShippingConfig other = (ScheduledShippingConfig) obj;
+            if (remote == null)
+            {
+                if (other.remote != null)
+                {
+                    return false;
+                }
+            }
+            else if (other.remote == null || !remote.getName().equals(other.remote.getName()))
+            {
+                return false;
+            }
+            if (rscDfn == null)
+            {
+                if (other.rscDfn != null)
+                {
+                    return false;
+                }
+            }
+            else if (other.rscDfn == null || !rscDfn.getName().equals(other.rscDfn.getName()))
+            {
+                return false;
+            }
+            if (schedule == null)
+            {
+                if (other.schedule != null)
+                {
+                    return false;
+                }
+            }
+            else if (other.schedule == null || !schedule.getName().equals(other.schedule.getName()))
+            {
+                return false;
+            }
+            return true;
+        }
+
     }
 }

@@ -288,10 +288,10 @@ public class View
     @Path("schedules-by-resource")
     public Response listActiveRscs(
         @Context Request request,
-        @QueryParam("rsc_name") String rscName,
-        @QueryParam("remote_name") String remoteName,
-        @QueryParam("schedule_name") String scheduleName,
-        @QueryParam("active_only") @DefaultValue("false") boolean activeOnly
+        @QueryParam("rsc") String rscName,
+        @QueryParam("remote") String remoteName,
+        @QueryParam("schedule") String scheduleName,
+        @QueryParam("active-only") @DefaultValue("false") boolean activeOnly
     )
     {
         return requestHelper.doInScope(

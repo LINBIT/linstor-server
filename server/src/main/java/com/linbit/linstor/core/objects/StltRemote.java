@@ -31,7 +31,7 @@ import java.util.UUID;
  * This object is expected to be deleted after a backup shipping.
  */
 public class StltRemote extends BaseTransactionObject
-    implements Remote, DbgInstanceUuid, Comparable<StltRemote>, ProtectedObject
+    implements Remote, DbgInstanceUuid, Comparable<Remote>, ProtectedObject
 {
     public interface InitMaps
     {
@@ -103,9 +103,14 @@ public class StltRemote extends BaseTransactionObject
     }
 
     @Override
-    public int compareTo(@Nonnull StltRemote s3remote)
+    public int compareTo(@Nonnull Remote remote)
     {
-        return remoteName.compareTo(s3remote.getName());
+        int cmp = remote.getClass().getSimpleName().compareTo(StltRemote.class.getSimpleName());
+        if (cmp == 0)
+        {
+            cmp = remoteName.compareTo(remote.getName());
+        }
+        return cmp;
     }
 
     @Override

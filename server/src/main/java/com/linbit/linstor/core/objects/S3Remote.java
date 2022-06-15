@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class S3Remote extends BaseTransactionObject
-    implements Remote, DbgInstanceUuid, Comparable<S3Remote>, ProtectedObject
+    implements Remote, DbgInstanceUuid, Comparable<Remote>, ProtectedObject
 {
     public interface InitMaps
     {
@@ -97,9 +97,14 @@ public class S3Remote extends BaseTransactionObject
     }
 
     @Override
-    public int compareTo(@Nonnull S3Remote s3remote)
+    public int compareTo(@Nonnull Remote remote)
     {
-        return remoteName.compareTo(s3remote.getName());
+        int cmp = remote.getClass().getSimpleName().compareTo(S3Remote.class.getSimpleName());
+        if (cmp == 0)
+        {
+            cmp = remoteName.compareTo(remote.getName());
+        }
+        return cmp;
     }
 
     @Override

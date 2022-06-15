@@ -410,24 +410,6 @@ public class CtrlBackupApiCallHandler
                     scheduleNameRef,
                     InternalApiConsts.NAMESPC_SCHEDULE
                 );
-                if (linstorRemoteName != null)
-                {
-                    rscDfn.getProps(peerAccCtx.get()).setProp(
-                        linstorRemoteName + Props.PATH_SEPARATOR + scheduleNameRef + Props.PATH_SEPARATOR
-                            + InternalApiConsts.KEY_LAST_BACKUP_TIME,
-                        Long.toString(nowRef.getTime()),
-                        InternalApiConsts.NAMESPC_SCHEDULE
-                    );
-                }
-                else
-                {
-                    rscDfn.getProps(peerAccCtx.get()).setProp(
-                        remoteName + Props.PATH_SEPARATOR + scheduleNameRef + Props.PATH_SEPARATOR
-                            + InternalApiConsts.KEY_LAST_BACKUP_TIME,
-                        Long.toString(nowRef.getTime()),
-                        InternalApiConsts.NAMESPC_SCHEDULE
-                    );
-                }
             }
 
             // save the s3 suffix as prop so that when restoring the satellite can reconstruct the .meta name
@@ -832,42 +814,56 @@ public class CtrlBackupApiCallHandler
         throws InvalidValueException, AccessDeniedException, DatabaseException
     {
         SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
+        Props snapDfnProps = snapDfn.getProps(peerAccCtx.get());
+        Props rscDfnProps = snapDfn.getResourceDefinition().getProps(peerAccCtx.get());
         if (prevSnapDfn == null)
         {
-            snapDfn.getProps(peerAccCtx.get())
-                .setProp(
-                    InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
-                    snap.getSnapshotName().displayValue,
-                    ApiConsts.NAMESPC_BACKUP_SHIPPING
-                );
-
-            snapDfn.getResourceDefinition().getProps(peerAccCtx.get()).setProp(
-                remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR
-                    + InternalApiConsts.KEY_LAST_BACKUP_INC,
-                ApiConsts.VAL_FALSE,
-                InternalApiConsts.NAMESPC_SCHEDULE
+            snapDfnProps.setProp(
+                InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
+                snap.getSnapshotName().displayValue,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
+            if (scheduleName != null)
+            {
+                rscDfnProps.setProp(
+                    remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR
+                        + InternalApiConsts.KEY_LAST_BACKUP_INC,
+                    ApiConsts.VAL_FALSE,
+                    InternalApiConsts.NAMESPC_SCHEDULE
+                );
+            }
         }
         else
         {
-            snapDfn.getProps(peerAccCtx.get())
-                .setProp(
+            snapDfnProps.setProp(
+                InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
+                prevSnapDfn.getProps(peerAccCtx.get()).getProp(
                     InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
-                    prevSnapDfn.getProps(peerAccCtx.get()).getProp(
-                        InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
-                    ),
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
-                );
+                ),
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
             snap.getProps(peerAccCtx.get()).setProp(
                 InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
                 prevSnapDfn.getName().displayValue,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
-            snapDfn.getResourceDefinition().getProps(peerAccCtx.get()).setProp(
+            if (scheduleName != null)
+            {
+                rscDfnProps.setProp(
+                    remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR
+                        + InternalApiConsts.KEY_LAST_BACKUP_INC,
+                    ApiConsts.VAL_TRUE,
+                    InternalApiConsts.NAMESPC_SCHEDULE
+                );
+            }
+        }
+        if (scheduleName != null)
+        {
+            rscDfnProps.setProp(
                 remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR
-                    + InternalApiConsts.KEY_LAST_BACKUP_INC,
-                ApiConsts.VAL_TRUE,
+                    + InternalApiConsts.KEY_LAST_BACKUP_TIME,
+                Long.toString(System.currentTimeMillis()),
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
         }
@@ -3674,8 +3670,17 @@ public class CtrlBackupApiCallHandler
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
                         remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-                        forceSkip = true;
+                        Pair<Flux<ApiCallRc>, Remote> pair = getRemoteForScheduleAndCleanupFlux(
+                            remote,
+                            rscDfn,
+                            snapNameRef,
+                            successRef
+                        );
+
+                        remoteForSchedule = pair.objB;
+                        cleanupFlux = cleanupFlux.concatWith(pair.objA);
                     }
+                    forceSkip = true;
                 }
                 else
                 {
@@ -3697,41 +3702,15 @@ public class CtrlBackupApiCallHandler
                         );
                         snap.getFlags().disableFlags(sysCtx, Snapshot.Flags.BACKUP_SOURCE);
                         remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-                        if (remote != null)
-                        {
-                            if (remote instanceof StltRemote)
-                            {
-                                StltRemote stltRemote = (StltRemote) remote;
-                                cleanupFlux = cleanupStltRemote(stltRemote);
-                                // get the linstor-remote instead, needed for scheduled shipping
-                                remoteForSchedule = remoteRepo.get(sysCtx, stltRemote.getLinstorRemoteName());
-                                if (successRef)
-                                {
-                                    rscDfn.getProps(peerAccCtx.get()).setProp(
-                                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                                        snapNameRef,
-                                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" +
-                                            remoteForSchedule.getName().displayValue
-                                    );
-                                }
-                            }
-                            else
-                            {
-                                remoteForSchedule = remote;
-                                if (successRef)
-                                {
-                                    rscDfn.getProps(peerAccCtx.get()).setProp(
-                                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                                        snapNameRef,
-                                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
-                                    );
-                                }
-                            }
-                        }
-                        else
-                        {
-                            throw new ImplementationError("Unknown remote. successRef: " + successRef);
-                        }
+                        Pair<Flux<ApiCallRc>, Remote> pair = getRemoteForScheduleAndCleanupFlux(
+                            remote,
+                            rscDfn,
+                            snapNameRef,
+                            successRef
+                        );
+
+                        remoteForSchedule = pair.objB;
+                        cleanupFlux = cleanupFlux.concatWith(pair.objA);
                     }
                     ctrlTransactionHelper.commit();
                     Flux<ApiCallRc> flux = ctrlSatelliteUpdateCaller.updateSatellites(
@@ -3758,7 +3737,7 @@ public class CtrlBackupApiCallHandler
                 String scheduleName = snapDfn.getProps(peerAccCtx.get())
                     .getProp(InternalApiConsts.KEY_BACKUP_SHIPPED_BY_SCHEDULE, InternalApiConsts.NAMESPC_SCHEDULE);
                 // if scheduleName == null the backup did not originate from a scheduled shipping
-                if (scheduleName != null)
+                if (scheduleName != null && remoteForSchedule != null)
                 {
                     Schedule schedule = ctrlApiDataLoader.loadSchedule(scheduleName, false);
                     if (schedule != null)
@@ -3941,6 +3920,55 @@ public class CtrlBackupApiCallHandler
             }
         }
         return cleanupFlux;
+    }
+
+    private Pair<Flux<ApiCallRc>, Remote> getRemoteForScheduleAndCleanupFlux(
+        Remote remote,
+        ResourceDefinition rscDfn,
+        String snapName,
+        boolean success
+    )
+        throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
+    {
+        Flux<ApiCallRc> cleanupFlux;
+        Remote remoteForSchedule;
+        if (remote != null)
+        {
+            if (remote instanceof StltRemote)
+            {
+                StltRemote stltRemote = (StltRemote) remote;
+                cleanupFlux = cleanupStltRemote(stltRemote);
+                // get the linstor-remote instead, needed for scheduled shipping
+                remoteForSchedule = remoteRepo.get(sysCtx, stltRemote.getLinstorRemoteName());
+                if (success)
+                {
+                    rscDfn.getProps(peerAccCtx.get()).setProp(
+                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                        snapName,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" +
+                            remoteForSchedule.getName().displayValue
+                    );
+                }
+            }
+            else
+            {
+                remoteForSchedule = remote;
+                cleanupFlux = Flux.empty();
+                if (success)
+                {
+                    rscDfn.getProps(peerAccCtx.get()).setProp(
+                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                        snapName,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remote.getName().displayValue
+                    );
+                }
+            }
+        }
+        else
+        {
+            throw new ImplementationError("Unknown remote. successRef: " + success);
+        }
+        return new Pair<>(cleanupFlux, remoteForSchedule);
     }
 
     private Map<SnapshotDefinition, List<SnapshotDefinition>> getAllSnapshotChains(
@@ -4335,10 +4363,20 @@ public class CtrlBackupApiCallHandler
                     + Props.PATH_SEPARATOR + InternalApiConsts.KEY_TRIPLE_ENABLED,
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
-
             if (prop != null && Boolean.parseBoolean(prop))
             {
-                scheduleService.get().addNewTask(rscDfn, schedule, remote, false, peerAccCtx.get());
+                if (rscDfn.getResourceCount() > 0)
+                {
+                    scheduleService.get().addNewTask(rscDfn, schedule, remote, false, peerAccCtx.get());
+                }
+                else
+                {
+                    errorReporter.logDebug(
+                        "ResourceDefinition %s to remote %s scheduled, but will not ship unless resources are created.",
+                        rscDfn.getName(),
+                        remote.getName()
+                    );
+                }
             }
             else
             {

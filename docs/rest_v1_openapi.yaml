@@ -4811,7 +4811,7 @@ paths:
         required: false
         description: only list active schedules
         schema:
-          type: string
+          type: boolean
     get:
       tags:
         - developers

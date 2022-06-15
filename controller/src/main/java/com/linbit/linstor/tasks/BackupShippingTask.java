@@ -61,109 +61,111 @@ public class BackupShippingTask implements TaskScheduleService.Task
     @Override
     public long run(long scheduledAt)
     {
+        boolean inc;
         synchronized (syncObj)
         {
-            final Flux<ApiCallRc> flux;
-            scheduleBackupService.removeSingleTask(conf, true);
-            Peer peer = new PeerTask("BackupShippingTaskPeer", accCtx);
-            if (conf.remote instanceof S3Remote)
+            inc = incremental;
+        }
+        final Flux<ApiCallRc> flux;
+        scheduleBackupService.removeSingleTask(conf, true);
+        Peer peer = new PeerTask("BackupShippingTaskPeer", accCtx);
+        if (conf.remote instanceof S3Remote)
+        {
+            Flux<ApiCallRc> dumbDummyFluxBecauseFinal;
+            try
             {
-                Flux<ApiCallRc> dumbDummyFluxBecauseFinal;
-                try
-                {
-                    dumbDummyFluxBecauseFinal = backupApiCallHandler
-                        .createBackup(
-                            rscName, "", conf.remote.getName().displayValue, nodeName,
-                            conf.schedule.getName().displayValue, incremental
-                        );
-                }
-                catch (AccessDeniedException exc)
-                {
-                    dumbDummyFluxBecauseFinal = Flux.empty();
-                    errorReporter.reportError(exc);
-                }
-                flux = dumbDummyFluxBecauseFinal;
-            }
-            else if (conf.remote instanceof LinstorRemote)
-            {
-                flux = backupL2LSrcApiCallHandler
-                    .shipBackup(
-                        nodeName, rscName, conf.remote.getName().displayValue, rscName, null, null, null, null, true,
-                        conf.schedule.getName().displayValue, incremental
+                dumbDummyFluxBecauseFinal = backupApiCallHandler
+                    .createBackup(
+                        rscName, "", conf.remote.getName().displayValue, nodeName,
+                        conf.schedule.getName().displayValue, inc
                     );
             }
-            else
+            catch (AccessDeniedException exc)
             {
-                flux = Flux.empty();
-                errorReporter.reportError(
-                    new ImplementationError(
-                        "The following remote type can not be used for scheduled shippings: " +
-                            conf.remote.getClass().getSimpleName()
-                    )
-                );
+                dumbDummyFluxBecauseFinal = Flux.empty();
+                errorReporter.reportError(exc);
             }
-
-            Thread t = new Thread(() ->
-            {
-                flux.subscriberContext(
-                    Context.of(
-                        AccessContext.class, accCtx, Peer.class, peer, ApiModule.API_CALL_NAME,
-                        "scheduled backup shipping"
-                    )
+            flux = dumbDummyFluxBecauseFinal;
+        }
+        else if (conf.remote instanceof LinstorRemote)
+        {
+            flux = backupL2LSrcApiCallHandler
+                .shipBackup(
+                    nodeName, rscName, conf.remote.getName().displayValue, rscName, null, null, null, null, true,
+                    conf.schedule.getName().displayValue, inc
+                );
+        }
+        else
+        {
+            flux = Flux.empty();
+            errorReporter.reportError(
+                new ImplementationError(
+                    "The following remote type can not be used for scheduled shippings: " +
+                        conf.remote.getClass().getSimpleName()
                 )
-                    .subscribe(
-                        apiCallRc ->
+            );
+        }
+
+        Thread t = new Thread(() ->
+        {
+            flux.subscriberContext(
+                Context.of(
+                    AccessContext.class, accCtx, Peer.class, peer, ApiModule.API_CALL_NAME,
+                    "scheduled backup shipping"
+                )
+            )
+                .subscribe(
+                    apiCallRc ->
+                    {
+                        for (ApiCallRc.RcEntry rc : apiCallRc.getEntries())
                         {
-                            for (ApiCallRc.RcEntry rc : apiCallRc.getEntries())
+                            if ((ApiConsts.MASK_ERROR & rc.getReturnCode()) == ApiConsts.MASK_ERROR)
                             {
-                                if ((ApiConsts.MASK_ERROR & rc.getReturnCode()) == ApiConsts.MASK_ERROR)
+                                try
                                 {
-                                    try
-                                    {
-                                        scheduleBackupService.addTaskAgain(
-                                            conf.rscDfn,
-                                            conf.schedule,
-                                            conf.remote,
-                                            scheduledAt,
-                                            false,
-                                            false,
-                                            conf.lastInc,
-                                            accCtx
-                                        );
-                                    }
-                                    catch (AccessDeniedException exc)
-                                    {
-                                        errorReporter.reportError(exc);
-                                    }
+                                    scheduleBackupService.addTaskAgain(
+                                        conf.rscDfn,
+                                        conf.schedule,
+                                        conf.remote,
+                                        scheduledAt,
+                                        false,
+                                        false,
+                                        conf.lastInc,
+                                        accCtx
+                                    );
+                                }
+                                catch (AccessDeniedException exc)
+                                {
+                                    errorReporter.reportError(exc);
                                 }
                             }
-                        },
-                        error ->
-                        {
-                            errorReporter.reportError(error);
-                            try
-                            {
-                                scheduleBackupService.addTaskAgain(
-                                    conf.rscDfn,
-                                    conf.schedule,
-                                    conf.remote,
-                                    scheduledAt,
-                                    false,
-                                    false,
-                                    conf.lastInc,
-                                    accCtx
-                                );
-                            }
-                            catch (AccessDeniedException exc)
-                            {
-                                errorReporter.reportError(exc);
-                            }
                         }
-                    );
-            });
-            t.start();
-            return Task.END_TASK;
-        }
+                    },
+                    error ->
+                    {
+                        errorReporter.reportError(error);
+                        try
+                        {
+                            scheduleBackupService.addTaskAgain(
+                                conf.rscDfn,
+                                conf.schedule,
+                                conf.remote,
+                                scheduledAt,
+                                false,
+                                false,
+                                conf.lastInc,
+                                accCtx
+                            );
+                        }
+                        catch (AccessDeniedException exc)
+                        {
+                            errorReporter.reportError(exc);
+                        }
+                    }
+                );
+        });
+        t.start();
+        return Task.END_TASK;
     }
 
     public long getPreviousTaskStartTime()

@@ -44,6 +44,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -71,6 +72,10 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlScheduleApiCallHandler
 {
+    private static final String REASON_NONE_SET = "none set";
+    private static final String REASON_DISABLED = "disabled";
+    private static final String REASON_UNDEPLOYED = "undeployed";
+
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -146,7 +151,7 @@ public class CtrlScheduleApiCallHandler
     )
     {
         ResponseContext context = makeScheduleContext(
-            ApiOperation.makeModifyOperation(),
+            ApiOperation.makeCreateOperation(),
             scheduleName
         );
 
@@ -433,8 +438,21 @@ public class CtrlScheduleApiCallHandler
             ret.addAll(listActiveSchedules(rscName, remoteName, scheduleName));
             if (!activeOnly)
             {
-                ret.addAll(listUnscheduledRsc());
+                ret.addAll(listUnscheduledRsc(rscName));
             }
+            ret.sort((a, b) ->
+            {
+                int cmp = a.rsc_name.compareTo(b.rsc_name);
+                if (cmp == 0)
+                {
+                    cmp = StringUtils.compareToNullable(a.remote, b.remote);
+                    if (cmp == 0)
+                    {
+                        cmp = StringUtils.compareToNullable(a.schedule, b.schedule);
+                    }
+                }
+                return cmp;
+            });
         }
         catch (AccessDeniedException exc)
         {
@@ -443,88 +461,111 @@ public class CtrlScheduleApiCallHandler
         return ret;
     }
 
-    private List<ScheduledRscsPojo> listUnscheduledRsc() throws AccessDeniedException
+    private List<ScheduledRscsPojo> listUnscheduledRsc(String rscName)
+        throws AccessDeniedException
     {
         // Map<rscName, Pair<reason, List<Pair<remoteName, scheduleName>>>>
         List<ScheduledRscsPojo> ret = new ArrayList<>();
         ResourceDefinitionMap map = rscDfnRepo.getMapForView(peerAccCtx.get());
-        String notSet = "none set";
-        String disabled = "disabled";
         for (ResourceDefinition rscDfn : map.values())
         {
-            PriorityProps prioProps = new PriorityProps(
-                rscDfn.getProps(peerAccCtx.get()),
-                rscDfn.getResourceGroup().getProps(peerAccCtx.get()),
-                systemConfRepository.getCtrlConfForView(peerAccCtx.get())
-            );
-            Map<String, String> props = prioProps.renderRelativeMap(InternalApiConsts.NAMESPC_SCHEDULE);
-            if (props.size() == 0)
+            if (rscName == null || rscName.isEmpty() || rscDfn.getName().value.equalsIgnoreCase(rscName))
             {
-                ret.add(
-                    new ScheduledRscsPojo(
-                        rscDfn.getName().displayValue,
-                        null,
-                        null,
-                        notSet,
-                        -1,
-                        false,
-                        -1,
-                        false,
-                        -1,
-                        -1
-                    )
+                PriorityProps prioProps = new PriorityProps(
+                    rscDfn.getProps(peerAccCtx.get()),
+                    rscDfn.getResourceGroup().getProps(peerAccCtx.get()),
+                    systemConfRepository.getCtrlConfForView(peerAccCtx.get())
                 );
-            }
-            else
-            {
-                boolean confSet = false;
-                List<Pair<String, String>> confs = new ArrayList<>();
-                for (Entry<String, String> prop : props.entrySet())
+                Map<String, String> props = prioProps.renderRelativeMap(InternalApiConsts.NAMESPC_SCHEDULE);
+                if (props.size() == 0)
                 {
-                    // key is {remoteName}/{scheduleName}
-                    String[] parts = prop.getKey().split(Props.PATH_SEPARATOR);
-                    if (parts.length == 3 && parts[2].equals(InternalApiConsts.KEY_TRIPLE_ENABLED))
-                    {
-                        if (prop.getValue().equals(ApiConsts.VAL_FALSE))
-                        {
-                            confs.add(new Pair<>(parts[0], parts[1]));
-                        }
-                        else
-                        {
-                            confSet = true;
-                            break;
-                        }
-                    }
+                    ret.add(
+                        new ScheduledRscsPojo(
+                            rscDfn.getName().displayValue,
+                            null,
+                            null,
+                            REASON_NONE_SET,
+                            -1,
+                            false,
+                            -1,
+                            false,
+                            -1,
+                            -1
+                        )
+                    );
                 }
-                if (!confSet)
+                else
                 {
-                    if (confs.size() == 0)
+                    boolean confSet = false;
+                    List<Pair<String, String>> confs = new ArrayList<>();
+                    for (Entry<String, String> prop : props.entrySet())
                     {
-                        ret.add(
-                            new ScheduledRscsPojo(
-                                rscDfn.getName().displayValue,
-                                null,
-                                null,
-                                notSet,
-                                -1,
-                                false,
-                                -1,
-                                false,
-                                -1,
-                                -1
-                            )
-                        );
+                        // key is {remoteName}/{scheduleName}
+                        String[] parts = prop.getKey().split(Props.PATH_SEPARATOR);
+                        if (parts.length == 3 && parts[2].equals(InternalApiConsts.KEY_TRIPLE_ENABLED))
+                        {
+                            if (prop.getValue().equals(ApiConsts.VAL_FALSE))
+                            {
+                                confs.add(new Pair<>(parts[0], parts[1]));
+                            }
+                            else
+                            {
+                                confSet = true;
+                                break;
+                            }
+                        }
                     }
-                    else
+                    if (!confSet)
                     {
-                        for (Pair<String, String> conf : confs)
+                        if (confs.size() == 0)
                         {
                             ret.add(
                                 new ScheduledRscsPojo(
                                     rscDfn.getName().displayValue,
-                                    conf.objA,
-                                    conf.objB,
-                                    disabled,
+                                    null,
+                                    null,
+                                    REASON_NONE_SET,
+                                    -1,
+                                    false,
+                                    -1,
+                                    false,
+                                    -1,
+                                    -1
+                                )
+                            );
+                        }
+                        else
+                        {
+                            for (Pair<String, String> conf : confs)
+                            {
+                                ret.add(
+                                    new ScheduledRscsPojo(
+                                        rscDfn.getName().displayValue,
+                                        conf.objA,
+                                        conf.objB,
+                                        REASON_DISABLED,
+                                        -1,
+                                        false,
+                                        -1,
+                                        false,
+                                        -1,
+                                        -1
+                                    )
+                                );
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (rscDfn.getResourceCount() == 0)
+                        {
+                            // this will not be listed under activeSchedules, so add it here
+                            ret.add(
+                                new ScheduledRscsPojo(
+                                    rscDfn.getName().displayValue,
+                                    null,
+                                    null,
+                                    REASON_UNDEPLOYED,
                                     -1,
                                     false,
                                     -1,
@@ -556,11 +597,13 @@ public class CtrlScheduleApiCallHandler
             );
             long lastSnapTimeLong;
             ZonedDateTime lastSnap;
-            if(lastSnapTime != null) {
+            if (lastSnapTime != null)
+            {
                 lastSnapTimeLong = Long.parseLong(lastSnapTime);
                 lastSnap = ZonedDateTime.ofInstant(Instant.ofEpochMilli(lastSnapTimeLong), ZoneId.systemDefault());
             }
-            else {
+            else
+            {
                 lastSnapTimeLong = -1;
                 lastSnap = ZonedDateTime.now();
             }

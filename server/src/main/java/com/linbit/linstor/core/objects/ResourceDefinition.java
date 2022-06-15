@@ -268,6 +268,28 @@ public class ResourceDefinition extends BaseTransactionObject
         return count;
     }
 
+    //TODO: check if this should be used instead of diskfullCount
+    public int notDeletedDiskfulCount(AccessContext accCtx) throws AccessDeniedException
+    {
+        int count = 0;
+        for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
+        {
+            StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
+            if (
+                stateFlags.isUnset(
+                    accCtx,
+                    Resource.Flags.DELETE,
+                    Resource.Flags.DRBD_DISKLESS,
+                    Resource.Flags.NVME_INITIATOR
+                )
+            )
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
     public Iterator<Resource> iterateResource(AccessContext accCtx)
         throws AccessDeniedException
     {

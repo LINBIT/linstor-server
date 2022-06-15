@@ -27,7 +27,7 @@ import java.util.Arrays;
 import java.util.UUID;
 
 public class LinstorRemote extends BaseTransactionObject
-    implements Remote, DbgInstanceUuid, Comparable<LinstorRemote>, ProtectedObject
+    implements Remote, DbgInstanceUuid, Comparable<Remote>, ProtectedObject
 {
     public interface InitMaps
     {
@@ -100,9 +100,14 @@ public class LinstorRemote extends BaseTransactionObject
     }
 
     @Override
-    public int compareTo(@Nonnull LinstorRemote s3remote)
+    public int compareTo(@Nonnull Remote remote)
     {
-        return remoteName.compareTo(s3remote.getName());
+        int cmp = remote.getClass().getSimpleName().compareTo(LinstorRemote.class.getSimpleName());
+        if (cmp == 0)
+        {
+            cmp = remoteName.compareTo(remote.getName());
+        }
+        return cmp;
     }
 
     @Override

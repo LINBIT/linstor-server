@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public interface Remote
+public interface Remote extends Comparable<Remote>
 {
     RemoteName getName();
 

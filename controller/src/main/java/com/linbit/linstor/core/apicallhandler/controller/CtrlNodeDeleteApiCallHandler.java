@@ -235,6 +235,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             markDeleted(node);
             for (Resource rsc : getRscStream(node).collect(toList()))
             {
+                // this cannot be the last diskful rsc of any rscDfn, so no need to notify scheduled shipping
                 markDeleted(rsc);
             }
 

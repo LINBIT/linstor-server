@@ -775,9 +775,10 @@ public class CtrlRscCrtApiHelper
         Publisher<ApiCallRc> readyResponses = waitForReady ?
             waitResourcesReady(context, rscDfn, deployedResources) : Flux.empty();
 
+        Flux<ApiCallRc> taskFlux = scheduleBackupService.fluxAllNewTasks(rscDfn, peerAccCtx.get());
         return ctrlSatelliteUpdateCaller.updateSatellites(
             rscDfn,
-            scheduleBackupService.fluxAllNewTasks(rscDfn, peerAccCtx.get())
+            taskFlux
             // if failed, there is no need for the retry-task to wait for readyState
             // this is only true as long as there is no other flux concatenated after readyResponses
         )
@@ -790,7 +791,7 @@ public class CtrlRscCrtApiHelper
                 )
             )
             .concatWith(readyResponses)
-            .concatWith(scheduleBackupService.fluxAllNewTasks(rscDfn, peerAccCtx.get()));
+            .concatWith(taskFlux);
     }
 
     private Mono<ApiCallRc> makeRdyTimeoutApiRc(NodeName nodeName)

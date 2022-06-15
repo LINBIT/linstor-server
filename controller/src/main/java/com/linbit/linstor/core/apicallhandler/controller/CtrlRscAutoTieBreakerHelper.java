@@ -243,6 +243,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 {
                     if (tieBreaker != null)
                     {
+                        // this cannot be the last diskful rsc of any rscDfn, so no need to notify scheduled shipping
                         tieBreaker.markDeleted(peerCtx.get());
                         ctx.responses.addEntries(
                             ApiCallRcImpl.singleApiCallRc(

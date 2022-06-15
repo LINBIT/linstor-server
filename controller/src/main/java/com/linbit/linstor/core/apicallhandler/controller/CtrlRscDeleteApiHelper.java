@@ -26,6 +26,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -58,6 +59,7 @@ public class CtrlRscDeleteApiHelper
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
+    private final ScheduleBackupService scheduleService;
 
     @Inject
     public CtrlRscDeleteApiHelper(
@@ -68,7 +70,8 @@ public class CtrlRscDeleteApiHelper
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         LockGuardFactory lockGuardFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        ScheduleBackupService scheduleServiceRef
     )
     {
         errorReporter = errorReporterRef;
@@ -79,13 +82,20 @@ public class CtrlRscDeleteApiHelper
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        scheduleService = scheduleServiceRef;
     }
 
     public void markDeletedWithVolumes(Resource rsc)
     {
         try
         {
+            ResourceDefinition rscDfn = rsc.getDefinition();
             rsc.markDeleted(peerAccCtx.get());
+            if (rscDfn.notDeletedDiskfulCount(apiCtx) == 0)
+            {
+                scheduleService.removeTasks(rscDfn);
+            }
+
             Iterator<Volume> volumesIterator = rsc.iterateVolumes();
             while (volumesIterator.hasNext())
             {

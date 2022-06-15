@@ -1,5 +1,7 @@
 package com.linbit.utils;
 
+import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -125,6 +127,38 @@ public class StringUtils
     public static boolean propTrueOrYes(String propValue)
     {
         return propValue != null && (propValue.equalsIgnoreCase("true") || propValue.equalsIgnoreCase("yes"));
+    }
+
+    /**
+     * sorts in this order:
+     * "a", "b", null
+     */
+    public static int compareToNullable(@Nullable String a, @Nullable String b)
+    {
+        int cmp;
+        if (a != null)
+        {
+            if (b != null)
+            {
+                cmp = a.compareTo(b);
+            }
+            else
+            {
+                cmp = -1;
+            }
+        }
+        else
+        {
+            if (b != null)
+            {
+                cmp = 1;
+            }
+            else
+            {
+                cmp = 0;
+            }
+        }
+        return cmp;
     }
 
     public static class ConditionalStringJoiner
