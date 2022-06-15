@@ -30,8 +30,8 @@ public class FileCollector extends SimpleFileVisitor<Path>
         {
             files.add(
                 new SosReportType.SosFileType(
-                    "logs/" + relativizeTo.relativize(file),
                     file.toString(),
+                    !file.startsWith("ErrorReport"),
                     attrs.creationTime().toMillis()
                 )
             );
@@ -44,8 +44,8 @@ public class FileCollector extends SimpleFileVisitor<Path>
     {
         files.add(
             new SosReportType.SosFileType(
-                "logs/" + relativizeTo.relativize(file),
                 file.toString(),
+                !file.startsWith("ErrorReport"),
                 -1
             )
         );

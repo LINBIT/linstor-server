@@ -88,7 +88,7 @@ public class StltSosReportApiCallHandler
         StringBuilder errors = new StringBuilder();
         List<FileInfoPojo> fileList = new ArrayList<>();
 
-        Path sosReportDir = SOS_REPORTS_DIR.resolve(sosReportName);
+        Path sosReportDir = getSosReportDir(sosReportName);
         try
         {
             Files.createDirectories(sosReportDir);
@@ -104,7 +104,7 @@ public class StltSosReportApiCallHandler
 
             for (SosReportType report : reports)
             {
-                String fileName = report.getRelativeFileName();
+                String fileName = report.getFileName();
                 long timestamp = report.getTimestamp();
                 if ((report instanceof SosReportType.SosFileType) || (report instanceof SosReportType.SosInfoType))
                 {
@@ -114,7 +114,9 @@ public class StltSosReportApiCallHandler
                         try
                         {
                             Files.write(targetPath, ((SosInfoType) report).getInfo().getBytes());
-                            fileList.add(new FileInfoPojo(fileName, targetPath.toFile().length(), timestamp));
+                            fileList.add(
+                                new FileInfoPojo(targetPath.toString(), targetPath.toFile().length(), timestamp)
+                            );
                         }
                         catch (IOException exc)
                         {
@@ -123,7 +125,8 @@ public class StltSosReportApiCallHandler
                     }
                     else if (report instanceof SosReportType.SosFileType)
                     {
-                        Path sourcePath = ((SosFileType) report).getPath();
+                        SosFileType sosFileType = (SosFileType) report;
+                        Path sourcePath = sosFileType.getSourcePath();
                         try
                         {
                             if (Files.exists(sourcePath))
@@ -132,18 +135,27 @@ public class StltSosReportApiCallHandler
                                 {
                                     Files.createDirectories(targetPath.getParent());
                                 }
-                                Files.copy(
-                                    sourcePath,
-                                    targetPath,
-                                    StandardCopyOption.COPY_ATTRIBUTES
+                                if (sosFileType.isCopyEnabled())
+                                {
+                                    Files.copy(
+                                        sourcePath,
+                                        targetPath,
+                                        StandardCopyOption.COPY_ATTRIBUTES
+                                    );
+                                }
+                                fileList.add(
+                                    new FileInfoPojo(
+                                        targetPath.toString(),
+                                        targetPath.toFile().length(),
+                                        timestamp
+                                    )
                                 );
-                                fileList.add(new FileInfoPojo(fileName, targetPath.toFile().length(), timestamp));
                             }
                             else
                             {
-                                String fileNameNotFound = fileName + SUFFIX_FILE_NOT_FOUND;
-                                Files.createFile(sosReportDir.resolve(fileNameNotFound));
-                                fileList.add(new FileInfoPojo(fileNameNotFound, 0, timestamp));
+                                Path fileNameNotFound = sosReportDir.resolve(fileName + SUFFIX_FILE_NOT_FOUND);
+                                Files.createFile(fileNameNotFound);
+                                fileList.add(new FileInfoPojo(fileNameNotFound.toString(), 0, timestamp));
                             }
                         }
                         catch (IOException exc)
@@ -151,9 +163,11 @@ public class StltSosReportApiCallHandler
                             byte[] exceptionData = exceptionToString(exc).getBytes();
                             try
                             {
-                                String fileNameIoExc = fileName + SUFFIX_IO_EXC;
-                                Files.write(sosReportDir.resolve(fileNameIoExc), exceptionData);
-                                fileList.add(new FileInfoPojo(fileNameIoExc, exceptionData.length, timestamp));
+                                Path fileNameIoExc = sosReportDir.resolve(fileName + SUFFIX_IO_EXC);
+                                Files.write(fileNameIoExc, exceptionData);
+                                fileList.add(
+                                    new FileInfoPojo(fileNameIoExc.toString(), exceptionData.length, timestamp)
+                                );
                             }
                             catch (IOException exc1)
                             {
@@ -184,11 +198,11 @@ public class StltSosReportApiCallHandler
                             command,
                             timestamp
                         );
-                        fileList.add(new FileInfoPojo(fileName, outFile.length(), timestamp));
+                        fileList.add(new FileInfoPojo(outFile.toString(), outFile.length(), timestamp));
 
                         if (hasErrFile)
                         {
-                            fileList.add(new FileInfoPojo(errFileName, errFile.length(), timestamp));
+                            fileList.add(new FileInfoPojo(errFile.toString(), errFile.length(), timestamp));
                         }
                     }
                     catch (IOException | InterruptedException exc)
@@ -196,9 +210,9 @@ public class StltSosReportApiCallHandler
                         byte[] exceptionData = exceptionToString(exc).getBytes();
                         try
                         {
-                            String fileNameIoExc = fileName + SUFFIX_IO_EXC;
-                            Files.write(sosReportDir.resolve(fileNameIoExc), exceptionData);
-                            fileList.add(new FileInfoPojo(fileNameIoExc, exceptionData.length, timestamp));
+                            Path fileNameIoExc = sosReportDir.resolve(fileName + SUFFIX_IO_EXC);
+                            Files.write(fileNameIoExc, exceptionData);
+                            fileList.add(new FileInfoPojo(fileNameIoExc.toString(), exceptionData.length, timestamp));
                         }
                         catch (IOException exc1)
                         {
@@ -268,47 +282,56 @@ public class StltSosReportApiCallHandler
 
     public void handleSosReportRequestedFiles(String sosReportName, List<RequestFilePojo> listRef)
     {
-        Path sosReportDir = SOS_REPORTS_DIR.resolve(sosReportName);
-
         List<FilePojo> filesToRespond = new ArrayList<>();
         long now = System.currentTimeMillis();
 
+        final String errorLogdir = errorReporter.getLogDirectory().toString();
         for (RequestFilePojo reqFile : listRef)
         {
-            String relativeFileName = reqFile.name;
-            String fileName = sosReportDir.resolve(relativeFileName).toString();
-            File file = new File(fileName);
-
-            try (RandomAccessFile raf = new RandomAccessFile(file, "r");)
+            String fileName = reqFile.name;
+            if (!fileName.startsWith(LinStor.CONFIG_PATH) && !fileName.startsWith(errorLogdir))
             {
-                if (reqFile.offset != 0)
-                {
-                    raf.seek(reqFile.offset);
-                }
-                int len = (int) reqFile.length;
-
-                byte[] buf = new byte[len];
-                errorReporter
-                    .logTrace("Reading %d bytes from file %s from offset %d.", len, reqFile.name, reqFile.offset);
-                raf.readFully(buf, 0, buf.length);
-
-                filesToRespond.add(new FilePojo(relativeFileName, file.lastModified(), buf, reqFile.offset));
+                errorReporter.logWarning("Skipped unexpected access to file: %s", reqFile.name);
             }
-            catch (IOException exc)
+            else
             {
-                String errorSuffix = SUFFIX_IO_EXC;
-                if (exc instanceof FileNotFoundException)
+                File file = new File(fileName);
+
+                try (RandomAccessFile raf = new RandomAccessFile(file, "r");)
                 {
-                    errorSuffix = SUFFIX_FILE_NOT_FOUND;
+                    if (reqFile.offset != 0)
+                    {
+                        raf.seek(reqFile.offset);
+                    }
+                    int len = (int) reqFile.length;
+
+                    byte[] buf = new byte[len];
+                    errorReporter.logTrace(
+                        "Reading %8d bytes from file %s from offset %d.",
+                        len,
+                        reqFile.name,
+                        reqFile.offset
+                    );
+                    raf.readFully(buf, 0, buf.length);
+
+                    filesToRespond.add(new FilePojo(fileName, file.lastModified(), buf, reqFile.offset));
                 }
-                filesToRespond.add(
-                    new FilePojo(
-                        relativeFileName + errorSuffix,
-                        now,
-                        exceptionToString(exc).getBytes(),
-                        0
-                    )
-                );
+                catch (IOException exc)
+                {
+                    String errorSuffix = SUFFIX_IO_EXC;
+                    if (exc instanceof FileNotFoundException)
+                    {
+                        errorSuffix = SUFFIX_FILE_NOT_FOUND;
+                    }
+                    filesToRespond.add(
+                        new FilePojo(
+                            fileName + errorSuffix,
+                            now,
+                            exceptionToString(exc).getBytes(),
+                            0
+                        )
+                    );
+                }
             }
         }
         byte[] build = interComSerializer.answerBuilder(InternalApiConsts.API_RSP_SOS_REPORT_FILE_LIST, apiCallId.get())
@@ -419,8 +442,8 @@ public class StltSosReportApiCallHandler
                 .forEach(
                     file -> reportTypes.add(
                         new SosFileType(
-                            "res/" + file.getFileName().toString(),
                             file.toString(),
+                            true,
                             file.toFile().lastModified()
                         )
                     )
@@ -434,10 +457,10 @@ public class StltSosReportApiCallHandler
         {
             try
             {
-                String fileNameIoExc = "res/error_reports_list" + SUFFIX_IO_EXC;
+                String fileNameIoExc = "error_reports_list" + SUFFIX_IO_EXC;
                 byte[] exceptionData = exceptionToString(ioExc).getBytes();
                 Files.write(sosReportDir.resolve(fileNameIoExc), exceptionData);
-                reportTypes.add(new SosFileType("error_reports_list_io_exc", fileNameIoExc, now));
+                reportTypes.add(new SosFileType(fileNameIoExc, false, now));
                 errorReporter.reportError(ioExc);
             }
             catch (IOException exc1)

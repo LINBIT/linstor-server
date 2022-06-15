@@ -4,7 +4,7 @@ package com.linbit.linstor.proto.responses;
 
 message File
 {
-    required string relative_title = 1;
+    required string file_name = 1;
     required uint64 time = 2;
     required bytes  content = 3;
     required uint64 offset = 4;

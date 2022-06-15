@@ -271,6 +271,7 @@ public class CtrlSosReportApiCallHandler
         else
         {
             Path sosDir = tmpDirRef.resolve("tmp/" + msgSosReportListReply.getNodeName());
+            String sosDirStr = sosDir.toString();
             LinkedList<RequestFilePojo> filesToRequest = new LinkedList<>();
             for (FileInfo fileInfo : msgSosReportListReply.getFilesList())
             {
@@ -278,7 +279,7 @@ public class CtrlSosReportApiCallHandler
                 {
                     // do not request files with 0 bytes. instead, just create the corresponding file right now
                     append(
-                        sosDir.resolve(fileInfo.getName()),
+                        concatPaths(sosDirStr, fileInfo.getName()),
                         new byte[0],
                         fileInfo.getTime()
                     );
@@ -410,10 +411,11 @@ public class CtrlSosReportApiCallHandler
 
         String nodeName = protoFilesReply.getNodeName();
         Path sosDir = tmpDirRef.resolve("tmp/" + nodeName);
+        String sosDirStr = sosDir.toString();
         for (File file : protoFilesReply.getFilesList())
         {
             append(
-                sosDir.resolve(file.getRelativeTitle()),
+                concatPaths(sosDirStr, file.getFileName()),
                 file.getContent().toByteArray(),
                 file.getTime()
             );
@@ -605,12 +607,12 @@ public class CtrlSosReportApiCallHandler
         Set<SosReportType> errorReports = collector.getFiles();
         for (SosReportType err : errorReports)
         {
-            Path erroReportPath = sosDir.resolve("logs/" + Paths.get(err.getRelativeFileName()).getFileName());
+            Path erroReportPath = sosDir.resolve("logs/" + Paths.get(err.getFileName()).getFileName());
             makeFileFromCmdNoFailed(
                 addExtension(erroReportPath, ".out"),
                 nowMillis,
                 "cp", "-p",
-                errorReporter.getLogDirectory().resolve(err.getRelativeFileName()).toString(),
+                errorReporter.getLogDirectory().resolve(err.getFileName()).toString(),
                 erroReportPath.toString()
             );
         }
@@ -713,6 +715,13 @@ public class CtrlSosReportApiCallHandler
     private Path addExtension(Path pathRef, String extensionRef)
     {
         return pathRef.getParent().resolve(pathRef.getFileName() + extensionRef);
+    }
+
+    private Path concatPaths(String first, String second)
+    {
+        // DO NOT use sosDir.resolve(file.getFileName()) since file.getFileName() returns an absolute path.
+        // if the parameter of .resolve(param) is absolute, it is simply returned instead of concatenated
+        return Paths.get(first, second);
     }
 
     private void append(Path file, byte[] data, long timestampRef, String... command)

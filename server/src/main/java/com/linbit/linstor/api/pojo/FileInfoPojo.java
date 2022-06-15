@@ -2,13 +2,13 @@ package com.linbit.linstor.api.pojo;
 
 public class FileInfoPojo
 {
-    public final String relativeName;
+    public final String fileName;
     public final long size;
     public final long timestamp;
 
-    public FileInfoPojo(String relativeNameRef, long sizeRef, long timestampRef)
+    public FileInfoPojo(String fileNameRef, long sizeRef, long timestampRef)
     {
-        relativeName = relativeNameRef;
+        fileName = fileNameRef;
         size = sizeRef;
         timestamp = timestampRef;
     }

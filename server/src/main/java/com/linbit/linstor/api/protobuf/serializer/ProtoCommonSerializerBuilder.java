@@ -788,7 +788,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         {
             ret.add(
                 FileInfo.newBuilder()
-                    .setName(pojo.relativeName)
+                    .setName(pojo.fileName)
                     .setSize(pojo.size)
                     .setTime(pojo.timestamp)
                     .build()
@@ -827,7 +827,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         {
             ret.add(
                 File.newBuilder()
-                    .setRelativeTitle(pojo.relativeName)
+                    .setFileName(pojo.fileName)
                     .setOffset(pojo.offset)
                     .setTime(pojo.timestamp)
                     .setContent(ByteString.copyFrom(pojo.content))

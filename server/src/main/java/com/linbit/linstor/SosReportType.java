@@ -7,18 +7,18 @@ import java.util.Objects;
 
 public abstract class SosReportType
 {
-    protected final String relativeFileName;
+    protected final String fileName;
     protected final long timestamp;
 
-    protected SosReportType(String relativeFileNameRef, long timestampRef)
+    protected SosReportType(String fileNameRef, long timestampRef)
     {
-        relativeFileName = relativeFileNameRef;
+        fileName = fileNameRef;
         timestamp = timestampRef;
     }
 
-    public String getRelativeFileName()
+    public String getFileName()
     {
-        return relativeFileName;
+        return fileName;
     }
 
     public long getTimestamp()
@@ -31,7 +31,7 @@ public abstract class SosReportType
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((relativeFileName == null) ? 0 : relativeFileName.hashCode());
+        result = prime * result + ((fileName == null) ? 0 : fileName.hashCode());
         result = prime * result + (int) (timestamp ^ (timestamp >>> 32));
         return result;
     }
@@ -43,7 +43,7 @@ public abstract class SosReportType
         if (obj instanceof SosReportType)
         {
             SosReportType other = (SosReportType) obj;
-            eq = Objects.equals(relativeFileName, other.relativeFileName) &&
+            eq = Objects.equals(fileName, other.fileName) &&
                 Objects.equals(timestamp, other.timestamp);
         }
         return eq;
@@ -53,9 +53,9 @@ public abstract class SosReportType
     {
         private final String info;
 
-        public SosInfoType(String relativeFileNameRef, long timestampRef, String infoRef)
+        public SosInfoType(String fileNameRef, long timestampRef, String infoRef)
         {
-            super(relativeFileNameRef, timestampRef);
+            super(fileNameRef, timestampRef);
             info = infoRef;
         }
 
@@ -90,9 +90,9 @@ public abstract class SosReportType
     {
         private final String[] command;
 
-        public SosCommandType(String relativeFileNameRef, long timestampRef, String... commandRef)
+        public SosCommandType(String fileNameRef, long timestampRef, String... commandRef)
         {
-            super(relativeFileNameRef, timestampRef);
+            super(fileNameRef, timestampRef);
             command = commandRef;
         }
 
@@ -126,16 +126,27 @@ public abstract class SosReportType
     public static class SosFileType extends SosReportType
     {
         private final Path path;
+        private final boolean copyEnabled;
 
-        public SosFileType(String relativeFileNameRef, String fullPathRef, long createTimestampRef)
+        public SosFileType(
+            String fullPathRef,
+            boolean copyEnabledRef,
+            long createTimestampRef
+        )
         {
-            super(relativeFileNameRef, createTimestampRef);
+            super(fullPathRef, createTimestampRef);
+            copyEnabled = copyEnabledRef;
             path = Paths.get(fullPathRef);
         }
 
-        public Path getPath()
+        public Path getSourcePath()
         {
             return path;
+        }
+
+        public boolean isCopyEnabled()
+        {
+            return copyEnabled;
         }
 
         @Override
