@@ -148,8 +148,9 @@ public class CtrlSosReportApiCallHandler
                     lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
                     () -> handleSosFileList(tmpDir, sosReportName, sosFileList)
                 )
-            ).transform(ignore -> ignore.thenMany(Flux.<String>empty()))
-                .concatWith(
+            ).transform(
+                ignore -> ignore.thenMany(Flux.<String>empty())
+            ).concatWith(
                 scopeRunner.fluxInTransactionalScope(
                     "Finishing SOS report",
                     lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
@@ -281,6 +282,14 @@ public class CtrlSosReportApiCallHandler
                     );
                 }
                 filesToRequest.add(new RequestFilePojo(fileInfo.getName(), 0, fileInfo.getSize()));
+            }
+            if (!msgSosReportListReply.getErrorMessage().isEmpty())
+            {
+                append(
+                    sosDir.resolve("sos.err"),
+                    (msgSosReportListReply.getErrorMessage() + "\n").getBytes(),
+                    System.currentTimeMillis()
+                );
             }
             flux = requestNextBatch(tmpDirRef, sosReportName, peer, filesToRequest);
         }
