@@ -15,6 +15,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass.MsgPhysicalDevices;
 import com.linbit.linstor.security.AccessContext;
@@ -73,6 +74,27 @@ public class CtrlPhysicalStorageApiCallHandler
         this.nodeRepository = nodeRepositoryRef;
     }
 
+    public Flux<List<LsBlkEntry>> getPhysicalStorage(String nodeName)
+    {
+        return scopeRunner.fluxInTransactionlessScope(
+            "get physical storage",
+            lockGuardFactory.buildDeferred(LockGuardFactory.LockType.READ, LockGuardFactory.LockObj.NODES_MAP),
+            () -> {
+                Node node = ctrlApiDataLoader.loadNode(nodeName, true);
+                return getPhysicalStorageForPeer(node.getPeer(peerAccCtx.get()));
+            }
+        );
+    }
+
+    private Flux<List<LsBlkEntry>> getPhysicalStorageForPeer(Peer peer)
+    {
+        return peer
+            .apiCall(
+                InternalApiConsts.API_LIST_PHYSICAL_DEVICES,
+                ctrlStltSerializer.headerlessBuilder().requestPhysicalDevices(true).build())
+            .map(CtrlPhysicalStorageApiCallHandler::parsePhysicalDevices);
+    }
+
     public Flux<Map<NodeName, List<LsBlkEntry>>> listPhysicalStorage()
     {
         return scopeRunner.fluxInTransactionlessScope(
@@ -87,32 +109,19 @@ public class CtrlPhysicalStorageApiCallHandler
         Flux<Map<NodeName, List<LsBlkEntry>>> flux = Flux.empty();
         try
         {
-            List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> requests = new ArrayList<>();
-            for (Node node : new ArrayList<>(nodeRepository.getMapForView(peerAccCtx.get()).values()))
+            ArrayList<Peer> peers = new ArrayList<>();
+            for (Node node : nodeRepository.getMapForView(peerAccCtx.get()).values())
             {
-                requests.add(Tuples.of(node.getName(), node.getPeer(peerAccCtx.get())
-                    .apiCall(
-                        InternalApiConsts.API_LIST_PHYSICAL_DEVICES,
-                        ctrlStltSerializer.headerlessBuilder().requestPhysicalDevices(true).build())
-                    .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())));
+                peers.add(node.getPeer(peerAccCtx.get()));
             }
 
             flux = Flux
-                .fromIterable(requests)
-                .flatMap(nameAndRequest -> nameAndRequest.getT2()
-                    .map(byteStream -> Tuples.of(nameAndRequest.getT1(), byteStream)))
-
-            .collectList()
-                .flatMapMany(answers ->
-                {
-                    Map<NodeName, List<LsBlkEntry>> answerMap = new HashMap<>();
-                    for (Tuple2<NodeName, ByteArrayInputStream> tup : answers)
-                    {
-                        answerMap.put(tup.getT1(), parsePhysicalDevices(tup.getT2()));
-                    }
-                    return Flux.just(answerMap);
-                }
-            );
+                .fromIterable(peers)
+                .flatMap(peer -> getPhysicalStorageForPeer(peer)
+                    .map(l -> Tuples.of(peer.getNode().getName(), l))
+                    .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty()))
+                .collectMap(Tuple2::getT1, Tuple2::getT2)
+                .flux();
         }
         catch (AccessDeniedException accExc)
         {
@@ -358,5 +367,17 @@ public class CtrlPhysicalStorageApiCallHandler
             }
         }
         return new ArrayList<>(phys.values());
+    }
+
+    public static JsonGenTypes.PhysicalStorageNode toPhysicalStorageNode(LsBlkEntry entry)
+    {
+        JsonGenTypes.PhysicalStorageNode result = new JsonGenTypes.PhysicalStorageNode();
+        result.size = entry.getSize();
+        result.rotational = entry.isRotational();
+        result.device = entry.getName();
+        result.model = entry.getModel();
+        result.wwn = entry.getWwn();
+        result.serial = entry.getSerial();
+        return result;
     }
 }

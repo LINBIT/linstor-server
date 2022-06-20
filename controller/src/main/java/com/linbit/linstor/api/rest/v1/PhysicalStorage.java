@@ -72,7 +72,7 @@ public class PhysicalStorage
         {
             Mono<Response> answer = physicalStorageApiCallHandler.listPhysicalStorage()
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
-                .flatMap(physicalStorageMap ->
+                .map(physicalStorageMap ->
                 {
                     Response resp;
                     final List<JsonGenTypes.PhysicalStorage> physicalStorages =
@@ -96,9 +96,46 @@ public class PhysicalStorage
                         exc.printStackTrace();
                         resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
                     }
-                    return Mono.just(resp);
+                    return resp;
                 }).next();
 
+            requestHelper.doFlux(asyncResponse, answer);
+        });
+    }
+
+    @GET
+    @Path("{nodeName}")
+    public void getPhysicalStorage(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        @PathParam("nodeName") String nodeName
+    )
+    {
+        RequestHelper.safeAsyncResponse(asyncResponse, () ->
+        {
+            Mono<Response> answer = physicalStorageApiCallHandler.getPhysicalStorage(nodeName)
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
+                .map(lsBlkEntries -> {
+                    List<JsonGenTypes.PhysicalStorageNode> result = lsBlkEntries
+                        .stream()
+                        .map(CtrlPhysicalStorageApiCallHandler::toPhysicalStorageNode)
+                        .collect(Collectors.toList());
+
+                    Response resp;
+                    try
+                    {
+                        resp =  Response
+                            .status(Response.Status.OK)
+                            .entity(objectMapper.writeValueAsString(result))
+                            .build();
+                    }
+                    catch (JsonProcessingException exc)
+                    {
+                        exc.printStackTrace();
+                        resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    }
+                    return resp;
+                }).next();
             requestHelper.doFlux(asyncResponse, answer);
         });
     }

@@ -1385,6 +1385,17 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class PhysicalStorageNode
+    {
+        public Long size;
+        public Boolean rotational;
+        public String device;
+        public String model;
+        public String serial;
+        public String wwn;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PhysicalStorage
     {
         public Long size;

@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased
+      - Added /v1/physical-storage/{node} to view devices for a single node
     * 1.13.1
       - Added k8s options to DB config
       - Added NetCom properties to whitelist
@@ -4840,6 +4842,26 @@ paths:
         '500':
           $ref: '#/components/responses/OperationFailed'
   /v1/physical-storage/{node}:
+    get:
+      tags:
+        - developers
+      operationId: getPhysicalStorage
+      summary: show physical storage on a single node
+      description: |
+        Gives a complete list of physical storage that can be turned into a LINSTOR storage-pool.
+      parameters:
+        - $ref: '#/components/parameters/Node'
+      responses:
+        '200':
+          description: physical storage list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PhysicalStorageNode'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
     post:
       tags:
         - developers
@@ -7643,6 +7665,22 @@ components:
             - lz4
         compression_props:
           $ref: '#/components/schemas/Properties'
+    PhysicalStorageNode:
+      type: object
+      properties:
+        size:
+          type: integer
+          format: int64
+        rotational:
+          type: boolean
+        device:
+          type: string
+        model:
+          type: string
+        serial:
+          type: string
+        wwn:
+          type: string
     PhysicalStorage:
       type: object
       properties:
