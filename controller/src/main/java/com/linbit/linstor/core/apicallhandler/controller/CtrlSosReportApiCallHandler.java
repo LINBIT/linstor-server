@@ -127,6 +127,25 @@ public class CtrlSosReportApiCallHandler
         sdfUtc.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
+    /**
+     * Overall workflow is as follows:
+     *
+     * First, the controller sends out requests to all satellite for a file-list (name, size and length; no content).
+     * We simply assume that this file-list is per satellite smaller than 16MB.
+     *
+     * Next, in order to not exceed that 16MB limit, the controller requests the first files per list that sum of sizes
+     * do not exceed 10MB.
+     * The rest of the 16MB is a (hopefully more than generous) buffer for the overhead from Linstor-protocol and
+     * protobuf, and others.
+     *
+     * The responses to those requests are stored on the controller directly in the destination files.
+     *
+     * Once all satellites finished the responses, the controller tar.gz's the collected files and sends a
+     * cleanup-message to the satellites
+     * (which deletes their temporary sos-directories).
+     *
+     * The resulting String in the flux is the name of the SOS-report.
+     */
     public Flux<String> getSosReport(
         Set<String> nodes,
         Date since
@@ -151,6 +170,9 @@ public class CtrlSosReportApiCallHandler
                     () -> handleSosFileList(tmpDir, sosReportName, sosFileList)
                 )
             ).transform(
+                // until now we were working with Flux<ByteArrayInputStream>s (proto messages from the satellites), but
+                // now we need to prepare for the answer to the satellite, which expects a single string of the sos
+                // report name
                 ignore -> ignore.thenMany(Flux.<String>empty())
             ).concatWith(
                 scopeRunner.fluxInTransactionalScope(
@@ -168,6 +190,10 @@ public class CtrlSosReportApiCallHandler
         return ret;
     }
 
+    /**
+     * Sends the initial request of file-lists to all given satellites.
+     * Next flux: process answers
+     */
     private Flux<ByteArrayInputStream> sendRequests(
         Set<String> nodes,
         Path tmpDir,
@@ -193,6 +219,10 @@ public class CtrlSosReportApiCallHandler
         return Flux.fromIterable(namesAndRequests).flatMap(Function.identity());
     }
 
+    /**
+     * If the peer cannot be found from the given node, return a <code>Flux.empty()</code>. Otherwise return the Flux
+     * from <code>peer.apiCall(...)</code>
+     */
     private Flux<ByteArrayInputStream> prepareSosRequestApi(
         Node node,
         Path tmpDir,
@@ -231,6 +261,11 @@ public class CtrlSosReportApiCallHandler
         return peer;
     }
 
+    /**
+     * Called when the satellite responses their file list (without content).
+     * The ProtoFiles are converted into Pojos, empty files (0 bytes) are already created,
+     * and <code>requestNextBatch</code> is called.
+     */
     private Flux<ByteArrayInputStream> handleSosFileList(
         Path tmpDirRef,
         String sosReportName,
@@ -300,6 +335,15 @@ public class CtrlSosReportApiCallHandler
         return flux;
     }
 
+    /**
+     * This method takes the original fileList and processes all elements. A fully processed entry is deleted from the
+     * list. An element is fully processed if all of its bytes can be requested from the satellite. A file needs to be
+     * split into multiple requests if the current request's size exceeds 10MiB. In that case, the partially requested
+     * file is re-added to the list (at beginning, at index 0) with modified offset for the next processing.
+     * The prepared batch is requested from the satellite and processed in the method <code>handleReceivedFiles</code>.
+     * If the fileList is empty (i.e. the last batch was requested and processed), this method returns an empty Flux
+     * finishing the Flux-loop.
+     */
     private Flux<ByteArrayInputStream> requestNextBatch(
         Path tmpDirRef,
         String sosReportNameRef,
@@ -385,6 +429,10 @@ public class CtrlSosReportApiCallHandler
         return ret;
     }
 
+    /**
+     * Processes the requested batch (writes the content to the corresponding files) and calls the previous method
+     * (<code>requestNextBatch</code>) for the next batch.
+     */
     private Flux<ByteArrayInputStream> handleReceivedFiles(
         Path tmpDirRef,
         String sosReportNameRef,
@@ -423,6 +471,12 @@ public class CtrlSosReportApiCallHandler
         return requestNextBatch(tmpDirRef, sosReportNameRef, stltPeerRef, filesToRequestRef);
     }
 
+    /**
+     * After all files are processed, this method stores the controller-related information (if the
+     * filtered node-list contains "Controller" ignoring case), tars the SOS report which also deletes the temporary
+     * directory on the controller, sends out a cleanup message to all participating satellites (to delete their
+     * temporary SOS-directory) and returns a Flux containing the sos report name.
+     */
     private Flux<String> finishReport(
         Set<String> nodes,
         Path tmpDir,
@@ -490,6 +544,9 @@ public class CtrlSosReportApiCallHandler
         return ret.thenMany(Flux.just(fileName));
     }
 
+    /**
+     * Creates a file with all supported and unsupported external tools of the given satellite in the given directory.
+     */
     private void createExtToolsInfo(Path dirPath, Peer peer)
     {
         try
@@ -530,6 +587,22 @@ public class CtrlSosReportApiCallHandler
         }
     }
 
+    /**
+     * Collects all controller-based information (see list below) into the given <code>$tmpDir/_Controller</code>.
+     *
+     * Collected files/info:
+     * <table>
+     * <style>table tr td { padding-right: 10px; }</style>
+     * <tr><th>Filename</th><th>Content</th></tr>
+     * <tr><td>linstor.toml</td><td>'cp -p $actual_linstor.toml $sosDir'</td></tr>
+     * <tr><td>journalctl</td><td>'journal -u linstor-controller --since $since'</td></tr>
+     * <tr><td>ip-a</td><td>'ip a'</td></tr>
+     * <tr><td>log-syslog</td><td>'cp -p /var/log/syslog $sosDir/log-syslog'</td></tr>
+     * <tr><td>log-kern.log</td><td>'cp -p /var/log/kern.log $sosDir/log-kern.log'</td></tr>
+     * <tr><td>log-messages</td><td>'cp -p /var/log/messages $sosdir/log-messages'</td></tr>
+     * <tr><td>release</td><td>'cat /etc/redhat-release /etc/lsb-release /etc/os-release'</td></tr>
+     * </table>
+     */
     private void createControllerFilesInto(Path tmpDir, Date since) throws IOException
     {
         long nowMillis = System.currentTimeMillis();
@@ -602,9 +675,14 @@ public class CtrlSosReportApiCallHandler
             makeFileFromCmdNoFailed(cmd.file, nowMillis, cmd.cmd);
         }
 
-        FileCollector collector = new FileCollector(errorReporter.getLogDirectory());
+        FileCollector collector = new FileCollector();
         Files.walkFileTree(errorReporter.getLogDirectory(), collector);
         Set<SosReportType> errorReports = collector.getFiles();
+        if (!errorReports.isEmpty())
+        {
+            makeDir(sosDir.resolve("logs/"));
+        }
+
         for (SosReportType err : errorReports)
         {
             Path erroReportPath = sosDir.resolve("logs/" + Paths.get(err.getFileName()).getFileName());
@@ -626,7 +704,16 @@ public class CtrlSosReportApiCallHandler
         }
     }
 
-    // make file with stderr & stdout if failed, but don't mark it as failed, make file with stdout if successful
+    /**
+     * Runs the given command and stores the stdOut in the given file.
+     * The given file's lastModified date is set in the end.
+     *
+     * If a problem occurs, a new file with the additional ".err" is created with the content of the stdErr.
+     * Another such special file is created for ".ioexc" (containing the stacktrace).
+     *
+     * If there is neither stdOut nor stdErr (and no exception) no files will be created at all (in case of a 'cp ...'
+     * command for example)
+     */
     private void makeFileFromCmdNoFailed(Path filePath, long timestamp, String... command)
     {
         LinkedBlockingDeque<Event> deque = new LinkedBlockingDeque<>(DFLT_DEQUE_CAPACITY);
@@ -717,13 +804,20 @@ public class CtrlSosReportApiCallHandler
         return pathRef.getParent().resolve(pathRef.getFileName() + extensionRef);
     }
 
+    /**
+     * Concatenates two paths with each other.
+     * This is intentionally NOT done by using first.resolve(second) since if second is an absolute path the result of
+     * the .resolve call is just plain the parameter (in this case $second).
+     */
     private Path concatPaths(String first, String second)
     {
-        // DO NOT use sosDir.resolve(file.getFileName()) since file.getFileName() returns an absolute path.
-        // if the parameter of .resolve(param) is absolute, it is simply returned instead of concatenated
         return Paths.get(first, second);
     }
 
+    /**
+     * Appends the given data to the given path and setting the lastModifiedTime.
+     * The given command is NOT executed, just needed for possible error reports.
+     */
     private void append(Path file, byte[] data, long timestampRef, String... command)
     {
         try
@@ -762,6 +856,9 @@ public class CtrlSosReportApiCallHandler
 
     }
 
+    /**
+     * Writes a database dump to $dirPath/dbDump
+     */
     private void getDbDump(Path dirPath) throws IOException
     {
         try
@@ -780,7 +877,12 @@ public class CtrlSosReportApiCallHandler
         }
     }
 
-    private void createTar(Path source, String fileName, List<String> names)
+    /**
+     * Creates a $fileName.tar.gz file from the given source directory using the given directories relative to
+     * '$source/tmp'.
+     * The $source path is 'rm -rf'ed in the end.
+     */
+    private void createTar(Path source, String fileName, List<String> directories)
             throws IOException, ExtCmdFailedException, ChildProcessTimeoutException
     {
         ExtCmd extCommand = extCmdFactory.create();
@@ -790,7 +892,7 @@ public class CtrlSosReportApiCallHandler
         cmd.add(source.toString() + "/tmp");
         cmd.add("-czvf");
         cmd.add(fileName);
-        cmd.addAll(names);
+        cmd.addAll(directories);
         String[] command = cmd.toArray(new String[0]);
 
         OutputData output = extCommand.exec(command);

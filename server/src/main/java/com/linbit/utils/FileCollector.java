@@ -16,11 +16,9 @@ public class FileCollector extends SimpleFileVisitor<Path>
 {
     private static final PathMatcher LOG_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.{mv.db,log}");
     private final Set<SosReportType> files = new HashSet<>();
-    private final Path relativizeTo;
 
-    public FileCollector(Path relativizeToRef)
+    public FileCollector()
     {
-        relativizeTo = relativizeToRef;
     }
 
     @Override
@@ -31,7 +29,7 @@ public class FileCollector extends SimpleFileVisitor<Path>
             files.add(
                 new SosReportType.SosFileType(
                     file.toString(),
-                    !file.startsWith("ErrorReport"),
+                    !file.getFileName().toString().startsWith("ErrorReport"),
                     attrs.creationTime().toMillis()
                 )
             );
@@ -45,7 +43,7 @@ public class FileCollector extends SimpleFileVisitor<Path>
         files.add(
             new SosReportType.SosFileType(
                 file.toString(),
-                !file.startsWith("ErrorReport"),
+                !file.getFileName().toString().startsWith("ErrorReport"),
                 -1
             )
         );

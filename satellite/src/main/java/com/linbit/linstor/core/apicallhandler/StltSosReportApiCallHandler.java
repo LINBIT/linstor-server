@@ -2,27 +2,24 @@ package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.SosReportType;
 import com.linbit.linstor.SosReportType.SosCommandType;
 import com.linbit.linstor.SosReportType.SosFileType;
 import com.linbit.linstor.SosReportType.SosInfoType;
-import com.linbit.linstor.api.ApiModule;
-import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.FileInfoPojo;
 import com.linbit.linstor.api.pojo.FilePojo;
 import com.linbit.linstor.api.pojo.RequestFilePojo;
-import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.FileCollector;
+import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.File;
@@ -40,6 +37,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 @Singleton
@@ -52,38 +50,28 @@ public class StltSosReportApiCallHandler
     private static final String SUFFIX_IO_EXC = ".io_exc";
 
     private final ErrorReporter errorReporter;
-    private final ControllerPeerConnector controllerPeerConnector;
-    private final CtrlStltSerializer interComSerializer;
-    private final Provider<Long> apiCallId;
     private final StltConfig stltCfg;
     private final ExtCmdFactory extCmdFactory;
 
     @Inject
     public StltSosReportApiCallHandler(
         final ErrorReporter errorReporterRef,
-        final ControllerPeerConnector controllerPeerConnectorRef,
-        final CtrlStltSerializer interComSerializerRef,
-        final @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
         final StltConfig stltCfgRef,
         final ExtCmdFactory extCmdFactoryRef
     )
     {
         errorReporter = errorReporterRef;
-        controllerPeerConnector = controllerPeerConnectorRef;
-        interComSerializer = interComSerializerRef;
-        apiCallId = apiCallIdRef;
         stltCfg = stltCfgRef;
         extCmdFactory = extCmdFactoryRef;
     }
 
     /**
-     * Collects a list of local reports, stores them in the linstor.d directory and replies the controller the list of
-     * files with their sizes, but without their content. The files with content have to be requested separately.
+     * Collects a list of local reports, stores them in the linstor.d/sos/<sos-report-name> directory and replies the
+     * controller the list of files with their sizes, but without their content. The files with content have to be
+     * requested separately.
      * The list of collected Reports can be found in {@link #listSosReport(Date)}
-     *
-     * @param since
      */
-    public void handleSosReportRequestFileList(String sosReportName, Date since)
+    public Pair<List<FileInfoPojo>, String> handleSosReportRequestFileList(String sosReportName, Date since)
     {
         StringBuilder errors = new StringBuilder();
         List<FileInfoPojo> fileList = new ArrayList<>();
@@ -104,144 +92,193 @@ public class StltSosReportApiCallHandler
 
             for (SosReportType report : reports)
             {
-                String fileName = report.getFileName();
-                long timestamp = report.getTimestamp();
-                if ((report instanceof SosReportType.SosFileType) || (report instanceof SosReportType.SosInfoType))
+                if (report instanceof SosReportType.SosInfoType)
                 {
-                    Path targetPath = sosReportDir.resolve(fileName);
-                    if (report instanceof SosReportType.SosInfoType)
-                    {
-                        try
-                        {
-                            Files.write(targetPath, ((SosInfoType) report).getInfo().getBytes());
-                            fileList.add(
-                                new FileInfoPojo(targetPath.toString(), targetPath.toFile().length(), timestamp)
-                            );
-                        }
-                        catch (IOException exc)
-                        {
-                            appendExcToStringBuilder(errors, exc);
-                        }
-                    }
-                    else if (report instanceof SosReportType.SosFileType)
-                    {
-                        SosFileType sosFileType = (SosFileType) report;
-                        Path sourcePath = sosFileType.getSourcePath();
-                        try
-                        {
-                            if (Files.exists(sourcePath))
-                            {
-                                if (!Files.exists(targetPath.getParent()))
-                                {
-                                    Files.createDirectories(targetPath.getParent());
-                                }
-                                if (sosFileType.isCopyEnabled())
-                                {
-                                    Files.copy(
-                                        sourcePath,
-                                        targetPath,
-                                        StandardCopyOption.COPY_ATTRIBUTES
-                                    );
-                                }
-                                fileList.add(
-                                    new FileInfoPojo(
-                                        targetPath.toString(),
-                                        targetPath.toFile().length(),
-                                        timestamp
-                                    )
-                                );
-                            }
-                            else
-                            {
-                                Path fileNameNotFound = sosReportDir.resolve(fileName + SUFFIX_FILE_NOT_FOUND);
-                                Files.createFile(fileNameNotFound);
-                                fileList.add(new FileInfoPojo(fileNameNotFound.toString(), 0, timestamp));
-                            }
-                        }
-                        catch (IOException exc)
-                        {
-                            byte[] exceptionData = exceptionToString(exc).getBytes();
-                            try
-                            {
-                                Path fileNameIoExc = sosReportDir.resolve(fileName + SUFFIX_IO_EXC);
-                                Files.write(fileNameIoExc, exceptionData);
-                                fileList.add(
-                                    new FileInfoPojo(fileNameIoExc.toString(), exceptionData.length, timestamp)
-                                );
-                            }
-                            catch (IOException exc1)
-                            {
-                                appendExcToStringBuilder(errors, exc);
-                                appendExcToStringBuilder(errors, exc1);
-                            }
-                        }
-                    }
-                    else
-                    {
-                        throw new ImplementationError("Unknown SosReportType: " + report.getClass().getCanonicalName());
-                    }
+                    appendInfoType(sosReportDir, (SosInfoType) report, fileList, errors);
+                }
+                else if (report instanceof SosReportType.SosFileType)
+                {
+                    appendFileType(sosReportDir, (SosFileType) report, fileList, errors);
                 }
                 else if (report instanceof SosReportType.SosCommandType)
                 {
-                    SosCommandType sosCommandType = (SosCommandType) report;
-                    String[] command = sosCommandType.getCommand();
-
-                    try
-                    {
-                        File outFile = sosReportDir.resolve(fileName).toFile();
-                        String errFileName = fileName + SUFFIX_CMD_STDERR;
-                        File errFile = sosReportDir.resolve(errFileName).toFile();
-
-                        boolean hasErrFile = copy(
-                            outFile,
-                            errFile,
-                            command,
-                            timestamp
-                        );
-                        fileList.add(new FileInfoPojo(outFile.toString(), outFile.length(), timestamp));
-
-                        if (hasErrFile)
-                        {
-                            fileList.add(new FileInfoPojo(errFile.toString(), errFile.length(), timestamp));
-                        }
-                    }
-                    catch (IOException | InterruptedException exc)
-                    {
-                        byte[] exceptionData = exceptionToString(exc).getBytes();
-                        try
-                        {
-                            Path fileNameIoExc = sosReportDir.resolve(fileName + SUFFIX_IO_EXC);
-                            Files.write(fileNameIoExc, exceptionData);
-                            fileList.add(new FileInfoPojo(fileNameIoExc.toString(), exceptionData.length, timestamp));
-                        }
-                        catch (IOException exc1)
-                        {
-                            appendExcToStringBuilder(errors, exc);
-                            appendExcToStringBuilder(errors, exc1);
-                        }
-                    }
+                    appendCommandType(sosReportDir, (SosCommandType) report, fileList, errors);
+                }
+                else
+                {
+                    throw new ImplementationError("Unknown SosReportType: " + report.getClass().getCanonicalName());
                 }
             }
         }
-
-        controllerPeerConnector.getControllerPeer().sendMessage(
-            interComSerializer.answerBuilder(InternalApiConsts.API_RSP_SOS_REPORT_FILE_LIST, apiCallId.get())
-                .sosReportFileInfoList(
-                    controllerPeerConnector.getLocalNodeName().displayValue,
-                    sosReportName,
-                    fileList,
-                    errors.toString()
-                )
-                .build(),
-            InternalApiConsts.API_RSP_SOS_REPORT_FILE_LIST
-        );
+        return new Pair<>(fileList, errors.toString());
     }
 
+    /**
+     * Writes the content of the SosInfoType into the destination file and adds a corresponding entry to the list of
+     * FileInfoPojos.
+     */
+    private void appendInfoType(
+        final Path sosReportDirRef,
+        final SosInfoType reportRef,
+        final List<FileInfoPojo> fileListRef,
+        final StringBuilder errorsRef
+    )
+    {
+        final Path targetPath = sosReportDirRef.resolve(reportRef.getFileName());
+        try
+        {
+            Files.write(targetPath, reportRef.getInfo().getBytes());
+            fileListRef.add(
+                new FileInfoPojo(targetPath.toString(), targetPath.toFile().length(), reportRef.getTimestamp())
+            );
+        }
+        catch (IOException exc)
+        {
+            appendExcToStringBuilder(errorsRef, exc);
+        }
+    }
+
+    /**
+     * If <code>reportRef.isCopyEnabled()</code> returns true, the source file is copied to the target and from the
+     * target file an entry in the list of FileInfoPojos is created.
+     * Otherwise the source file is added to the list of FileInfoPojos and will be read when the controller requests it.
+     */
+    private void appendFileType(
+        final Path sosReportDirRef,
+        final SosFileType reportRef,
+        final List<FileInfoPojo> fileListRef,
+        final StringBuilder errorsRef
+    )
+    {
+        final String fileName = reportRef.getFileName();
+        final long timestamp = reportRef.getTimestamp();
+
+        final Path targetPath = sosReportDirRef.resolve(fileName);
+        final Path sourcePath = reportRef.getSourcePath();
+        try
+        {
+            if (Files.exists(sourcePath))
+            {
+                if (!Files.exists(targetPath.getParent()))
+                {
+                    Files.createDirectories(targetPath.getParent());
+                }
+                final Path pathToAdd;
+                if (reportRef.isCopyEnabled())
+                {
+                    Files.copy(
+                        sourcePath,
+                        targetPath,
+                        StandardCopyOption.COPY_ATTRIBUTES
+                    );
+                    pathToAdd = targetPath;
+                }
+                else
+                {
+                    pathToAdd = sourcePath;
+                }
+                fileListRef.add(
+                    new FileInfoPojo(
+                        pathToAdd.toString(),
+                        pathToAdd.toFile().length(),
+                        timestamp
+                    )
+                );
+            }
+            else
+            {
+                Path fileNameNotFound = sosReportDirRef.resolve(fileName + SUFFIX_FILE_NOT_FOUND);
+                Files.createFile(fileNameNotFound);
+                fileListRef.add(new FileInfoPojo(fileNameNotFound.toString(), 0, timestamp));
+            }
+        }
+        catch (IOException exc)
+        {
+            byte[] exceptionData = exceptionToString(exc).getBytes();
+            try
+            {
+                Path fileNameIoExc = sosReportDirRef.resolve(fileName + SUFFIX_IO_EXC);
+                Files.write(fileNameIoExc, exceptionData);
+                fileListRef.add(
+                    new FileInfoPojo(fileNameIoExc.toString(), exceptionData.length, timestamp)
+                );
+            }
+            catch (IOException exc1)
+            {
+                appendExcToStringBuilder(errorsRef, exc);
+                appendExcToStringBuilder(errorsRef, exc1);
+            }
+        }
+    }
+
+    /**
+     * Executes the command from the SosCommandType, stores stdOut and stdErr in <code>fileName</code> and
+     * <code>fileName + SUFFIX_CMD_STDERR</code> respectively. The stdErr file is deleted if still empty after the
+     * command finished.
+     * The resulting file(s) are added to the list of FileInfoPojos.
+     *
+     * @param sosReportDirRef
+     * @param reportRef
+     * @param fileListRef
+     * @param errorsRef
+     */
+    private void appendCommandType(
+        final Path sosReportDirRef,
+        final SosCommandType reportRef,
+        final List<FileInfoPojo> fileListRef,
+        final StringBuilder errorsRef
+    )
+    {
+        final String fileName = reportRef.getFileName();
+        final long timestamp = reportRef.getTimestamp();
+
+        try
+        {
+            File outFile = sosReportDirRef.resolve(fileName).toFile();
+            String errFileName = fileName + SUFFIX_CMD_STDERR;
+            File errFile = sosReportDirRef.resolve(errFileName).toFile();
+
+            boolean hasErrFile = executeCmd(
+                reportRef.getCommand(),
+                outFile,
+                errFile,
+                timestamp
+            );
+            fileListRef.add(new FileInfoPojo(outFile.toString(), outFile.length(), timestamp));
+
+            if (hasErrFile)
+            {
+                fileListRef.add(new FileInfoPojo(errFile.toString(), errFile.length(), timestamp));
+            }
+        }
+        catch (IOException | InterruptedException exc)
+        {
+            byte[] exceptionData = exceptionToString(exc).getBytes();
+            try
+            {
+                Path fileNameIoExc = sosReportDirRef.resolve(fileName + SUFFIX_IO_EXC);
+                Files.write(fileNameIoExc, exceptionData);
+                fileListRef.add(new FileInfoPojo(fileNameIoExc.toString(), exceptionData.length, timestamp));
+            }
+            catch (IOException exc1)
+            {
+                appendExcToStringBuilder(errorsRef, exc);
+                appendExcToStringBuilder(errorsRef, exc1);
+            }
+        }
+    }
+
+    /**
+     * Simple helper method that appends the exc.printStackTrace String to the given StringBuilder
+     */
     private void appendExcToStringBuilder(StringBuilder errors, Exception exc)
     {
         errors.append(exceptionToString(exc));
     }
 
+    /**
+     * Converts the exception's stacktrace to a String
+     */
     private String exceptionToString(Exception exc)
     {
         StringWriter sw = new StringWriter();
@@ -250,20 +287,45 @@ public class StltSosReportApiCallHandler
         return sw.toString();
     }
 
-    private boolean copy(
+    /**
+     * Executes the given command and stores the stdOut and stdErr in the given files. If the always created error-file
+     * is empty after the command finishes, it is deleted again.
+     *
+     * @param commandRef
+     * @param outFileRef
+     * @param errFileRef
+     * @param timepstampRef
+     *
+     * @return Whether the error file exists or not after this method
+     *
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    private boolean executeCmd(
+        final String[] commandRef,
         final File outFileRef,
         final File errFileRef,
-        final String[] commandRef,
         final long timepstampRef
     )
         throws IOException, InterruptedException
     {
+        // we would need to rework ExtCmd to support redirecting Out and Err into given files instead of collecting them
+        // in the OutputData.
         ProcessBuilder pb = new ProcessBuilder(commandRef);
         pb.redirectOutput(outFileRef);
         pb.redirectError(errFileRef);
 
         Process proc = pb.start();
-        proc.waitFor();
+        boolean exited = proc.waitFor(ChildProcessHandler.dfltWaitTimeout, TimeUnit.MILLISECONDS);
+        if (!exited)
+        {
+            proc.destroyForcibly();
+            Files.write(
+                errFileRef.toPath(),
+                ("\n\nCommand did not terminate within " + ChildProcessHandler.dfltWaitTimeout + "ms. Command was: " +
+                    StringUtils.join(" ", commandRef)).getBytes()
+            );
+        }
 
         outFileRef.setLastModified(timepstampRef);
         boolean errFileExists;
@@ -280,7 +342,10 @@ public class StltSosReportApiCallHandler
         return errFileExists;
     }
 
-    public void handleSosReportRequestedFiles(String sosReportName, List<RequestFilePojo> listRef)
+    /**
+     * Returns the requested files, including their content.
+     */
+    public List<FilePojo> getRequestedSosReportFiles(List<RequestFilePojo> listRef)
     {
         List<FilePojo> filesToRespond = new ArrayList<>();
         long now = System.currentTimeMillis();
@@ -334,14 +399,7 @@ public class StltSosReportApiCallHandler
                 }
             }
         }
-        byte[] build = interComSerializer.answerBuilder(InternalApiConsts.API_RSP_SOS_REPORT_FILE_LIST, apiCallId.get())
-            .sosReportFiles(controllerPeerConnector.getLocalNodeName().displayValue, sosReportName, filesToRespond)
-            .build();
-        errorReporter.logTrace("Responding (partial) sos-report %s, bytes: %d", sosReportName, build.length);
-        controllerPeerConnector.getControllerPeer().sendMessage(
-            build,
-            InternalApiConsts.API_RSP_SOS_REPORT_FILE_LIST
-        );
+        return filesToRespond;
     }
 
     private Path getSosReportDir(String sosReportName)
@@ -449,7 +507,7 @@ public class StltSosReportApiCallHandler
                     )
                 );
 
-            FileCollector collector = new FileCollector(errorReporter.getLogDirectory());
+            FileCollector collector = new FileCollector();
             Files.walkFileTree(errorReporter.getLogDirectory(), collector);
             reportTypes.addAll(collector.getFiles());
         }
@@ -472,6 +530,11 @@ public class StltSosReportApiCallHandler
         return reportTypes;
     }
 
+    /**
+     * Executes <code>'rm -rf ..../linstor.d/$sosReportNameRef'</code>
+     *
+     * @param sosReportNameRef
+     */
     public void handleSosReportCleanup(String sosReportNameRef)
     {
         Path sosReportDir = getSosReportDir(sosReportNameRef);
