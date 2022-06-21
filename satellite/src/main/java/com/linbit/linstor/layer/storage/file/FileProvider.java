@@ -24,8 +24,8 @@ import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.file.utils.FileCommands;
-import com.linbit.linstor.layer.storage.file.utils.FileUtils;
-import com.linbit.linstor.layer.storage.file.utils.FileUtils.FileInfo;
+import com.linbit.linstor.layer.storage.file.utils.FileProviderUtils;
+import com.linbit.linstor.layer.storage.file.utils.FileProviderUtils.FileInfo;
 import com.linbit.linstor.layer.storage.file.utils.LosetupCommands;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.utils.StltProviderUtils;
@@ -473,7 +473,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        Map<String, Long> freeSizes = FileUtils.getDirFreeSizes(changedStoragePoolStrings);
+        Map<String, Long> freeSizes = FileProviderUtils.getDirFreeSizes(changedStoragePoolStrings);
         for (String dir : changedStoragePoolStrings)
         {
             if (!freeSizes.containsKey(dir))
@@ -501,7 +501,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             );
         }
 
-        Map<String, FileInfo> infoList = FileUtils.getInfoList(
+        Map<String, FileInfo> infoList = FileProviderUtils.getInfoList(
             extCmdFactory.create(),
             path -> getAllocatedSizeFileImpl(extCmdFactory.create(), path)
         );
@@ -605,8 +605,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
     {
         Path dir = getStorageDirectory(storPool);
-        long capacity = FileUtils.getPoolCapacity(extCmdFactory.create(), dir);
-        long freeSpace = FileUtils.getFreeSpace(extCmdFactory.create(), dir);
+        long capacity = FileProviderUtils.getPoolCapacity(extCmdFactory.create(), dir);
+        long freeSpace = FileProviderUtils.getFreeSpace(extCmdFactory.create(), dir);
         return new SpaceInfo(capacity, freeSpace);
     }
 
@@ -687,7 +687,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         String dirStr = props.getProp(StorageConstants.CONFIG_FILE_DIRECTORY_KEY);
         Path storageDirectory = Paths.get(dirStr);
 
-        String dev = FileUtils.getSourceDevice(extCmdFactory.create(), storageDirectory);
+        String dev = FileProviderUtils.getSourceDevice(extCmdFactory.create(), storageDirectory);
         if (PmemUtils.supportsDax(extCmdFactory.create(), dev))
         {
             storPool.setPmem(true);

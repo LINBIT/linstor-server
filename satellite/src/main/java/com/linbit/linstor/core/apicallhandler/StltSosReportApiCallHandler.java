@@ -1,6 +1,5 @@
 package com.linbit.linstor.core.apicallhandler;
 
-import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.extproc.ExtCmdFactory;
@@ -15,6 +14,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.utils.FileUtils;
 import com.linbit.utils.FileCollector;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -529,7 +529,7 @@ public class StltSosReportApiCallHandler
     }
 
     /**
-     * Executes <code>'rm -rf ..../linstor.d/$sosReportNameRef'</code>
+     * Basically performs a java-based <code>'rm -rf ..../linstor.d/$sosReportNameRef'</code>
      *
      * @param sosReportNameRef
      */
@@ -538,9 +538,9 @@ public class StltSosReportApiCallHandler
         Path sosReportDir = getSosReportDir(sosReportNameRef);
         try
         {
-            extCmdFactory.create().exec("rm", "-rf", sosReportDir.toString());
+            FileUtils.deleteDirectoryWithContent(sosReportDir, errorReporter);
         }
-        catch (ChildProcessTimeoutException | IOException exc)
+        catch (IOException exc)
         {
             errorReporter.reportError(exc);
         }

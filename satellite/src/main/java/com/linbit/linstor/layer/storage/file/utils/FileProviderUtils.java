@@ -18,9 +18,9 @@ import java.util.TreeMap;
 /**
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public class FileUtils
+public class FileProviderUtils
 {
-    private FileUtils()
+    private FileProviderUtils()
     {
     }
 

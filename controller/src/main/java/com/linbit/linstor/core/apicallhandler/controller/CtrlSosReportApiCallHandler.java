@@ -44,6 +44,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.utils.FileUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -567,6 +568,9 @@ public class CtrlSosReportApiCallHandler
                 ).map(
                     answer -> CtrlSatelliteUpdateCaller.deserializeApiCallRc(node.getName(), answer)
                 )
+                    // not sure why this is needed when we .thenMany later on... but without this, we get
+                    // ClassCastExceptions as ApiCallRcImpl cannot be casted to String
+                    .ignoreElements()
             );
         }
 
@@ -929,15 +933,8 @@ public class CtrlSosReportApiCallHandler
         {
             throw new ExtCmdFailedException(command, output);
         }
-        command = new String[]
-        {
-            "rm", "-rf", source.toString()
-        };
-        output = extCmdFactory.create().exec(command);
-        if (output.exitCode != 0)
-        {
-            throw new ExtCmdFailedException(command, output);
-        }
+
+        FileUtils.deleteDirectoryWithContent(source, errorReporter);
     }
 
     private boolean containsController(Set<String> nodes)

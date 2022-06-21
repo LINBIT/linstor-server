@@ -12,7 +12,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.file.utils.FileCommands;
-import com.linbit.linstor.layer.storage.file.utils.FileUtils;
+import com.linbit.linstor.layer.storage.file.utils.FileProviderUtils;
 import com.linbit.linstor.layer.storage.file.utils.LosetupCommands;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -96,7 +96,7 @@ public class FileThinProvider extends FileProvider
     @Override
     protected long getAllocatedSizeFileImpl(ExtCmd extCmd, String pathRef) throws StorageException
     {
-        return FileUtils.getThinAllocatedSize(
+        return FileProviderUtils.getThinAllocatedSize(
             extCmd,
             pathRef
         );
@@ -105,7 +105,7 @@ public class FileThinProvider extends FileProvider
     @Override
     protected long getAllocatedSize(FileData<Resource> fileData) throws StorageException
     {
-        return FileUtils.getThinAllocatedSize(
+        return FileProviderUtils.getThinAllocatedSize(
             extCmdFactory.create(),
             getFullQualifiedIdentifier(fileData)
         );
