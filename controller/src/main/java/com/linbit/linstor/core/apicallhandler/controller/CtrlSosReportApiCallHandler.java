@@ -306,6 +306,7 @@ public class CtrlSosReportApiCallHandler
         else
         {
             Path sosDir = tmpDirRef.resolve("tmp/" + msgSosReportListReply.getNodeName());
+            String sosReportDirOnStltStr = LinStor.SOS_REPORTS_DIR.resolve(sosReportName).toString();
             String sosDirStr = sosDir.toString();
             LinkedList<RequestFilePojo> filesToRequest = new LinkedList<>();
             for (FileInfo fileInfo : msgSosReportListReply.getFilesList())
@@ -313,13 +314,30 @@ public class CtrlSosReportApiCallHandler
                 if (fileInfo.getSize() == 0)
                 {
                     // do not request files with 0 bytes. instead, just create the corresponding file right now
+
+                    String fileName = fileInfo.getName();
+                    if (fileName.startsWith(sosReportDirOnStltStr))
+                    {
+                        // move all '$stlt/var/lib/linstor.d/sos-report/$currentSosName/*' files to '$stlt/*'.
+                        fileName = fileName.substring(sosReportDirOnStltStr.length());
+                    }
+                    errorReporter.logTrace(
+                        "Not requesting %s for file %s as its size is 0 bytes. File %s created.",
+                        peer.getNode().getName().displayValue,
+                        fileInfo.getName(),
+                        fileName
+                    );
+
                     append(
-                        concatPaths(sosDirStr, fileInfo.getName()),
+                        concatPaths(sosDirStr, fileName),
                         new byte[0],
                         fileInfo.getTime()
                     );
                 }
-                filesToRequest.add(new RequestFilePojo(fileInfo.getName(), 0, fileInfo.getSize()));
+                else
+                {
+                    filesToRequest.add(new RequestFilePojo(fileInfo.getName(), 0, fileInfo.getSize()));
+                }
             }
             if (!msgSosReportListReply.getErrorMessage().isEmpty())
             {
@@ -432,6 +450,10 @@ public class CtrlSosReportApiCallHandler
     /**
      * Processes the requested batch (writes the content to the corresponding files) and calls the previous method
      * (<code>requestNextBatch</code>) for the next batch.
+     *
+     * If a processed file starts with /var/lib/linstor.d/sos-report/$currentSosName/, instead of creating a
+     * satellite-local directory with that name, we simplycreate the file into the satellite-root directory. In other
+     * words all '$stlt/var/lib/linstor.d/sos-report/$currentSosName/*' files are going to land in '$stlt/*'.
      */
     private Flux<ByteArrayInputStream> handleReceivedFiles(
         Path tmpDirRef,
@@ -460,10 +482,17 @@ public class CtrlSosReportApiCallHandler
         String nodeName = protoFilesReply.getNodeName();
         Path sosDir = tmpDirRef.resolve("tmp/" + nodeName);
         String sosDirStr = sosDir.toString();
+        String sosReportDirOnStltStr = LinStor.SOS_REPORTS_DIR.resolve(sosReportNameRef).toString();
         for (File file : protoFilesReply.getFilesList())
         {
+            String fileName = file.getFileName();
+            if (fileName.startsWith(sosReportDirOnStltStr))
+            {
+                // move all '$stlt/var/lib/linstor.d/sos-report/$currentSosName/*' files to '$stlt/*'.
+                fileName = fileName.substring(sosReportDirOnStltStr.length());
+            }
             append(
-                concatPaths(sosDirStr, file.getFileName()),
+                concatPaths(sosDirStr, fileName),
                 file.getContent().toByteArray(),
                 file.getTime()
             );

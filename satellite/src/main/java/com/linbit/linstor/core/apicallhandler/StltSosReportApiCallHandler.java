@@ -43,8 +43,6 @@ import java.util.stream.Stream;
 @Singleton
 public class StltSosReportApiCallHandler
 {
-    private static final Path SOS_REPORTS_DIR = Paths.get(LinStor.CONFIG_PATH + "/sos-reports/");
-
     private static final String SUFFIX_CMD_STDERR = ".err";
     private static final String SUFFIX_FILE_NOT_FOUND = ".file_not_found";
     private static final String SUFFIX_IO_EXC = ".io_exc";
@@ -404,7 +402,7 @@ public class StltSosReportApiCallHandler
 
     private Path getSosReportDir(String sosReportName)
     {
-        return SOS_REPORTS_DIR.resolve(sosReportName);
+        return LinStor.SOS_REPORTS_DIR.resolve(sosReportName);
     }
 
     /**

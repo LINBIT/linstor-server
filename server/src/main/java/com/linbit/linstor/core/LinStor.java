@@ -9,6 +9,8 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -223,6 +225,8 @@ public abstract class LinStor
         }
         return haveFipsInit;
     }
+
+    public static final Path SOS_REPORTS_DIR = Paths.get(CONFIG_PATH + "/sos-reports/");
 
     private LinStor()
     {
