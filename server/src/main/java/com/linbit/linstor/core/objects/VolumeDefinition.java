@@ -534,7 +534,8 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
         DELETE(1L),
         ENCRYPTED(1L << 1),
         RESIZE(1L << 2),
-        GROSS_SIZE(1L << 3);
+        GROSS_SIZE(1L << 3),
+        RESIZE_SHRINK(RESIZE.getFlagValue() | 1L << 4);
 
         public final long flagValue;
 

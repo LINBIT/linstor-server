@@ -123,7 +123,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             boolean resizing = vlmDfn.getFlags().isSet(apiCtx, VolumeDefinition.Flags.RESIZE);
             if (resizing)
             {
-                fluxes.add(updateSatellites(rscName, vlmDfn.getVolumeNumber(), true));
+                fluxes.add(updateSatellites(rscName, vlmDfn.getVolumeNumber()));
             }
         }
 
@@ -261,6 +261,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             if (shrink)
             {
                 ensureShrinkingIsSupported(vlmDfn);
+                setFlag(vlmDfn, VolumeDefinition.Flags.RESIZE_SHRINK);
             }
             else
             {
@@ -322,25 +323,11 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 markVlmDfnResize(vlmDfn);
             }
 
-            if (shrink)
-            {
-                updateResponses = resizeDrbdInTransaction(rscName, vlmNr)
-                    .concatWith(resizeNonDrbd(rscName, vlmNr))
-                    .concatWith(finishResize(rscName, vlmNr));
-            }
-            else
-            {
-                updateResponses = resizeNonDrbdInTransaction(rscName, vlmNr)
-                    .concatWith(resizeDrbd(rscName, vlmNr))
-                    .concatWith(finishResize(rscName, vlmNr));
-            }
+            notifyStlts = true;
         }
-        else
+        if (notifyStlts)
         {
-            if (notifyStlts)
-            {
-                updateResponses = updateResponses.concatWith(updateSatellites(rscName, vlmNr, false));
-            }
+            updateResponses = updateResponses.concatWith(updateSatellites(rscName, vlmNr));
         }
 
         ctrlTransactionHelper.commit();
@@ -459,17 +446,17 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     }
 
     // Restart from here when connection established and RESIZE flag set
-    private Flux<ApiCallRc> updateSatellites(ResourceName rscName, VolumeNumber vlmNr, boolean resize)
+    private Flux<ApiCallRc> updateSatellites(ResourceName rscName, VolumeNumber vlmNr)
     {
         return scopeRunner
-            .fluxInTransactionlessScope(
+            .fluxInTransactionalScope(
                 "Update for volume definition modification",
-                LockGuard.createDeferred(rscDfnMapLock.readLock()),
-                () -> updateSatellitesInScope(rscName, vlmNr, resize)
+                LockGuard.createDeferred(rscDfnMapLock.writeLock()),
+                () -> updateSatellitesInScope(rscName, vlmNr)
             );
     }
 
-    private Flux<ApiCallRc> updateSatellitesInScope(ResourceName rscName, VolumeNumber vlmNr, boolean resize)
+    private Flux<ApiCallRc> updateSatellitesInScope(ResourceName rscName, VolumeNumber vlmNr)
     {
         VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, false);
 
@@ -482,16 +469,67 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         else
         {
             Flux<ApiCallRc> nextStep = Flux.empty();
+            boolean resize;
+            boolean shrink;
+            try
+            {
+                shrink = vlmDfn.getFlags().isSet(peerAccCtx.get(), VolumeDefinition.Flags.RESIZE_SHRINK);
+                resize = vlmDfn.getFlags().isSet(peerAccCtx.get(), VolumeDefinition.Flags.RESIZE);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ApiAccessDeniedException(
+                    exc,
+                    "Checking for resize/shrink flag",
+                    ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+                );
+            }
             if (resize)
             {
-                if (hasDrbd(vlmDfn))
+                /*
+                 * TODO: we should not call the first flux as *InTransaction method, but just call the regular method
+                 * instead.
+                 * However, if we change that to the non-*InTransaction version, the RESIZE flag is not set on vlms,
+                 * just the vlmDfn.size is updated. That - for some reasons - is enough for the satellites to execute
+                 * lvresize.
+                 *
+                 * This was debugged with an intentionally broken /sbin/lvresize. The result was that the resize
+                 * operation stopped (expected), but in a state where the linstor-client would not show any of the
+                 * resources in resizing state, just one of them having the updated size (the one with the still working
+                 * lvresize) and the one with the broken lvresize still had the old allocated size. No
+                 * "Resizing, UpToDate". Just "UpToDate" with different allocated sizes.
+                 */
+                if (shrink)
                 {
-                    nextStep = resizeDrbd(rscName, vlmNr);
+                    // if drbd exists, resize DRBD first, others afterwards
+
+                    boolean firstFlux = true;
+                    if (hasDrbd(vlmDfn))
+                    {
+                        nextStep = resizeDrbdInTransaction(rscName, vlmNr);
+                        firstFlux = false;
+                    }
+                    if (firstFlux)
+                    {
+                        nextStep = resizeNonDrbdInTransaction(rscName, vlmNr);
+                    }
+                    else
+                    {
+                        // DO NOT call the *InTx version
+                        nextStep = nextStep.concatWith(resizeNonDrbd(rscName, vlmNr));
+                    }
                 }
                 else
                 {
-                    nextStep = finishResize(rscName, vlmNr);
+                    // resize others first and DRBD last
+                    nextStep = resizeNonDrbdInTransaction(rscName, vlmNr);
+                    if (hasDrbd(vlmDfn))
+                    {
+                        nextStep = nextStep.concatWith(resizeDrbd(rscName, vlmNr));
+                    }
                 }
+                // finally, finish resize
+                nextStep = nextStep.concatWith(finishResize(rscName, vlmNr));
             }
             flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), nextStep)
                 .transform(
@@ -678,7 +716,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             ctrlTransactionHelper.commit();
         }
 
-        return updateSatellites(rscName, vlmNr, false);
+        return updateSatellites(rscName, vlmNr);
     }
 
     private Props getVlmDfnProps(VolumeDefinition vlmDfn)
