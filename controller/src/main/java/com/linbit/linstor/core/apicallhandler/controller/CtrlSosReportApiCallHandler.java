@@ -30,7 +30,9 @@ import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.NodeRepository;
+import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -67,6 +69,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -95,6 +98,7 @@ public class CtrlSosReportApiCallHandler
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final NodeRepository nodeRepository;
+    private final ResourceDefinitionRepository rscDfnRepo;
     private final CtrlStltSerializer stltComSerializer;
     private final ErrorReporter errorReporter;
     private final ExtCmdFactory extCmdFactory;
@@ -109,6 +113,7 @@ public class CtrlSosReportApiCallHandler
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         NodeRepository nodeRepositoryRef,
+        ResourceDefinitionRepository rscDfnRepoRef,
         CtrlStltSerializer clientComSerializerRef,
         ExtCmdFactory extCmdFactoryRef,
         CtrlConfig ctrlCfgRef,
@@ -120,6 +125,7 @@ public class CtrlSosReportApiCallHandler
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         nodeRepository = nodeRepositoryRef;
+        rscDfnRepo = rscDfnRepoRef;
         stltComSerializer = clientComSerializerRef;
         extCmdFactory = extCmdFactoryRef;
         ctrlCfg = ctrlCfgRef;
@@ -148,6 +154,7 @@ public class CtrlSosReportApiCallHandler
      */
     public Flux<String> getSosReport(
         Set<String> nodes,
+        Set<String> rscs,
         Date since,
         boolean includeCtrl
     )
@@ -162,8 +169,8 @@ public class CtrlSosReportApiCallHandler
 
             ret = scopeRunner.fluxInTransactionlessScope(
                 "Send SOS report queries",
-                lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
-                () -> sendRequests(nodes, tmpDir, sosReportName, since)
+                lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
+                () -> sendRequests(nodes, rscs, tmpDir, sosReportName, since)
             ).flatMap(
                 sosFileList -> scopeRunner.fluxInTransactionalScope(
                     "Receiving SOS FileList",
@@ -178,9 +185,9 @@ public class CtrlSosReportApiCallHandler
             ).concatWith(
                 scopeRunner.fluxInTransactionalScope(
                     "Finishing SOS report",
-                    lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
+                    lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                     () -> finishReport(
-                        nodes, tmpDir, sosReportName, since, includeCtrl
+                        nodes, rscs, tmpDir, sosReportName, since, includeCtrl
                     )
                 )
             );
@@ -199,13 +206,14 @@ public class CtrlSosReportApiCallHandler
      */
     private Flux<ByteArrayInputStream> sendRequests(
         Set<String> nodes,
+        Set<String> rscs,
         Path tmpDir,
         String sosReportName,
         Date since
     )
         throws AccessDeniedException
     {
-        Stream<Node> nodeStream = getNodeStreamForSosReport(nodes);
+        Stream<Node> nodeStream = getNodeStreamForSosReport(nodes, rscs);
 
         List<Flux<ByteArrayInputStream>> namesAndRequests = nodeStream
             .map(node -> prepareSosRequestApi(node, tmpDir, sosReportName, since))
@@ -503,6 +511,7 @@ public class CtrlSosReportApiCallHandler
      */
     private Flux<String> finishReport(
         Set<String> nodes,
+        Set<String> rscs,
         Path tmpDir,
         String sosReportName,
         Date since,
@@ -512,7 +521,7 @@ public class CtrlSosReportApiCallHandler
     {
         String fileName = errorReporter.getLogDirectory() + "/" + sosReportName + SOS_SUFFIX;
 
-        Stream<Node> nodeStream = getNodeStreamForSosReport(nodes);
+        Stream<Node> nodeStream = getNodeStreamForSosReport(nodes, rscs);
         List<Node> nodeList = nodeStream.collect(Collectors.toList());
         List<String> namesForTar = nodeList.stream().map(node -> node.getName().displayValue)
             .collect(Collectors.toList());
@@ -922,15 +931,28 @@ public class CtrlSosReportApiCallHandler
         FileUtils.deleteDirectoryWithContent(source, errorReporter);
     }
 
-    private Stream<Node> getNodeStreamForSosReport(Set<String> nodes)
+    private Stream<Node> getNodeStreamForSosReport(Set<String> nodes, Set<String> rscs)
         throws AccessDeniedException
     {
+        Set<Node> rscNodes = new HashSet<>();
+        Set<String> copyRscs = rscs.stream().map(String::toLowerCase).collect(Collectors.toSet());
+        if (!copyRscs.isEmpty())
+        {
+            for (ResourceDefinition rscDfn : rscDfnRepo.getMapForView(peerAccCtx.get()).values())
+            {
+                if (copyRscs.contains(rscDfn.getName().getDisplayName().toLowerCase()))
+                {
+                    rscDfn.streamResource(peerAccCtx.get()).forEach(rsc -> rscNodes.add(rsc.getNode()));
+                }
+            }
+        }
+
         Set<String> copyNodes = nodes.stream().map(String::toLowerCase).collect(Collectors.toSet());
         Stream<Node> nodeStream = nodeRepository.getMapForView(peerAccCtx.get()).values().stream();
-        if (!copyNodes.isEmpty())
+        if (!copyNodes.isEmpty() || !rscNodes.isEmpty())
         {
             nodeStream = nodeStream.filter(
-                node -> copyNodes.contains(node.getName().getDisplayName().toLowerCase())
+                node -> copyNodes.contains(node.getName().getDisplayName().toLowerCase()) || rscNodes.contains(node)
             );
         }
         return nodeStream;
