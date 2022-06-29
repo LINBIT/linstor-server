@@ -6,6 +6,7 @@ import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSosReportApiCallHandler;
 
 import javax.inject.Inject;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -17,10 +18,12 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
+
 import java.io.FileInputStream;
 import java.nio.file.Paths;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.google.common.io.ByteStreams;
@@ -50,19 +53,21 @@ public class SosReport
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public void downloadSosReport(
         @Context Request request,
-        @QueryParam("node") String nodeName,
+        @QueryParam("nodes") List<String> nodeNames,
         @QueryParam("since") Long since,
+        @QueryParam("include-ctrl") @DefaultValue("true") boolean includeCtrl,
         @Suspended final AsyncResponse asyncResponse
     )
     {
         Set<String> filterNodes = new HashSet<>();
-        if (nodeName != null)
+        if (nodeNames != null)
         {
-            filterNodes.add(nodeName);
+            filterNodes.addAll(nodeNames);
         }
         final Date sinceDate = since != null ? new Date(since) : new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
 
-        Mono<Response> flux = ctrlSosReportApiCallHandler.getSosReport(filterNodes, sinceDate)
+        Mono<Response> flux = ctrlSosReportApiCallHandler
+            .getSosReport(filterNodes, sinceDate, includeCtrl)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
             .flatMap(sosReport ->
             {
@@ -80,7 +85,7 @@ public class SosReport
                         }
                         catch (Exception exc)
                         {
-                            throw new WebApplicationException("File Not Found !!");
+                            throw new WebApplicationException("File Not Found !!", exc);
                         }
                     }, MediaType.APPLICATION_OCTET_STREAM)
                     .header("content-disposition", "attachment; filename = " + Paths.get(sosReport).getFileName().toString())
@@ -96,19 +101,21 @@ public class SosReport
     public void getSosReport(
         @Context
         Request request,
-        @QueryParam("node") String nodeName,
+        @QueryParam("nodes") List<String> nodeNames,
         @QueryParam("since") Long since,
+        @QueryParam("include-ctrl") @DefaultValue("true") boolean includeCtrl,
         @Suspended final AsyncResponse asyncResponse
     )
     {
         Set<String> filterNodes = new HashSet<>();
-        if (nodeName != null)
+        if (nodeNames != null)
         {
-            filterNodes.add(nodeName);
+            filterNodes.addAll(nodeNames);
         }
         final Date sinceDate = since != null ? new Date(since) : new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
 
-        Mono<Response> flux = ctrlSosReportApiCallHandler.getSosReport(filterNodes, sinceDate)
+        Mono<Response> flux = ctrlSosReportApiCallHandler
+            .getSosReport(filterNodes, sinceDate, includeCtrl)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
             .flatMap(sosReport ->
             {

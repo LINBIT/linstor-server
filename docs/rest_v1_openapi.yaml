@@ -4958,11 +4958,18 @@ paths:
       operationId: createSOSReport
       summary: creates a SOS report in the log directory of the controller
       parameters:
-        - name: node
+        - name: nodes
           in: query
-          description: node to use
+          description: nodes to use
           schema:
-            type: string
+            type: array
+            items:
+              type: string
+        - name: include-ctrl
+          in: query
+          description: include logs from ctrl
+          schema:
+            type: boolean
         - $ref: '#/components/parameters/Since'
       responses:
         '201':
@@ -4980,11 +4987,18 @@ paths:
       operationId: downloadSOSReport
       summary: request sos report to download
       parameters:
-        - name: node
+        - name: nodes
           in: query
-          description: node to use
+          description: nodes to use
           schema:
-            type: string
+            type: array
+            items:
+              type: string
+        - name: include-ctrl
+          in: query
+          description: include logs from ctrl
+          schema:
+            type: boolean
         - $ref: '#/components/parameters/Since'
       responses:
         '200':

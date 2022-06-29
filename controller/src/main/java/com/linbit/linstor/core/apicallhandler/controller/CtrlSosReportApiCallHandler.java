@@ -67,7 +67,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -149,7 +148,8 @@ public class CtrlSosReportApiCallHandler
      */
     public Flux<String> getSosReport(
         Set<String> nodes,
-        Date since
+        Date since,
+        boolean includeCtrl
     )
     {
         Flux<String> ret;
@@ -179,7 +179,9 @@ public class CtrlSosReportApiCallHandler
                 scopeRunner.fluxInTransactionalScope(
                     "Finishing SOS report",
                     lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
-                    () -> finishReport(nodes, tmpDir, sosReportName, since)
+                    () -> finishReport(
+                        nodes, tmpDir, sosReportName, since, includeCtrl
+                    )
                 )
             );
         }
@@ -203,15 +205,7 @@ public class CtrlSosReportApiCallHandler
     )
         throws AccessDeniedException
     {
-        HashSet<String> copyNodes = new HashSet<>();
-        nodes.forEach(node -> copyNodes.add(node.toLowerCase()));
-        Stream<Node> nodeStream = nodeRepository.getMapForView(peerAccCtx.get()).values().stream();
-        if (!copyNodes.isEmpty())
-        {
-            nodeStream = nodeStream.filter(
-                node -> copyNodes.contains(node.getName().getDisplayName().toLowerCase())
-            );
-        }
+        Stream<Node> nodeStream = getNodeStreamForSosReport(nodes);
 
         List<Flux<ByteArrayInputStream>> namesAndRequests = nodeStream
             .map(node -> prepareSosRequestApi(node, tmpDir, sosReportName, since))
@@ -511,49 +505,40 @@ public class CtrlSosReportApiCallHandler
         Set<String> nodes,
         Path tmpDir,
         String sosReportName,
-        Date since
+        Date since,
+        boolean includeCtrl
     )
         throws IOException, AccessDeniedException, ChildProcessTimeoutException, ExtCmdFailedException
     {
-        if (containsController(nodes))
-        {
-            createControllerFilesInto(tmpDir, since);
-        }
-        nodes.stream()
-            .filter(nodeName -> !LinStor.CONTROLLER_MODULE.equalsIgnoreCase(nodeName))
-            .forEach(nodeName -> {
-                try
-                {
-                    makeDir(tmpDir.resolve(nodeName));
-                }
-                catch (IOException exc)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_UNKNOWN_ERROR,
-                            "Failed to create directory: " + tmpDir.resolve(nodeName)
-                        ),
-                        exc
-                    );
-                }
-            });
-
         String fileName = errorReporter.getLogDirectory() + "/" + sosReportName + SOS_SUFFIX;
 
-        HashSet<String> copyNodes = new HashSet<>();
-        nodes.forEach(node -> copyNodes.add(node.toLowerCase()));
-        Stream<Node> nodeStream = nodeRepository.getMapForView(peerAccCtx.get()).values().stream()
-            .filter(
-                node -> copyNodes.isEmpty() ||
-                    copyNodes.contains(node.getName().getDisplayName().toLowerCase())
-            );
+        Stream<Node> nodeStream = getNodeStreamForSosReport(nodes);
         List<Node> nodeList = nodeStream.collect(Collectors.toList());
-        List<String> names = nodeList.stream().map(node -> node.getName().displayValue).collect(Collectors.toList());
-        if (containsController(nodes))
+        List<String> namesForTar = nodeList.stream().map(node -> node.getName().displayValue)
+            .collect(Collectors.toList());
+        for (String name : namesForTar)
         {
-            names.add("_" + LinStor.CONTROLLER_MODULE);
+            try
+            {
+                makeDir(tmpDir.resolve(name));
+            }
+            catch (IOException exc)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UNKNOWN_ERROR,
+                        "Failed to create directory: " + tmpDir.resolve(name)
+                    ),
+                    exc
+                );
+            }
         }
-        createTar(tmpDir, fileName, names);
+        if (includeCtrl)
+        {
+            namesForTar.add("_" + LinStor.CONTROLLER_MODULE);
+            createControllerFilesInto(tmpDir, since);
+        }
+        createTar(tmpDir, fileName, namesForTar);
 
         Flux<ApiCallRc> ret = Flux.empty();
 
@@ -937,9 +922,18 @@ public class CtrlSosReportApiCallHandler
         FileUtils.deleteDirectoryWithContent(source, errorReporter);
     }
 
-    private boolean containsController(Set<String> nodes)
+    private Stream<Node> getNodeStreamForSosReport(Set<String> nodes)
+        throws AccessDeniedException
     {
-        return nodes.isEmpty() || nodes.stream().anyMatch(LinStor.CONTROLLER_MODULE::equalsIgnoreCase);
+        Set<String> copyNodes = nodes.stream().map(String::toLowerCase).collect(Collectors.toSet());
+        Stream<Node> nodeStream = nodeRepository.getMapForView(peerAccCtx.get()).values().stream();
+        if (!copyNodes.isEmpty())
+        {
+            nodeStream = nodeStream.filter(
+                node -> copyNodes.contains(node.getName().getDisplayName().toLowerCase())
+            );
+        }
+        return nodeStream;
     }
 
     private static class CommandHelper
