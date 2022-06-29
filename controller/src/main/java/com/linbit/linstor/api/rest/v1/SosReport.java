@@ -55,6 +55,7 @@ public class SosReport
         @Context Request request,
         @QueryParam("nodes") List<String> nodeNames,
         @QueryParam("rscs") List<String> rscNames,
+        @QueryParam("exclude") List<String> excludeNodes,
         @QueryParam("since") Long since,
         @QueryParam("include-ctrl") @DefaultValue("true") boolean includeCtrl,
         @Suspended final AsyncResponse asyncResponse
@@ -70,10 +71,15 @@ public class SosReport
         {
             filterRscs.addAll(rscNames);
         }
+        Set<String> filterExclude = new HashSet<>();
+        if (excludeNodes != null)
+        {
+            filterExclude.addAll(excludeNodes);
+        }
         final Date sinceDate = since != null ? new Date(since) : new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
 
         Mono<Response> flux = ctrlSosReportApiCallHandler
-            .getSosReport(filterNodes, filterRscs, sinceDate, includeCtrl)
+            .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
             .subscriberContext(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
             .flatMap(sosReport ->
             {
@@ -109,6 +115,7 @@ public class SosReport
         Request request,
         @QueryParam("nodes") List<String> nodeNames,
         @QueryParam("rscs") List<String> rscNames,
+        @QueryParam("exclude") List<String> excludeNodes,
         @QueryParam("since") Long since,
         @QueryParam("include-ctrl") @DefaultValue("true") boolean includeCtrl,
         @Suspended final AsyncResponse asyncResponse
@@ -124,10 +131,15 @@ public class SosReport
         {
             filterRscs.addAll(rscNames);
         }
+        Set<String> filterExclude = new HashSet<>();
+        if (excludeNodes != null)
+        {
+            filterExclude.addAll(excludeNodes);
+        }
         final Date sinceDate = since != null ? new Date(since) : new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
 
         Mono<Response> flux = ctrlSosReportApiCallHandler
-            .getSosReport(filterNodes, filterRscs, sinceDate, includeCtrl)
+            .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
             .subscriberContext(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
             .flatMap(sosReport ->
             {

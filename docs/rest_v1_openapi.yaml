@@ -4972,6 +4972,13 @@ paths:
             type: array
             items:
               type: string
+        - name: exclude
+          in: query
+          description: do not use the given nodes
+          schema:
+            type: array
+            items:
+              type: string
         - name: include-ctrl
           in: query
           description: include logs from ctrl
@@ -5004,6 +5011,13 @@ paths:
         - name: rscs
           in: query
           description: use nodes where any given rsc is deployed
+          schema:
+            type: array
+            items:
+              type: string
+        - name: exclude
+          in: query
+          description: do not use the given nodes
           schema:
             type: array
             items:

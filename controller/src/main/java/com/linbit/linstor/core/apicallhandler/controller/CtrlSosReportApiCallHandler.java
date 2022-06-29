@@ -85,6 +85,8 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlSosReportApiCallHandler
 {
+    private static final String QUERY_FILE = "query-params";
+
     private static final int DFLT_DEQUE_CAPACITY = 10;
 
     private static final String SOS_PREFIX = "sos_";
@@ -155,8 +157,10 @@ public class CtrlSosReportApiCallHandler
     public Flux<String> getSosReport(
         Set<String> nodes,
         Set<String> rscs,
+        Set<String> excludeNodes,
         Date since,
-        boolean includeCtrl
+        boolean includeCtrl,
+        String queryParams
     )
     {
         Flux<String> ret;
@@ -170,7 +174,7 @@ public class CtrlSosReportApiCallHandler
             ret = scopeRunner.fluxInTransactionlessScope(
                 "Send SOS report queries",
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
-                () -> sendRequests(nodes, rscs, tmpDir, sosReportName, since)
+                () -> sendRequests(nodes, rscs, excludeNodes, tmpDir, sosReportName, since)
             ).flatMap(
                 sosFileList -> scopeRunner.fluxInTransactionalScope(
                     "Receiving SOS FileList",
@@ -187,7 +191,7 @@ public class CtrlSosReportApiCallHandler
                     "Finishing SOS report",
                     lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                     () -> finishReport(
-                        nodes, rscs, tmpDir, sosReportName, since, includeCtrl
+                        nodes, rscs, excludeNodes, tmpDir, sosReportName, since, includeCtrl, queryParams
                     )
                 )
             );
@@ -207,13 +211,14 @@ public class CtrlSosReportApiCallHandler
     private Flux<ByteArrayInputStream> sendRequests(
         Set<String> nodes,
         Set<String> rscs,
+        Set<String> excludeNodes,
         Path tmpDir,
         String sosReportName,
         Date since
     )
         throws AccessDeniedException
     {
-        Stream<Node> nodeStream = getNodeStreamForSosReport(nodes, rscs);
+        Stream<Node> nodeStream = getNodeStreamForSosReport(nodes, rscs, excludeNodes);
 
         List<Flux<ByteArrayInputStream>> namesAndRequests = nodeStream
             .map(node -> prepareSosRequestApi(node, tmpDir, sosReportName, since))
@@ -512,16 +517,18 @@ public class CtrlSosReportApiCallHandler
     private Flux<String> finishReport(
         Set<String> nodes,
         Set<String> rscs,
+        Set<String> excludeNodes,
         Path tmpDir,
         String sosReportName,
         Date since,
-        boolean includeCtrl
+        boolean includeCtrl,
+        String queryParams
     )
         throws IOException, AccessDeniedException, ChildProcessTimeoutException, ExtCmdFailedException
     {
         String fileName = errorReporter.getLogDirectory() + "/" + sosReportName + SOS_SUFFIX;
 
-        Stream<Node> nodeStream = getNodeStreamForSosReport(nodes, rscs);
+        Stream<Node> nodeStream = getNodeStreamForSosReport(nodes, rscs, excludeNodes);
         List<Node> nodeList = nodeStream.collect(Collectors.toList());
         List<String> namesForTar = nodeList.stream().map(node -> node.getName().displayValue)
             .collect(Collectors.toList());
@@ -547,6 +554,12 @@ public class CtrlSosReportApiCallHandler
             namesForTar.add("_" + LinStor.CONTROLLER_MODULE);
             createControllerFilesInto(tmpDir, since);
         }
+        namesForTar.add(QUERY_FILE);
+        append(
+            tmpDir.resolve("tmp/" + QUERY_FILE),
+            (queryParams == null ? "<no query-params>" : queryParams).getBytes(),
+            System.currentTimeMillis()
+        );
         createTar(tmpDir, fileName, namesForTar);
 
         Flux<ApiCallRc> ret = Flux.empty();
@@ -931,7 +944,7 @@ public class CtrlSosReportApiCallHandler
         FileUtils.deleteDirectoryWithContent(source, errorReporter);
     }
 
-    private Stream<Node> getNodeStreamForSosReport(Set<String> nodes, Set<String> rscs)
+    private Stream<Node> getNodeStreamForSosReport(Set<String> nodes, Set<String> rscs, Set<String> excludeNodes)
         throws AccessDeniedException
     {
         Set<Node> rscNodes = new HashSet<>();
@@ -954,6 +967,12 @@ public class CtrlSosReportApiCallHandler
             nodeStream = nodeStream.filter(
                 node -> copyNodes.contains(node.getName().getDisplayName().toLowerCase()) || rscNodes.contains(node)
             );
+        }
+        Set<String> copyExclude = excludeNodes.stream().map(String::toLowerCase).collect(Collectors.toSet());
+        if (!copyExclude.isEmpty())
+        {
+            nodeStream = nodeStream
+                .filter(node -> !copyExclude.contains(node.getName().getDisplayName().toLowerCase()));
         }
         return nodeStream;
     }
