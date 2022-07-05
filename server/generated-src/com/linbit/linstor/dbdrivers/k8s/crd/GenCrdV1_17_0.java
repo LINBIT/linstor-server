@@ -24,11 +24,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
 import com.fasterxml.jackson.databind.DatabindContext;
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver;
 import com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
@@ -237,7 +235,8 @@ public class GenCrdV1_17_0
             case "VOLUME_GROUPS":
                 return (Class<CRD>) VolumeGroups.class;
             default:
-                throw new ImplementationError("Unknown database table: " + table.getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 
@@ -335,7 +334,8 @@ public class GenCrdV1_17_0
             case "VOLUME_GROUPS":
                 return (Class<SPEC>) VolumeGroupsSpec.class;
             default:
-                throw new ImplementationError("Unknown database table: " + table.getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 
@@ -431,7 +431,8 @@ public class GenCrdV1_17_0
             case "VOLUME_GROUPS":
                 return (LinstorCrd<SPEC>) new VolumeGroups((VolumeGroupsSpec) spec);
             default:
-                throw new ImplementationError("Unknown database table: " + spec.getDatabaseTable().getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 
@@ -961,7 +962,8 @@ public class GenCrdV1_17_0
                 );
             }
             default:
-                throw new ImplementationError("Unknown database table: " + table.getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 
@@ -1056,7 +1058,8 @@ public class GenCrdV1_17_0
             case "VOLUME_GROUPS":
                 return "/com/linbit/linstor/dbcp/k8s/crd/v1_17_0/VolumeGroups.yaml";
             default:
-                throw new ImplementationError("Unknown database table: " + dbTable.getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 
@@ -1151,7 +1154,8 @@ public class GenCrdV1_17_0
             case "VOLUME_GROUPS":
                 return "volumegroups";
             default:
-                throw new ImplementationError("Unknown database table: " + dbTable.getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 

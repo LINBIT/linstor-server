@@ -13,6 +13,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 
 @K8sCrdMigration(
     description = "change keys from base32 to sha256",
@@ -48,7 +51,17 @@ public class Migration_3_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCrd
              * although the RollbackManager is now (hopefully) fixed, it cannot create any rollback instance because the
              * old (1.15.0) data are missing critical deserialization-information.
              */
-            txFrom.getClient(dbTable).delete();
+            MixedOperation<LinstorCrd<LinstorSpec>, KubernetesResourceList<LinstorCrd<LinstorSpec>>, Resource<LinstorCrd<LinstorSpec>>> txFromClient = txFrom
+                .getClient(dbTable);
+            if (txFromClient != null)
+            {
+                /*
+                 * we are iterating GeneratedDatabaseTables.ALL_TABLES which contains a table that the current version
+                 * of the db / migration simply does not know. It should be save to ignore this case, since
+                 * the migration will most likely not try to access a table it does not know?
+                 */
+                txFromClient.delete();
+            }
         }
 
         // update CRD entries for all DatabaseTables

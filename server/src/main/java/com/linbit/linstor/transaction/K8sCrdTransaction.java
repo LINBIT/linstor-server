@@ -282,13 +282,23 @@ public class K8sCrdTransaction
         MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = getClient(
             dbTable
         );
-        KubernetesResourceList<CRD> list = client.list();
-        ArrayList<CRD> updatedList = updateK8sList(list, dbTable);
-        for (CRD item : updatedList)
+        if (client != null)
         {
-            if (matcher.test(item))
+            /*
+             * otherwise we are most likely iterating GeneratedDatabaseTables.ALL_TABLES which contains a table that the
+             * current version of the db / migration simply does not know. It should be save to ignore this case, since
+             * the migration will most likely not try to access a table it does not know?
+             *
+             * Returning an empty map should be fine in this case
+             */
+            KubernetesResourceList<CRD> list = client.list();
+            ArrayList<CRD> updatedList = updateK8sList(list, dbTable);
+            for (CRD item : updatedList)
             {
-                ret.put(item.getK8sKey(), item);
+                if (matcher.test(item))
+                {
+                    ret.put(item.getK8sKey(), item);
+                }
             }
         }
         return ret;

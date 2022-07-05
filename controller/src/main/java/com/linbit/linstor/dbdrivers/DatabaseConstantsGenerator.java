@@ -470,11 +470,11 @@ public final class DatabaseConstantsGenerator
             "com.fasterxml.jackson.annotation.JsonInclude",
             "com.fasterxml.jackson.annotation.JsonInclude.Include",
             "com.fasterxml.jackson.annotation.JsonProperty",
-            "com.fasterxml.jackson.annotation.JsonTypeInfo",
+            // "com.fasterxml.jackson.annotation.JsonTypeInfo",
             "com.fasterxml.jackson.annotation.JsonTypeInfo.Id",
             "com.fasterxml.jackson.databind.DatabindContext",
             "com.fasterxml.jackson.databind.JavaType",
-            "com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver",
+            // "com.fasterxml.jackson.databind.annotation.JsonTypeIdResolver",
             "com.fasterxml.jackson.databind.jsontype.impl.TypeIdResolverBase",
             "com.fasterxml.jackson.databind.type.TypeFactory",
             // "com.fasterxml.jackson.databind.annotation.JsonDeserialize",
@@ -557,7 +557,8 @@ public final class DatabaseConstantsGenerator
                     appendLine("default:");
                     try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
                     {
-                        appendLine("throw new ImplementationError(\"Unknown database table: \" + table.getName());");
+                        appendLine("// we are most likely iterating tables the current version does not know about.");
+                        appendLine("return null;");
                     }
                 }
             }
@@ -590,7 +591,8 @@ public final class DatabaseConstantsGenerator
                     appendLine("default:");
                     try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
                     {
-                        appendLine("throw new ImplementationError(\"Unknown database table: \" + table.getName());");
+                        appendLine("// we are most likely iterating tables the current version does not know about.");
+                        appendLine("return null;");
                     }
                 }
             }
@@ -616,9 +618,8 @@ public final class DatabaseConstantsGenerator
                     appendLine("default:");
                     try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
                     {
-                        appendLine(
-                            "throw new ImplementationError(\"Unknown database table: \" + spec.getDatabaseTable().getName());"
-                        );
+                        appendLine("// we are most likely iterating tables the current version does not know about.");
+                        appendLine("return null;");
                     }
                 }
             }
@@ -675,7 +676,8 @@ public final class DatabaseConstantsGenerator
                     appendLine("default:");
                     try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
                     {
-                        appendLine("throw new ImplementationError(\"Unknown database table: \" + table.getName());");
+                        appendLine("// we are most likely iterating tables the current version does not know about.");
+                        appendLine("return null;");
                     }
                 }
             }
@@ -698,7 +700,8 @@ public final class DatabaseConstantsGenerator
                     appendLine("default:");
                     try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
                     {
-                        appendLine("throw new ImplementationError(\"Unknown database table: \" + dbTable.getName());");
+                        appendLine("// we are most likely iterating tables the current version does not know about.");
+                        appendLine("return null;");
                     }
                 }
             }
@@ -721,7 +724,8 @@ public final class DatabaseConstantsGenerator
                     appendLine("default:");
                     try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
                     {
-                        appendLine("throw new ImplementationError(\"Unknown database table: \" + dbTable.getName());");
+                        appendLine("// we are most likely iterating tables the current version does not know about.");
+                        appendLine("return null;");
                     }
                 }
             }

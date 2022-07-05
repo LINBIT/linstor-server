@@ -132,7 +132,8 @@ public class GenCrdV1_15_0
             case "VOLUME_GROUPS":
                 return (Class<CRD>) VolumeGroups.class;
             default:
-                throw new ImplementationError("Unknown database table: " + table.getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 
@@ -228,7 +229,8 @@ public class GenCrdV1_15_0
             case "VOLUME_GROUPS":
                 return (LinstorCrd<SPEC>) new VolumeGroups((VolumeGroupsSpec) spec);
             default:
-                throw new ImplementationError("Unknown database table: " + spec.getDatabaseTable().getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 
@@ -756,7 +758,8 @@ public class GenCrdV1_15_0
                 );
             }
             default:
-                throw new ImplementationError("Unknown database table: " + table.getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 
@@ -851,7 +854,8 @@ public class GenCrdV1_15_0
             case "VOLUME_GROUPS":
                 return "/com/linbit/linstor/dbcp/k8s/crd/v1_15_0/VolumeGroups.yaml";
             default:
-                throw new ImplementationError("Unknown database table: " + dbTable.getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 
@@ -946,7 +950,8 @@ public class GenCrdV1_15_0
             case "VOLUME_GROUPS":
                 return "volumegroups";
             default:
-                throw new ImplementationError("Unknown database table: " + dbTable.getName());
+                // we are most likely iterating tables the current version does not know about.
+                return null;
         }
     }
 

@@ -68,10 +68,19 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
         crdVersion = ctx.getCrdVersion();
         for (DatabaseTable tbl : GeneratedDatabaseTables.ALL_TABLES)
         {
-            crdClientLut.put(
-                tbl,
-                k8sClient.resources(dbTableToCrdClass.apply(tbl))
-            );
+            Class<? extends LinstorCrd<? extends LinstorSpec>> clazz = dbTableToCrdClass.apply(tbl);
+            if (clazz != null)
+            {
+                /*
+                 * otherwise GeneratedDatabaseTables.ALL_TABLES contains a table that the current version of the db /
+                 * migration simply does not know. It should be save to ignore this case, since the migration will most
+                 * likely not try to access a table it does not know?
+                 */
+                crdClientLut.put(
+                    tbl,
+                    k8sClient.resources(clazz)
+                );
+            }
         }
         rollbackClient = k8sClient.resources(RollbackCrd.class);
         linstorVersionClient = k8sClient.resources(LinstorVersionCrd.class);

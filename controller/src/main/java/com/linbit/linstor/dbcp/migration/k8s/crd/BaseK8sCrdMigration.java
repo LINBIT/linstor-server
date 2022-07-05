@@ -109,7 +109,16 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
 
         for (DatabaseTable dbTable : GeneratedDatabaseTables.ALL_TABLES)
         {
-            createOrReplaceCrdSchema(k8sClient, dbTableToYamlLocation.apply(dbTable));
+            String yamlLocation = dbTableToYamlLocation.apply(dbTable);
+            if (yamlLocation != null)
+            {
+                /*
+                 * otherwise GeneratedDatabaseTables.ALL_TABLES contains a table that the current version of the db /
+                 * migration simply does not know. It should be save to ignore this case, since the migration will most
+                 * likely not try to access a table it does not know?
+                 */
+                createOrReplaceCrdSchema(k8sClient, yamlLocation);
+            }
         }
 
         Function<DatabaseTable, Class<? extends LinstorCrd<? extends LinstorSpec>>> tableMap = upgradeToTxMgrContext
@@ -124,7 +133,16 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             {
                 for (DatabaseTable table: tablesToUpdate)
                 {
-                    k8sClient.resources(tableMap.apply(table)).list();
+                    Class<? extends LinstorCrd<? extends LinstorSpec>> clazz = tableMap.apply(table);
+                    if (clazz != null)
+                    {
+                        /*
+                         * otherwise GeneratedDatabaseTables.ALL_TABLES contains a table that the current version of the
+                         * db / migration simply does not know. It should be save to ignore this case, since the
+                         * migration will most likely not try to access a table it does not know?
+                         */
+                        k8sClient.resources(clazz).list();
+                    }
                     updatedTables.add(table);
                 }
             }
