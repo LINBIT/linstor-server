@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -22,6 +23,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -63,6 +65,7 @@ public class RscDfnInternalCallHandler
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
 
     private final ReadWriteLock rscDfnMapLock;
+    private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
 
     @Inject
     public RscDfnInternalCallHandler(
@@ -79,7 +82,8 @@ public class RscDfnInternalCallHandler
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -96,6 +100,7 @@ public class RscDfnInternalCallHandler
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
+        ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
     }
 
     public void handlePrimaryResourceRequest(
@@ -231,6 +236,7 @@ public class RscDfnInternalCallHandler
                         vlm.getFlags().enableFlags(apiCtx, Volume.Flags.CLONING_FINISHED);
                         errorReporter.logTrace("Cloning finished with success on %s/%d from %s",
                             rscName, vlmNr, currentPeer.getNode().getName());
+                        ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
                     }
                     else
                     {
@@ -278,6 +284,7 @@ public class RscDfnInternalCallHandler
                     {
                         vlm.getFlags().disableFlags(apiCtx, Volume.Flags.CLONING);
                     }
+                    ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
                 }
 
                 ctrlTransactionHelper.commit();
@@ -320,6 +327,10 @@ public class RscDfnInternalCallHandler
             rscDfn.getFlags().disableFlags(apiCtx, ResourceDefinition.Flags.CLONING);
 
             final Set<Resource> resources = rscDfn.streamResource(apiCtx).collect(Collectors.toSet());
+            for (Resource rsc : resources)
+            {
+                ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
+            }
 
             ctrlTransactionHelper.commit();
 

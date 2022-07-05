@@ -228,8 +228,20 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
 
         if (needsCacheDevice(rscDataRef.getAbsResource(), layerListRef))
         {
-            children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_CACHE_CACHE, DeviceLayerKind.STORAGE));
-            children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_CACHE_META, DeviceLayerKind.STORAGE));
+            children.add(
+                new ChildResourceData(
+                    RscLayerSuffixes.SUFFIX_CACHE_CACHE,
+                    IGNORE_REASON_CACHE_CACHE,
+                    DeviceLayerKind.STORAGE
+                )
+            );
+            children.add(
+                new ChildResourceData(
+                    RscLayerSuffixes.SUFFIX_CACHE_META,
+                    IGNORE_REASON_CACHE_META,
+                    DeviceLayerKind.STORAGE
+                )
+            );
         }
 
         return children;
@@ -282,12 +294,19 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected boolean isExpectedToProvideDevice(
-        CacheRscData<Resource> cacheRscData
+    protected void recalculateVolatilePropertiesImpl(
+        CacheRscData<Resource> rscDataRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payloadRef
     )
-        throws AccessDeniedException
     {
-        return true;
+        // no-op
+    }
+
+    @Override
+    protected boolean isExpectedToProvideDevice(CacheRscData<Resource> cacheRscData) throws AccessDeniedException
+    {
+        return cacheRscData.getIgnoreReason() != null;
     }
 
     private StorPool getSpecialStorPool(

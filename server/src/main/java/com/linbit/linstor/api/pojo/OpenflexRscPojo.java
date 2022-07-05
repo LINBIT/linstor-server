@@ -7,6 +7,8 @@ import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -16,18 +18,21 @@ public class OpenflexRscPojo implements RscLayerDataApi
     private final OpenflexRscDfnPojo rscDfn;
     private final List<OpenflexVlmPojo> vlms;
     private final boolean suspend;
+    private final @Nullable String ignoreReason;
 
     public OpenflexRscPojo(
         int idRef,
         OpenflexRscDfnPojo rscDfnRef,
         List<OpenflexVlmPojo> vlmsRef,
-        boolean suspendRef
+        boolean suspendRef,
+        @Nullable String ignoreReasonRef
     )
     {
         id = idRef;
         rscDfn = rscDfnRef;
         vlms = vlmsRef;
         suspend = suspendRef;
+        ignoreReason = ignoreReasonRef;
     }
 
     @Override
@@ -58,6 +63,12 @@ public class OpenflexRscPojo implements RscLayerDataApi
     public boolean getSuspend()
     {
         return suspend;
+    }
+
+    @Override
+    public @Nullable String getIgnoreReason()
+    {
+        return ignoreReason;
     }
 
     @Override

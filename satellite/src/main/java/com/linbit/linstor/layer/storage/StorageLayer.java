@@ -223,7 +223,7 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public LayerProcessResult process(
+    public void process(
         AbsRscLayerObject<Resource> rscLayerData,
         List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
@@ -317,26 +317,6 @@ public class StorageLayer implements DeviceLayer
                 }
             }
         }
-
-        LayerProcessResult result;
-        if (
-            rscLayerData != null &&
-                (rscLayerData.getAbsResource().getStateFlags().isSet(storDriverAccCtx, Resource.Flags.INACTIVE) ||
-                    rscLayerData.getAbsResource().streamVolumes()
-                        .anyMatch(
-                            vlm -> isVolumeFlagSetPrivileged(vlm, Volume.Flags.CLONING) ||
-                                isVolumeFlagSetPrivileged(vlm, Volume.Flags.CLONING_START)
-                        ))
-        )
-        {
-            result = LayerProcessResult.NO_DEVICES_PROVIDED;
-        }
-        else
-        {
-            result = LayerProcessResult.SUCCESS;
-        }
-
-        return result;
     }
 
     private List<VlmProviderObject<Snapshot>> filterSnapVlms(
@@ -440,18 +420,5 @@ public class StorageLayer implements DeviceLayer
         }
 
         return ret;
-    }
-
-    private boolean isVolumeFlagSetPrivileged(Volume vlm, Volume.Flags flag)
-    {
-        boolean isSet = false;
-        try
-        {
-            isSet = vlm.getFlags().isSet(storDriverAccCtx, flag);
-        }
-        catch (AccessDeniedException ignored)
-        {
-        }
-        return isSet;
     }
 }

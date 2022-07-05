@@ -206,7 +206,13 @@ class RscWritecacheLayerHelper
 
         if (needsCacheDevice(rscDataRef, layerListRef))
         {
-            children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE, DeviceLayerKind.STORAGE));
+            children.add(
+                new ChildResourceData(
+                    RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE,
+                    IGNORE_REASON_WRITECACHE_CACHE,
+                    DeviceLayerKind.STORAGE
+                )
+            );
         }
 
         return children;
@@ -255,10 +261,21 @@ class RscWritecacheLayerHelper
     }
 
     @Override
+    protected void recalculateVolatilePropertiesImpl(
+        WritecacheRscData<Resource> rscDataRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payloadRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        // no-op
+    }
+
+    @Override
     protected boolean isExpectedToProvideDevice(WritecacheRscData<Resource> writecacheRscData)
         throws AccessDeniedException
     {
-        return true;
+        return writecacheRscData.getIgnoreReason() != null;
     }
 
     private StorPool getCacheStorPool(Volume vlm) throws InvalidKeyException, AccessDeniedException

@@ -284,6 +284,10 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         {
             luksRscData = createLuksRscData(rsc, parent, luksRscPojo);
         }
+        else
+        {
+            mergeLuksRscData(parent, luksRscPojo, luksRscData);
+        }
 
         // do not iterate over rsc.volumes as those might have changed in the meantime
         // see gitlab 368
@@ -330,6 +334,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         }
         else
         {
+            mergeStorageRscData(parent, storRscPojo, storRscData);
             updateParent(storRscData, parent);
         }
 
@@ -512,6 +517,10 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         {
             nvmeRscData = createNvmeRscData(rsc, parent, nvmeRscPojo);
         }
+        else
+        {
+            mergeNvmeRscData(parent, nvmeRscPojo, nvmeRscData);
+        }
 
         // do not iterate over rsc.volumes as those might have changed in the meantime
         // see gitlab 368
@@ -576,6 +585,10 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         if (ofRscData == null)
         {
             ofRscData = createOpenflexRscData(rsc, parent, ofRscDfnData, ofRscPojo);
+        }
+        else
+        {
+            mergeOpenflexRscData(parent, ofRscPojo, ofRscData);
         }
 
         // do not iterate over rsc.volumes as those might have changed in the meantime
@@ -724,6 +737,10 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         if (cacheRscData == null)
         {
             cacheRscData = createCacheRscData(rsc, parent, cacheRscPojo);
+        }
+        else
+        {
+            mergeCacheRscData(parent, cacheRscPojo, cacheRscData);
         }
 
         // do not iterate over rsc.volumes as those might have changed in the meantime
@@ -913,6 +930,13 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     )
         throws DatabaseException, AccessDeniedException;
 
+    protected abstract void mergeLuksRscData(
+        AbsRscLayerObject<RSC> parent,
+        LuksRscPojo luksRscPojo,
+        LuksRscData<RSC> luksRscData
+    )
+        throws AccessDeniedException, DatabaseException;
+
     protected abstract void removeLuksVlm(LuksRscData<RSC> luksRscData, VolumeNumber vlmNr)
         throws DatabaseException, AccessDeniedException;
 
@@ -932,6 +956,13 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         StorageRscPojo storRscPojo
     )
         throws DatabaseException, AccessDeniedException;
+
+    protected abstract void mergeStorageRscData(
+        AbsRscLayerObject<RSC> parent,
+        StorageRscPojo storRscPojo,
+        StorageRscData<RSC> storRscData
+    )
+        throws AccessDeniedException, DatabaseException;
 
     protected abstract void removeStorageVlm(StorageRscData<RSC> storRscData, VolumeNumber vlmNr)
         throws DatabaseException, AccessDeniedException;
@@ -1026,6 +1057,13 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     )
         throws DatabaseException, AccessDeniedException;
 
+    protected abstract void mergeNvmeRscData(
+        AbsRscLayerObject<RSC> parent,
+        NvmeRscPojo nvmeRscPojo,
+        NvmeRscData<RSC> nvmeRscData
+    )
+        throws AccessDeniedException, DatabaseException;
+
     protected abstract void removeNvmeVlm(NvmeRscData<RSC> nvmeRscData, VolumeNumber vlmNr)
         throws DatabaseException, AccessDeniedException;
 
@@ -1051,6 +1089,13 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     )
         throws DatabaseException, AccessDeniedException;
 
+    protected abstract void mergeOpenflexRscData(
+        AbsRscLayerObject<RSC> parent,
+        OpenflexRscPojo ofRscPojo,
+        OpenflexRscData<RSC> ofRscData
+    )
+        throws AccessDeniedException, DatabaseException;
+
     protected abstract void removeOpenflexVlm(OpenflexRscData<RSC> ofRscData, VolumeNumber vlmNr)
         throws DatabaseException, AccessDeniedException;
 
@@ -1068,7 +1113,6 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     /*
      * Writecache layer methods
      */
-
     protected abstract WritecacheRscData<RSC> createWritecacheRscData(
         RSC rsc,
         AbsRscLayerObject<RSC> parent,
@@ -1100,13 +1144,19 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     /*
      * Cache layer methods
      */
-
     protected abstract CacheRscData<RSC> createCacheRscData(
         RSC rsc,
         AbsRscLayerObject<RSC> parent,
         CacheRscPojo cacheRscPojo
     )
         throws DatabaseException, AccessDeniedException;
+
+    protected abstract void mergeCacheRscData(
+        AbsRscLayerObject<RSC> parent,
+        CacheRscPojo cacheRscPojo,
+        CacheRscData<RSC> cacheRscData
+    )
+        throws AccessDeniedException, DatabaseException;
 
     protected abstract void removeCacheVlm(CacheRscData<RSC> cacheRscData, VolumeNumber vlmNr)
         throws DatabaseException, AccessDeniedException;
@@ -1126,7 +1176,6 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     /*
      * BCache layer methods
      */
-
     protected abstract BCacheRscData<RSC> createBCacheRscData(
         RSC rsc,
         AbsRscLayerObject<RSC> parent,
@@ -1154,7 +1203,6 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
 
     protected abstract void mergeBCacheVlm(BCacheVlmPojo vlmPojo, BCacheVlmData<RSC> bcacheVlmData)
         throws DatabaseException;
-
 
     protected abstract void updateParent(AbsRscLayerObject<RSC> rscDataRef, AbsRscLayerObject<RSC> parentRef)
         throws DatabaseException;

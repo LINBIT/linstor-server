@@ -116,6 +116,8 @@ public class CtrlRscCrtApiHelper
     private final SharedResourceManager sharedRscMgr;
     private final BackupInfoManager backupInfoMgr;
     private final ScheduleBackupService scheduleBackupService;
+    private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
+    private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -136,7 +138,9 @@ public class CtrlRscCrtApiHelper
         Provider<CtrlRscToggleDiskApiCallHandler> toggleDiskHelperRef,
         SharedResourceManager sharedRscMgrRef,
         BackupInfoManager backupInfoMgrRef,
-        ScheduleBackupService scheduleBackupServiceRef
+        ScheduleBackupService scheduleBackupServiceRef,
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -157,6 +161,8 @@ public class CtrlRscCrtApiHelper
         sharedRscMgr = sharedRscMgrRef;
         backupInfoMgr = backupInfoMgrRef;
         scheduleBackupService = scheduleBackupServiceRef;
+        ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
+        ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
     }
 
     /**
@@ -232,7 +238,7 @@ public class CtrlRscCrtApiHelper
 
             if (FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.INACTIVE))
             {
-                setResourceFlags(rsc, Resource.Flags.INACTIVE);
+                autoFlux.add(ctrlRscActivateApiCallHandler.deactivateRsc(nodeNameStr, rscNameStr));
             }
 
             if (!isDiskless)
@@ -454,7 +460,7 @@ public class CtrlRscCrtApiHelper
 
         if (!isFlagSet(rsc, Resource.Flags.INACTIVE) && !sharedRscMgr.isActivationAllowed(rsc))
         {
-            setResourceFlags(rsc, Resource.Flags.INACTIVE);
+            autoFlux.add(ctrlRscActivateApiCallHandler.activateRsc(nodeNameStr, rscNameStr));
         }
 
         return new Pair<>(autoFlux, new ApiCallRcWith<>(responses, rsc));

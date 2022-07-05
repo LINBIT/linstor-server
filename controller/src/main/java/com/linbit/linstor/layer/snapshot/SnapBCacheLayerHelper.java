@@ -36,10 +36,9 @@ import javax.inject.Singleton;
 import java.util.Map;
 
 @Singleton
-class SnapBCacheLayerHelper
-    extends AbsSnapLayerHelper<
-        BCacheRscData<Snapshot>, BCacheVlmData<Snapshot>,
-        RscDfnLayerObject, VlmDfnLayerObject>
+class SnapBCacheLayerHelper extends AbsSnapLayerHelper<
+    BCacheRscData<Snapshot>, BCacheVlmData<Snapshot>,
+    RscDfnLayerObject, VlmDfnLayerObject>
 {
     @Inject
     SnapBCacheLayerHelper(

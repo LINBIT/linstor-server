@@ -315,7 +315,8 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             vlmPojos,
             suspend.get(),
             promotionScore,
-            mayPromote
+            mayPromote,
+            ignoreReason.get()
         );
     }
 }

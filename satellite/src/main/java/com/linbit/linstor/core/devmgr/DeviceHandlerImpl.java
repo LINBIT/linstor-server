@@ -35,7 +35,6 @@ import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.AbortLayerProcessingException;
-import com.linbit.linstor.layer.DeviceLayer.LayerProcessResult;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.LayerFactory;
 import com.linbit.linstor.layer.openflex.OpenflexLayer;
@@ -423,7 +422,22 @@ public class DeviceHandlerImpl implements DeviceHandler
                 extFileHandler.handle(rsc);
 
                 // give the layer the opportunity to send a "resource ready" event
-                resourceFinished(rsc.getLayerData(wrkCtx));
+                AbsRscLayerObject<Resource> firstNonIgnoredRscData = getFirstRscDataWithoutIgnoredReasonForDataPath(
+                    rsc.getLayerData(wrkCtx)
+                );
+                if (firstNonIgnoredRscData == null)
+                {
+                    errorReporter.logDebug(
+                        "Not calling resourceFinished for any layer as the resource '%s' is completely ignored. " +
+                            "Topmost reason: %s",
+                        rsc.getLayerData(wrkCtx).getSuffixedResourceName(),
+                        rsc.getLayerData(wrkCtx).getIgnoreReason()
+                    );
+                }
+                else
+                {
+                    resourceFinished(firstNonIgnoredRscData);
+                }
 
                 if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE))
                 {
@@ -524,6 +538,18 @@ public class DeviceHandlerImpl implements DeviceHandler
             notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
         }
         sysFsHandler.updateSysFsSettings(sysFsUpdateList, sysFsDeleteList);
+    }
+
+    private <RSC extends AbsResource<RSC>> AbsRscLayerObject<RSC> getFirstRscDataWithoutIgnoredReasonForDataPath(
+        AbsRscLayerObject<RSC> rscData
+    )
+    {
+        AbsRscLayerObject<RSC> curRscData = rscData;
+        while (curRscData != null && curRscData.hasIgnoreReason())
+        {
+            curRscData = curRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
+        }
+        return curRscData;
     }
 
     private void ensureAllVlmDataDeleted(
@@ -727,18 +753,23 @@ public class DeviceHandlerImpl implements DeviceHandler
         boolean success;
         try
         {
+            Set<AbsRscLayerObject<Resource>> filteredRscSet = filterNonIgnored(rscSet);
+            Set<AbsRscLayerObject<Snapshot>> filteredSnapSet = filterNonIgnored(snapSet);
             errorReporter.logTrace(
-                "Layer '%s' preparing %d resources, %d snapshots",
+                "Layer '%s' preparing %d (of %d) resources, %d (of %d) snapshots",
                 layer.getName(),
+                filteredRscSet.size(),
                 rscSet.size(),
+                filteredSnapSet.size(),
                 snapSet.size()
             );
-            layer.prepare(rscSet, snapSet);
+
+            layer.prepare(filteredRscSet, filteredSnapSet);
             errorReporter.logTrace(
                 "Layer '%s' finished preparing %d resources, %d snapshots",
                 layer.getName(),
-                rscSet.size(),
-                snapSet.size()
+                filteredRscSet.size(),
+                filteredSnapSet.size()
             );
             success = true;
         }
@@ -777,6 +808,22 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
         }
         return success;
+    }
+
+    private <RSC extends AbsResource<RSC>> Set<AbsRscLayerObject<RSC>> filterNonIgnored(
+        Set<AbsRscLayerObject<RSC>> dataSetRef
+    )
+    {
+        Set<AbsRscLayerObject<RSC>> ret = new HashSet<>();
+        for (AbsRscLayerObject<RSC> data : dataSetRef)
+        {
+            errorReporter.logTrace("DEBUG: %s has reason: %s", data.getSuffixedResourceName(), data.getIgnoreReason());
+            if (!data.hasIgnoreReason())
+            {
+                ret.add(data);
+            }
+        }
+        return ret;
     }
 
     private void resourceFinished(AbsRscLayerObject<Resource> layerDataRef)
@@ -829,7 +876,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public LayerProcessResult process(
+    public void process(
         AbsRscLayerObject<Resource> rscLayerData,
         List<Snapshot> snapshotsRef,
         ApiCallRcImpl apiCallRc
@@ -838,13 +885,34 @@ public class DeviceHandlerImpl implements DeviceHandler
     {
         DeviceLayer nextLayer = layerFactory.getDeviceLayer(rscLayerData.getLayerKind());
 
-        errorReporter.logTrace(
-            "Layer '%s' processing resource '%s'",
-            nextLayer.getName(),
-            rscLayerData.getSuffixedResourceName()
-        );
-
-        LayerProcessResult processResult = nextLayer.process(rscLayerData, snapshotsRef, apiCallRc);
+        if (!rscLayerData.hasIgnoreReason())
+        {
+            errorReporter.logTrace(
+                "Layer '%s' processing resource '%s'",
+                nextLayer.getName(),
+                rscLayerData.getSuffixedResourceName()
+            );
+            nextLayer.process(rscLayerData, snapshotsRef, apiCallRc);
+        }
+        else
+        {
+            errorReporter.logTrace(
+                "Ignoring layer '%s' for resource '%s' because '%s'",
+                nextLayer.getName(),
+                rscLayerData.getSuffixedResourceName(),
+                rscLayerData.getIgnoreReason()
+            );
+            for (AbsRscLayerObject<Resource> child : rscLayerData.getChildren())
+            {
+                /*
+                 * Although the current rscLayerData should not be processed, we might need to process one of its
+                 * children (i.e. an NVMe target rscData).
+                 *
+                 * Usually the order of processing children is important, but not if the current rscData is ignored.
+                 */
+                process(child, snapshotsRef, apiCallRc);
+            }
+        }
 
         if (rscLayerData.hasFailed())
         {
@@ -856,7 +924,6 @@ public class DeviceHandlerImpl implements DeviceHandler
             nextLayer.getName(),
             rscLayerData.getSuffixedResourceName()
         );
-        return processResult;
     }
 
     @Override

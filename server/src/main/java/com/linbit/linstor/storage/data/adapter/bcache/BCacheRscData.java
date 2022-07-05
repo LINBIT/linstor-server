@@ -75,7 +75,8 @@ public class BCacheRscData<RSC extends AbsResource<RSC>>
             getChildrenPojos(accCtxRef),
             rscSuffix,
             vlmPojos,
-            suspend.get()
+            suspend.get(),
+            ignoreReason.get()
         );
     }
 
@@ -96,5 +97,4 @@ public class BCacheRscData<RSC extends AbsResource<RSC>>
     {
         bcacheDbDriver.delete(this);
     }
-
 }

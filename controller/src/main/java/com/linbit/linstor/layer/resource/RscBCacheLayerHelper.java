@@ -210,7 +210,13 @@ class RscBCacheLayerHelper
 
         if (needsCacheDevice(rscDataRef.getAbsResource(), layerListRef))
         {
-            children.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_BCACHE_CACHE, DeviceLayerKind.STORAGE));
+            children.add(
+                new ChildResourceData(
+                    RscLayerSuffixes.SUFFIX_BCACHE_CACHE,
+                    IGNORE_REASON_BCACHE_CACHE,
+                    DeviceLayerKind.STORAGE
+                )
+            );
         }
 
         return children;
@@ -256,10 +262,21 @@ class RscBCacheLayerHelper
     }
 
     @Override
+    protected void recalculateVolatilePropertiesImpl(
+        BCacheRscData<Resource> rscDataRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payloadRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        // no-op
+    }
+
+    @Override
     protected boolean isExpectedToProvideDevice(BCacheRscData<Resource> bcacheRscData)
         throws AccessDeniedException
     {
-        return true;
+        return bcacheRscData.getIgnoreReason() != null;
     }
 
     private StorPool getCacheStorPool(Resource rsc, VolumeDefinition vlmDfn)

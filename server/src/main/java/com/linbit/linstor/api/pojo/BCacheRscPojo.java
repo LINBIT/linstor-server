@@ -23,6 +23,8 @@ public class BCacheRscPojo implements RscLayerDataApi
     private final String rscNameSuffix;
     @JsonIgnore
     private final boolean suspend;
+    @JsonIgnore
+    private final @Nullable String ignoreReason;
 
     private final List<BCacheVlmPojo> vlms;
 
@@ -31,7 +33,8 @@ public class BCacheRscPojo implements RscLayerDataApi
         List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
         List<BCacheVlmPojo> vlmsRef,
-        boolean suspendRef
+        boolean suspendRef,
+        @Nullable String ignoreReasonRef
     )
     {
         super();
@@ -40,6 +43,7 @@ public class BCacheRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = suspendRef;
+        ignoreReason = ignoreReasonRef;
     }
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -55,6 +59,7 @@ public class BCacheRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = false;
+        ignoreReason = null;
     }
 
     @Override
@@ -85,6 +90,12 @@ public class BCacheRscPojo implements RscLayerDataApi
     public boolean getSuspend()
     {
         return suspend;
+    }
+
+    @Override
+    public @Nullable String getIgnoreReason()
+    {
+        return ignoreReason;
     }
 
     @SuppressWarnings("unchecked")

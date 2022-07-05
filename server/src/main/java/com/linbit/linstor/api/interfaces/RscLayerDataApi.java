@@ -9,6 +9,8 @@ import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
+import javax.annotation.Nullable;
+
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -54,6 +56,10 @@ public interface RscLayerDataApi
 
     @JsonIgnore
     boolean getSuspend();
+
+    @JsonIgnore
+    @Nullable
+    String getIgnoreReason();
 
     <T extends VlmLayerDataApi> List<T> getVolumeList();
 

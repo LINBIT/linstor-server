@@ -33,6 +33,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -170,7 +171,10 @@ public class CtrlRscLayerDataFactory
 
             rootObj = ensureDataRec(rscRef, payload, layerList, new ChildResourceData(""), null);
 
+            clearIgnoreReasonsRec(rootObj);
+
             rscRef.setLayerData(apiCtx, rootObj);
+            recalculateVolatileRscData(rscRef);
         }
         catch (AccessDeniedException exc)
         {
@@ -221,7 +225,8 @@ public class CtrlRscLayerDataFactory
         List<DeviceLayerKind> layerStackRef,
         ChildResourceData currentData,
         AbsRscLayerObject<Resource> parentRscObj
-    ) throws InvalidKeyException, DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
+    )
+        throws InvalidKeyException, DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
         ValueInUseException, LinStorException, InvalidNameException
     {
         DeviceLayerKind currentKind = layerStackRef.get(0);
@@ -237,7 +242,8 @@ public class CtrlRscLayerDataFactory
                 payloadRef,
                 currentData.rscNameSuffix,
                 parentRscObj,
-                childList
+                childList,
+                currentData.ignoreReason
             );
 
             if (result == null)
@@ -473,6 +479,8 @@ public class CtrlRscLayerDataFactory
         {
             AbsRscLayerObject<Resource> rscData = copyRec(toResource, fromAbsRsc, null);
             toResource.setLayerData(apiCtx, rscData);
+            clearIgnoreReasonsRec(rscData);
+            recalculateVolatileRscData(toResource);
         }
         catch (AccessDeniedException exc)
         {
@@ -547,36 +555,69 @@ public class CtrlRscLayerDataFactory
         return rscData;
     }
 
-    protected AbsRscLayerHelper<?, ?, ?, ?> getLayerHelperByKind(
+    private void clearIgnoreReasonsRec(AbsRscLayerObject<Resource> rscDataRef) throws DatabaseException
+    {
+        rscDataRef.setIgnoreReason(AbsRscLayerHelper.IGNORE_REASON_NONE);
+        for (AbsRscLayerObject<Resource> child : rscDataRef.getChildren())
+        {
+            clearIgnoreReasonsRec(child);
+        }
+    }
+
+    public void recalculateVolatileRscData(Resource rscRef) throws AccessDeniedException, DatabaseException
+    {
+        AbsRscLayerObject<Resource> rscData = rscRef.getLayerData(apiCtx);
+        List<DeviceLayerKind> layerStack = getLayerStack(rscRef);
+        recalculateVolatileRscDataRec(rscData, layerStack, new LayerPayload());
+    }
+
+    @SuppressWarnings("unchecked")
+    private <RSC_LO extends AbsRscLayerObject<Resource>> void recalculateVolatileRscDataRec(
+        AbsRscLayerObject<Resource> rscDataRef,
+        List<DeviceLayerKind> layerStackRef,
+        LayerPayload layerPayloadRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        AbsRscLayerHelper<RSC_LO, ?, ?, ?> layerHelper = getLayerHelperByKind(rscDataRef.getLayerKind());
+        layerHelper.recalculateVolatileProperties((RSC_LO) rscDataRef, layerStackRef, layerPayloadRef);
+
+        for (AbsRscLayerObject<Resource> child : rscDataRef.getChildren())
+        {
+            recalculateVolatileRscDataRec(child, layerStackRef, layerPayloadRef);
+        }
+    }
+
+    protected <RSC_LO extends AbsRscLayerObject<Resource>> AbsRscLayerHelper<RSC_LO, ?, ?, ?> getLayerHelperByKind(
         DeviceLayerKind kind
     )
     {
-        AbsRscLayerHelper<?, ?, ?, ?> layerHelper;
+        AbsRscLayerHelper<RSC_LO, ?, ?, ?> layerHelper;
         switch (kind)
         {
             case DRBD:
-                layerHelper = drbdLayerHelper;
+                layerHelper = (AbsRscLayerHelper<RSC_LO, ?, ?, ?>) drbdLayerHelper;
                 break;
             case LUKS:
-                layerHelper = luksLayerHelper;
+                layerHelper = (AbsRscLayerHelper<RSC_LO, ?, ?, ?>) luksLayerHelper;
                 break;
             case NVME:
-                layerHelper = nvmeLayerHelper;
+                layerHelper = (AbsRscLayerHelper<RSC_LO, ?, ?, ?>) nvmeLayerHelper;
                 break;
             case WRITECACHE:
-                layerHelper = writecacheLayerHelper;
+                layerHelper = (AbsRscLayerHelper<RSC_LO, ?, ?, ?>) writecacheLayerHelper;
                 break;
             case CACHE:
-                layerHelper = cacheLayerHelper;
+                layerHelper = (AbsRscLayerHelper<RSC_LO, ?, ?, ?>) cacheLayerHelper;
                 break;
             case BCACHE:
-                layerHelper = bcacheLayerHelper;
+                layerHelper = (AbsRscLayerHelper<RSC_LO, ?, ?, ?>) bcacheLayerHelper;
                 break;
             case STORAGE:
-                layerHelper = storageLayerHelper;
+                layerHelper = (AbsRscLayerHelper<RSC_LO, ?, ?, ?>) storageLayerHelper;
                 break;
             case OPENFLEX:
-                layerHelper = ofLayerHelper;
+                layerHelper = (AbsRscLayerHelper<RSC_LO, ?, ?, ?>) ofLayerHelper;
                 break;
             default:
                 throw new ImplementationError("Unknown device layer kind '" + kind + "'");
@@ -646,9 +687,6 @@ public class CtrlRscLayerDataFactory
         return isDiskless;
     }
 
-    /**
-     * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
-     */
     public static class LayerResult<RSC extends AbsResource<RSC>>
     {
         private AbsRscLayerObject<RSC> rscObj;
@@ -681,23 +719,49 @@ public class CtrlRscLayerDataFactory
 
         private final String rscNameSuffix;
         private final List<DeviceLayerKind> skipUntilList = new ArrayList<>();
+        private final @Nullable String ignoreReason;
 
         ChildResourceData(String rscNameSuffixRef)
         {
             rscNameSuffix = rscNameSuffixRef;
             skipUntilList.addAll(ANY_KIND);
+            ignoreReason = null;
         }
 
-        ChildResourceData(String rscNameSuffixRef, List<DeviceLayerKind> skipUntilListRef)
+        ChildResourceData(
+            String rscNameSuffixRef,
+            String ignoreReasonRef,
+            List<DeviceLayerKind> skipUntilListRef
+        )
         {
             rscNameSuffix = rscNameSuffixRef;
-            skipUntilList.addAll(skipUntilListRef);
+            if (skipUntilListRef == null || skipUntilListRef.isEmpty())
+            {
+                skipUntilList.addAll(ANY_KIND);
+            }
+            else
+            {
+                skipUntilList.addAll(skipUntilListRef);
+            }
+            ignoreReason = ignoreReasonRef;
         }
 
-        ChildResourceData(String rscNameSuffixRef, DeviceLayerKind... skipUntilKindsRef)
+        ChildResourceData(
+            String rscNameSuffixRef,
+            String ignoreReasonRef,
+            DeviceLayerKind... skipUntilKindsRef
+        )
         {
             rscNameSuffix = rscNameSuffixRef;
-            skipUntilList.addAll(Arrays.asList(skipUntilKindsRef));
+            if (skipUntilKindsRef == null || skipUntilKindsRef.length == 0)
+            {
+                skipUntilList.addAll(ANY_KIND);
+            }
+            else
+            {
+                skipUntilList.addAll(Arrays.asList(skipUntilKindsRef));
+            }
+            ignoreReason = ignoreReasonRef;
         }
 
         @Override

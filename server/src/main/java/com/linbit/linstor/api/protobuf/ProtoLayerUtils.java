@@ -96,7 +96,8 @@ public class ProtoLayerUtils
                             new ArrayList<>(),
                             protoRscData.getSuspend(),
                             null,
-                            null
+                            null,
+                            protoRscData.getIgnoreReason()
                         );
 
                         for (DrbdVlm protoDrbdVlm : protoDrbdRsc.getDrbdVlmsList())
@@ -121,7 +122,8 @@ public class ProtoLayerUtils
                             new ArrayList<>(),
                             protoRscData.getRscNameSuffix(),
                             new ArrayList<>(),
-                            protoRscData.getSuspend()
+                            protoRscData.getSuspend(),
+                            protoRscData.getIgnoreReason()
                         );
                         for (LuksVlm protoLuksVlm : protoRscData.getLuks().getLuksVlmsList())
                         {
@@ -145,7 +147,8 @@ public class ProtoLayerUtils
                             new ArrayList<>(),
                             protoRscData.getRscNameSuffix(),
                             new ArrayList<>(),
-                            protoRscData.getSuspend()
+                            protoRscData.getSuspend(),
+                            protoRscData.getIgnoreReason()
                         );
                         for (StorageVlm protoVlm : protoRscData.getStorage().getStorageVlmsList())
                         {
@@ -175,7 +178,8 @@ public class ProtoLayerUtils
                         new ArrayList<>(),
                         protoRscData.getRscNameSuffix(),
                         new ArrayList<>(),
-                        protoRscData.getSuspend()
+                        protoRscData.getSuspend(),
+                        protoRscData.getIgnoreReason()
                     );
                     for (NvmeVlm protoVlm : protoRscData.getNvme().getNvmeVlmsList())
                     {
@@ -202,7 +206,8 @@ public class ProtoLayerUtils
                         protoRscData.getId(),
                         ofRscDfnPojo,
                         new ArrayList<>(),
-                        protoRscData.getSuspend()
+                        protoRscData.getSuspend(),
+                        protoRscData.getIgnoreReason()
                     );
                     for (OpenflexVlm protoVlm : protoOpenflex.getOpenflexVlmsList())
                     {
@@ -224,7 +229,8 @@ public class ProtoLayerUtils
                         new ArrayList<>(),
                         protoRscData.getRscNameSuffix(),
                         new ArrayList<>(),
-                        protoRscData.getSuspend()
+                        protoRscData.getSuspend(),
+                        protoRscData.getIgnoreReason()
                     );
                     List<WritecacheVlmPojo> volumeList = writecacheRscPojo.getVolumeList();
                     for (WritecacheVlm protoVlm : protoRscData.getWritecache().getVlmsList())
@@ -248,7 +254,8 @@ public class ProtoLayerUtils
                         new ArrayList<>(),
                         protoRscData.getRscNameSuffix(),
                         new ArrayList<>(),
-                        protoRscData.getSuspend()
+                        protoRscData.getSuspend(),
+                        protoRscData.getIgnoreReason()
                     );
                     List<CacheVlmPojo> volumeList = cacheRscPojo.getVolumeList();
                     for (CacheVlm protoVlm : protoRscData.getCache().getVlmsList())
@@ -272,7 +279,8 @@ public class ProtoLayerUtils
                     new ArrayList<>(),
                     protoRscData.getRscNameSuffix(),
                     new ArrayList<>(),
-                    protoRscData.getSuspend()
+                    protoRscData.getSuspend(),
+                    protoRscData.getIgnoreReason()
                 );
                 List<BCacheVlmPojo> volumeList = bcacheRscPojo.getVolumeList();
                 for (BCacheVlm protoVlm : protoRscData.getBcache().getVlmsList())

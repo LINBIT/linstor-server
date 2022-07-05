@@ -91,7 +91,8 @@ public class StorageRscData<RSC extends AbsResource<RSC>>
             getChildrenPojos(accCtxRef),
             rscSuffix,
             vlmPojos,
-            suspend.get()
+            suspend.get(),
+            ignoreReason.get()
         );
     }
 }

@@ -44,6 +44,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> parent;
     protected final TransactionSet<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> children;
     protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, Boolean> suspend;
+    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, String> ignoreReason;
 
     // volatile satellite only
     private boolean checkFileSystem;
@@ -70,6 +71,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
         children = transObjFactory.createTransactionSet(this, childrenRef, null);
         vlmMap = transObjFactory.createTransactionMap(vlmProviderObjectsRef, null);
         suspend = transObjFactory.createTransactionSimpleObject(this, false, dbDriverRef.getSuspendDriver());
+        ignoreReason = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         checkFileSystem = true;
 
@@ -199,6 +201,18 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     }
 
     @Override
+    public String getIgnoreReason()
+    {
+        return ignoreReason.get();
+    }
+
+    @Override
+    public void setIgnoreReason(String ignoreReasonRef) throws DatabaseException
+    {
+        ignoreReason.set(ignoreReasonRef);
+    }
+
+    @Override
     public boolean checkFileSystem()
     {
         return checkFileSystem;
@@ -209,4 +223,28 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     {
         this.checkFileSystem = false;
     }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + rscLayerId;
+        result = prime * result + ((rscSuffix == null) ? 0 : rscSuffix.hashCode());
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        boolean ret = obj instanceof AbsRscData;
+        if (ret)
+        {
+            AbsRscData<?, ?> other = (AbsRscData<?, ?>) obj;
+            ret = Objects.equals(rscSuffix, other.rscSuffix) &&
+                Objects.equals(rscLayerId, other.rscLayerId);
+        }
+        return ret;
+    }
+
 }

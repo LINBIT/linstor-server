@@ -203,8 +203,9 @@ public class DrbdLayer implements DeviceLayer
 
         try
         {
-            boolean isDiskless = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags()
-                .isSet(workerCtx, Resource.Flags.DRBD_DISKLESS);
+            StateFlags<Flags> rscFlags = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags();
+            boolean isDiskless = rscFlags.isSet(workerCtx, Resource.Flags.DRBD_DISKLESS) &&
+                !rscFlags.isSomeSet(workerCtx, Resource.Flags.DISK_ADD_REQUESTED, Resource.Flags.DISK_ADDING);
             if (!isDiskless)
             {
                 long netSize = drbdVlmData.getUsableSize();
@@ -343,7 +344,7 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public LayerProcessResult process(
+    public void process(
         AbsRscLayerObject<Resource> rscLayerData,
         List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
@@ -403,8 +404,6 @@ public class DrbdLayer implements DeviceLayer
                 }
             }
         }
-        return LayerProcessResult.NO_DEVICES_PROVIDED; // TODO: make this depend on whether the local
-        // resource is currently primary or not.
     }
 
     private void addDeletedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
@@ -455,30 +454,23 @@ public class DrbdLayer implements DeviceLayer
         if (!isDiskless || isDiskRemoving)
         {
             AbsRscLayerObject<Resource> dataChild = drbdRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-            LayerProcessResult dataResult = resourceProcessorProvider.get().process(
+            resourceProcessorProvider.get().process(
                 dataChild,
                 snapshotList,
                 apiCallRc
             );
-            LayerProcessResult metaResult = null;
 
             AbsRscLayerObject<Resource> metaChild = drbdRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META);
             if (metaChild != null)
             {
-                metaResult = resourceProcessorProvider.get().process(
+                resourceProcessorProvider.get().process(
                     metaChild,
                     snapshotList,
                     apiCallRc
                 );
             }
 
-            if (
-                dataResult == LayerProcessResult.SUCCESS &&
-                    (metaResult == null || metaResult == LayerProcessResult.SUCCESS)
-            )
-            {
-                contProcess = true;
-            }
+            contProcess = true;
         }
         return contProcess;
     }

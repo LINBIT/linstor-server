@@ -507,8 +507,23 @@ public class Resource extends AbsResource<Resource>
 
         NVME_INITIATOR(DISKLESS.flagValue | 1L << 9),
 
+        /**
+         * Causes the controller to set the "Resource inactive" ignore reason to be set on all layers except the storage
+         * layer. That will cause the layers to be skipped within the device manager run
+         */
         INACTIVE(1L << 10),
+        /**
+         * Causes the satellite to re-decrypt LUKS volume keys and such. Should be a short state
+         */
         REACTIVATE(1L << 11),
+        /**
+         * Same as {@link #INACTIVE} but ... permanently (who would have guessed)?
+         * A resource will be declared permanently inactive once it is used as a snapshot-shipping target.
+         * The reason for this is that the received snapshot will (except for external metadata) contain the internal
+         * metadata from the sender. Rolling back to such a state (activating the resource first) would cause the
+         * target-resource to have the same metadata as the once-sender. We also cannot recreate the metadata since in
+         * that case we would lose the tracking of which data we might need to send to new peers.
+         */
         INACTIVE_PERMANENTLY(INACTIVE.flagValue | 1L << 12),
         @Deprecated
         BACKUP_RESTORE(1L << 13),
@@ -517,6 +532,11 @@ public class Resource extends AbsResource<Resource>
         RESTORE_FROM_SNAPSHOT(1L << 16),
         EVACUATE(1L << 17),
         DRBD_DELETE(1L << 18),
+        /**
+         * Causes the satellite to deactivate all layers (except storage). Once the satellite are finished with
+         * inactivating, the {@link #INACTIVE} flag should be placed. Should be a short state
+         */
+        INACTIVATING(1L << 19),
         ;
 
         public final long flagValue;

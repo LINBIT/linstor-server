@@ -36,7 +36,8 @@ public class ResourceTest
             Resource.Flags.INACTIVE_BEFORE_EVICTION.flagValue |
             Resource.Flags.RESTORE_FROM_SNAPSHOT.flagValue |
             Resource.Flags.EVACUATE.flagValue |
-            Resource.Flags.DRBD_DELETE.flagValue;
+            Resource.Flags.DRBD_DELETE.flagValue |
+            Resource.Flags.INACTIVATING.flagValue;
         List<String> strList = Resource.Flags.toStringList(mask);
         assertEquals(Resource.Flags.values().length, strList.size());
 
@@ -60,7 +61,8 @@ public class ResourceTest
                 "INACTIVE_BEFORE_EVICTION", // internal
                 "RESTORE_FROM_SNAPSHOT", // internal
                 ApiConsts.FLAG_EVACUATE,
-                "DRBD_DELETE" // internal
+                "DRBD_DELETE", // internal
+                "INACTIVATING" // internal
             },
             strList.toArray()
         );

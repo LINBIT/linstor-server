@@ -9,10 +9,10 @@ import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
-import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
@@ -118,27 +118,22 @@ public class OpenflexLayer implements DeviceLayer
     }
 
     @Override
-    public LayerProcessResult process(
+    public void process(
         AbsRscLayerObject<Resource> rscLayerDataRef,
         List<Snapshot> ignored,
         ApiCallRcImpl apiCallRcRef
     ) throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
-        LayerProcessResult processResult;
-
         OpenflexRscData<Resource> ofRscData = (OpenflexRscData<Resource>) rscLayerDataRef;
 
         if (ofRscData.isInitiator(sysCtx))
         {
             processInitiator(ofRscData, apiCallRcRef);
-            processResult = LayerProcessResult.SUCCESS; // throws exception otherwise
         }
         else
         {
             processTarget(ofRscData, apiCallRcRef);
-            processResult = LayerProcessResult.NO_DEVICES_PROVIDED;
         }
-        return processResult;
     }
 
     private void processTarget(OpenflexRscData<Resource> ofRscData, ApiCallRcImpl apiCallRcRef)

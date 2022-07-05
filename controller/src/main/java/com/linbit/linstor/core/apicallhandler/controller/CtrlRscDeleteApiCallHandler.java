@@ -13,7 +13,6 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoH
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
@@ -28,7 +27,6 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -72,6 +70,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     private final CtrlSnapshotShippingAbortHandler snapShipAbortHandler;
     private final SharedResourceManager sharedRscMgr;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
+    private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
 
     @Inject
     public CtrlRscDeleteApiCallHandler(
@@ -87,7 +86,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         CtrlRscAutoHelper autoHelperRef,
         CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef,
         SharedResourceManager sharedRscMgrRef,
-        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -103,6 +103,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         snapShipAbortHandler = snapShipAbortHandlerRef;
         sharedRscMgr = sharedRscMgrRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
+        ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
     }
 
     @Override
@@ -157,11 +158,44 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
 
         return scopeRunner
             .fluxInTransactionalScope(
+                "Activating resource if necessary before deletion",
+                LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
+                () -> activateRscIfLastInTransaction(nodeNameStr, rscNameStr, context)
+                // () -> prepareResourceDeleteInTransaction(nodeNameStr, rscNameStr, context)
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> activateRscIfLastInTransaction(
+        String nodeNameStr,
+        String rscNameStr,
+        ResponseContext context
+    )
+    {
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, false);
+
+        if (rsc == null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.WARN_NOT_FOUND,
+                    getRscDescription(nodeNameStr, rscNameStr) + " not found."
+                )
+            );
+        }
+
+        ctrlRscDeleteApiHelper.ensureNotInUse(rsc);
+        ctrlRscDeleteApiHelper.ensureNotLastDisk(rsc);
+
+        failIfDependentSnapshot(rsc);
+
+        return activateIfLast(rsc).concatWith(
+            scopeRunner.fluxInTransactionalScope(
                 "Prepare resource delete",
                 LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
                 () -> prepareResourceDeleteInTransaction(nodeNameStr, rscNameStr, context)
             )
-            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+        );
     }
 
     private Flux<ApiCallRc> prepareResourceDeleteInTransaction(
@@ -186,8 +220,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         ctrlRscDeleteApiHelper.ensureNotLastDisk(rsc);
 
         failIfDependentSnapshot(rsc);
-
-        activateIfLast(rsc);
 
         AccessContext accCtx = peerAccCtx.get();
 
@@ -332,8 +364,10 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         return flux;
     }
 
-    private void activateIfLast(Resource rsc)
+    private Flux<ApiCallRc> activateIfLast(Resource rsc)
     {
+        Flux<ApiCallRc> ret = Flux.empty();
+
         boolean found = false;
         TreeSet<Resource> sharedResources = sharedRscMgr.getSharedResources(rsc);
         for (Resource sharedRsc : sharedResources)
@@ -352,9 +386,13 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             // layer can cleanup the volumes
             if (isFlagSet(rsc, Resource.Flags.INACTIVE))
             {
-                unsetFlag(rsc, Resource.Flags.INACTIVE);
+                ret = ctrlRscActivateApiCallHandler.activateRsc(
+                    rsc.getNode().getName().displayValue,
+                    rsc.getDefinition().getName().displayValue
+                );
             }
         }
+        return ret;
     }
 
     private boolean isFlagSet(Resource rsc, Resource.Flags... flags)
@@ -370,22 +408,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         }
 
         return isSet;
-    }
-
-    private void unsetFlag(Resource rsc, Resource.Flags... flags)
-    {
-        try
-        {
-            rsc.getStateFlags().disableFlags(apiCtx, flags);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (DatabaseException sqlExc)
-        {
-            throw new ApiDatabaseException(sqlExc);
-        }
     }
 
     private void failIfDependentSnapshot(Resource rsc)

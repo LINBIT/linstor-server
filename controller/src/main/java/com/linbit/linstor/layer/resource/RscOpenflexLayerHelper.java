@@ -131,7 +131,8 @@ public class RscOpenflexLayerHelper
         String rscNameSuffixRef,
         AbsRscLayerObject<Resource> parentObjectRef,
         List<DeviceLayerKind> layerListRef
-    ) throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
+    )
+        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException, ImplementationError, InvalidNameException, LinStorException
     {
         RscNvmeLayerHelper.ensureTargetNodeNameIsSet(rscRef, apiCtx);
@@ -147,6 +148,7 @@ public class RscOpenflexLayerHelper
             ofRscDfnData,
             parentObjectRef
         );
+
         ofRscDfnData.getOfRscDataList().add(ofRscData);
         return ofRscData;
     }
@@ -227,9 +229,30 @@ public class RscOpenflexLayerHelper
     }
 
     @Override
+    protected void recalculateVolatilePropertiesImpl(
+        OpenflexRscData<Resource> rscDataRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payloadRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        if (rscDataRef.getAbsResource().isNvmeInitiator(apiCtx))
+        {
+            // we are initiator, ignore everything below us
+            setIgnoreReason(rscDataRef, IGNORE_REASON_NVME_INITIATOR, false, true, true);
+        }
+        else
+        {
+            // we are target, so tell all of our ancestors to ignoreNonDataPaths
+            setIgnoreReason(rscDataRef, IGNORE_REASON_NVME_TARGET, true, false, true);
+        }
+    }
+
+    @Override
     protected boolean isExpectedToProvideDevice(OpenflexRscData<Resource> ofRscData) throws AccessDeniedException
     {
-        return ofRscData.getAbsResource().getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        return ofRscData.getAbsResource().isNvmeInitiator(apiCtx) &&
+            ofRscData.getIgnoreReason() != null;
     }
 
     @Override

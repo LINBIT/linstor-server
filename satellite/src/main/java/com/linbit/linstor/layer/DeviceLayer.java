@@ -88,7 +88,7 @@ public interface DeviceLayer
      * @throws AccessDeniedException
      * @throws DatabaseException
      */
-    LayerProcessResult process(
+    void process(
         AbsRscLayerObject<Resource> rscLayerData,
         List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
@@ -149,11 +149,6 @@ public interface DeviceLayer
         void notifyFreeSpacesChanged(Map<StorPool, SpaceInfo> spaceInfoMapRef);
 
         void notifyResourceFailed(Resource rsc, ApiCallRc apiCallRc);
-    }
-
-    enum LayerProcessResult
-    {
-        SUCCESS, NO_DEVICES_PROVIDED
     }
 
     class AbortLayerProcessingException extends LinStorRuntimeException

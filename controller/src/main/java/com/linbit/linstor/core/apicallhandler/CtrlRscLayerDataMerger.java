@@ -183,6 +183,17 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
+    protected void mergeLuksRscData(
+        AbsRscLayerObject<Resource> parentRef,
+        LuksRscPojo luksRscPojoRef,
+        LuksRscData<Resource> luksRscDataRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        // nothing to merge
+    }
+
+    @Override
     protected void removeLuksVlm(LuksRscData<Resource> luksRscDataRef, VolumeNumber vlmNrRef)
         throws DatabaseException, AccessDeniedException
     {
@@ -217,6 +228,17 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         throws DatabaseException, AccessDeniedException
     {
         throw new ImplementationError("Received unknown storage resource from satellite");
+    }
+
+    @Override
+    protected void mergeStorageRscData(
+        AbsRscLayerObject<Resource> parentRef,
+        StorageRscPojo storRscPojoRef,
+        StorageRscData<Resource> storRscDataRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        // nothing to merge
     }
 
     @Override
@@ -414,6 +436,17 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
+    protected void mergeNvmeRscData(
+        AbsRscLayerObject<Resource> parentRef,
+        NvmeRscPojo nvmeRscPojoRef,
+        NvmeRscData<Resource> nvmeRscDataRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        // nothing to merge
+    }
+
+    @Override
     protected void createNvmeVlm(
         AbsVolume<Resource> vlmRef,
         NvmeRscData<Resource> nvmeRscDataRef,
@@ -448,6 +481,17 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     ) throws DatabaseException, AccessDeniedException
     {
         throw new ImplementationError("Received unknown openflex resource from satellite");
+    }
+
+    @Override
+    protected void mergeOpenflexRscData(
+        AbsRscLayerObject<Resource> parentRef,
+        OpenflexRscPojo ofRscPojoRef,
+        OpenflexRscData<Resource> ofRscDataRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        // nothing to merge
     }
 
     @Override
@@ -495,7 +539,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         WritecacheRscData<Resource> writecacheRscData)
         throws AccessDeniedException, DatabaseException
     {
-        // nothing
+        // nothing to merge
     }
 
     @Override
@@ -536,6 +580,17 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         throws DatabaseException, AccessDeniedException
     {
         throw new ImplementationError("Received unknown cache resource from satellite");
+    }
+
+    @Override
+    protected void mergeCacheRscData(
+        AbsRscLayerObject<Resource> parentRef,
+        CacheRscPojo cacheRscPojoRef,
+        CacheRscData<Resource> cacheRscDataRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        // nothing to merge
     }
 
     @Override
@@ -586,7 +641,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         BCacheRscData<Resource> bCacheRscData)
         throws AccessDeniedException, DatabaseException
     {
-        // nothing
+        // nothing to merge
     }
 
     @Override

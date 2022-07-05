@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -29,6 +30,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -47,6 +49,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -375,9 +378,112 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
+    protected void recalculateVolatilePropertiesImpl(
+        StorageRscData<Resource> rscDataRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payloadRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        Resource rsc = rscDataRef.getAbsResource();
+
+        if (layerListRef.contains(DeviceLayerKind.NVME))
+        {
+            if (!rsc.isNvmeInitiator(apiCtx))
+            {
+                // we are target, so tell all of our ancestors to ignoreNonDataPaths
+                String reason = IGNORE_REASON_NONE;
+                Collection<VlmProviderObject<Resource>> vlmLayerObjects = rscDataRef.getVlmLayerObjects().values();
+                if (!vlmLayerObjects.isEmpty())
+                {
+                    VlmProviderObject<Resource> vlmData = vlmLayerObjects.iterator().next();
+                    DeviceProviderKind providerKind = vlmData.getProviderKind();
+                    switch (providerKind)
+                    {
+                        case OPENFLEX_TARGET:
+                            reason = IGNORE_REASON_OF_TARGET;
+                            break;
+                        case REMOTE_SPDK:
+                        case SPDK:
+                            reason = IGNORE_REASON_SPDK_TARGET;
+                            break;
+                        case DISKLESS:
+                        case EXOS:
+                        case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                        case FILE:
+                        case FILE_THIN:
+                        case LVM:
+                        case LVM_THIN:
+                        case ZFS:
+                        case ZFS_THIN:
+                        default:
+                            reason = IGNORE_REASON_NONE;
+                            break;
+                    }
+                    if (reason != null) // IGNORE_REASON_NONE == null
+                    {
+                        setIgnoreReason(rscDataRef, reason, true, false, true);
+                    }
+                }
+                // else - it does not matter
+            }
+            else
+            {
+                if (rscDataRef.hasIgnoreReason() && !rscDataRef.getVlmLayerObjects().isEmpty())
+                {
+                    throw new ImplementationError(
+                        rscDataRef.getSuffixedResourceName() +
+                            " is an NVMe initiator so at least the storage layer should have be ignored, but is not"
+                    );
+                }
+            }
+        }
+
+        StateFlags<Flags> rscFlags = rsc.getStateFlags();
+        if (rscFlags.isSet(apiCtx, Resource.Flags.INACTIVE) && rscFlags.isUnset(apiCtx, Resource.Flags.INACTIVATING))
+        {
+            // do not propagate the reason while we are still inactivating the resource.
+            setIgnoreReason(rscDataRef, IGNORE_REASON_RSC_INACTIVE, true, false, true);
+        }
+        if (rsc.streamVolumes().anyMatch(
+            vlm -> isAnyVolumeFlagSetPrivileged(vlm, Volume.Flags.CLONING, Volume.Flags.CLONING_START) &&
+                !areAllVolumeFlagsSetPrivileged(vlm, Volume.Flags.CLONING_FINISHED)
+        ))
+        {
+            setIgnoreReason(rscDataRef, IGNORE_REASON_RSC_CLONING, true, false, true);
+        }
+    }
+
+    private boolean areAllVolumeFlagsSetPrivileged(Volume vlm, Volume.Flags... flags)
+    {
+        boolean isSet = false;
+        try
+        {
+            isSet = vlm.getFlags().isSet(apiCtx, flags);
+        }
+        catch (AccessDeniedException ignored)
+        {
+        }
+        return isSet;
+    }
+
+    private boolean isAnyVolumeFlagSetPrivileged(Volume vlm, Volume.Flags... flags)
+    {
+        boolean isSet = false;
+        try
+        {
+            isSet = vlm.getFlags().isSomeSet(apiCtx, flags);
+        }
+        catch (AccessDeniedException ignored)
+        {
+        }
+        return isSet;
+    }
+
+    @Override
     protected boolean isExpectedToProvideDevice(StorageRscData<Resource> storageRscData) throws AccessDeniedException
     {
-        return true;
+        return storageRscData.getIgnoreReason() != null;
     }
 
     @Override

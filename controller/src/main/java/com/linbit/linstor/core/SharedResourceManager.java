@@ -51,7 +51,11 @@ public class SharedResourceManager
                         // rsc shares at least one storPool with tmpRsc.
                         // rsc can only get active if tmpRsc is inactive
                         boolean isTmpRscInactive = tmpRsc.getStateFlags()
-                            .isSomeSet(sysCtx, Resource.Flags.INACTIVE, Resource.Flags.INACTIVE_PERMANENTLY);
+                            .isSomeSet(
+                                sysCtx,
+                                Resource.Flags.INACTIVE,
+                                Resource.Flags.INACTIVE_PERMANENTLY
+                            );
                         if (!isTmpRscInactive)
                         {
                             ret = false;

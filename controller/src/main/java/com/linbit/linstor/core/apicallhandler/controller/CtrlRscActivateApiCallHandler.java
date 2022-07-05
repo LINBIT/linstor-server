@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -18,6 +19,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -53,6 +55,7 @@ public class CtrlRscActivateApiCallHandler
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final SharedResourceManager sharedRscMgr;
+    private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
 
     @Inject
     public CtrlRscActivateApiCallHandler(
@@ -63,7 +66,8 @@ public class CtrlRscActivateApiCallHandler
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        SharedResourceManager sharedRscMgrRef
+        SharedResourceManager sharedRscMgrRef,
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef
     )
     {
         sharedRscMgr = sharedRscMgrRef;
@@ -74,6 +78,7 @@ public class CtrlRscActivateApiCallHandler
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
 
     }
 
@@ -136,8 +141,10 @@ public class CtrlRscActivateApiCallHandler
             {
                 checkIfReactivatable(rsc);
 
-                unsetFlag(rsc, Resource.Flags.INACTIVE);
+                unsetFlag(rsc, Resource.Flags.INACTIVE, Resource.Flags.INACTIVATING);
                 setFlag(rsc, Resource.Flags.REACTIVATE);
+
+                ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
 
                 ctrlTransactionHelper.commit();
                 ret = ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
@@ -154,7 +161,6 @@ public class CtrlRscActivateApiCallHandler
                         )
                     )
                 );
-
             }
             else
             {
@@ -167,11 +173,14 @@ public class CtrlRscActivateApiCallHandler
                         )
                     );
                 }
-                setFlag(rsc, Resource.Flags.INACTIVE);
+                setFlag(rsc, Resource.Flags.INACTIVE, Resource.Flags.INACTIVATING);
+                ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
 
                 ctrlTransactionHelper.commit();
 
-                ret = ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
+                Flux<ApiCallRc> nextStep = finishInactivate(contextRef, nodeNameStrRef, rscNameStrRef);
+
+                ret = ctrlSatelliteUpdateCaller.updateSatellites(rsc, nextStep).transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
                         updateResponses,
                         rsc.getResourceDefinition().getName(),
@@ -179,10 +188,44 @@ public class CtrlRscActivateApiCallHandler
                         "Resource deactivated on {0}",
                         "Resource marked inactivate on {0}"
                     )
-                );
+                )
+                    .concatWith(nextStep);
             }
         }
         return ret;
+    }
+
+    private Flux<ApiCallRc> finishInactivate(ResponseContext context, String nodeNameStr, String rscNameStr)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Finishing deactivation of resource " +
+                    CtrlRscApiCallHandler.getRscDescription(nodeNameStr, rscNameStr),
+                createLockGuard(),
+                () -> finishInactivateInTransaction(
+                    nodeNameStr,
+                    rscNameStr
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> finishInactivateInTransaction(String nodeNameStrRef, String rscNameStrRef)
+    {
+        Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameStrRef, rscNameStrRef, true);
+        unsetFlag(rsc, Resource.Flags.INACTIVATING);
+        ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
+        ctrlTransactionHelper.commit();
+
+        return ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
+            updateResponses -> CtrlResponseUtils.combineResponses(
+                updateResponses,
+                rsc.getResourceDefinition().getName(),
+                Collections.singleton(rsc.getNode().getName()),
+                "Finished deactivation of resource on {0}",
+                "Finished deactivation of resource on {0}"
+            )
+        );
     }
 
     private void checkIfReactivatable(Resource rsc)

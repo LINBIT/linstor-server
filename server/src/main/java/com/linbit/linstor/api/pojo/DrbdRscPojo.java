@@ -36,6 +36,8 @@ public class DrbdRscPojo implements RscLayerDataApi
     private final @Nullable Integer promotionScore;
     @JsonIgnore
     private final @Nullable Boolean mayPromote;
+    @JsonIgnore
+    private final @Nullable String ignoreReason;
 
     public DrbdRscPojo(
         int idRef,
@@ -50,7 +52,8 @@ public class DrbdRscPojo implements RscLayerDataApi
         List<DrbdVlmPojo> vlmsRef,
         boolean suspendRef,
         @Nullable Integer promotionScoreRef,
-        @Nullable Boolean mayPromoteRef
+        @Nullable Boolean mayPromoteRef,
+        @Nullable String ignoreReasonRef
     )
     {
         id = idRef;
@@ -66,6 +69,7 @@ public class DrbdRscPojo implements RscLayerDataApi
         suspend = suspendRef;
         promotionScore = promotionScoreRef;
         mayPromote = mayPromoteRef;
+        ignoreReason = ignoreReasonRef;
     }
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -94,6 +98,7 @@ public class DrbdRscPojo implements RscLayerDataApi
         suspend = false;
         promotionScore = null;
         mayPromote = null;
+        ignoreReason = null;
     }
 
     @Override
@@ -165,6 +170,12 @@ public class DrbdRscPojo implements RscLayerDataApi
     public Boolean mayPromote()
     {
         return mayPromote;
+    }
+
+    @Override
+    public @Nullable String getIgnoreReason()
+    {
+        return ignoreReason;
     }
 
     @Override

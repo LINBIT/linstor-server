@@ -170,6 +170,7 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             drbdRscPojo.getFlags()
         );
         drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
+        drbdRscData.setIgnoreReason(drbdRscPojo.getIgnoreReason());
         if (parent == null)
         {
             snap.setLayerData(apiCtx, drbdRscData);
@@ -194,6 +195,7 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             DrbdRscFlags.restoreFlags(drbdRscPojoRef.getFlags())
         );
         updateParent(drbdRscDataRef, parentRef);
+        drbdRscDataRef.setIgnoreReason(drbdRscPojoRef.getIgnoreReason());
     }
 
     @Override
@@ -296,6 +298,8 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             luksRscPojoRef.getRscNameSuffix(),
             parentRef
         );
+        luksRscData.setIgnoreReason(luksRscPojoRef.getIgnoreReason());
+
         if (parentRef == null)
         {
             rscRef.setLayerData(apiCtx, luksRscData);
@@ -308,12 +312,22 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     }
 
     @Override
+    protected void mergeLuksRscData(
+        AbsRscLayerObject<Snapshot> parentRef,
+        LuksRscPojo luksRscPojoRef,
+        LuksRscData<Snapshot> luksRscDataRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        luksRscDataRef.setIgnoreReason(luksRscPojoRef.getIgnoreReason());
+    }
+
+    @Override
     protected void removeLuksVlm(LuksRscData<Snapshot> luksRscDataRef, VolumeNumber vlmNrRef)
         throws DatabaseException, AccessDeniedException
     {
         luksRscDataRef.remove(apiCtx, vlmNrRef);
     }
-
 
     @Override
     protected void createOrMergeLuksVlm(
@@ -360,6 +374,8 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             snapRef,
             storRscPojoRef.getRscNameSuffix()
         );
+        storSnapData.setIgnoreReason(storRscPojoRef.getIgnoreReason());
+
         if (parentRef == null)
         {
             snapRef.setLayerData(apiCtx, storSnapData);
@@ -369,6 +385,17 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             updateParent(storSnapData, parentRef);
         }
         return storSnapData;
+    }
+
+    @Override
+    protected void mergeStorageRscData(
+        AbsRscLayerObject<Snapshot> parentRef,
+        StorageRscPojo storRscPojoRef,
+        StorageRscData<Snapshot> storRscDataRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        storRscDataRef.setIgnoreReason(storRscPojoRef.getIgnoreReason());
     }
 
     @Override
@@ -585,6 +612,8 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             nvmeRscPojoRef.getRscNameSuffix(),
             parentRef
         );
+        nvmeRscData.setIgnoreReason(nvmeRscPojoRef.getIgnoreReason());
+
         if (parentRef == null)
         {
             snapRef.setLayerData(apiCtx, nvmeRscData);
@@ -594,6 +623,17 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             updateParent(nvmeRscData, parentRef);
         }
         return nvmeRscData;
+    }
+
+    @Override
+    protected void mergeNvmeRscData(
+        AbsRscLayerObject<Snapshot> parentRef,
+        NvmeRscPojo nvmeRscPojoRef,
+        NvmeRscData<Snapshot> nvmeRscDataRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        nvmeRscDataRef.setIgnoreReason(nvmeRscPojoRef.getIgnoreReason());
     }
 
     @Override
@@ -639,6 +679,8 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             parentRef
         );
         rscDfnDataRef.getOfRscDataList().add(ofRscData);
+        ofRscData.setIgnoreReason(ofRscPojoRef.getIgnoreReason());
+
         if (parentRef == null)
         {
             snapRef.setLayerData(apiCtx, ofRscData);
@@ -648,6 +690,17 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             updateParent(ofRscData, parentRef);
         }
         return ofRscData;
+    }
+
+    @Override
+    protected void mergeOpenflexRscData(
+        AbsRscLayerObject<Snapshot> parentRef,
+        OpenflexRscPojo ofRscPojoRef,
+        OpenflexRscData<Snapshot> ofRscDataRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        ofRscDataRef.setIgnoreReason(ofRscPojoRef.getIgnoreReason());
     }
 
     @Override
@@ -731,6 +784,8 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             writecacheRscPojoRef.getRscNameSuffix(),
             parentRef
         );
+        writecacheSnapData.setIgnoreReason(writecacheRscPojoRef.getIgnoreReason());
+
         if (parentRef == null)
         {
             snapRef.setLayerData(apiCtx, writecacheSnapData);
@@ -746,9 +801,11 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     protected void mergeWritecacheRscData(
         AbsRscLayerObject<Snapshot> parent,
         WritecacheRscPojo writecacheRscPojo,
-        WritecacheRscData<Snapshot> writecacheRscData) throws AccessDeniedException, DatabaseException
+        WritecacheRscData<Snapshot> writecacheRscData
+    )
+        throws AccessDeniedException, DatabaseException
     {
-
+        writecacheRscData.setIgnoreReason(writecacheRscPojo.getIgnoreReason());
     }
 
     @Override
@@ -810,6 +867,8 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             cacheRscPojoRef.getRscNameSuffix(),
             parentRef
         );
+        cacheSnapData.setIgnoreReason(cacheRscPojoRef.getIgnoreReason());
+
         if (parentRef == null)
         {
             snapRef.setLayerData(apiCtx, cacheSnapData);
@@ -819,6 +878,17 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
             updateParent(cacheSnapData, parentRef);
         }
         return cacheSnapData;
+    }
+
+    @Override
+    protected void mergeCacheRscData(
+        AbsRscLayerObject<Snapshot> parentRef,
+        CacheRscPojo cacheRscPojoRef,
+        CacheRscData<Snapshot> cacheRscDataRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        cacheRscDataRef.setIgnoreReason(cacheRscPojoRef.getIgnoreReason());
     }
 
     @Override
@@ -887,31 +957,34 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     )
         throws DatabaseException, AccessDeniedException
     {
-        BCacheRscData<Snapshot> writecacheSnapData = layerDataFactory.createBCacheRscData(
+        BCacheRscData<Snapshot> bcacheSnapData = layerDataFactory.createBCacheRscData(
             bcacheRscPojoRef.getId(),
             snapRef,
             bcacheRscPojoRef.getRscNameSuffix(),
             parentRef
         );
+        bcacheSnapData.setIgnoreReason(bcacheRscPojoRef.getIgnoreReason());
+
         if (parentRef == null)
         {
-            snapRef.setLayerData(apiCtx, writecacheSnapData);
+            snapRef.setLayerData(apiCtx, bcacheSnapData);
         }
         else
         {
-            updateParent(writecacheSnapData, parentRef);
+            updateParent(bcacheSnapData, parentRef);
         }
-        return writecacheSnapData;
+        return bcacheSnapData;
     }
 
     @Override
     protected void mergeBCacheRscData(
         AbsRscLayerObject<Snapshot> parent,
         BCacheRscPojo bCacheRscPojo,
-        BCacheRscData<Snapshot> bCacheRscData)
+        BCacheRscData<Snapshot> bCacheRscData
+    )
         throws AccessDeniedException, DatabaseException
     {
-
+        bCacheRscData.setIgnoreReason(bCacheRscPojo.getIgnoreReason());
     }
 
     @Override

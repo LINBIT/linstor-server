@@ -4,10 +4,10 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -26,6 +27,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -42,6 +44,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -282,9 +285,43 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
+    protected void recalculateVolatilePropertiesImpl(
+        LuksRscData<Resource> rscDataRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payloadRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        if (!secObjs.areAllSet())
+        {
+            setIgnoreReason(rscDataRef, IGNORE_REASON_LUKS_MISSING_KEY, true, false, true);
+        }
+    }
+
+    @Override
+    protected void setIgnoreReasonImpl(
+        AbsRscLayerObject<Resource> rscDataRef,
+        String ignoreReasonRef
+    )
+        throws DatabaseException
+    {
+        if (!IGNORE_REASON_LUKS_MISSING_KEY.equals(ignoreReasonRef))
+        {
+            super.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
+        }
+    }
+
+    @Override
     protected boolean isExpectedToProvideDevice(LuksRscData<Resource> luksRscData)
     {
-        return true;
+        return luksRscData.getIgnoreReason() != null;
+    }
+
+    @Override
+    protected List<ChildResourceData> getChildRsc(LuksRscData<Resource> rscDataRef, List<DeviceLayerKind> layerListRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        return Arrays.asList(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA));
     }
 
     @Override

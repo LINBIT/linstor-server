@@ -33,14 +33,15 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 public abstract class AbsRscLayerHelper<
@@ -50,6 +51,25 @@ public abstract class AbsRscLayerHelper<
     VLM_DFN_LO extends VlmDfnLayerObject
 >
 {
+    public static final String IGNORE_REASON_NONE = null;
+
+    public static final String IGNORE_REASON_SNAPSHOT = "snapshot";
+
+    public static final String IGNORE_REASON_BCACHE_CACHE = "BCache cache";
+    public static final String IGNORE_REASON_CACHE_CACHE = "Cache cache";
+    public static final String IGNORE_REASON_CACHE_META = "Cache meta";
+    public static final String IGNORE_REASON_DRBD_DISKLESS = "DRBD diskless device";
+    public static final String IGNORE_REASON_DRBD_METADATA = "DRBD metadata";
+    public static final String IGNORE_REASON_EXOS_TARGET = "EXOS target";
+    public static final String IGNORE_REASON_LUKS_MISSING_KEY = "LUKS no key";
+    public static final String IGNORE_REASON_NVME_TARGET = "NVMe target";
+    public static final String IGNORE_REASON_NVME_INITIATOR = "NVMe initiator";
+    public static final String IGNORE_REASON_OF_TARGET = "OpenFlex target";
+    public static final String IGNORE_REASON_RSC_INACTIVE = "Resource inactive";
+    public static final String IGNORE_REASON_RSC_CLONING = "Resource cloning";
+    public static final String IGNORE_REASON_SPDK_TARGET = "SPDK target";
+    public static final String IGNORE_REASON_WRITECACHE_CACHE = "Writecache cache";
+
     protected static boolean loadingFromDatabase = true;
 
     protected final ErrorReporter errorReporter;
@@ -104,8 +124,7 @@ public abstract class AbsRscLayerHelper<
         String rscNameSuffix,
         LayerPayload payload
     )
-        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException, LinStorException
+        throws ValueOutOfRangeException, ExhaustedPoolException, ValueInUseException, LinStorException
     {
         RSC_DFN_LO rscDfnData = rscDfn.getLayerData(apiCtx, kind, rscNameSuffix);
         if (rscDfnData == null)
@@ -177,7 +196,8 @@ public abstract class AbsRscLayerHelper<
         LayerPayload payloadRef,
         String rscNameSuffixRef,
         AbsRscLayerObject<Resource> parentObjectRef,
-        List<DeviceLayerKind> layerList
+        List<DeviceLayerKind> layerList,
+        @Nullable String ignoreReasonRef
     )
         throws DatabaseException, ExhaustedPoolException, ValueOutOfRangeException,
         ValueInUseException, LinStorException, InvalidKeyException, InvalidNameException
@@ -211,7 +231,14 @@ public abstract class AbsRscLayerHelper<
 
         if (rscData == null)
         {
-            rscData = createRscData(rscRef, payloadRef, rscNameSuffixRef, parentObjectRef, layerList);
+            rscData = createRscData(
+                rscRef,
+                payloadRef,
+                rscNameSuffixRef,
+                parentObjectRef,
+                layerList
+            );
+            rscData.setIgnoreReason(ignoreReasonRef);
         }
         else
         {
@@ -283,6 +310,126 @@ public abstract class AbsRscLayerHelper<
             rscData,
             getChildRsc(rscData, layerList)
         );
+    }
+
+    /**
+     * Clear known volatile information so they have to be recalculated.
+     * This way we can prevent calling i.e. setIgnoreReason with null reason, which might override still valid reasons
+     * from ancestors
+     */
+    protected void recalculateVolatileProperties(
+        RSC_LO rscDataRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payloadRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        setIgnoreReasonImpl(rscDataRef, IGNORE_REASON_NONE);
+        recalculateVolatilePropertiesImpl(rscDataRef, layerListRef, payloadRef);
+    }
+
+    /**
+     * Calling this method will call {@link #setIgnoreReasonImpl(AbsRscLayerObject, String)} of the
+     * layerHelper class matching the rscDataRef's DeviceLayerKind AND upwards until the parent is null.
+     *
+     * If a layerHelper has set the new ignoreReason, its children are also iterated (recursively)
+     */
+    protected void setIgnoreReason(
+        @Nullable AbsRscLayerObject<Resource> rscDataRef,
+        String ignoreReasonNvmeTargetRef,
+        boolean goUpRef,
+        boolean goDownRef,
+        boolean skipSelfRef
+    )
+        throws DatabaseException
+    {
+        HashSet<AbsRscLayerObject<Resource>> visited = new HashSet<>();
+        if (rscDataRef != null)
+        {
+            if (!goUpRef)
+            {
+                AbsRscLayerObject<Resource> parent = rscDataRef.getParent();
+                if (parent != null)
+                {
+                    visited.add(parent); // this should implicitly prevent going any higher, no need to add
+                    // all ancestors here
+                }
+            }
+            if (!goDownRef)
+            {
+                for (AbsRscLayerObject<Resource> childRscData : rscDataRef.getChildren())
+                {
+                    if (childRscData != null)
+                    {
+                        visited.add(childRscData); // this should implicitly prevent going any lower
+                    }
+                }
+            }
+        }
+        setIgnoreReasonRec(
+            rscDataRef,
+            ignoreReasonNvmeTargetRef,
+            skipSelfRef,
+            visited
+        );
+    }
+
+    private void setIgnoreReasonRec(
+        AbsRscLayerObject<Resource> rscDataRef,
+        String ignoreReasonNvmeTargetRef,
+        boolean skipRef,
+        HashSet<AbsRscLayerObject<Resource>> visitedRef
+    )
+        throws DatabaseException
+    {
+        if (rscDataRef != null && !visitedRef.contains(rscDataRef))
+        {
+            visitedRef.add(rscDataRef);
+
+            AbsRscLayerHelper<?, ?, ?, ?> layerHelperByKind = layerDataHelperProvider.get()
+                .getLayerHelperByKind(rscDataRef.getLayerKind());
+            String reasonPreSet = rscDataRef.getIgnoreReason();
+
+            if (!skipRef)
+            {
+                layerHelperByKind.setIgnoreReasonImpl(rscDataRef, ignoreReasonNvmeTargetRef);
+            }
+
+            setIgnoreReasonRec(
+                rscDataRef.getParent(),
+                ignoreReasonNvmeTargetRef,
+                false, // only first might be skipped
+                visitedRef
+            );
+
+            String currentIgnoreReason = rscDataRef.getIgnoreReason();
+            if (Objects.equals(ignoreReasonNvmeTargetRef, currentIgnoreReason) &&
+                !Objects.equals(reasonPreSet, currentIgnoreReason))
+            {
+                for (AbsRscLayerObject<Resource> childRscData : rscDataRef.getChildren())
+                {
+                    setIgnoreReasonRec(
+                        childRscData,
+                        ignoreReasonNvmeTargetRef,
+                        false, // only first might be skipped
+                        visitedRef
+                    );
+                }
+            }
+        }
+    }
+
+    protected void setIgnoreReasonImpl(
+        AbsRscLayerObject<Resource> rscDataRef,
+        String ignoreReasonRef
+    )
+        throws DatabaseException
+    {
+        // by default, always set the ignoreReason
+        if (!Objects.equals(rscDataRef.getIgnoreReason(), ignoreReasonRef))
+        {
+            rscDataRef.setIgnoreReason(ignoreReasonRef);
+        }
     }
 
     public <RSC extends AbsResource<RSC>> RSC_LO restoreFromAbsRsc(
@@ -393,22 +540,6 @@ public abstract class AbsRscLayerHelper<
     }
 
     /**
-     * Only returns the current rscData's resource name suffix by default
-     *
-     * @param rscDataRef
-     * @param layerListRef
-     * @return
-     * @throws InvalidKeyException
-     * @throws AccessDeniedException
-     */
-    @SuppressWarnings("unused") // exceptions needed by implementations
-    protected List<ChildResourceData> getChildRsc(RSC_LO rscDataRef, List<DeviceLayerKind> layerListRef)
-        throws AccessDeniedException, InvalidKeyException
-    {
-        return Arrays.asList(new ChildResourceData(""));
-    }
-
-    /**
      * By default, this returns null, meaning that the layer above should be asked
      *
      * @param vlmRef
@@ -451,6 +582,10 @@ public abstract class AbsRscLayerHelper<
         }
         return shared;
     }
+
+    @SuppressWarnings("unused") // exceptions needed by implementations
+    protected abstract List<ChildResourceData> getChildRsc(RSC_LO rscDataRef, List<DeviceLayerKind> layerListRef)
+        throws AccessDeniedException, InvalidKeyException;
 
     protected abstract boolean isExpectedToProvideDevice(RSC_LO rsc) throws AccessDeniedException;
 
@@ -550,6 +685,19 @@ public abstract class AbsRscLayerHelper<
     protected abstract void resetStoragePools(AbsRscLayerObject<Resource> rscDataRef)
         throws AccessDeniedException, DatabaseException, InvalidKeyException;
 
+    /**
+     * The intention of this method is to (re-)calculate volatile properties as ignoreReason.
+     * Such properties are not persisted as well as their requirements can change fast (i.e. Resource.Flags.INACTIVE
+     * causes all layers above Storage to be ignored since no device should be provided/accessed when the resource is
+     * inactive)
+     */
+    protected abstract void recalculateVolatilePropertiesImpl(
+        RSC_LO rscDataRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payloadRef
+    )
+        throws AccessDeniedException, DatabaseException;
+
     // abstract methods used for restoring data from snapshot
 
     protected abstract <RSC extends AbsResource<RSC>> RSC_DFN_LO restoreRscDfnData(
@@ -579,5 +727,4 @@ public abstract class AbsRscLayerHelper<
         VlmProviderObject<RSC> vlmProviderObjectRef
     )
         throws DatabaseException, AccessDeniedException, LinStorException;
-
 }

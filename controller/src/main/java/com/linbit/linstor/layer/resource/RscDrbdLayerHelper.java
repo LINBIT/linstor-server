@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
@@ -14,7 +15,6 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -36,6 +36,7 @@ import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -59,7 +60,6 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -244,7 +244,7 @@ public class RscDrbdLayerHelper extends
         List<DeviceLayerKind> layerListRef
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-            ValueInUseException, ImplementationError, InvalidNameException, LinStorException
+        ValueInUseException, ImplementationError, InvalidNameException, LinStorException
     {
         ResourceDefinition rscDfn = rscRef.getDefinition();
         DrbdRscDfnData<Resource> drbdRscDfnData = ensureResourceDefinitionExists(
@@ -550,16 +550,28 @@ public class RscDrbdLayerHelper extends
 
         if (isDrbdDiskless(rscDataRef))
         {
-            ret.add(new ChildResourceData("", DeviceLayerKind.STORAGE));
+            ret.add(
+                new ChildResourceData(
+                    RscLayerSuffixes.SUFFIX_DATA,
+                    IGNORE_REASON_DRBD_DISKLESS,
+                    DeviceLayerKind.STORAGE
+                )
+            );
         }
         else
         {
-            ret.add(new ChildResourceData(""));
+            ret.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA, IGNORE_REASON_NONE));
         }
 
         if (needsMetaData(rscDataRef, layerListRef))
         {
-            ret.add(new ChildResourceData(RscLayerSuffixes.SUFFIX_DRBD_META, DeviceLayerKind.STORAGE));
+            ret.add(
+                new ChildResourceData(
+                    RscLayerSuffixes.SUFFIX_DRBD_META,
+                    IGNORE_REASON_DRBD_METADATA,
+                    DeviceLayerKind.STORAGE
+                )
+            );
         }
 
         return ret;
@@ -648,6 +660,33 @@ public class RscDrbdLayerHelper extends
         }
     }
 
+    @Override
+    protected void recalculateVolatilePropertiesImpl(
+        DrbdRscData<Resource> rscDataRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payloadRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        if (isDrbdDiskless(rscDataRef))
+        {
+            setIgnoreReason(rscDataRef, IGNORE_REASON_DRBD_DISKLESS, false, true, true);
+        }
+    }
+
+    @Override
+    protected void setIgnoreReasonImpl(
+        AbsRscLayerObject<Resource> rscDataRef,
+        String ignoreReasonRef
+    )
+        throws DatabaseException
+    {
+        if (!IGNORE_REASON_DRBD_DISKLESS.equals(ignoreReasonRef))
+        {
+            super.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
+        }
+    }
+
     public StorPool getMetaStorPool(Volume vlmRef, AccessContext accCtx)
         throws AccessDeniedException, InvalidNameException
     {
@@ -708,7 +747,7 @@ public class RscDrbdLayerHelper extends
     @Override
     protected boolean isExpectedToProvideDevice(DrbdRscData<Resource> drbdRscData)
     {
-        return true;
+        return drbdRscData.getIgnoreReason() != null;
     }
 
     @Override

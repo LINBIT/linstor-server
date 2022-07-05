@@ -214,7 +214,7 @@ public class BCacheLayer implements DeviceLayer
     }
 
     @Override
-    public LayerProcessResult process(
+    public void process(
         AbsRscLayerObject<Resource> rscLayerDataRef,
         List<Snapshot> snapshotListRef,
         ApiCallRcImpl apiCallRcRef
@@ -222,7 +222,6 @@ public class BCacheLayer implements DeviceLayer
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException,
         AbortLayerProcessingException
     {
-        LayerProcessResult ret;
         BCacheRscData<Resource> rscData = (BCacheRscData<Resource>) rscLayerDataRef;
         StateFlags<Flags> rscFlags = rscData.getAbsResource().getStateFlags();
 
@@ -293,31 +292,27 @@ public class BCacheLayer implements DeviceLayer
             }
         }
 
-        LayerProcessResult dataResult = resourceProcessorProvider.get().process(
+        resourceProcessorProvider.get().process(
             rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
             snapshotListRef,
             apiCallRcRef
         );
-        LayerProcessResult metaResult;
         AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_BCACHE_CACHE);
         if (cacheRscChild == null)
         {
             // we might be an imaginary layer above an NVMe target which does not need a cache...
             errorReporter.logDebug("BCache: no devices provided to upper layer");
-            metaResult = LayerProcessResult.NO_DEVICES_PROVIDED;
         }
         else
         {
-            metaResult = resourceProcessorProvider.get().process(
+            resourceProcessorProvider.get().process(
                 cacheRscChild,
                 snapshotListRef,
                 apiCallRcRef
             );
         }
 
-        if (!deleteFlagSet && !inactiveFlagSet &&
-            dataResult == LayerProcessResult.SUCCESS &&
-            metaResult == LayerProcessResult.SUCCESS)
+        if (!deleteFlagSet && !inactiveFlagSet)
         {
             for (BCacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
@@ -450,22 +445,7 @@ public class BCacheLayer implements DeviceLayer
                     }
                 }
             }
-            if (forceCreateMetaData)
-            {
-                // just in case something goes wrong later and we need to re-create the bcache metadata once more
-                ret = LayerProcessResult.NO_DEVICES_PROVIDED;
-            }
-            else
-            {
-                ret = LayerProcessResult.SUCCESS;
-            }
         }
-        else
-        {
-            ret = LayerProcessResult.NO_DEVICES_PROVIDED;
-        }
-
-        return ret;
     }
 
 

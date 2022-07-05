@@ -99,14 +99,13 @@ public class NvmeLayer implements DeviceLayer
      *     ApiCallRcImpl responses, passed on to {@link DeviceHandler}
      */
     @Override
-    public LayerProcessResult process(
+    public void process(
         AbsRscLayerObject<Resource> rscData,
         List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
-        LayerProcessResult ret;
         NvmeRscData<Resource> nvmeRscData = (NvmeRscData<Resource>) rscData;
 
         StateFlags<Flags> rscFlags = nvmeRscData.getAbsResource().getStateFlags();
@@ -171,7 +170,6 @@ public class NvmeLayer implements DeviceLayer
                     );
                 }
             }
-            ret = LayerProcessResult.SUCCESS;
         }
         else
         {
@@ -234,21 +232,17 @@ public class NvmeLayer implements DeviceLayer
                             }
                         }
 
-                        LayerProcessResult layerProcessResult = resourceProcessorProvider.get()
-                            .process(nvmeRscData.getSingleChild(), snapshotList, apiCallRc);
+                        resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshotList, apiCallRc);
 
-                        if (layerProcessResult == LayerProcessResult.SUCCESS)
+                        for (NvmeVlmData<Resource> nvmeVlmData : newVolumes)
                         {
-                            for (NvmeVlmData<Resource> nvmeVlmData : newVolumes)
+                            if (nvmeRscData.isSpdk())
                             {
-                                if (nvmeRscData.isSpdk())
-                                {
-                                    nvmeUtils.createSpdkNamespace(nvmeVlmData, subsystemName);
-                                }
-                                else
-                                {
-                                    nvmeUtils.createNamespace(nvmeVlmData, subsystemDirectory);
-                                }
+                                nvmeUtils.createSpdkNamespace(nvmeVlmData, subsystemName);
+                            }
+                            else
+                            {
+                                nvmeUtils.createNamespace(nvmeVlmData, subsystemDirectory);
                             }
                         }
                     }
@@ -264,17 +258,11 @@ public class NvmeLayer implements DeviceLayer
                 else
                 {
                     // Create volumes
-                    LayerProcessResult layerProcessResult = resourceProcessorProvider.get()
-                        .process(nvmeRscData.getSingleChild(), snapshotList, apiCallRc);
-                    if (layerProcessResult == LayerProcessResult.SUCCESS)
-                    {
-                        nvmeUtils.createTargetRsc(nvmeRscData, sysCtx);
-                    }
+                    resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshotList, apiCallRc);
+                    nvmeUtils.createTargetRsc(nvmeRscData, sysCtx);
                 }
             }
-            ret = LayerProcessResult.NO_DEVICES_PROVIDED;
         }
-        return ret;
     }
 
     @Override

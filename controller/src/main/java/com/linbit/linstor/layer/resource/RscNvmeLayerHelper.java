@@ -18,6 +18,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -26,6 +27,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -40,6 +42,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -262,15 +265,43 @@ class RscNvmeLayerHelper
     }
 
     @Override
+    protected List<ChildResourceData> getChildRsc(NvmeRscData<Resource> rscDataRef, List<DeviceLayerKind> layerListRef)
+        throws AccessDeniedException, InvalidKeyException
+    {
+        return Arrays.asList(new ChildResourceData(RscLayerSuffixes.SUFFIX_DATA));
+    }
+
+    @Override
     protected void resetStoragePools(AbsRscLayerObject<Resource> rscDataRef)
     {
         // nothing to do
     }
 
     @Override
+    protected void recalculateVolatilePropertiesImpl(
+        NvmeRscData<Resource> rscDataRef,
+        List<DeviceLayerKind> layerListRef,
+        LayerPayload payloadRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        if (rscDataRef.getAbsResource().isNvmeInitiator(apiCtx))
+        {
+            // we are initiator, ignore everything below us
+            setIgnoreReason(rscDataRef, IGNORE_REASON_NVME_INITIATOR, false, true, true);
+        }
+        else
+        {
+            // we are target, so tell all of our ancestors to ignoreNonDataPaths
+            setIgnoreReason(rscDataRef, IGNORE_REASON_NVME_TARGET, true, false, true);
+        }
+    }
+
+    @Override
     protected boolean isExpectedToProvideDevice(NvmeRscData<Resource> nvmeRscData) throws AccessDeniedException
     {
-        return nvmeRscData.getAbsResource().getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        return nvmeRscData.getAbsResource().isNvmeInitiator(apiCtx) &&
+            nvmeRscData.getIgnoreReason() != null;
     }
 
     @Override
@@ -295,7 +326,7 @@ class RscNvmeLayerHelper
             layerRscIdPool.autoAllocate(),
             rscRef,
             fromAbsRscDataRef.getResourceNameSuffix(),
-            rscParentRef
+           rscParentRef
        );
     }
 

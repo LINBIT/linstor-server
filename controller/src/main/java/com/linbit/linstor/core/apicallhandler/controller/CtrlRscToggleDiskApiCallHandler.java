@@ -121,6 +121,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final Provider<AccessContext> peerAccCtx;
     private final Provider<CtrlRscAutoHelper> rscAutoHelper;
     private final ErrorReporter errorReporter;
+    private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
@@ -141,7 +142,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<CtrlRscAutoHelper> rscAutoHelperRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -163,6 +165,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         peerAccCtx = peerAccCtxRef;
         rscAutoHelper = rscAutoHelperRef;
         errorReporter = errorReporterRef;
+        ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
     }
 
     @Override
@@ -345,6 +348,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
          * we must set the INACTIVE flag for the current rsc.
          */
         boolean needsDeactivate = false;
+        Flux<ApiCallRc> deactivateFlux = Flux.empty();
 
         LayerPayload payload = new LayerPayload();
         if (isSharedSourceStorPool(rsc))
@@ -405,7 +409,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                         "Resource got deactivated as target shared storage pool is already used by a shared resource"
                         )
                     );
-                setFlags(rsc, Resource.Flags.INACTIVE);
+                deactivateFlux = ctrlRscActivateApiCallHandler.deactivateRsc(
+                    rsc.getNode().getName().displayValue,
+                    rsc.getDefinition().getName().displayValue
+                );
 
                 /*
                  * We also have to remove the currently diskless DrbdRscData and free up the node-id as now we must
@@ -469,6 +476,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         return Flux
             .<ApiCallRc>just(responses)
+            .concatWith(deactivateFlux)
             .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, context));
     }
 
@@ -764,11 +772,12 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         List<DeviceLayerKind> layerList = null;
         LayerPayload payload = new LayerPayload();
+        Flux<ApiCallRc> activateFlux = Flux.empty();
         if (removeDisk)
         {
             markDiskRemoved(rsc);
 
-            activateIfPossible(rsc);
+            activateFlux = activateIfPossible(rsc);
             /*
              * We also have to remove the possible meta-children of previous StorageRscData.
              * LayerData will be recreated with ensureStackDataExists.
@@ -811,6 +820,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         return Flux
             .<ApiCallRc>just(responses)
+            .concatWith(activateFlux)
             .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rsc, migrationFlux)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
@@ -823,8 +833,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             .concatWith(autoFlux);
     }
 
-    private void activateIfPossible(Resource rsc)
+    private Flux<ApiCallRc> activateIfPossible(Resource rsc)
     {
+        Flux<ApiCallRc> ret = Flux.empty();
         StateFlags<Flags> rscFlags = rsc.getStateFlags();
         try
         {
@@ -833,20 +844,17 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 !rscFlags.isSet(apiCtx, Resource.Flags.INACTIVE_PERMANENTLY)
             )
             {
-                // an inactive diskless does not make sense.
-                rsc.getStateFlags().disableFlags(apiCtx, Resource.Flags.INACTIVE);
+                ret = ctrlRscActivateApiCallHandler.activateRsc(
+                    rsc.getNode().getName().displayValue,
+                    rsc.getResourceDefinition().getName().displayValue
+                );
             }
         }
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
-
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-
+        return ret;
     }
 
     private boolean isSharedSourceStorPool(Resource rsc)

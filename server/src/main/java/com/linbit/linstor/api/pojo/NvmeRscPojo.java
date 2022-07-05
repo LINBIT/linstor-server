@@ -6,6 +6,8 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
+
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -21,13 +23,16 @@ public class NvmeRscPojo implements RscLayerDataApi
     private final List<NvmeVlmPojo> vlms;
     @JsonIgnore
     private final boolean suspend;
+    @JsonIgnore
+    private final @Nullable String ignoreReason;
 
     public NvmeRscPojo(
         int idRef,
         List<RscLayerDataApi> childrenRef,
         String rscNameSuffixRef,
         List<NvmeVlmPojo> vlmsRef,
-        boolean suspendRef
+        boolean suspendRef,
+        @Nullable String ignoreReasonRef
     )
     {
         id = idRef;
@@ -35,6 +40,7 @@ public class NvmeRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = suspendRef;
+        ignoreReason = ignoreReasonRef;
     }
 
     @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -49,6 +55,7 @@ public class NvmeRscPojo implements RscLayerDataApi
         rscNameSuffix = rscNameSuffixRef;
         vlms = vlmsRef;
         suspend = false;
+        ignoreReason = null;
     }
 
     @Override
@@ -79,6 +86,12 @@ public class NvmeRscPojo implements RscLayerDataApi
     public boolean getSuspend()
     {
         return suspend;
+    }
+
+    @Override
+    public @Nullable String getIgnoreReason()
+    {
+        return ignoreReason;
     }
 
     @Override

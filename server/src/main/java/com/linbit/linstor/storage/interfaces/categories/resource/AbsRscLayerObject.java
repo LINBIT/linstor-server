@@ -54,6 +54,16 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
 
     boolean getSuspendIo();
 
+    void setIgnoreReason(String ignoreReasonRef) throws DatabaseException;
+
+    String getIgnoreReason();
+
+    default boolean hasIgnoreReason()
+    {
+        String ignoreReason = getIgnoreReason();
+        return ignoreReason != null && !ignoreReason.isEmpty();
+    }
+
     default AbsRscLayerObject<RSC> getSingleChild()
     {
         Set<AbsRscLayerObject<RSC>> children = getChildren();

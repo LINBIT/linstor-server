@@ -229,14 +229,13 @@ public class CacheLayer implements DeviceLayer
     }
 
     @Override
-    public LayerProcessResult process(
+    public void process(
         AbsRscLayerObject<Resource> rscLayerDataRef,
         List<Snapshot> snapshotListRef,
         ApiCallRcImpl apiCallRcRef
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
-        LayerProcessResult ret;
         CacheRscData<Resource> rscData = (CacheRscData<Resource>) rscLayerDataRef;
         StateFlags<Flags> rscFlags = rscData.getAbsResource().getStateFlags();
         boolean deleteFlagSet = rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE) ||
@@ -275,42 +274,33 @@ public class CacheLayer implements DeviceLayer
             }
         }
 
-        LayerProcessResult dataResult = resourceProcessorProvider.get().process(
+        resourceProcessorProvider.get().process(
             rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
             snapshotListRef,
             apiCallRcRef
         );
-        LayerProcessResult metaResult;
-        LayerProcessResult cacheResult;
         AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);
         AbsRscLayerObject<Resource> metaRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_META);
         if (cacheRscChild == null || metaRscChild == null)
         {
             // we might be an imaginary layer above an NVMe target which does not need a cache...
             errorReporter.logDebug("Cache: no devices provided to upper layer");
-            cacheResult = LayerProcessResult.NO_DEVICES_PROVIDED;
-            metaResult = LayerProcessResult.NO_DEVICES_PROVIDED;
         }
         else
         {
-            cacheResult = resourceProcessorProvider.get().process(
+            resourceProcessorProvider.get().process(
                 cacheRscChild,
                 snapshotListRef,
                 apiCallRcRef
             );
-            metaResult = resourceProcessorProvider.get().process(
+            resourceProcessorProvider.get().process(
                 metaRscChild,
                 snapshotListRef,
                 apiCallRcRef
             );
         }
 
-        if (
-            !deleteFlagSet &&
-                dataResult == LayerProcessResult.SUCCESS &&
-                cacheResult == LayerProcessResult.SUCCESS &&
-                metaResult == LayerProcessResult.SUCCESS
-        )
+        if (!deleteFlagSet)
         {
             for (CacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
@@ -378,13 +368,7 @@ public class CacheLayer implements DeviceLayer
                     }
                 }
             }
-            ret = LayerProcessResult.SUCCESS;
         }
-        else
-        {
-            ret = LayerProcessResult.NO_DEVICES_PROVIDED;
-        }
-        return ret;
     }
 
     @Override

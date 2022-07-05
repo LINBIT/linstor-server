@@ -20,7 +20,6 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
@@ -34,6 +33,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -84,6 +84,8 @@ public class CtrlRscMakeAvailableApiCallHandler
     private final CtrlRscToggleDiskApiCallHandler toggleDiskHandler;
     private final SharedResourceManager sharedRscMgr;
     private final CtrlPropsHelper ctrlPropsHelper;
+    private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
+    private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
 
     @Inject
     public CtrlRscMakeAvailableApiCallHandler(
@@ -100,7 +102,9 @@ public class CtrlRscMakeAvailableApiCallHandler
         CtrlSatelliteUpdateCaller stltUpdateCallerRef,
         CtrlRscToggleDiskApiCallHandler toggleDiskHandlerRef,
         SharedResourceManager sharedRscMgrRef,
-        CtrlPropsHelper ctrlPropsHelperRef
+        CtrlPropsHelper ctrlPropsHelperRef,
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -117,6 +121,8 @@ public class CtrlRscMakeAvailableApiCallHandler
         toggleDiskHandler = toggleDiskHandlerRef;
         sharedRscMgr = sharedRscMgrRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
+        ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
+        ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
     }
 
     public Flux<ApiCallRc> makeResourceAvailable(
@@ -197,30 +203,22 @@ public class CtrlRscMakeAvailableApiCallHandler
                 Resource activeRsc = getActiveRsc(rsc);
                 if (activeRsc == null)
                 {
-                    disableFlag(rsc, Resource.Flags.INACTIVE);
-                    flux = stltUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
-                        updateResponses -> CtrlResponseUtils.combineResponses(
-                            updateResponses,
-                            rsc.getResourceDefinition().getName(),
-                            Collections.singleton(rsc.getNode().getName()),
-                            "Resource activated on {0}",
-                            "Resource activated on {0}"
-                        )
+                    flux = ctrlRscActivateApiCallHandler.activateRsc(
+                        rsc.getNode().getName().displayValue,
+                        rsc.getDefinition().getName().displayValue
                     );
                 }
                 else
                 {
-                    setFlag(activeRsc, Resource.Flags.INACTIVE);
-                    flux = stltUpdateCaller.updateSatellites(activeRsc, Flux.empty()).transform(
-                        updateResponses -> CtrlResponseUtils.combineResponses(
-                            updateResponses,
-                            rsc.getResourceDefinition().getName(),
-                            Collections.singleton(rsc.getNode().getName()),
-                            "Resource deactivated on {0}",
-                            "Resource deactivated on {0}"
+                    flux = ctrlRscActivateApiCallHandler.deactivateRsc(
+                        activeRsc.getNode().getName().displayValue,
+                        activeRsc.getDefinition().getName().displayValue
+                    ).concatWith(
+                        ctrlRscActivateApiCallHandler.activateRsc(
+                            rsc.getNode().getName().displayValue,
+                            rsc.getDefinition().getName().displayValue
                         )
-                    ).concatWith(postDeactivateOldRsc(rsc))
-                        .onErrorResume(error -> abortDeactivateOldRsc(activeRsc, rsc));
+                    ).onErrorResume(error -> abortDeactivateOldRsc(activeRsc, rsc));
                 }
             }
             else
@@ -277,15 +275,9 @@ public class CtrlRscMakeAvailableApiCallHandler
 
                 // try to deactivate already active resource first
                 Resource activeRsc = getActiveRsc(createRscPojo, node, rscDfn);
-                setFlag(activeRsc, Resource.Flags.INACTIVE);
-                flux = stltUpdateCaller.updateSatellites(activeRsc, Flux.empty()).transform(
-                    updateResponses -> CtrlResponseUtils.combineResponses(
-                        updateResponses,
-                        rscDfn.getName(),
-                        Collections.singleton(node.getName()),
-                        "Resource deactivated on {0}",
-                        "Resource deactivated on {0}"
-                    )
+                flux = ctrlRscActivateApiCallHandler.deactivateRsc(
+                    activeRsc.getNode().getName().displayValue,
+                    activeRsc.getResourceDefinition().getName().displayValue
                 ).concatWith(
                     freeCapacityFetcher.fetchThinFreeCapacities(Collections.singleton(node.getName())).flatMapMany(
                         // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
@@ -349,48 +341,12 @@ public class CtrlRscMakeAvailableApiCallHandler
         Flux<ApiCallRc> flux = Flux.empty();
         if (newActiveRscRef == null || isFlagSet(newActiveRscRef, Resource.Flags.INACTIVE))
         {
-            disableFlag(oldActiveRscRef, Resource.Flags.INACTIVE);
-
-            ctrlTransactionHelper.commit();
-            flux = stltUpdateCaller.updateSatellites(oldActiveRscRef, Flux.empty()).transform(
-                updateResponses -> CtrlResponseUtils.combineResponses(
-                    updateResponses,
-                    oldActiveRscRef.getResourceDefinition().getName(),
-                    Collections.singleton(oldActiveRscRef.getNode().getName()),
-                    "Resource reactivated on {0}",
-                    "Resource reactivated on {0}"
-                )
+            flux = ctrlRscActivateApiCallHandler.activateRsc(
+                oldActiveRscRef.getNode().getName().displayValue,
+                oldActiveRscRef.getResourceDefinition().getName().displayValue
             );
-
         }
         return flux;
-    }
-
-    private Flux<ApiCallRc> postDeactivateOldRsc(Resource newActiveRsc)
-    {
-        return scopeRunner.fluxInTransactionalScope(
-            "Post deactivate rsc",
-            lockGuardFactory.create()
-                .read(LockObj.NODES_MAP)
-                .write(LockObj.RSC_DFN_MAP)
-                .buildDeferred(),
-            () -> postDeactivateOldRscInTransaction(newActiveRsc)
-        );
-    }
-
-    private Flux<ApiCallRc> postDeactivateOldRscInTransaction(Resource newActiveRscRef)
-    {
-        disableFlag(newActiveRscRef, Resource.Flags.INACTIVE);
-        ctrlTransactionHelper.commit();
-        return stltUpdateCaller.updateSatellites(newActiveRscRef, Flux.empty()).transform(
-            updateResponses -> CtrlResponseUtils.combineResponses(
-                updateResponses,
-                newActiveRscRef.getResourceDefinition().getName(),
-                Collections.singleton(newActiveRscRef.getNode().getName()),
-                "Resource activated on {0}",
-                "Resource activated on {0}"
-            )
-        );
     }
 
     private Resource getActiveRsc(Resource myRsc)

@@ -26,6 +26,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -878,8 +879,10 @@ public class CtrlRscDfnApiCallHandler
                 {
                     vlm.getFlags().disableFlags(peerAccCtx.get(), Volume.Flags.CLONING_START);
                 }
+                ResourceDataUtils.recalculateVolatileRscData(ctrlLayerStackHelper, rsc);
             }
         }
+
         ctrlTransactionHelper.commit();
         return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty())
             .transform(
@@ -1016,6 +1019,8 @@ public class CtrlRscDfnApiCallHandler
                     }
                 }
 
+                ResourceDataUtils.recalculateVolatileRscData(ctrlLayerStackHelper, rsc);
+                ResourceDataUtils.recalculateVolatileRscData(ctrlLayerStackHelper, newRsc);
                 deployedResources.add(newRsc);
             }
 

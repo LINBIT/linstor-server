@@ -133,6 +133,12 @@ public class OpenflexRscData<RSC extends AbsResource<RSC>>
         {
             vlmPojos.add(ofVlmData.asPojo(accCtxRef));
         }
-        return new OpenflexRscPojo(rscLayerId, rscDfnData.getApiData(accCtxRef), vlmPojos, suspend.get());
+        return new OpenflexRscPojo(
+            rscLayerId,
+            rscDfnData.getApiData(accCtxRef),
+            vlmPojos,
+            suspend.get(),
+            ignoreReason.get()
+        );
     }
 }

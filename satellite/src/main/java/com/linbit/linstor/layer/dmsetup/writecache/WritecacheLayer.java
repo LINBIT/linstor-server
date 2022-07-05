@@ -232,14 +232,13 @@ public class WritecacheLayer implements DeviceLayer
     }
 
     @Override
-    public LayerProcessResult process(
+    public void process(
         AbsRscLayerObject<Resource> rscLayerDataRef,
         List<Snapshot> snapshotListRef,
         ApiCallRcImpl apiCallRcRef
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
-        LayerProcessResult ret;
         WritecacheRscData<Resource> rscData = (WritecacheRscData<Resource>) rscLayerDataRef;
         StateFlags<Flags> rscFlags = rscData.getAbsResource().getStateFlags();
         boolean rscDeleteFlagSet = rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE) ||
@@ -336,29 +335,27 @@ public class WritecacheLayer implements DeviceLayer
             }
         }
 
-        LayerProcessResult dataResult = resourceProcessorProvider.get().process(
+        resourceProcessorProvider.get().process(
             rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
             snapshotListRef,
             apiCallRcRef
         );
-        LayerProcessResult metaResult;
         AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE);
         if (cacheRscChild == null)
         {
             // we might be an imaginary layer above an NVMe target which does not need a cache...
             errorReporter.logDebug("Writecache: no devices provided to upper layer");
-            metaResult = LayerProcessResult.NO_DEVICES_PROVIDED;
         }
         else
         {
-            metaResult = resourceProcessorProvider.get().process(
+            resourceProcessorProvider.get().process(
                 cacheRscChild,
                 snapshotListRef,
                 apiCallRcRef
             );
         }
 
-        if (!rscDeleteFlagSet && dataResult == LayerProcessResult.SUCCESS && metaResult == LayerProcessResult.SUCCESS)
+        if (!rscDeleteFlagSet)
         {
             for (WritecacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
@@ -504,13 +501,7 @@ public class WritecacheLayer implements DeviceLayer
                     }
                 }
             }
-            ret = LayerProcessResult.SUCCESS;
         }
-        else
-        {
-            ret = LayerProcessResult.NO_DEVICES_PROVIDED;
-        }
-        return ret;
     }
 
     @Override

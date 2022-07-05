@@ -67,6 +67,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final SharedResourceManager sharedRscMgr;
     private final AutoSnapshotTask autoSnapshotTask;
     private final ScheduleBackupService scheduleService;
+    private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
 
     @Inject
     public CtrlRscDfnDeleteApiCallHandler(
@@ -81,7 +82,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         SharedResourceManager sharedRscMgrRef,
         AutoSnapshotTask autoSnapshotTaskRef,
-        ScheduleBackupService scheduleServiceRef
+        ScheduleBackupService scheduleServiceRef,
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -96,6 +98,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         sharedRscMgr = sharedRscMgrRef;
         autoSnapshotTask = autoSnapshotTaskRef;
         scheduleService = scheduleServiceRef;
+        ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
     }
 
     @Override
@@ -277,13 +280,9 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     {
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, false);
 
-        Flux<ApiCallRc> flux;
+        Flux<ApiCallRc> flux = Flux.empty();
 
-        if (rscDfn == null)
-        {
-            flux = Flux.empty();
-        }
-        else
+        if (rscDfn != null)
         {
             for (Resource rsc : getRscStreamPrivileged(rscDfn).collect(Collectors.toList()))
             {
@@ -310,7 +309,10 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                     }
                     if (activeRsc == null && rscToActivate != null)
                     {
-                        unsetFlagPrivleged(rscToActivate, Resource.Flags.INACTIVE);
+                        flux = ctrlRscActivateApiCallHandler.activateRsc(
+                            rscToActivate.getNode().getName().displayValue,
+                            rscToActivate.getDefinition().getName().displayValue
+                        );
                     }
                 }
 
@@ -326,17 +328,20 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             ctrlTransactionHelper.commit();
 
             Flux<ApiCallRc> nextStep = deleteData(rscName);
-            flux = ctrlSatelliteUpdateCaller
-                .updateSatellites(
+            flux = flux.concatWith(
+                ctrlSatelliteUpdateCaller.updateSatellites(
                     rscDfn,
                     nodeName -> Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))),
                     nextStep
                 )
-                .transform(updateResponses -> CtrlResponseUtils.combineResponses(
-                    updateResponses,
-                    rscName,
-                    "Resource {1} on {0} deleted"
-                ))
+                    .transform(
+                        updateResponses -> CtrlResponseUtils.combineResponses(
+                            updateResponses,
+                            rscName,
+                            "Resource {1} on {0} deleted"
+                        )
+                    )
+                )
                 .concatWith(nextStep)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
         }
@@ -357,22 +362,6 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         }
 
         return isSet;
-    }
-
-    private void unsetFlagPrivleged(Resource rsc, Resource.Flags... flags)
-    {
-        try
-        {
-            rsc.getStateFlags().disableFlags(apiCtx, flags);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (DatabaseException sqlExc)
-        {
-            throw new ApiDatabaseException(sqlExc);
-        }
     }
 
     private Flux<ApiCallRc> deleteData(ResourceName rscName)
