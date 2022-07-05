@@ -170,16 +170,25 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
         final ScheduleName scheduleName = raw.build(DSP_NAME, ScheduleName::new);
         final long initFlags;
         final long onFailureLong;
+        final Integer keepLocal;
+        final Integer keepRemote;
+        final Integer maxRetries;
         switch (getDbType())
         {
             case ETCD:
                 initFlags = Long.parseLong(raw.get(FLAGS));
                 onFailureLong = Long.parseLong(raw.get(ON_FAILURE));
+                keepLocal = raw.<String, Integer, NumberFormatException> build(KEEP_LOCAL, Integer::parseInt);
+                keepRemote = raw.<String, Integer, NumberFormatException> build(KEEP_REMOTE, Integer::parseInt);
+                maxRetries = raw.<String, Integer, NumberFormatException> build(MAX_RETRIES, Integer::parseInt);
                 break;
             case SQL: // fall-through
             case K8S_CRD:
                 initFlags = raw.get(FLAGS);
                 onFailureLong = raw.get(ON_FAILURE);
+                keepLocal = raw.get(KEEP_LOCAL);
+                keepRemote = raw.get(KEEP_REMOTE);
+                maxRetries = raw.get(MAX_RETRIES);
                 break;
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
@@ -194,10 +203,10 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
                 initFlags,
                 raw.build(FULL_CRON, parser::parse),
                 raw.build(INC_CRON, parser::parse),
-                raw.get(KEEP_LOCAL),
-                raw.get(KEEP_REMOTE),
+                keepLocal,
+                keepRemote,
                 OnFailure.getByValueOrNull(onFailureLong),
-                raw.get(MAX_RETRIES),
+                maxRetries,
                 transObjFactory,
                 transMgrProvider
             ),
