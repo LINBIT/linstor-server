@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers.sql;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
@@ -12,6 +13,7 @@ import com.linbit.utils.ExceptionThrowingFunction;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -130,7 +132,28 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
     protected int fillSetter(PreparedStatement stmt, int startIdx, INPUT_TYPE element)
         throws SQLException
     {
-        stmt.setObject(startIdx, mapper.apply(element), colToUpdate.getSqlType());
+        DB_TYPE data = mapper.apply(element);
+        if (colToUpdate.getSqlType() == Types.BLOB)
+        {
+            if (data == null)
+            {
+                stmt.setNull(startIdx, colToUpdate.getSqlType());
+            }
+            else if (data instanceof byte[])
+            {
+                // BLOB needs special treatment as i.e. PSQL does not support setting byte[] as a blob
+                byte[] arr = (byte[]) data;
+                stmt.setBytes(startIdx, arr);
+            }
+            else
+            {
+                throw new ImplementationError("Invalid class (" + data.getClass() + ") for BLOB type");
+            }
+        }
+        else
+        {
+            stmt.setObject(startIdx, data, colToUpdate.getSqlType());
+        }
         return startIdx + 1;
     }
 }
