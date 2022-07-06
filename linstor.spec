@@ -22,7 +22,7 @@ Source0: http://pkg.linbit.com/downloads/linstor/linstor-server-%{FILE_VERSION}.
 BuildRequires: java-1_8_0-openjdk-headless java-1_8_0-openjdk-devel python
 %else
     %if 0%{?rhel} > 8
-BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel python
+BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel python3
     %else
 BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel python2
     %endif
