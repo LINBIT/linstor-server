@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.14.0
       - Added /v1/physical-storage/{node} to view devices for a single node
       - Added /v1/schedules/ and /v1/schedules/{scheduleName} endpoints as well as Schedule to create, delete, modify and list schedules
       - Added /v1/remotes/{remote_name}/backups/schedule/{schedule_name}/enable, disable and delete to create, delete and modify schedule-remote-rscDfn-triples

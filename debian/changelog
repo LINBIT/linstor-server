@@ -1,3 +1,122 @@
+linstor-server (1.19.0~rc.1-1) experimental; urgency=medium
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * crd: prevent version conflicts on rollback
+  * crds: remove redundant get during rollback
+  * crds: wait for CR api using actual API
+  * docker: manually start lvm daemon
+  * add GET /v1/physical-storage/{node}
+
+  [ Robert Altnoeder ]
+  * Load identity information from the database for LDAP sign-ins
+  * PBKDF2 password hashing
+  * Add class UnicodeConversion
+  * Adjust UnicodeConversion call to the actual method parameters
+  * Fix createSignInEntry in EmptySecurityDbDriver
+  * Fix initializeAuthentication in ControllerSecurityModule
+  * Fix HASH_LENGTH, it's in bits, not bytes
+  * Extract password hash generation from the sign-in check
+  * Adjust AuthenticationTest to the new cryptographic methods
+  * Foundations for creating LINSTOR identities
+  * Add interface ModularCryptoProvider
+  * Adjust SymmetricKeyCipher parameters for ModularCryptoProvider compatibility
+  * SslTcpCommons: Remove key/certificate management methods
+  * SslTcpConnectorService: Use ModularCryptoProvider for SSL initialization
+  * SatelliteNetComInitializer: Use ModularCryptoProvider
+  * ControllerNetComInitializer: Use ModularCryptoProvider
+  * EncryptionHelper, DecryptionHelper: Use cipher from ModularCryptoProvider
+  * Transform SecretGenerator into an interface
+  * Move class SecretGenerator to com.linbit.linstor.modularcrypto
+  * Add implementation SecretGeneratorImpl
+  * Adjust LINSTOR code to new SecretGenerator
+  * Adjust LINSTOR code to ModularCryptoProvider cipher creation
+  * Moved class LengthPaddingImpl to modularcrypto
+  * LengthPaddingImpl: Adjust constructor for modularcrypto integration
+  * Adjust LINSTOR code to LengthPadding changes
+  * Add interface KeyDerivation
+  * Add class JclKeyDerivationImpl
+  * Changed sign-in process to use ModularCryptoProvider
+  * EncryptionHelper: Modified control flow
+  * Add startup information about which crypto provider is in use
+  * Add class JclCryptoProvider
+  * Add class JclCryptoModule: Injector configuration
+  * Move interface SecretGenerator to com.linbit.crypto
+  * AuthenticationTest: Adjust test to the modular cryptography architecture
+  * Add comment about the use of the UnicodeConversion class
+  * Remove unused class SslTcpCommons
+  * Dynamic loading of modular cryptography providers
+  * Provide ModularCryptoProvider to migrations
+  * Change migration from 2019-04-10 to use ModularCryptoProvider
+  * Move & rename class SymmetricKeyCipher
+  * Move JCL crypto implementation
+  * Modified build.gradle, settings.gradle
+  * SymmetricKeyCipherTest fixes
+  * AuthenticationTest fixes
+  * GenericDbBase fixes (tests)
+  * Add class CryptoProviderLoader - Dynamic loader for use by unit tests
+  * Modify tests to use CryptoProviderLoader
+  * Move/Fix typo: SymmetricKeyCiperTest -> SymmetricKeyCipherTest
+
+  [ Gabor Hernadi ]
+  * Crypto: Fixed guice modules for junit tests
+  * Crypt: Fixed Unit tests
+  * JCLCrypto: Fixed build.gradle, debian/rules and linstor.spec
+  * GitLab: Fix replaced keyword.
+  * ScopeRunner: Do not release locks before rollback
+  * ScopeRunner: Properly handle exceptions
+  * Auth: Start pinging earlier
+  * GenSql: Load and inject JclCrypto to migrations
+  * K8sGen: Fix generating the changed constructor
+  * OutputProxy: Added undelimited reader
+  * CONFIG_PATH: Unified constant
+  * Sos: First iteration of rework
+  * Sos: second iteration
+  * Sos: Do not request 0 byte files
+  * Sos: Do not ignore errors from satellite
+  * Sos: Cleanup satellites
+  * Sos: Do not copy ErrorReports
+  * Sos: Cleanup and bugfixes
+  * Sos: Moved content of sos-report folder to stlt-root
+  * Sos: Use java-version of 'rm -rf' for cleanup
+  * CRD: Fix migrations with new tables
+  * Resize: Attempt to fix stuck resize
+  * PSQL,ExtFiles: Fix update of ext-file-content
+
+  [ Rene Peinthor ]
+  * gitlab-ci: only run standard tests on MR's
+  * gitlab-ci: use prefilled variables
+  * gitlab-ci: add manual run all step for MR's
+  * gitlab-ci: add extra integration-all stage
+  * gitlab-ci: only run build/test stage on MR and manual pipelines
+  * gitlab: test stage should be included on master branch
+  * ctrlconfapi: fix unreachable code
+  * ctrlconfapi: code cleanup
+  * ctrlconfapi: don't commit() on each prop update
+  * gradle: fix running controller/satellite from gradle
+  * ctrl-verify-algo: fix setting/reading of verify algo list
+  * physical-storage/vdo: switch to lvcreate vdo syntax
+  * linstor.spec: fix python dependency for rhel9
+
+  [ Roland Kammerer ]
+  * pve: add before pvedaemon ordering
+
+  [ Johanna Kucera ]
+  * Schedule: add new core object Schedule
+  * BackupShipping: add scheduled backup shipping
+  * BackupShipping: add keepSnaps-flag to backup-delete
+  * BackupShipping: fix various scheduled shipping bugs
+  * BackupShipping: actually use keepLocal and keepRemote
+  * BackupShipping: move endpoints to avoid name conflicts
+  * BackupShipping: add maxRetries to Schedule
+  * BackupShipping: fix scheduled shipping to l2l remote
+  * BackupShipping: small scheduled shipping fixes
+  * SosReport: filter by list of nodes and add includeCtrl flag
+  * SosReport: add filter by rscs
+  * SosReport: add exclude-nodes filter and query-params file
+  * Schedule,DB: fix loading of Schedules with ETCD
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 06 Jul 2022 10:58:20 +0000
+
 linstor-server (1.18.2-1) experimental; urgency=medium
 
   [ Moritz "WanzenBug" Wanzenböck ]
