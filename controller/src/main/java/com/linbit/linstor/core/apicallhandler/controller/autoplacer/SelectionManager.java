@@ -25,9 +25,9 @@ import java.util.Set;
  *
  * In particular, it ensures that:
  * - a potential selection upholds all rules:
- *   - one storage pool per node
- *   - replicas-on-same settings
- *   - replicas-on-different settings
+ * -- one storage pool per node
+ * -- replicas-on-same settings
+ * -- replicas-on-different settings
  * - a selection can be reverted, even in parts
  */
 public class SelectionManager
@@ -333,18 +333,18 @@ public class SelectionManager
         {
             for (String replOnSame : selectFilter.getReplicasOnSameList())
             {
-                String key;
-                String selectedValue;
+                int assignIdx = replOnSame.indexOf("=");
 
-                /*
-                 * Keys with values fixed by the user are already considered in the Filter step.
-                 * That means we can rely here that all given storage pools already meet the
-                 * fixed-value filters.
-                 */
-                if (!replOnSame.contains("="))
+                if (assignIdx != -1)
                 {
-                    key = replOnSame;
-                    selectedValue = null;
+                    String key = replOnSame.substring(0, assignIdx);
+                    String val = replOnSame.substring(assignIdx + 1);
+                    sameProps.put(key, val);
+                }
+                else
+                {
+                    String key = replOnSame;
+                    String selectedValue = null;
                     for (Node selectedNode : selectedNodes)
                     {
                         String selectedNodeValue = selectedNode.getProps(accessContext).getProp(key);

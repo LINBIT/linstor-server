@@ -208,4 +208,38 @@ public class SelectionManagerTest extends GenericDbBase
             Assert.assertEquals("c", selected.storPool.getNode().getProps(accessContext).getProp(zoneKey));
         }
     }
+
+    @Test
+    public void fixedProperties() throws Exception
+    {
+        // Normally this selection is done in the prefilter. But for TieBreaker selection, we
+        // might want to filter it again here.
+        AutoSelectFilterApi selectFilter = new AutoSelectFilterBuilder()
+            .setPlaceCount(3)
+            .setReplicasOnSameList(Collections.singletonList(rackKey + "=2"))
+            .setReplicasOnDifferentList(Collections.singletonList(zoneKey))
+            .build();
+
+        SelectionManager selectionManager = new SelectionManager(
+            DummySecurityInitializer.getSystemAccessContext(),
+            errorReporter,
+            selectFilter,
+            Collections.emptyList(),
+            0,
+            0,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            storPoolWithScores);
+
+        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
+        Assert.assertEquals(3, actual.size());
+
+        Set<String> seenZones = new HashSet<>();
+
+        for (Autoplacer.StorPoolWithScore pool : actual)
+        {
+            Assert.assertEquals("2", pool.storPool.getNode().getProps(accessContext).getProp(rackKey));
+            Assert.assertTrue(seenZones.add(pool.storPool.getNode().getProps(accessContext).getProp(zoneKey)));
+        }
+    }
 }
