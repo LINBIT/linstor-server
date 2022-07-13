@@ -9,9 +9,11 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.SelectionManager;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -27,6 +29,7 @@ import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
@@ -40,6 +43,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
@@ -59,6 +63,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Predicate;
 
 import reactor.core.publisher.Flux;
 
@@ -68,6 +73,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     private final SystemConfRepository systemConfRepository;
     private final CtrlRscLayerDataFactory layerDataHelper;
     private final NodeRepository nodeRepo;
+    private final StorPoolDefinitionMap storPoolDfnMap;
     private final CtrlRscCrtApiHelper rscCrtApiHelper;
     private final Provider<AccessContext> peerCtx;
     private final ScopeRunner scopeRunner;
@@ -78,37 +84,14 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     private final CtrlRscToggleDiskApiCallHandler rscToggleDiskHelper;
     private final Autoplacer autoplacer;
 
-    class AutoTiebreakerResult
-    {
-        /**
-         * Set if a new tiebreaker resource was created
-         */
-        Resource created = null;
-        /**
-         * Set if a linstor managed tiebreaker is deleted by autoTiebreaker mechanism
-         */
-        Resource deleting = null;
-        /**
-         * Set if the linstor (now) managed tiebreaker needs to be updated. This could be the
-         * case when taking over a previously diskless resource as a now tiebreaking resource (i.e.
-         * making a non-linstor-managed diskless resource to a linstor-managed diskless resource ->
-         * tiebreaker)
-         */
-        Resource takeoverDiskless = null;
-
-        /**
-         * Set if tiebreaker needs a toggle disk. Currently only used if a previously non-linstor managed
-         * diskful resource in deleting state is being taken over, resulting in a diskless linstor managed
-         * tiebreaker resource.
-         */
-        Resource takeoverDiskful = null;
-    }
+    private final ErrorReporter errorReporter;
 
     @Inject
     public CtrlRscAutoTieBreakerHelper(
         SystemConfRepository systemConfRepositoryRef,
         ScopeRunner scopeRunnerRef,
         NodeRepository nodeRepoRef,
+        StorPoolDefinitionMap storPoolDfnMapRef,
         CtrlRscLayerDataFactory layerDataHelperRef,
         @PeerContext Provider<AccessContext> peerCtxRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
@@ -117,12 +100,14 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         ResponseConverter responseConverterRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlRscToggleDiskApiCallHandler rscToggleDiskHelperRef,
-        Autoplacer autoplacerRef
+        Autoplacer autoplacerRef,
+        ErrorReporter errorReporterRef
     )
     {
         systemConfRepository = systemConfRepositoryRef;
         scopeRunner = scopeRunnerRef;
         nodeRepo = nodeRepoRef;
+        storPoolDfnMap = storPoolDfnMapRef;
         layerDataHelper = layerDataHelperRef;
         peerCtx = peerCtxRef;
         nodesMapLock = nodesMapLockRef;
@@ -132,6 +117,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         rscToggleDiskHelper = rscToggleDiskHelperRef;
         autoplacer = autoplacerRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -206,7 +192,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                 ctx.responses.addEntries(
                                     ApiCallRcImpl.singleApiCallRc(
                                         ApiConsts.INFO_TIE_BREAKER_CREATED,
-                                        String.format("Tie breaker resource '%s' created on %s",
+                                        String.format(
+                                            "Tie breaker resource '%s' created on %s",
                                             ctx.rscDfn.getName().displayValue,
                                             storPool.getName().displayValue
                                         )
@@ -408,6 +395,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 
         if (CtrlRscAutoQuorumHelper.isAutoQuorumEnabled(getPrioProps(rscDfn)))
         {
+            Predicate<StorPool> isEligibleTieBreakerStorPool = getEligibleTieBreakerStorPoolPredicate(rscDfn);
+
             Iterator<Resource> rscIt = rscDfn.iterateResource(peerAccCtx);
             while (rscIt.hasNext())
             {
@@ -415,24 +404,18 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 
                 StateFlags<Resource.Flags> rscFlags = rsc.getStateFlags();
 
-                List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
-                boolean hasDrbdLayer = layerStack.contains(DeviceLayerKind.DRBD);
-                boolean hasNvmeLayer = layerStack.contains(DeviceLayerKind.NVME);
-                boolean countAsDrbd = !hasNvmeLayer ||
-                    (hasNvmeLayer && rscFlags.isSet(peerAccCtx, Resource.Flags.NVME_INITIATOR));
-                if (
-                    hasDrbdLayer && countAsDrbd &&
-                    rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE) &&
-                        rscFlags.isUnset(peerAccCtx, Resource.Flags.DRBD_DELETE) &&
-                    rscFlags.isUnset(peerAccCtx, Resource.Flags.INACTIVE)
-                )
+                if (isDrbdResource(peerAccCtx, rsc))
                 {
                     if (rscFlags.isSet(peerAccCtx, Resource.Flags.DRBD_DISKLESS))
                     {
-                        if (!rscFlags.isSet(peerAccCtx, Resource.Flags.TIE_BREAKER))
+                        boolean eligibleStoragePool = LayerVlmUtils.getStorPools(rsc, peerAccCtx)
+                            .stream()
+                            .allMatch(isEligibleTieBreakerStorPool);
+                        if (eligibleStoragePool && !rscFlags.isSet(peerAccCtx, Resource.Flags.TIE_BREAKER))
                         {
-                            // do not count tiebreaker here as this method should determine if the tiebreaker should
-                            // exist or not
+                            // We only count non-tie-breaker diskless resource, which are also "eligible"
+                            // to be tiebreakers, i.e. the autoplacer could have chosen this node, assuming
+                            // it only saw the diskful resources.
                             disklessDrbdCount++;
                         }
                     }
@@ -459,6 +442,74 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         }
         // TODO: maybe change to something like diskful % 2==0 && diskless % 2==0 && diskful > 0
         return hasEveryoneEnoughPeerSlots && diskfulDrbdCount == 2 && disklessDrbdCount == 0;
+    }
+
+    private Predicate<StorPool> getEligibleTieBreakerStorPoolPredicate(ResourceDefinition rscDfn) throws AccessDeniedException
+    {
+        List<Node> alreadyDeployedDiskfulNodes = new ArrayList<>();
+
+        AccessContext peerAccCtx = peerCtx.get();
+        Iterator<Resource> rscIt = rscDfn.iterateResource(peerAccCtx);
+        while (rscIt.hasNext())
+        {
+            Resource rsc = rscIt.next();
+
+            if (!rsc.isDiskless(peerAccCtx))
+            {
+                alreadyDeployedDiskfulNodes.add(rsc.getNode());
+            }
+        }
+
+        AutoSelectFilterPojo mergedAutoSelectFilter = AutoSelectFilterPojo.merge(
+            new AutoSelectFilterBuilder()
+                .setPlaceCount(0)
+                .setAdditionalPlaceCount(1)
+                .setDoNotPlaceWithRscList(Collections.singletonList(rscDfn.getName().displayValue))
+                .setLayerStackList(Collections.singletonList(DeviceLayerKind.DRBD))
+                .setDisklessType(Resource.Flags.DRBD_DISKLESS.name())
+                .build(),
+            rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
+        );
+
+        SelectionManager selectionManager = new SelectionManager(
+            peerAccCtx,
+            errorReporter,
+            mergedAutoSelectFilter,
+            alreadyDeployedDiskfulNodes,
+            alreadyDeployedDiskfulNodes.size(),
+            0,
+            Collections.emptyList(),
+            Collections.emptyList(),
+            null
+        );
+
+        return storPool -> {
+            boolean isAllowed = false;
+            try
+            {
+                isAllowed = selectionManager.isAllowed(storPool);
+            }
+            catch (AccessDeniedException e)
+            {
+                // Ignore -> not allowed
+            }
+            return isAllowed;
+        };
+    }
+
+    private boolean isDrbdResource(AccessContext peerAccCtx, Resource rsc) throws AccessDeniedException
+    {
+        StateFlags<Resource.Flags> rscFlags = rsc.getStateFlags();
+
+        List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
+        boolean hasDrbdLayer = layerStack.contains(DeviceLayerKind.DRBD);
+        boolean hasNvmeLayer = layerStack.contains(DeviceLayerKind.NVME);
+        boolean countAsDrbd = !hasNvmeLayer || rscFlags.isSet(peerAccCtx, Resource.Flags.NVME_INITIATOR);
+
+        return hasDrbdLayer && countAsDrbd &&
+            rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE) &&
+            rscFlags.isUnset(peerAccCtx, Resource.Flags.DRBD_DELETE) &&
+            rscFlags.isUnset(peerAccCtx, Resource.Flags.INACTIVE);
     }
 
     private PriorityProps getPrioProps(ResourceDefinition rscDfn) throws AccessDeniedException
@@ -511,6 +562,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                  * That means, it should be always safe to also ignore the storPoolNameList of the ctx.selectFilter as
                  * well as from the resourcegroup (i.e. the merged result)
                  */
+                // TODO: This is no longer true...
                 mergedAutoSelectFilterPojo.setStorPoolNameList(null);
 
                 Set<StorPool> autoplaceResult = autoplacer.autoPlace(
@@ -615,7 +667,6 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
      * Does NOT update satellites
      *
      * @param tiebreaker
-     *
      * @return
      */
     public Flux<ApiCallRc> setTiebreakerFlag(Resource tiebreaker)

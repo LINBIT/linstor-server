@@ -53,7 +53,7 @@ public class SelectionManager
     final private HashMap<String, String> sameProps = new HashMap<>();
     final private HashMap<String, List<String>> diffProps = new HashMap<>();
 
-    SelectionManager(
+    public SelectionManager(
         AccessContext accessContextRef,
         ErrorReporter errorReporterRef,
         AutoSelectFilterApi selectFilterRef,
@@ -144,8 +144,9 @@ public class SelectionManager
         for (int idx = startIdxRef; idx < sortedStorPoolByScoreArr.length && !isComplete(); idx++)
         {
             Autoplacer.StorPoolWithScore currentSpWithScore = sortedStorPoolByScoreArr[idx];
-            if (chooseIfAllowed(currentSpWithScore))
+            if (isAllowed(currentSpWithScore.storPool))
             {
+                select(currentSpWithScore);
                 findSelectionImpl(idx + 1);
                 if (!isComplete())
                 {
@@ -164,9 +165,8 @@ public class SelectionManager
         return selectedStorPoolWithScoreSet.size() == additionalRscCountToSelect;
     }
 
-    private boolean chooseIfAllowed(Autoplacer.StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
+    public boolean isAllowed(StorPool sp) throws AccessDeniedException
     {
-        StorPool sp = currentSpWithScoreRef.storPool;
         Node node = sp.getNode();
         Props nodeProps = node.getProps(accessContext);
 
@@ -250,11 +250,6 @@ public class SelectionManager
                     );
                 }
             }
-        }
-
-        if (isAllowed)
-        {
-            select(currentSpWithScoreRef);
         }
 
         return isAllowed;
