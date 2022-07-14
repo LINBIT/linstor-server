@@ -44,6 +44,12 @@ public class S3Remote extends BaseTransactionObject
     private final TransactionSimpleObject<S3Remote, Boolean> deleted;
     private final StateFlags<Flags> flags;
 
+    // it would be nicer if both booleans could be TransactionSimpleObjects
+    // but the stlt changes these as well, and would require scopes in the corresponding threads only for this
+    // which is rather cumbersome
+    private boolean requesterPaysSupported = true;
+    private boolean multiDeleteSupported = true;
+
     public S3Remote(
         ObjectProtection objProtRef,
         UUID objIdRef,
@@ -189,6 +195,36 @@ public class S3Remote extends BaseTransactionObject
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         secretKey.set(secretKeyRef);
+    }
+
+    public boolean isRequesterPaysSupported(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return requesterPaysSupported;
+    }
+
+    public void setRequesterPaysSupported(AccessContext accCtx, boolean requesterPaysSupportedRef)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        requesterPaysSupported = requesterPaysSupportedRef;
+    }
+
+    public boolean isMultiDeleteSupported(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return multiDeleteSupported;
+    }
+
+    public void setMultiDeleteSupported(AccessContext accCtx, boolean multiDeleteSupportedRef)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.CHANGE);
+        multiDeleteSupported = multiDeleteSupportedRef;
     }
 
     @Override

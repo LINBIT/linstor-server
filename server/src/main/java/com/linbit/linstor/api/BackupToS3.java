@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,12 +37,16 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
+import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.ListObjectsV2Request;
 import com.amazonaws.services.s3.model.ListObjectsV2Result;
+import com.amazonaws.services.s3.model.MultiObjectDeleteException;
+import com.amazonaws.services.s3.model.MultiObjectDeleteException.DeleteError;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -90,7 +95,7 @@ public class BackupToS3
         final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
         String bucket = remote.getBucket(accCtx);
 
-        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+        boolean reqPays = getRequesterPays(remote, accCtx, s3, bucket);
 
         InitiateMultipartUploadRequest initReq = new InitiateMultipartUploadRequest(
             bucket,
@@ -115,7 +120,7 @@ public class BackupToS3
         final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
 
         String bucket = remote.getBucket(accCtx);
-        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+        boolean reqPays = getRequesterPays(remote, accCtx, s3, bucket);
 
         // make the buffer size (part size) as big as possible, without going over the limit of Integer.MAX_VALUE
         // while making sure to stay above the minimum part size of 5 MB and below 10000 parts
@@ -182,7 +187,7 @@ public class BackupToS3
         final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
 
         String bucket = remote.getBucket(accCtx);
-        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+        boolean reqPays = getRequesterPays(remote, accCtx, s3, bucket);
 
         AbortMultipartUploadRequest abortReq = new AbortMultipartUploadRequest(
             bucket,
@@ -197,7 +202,7 @@ public class BackupToS3
     {
         final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
         String bucket = remote.getBucket(accCtx);
-        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+        boolean reqPays = getRequesterPays(remote, accCtx, s3, bucket);
         ObjectMetadata meta = new ObjectMetadata();
         meta.setContentLength(content.getBytes().length);
         PutObjectRequest req = new PutObjectRequest(bucket, key, new ByteArrayInputStream(content.getBytes()), meta)
@@ -208,13 +213,68 @@ public class BackupToS3
     public void deleteObjects(Set<String> keys, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException
     {
-        final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
         String bucket = remote.getBucket(accCtx);
-        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+        final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
+        boolean reqPays = getRequesterPays(remote, accCtx, s3, bucket);
         DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucket);
-        String[] helper = new String[keys.size()];
-        deleteObjectsRequest.withKeys(keys.toArray(helper)).withRequesterPays(reqPays);
-        s3.deleteObjects(deleteObjectsRequest);
+        deleteObjectsRequest.withKeys(keys.toArray(new String[keys.size()])).withRequesterPays(reqPays);
+        if (remote.isMultiDeleteSupported(accCtx))
+        {
+            try
+            {
+                s3.deleteObjects(deleteObjectsRequest);
+            }
+            catch (Exception exc)
+            {
+                if (exc instanceof MultiObjectDeleteException)
+                {
+                    throw exc;
+                }
+                errorReporter.logWarning(
+                    "Exception occurred while trying multi-object-delete on remote %s. Retrying with multiple single-object-deletes",
+                    remote.getName().displayValue
+                );
+                remote.setMultiDeleteSupported(accCtx, false);
+                deleteSingleObjects(keys, bucket, reqPays, s3);
+            }
+        }
+        else
+        {
+            errorReporter.logDebug(
+                "Multi-object-delete not supported due to prior exception on remote %s. Using multiple single-object-deletes instead",
+                remote.getName().displayValue
+            );
+            deleteSingleObjects(keys, bucket, reqPays, s3);
+        }
+    }
+
+    private void deleteSingleObjects(Set<String> keys, String bucket, boolean reqPays, AmazonS3 s3)
+    {
+        List<DeletedObject> deleted = new ArrayList<>();
+        // could use threads, but doesn't seem to be slower this way
+        for (String key : keys)
+        {
+            try
+            {
+                DeleteObjectRequest req = new DeleteObjectRequest(bucket, key);
+                req.withRequesterPays(reqPays);
+                s3.deleteObject(req);
+                DeletedObject obj = new DeletedObject();
+                obj.setKey(key);
+                deleted.add(obj);
+            }
+            catch (Exception ignored)
+            {
+                // ignored, see below
+            }
+        }
+        if (deleted.size() != keys.size())
+        {
+            // ignored because caller also ignores these
+            List<DeleteError> errs = Collections.emptyList();
+            MultiObjectDeleteException newExc = new MultiObjectDeleteException(errs, deleted);
+            throw newExc;
+        }
     }
 
     public BackupMetaDataPojo getMetaFile(String key, S3Remote remote, AccessContext accCtx, byte[] masterKey)
@@ -242,7 +302,7 @@ public class BackupToS3
             final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
 
             String bucket = remote.getBucket(accCtx);
-            boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+            boolean reqPays = getRequesterPays(remote, accCtx, s3, bucket);
 
             GetObjectRequest req = new GetObjectRequest(bucket, key, reqPays);
             S3Object obj = s3.getObject(req);
@@ -300,7 +360,7 @@ public class BackupToS3
         final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
 
         String bucket = remote.getBucket(accCtx);
-        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+        boolean reqPays = getRequesterPays(remote, accCtx, s3, bucket);
 
         GetObjectRequest req = new GetObjectRequest(bucket, key, reqPays);
         S3Object obj = s3.getObject(req);
@@ -313,7 +373,7 @@ public class BackupToS3
         Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
         String bucket = remote.getBucket(accCtx);
-        boolean reqPays = s3.isRequesterPaysEnabled(bucket);
+        boolean reqPays = getRequesterPays(remote, accCtx, s3, bucket);
 
         ListObjectsV2Request req = new ListObjectsV2Request();
         req.withRequesterPays(reqPays)
@@ -414,4 +474,32 @@ public class BackupToS3
             .withPathStyleAccessEnabled(remote.getFlags().isSet(accCtx, Remote.Flags.S3_USE_PATH_STYLE))
             .build();
     }
+
+    private boolean getRequesterPays(S3Remote remote, AccessContext accCtx, AmazonS3 s3, String bucket) throws AccessDeniedException
+     {
+         boolean reqPaysSupported = remote.isRequesterPaysSupported(accCtx);
+         boolean ret = false;
+         if (reqPaysSupported)
+         {
+             try
+             {
+                 ret = s3.isRequesterPaysEnabled(bucket);
+             }
+             catch (Exception exc)
+             {
+                 remote.setRequesterPaysSupported(accCtx, false);
+                 errorReporter.logWarning(
+                     "Exception occurred while checking for support of requester-pays on remote %s. Defaulting to false",
+                     remote.getName().displayValue
+                 );
+             }
+         }
+         else
+         {
+             errorReporter.logDebug(
+                 "Requester-pays not supported due to prior exception on remote %s.", remote.getName().displayValue
+             );
+         }
+         return ret;
+     }
 }
