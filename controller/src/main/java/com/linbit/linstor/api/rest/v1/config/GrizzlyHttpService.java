@@ -320,7 +320,15 @@ public class GrizzlyHttpService implements SystemService
         }
         catch (SocketException sexc)
         {
-            errorReporter.logError("Unable to start grizzly http server on " + listenAddress + ".");
+            if (!httpServer.isStarted())
+            {
+                errorReporter.logError("Unable to start grizzly http server on " + listenAddress + ".");
+            }
+            if (httpSslServer != null && !httpSslServer.isStarted())
+            {
+                errorReporter.logError("Unable to start grizzly https server on " + listenAddressSecure + ".");
+            }
+            errorReporter.reportError(sexc);
             // ipv6 failed, if it is localhost ipv6, retry ipv4
             if (listenAddress.startsWith("[::]"))
             {
