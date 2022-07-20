@@ -7,6 +7,7 @@ import "javainternal/c2s/IntStorPool.proto";
 import "javainternal/c2s/IntRsc.proto";
 import "javainternal/c2s/IntSnapshot.proto";
 import "javainternal/c2s/IntExternalFile.proto";
+import "javainternal/c2s/IntEbsRemote.proto";
 import "javainternal/c2s/IntS3Remote.proto";
 
 // Internal message containing a full synchronization of the resource specific data
@@ -39,4 +40,7 @@ message MsgIntApplyFullSync
     
     // S3-Remotes (in case the satellite needs to do a backup shipping)
     repeated IntS3Remote     s3remotes   = 12;
+
+    // Ebs-Remotes
+    repeated IntEbsRemote    ebs_remotes   = 13;
 }

@@ -3,10 +3,12 @@ package com.linbit.linstor.api.protobuf;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.pojo.EbsRemotePojo;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.proto.javainternal.c2s.IntEbsRemoteOuterClass.IntEbsRemote;
 import com.linbit.linstor.proto.javainternal.c2s.IntS3RemoteOuterClass.IntS3Remote;
 import com.linbit.linstor.proto.javainternal.c2s.IntStltRemoteOuterClass.IntStltRemote;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyRemoteOuterClass.MsgIntApplyRemote;
@@ -63,6 +65,15 @@ public class ApplyRemote implements ApiCall
             );
             apiCallHandler.applyStltRemoteChanges(stltRemotePojo);
         }
+        else if (msgApplyRemote.hasEbsRemote())
+        {
+            EbsRemotePojo ebsRemotePojo = asEbsRemotePojo(
+                msgApplyRemote.getEbsRemote(),
+                msgApplyRemote.getFullSyncId(),
+                msgApplyRemote.getUpdateId()
+            );
+            apiCallHandler.applyEbsRemoteChanges(ebsRemotePojo);
+        }
         else
         {
             errorReporter.reportError(new ImplementationError("Message does not have a known remote type."));
@@ -78,6 +89,22 @@ public class ApplyRemote implements ApiCall
             proto.getFlags(),
             proto.getEndpoint(),
             proto.getBucket(),
+            proto.getRegion(),
+            proto.getAccessKey().toByteArray(),
+            proto.getSecretKey().toByteArray(),
+            fullSyncId,
+            updateId
+        );
+    }
+
+    static EbsRemotePojo asEbsRemotePojo(IntEbsRemote proto, long fullSyncId, long updateId)
+    {
+        return new EbsRemotePojo(
+            UUID.fromString(proto.getUuid()),
+            proto.getName(),
+            proto.getFlags(),
+            proto.getUrl(),
+            proto.getAvailabilityZone(),
             proto.getRegion(),
             proto.getAccessKey().toByteArray(),
             proto.getSecretKey().toByteArray(),

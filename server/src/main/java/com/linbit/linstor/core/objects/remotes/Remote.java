@@ -89,6 +89,7 @@ public interface Remote extends Comparable<Remote>
     {
         S3,
         SATELLITE,
-        LINSTOR // controller only, should never be sent to satellite
+        LINSTOR, // controller only, should never be sent to satellite
+        EBS // only used by special (EBS) satellite
     }
 }

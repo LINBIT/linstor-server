@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.BackupToS3;
+import com.linbit.linstor.api.pojo.EbsRemotePojo;
 import com.linbit.linstor.api.pojo.LinstorRemotePojo;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.core.CtrlSecurityObjects;
@@ -24,12 +25,17 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
+import com.linbit.linstor.core.objects.remotes.EbsRemoteControllerFactory;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemoteControllerFactory;
 import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.Remote.Flags;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.S3RemoteControllerFactory;
-import com.linbit.linstor.core.objects.remotes.Remote.Flags;
+import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -39,8 +45,10 @@ import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.UuidUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -48,9 +56,11 @@ import javax.inject.Singleton;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -63,6 +73,7 @@ import reactor.core.publisher.Flux;
 public class CtrlRemoteApiCallHandler
 {
     private static final Pattern LINSTOR_URL_PATTERN = Pattern.compile("(https?://)?([^:]+)(:[0-9]+)?");
+    private static final Pattern PATTERN_AWS_REGION_FROM_AZ = Pattern.compile("([^-]+-[^-]+-.)");
 
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -74,10 +85,12 @@ public class CtrlRemoteApiCallHandler
     private final ResponseConverter responseConverter;
     private final S3RemoteControllerFactory s3remoteFactory;
     private final LinstorRemoteControllerFactory linstorRemoteFactory;
+    private final EbsRemoteControllerFactory ebsRemoteFactory;
     private final RemoteRepository remoteRepository;
     private final EncryptionHelper encryptionHelper;
     private final BackupToS3 backupHandler;
     private final CtrlSecurityObjects ctrlSecObj;
+    private final NodeRepository nodeRepo;
 
     private final ScheduleBackupService scheduleService;
 
@@ -93,11 +106,13 @@ public class CtrlRemoteApiCallHandler
         ResponseConverter responseConverterRef,
         S3RemoteControllerFactory s3remoteFactoryRef,
         LinstorRemoteControllerFactory linstorRemoteFactoryRef,
+        EbsRemoteControllerFactory ebsRemoteFactoryRef,
         RemoteRepository remoteRepositoryRef,
         EncryptionHelper encryptionHelperRef,
         BackupToS3 backupHandlerRef,
         CtrlSecurityObjects ctrlSecObjRef,
-        ScheduleBackupService scheduleServiceRef
+        ScheduleBackupService scheduleServiceRef,
+        NodeRepository nodeRepoRef
     )
     {
         apiCtx = apiCtxRef;
@@ -110,45 +125,58 @@ public class CtrlRemoteApiCallHandler
         responseConverter = responseConverterRef;
         s3remoteFactory = s3remoteFactoryRef;
         linstorRemoteFactory = linstorRemoteFactoryRef;
+        ebsRemoteFactory = ebsRemoteFactoryRef;
         remoteRepository = remoteRepositoryRef;
         encryptionHelper = encryptionHelperRef;
         backupHandler = backupHandlerRef;
         ctrlSecObj = ctrlSecObjRef;
         scheduleService = scheduleServiceRef;
+        nodeRepo = nodeRepoRef;
     }
 
     public List<S3RemotePojo> listS3()
     {
-        ArrayList<S3RemotePojo> ret = new ArrayList<>();
-        try
-        {
-            AccessContext pAccCtx = peerAccCtx.get();
-            for (Entry<RemoteName, Remote> entry : remoteRepository.getMapForView(pAccCtx).entrySet())
-            {
-                if (entry.getValue() instanceof S3Remote)
-                {
-                    ret.add(((S3Remote) entry.getValue()).getApiData(pAccCtx, null, null));
-                }
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            // ignore, we will return an empty list
-        }
-        return ret;
+        final AccessContext pAccCtx = peerAccCtx.get();
+        return listGeneric(
+            S3Remote.class,
+            remote -> remote.getApiData(pAccCtx, null, null)
+        );
     }
 
     public List<LinstorRemotePojo> listLinstor()
     {
-        ArrayList<LinstorRemotePojo> ret = new ArrayList<>();
+        final AccessContext pAccCtx = peerAccCtx.get();
+        return listGeneric(
+            LinstorRemote.class,
+            remote -> remote.getApiData(pAccCtx, null, null)
+        );
+    }
+
+    public List<EbsRemotePojo> listEbs()
+    {
+        final AccessContext pAccCtx = peerAccCtx.get();
+        return listGeneric(
+            EbsRemote.class,
+            remote -> remote.getApiData(pAccCtx, null, null)
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    private <RET_TYPE, REMOTE_CLASS extends Remote> List<RET_TYPE> listGeneric(
+        Class<REMOTE_CLASS> clazz,
+        ExceptionThrowingFunction<REMOTE_CLASS, RET_TYPE, AccessDeniedException> remoteToApiDataFunc
+    )
+    {
+        ArrayList<RET_TYPE> ret = new ArrayList<>();
         try
         {
             AccessContext pAccCtx = peerAccCtx.get();
             for (Entry<RemoteName, Remote> entry : remoteRepository.getMapForView(pAccCtx).entrySet())
             {
-                if (entry.getValue() instanceof LinstorRemote)
+                Remote remote = entry.getValue();
+                if (clazz.isInstance(remote))
                 {
-                    ret.add(((LinstorRemote) entry.getValue()).getApiData(pAccCtx, null, null));
+                    ret.add(remoteToApiDataFunc.accept((REMOTE_CLASS) remote));
                 }
             }
         }
@@ -195,16 +223,8 @@ public class CtrlRemoteApiCallHandler
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStr);
-        if (ctrlApiDataLoader.loadRemote(remoteName, false) != null)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_EXISTS_REMOTE,
-                    "A remote with the name '" + remoteNameStr +
-                        "' already exists. Please use a different name or try to modify the remote instead."
-                )
-            );
-        }
+
+        checkRemoteNameAvailable(remoteName);
 
         try
         {
@@ -303,18 +323,7 @@ public class CtrlRemoteApiCallHandler
     )
     {
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStr);
-        Remote remote = ctrlApiDataLoader.loadRemote(remoteName, true);
-        if (!(remote instanceof S3Remote))
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_EXISTS_REMOTE,
-                    "The remote with the name '" + remoteNameStr +
-                        "' is not a s3 remote."
-                )
-            );
-        }
-        S3Remote s3remote = (S3Remote) remote;
+        S3Remote s3remote = loadRemote(remoteName, S3Remote.class, "s3");
         try
         {
             if (endpointRef != null && !endpointRef.isEmpty())
@@ -396,7 +405,7 @@ public class CtrlRemoteApiCallHandler
         }
 
         ctrlTransactionHelper.commit();
-        return ctrlSatelliteUpdateCaller.updateSatellites(remote);
+        return ctrlSatelliteUpdateCaller.updateSatellites(s3remote);
     }
 
     public Flux<ApiCallRc> createLinstor(
@@ -431,16 +440,7 @@ public class CtrlRemoteApiCallHandler
     )
     {
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameRef);
-        if (ctrlApiDataLoader.loadRemote(remoteName, false) != null)
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_EXISTS_REMOTE,
-                    "A remote with the name '" + remoteNameRef +
-                        "' already exists. Please use a different name or try to modify the remote instead."
-                )
-            );
-        }
+        checkRemoteNameAvailable(remoteName);
         LinstorRemote remote = null;
 
         UUID remoteClusterId = null;
@@ -598,18 +598,7 @@ public class CtrlRemoteApiCallHandler
     )
     {
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStr);
-        Remote remote = ctrlApiDataLoader.loadRemote(remoteName, true);
-        if (!(remote instanceof LinstorRemote))
-        {
-            throw new ApiRcException(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_EXISTS_REMOTE,
-                    "The remote with the name '" + remoteNameStr +
-                        "' is not a linstor remote."
-                )
-            );
-        }
-        LinstorRemote linstorRemote = (LinstorRemote) remote;
+        LinstorRemote linstorRemote = loadRemote(remoteName, LinstorRemote.class, "linstor");
         try
         {
             if (urlStrRef != null && !urlStrRef.isEmpty())
@@ -668,6 +657,298 @@ public class CtrlRemoteApiCallHandler
         );
     }
 
+    public Flux<ApiCallRc> createEbs(
+        String remoteNameStrRef,
+        @Nullable String endpointRef,
+        @Nullable String regionRef,
+        String availabilityZoneRef,
+        String accessKeyRef,
+        String secretKeyRef
+    )
+    {
+        ResponseContext context = makeRemoteContext(
+            ApiOperation.makeModifyOperation(),
+            remoteNameStrRef
+        );
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Create EBS remote",
+            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.REMOTE_MAP),
+            () -> createEbsInTransaction(
+                remoteNameStrRef,
+                endpointRef,
+                regionRef,
+                availabilityZoneRef,
+                accessKeyRef,
+                secretKeyRef
+            )
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> createEbsInTransaction(
+        String remoteNameStrRef,
+        @Nullable String endpointRef,
+        @Nullable String regionRef,
+        String availabilityZoneRef,
+        String accessKeyRef,
+        String secretKeyRef
+    )
+    {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStrRef);
+        checkRemoteNameAvailable(remoteName);
+
+        final String region = buildRegion(regionRef, availabilityZoneRef);
+        final String endpoint = buildEndpoing(endpointRef, region);
+
+        EbsRemote remote;
+        try
+        {
+            byte[] encryptedAccessKey = encryptionHelper.encrypt(accessKeyRef);
+            byte[] encryptedSecretKey = encryptionHelper.encrypt(secretKeyRef);
+            remote = ebsRemoteFactory.create(
+                peerAccCtx.get(),
+                remoteName,
+                0,
+                new URL(endpoint),
+                region,
+                availabilityZoneRef,
+                encryptedAccessKey,
+                encryptedSecretKey
+            );
+            remoteRepository.put(apiCtx, remote);
+
+            // TODO perform check if accessKey and secretKey are correct if possible
+
+            ctrlTransactionHelper.commit();
+            responses.addEntry(ApiCallRcImpl.simpleEntry(ApiConsts.CREATED | ApiConsts.MASK_REMOTE, "Remote created"));
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "create " + getRemoteDescription(remoteNameStrRef),
+                ApiConsts.FAIL_ACC_DENIED_REMOTE
+            );
+        }
+        catch (LinStorDataAlreadyExistsException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        catch (LinStorException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_BACKUP,
+                    "Encrypting the access key or secret key failed."
+                ),
+                exc
+            );
+        }
+        catch (MalformedURLException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_INVLD_CONF,
+                        "End point '" + endpoint + "' is invalid."
+                    )
+                    .setSkipErrorReport(true)
+                    .build(),
+                exc
+            );
+        }
+
+        return Flux.<ApiCallRc>just(responses)
+            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote));
+    }
+
+    private String buildRegion(String regionRef, String availabilityZoneRef)
+    {
+        final String region;
+        if (regionRef != null)
+        {
+            region = regionRef;
+        }
+        else
+        {
+            Matcher matcher = PATTERN_AWS_REGION_FROM_AZ.matcher(availabilityZoneRef);
+            if (!matcher.find())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_MISSING_EBS_TARGET,
+                        "Cannot construct region. You have to specify the region",
+                        true
+                    )
+                );
+            }
+            region = matcher.group(1);
+        }
+        return region;
+    }
+
+    private String buildEndpoing(String endpointRef, String regionRef)
+    {
+        final String endpoint;
+        if (endpointRef != null)
+        {
+            endpoint = endpointRef;
+        }
+        else
+        {
+            endpoint = "https://ec2." + regionRef + ".amazonaws.com";
+        }
+        return endpoint;
+    }
+
+    public Flux<ApiCallRc> changeEbs(
+        String remoteNameRef,
+        @Nullable String endpointRef,
+        @Nullable String regionRef,
+        @Nullable String availabilityZoneRef,
+        @Nullable String accessKeyRef,
+        @Nullable String secretKeyRef
+    )
+    {
+        ResponseContext context = makeRemoteContext(
+            ApiOperation.makeModifyOperation(),
+            remoteNameRef
+        );
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Modify EBS remote",
+            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.REMOTE_MAP),
+            () -> changeEbsInTransaction(
+                remoteNameRef,
+                endpointRef,
+                regionRef,
+                availabilityZoneRef,
+                accessKeyRef,
+                secretKeyRef
+            )
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> changeEbsInTransaction(
+        String remoteNameStrRef,
+        @Nullable String endpointRef,
+        @Nullable String regionRef,
+        @Nullable String availabilityZoneRef,
+        @Nullable String accessKeyRef,
+        @Nullable String secretKeyRef
+    )
+    {
+        final ApiCallRcImpl responses = new ApiCallRcImpl(
+            ApiCallRcImpl.simpleEntry(
+                ApiConsts.MODIFIED,
+                "EBS remote successfully updated"
+            )
+        );
+        final RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStrRef);
+        final EbsRemote ebsRemote = loadRemote(remoteName, EbsRemote.class, "ebs");
+
+        try
+        {
+            final AccessContext pAccCtx = peerAccCtx.get();
+            final String changedEndpoint;
+            final String changedRegion;
+            if (availabilityZoneRef != null && !availabilityZoneRef.isEmpty())
+            {
+                ebsRemote.setAvailabilityZone(pAccCtx, availabilityZoneRef);
+                changedRegion = buildRegion(regionRef, availabilityZoneRef);
+                if (!Objects.equals(changedRegion, regionRef))
+                {
+                    responses.addEntry(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.MODIFIED,
+                            "Automatically updated region to " + changedRegion + " due to changed availability zone"
+                        )
+                    );
+                }
+            }
+            else
+            {
+                changedRegion = regionRef;
+            }
+
+            if (changedRegion != null && !changedRegion.isEmpty())
+            {
+                ebsRemote.setRegion(pAccCtx, changedRegion);
+                changedEndpoint = buildEndpoing(endpointRef, changedRegion);
+                if (!Objects.equals(changedEndpoint, endpointRef))
+                {
+                    responses.addEntry(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.MODIFIED,
+                            "Automatically updated endpoint to " + changedEndpoint + " due to changed region"
+                        )
+                    );
+                }
+            }
+            else
+            {
+                changedEndpoint = endpointRef;
+            }
+
+            if (changedEndpoint != null && !changedEndpoint.isEmpty())
+            {
+                ebsRemote.setUrl(pAccCtx, new URL(changedEndpoint));
+            }
+            if (accessKeyRef != null && !accessKeyRef.isEmpty())
+            {
+                ebsRemote.setEncryptedAccessKey(pAccCtx, encryptionHelper.encrypt(accessKeyRef));
+            }
+            if (secretKeyRef != null && !secretKeyRef.isEmpty())
+            {
+                ebsRemote.setEncryptedSecretKey(pAccCtx, encryptionHelper.encrypt(secretKeyRef));
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "modify " + getRemoteDescription(remoteNameStrRef),
+                ApiConsts.FAIL_ACC_DENIED_REMOTE
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        catch (MalformedURLException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.FAIL_INVLD_CONF,
+                        "End point '" + endpointRef + "' is invalid."
+                    )
+                    .setSkipErrorReport(true)
+                    .build(),
+                exc
+            );
+        }
+        catch (LinStorException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An exception occurred while modifying linstor remote object"
+                ),
+                exc
+            );
+        }
+
+        ctrlTransactionHelper.commit();
+        return Flux.<ApiCallRc>just(responses)
+            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(ebsRemote));
+    }
+
     public Flux<ApiCallRc> delete(String remoteNameStrRef)
     {
         ResponseContext context = makeRemoteContext(
@@ -682,6 +963,41 @@ public class CtrlRemoteApiCallHandler
             ),
             () -> deleteInTransaction(remoteNameStrRef)
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private void checkRemoteNameAvailable(RemoteName remoteName)
+    {
+        if (ctrlApiDataLoader.loadRemote(remoteName, false) != null)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_REMOTE,
+                    "A remote with the name '" + remoteName.displayValue +
+                        "' already exists. Please use a different name or try to modify the remote instead."
+                )
+            );
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <REMOTE_TYPE extends Remote> REMOTE_TYPE loadRemote(
+        RemoteName remoteNameRef,
+        Class<REMOTE_TYPE> remoteTypeClassRef,
+        String remoteTypeDescrRef
+    )
+    {
+        Remote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
+        if (!remoteTypeClassRef.isInstance(remote))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_REMOTE,
+                    "The remote with the name '" + remoteNameRef.displayValue +
+                        "' is not a " + remoteTypeDescrRef + " remote."
+                )
+            );
+        }
+        return (REMOTE_TYPE) remote;
     }
 
     private Flux<ApiCallRc> deleteInTransaction(String remoteNameStrRef)
@@ -702,6 +1018,8 @@ public class CtrlRemoteApiCallHandler
         }
         else
         {
+            checkIfRemoteCanBeDeletedPriviledged(remote);
+
             enableFlags(remote, Remote.Flags.DELETE);
             try
             {
@@ -732,7 +1050,7 @@ public class CtrlRemoteApiCallHandler
                     .build()
             );
 
-            flux = Flux.<ApiCallRc> just(responses);
+            flux = Flux.<ApiCallRc>just(responses);
             if (!(remote instanceof LinstorRemote))
             {
                 // satellites do not know about any linstor-remote, so updating them here would break stuff
@@ -742,6 +1060,45 @@ public class CtrlRemoteApiCallHandler
             flux = flux.concatWith(deleteImpl(remote));
         }
         return flux;
+    }
+
+    private void checkIfRemoteCanBeDeletedPriviledged(Remote remoteRef)
+    {
+        try
+        {
+            if (remoteRef instanceof EbsRemote)
+            {
+                final String remoteNameDispValue = remoteRef.getName().displayValue;
+                for (Node node : nodeRepo.getMapForView(apiCtx).values())
+                {
+                    Iterator<StorPool> storPoolIt = node.iterateStorPools(apiCtx);
+                    while (storPoolIt.hasNext())
+                    {
+                        StorPool storPool = storPoolIt.next();
+                        String ebsRemoteName = storPool.getProps(apiCtx).getProp(
+                            ApiConsts.KEY_REMOTE,
+                            ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.NAMESPC_EBS
+                        );
+                        if (ebsRemoteName != null && ebsRemoteName.equalsIgnoreCase(remoteNameDispValue))
+                        {
+                            throw new ApiRcException(
+                                ApiCallRcImpl.simpleEntry(
+                                    ApiConsts.FAIL_IN_USE,
+                                    "Remote " + remoteNameDispValue +
+                                        " cannot be deleted as a storage pool still uses it"
+                                )
+                                    .setCorrection("Delete the storage pool first")
+                                    .setSkipErrorReport(true)
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     private Flux<ApiCallRc> deleteImpl(Remote remoteRef)
@@ -837,5 +1194,4 @@ public class CtrlRemoteApiCallHandler
     {
         return "remote '" + pathRef + "'";
     }
-
 }

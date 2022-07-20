@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.protobuf.serializer;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer.CommonSerializerBuilder;
@@ -23,6 +24,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
@@ -35,6 +37,7 @@ import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
 import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;
+import com.linbit.linstor.proto.javainternal.c2s.IntEbsRemoteOuterClass.IntEbsRemote;
 import com.linbit.linstor.proto.javainternal.c2s.IntExternalFileOuterClass.IntExternalFile;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNetIf.Builder;
@@ -495,6 +498,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             ArrayList<IntSnapshot> serializedSnapshots = new ArrayList<>();
             ArrayList<IntExternalFile> serializedExtFiles = new ArrayList<>();
             ArrayList<IntS3Remote> serializedS3Remotes = new ArrayList<>();
+            ArrayList<IntEbsRemote> serializedEbsRemotes = new ArrayList<>();
 
             IntController serializedCtrl = ctrlSerializerHelper.buildControllerDataMsg();
 
@@ -534,6 +538,10 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 {
                     serializedS3Remotes.add(remoteSerializerHelper.buildS3RemoteMsg((S3Remote) remote));
                 }
+                else if (remote instanceof EbsRemote)
+                {
+                    serializedEbsRemotes.add(remoteSerializerHelper.buildEbsRemoteMsg((EbsRemote) remote));
+                }
                 else if (remote instanceof StltRemote)
                 {
                     // should never happen, can be ignored
@@ -546,6 +554,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .addAllRscs(serializedRscs)
                 .addAllSnapshots(serializedSnapshots)
                 .addAllExternalFiles(serializedExtFiles)
+                .addAllEbsRemotes(serializedEbsRemotes)
                 .addAllS3Remotes(serializedS3Remotes)
                 .setFullSyncTimestamp(fullSyncTimestamp)
                 .setCtrl(serializedCtrl);
@@ -588,6 +597,17 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             else if (remoteRef instanceof StltRemote)
             {
                 builder.setSatelliteRemote(remoteSerializerHelper.buildStltRemoteMsg((StltRemote) remoteRef));
+            }
+            else if (remoteRef instanceof EbsRemote)
+            {
+                builder.setEbsRemote(remoteSerializerHelper.buildEbsRemoteMsg((EbsRemote) remoteRef));
+            }
+            else
+            {
+                throw new ImplementationError(
+                    "Cannot serialize unknown Remote type: " +
+                        (remoteRef == null ? "null" : remoteRef.getClass().getSimpleName())
+                );
             }
             builder.setFullSyncId(fullSyncIdRef)
                 .setUpdateId(updateIdRef)
@@ -1447,6 +1467,22 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setRegion(s3remote.getRegion(serializerCtx))
                 .setAccessKey(ByteString.copyFrom(s3remote.getAccessKey(serializerCtx)))
                 .setSecretKey(ByteString.copyFrom(s3remote.getSecretKey(serializerCtx)));
+            return builder
+                .build();
+        }
+
+        private IntEbsRemote buildEbsRemoteMsg(EbsRemote ebsremote)
+            throws AccessDeniedException
+        {
+            IntEbsRemote.Builder builder = IntEbsRemote.newBuilder()
+                .setUuid(ebsremote.getUuid().toString())
+                .setName(ebsremote.getName().displayValue)
+                .setFlags(ebsremote.getFlags().getFlagsBits(serializerCtx))
+                .setUrl(ebsremote.getUrl(serializerCtx).toString())
+                .setAvailabilityZone(ebsremote.getAvailabilityZone(serializerCtx))
+                .setRegion(ebsremote.getRegion(serializerCtx))
+                .setAccessKey(ByteString.copyFrom(ebsremote.getEncryptedAccessKey(serializerCtx)))
+                .setSecretKey(ByteString.copyFrom(ebsremote.getEncryptedSecretKey((serializerCtx))));
             return builder
                 .build();
         }

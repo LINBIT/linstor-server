@@ -3,6 +3,7 @@ package com.linbit.linstor.api.protobuf;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.api.pojo.EbsRemotePojo;
 import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -19,6 +20,7 @@ import com.linbit.linstor.layer.storage.utils.ProcCryptoUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.IntControllerOuterClass.IntController;
+import com.linbit.linstor.proto.javainternal.c2s.IntEbsRemoteOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntExternalFileOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntNodeOuterClass.IntNode;
 import com.linbit.linstor.proto.javainternal.c2s.IntRscOuterClass.IntRsc;
@@ -104,6 +106,9 @@ public class FullSync implements ApiCall
             )
         );
         Set<S3RemotePojo> s3remotes = new TreeSet<>(asS3Remote(applyFullSync.getS3RemotesList(), fullSyncId, updateId));
+        Set<EbsRemotePojo> ebsRemotes = new TreeSet<>(
+            asEbsRemote(applyFullSync.getEbsRemotesList(), fullSyncId, updateId)
+        );
 
         boolean success = apiCallHandler.applyFullSync(
             msgIntControllerData.getPropsMap(),
@@ -113,6 +118,7 @@ public class FullSync implements ApiCall
             snapshots,
             extFiles,
             s3remotes,
+            ebsRemotes,
             applyFullSync.getFullSyncTimestamp(),
             Base64.decode(applyFullSync.getMasterKey()),
             applyFullSync.getCryptHash().toByteArray(),
@@ -231,6 +237,20 @@ public class FullSync implements ApiCall
         for (IntS3RemoteOuterClass.IntS3Remote s3remote : s3remoteList)
         {
             ret.add(ApplyRemote.asS3RemotePojo(s3remote, fullSyncId, updateId));
+        }
+        return ret;
+    }
+
+    private ArrayList<EbsRemotePojo> asEbsRemote(
+        List<IntEbsRemoteOuterClass.IntEbsRemote> ebsRemoteList,
+        long fullSyncId,
+        long updateId
+    )
+    {
+        ArrayList<EbsRemotePojo> ret = new ArrayList<>(ebsRemoteList.size());
+        for (IntEbsRemoteOuterClass.IntEbsRemote s3remote : ebsRemoteList)
+        {
+            ret.add(ApplyRemote.asEbsRemotePojo(s3remote, fullSyncId, updateId));
         }
         return ret;
     }

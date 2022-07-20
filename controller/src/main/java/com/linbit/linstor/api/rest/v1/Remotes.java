@@ -65,6 +65,9 @@ public class Remotes
                 remoteList.linstor_remotes = remoteHandler.listLinstor().stream()
                     .map(Json::apiToLinstorRemote)
                     .collect(Collectors.toList());
+                remoteList.ebs_remotes = remoteHandler.listEbs().stream()
+                    .map(Json::apiToEbsRemote)
+                    .collect(Collectors.toList());
 
                 return Response
                     .status(Response.Status.OK)
@@ -228,6 +231,90 @@ public class Remotes
                 remoteJson.url,
                 remoteJson.passphrase,
                 remoteJson.cluster_id
+            ).subscriberContext(
+                requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
+            );
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
+    }
+
+    @GET
+    @Path("ebs")
+    public Response getEbsRemotes(@Context Request request)
+    {
+        return requestHelper.doInScope(
+            requestHelper.createContext(ApiConsts.API_LST_REMOTE, request),
+            () ->
+            {
+                List<JsonGenTypes.EbsRemote> remoteList = remoteHandler.listEbs().stream()
+                    .map(Json::apiToEbsRemote)
+                    .collect(Collectors.toList());
+
+                return Response
+                    .status(Response.Status.OK)
+                    .entity(objectMapper.writeValueAsString(remoteList))
+                    .build();
+            },
+            false
+        );
+    }
+
+    @POST
+    @Path("ebs")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void createEbsRemote(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.EbsRemote remoteJson = objectMapper.readValue(jsonData, JsonGenTypes.EbsRemote.class);
+            Flux<ApiCallRc> flux = remoteHandler.createEbs(
+                remoteJson.remote_name,
+                remoteJson.endpoint,
+                remoteJson.region,
+                remoteJson.availability_zone,
+                remoteJson.access_key,
+                remoteJson.secret_key
+            ).subscriberContext(
+                requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
+            );
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
+    }
+
+    @PUT
+    @Path("ebs/{remoteName}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void changeEbsRemote(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("remoteName") String remoteName,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.EbsRemote remoteJson = objectMapper.readValue(jsonData, JsonGenTypes.EbsRemote.class);
+            Flux<ApiCallRc> flux = remoteHandler.changeEbs(
+                remoteName,
+                remoteJson.endpoint,
+                remoteJson.region,
+                remoteJson.availability_zone,
+                remoteJson.access_key,
+                remoteJson.secret_key
             ).subscriberContext(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );

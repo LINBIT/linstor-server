@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.14.0";
+    public static final String REST_API_VERSION = "1.15.0";
 
     /**
      * Common api reply structure
@@ -1525,6 +1525,9 @@ public class JsonGenTypes
         public long vdo_slab_size_kib = 0;
         public long vdo_logical_size_kib = 0;
         public PhysicalStorageStoragePoolCreate with_storage_pool;
+        /**
+         * initialize SED with a random password
+         */
         public boolean sed = false;
     }
 
@@ -1725,6 +1728,7 @@ public class JsonGenTypes
     {
         public List<S3Remote> s3_remotes = Collections.emptyList();
         public List<LinstorRemote> linstor_remotes = Collections.emptyList();
+        public List<EbsRemote> ebs_remotes = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -1746,6 +1750,17 @@ public class JsonGenTypes
         public String url;
         public String passphrase;
         public String cluster_id;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class EbsRemote
+    {
+        public String remote_name;
+        public String endpoint;
+        public String region;
+        public String availability_zone;
+        public String access_key;
+        public String secret_key;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

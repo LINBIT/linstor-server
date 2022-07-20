@@ -21,6 +21,10 @@ info:
 
     Changelog:
 
+    * unreleased
+      - Added GET, POST /v1/remotes/ebs
+      - Added PUT /v1/remotes/ebs/{remoteName}
+      - Extended RemoteList with ebs_remotes
     * 1.14.0
       - Added /v1/physical-storage/{node} to view devices for a single node
       - Added /v1/schedules/ and /v1/schedules/{scheduleName} endpoints as well as Schedule to create, delete, modify and list schedules
@@ -57,6 +61,7 @@ info:
        - Added /v1/resource-groups/adjustall
        - Added Backup and BackupList, as well as the entrypoint /v1/remotes/{remote_name}/backups
        - Added S3Remote and the corresponding entrypoint /v1/remotes
+       - Added LinstorRemote and the corresponding entrypoint /v1/remotes
     * 1.9.0
        - Extended SatelliteConfig with remote_spdk boolean
     * 1.8.1
@@ -182,7 +187,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.14.0
+  version: 1.15.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -5708,63 +5713,120 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/S3Remote'
-#  /v1/remotes/linstor/{remoteName}:
-#    parameters:
-#      - name: remoteName
-#        in: path
-#        required: true
-#        description: name of the remote
-#        schema:
-#          type: string
-#    put:
-#      tags:
-#        - developers
-#      summary: modify a linstor remote
-#      description: modify an existing linstor remote
-#      responses:
-#        '200':
-#          description: linstor remote modified
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/ApiCallRcList'
-#      requestBody:
-#        content:
-#          application/json:
-#            schema:
-#              $ref: '#/components/schemas/LinstorRemote'
-#  /v1/remotes/linstor:
-#    get:
-#      tags:
-#        - developers
-#      summary: list all linstor remotes
-#      description: list of all known linstor remotes on this cluster
-#      responses:
-#        '200':
-#          description: list of linstor remotes
-#          content:
-#            application/json:
-#              schema:
-#                type: array
-#                items:
-#                  $ref: '#/components/schemas/LinstorRemote'
-#    post:
-#      tags:
-#        - developers
-#      summary: creates a new linstor remote
-#      description: Creates a new linstor remote unless it already exists
-#      responses:
-#        '200':
-#          description: linstor remote successfully created
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/ApiCallRcList'
-#      requestBody:
-#        content:
-#          application/json:
-#            schema:
-#              $ref: '#/components/schemas/LinstorRemote'
+  /v1/remotes/linstor:
+    get:
+      tags:
+        - developers
+      summary: list all linstor remotes
+      description: list of all known linstor remotes on this cluster
+      responses:
+        '200':
+          description: list of linstor remotes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LinstorRemote'
+    post:
+      tags:
+        - developers
+      summary: creates a new linstor remote
+      description: Creates a new linstor remote unless it already exists
+      responses:
+        '200':
+          description: linstor remote successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinstorRemote'
+  /v1/remotes/linstor/{remoteName}:
+    parameters:
+      - name: remoteName
+        in: path
+        required: true
+        description: name of the remote
+        schema:
+          type: string
+    put:
+      tags:
+        - developers
+      summary: modify a linstor remote
+      description: modify an existing linstor remote
+      responses:
+        '200':
+          description: linstor remote modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LinstorRemote'
+  /v1/remotes/ebs:
+    get:
+      tags:
+        - developers
+      summary: list all EBS remotes
+      description: list of all known EBS remotes on this cluster
+      responses:
+        '200':
+          description: list of EBS remotes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EbsRemote'
+    post:
+      tags:
+        - developers
+      summary: creates a new EBS remote
+      description: Creates a new EBS remote unless it already exists
+      responses:
+        '200':
+          description: EBS remote successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EbsRemote'
+  /v1/remotes/ebs/{remoteName}:
+    parameters:
+      - name: remoteName
+        in: path
+        required: true
+        description: name of the remote
+        schema:
+          type: string
+    put:
+      tags:
+        - developers
+      summary: modify a EBS remote
+      description: modify an existing EBS remote
+      responses:
+        '200':
+          description: EBS remote modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EbsRemote'
   /v1/schedules:
     get:
       tags:
@@ -8342,6 +8404,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LinstorRemote'
+        ebs_remotes:
+          type: array
+          items:
+            $ref: '#/components/schemas/EbsRemote'
     S3Remote:
       type: object
       properties:
@@ -8370,6 +8436,21 @@ components:
         passphrase:
           type: string
         cluster_id:
+          type: string
+    EbsRemote:
+      type: object
+      properties:
+        remote_name:
+          type: string
+        endpoint:
+          type: string
+        region:
+          type: string
+        availability_zone:
+          type: string
+        access_key:
+          type: string
+        secret_key:
           type: string
     ScheduleList:
       type: object

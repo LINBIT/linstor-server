@@ -45,6 +45,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
@@ -65,8 +66,6 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionCtrlDatabaseDri
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdCtrlDatabaseDriver.RscLayerInfo;
-import com.linbit.linstor.dbdrivers.interfaces.remotes.LinstorRemoteCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ScheduleCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionCtrlDatabaseDriver;
@@ -80,6 +79,9 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.remotes.EbsRemoteCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.remotes.LinstorRemoteCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteCtrlDatabaseDriver;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.AbsRscLayerHelper;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
@@ -168,6 +170,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final ExternalFileCtrlDatabaseDriver extFileDriver;
     private final S3RemoteCtrlDatabaseDriver s3remoteDriver;
     private final LinstorRemoteCtrlDatabaseDriver linstorRemoteDriver;
+    private final EbsRemoteCtrlDatabaseDriver ebsRemoteDriver;
     private final ScheduleCtrlDatabaseDriver scheduleDriver;
     private final Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelper;
     private final Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelper;
@@ -219,6 +222,7 @@ public class DatabaseLoader implements DatabaseDriver
         ExternalFileCtrlDatabaseDriver extFilesDriverRef,
         S3RemoteCtrlDatabaseDriver s3remoteDriverRef,
         LinstorRemoteCtrlDatabaseDriver linstorRemoteDriverRef,
+        EbsRemoteCtrlDatabaseDriver ebsRemoteDriverRef,
         ScheduleCtrlDatabaseDriver scheduleDriverRef,
         Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelperRef,
         Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelperRef,
@@ -267,6 +271,7 @@ public class DatabaseLoader implements DatabaseDriver
         extFileDriver = extFilesDriverRef;
         s3remoteDriver = s3remoteDriverRef;
         linstorRemoteDriver = linstorRemoteDriverRef;
+        ebsRemoteDriver = ebsRemoteDriverRef;
         scheduleDriver = scheduleDriverRef;
         ctrlRscLayerDataHelper = ctrlRscLayerDataHelperRef;
         ctrlSnapLayerDataHelper = ctrlSnapLayerDataHelperRef;
@@ -331,6 +336,8 @@ public class DatabaseLoader implements DatabaseDriver
                 .unmodifiableMap(s3remoteDriver.loadAll(null));
             Map<LinstorRemote, LinstorRemote.InitMaps> loadedLinstorRemotesMap = Collections
                 .unmodifiableMap(linstorRemoteDriver.loadAll(null));
+            Map<EbsRemote, EbsRemote.InitMaps> loadedEbsRemotesMap = Collections
+                .unmodifiableMap(ebsRemoteDriver.loadAll(null));
             Map<Schedule, Schedule.InitMaps> loadedSchedulesMap = Collections
                 .unmodifiableMap(scheduleDriver.loadAll(null));
 
@@ -352,6 +359,7 @@ public class DatabaseLoader implements DatabaseDriver
                 mapByName(loadedExtFilesMap, ExternalFile::getName);
             Map<RemoteName, Remote> tmpRemoteMap = mapByName(loadedS3RemotesMap, S3Remote::getName);
             tmpRemoteMap.putAll(mapByName(loadedLinstorRemotesMap, LinstorRemote::getName));
+            tmpRemoteMap.putAll(mapByName(loadedEbsRemotesMap, EbsRemote::getName));
             Map<ScheduleName, Schedule> tmpScheduleMap = mapByName(loadedSchedulesMap, Schedule::getName);
 
 

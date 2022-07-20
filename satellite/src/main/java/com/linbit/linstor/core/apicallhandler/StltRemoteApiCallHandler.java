@@ -4,14 +4,17 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.pojo.EbsRemotePojo;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.core.ControllerPeerConnectorImpl;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.objects.EbsRemoteSatelliteFactory;
 import com.linbit.linstor.core.objects.S3RemoteSatelliteFactory;
 import com.linbit.linstor.core.objects.StltRemoteSatelliteFactory;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
@@ -25,11 +28,14 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.net.URL;
+
 @Singleton
 public class StltRemoteApiCallHandler
 {
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
+    private final EbsRemoteSatelliteFactory ebsRemoteFactory;
     private final S3RemoteSatelliteFactory s3remoteFactory;
     private final StltRemoteSatelliteFactory stltRemoteFactory;
     private final ControllerPeerConnectorImpl ctrlPeerConnector;
@@ -44,6 +50,7 @@ public class StltRemoteApiCallHandler
         DeviceManager deviceManagerRef,
         CoreModule.RemoteMap remoteMapRef,
         S3RemoteSatelliteFactory s3remoteFactoryRef,
+        EbsRemoteSatelliteFactory ebsRemoteFactoryRef,
         StltRemoteSatelliteFactory stltRemoteFactoryRef,
         ControllerPeerConnectorImpl ctrlPeerConnectorRef,
         Provider<TransactionMgr> transMgrProviderRef
@@ -53,6 +60,7 @@ public class StltRemoteApiCallHandler
         apiCtx = apiCtxRef;
         deviceManager = deviceManagerRef;
         s3remoteFactory = s3remoteFactoryRef;
+        ebsRemoteFactory = ebsRemoteFactoryRef;
         stltRemoteFactory = stltRemoteFactoryRef;
         ctrlPeerConnector = ctrlPeerConnectorRef;
 
@@ -84,6 +92,44 @@ public class StltRemoteApiCallHandler
                 errorReporter.logTrace("S3Remote marked for deletion. Deleting. %s", remoteName);
                 remoteMap.remove(remoteName);
                 localS3Remote.delete(apiCtx);
+            }
+            transMgrProvider.get().commit();
+
+            deviceManager.remoteUpdateApplied(
+                remoteName,
+                ctrlPeerConnector.getLocalNodeName()
+            );
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            errorReporter.reportError(exc);
+        }
+    }
+
+    public void applyChangesEbs(EbsRemotePojo ebsRemotePojo)
+    {
+        try
+        {
+            EbsRemote localEbsRemote = ebsRemoteFactory.getInstanceSatellite(
+                apiCtx,
+                ebsRemotePojo.getUuid(),
+                new RemoteName(ebsRemotePojo.getRemoteName(), true),
+                ebsRemotePojo.getFlags(),
+                new URL(ebsRemotePojo.getUrl()),
+                ebsRemotePojo.getRegion(),
+                ebsRemotePojo.getAvailabilityZone(),
+                ebsRemotePojo.getAccessKey(),
+                ebsRemotePojo.getSecretKey()
+            );
+
+            localEbsRemote.applyApiData(apiCtx, ebsRemotePojo);
+
+            RemoteName remoteName = localEbsRemote.getName();
+            if (localEbsRemote.getFlags().isSet(apiCtx, StltRemote.Flags.DELETE))
+            {
+                errorReporter.logTrace("EbsRemote marked for deletion. Deleting. %s", remoteName);
+                remoteMap.remove(remoteName);
+                localEbsRemote.delete(apiCtx);
             }
             transMgrProvider.get().commit();
 

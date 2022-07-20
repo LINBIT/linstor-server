@@ -46,7 +46,6 @@ public interface RestClient
 
         final VlmProviderObject<Resource> vlmData;
 
-
         RestHttpRequest(
             VlmProviderObject<Resource> vlmDataRef,
             RestOp opRef,

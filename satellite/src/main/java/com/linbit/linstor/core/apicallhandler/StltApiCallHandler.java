@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.api.pojo.EbsRemotePojo;
 import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -301,6 +302,7 @@ public class StltApiCallHandler
         Set<SnapshotPojo> snapshots,
         Set<ExternalFilePojo> extFilesRef,
         Set<S3RemotePojo> s3remotes,
+        Set<EbsRemotePojo> ebsRemotes,
         long fullSyncId,
         byte[] cryptKey,
         byte[] cryptHash,
@@ -381,6 +383,10 @@ public class StltApiCallHandler
                 {
                     remoteHandler.applyChangesS3(s3remote);
                 }
+                for (EbsRemotePojo ebsRemote : ebsRemotes)
+                {
+                    remoteHandler.applyChangesEbs(ebsRemote);
+                }
 
                 transMgrProvider.get().commit();
 
@@ -409,6 +415,10 @@ public class StltApiCallHandler
                 for (S3RemotePojo s3remote : s3remotes)
                 {
                     errorReporter.logTrace("Remote '" + s3remote.getRemoteName() + "' received.");
+                }
+                for (EbsRemotePojo ebsRemote : ebsRemotes)
+                {
+                    errorReporter.logTrace("Remote '" + ebsRemote.getRemoteName() + "' received.");
                 }
                 errorReporter.logTrace("Full sync with controller finished");
 
@@ -677,6 +687,11 @@ public class StltApiCallHandler
     public void applyStltRemoteChanges(StltRemotePojo stltRemotePojoRef)
     {
         applyChangedData(new ApplyStltRemote(stltRemotePojoRef, false));
+    }
+
+    public void applyEbsRemoteChanges(EbsRemotePojo ebsRemotePojoRef)
+    {
+        applyChangedData(new ApplyEbsRemote(ebsRemotePojoRef));
     }
 
     public void applyDeletedRemoteChanges(String remoteNameRef, long fullSyncId, long updateId)
@@ -1306,6 +1321,37 @@ public class StltApiCallHandler
                 {
                     remoteHandler.applyChangesStlt(stltRemotePojo);
                 }
+            }
+        }
+    }
+
+    private class ApplyEbsRemote implements ApplyData
+    {
+        private final EbsRemotePojo ebsRemotePojo;
+
+        ApplyEbsRemote(EbsRemotePojo ebsRemotePojoRef)
+        {
+            ebsRemotePojo = ebsRemotePojoRef;
+        }
+
+        @Override
+        public long getFullSyncId()
+        {
+            return ebsRemotePojo.getFullSyncId();
+        }
+
+        @Override
+        public long getUpdateId()
+        {
+            return ebsRemotePojo.getUpdateId();
+        }
+
+        @Override
+        public void applyChange()
+        {
+            try (LockGuard ls = LockGuard.createLocked(remoteMapLock.writeLock()))
+            {
+                remoteHandler.applyChangesEbs(ebsRemotePojo);
             }
         }
     }

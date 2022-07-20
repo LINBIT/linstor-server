@@ -15,6 +15,56 @@ public class GeneratedDatabaseTables
     // Schema name
     public static final String DATABASE_SCHEMA_NAME = "LINSTOR";
 
+    public static class EbsRemotes implements DatabaseTable
+    {
+        private EbsRemotes()
+        {
+        }
+
+        // Primary Key
+        public static final ColumnImpl NAME = new ColumnImpl("NAME", Types.VARCHAR, true, false);
+
+        public static final ColumnImpl UUID = new ColumnImpl("UUID", Types.CHAR, false, false);
+        public static final ColumnImpl DSP_NAME = new ColumnImpl("DSP_NAME", Types.VARCHAR, false, false);
+        public static final ColumnImpl FLAGS = new ColumnImpl("FLAGS", Types.BIGINT, false, false);
+        public static final ColumnImpl URL = new ColumnImpl("URL", Types.VARCHAR, false, false);
+        public static final ColumnImpl REGION = new ColumnImpl("REGION", Types.VARCHAR, false, false);
+        public static final ColumnImpl AVAILABILITY_ZONE = new ColumnImpl("AVAILABILITY_ZONE", Types.VARCHAR, false, false);
+        public static final ColumnImpl ACCESS_KEY = new ColumnImpl("ACCESS_KEY", Types.BLOB, false, false);
+        public static final ColumnImpl SECRET_KEY = new ColumnImpl("SECRET_KEY", Types.BLOB, false, false);
+
+        public static final Column[] ALL = new Column[]
+        {
+            UUID,
+            NAME,
+            DSP_NAME,
+            FLAGS,
+            URL,
+            REGION,
+            AVAILABILITY_ZONE,
+            ACCESS_KEY,
+            SECRET_KEY
+        };
+
+        @Override
+        public Column[] values()
+        {
+            return ALL;
+        }
+
+        @Override
+        public String getName()
+        {
+            return "EBS_REMOTES";
+        }
+
+        @Override
+        public String toString()
+        {
+            return "Table EBS_REMOTES";
+        }
+    }
+
     public static class Files implements DatabaseTable
     {
         private Files()
@@ -1873,6 +1923,7 @@ public class GeneratedDatabaseTables
     }
 
     public static final DatabaseTable[] ALL_TABLES; // initialized in static block
+    public static final EbsRemotes EBS_REMOTES = new EbsRemotes();
     public static final Files FILES = new Files();
     public static final KeyValueStore KEY_VALUE_STORE = new KeyValueStore();
     public static final LayerBcacheVolumes LAYER_BCACHE_VOLUMES = new LayerBcacheVolumes();
@@ -1921,6 +1972,7 @@ public class GeneratedDatabaseTables
     static
     {
         ALL_TABLES = new DatabaseTable[] {
+            EBS_REMOTES,
             FILES,
             KEY_VALUE_STORE,
             LAYER_BCACHE_VOLUMES,
@@ -1967,6 +2019,15 @@ public class GeneratedDatabaseTables
             VOLUME_GROUPS
         };
 
+        EbsRemotes.UUID.table = EBS_REMOTES;
+        EbsRemotes.NAME.table = EBS_REMOTES;
+        EbsRemotes.DSP_NAME.table = EBS_REMOTES;
+        EbsRemotes.FLAGS.table = EBS_REMOTES;
+        EbsRemotes.URL.table = EBS_REMOTES;
+        EbsRemotes.REGION.table = EBS_REMOTES;
+        EbsRemotes.AVAILABILITY_ZONE.table = EBS_REMOTES;
+        EbsRemotes.ACCESS_KEY.table = EBS_REMOTES;
+        EbsRemotes.SECRET_KEY.table = EBS_REMOTES;
         Files.UUID.table = FILES;
         Files.PATH.table = FILES;
         Files.FLAGS.table = FILES;
@@ -2256,6 +2317,8 @@ public class GeneratedDatabaseTables
     {
         switch (value.toUpperCase())
         {
+            case "EBS_REMOTES":
+                return EBS_REMOTES;
             case "FILES":
                 return FILES;
             case "KEY_VALUE_STORE":

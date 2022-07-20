@@ -13,6 +13,7 @@ import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.BCacheRscPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
+import com.linbit.linstor.api.pojo.EbsRemotePojo;
 import com.linbit.linstor.api.pojo.ExosConnectionMapPojo;
 import com.linbit.linstor.api.pojo.ExosDefaultsPojo;
 import com.linbit.linstor.api.pojo.ExosEnclosureEventPojo;
@@ -1260,6 +1261,18 @@ public class Json
         json.remote_name = pojo.getRemoteName();
         json.url = pojo.getUrl();
         // encrypted passphrase intentionally not serialized
+
+        return json;
+    }
+
+    public static JsonGenTypes.EbsRemote apiToEbsRemote(EbsRemotePojo pojo)
+    {
+        JsonGenTypes.EbsRemote json = new JsonGenTypes.EbsRemote();
+        json.remote_name = pojo.getRemoteName();
+        json.endpoint = pojo.getUrl();
+        json.region = pojo.getRegion();
+        json.availability_zone = pojo.getAvailabilityZone();
+        // encrypted access- and secret-key intentionally not serialized
 
         return json;
     }
