@@ -5,10 +5,10 @@ import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializer;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.logging.StderrErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 

@@ -3,7 +3,7 @@ package com.linbit.linstor.core.repository;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.identifier.RemoteName;
-import com.linbit.linstor.core.objects.Remote;
+import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;

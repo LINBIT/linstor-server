@@ -1,79 +1,82 @@
-package com.linbit.linstor.core.objects;
+package com.linbit.linstor.core.objects.remotes;
 
-import com.linbit.ImplementationError;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
+import com.linbit.linstor.dbdrivers.interfaces.remotes.LinstorRemoteDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
-import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.util.Map;
+import java.net.URL;
 import java.util.UUID;
 
 @Singleton
-public class StltRemoteControllerFactory
+public class LinstorRemoteControllerFactory
 {
+    private final LinstorRemoteDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objProtFactory;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgr> transMgrProvider;
     private final RemoteRepository remoteRepo;
-    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
 
     @Inject
-    public StltRemoteControllerFactory(
+    public LinstorRemoteControllerFactory(
+        LinstorRemoteDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objProtFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         RemoteRepository extFileRepoRef
     )
     {
+        dbDriver = dbDriverRef;
         objProtFactory = objProtFactoryRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
         remoteRepo = extFileRepoRef;
     }
 
-    public StltRemote create(
+    public LinstorRemote create(
         AccessContext accCtxRef,
         RemoteName nameRef,
-        String ipRef,
-        Map<String, Integer> portsRef,
-        RemoteName linstorRemoteNameRef
+        URL url,
+        @Nullable byte[] encryptedPassphraseRef,
+        @Nullable UUID remoteClusterId
     )
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {
         if (remoteRepo.get(accCtxRef, nameRef) != null)
         {
-            throw new ImplementationError("This remote name is already registered");
+            throw new LinStorDataAlreadyExistsException("This remote name is already registered");
         }
 
-        StltRemote remote = new StltRemote(
+        LinstorRemote remote = new LinstorRemote(
             objProtFactory.getInstance(
                 accCtxRef,
                 ObjectProtection.buildPath(nameRef),
                 true
             ),
             UUID.randomUUID(),
+            dbDriver,
             nameRef,
             0,
-            ipRef,
-            portsRef,
-            null,
-            linstorRemoteNameRef,
-            (StateFlagsPersistence<StltRemote>) stateFlagsDriver,
+            url,
+            encryptedPassphraseRef,
+            remoteClusterId,
             transObjFactory,
             transMgrProvider
         );
+
+        dbDriver.create(remote);
 
         return remote;
     }

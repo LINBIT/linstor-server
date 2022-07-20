@@ -1,4 +1,4 @@
-package com.linbit.linstor.core.objects;
+package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
@@ -11,7 +11,7 @@ import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.LinstorRemoteCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.remotes.LinstorRemoteCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;

@@ -1,6 +1,6 @@
-package com.linbit.linstor.dbdrivers.interfaces;
+package com.linbit.linstor.dbdrivers.interfaces.remotes;
 
-import com.linbit.linstor.core.objects.LinstorRemote;
+import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;

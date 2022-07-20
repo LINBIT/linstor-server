@@ -1,11 +1,11 @@
-package com.linbit.linstor.core.objects;
+package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.S3RemoteDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;

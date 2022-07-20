@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.linstor.core.objects.S3Remote;
-import com.linbit.linstor.dbdrivers.interfaces.S3RemoteDatabaseDriver;
+import com.linbit.linstor.core.objects.remotes.S3Remote;
+import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;

@@ -4,7 +4,7 @@ import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.SchedulePojo;
 import com.linbit.linstor.core.identifier.ScheduleName;
-import com.linbit.linstor.core.objects.Remote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.Remote.RemoteType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ScheduleDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;

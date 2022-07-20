@@ -1,4 +1,4 @@
-package com.linbit.linstor.core.objects;
+package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;

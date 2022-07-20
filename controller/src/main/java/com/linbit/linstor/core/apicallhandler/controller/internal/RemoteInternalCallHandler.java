@@ -7,7 +7,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.identifier.RemoteName;
-import com.linbit.linstor.core.objects.Remote;
+import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;

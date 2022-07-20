@@ -5,6 +5,8 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.security.AccessContext;

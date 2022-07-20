@@ -16,10 +16,10 @@ import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreate
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ScheduleName;
-import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Schedule;
+import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ScheduleRepository;
