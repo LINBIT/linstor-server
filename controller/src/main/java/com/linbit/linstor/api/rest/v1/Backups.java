@@ -9,8 +9,11 @@ import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.BackupShip;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LSrcApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupRestoreApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlScheduledBackupsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -80,17 +83,26 @@ public class Backups
     private final CtrlBackupApiCallHandler backupApiCallHandler;
     private final CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandler;
     private final ObjectMapper objectMapper;
+    private final CtrlBackupCreateApiCallHandler backupCrtApiCallHandler;
+    private final CtrlBackupRestoreApiCallHandler backupRestoreApiCallHandler;
+    private final CtrlScheduledBackupsApiCallHandler scheduledBackupsApiCallHandler;
 
     @Inject
     public Backups(
         RequestHelper requestHelperRef,
         CtrlBackupApiCallHandler backupApiCallHandlerRef,
-        CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandlerRef
+        CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandlerRef,
+        CtrlBackupCreateApiCallHandler backupCrtApiCallHandlerRef,
+        CtrlBackupRestoreApiCallHandler backupRestoreApiCallHandlerRef,
+        CtrlScheduledBackupsApiCallHandler scheduledBackupsApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
         backupApiCallHandler = backupApiCallHandlerRef;
         backupL2LSrcApiCallHandler = backupL2LSrcApiCallHandlerRef;
+        backupCrtApiCallHandler = backupCrtApiCallHandlerRef;
+        backupRestoreApiCallHandler = backupRestoreApiCallHandlerRef;
+        scheduledBackupsApiCallHandler = scheduledBackupsApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -107,7 +119,7 @@ public class Backups
         {
             JsonGenTypes.BackupCreate data = objectMapper.readValue(jsonData, JsonGenTypes.BackupCreate.class);
             boolean incremental = data.incremental != null && data.incremental;
-            responses = backupApiCallHandler
+            responses = backupCrtApiCallHandler
                 .createBackup(data.rsc_name, data.snap_name, remoteName, data.node_name, null, incremental)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
@@ -142,7 +154,7 @@ public class Backups
 
             validateBackupSelectionParams(data.last_backup, data.src_rsc_name, data.src_snap_name);
 
-            responses = backupApiCallHandler.restoreBackup(
+            responses = backupRestoreApiCallHandler.restoreBackup(
                 data.src_rsc_name,
                 data.src_snap_name,
                 data.last_backup,
@@ -406,7 +418,7 @@ public class Backups
         try
         {
             JsonGenTypes.BackupSchedule data = objectMapper.readValue(jsonData, JsonGenTypes.BackupSchedule.class);
-            responses = backupApiCallHandler
+            responses = scheduledBackupsApiCallHandler
                 .enableSchedule(data.rsc_name, data.grp_name, remoteName, scheduleName, data.node_name)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
@@ -434,7 +446,7 @@ public class Backups
         try
         {
             JsonGenTypes.BackupSchedule data = objectMapper.readValue(jsonData, JsonGenTypes.BackupSchedule.class);
-            responses = backupApiCallHandler
+            responses = scheduledBackupsApiCallHandler
                 .disableSchedule(data.rsc_name, data.grp_name, remoteName, scheduleName, data.node_name)
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
@@ -460,7 +472,7 @@ public class Backups
     )
     {
         Flux<ApiCallRc> responses;
-        responses = backupApiCallHandler
+        responses = scheduledBackupsApiCallHandler
             .deleteSchedule(rscName, grpName, remoteName, scheduleName)
             .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
         requestHelper.doFlux(

@@ -368,7 +368,7 @@ public class CtrlSnapshotCrtHelper
         return isDiskless;
     }
 
-    SnapshotDefinition createSnapshotDfnData(
+    public SnapshotDefinition createSnapshotDfnData(
         ResourceDefinition rscDfn,
         SnapshotName snapshotName,
         SnapshotDefinition.Flags[] snapshotDfnInitFlags
@@ -414,7 +414,7 @@ public class CtrlSnapshotCrtHelper
         return snapshotDfn;
     }
 
-    SnapshotVolumeDefinition createSnapshotVlmDfnData(SnapshotDefinition snapshotDfn, VolumeDefinition vlmDfn)
+    public SnapshotVolumeDefinition createSnapshotVlmDfnData(SnapshotDefinition snapshotDfn, VolumeDefinition vlmDfn)
     {
         String descriptionInline = getSnapshotVlmDfnDescriptionInline(
             snapshotDfn.getResourceName().displayValue,
@@ -530,7 +530,12 @@ public class CtrlSnapshotCrtHelper
         return snapshot;
     }
 
-    Snapshot restoreSnapshot(SnapshotDefinition snapshotDfn, Node node, RscLayerDataApi layerData, Map<String, String> renameStorPoolsMap)
+    public Snapshot restoreSnapshot(
+        SnapshotDefinition snapshotDfn,
+        Node node,
+        RscLayerDataApi layerData,
+        Map<String, String> renameStorPoolsMap
+    )
     {
         String snapshotNameStr = snapshotDfn.getName().displayValue;
         String rscNameStr = snapshotDfn.getResourceName().displayValue;
@@ -634,7 +639,7 @@ public class CtrlSnapshotCrtHelper
         return snapVlm;
     }
 
-    SnapshotVolume restoreSnapshotVolume(
+    public SnapshotVolume restoreSnapshotVolume(
         RscLayerDataApi layerData,
         Snapshot snapshot,
         SnapshotVolumeDefinition snapshotVolumeDefinition,

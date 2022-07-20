@@ -1,4 +1,4 @@
-package com.linbit.linstor.core.apicallhandler.controller;
+package com.linbit.linstor.core.apicallhandler.controller.backup;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
@@ -14,6 +14,8 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
@@ -87,7 +89,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     private final StltRemoteControllerFactory stltRemoteFactory;
 
     private final BackupShippingRestClient restClient;
-    private final CtrlBackupApiCallHandler ctrlBackupApiCallHandler;
+    private final CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandler;
     private final SystemConfRepository systemConfRepository;
     private final BackupInfoManager backupInfoMgr;
     private final RemoteRepository remoteRepo;
@@ -104,7 +106,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         ErrorReporter errorReporterRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         StltRemoteControllerFactory stltRemoteFactoryRef,
-        CtrlBackupApiCallHandler ctrlBackupApiCallHandlerRef,
+        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef,
         SystemConfRepository systemConfRepositoryRef,
         RemoteRepository remoteRepoRef,
         BackupInfoManager backupInfoMgrRef,
@@ -120,7 +122,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         errorReporter = errorReporterRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         stltRemoteFactory = stltRemoteFactoryRef;
-        ctrlBackupApiCallHandler = ctrlBackupApiCallHandlerRef;
+        ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
         systemConfRepository = systemConfRepositoryRef;
         remoteRepo = remoteRepoRef;
         backupInfoMgr = backupInfoMgrRef;
@@ -297,7 +299,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         requiredExtTools.put(ExtTools.SOCAT, null);
         Map<ExtTools, Version> optionalExtTools = new HashMap<>();
         optionalExtTools.put(ExtTools.ZSTD, null);
-        Pair<Flux<ApiCallRc>, Snapshot> createSnapshot = ctrlBackupApiCallHandler.backupSnapshot(
+        Pair<Flux<ApiCallRc>, Snapshot> createSnapshot = ctrlBackupCrtApiCallHandler.backupSnapshot(
             data.srcRscName,
             data.stltRemote.getName().displayValue,
             data.srcNodeName,
@@ -530,7 +532,7 @@ public class CtrlBackupL2LSrcApiCallHandler
 
                 }
 
-                ctrlBackupApiCallHandler.setIncrementalDependentProps(
+                ctrlBackupCrtApiCallHandler.setIncrementalDependentProps(
                     snap, prevSnapDfn, data.linstorRemote.getName().displayValue, data.scheduleName
                 );
 
@@ -717,8 +719,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         }
 
         public Flux<JsonGenTypes.ApiCallRc> sendBackupReceiveRequest(
-            BackupShippingReceiveRequest data,
-            AccessContext accCtx
+            BackupShippingReceiveRequest data
         )
         {
             Flux<JsonGenTypes.ApiCallRc> flux = Flux.create(fluxSink ->

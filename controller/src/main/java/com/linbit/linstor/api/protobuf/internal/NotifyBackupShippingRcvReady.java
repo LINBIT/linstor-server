@@ -3,7 +3,7 @@ package com.linbit.linstor.api.protobuf.internal;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LDstApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LDstApiCallHandler;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupRcvReadyOuterClass.MsgIntBackupRcvReady;
 
 import javax.inject.Inject;

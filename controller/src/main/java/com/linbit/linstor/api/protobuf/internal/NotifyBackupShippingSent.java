@@ -3,7 +3,7 @@ package com.linbit.linstor.api.protobuf.internal;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippedOuterClass.MsgIntBackupShipped;
 
 import javax.inject.Inject;
@@ -22,24 +22,24 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class NotifyBackupShippingSent implements ApiCallReactive
 {
-    private CtrlBackupApiCallHandler ctrlBackupApiCallHandler;
+    private final CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandler;
 
     @Inject
     public NotifyBackupShippingSent(
-        CtrlBackupApiCallHandler ctrlBackupApiCallHandlerRef
+        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef
     )
     {
-        ctrlBackupApiCallHandler = ctrlBackupApiCallHandlerRef;
+        ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
     }
 
     @Override
     public Flux<byte[]> executeReactive(InputStream msgDataInRef) throws IOException
     {
         MsgIntBackupShipped ship = MsgIntBackupShipped.parseDelimitedFrom(msgDataInRef);
-        return ctrlBackupApiCallHandler.shippingSent(
+        // ship.getPortsList is being ignored since the sending side does not care about ports
+        return ctrlBackupCrtApiCallHandler.shippingSent(
             ship.getRscName(),
             ship.getSnapName(),
-            ship.getPortsList(),
             ship.getSuccess()
         ).thenMany(Flux.<byte[]>empty());
     }

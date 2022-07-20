@@ -21,13 +21,13 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
-
 @Singleton
-class CtrlVlmDfnCrtApiHelper
+public class CtrlVlmDfnCrtApiHelper
 {
     private final AccessContext apiCtx;
     private final VolumeDefinitionControllerFactory volumeDefinitionFactory;
@@ -42,7 +42,7 @@ class CtrlVlmDfnCrtApiHelper
         volumeDefinitionFactory = volumeDefinitionFactoryRef;
     }
 
-    VolumeDefinition createVlmDfnData(
+    public VolumeDefinition createVlmDfnData(
         AccessContext accCtx,
         ResourceDefinition rscDfn,
         VolumeNumber volNr,

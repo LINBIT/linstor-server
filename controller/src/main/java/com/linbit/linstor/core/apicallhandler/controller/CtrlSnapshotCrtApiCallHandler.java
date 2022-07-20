@@ -333,7 +333,7 @@ public class CtrlSnapshotCrtApiCallHandler
     }
 
     @SuppressWarnings("unchecked")
-    Flux<ApiCallRc> postCreateSnapshot(SnapshotDefinition snapshotDfn)
+    public Flux<ApiCallRc> postCreateSnapshot(SnapshotDefinition snapshotDfn)
     {
         return postCreateSnapshotSuppressingErrorClasses(snapshotDfn, CtrlResponseUtils.DelayedApiRcException.class);
     }
@@ -347,7 +347,7 @@ public class CtrlSnapshotCrtApiCallHandler
      * @return
      */
     @SuppressWarnings("unchecked")
-    <E extends Throwable> Flux<ApiCallRc> postCreateSnapshotSuppressingErrorClasses(
+    public <E extends Throwable> Flux<ApiCallRc> postCreateSnapshotSuppressingErrorClasses(
         SnapshotDefinition snapshotDfn,
         Class<E>... suppressErrorClasses
     )

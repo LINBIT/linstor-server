@@ -1,4 +1,4 @@
-package com.linbit.linstor.core.apicallhandler.controller;
+package com.linbit.linstor.core.apicallhandler.controller.backup;
 
 import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
@@ -17,6 +17,9 @@ import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
+import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -78,7 +81,7 @@ public class CtrlBackupL2LDstApiCallHandler
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ErrorReporter errorReporter;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
-    private final CtrlBackupApiCallHandler backupApiCallHandler;
+    private final CtrlBackupRestoreApiCallHandler backupRestoreApiCallHandler;
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final DynamicNumberPool snapshotShippingPortPool;
     private final ModularCryptoProvider cryptoProvider;
@@ -89,6 +92,7 @@ public class CtrlBackupL2LDstApiCallHandler
     private final BackupInfoManager backupInfoMgr;
     private final CtrlBackupL2LSrcApiCallHandler.BackupShippingRestClient backupShippingRestClient;
     private final Provider<Peer> peerProvider;
+    private final CtrlBackupApiHelper backupHelper;
 
     @Inject
     public CtrlBackupL2LDstApiCallHandler(
@@ -98,7 +102,7 @@ public class CtrlBackupL2LDstApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         ErrorReporter errorReporterRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
-        CtrlBackupApiCallHandler backupApiCallHandlerRef,
+        CtrlBackupRestoreApiCallHandler backupRestoreApiCallHandlerRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef,
         ModularCryptoProvider cryptoProviderRef,
@@ -108,7 +112,8 @@ public class CtrlBackupL2LDstApiCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         BackupInfoManager backupInfoMgrRef,
         CtrlBackupL2LSrcApiCallHandler helperReference,
-        Provider<Peer> peerProviderRef
+        Provider<Peer> peerProviderRef,
+        CtrlBackupApiHelper backupHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -117,7 +122,7 @@ public class CtrlBackupL2LDstApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         errorReporter = errorReporterRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
-        backupApiCallHandler = backupApiCallHandlerRef;
+        backupRestoreApiCallHandler = backupRestoreApiCallHandlerRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         snapshotShippingPortPool = snapshotShippingPortPoolRef;
         cryptoProvider = cryptoProviderRef;
@@ -127,6 +132,7 @@ public class CtrlBackupL2LDstApiCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         backupInfoMgr = backupInfoMgrRef;
         peerProvider = peerProviderRef;
+        backupHelper = backupHelperRef;
         backupShippingRestClient = helperReference.new BackupShippingRestClient(errorReporter);
     }
 
@@ -206,7 +212,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP).buildDeferred(),
                     () -> startReceivingInTransaction(data)
-                ).map(startInfo -> snapshotToResponse(data, startInfo));
+                ).map(startInfo -> snapshotToResponse(startInfo));
                 // .onErrorResume(err -> errorToResponse(err));
             }
             catch (ExhaustedPoolException exc)
@@ -317,7 +323,7 @@ public class CtrlBackupL2LDstApiCallHandler
                 final NodeName nodeName = peerProvider.get().getNode().getName();
 
                 return ctrlSatelliteUpdateCaller.updateSatellites(stltRemote)
-                    .concatWith(backupApiCallHandler.startStltCleanup(peerProvider.get(), rscName, snapName, nodeName))
+                    .concatWith(backupHelper.startStltCleanup(peerProvider.get(), rscName, snapName, nodeName))
                     .concatWith(
                         ctrlSatelliteUpdateCaller.updateSatellites(
                             snapDfn,
@@ -375,15 +381,14 @@ public class CtrlBackupL2LDstApiCallHandler
                         Collections.emptySet() :
                         Collections.singleton(LinstorParsingUtils.asNodeName(data.dstNodeName))
                 ).flatMapMany(
-                    thinFreeCapacities -> scopeRunner.fluxInTransactionalScope(
+                    ignoredThinFreeCapacities -> scopeRunner.fluxInTransactionalScope(
                         "restore backup",
                         lockGuardFactory.buildDeferred(
                             LockType.WRITE,
                             LockObj.NODES_MAP,
                             LockObj.RSC_DFN_MAP
                         ),
-                        () -> backupApiCallHandler.restoreBackupL2LInTransaction(
-                            thinFreeCapacities,
+                        () -> backupRestoreApiCallHandler.restoreBackupL2LInTransaction(
                             data
                         )
                     )
@@ -430,7 +435,6 @@ public class CtrlBackupL2LDstApiCallHandler
     }
 
     private BackupShippingResponse snapshotToResponse(
-        BackupShippingData dataRef,
         BackupShippingStartInfo startInfo
     )
     {
@@ -523,8 +527,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     ports,
                     data.incrBaseSnapDfnUuid,
                     useZstd
-                ),
-                apiCtx
+                )
             ).thenMany(Flux.empty()); // request is from stlt, so instead of converting from JsonGenTypes.ApiCallRc to
                                       // ApiCallRc the response gets ignored
         }
@@ -542,18 +545,6 @@ public class CtrlBackupL2LDstApiCallHandler
             );
         }
         return Flux.just(responses);
-    }
-
-    private Flux<BackupShippingResponse> errorToResponse(Throwable error)
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-
-        return Flux.just(
-            new BackupShippingResponse(
-                false,
-                responses
-            )
-        ).thenMany(Flux.error(error));
     }
 
     static class BackupShippingStartInfo

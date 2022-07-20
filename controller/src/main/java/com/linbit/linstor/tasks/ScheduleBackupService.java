@@ -12,8 +12,8 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LSrcApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.objects.Remote;
@@ -88,7 +88,7 @@ public class ScheduleBackupService implements SystemService
     private final ScheduleRepository scheduleRepo;
     private final LockGuardFactory lockGuardFactory;
     private final ErrorReporter errorReporter;
-    private final Provider<CtrlBackupApiCallHandler> backupApiCallHandler;
+    private final Provider<CtrlBackupCreateApiCallHandler> backupCrtApiCallHandler;
     private final Provider<CtrlBackupL2LSrcApiCallHandler> backupL2LSrcApiCallHandler;
     private final ScopeRunner scopeRunner;
 
@@ -114,7 +114,7 @@ public class ScheduleBackupService implements SystemService
         ScheduleRepository scheduleRepoRef,
         LockGuardFactory lockGuardFactoryRef,
         ErrorReporter errorReporterRef,
-        Provider<CtrlBackupApiCallHandler> backupApiCallHandlerRef,
+        Provider<CtrlBackupCreateApiCallHandler> backupCrtApiCallHandlerRef,
         Provider<CtrlBackupL2LSrcApiCallHandler> backupL2LSrcApiCallHandlerRef,
         ScopeRunner scopeRunnerRef
     )
@@ -127,7 +127,7 @@ public class ScheduleBackupService implements SystemService
         scheduleRepo = scheduleRepoRef;
         lockGuardFactory = lockGuardFactoryRef;
         errorReporter = errorReporterRef;
-        backupApiCallHandler = backupApiCallHandlerRef;
+        backupCrtApiCallHandler = backupCrtApiCallHandlerRef;
         backupL2LSrcApiCallHandler = backupL2LSrcApiCallHandlerRef;
         scopeRunner = scopeRunnerRef;
         serviceInstanceName = SERVICE_NAME;
@@ -412,7 +412,7 @@ public class ScheduleBackupService implements SystemService
                 BackupShippingTask task = new BackupShippingTask(
                     accCtx,
                     errorReporter,
-                    backupApiCallHandler.get(),
+                    backupCrtApiCallHandler.get(),
                     backupL2LSrcApiCallHandler.get(),
                     config,
                     this,

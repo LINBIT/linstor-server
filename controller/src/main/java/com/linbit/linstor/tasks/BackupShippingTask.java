@@ -4,8 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlBackupL2LSrcApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.objects.LinstorRemote;
 import com.linbit.linstor.core.objects.S3Remote;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -23,7 +23,7 @@ public class BackupShippingTask implements TaskScheduleService.Task
 {
     private final AccessContext accCtx;
     private final ErrorReporter errorReporter;
-    private final CtrlBackupApiCallHandler backupApiCallHandler;
+    private final CtrlBackupCreateApiCallHandler backupCrtApiCallHandler;
     private final CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandler;
     private final ScheduledShippingConfig conf;
     private final ScheduleBackupService scheduleBackupService;
@@ -36,7 +36,7 @@ public class BackupShippingTask implements TaskScheduleService.Task
     public BackupShippingTask(
         AccessContext accCtxRef,
         ErrorReporter errorReporterRef,
-        CtrlBackupApiCallHandler backupApiCallHandlerRef,
+        CtrlBackupCreateApiCallHandler backupCrtApiCallHandlerRef,
         CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandlerRef,
         ScheduledShippingConfig confRef,
         ScheduleBackupService scheduleBackupServiceRef,
@@ -48,7 +48,7 @@ public class BackupShippingTask implements TaskScheduleService.Task
     {
         accCtx = accCtxRef;
         errorReporter = errorReporterRef;
-        backupApiCallHandler = backupApiCallHandlerRef;
+        backupCrtApiCallHandler = backupCrtApiCallHandlerRef;
         backupL2LSrcApiCallHandler = backupL2LSrcApiCallHandlerRef;
         conf = confRef;
         scheduleBackupService = scheduleBackupServiceRef;
@@ -74,7 +74,7 @@ public class BackupShippingTask implements TaskScheduleService.Task
             Flux<ApiCallRc> dumbDummyFluxBecauseFinal;
             try
             {
-                dumbDummyFluxBecauseFinal = backupApiCallHandler
+                dumbDummyFluxBecauseFinal = backupCrtApiCallHandler
                     .createBackup(
                         rscName, "", conf.remote.getName().displayValue, nodeName,
                         conf.schedule.getName().displayValue, inc
