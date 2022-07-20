@@ -5,8 +5,12 @@ import com.linbit.GenericName;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 
+import java.util.UUID;
+
 public class RemoteName extends GenericName
 {
+    private static final String FORMAT_STLT_REMOTE = ".stlt:%s_%s_%s";
+
     public RemoteName(String remoteNameRef) throws InvalidNameException
     {
         this(remoteNameRef, false);
@@ -52,5 +56,10 @@ public class RemoteName extends GenericName
             throw new ImplementationError("Internal remote names should not throw InvalidNameExceptions", exc);
         }
         return remoteName;
+    }
+
+    public static RemoteName createStltRemoteName(String rscNameRef, String snapshotNameRef, UUID uuidRef)
+    {
+        return createInternal(String.format(FORMAT_STLT_REMOTE, rscNameRef, snapshotNameRef, uuidRef.toString()));
     }
 }

@@ -348,7 +348,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             stltRemote = stltRemoteFactoryRef.create(
                 accCtxRef,
                 // add random uuid to avoid naming conflict
-                RemoteName.createInternal(rscNameRef + "_" + snapshotNameRef + "_" + UUID.randomUUID().toString()),
+                RemoteName.createStltRemoteName(rscNameRef, snapshotNameRef, UUID.randomUUID()),
                 null,
                 snapShipPortsRef,
                 linstorRemoteNameRef
