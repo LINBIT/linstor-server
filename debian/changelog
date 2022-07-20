@@ -1,3 +1,22 @@
+linstor-server (1.19.0-1) experimental; urgency=medium
+
+  [ Johanna Kucera ]
+  * BackupShipping: fix support for Google and DigitalOcean remotes
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * autoplace: make SelectionManager public
+  * autoplace: add tests for SelectionManager
+  * autoplace: only migrate tiebreaker to eligible diskless
+  * autoplace: filter OnSame:prop=val in SelectionManager
+
+  [ Gabor Hernadi ]
+  * Exos,port: Correctly unset 'Connected' if necessary
+
+  [ Rene Peinthor ]
+  * grizzlyservice: improve error logging and show exception
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 20 Jul 2022 06:39:03 +0000
+
 linstor-server (1.19.0~rc.1-1) experimental; urgency=medium
 
   [ Moritz "WanzenBug" Wanzenböck ]
