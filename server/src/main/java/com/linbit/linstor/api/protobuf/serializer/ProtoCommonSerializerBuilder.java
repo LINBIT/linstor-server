@@ -1420,8 +1420,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case CRYPT_SETUP:
                 ret = ExternalTools.CRYPT_SETUP;
                 break;
-            case DRBD9:
+            case DRBD9_KERNEL:
                 ret = ExternalTools.DRBD9;
+                break;
+            case DRBD9_UTILS:
+                ret = ExternalTools.DRBD_UTILS;
                 break;
             case DRBD_PROXY:
                 ret = ExternalTools.DRBD_PROXY;

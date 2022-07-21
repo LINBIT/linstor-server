@@ -9,6 +9,7 @@ message ExternalToolsInfo
         UNKNOWN = 0;
 
         DRBD9 = 1;
+        DRBD_UTILS = 21;
         DRBD_PROXY = 2;
         CRYPT_SETUP = 3;
         LVM = 4;
@@ -28,6 +29,7 @@ message ExternalToolsInfo
         SAS_PHY = 18;
         SAS_DEVICE = 19;
         BCACHE_TOOLS = 20;
+        // next id: 22
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

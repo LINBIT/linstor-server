@@ -97,6 +97,7 @@ public class StltExtToolsChecker
             ExtToolsInfo[] infoArray =
             {
                 getDrbd9Info(),
+                getDrbdUtilsInfo(),
                 getDrbdProxyInfo(),
                 getCryptSetupInfo(),
                 getLvmInfo(),
@@ -148,27 +149,52 @@ public class StltExtToolsChecker
     private ExtToolsInfo getDrbd9Info()
     {
         ExtToolsInfo drbdInfo;
-        drbdVersionCheck.checkVersion();
+        drbdVersionCheck.checkKernelVersion();
         if (drbdVersionCheck.hasDrbd9())
         {
             drbdInfo = new ExtToolsInfo(
-                ExtTools.DRBD9,
+                ExtTools.DRBD9_KERNEL,
                 true,
-                (int) drbdVersionCheck.getMajorVsn(),
-                (int) drbdVersionCheck.getMinorVsn(),
-                (int) drbdVersionCheck.getPatchLvl(),
+                drbdVersionCheck.getKernelVsn(),
                 Collections.emptyList()
             );
         }
         else
         {
             drbdInfo = new ExtToolsInfo(
-                ExtTools.DRBD9,
+                ExtTools.DRBD9_KERNEL,
                 false,
                 null,
                 null,
                 null,
-                drbdVersionCheck.getNotSupportedReasons()
+                drbdVersionCheck.getKernelNotSupportedReasons()
+            );
+        }
+        return drbdInfo;
+    }
+
+    private ExtToolsInfo getDrbdUtilsInfo()
+    {
+        ExtToolsInfo drbdInfo;
+        drbdVersionCheck.checkUtilsVersion();
+        if (drbdVersionCheck.hasUtils())
+        {
+            drbdInfo = new ExtToolsInfo(
+                ExtTools.DRBD9_UTILS,
+                true,
+                drbdVersionCheck.getUtilsVsn(),
+                Collections.emptyList()
+            );
+        }
+        else
+        {
+            drbdInfo = new ExtToolsInfo(
+                ExtTools.DRBD9_UTILS,
+                false,
+                null,
+                null,
+                null,
+                drbdVersionCheck.getUtilsNotSupportedReasons()
             );
         }
         return drbdInfo;

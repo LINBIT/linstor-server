@@ -6,6 +6,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.timer.CoreTimer;
 
 import javax.inject.Inject;
@@ -35,7 +36,8 @@ public class DrbdVersion
         "- Make sure the system is running a version of DRBD that is supported by " +
         LinStor.PROGRAM;
 
-    public static final String KEY_VSN_CODE = "DRBD_KERNEL_VERSION_CODE";
+    public static final String KEY_DRBD_VSN_CODE = "DRBD_KERNEL_VERSION_CODE";
+    public static final String KEY_UTILS_VSN_CODE = "DRBDADM_VERSION_CODE";
 
     private static final Object SYNC_OBJ = new Object();
 
@@ -44,53 +46,96 @@ public class DrbdVersion
     public static final int SHIFT_MINOR_VSN = 8;
     public static final int MASK_VSN_ELEM = 0xFF;
 
-    public static final short DRBD9_MAJOR_VSN = 9;
+    public static final Version DRBD9_VSN = new Version(9);
+    // TODO: figure out the necessary version
+    public static final Version DRBD_UTILS_VSN = new Version(9);
 
-    public static final short UNDETERMINED_VERSION = -1;
+    public static final int UNDETERMINED_VERSION = -1;
 
-    private short majorVsn = UNDETERMINED_VERSION;
-    private short minorVsn = UNDETERMINED_VERSION;
-    private short patchLvl = UNDETERMINED_VERSION;
+    private Version drbdVsn = new Version();
+    private Version utilsVsn = new Version();
 
     private CoreTimer timerRef;
     private ErrorReporter errorLogRef;
-    private List<String> notSupportedReasons;
+    private List<String> drbdNotSupportedReasons;
+    private List<String> utilsNotSupportedReasons;
 
     @Inject
     public DrbdVersion(CoreTimer coreTimer, ErrorReporter errorReporter)
     {
         this.timerRef = coreTimer;
         this.errorLogRef = errorReporter;
-        notSupportedReasons = new ArrayList<>();
+        drbdNotSupportedReasons = new ArrayList<>();
+        utilsNotSupportedReasons = new ArrayList<>();
     }
 
     /**
-     * Initializes the version variables
-     *  majorVsn
-     *  majorVsn
-     *  patchLvl
-     *
+     * Initializes the DRBD kernel and utils version variables
+     * <br/>
+     * If the instance was unable to determine the DRBD versions, an error will be raised,
+     * but only if DRBD is installed.
+     */
+    public void checkDrbdVersions()
+    {
+        checkKernelVersion();
+        checkUtilsVersion();
+    }
+
+    /**
+     * Initializes the DRBD version variable
+     * <br/>
      * If the instance was unable to determine the DRBD version, an error will be raised,
      * but only if DRBD is installed.
      */
-    public void checkVersion()
+    public void checkKernelVersion()
+    {
+        checkVersion(false);
+    }
+
+    /**
+     * Initializes the DRBD utils version variable
+     * <br/>
+     * If the instance was unable to determine the DRBD utils version, an error will be raised,
+     * but only if DRBD is installed.
+     */
+    public void checkUtilsVersion()
+    {
+        checkVersion(true);
+    }
+
+    private void checkVersion(boolean utils)
     {
         synchronized (SYNC_OBJ)
         {
             ExtCmd cmd = new ExtCmd(timerRef, errorLogRef);
             String value = null;
+            String key;
+            String errorText;
+            List<String> notSupportedReasons;
+            if (utils)
+            {
+                key = KEY_UTILS_VSN_CODE;
+                errorText = "DRBD utils";
+                notSupportedReasons = utilsNotSupportedReasons;
+            }
+            else
+            {
+                key = KEY_DRBD_VSN_CODE;
+                errorText = "DRBD kernel";
+                notSupportedReasons = drbdNotSupportedReasons;
+            }
             try
             {
-                restoreDefaults();
+                restoreDefaults(utils);
                 OutputData cmdData = cmd.exec(VSN_QUERY_COMMAND);
                 try (BufferedReader vsnReader = new BufferedReader(new InputStreamReader(cmdData.getStdoutStream())))
                 {
-                    String key = KEY_VSN_CODE + "=";
+                    String longKey = key + "=";
                     for (String vsnLine = vsnReader.readLine(); vsnLine != null; vsnLine = vsnReader.readLine())
                     {
-                        if (vsnLine.startsWith(key))
+                        if (vsnLine.startsWith(longKey))
                         {
-                            value = vsnLine.substring(key.length());
+                            value = vsnLine.substring(longKey.length());
                             break;
                         }
                     }
@@ -102,16 +147,41 @@ public class DrbdVersion
                             value = value.substring(2);
                         }
                         int vsnCode = Integer.parseInt(value, HEXADECIMAL);
-                        majorVsn = (short) ((vsnCode >>> SHIFT_MAJOR_VSN) & MASK_VSN_ELEM);
-                        minorVsn = (short) ((vsnCode >>> SHIFT_MINOR_VSN) & MASK_VSN_ELEM);
-                        patchLvl = (short) (vsnCode & MASK_VSN_ELEM);
+                        if (utils)
+                        {
+                            utilsVsn = new Version(
+                                ((vsnCode >>> SHIFT_MAJOR_VSN) & MASK_VSN_ELEM),
+                                ((vsnCode >>> SHIFT_MINOR_VSN) & MASK_VSN_ELEM),
+                                (vsnCode & MASK_VSN_ELEM)
+                            );
+                        }
+                        else
+                        {
+                            drbdVsn = new Version(
+                                ((vsnCode >>> SHIFT_MAJOR_VSN) & MASK_VSN_ELEM),
+                                ((vsnCode >>> SHIFT_MINOR_VSN) & MASK_VSN_ELEM),
+                                (vsnCode & MASK_VSN_ELEM)
+                            );
+                        }
 
                         if (!hasDrbd9())
                         {
-                            notSupportedReasons.add(
-                                "DRBD version has to be >= 9. Current DRBD version: " +
-                                    majorVsn + "." + minorVsn + "." + patchLvl
-                            );
+                            if (!utils)
+                            {
+                                drbdNotSupportedReasons.add(
+                                    "DRBD version has to be >= " + DRBD9_VSN + ". Current DRBD version: " + drbdVsn
+                                );
+                            }
+                        }
+                        else if (!hasUtils())
+                        {
+                            if (utils)
+                            {
+                                utilsNotSupportedReasons.add(
+                                    "DRBD utils version has to be >= " + DRBD_UTILS_VSN + ". Current utils version: " +
+                                        utilsVsn
+                                );
+                            }
                         }
                         else
                         {
@@ -127,10 +197,10 @@ public class DrbdVersion
                     new LinStorException(
                         LOG_TXT_CHECK_FAILED,
                         ERR_DSC_CHECK_FAILED,
-                        "The value of the " + KEY_VSN_CODE + " field in the output of the " + DRBD_UTILS_CMD +
+                        "The value of the " + key + " field in the output of the " + DRBD_UTILS_CMD +
                             "utility is unparsable",
                         ERR_CORR_TXT,
-                        "The value of the " + KEY_VSN_CODE + " field is:\n" + value,
+                        "The value of the " + key + " field is:\n" + value,
                         nfExc
                     )
                 );
@@ -138,105 +208,167 @@ public class DrbdVersion
             catch (IOException | ChildProcessTimeoutException exc)
             {
                 errorLogRef.logWarning("Unable to check drbdadm version. '" + exc.getMessage() + "'");
-                notSupportedReasons.add(exc.getClass().getSimpleName() + " occurred when checking DRBD version");
+                notSupportedReasons
+                    .add(exc.getClass().getSimpleName() + " occurred when checking the " + errorText + " version");
             }
         }
     }
 
     /**
      * Returns the DRBD major version
-     *
+     * <br/>
      * E.g., for DRBD 9.0.15, the method will yield the value 9
-     *
+     * <br/>
      * If the instance was unable to determine the DRBD version,
      * the method returns {@code UNDETERMINED_VERSION (-1)}.
      *
      * @return DRBD major version (0 - 255), if successfully determined; UNDETERMINED_VERSION (-1) otherwise.
      */
-    public short getMajorVsn()
+    public int getDrbdMajorVsn()
     {
-        return majorVsn;
+        return drbdVsn.getMajor() == null ? UNDETERMINED_VERSION : drbdVsn.getMajor();
+    }
+
+    /**
+     * Returns the DRBD utils major version
+     * <br/>
+     * E.g., for DRBD utils 9.0.15, the method will yield the value 9
+     * <br/>
+     * If the instance was unable to determine the DRBD utils version,
+     * the method returns {@code UNDETERMINED_VERSION (-1)}.
+     *
+     * @return DRBD utils major version (0 - 255), if successfully determined; UNDETERMINED_VERSION (-1) otherwise.
+     */
+    public int getUtilsMajorVsn()
+    {
+        return utilsVsn.getMajor() == null ? UNDETERMINED_VERSION : utilsVsn.getMajor();
     }
 
     /**
      * Returns the DRBD minor version
-     *
+     * <br/>
      * E.g., for DRBD 9.0.15, the method will yield the value 0
-     *
+     * <br/>
      * If the instance was unable to determine the DRBD version,
      * the method returns {@code UNDETERMINED_VERSION (-1)}.
      *
      * @return DRBD minor version (0 - 255), if successfully determined; UNDETERMINED_VERSION (-1) otherwise.
      */
-    public short getMinorVsn()
+    public int getDrbdMinorVsn()
     {
-        return minorVsn;
+        return drbdVsn.getMinor() == null ? UNDETERMINED_VERSION : drbdVsn.getMinor();
+    }
+
+    /**
+     * Returns the DRBD utils minor version
+     * <br/>
+     * E.g., for DRBD utils 9.0.15, the method will yield the value 0
+     * <br/>
+     * If the instance was unable to determine the DRBD utils version,
+     * the method returns {@code UNDETERMINED_VERSION (-1)}.
+     *
+     * @return DRBD utils minor version (0 - 255), if successfully determined; UNDETERMINED_VERSION (-1) otherwise.
+     */
+    public int getUtilsMinorVsn()
+    {
+        return utilsVsn.getMinor() == null ? UNDETERMINED_VERSION : utilsVsn.getMinor();
     }
 
     /**
      * Returns the DRBD patch level
-     *
+     * <br/>
      * E.g., for DRBD 9.0.15, the method will yield the value 15
-     *
+     * <br/>
      * If the instance was unable to determine the DRBD version,
      * the method returns {@code UNDETERMINED_VERSION (-1)}.
      *
      * @return DRBD patch level (0 - 255), if successfully determined; UNDETERMINED_VERSION (-1) otherwise.
      */
-    public short getPatchLvl()
+    public int getDrbdPatchLvl()
     {
-        return patchLvl;
+        return drbdVsn.getPatch() == null ? UNDETERMINED_VERSION : drbdVsn.getPatch();
     }
 
     /**
-     * Returns an array 3 of element type short, containing the DRBD version
+     * Returns the DRBD utils patch level
+     * <br/>
+     * E.g., for DRBD utils 9.0.15, the method will yield the value 15
+     * <br/>
+     * If the instance was unable to determine the DRBD utils version,
+     * the method returns {@code UNDETERMINED_VERSION (-1)}.
      *
-     * Array indexes of the DRBD version information parts:
-     *   0 DRBD major version
-     *   1 DRBD minor version
-     *   2 DRBD patch level
-     *
-     * E.g., for DRBD 9.0.15, a call of the form
-     *   {@code short[] drbdVsn = instance.getVsn();}
-     * will yield the following values:
-     *   drbdVsn[0] == 9
-     *   drbdVsn[1] == 0
-     *   drbdVsn[2] == 15
-     *
-     * If the instance was unable to determine the DRBD version, all elements of the array will
-     * have the value {@code UNDETERMINED_VERSION (-1)}.
-     *
-     * @return Array 3 of element type short, containing the DRBD version parts
+     * @return DRBD utils patch level (0 - 255), if successfully determined; UNDETERMINED_VERSION (-1) otherwise.
      */
-    public short[] getVsn()
+    public int getUtilsPatchLvl()
     {
-        return new short[] {majorVsn, minorVsn, patchLvl};
+        return utilsVsn.getPatch() == null ? UNDETERMINED_VERSION : utilsVsn.getPatch();
+    }
+
+    /**
+     * Returns the DRBD version as a {@link Version}
+     * <br/>
+     * If the instance was unable to determine the DRBD version, all elements of the Version will
+     * have the value null.
+     *
+     * @return full DRBD version
+     */
+    public Version getKernelVsn()
+    {
+        return drbdVsn;
+    }
+
+    /**
+     * Returns the DRBD utils version as a {@link Version}
+     * <br/>
+     * If the instance was unable to determine the DRBD utils version, all elements of the Version will
+     * have the value null.
+     *
+     * @return full DRBD utils version
+     */
+    public Version getUtilsVsn()
+    {
+        return utilsVsn;
     }
 
     /**
      * Indicates whether the DRBD version that was detected is at least DRBD 9
-     *
+     * <br/>
      * If the instance was unable to determine the DRBD version, the method returns {@code false}.
      *
      * @return true if the DRBD major version is equal to or greater than 9, false otherwise
      */
     public boolean hasDrbd9()
     {
-        return majorVsn >= DRBD9_MAJOR_VSN;
+        return drbdVsn.greaterOrEqual(DRBD9_VSN);
     }
 
     /**
-     * Assigns the default value UNDETERMINED_VERSION to the version variables
-     *  majorVsn
-     *  majorVsn
-     *  patchLvl
+     * Indicates whether the DRBD utils version that was detected is at least DRBD-utils 9
+     * <br/>
+     * If the instance was unable to determine the DRBD utils version, the method returns {@code false}.
+     *
+     * @return true if the DRBD utils major version is equal to or greater than 9, false otherwise
      */
-    private void restoreDefaults()
+    public boolean hasUtils()
     {
-        majorVsn = UNDETERMINED_VERSION;
-        minorVsn = UNDETERMINED_VERSION;
-        patchLvl = UNDETERMINED_VERSION;
-        notSupportedReasons.clear();
+        return utilsVsn.greaterOrEqual(DRBD_UTILS_VSN);
+    }
+
+    /**
+     * Resets the given version and notSupportedReasons
+     */
+    private void restoreDefaults(boolean utils)
+    {
+        if (utils)
+        {
+            utilsVsn = new Version();
+            drbdNotSupportedReasons.clear();
+        }
+        else
+        {
+            drbdVsn = new Version();
+            utilsNotSupportedReasons.clear();
+        }
     }
 
     /**
@@ -255,8 +387,13 @@ public class DrbdVersion
         }
     }
 
-    public List<String> getNotSupportedReasons()
+    public List<String> getKernelNotSupportedReasons()
     {
-        return Collections.unmodifiableList(notSupportedReasons);
+        return Collections.unmodifiableList(drbdNotSupportedReasons);
+    }
+
+    public List<String> getUtilsNotSupportedReasons()
+    {
+        return Collections.unmodifiableList(utilsNotSupportedReasons);
     }
 }

@@ -2,25 +2,27 @@ package com.linbit.drbd;
 
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.utils.TestExtCmd;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 import com.linbit.linstor.timer.CoreTimerImpl;
 
-import static com.linbit.drbd.DrbdVersion.DRBD9_MAJOR_VSN;
 import static com.linbit.drbd.DrbdVersion.UNDETERMINED_VERSION;
 import static com.linbit.drbd.DrbdVersion.VSN_QUERY_COMMAND;
+
+import java.util.HashSet;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import org.junit.runner.RunWith;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.util.HashSet;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
@@ -67,69 +69,24 @@ public class DrbdVersionTest
         }
     }
 
-    /**
-     * @param version Determines the behavior of the cmd, e.g. 9
-     */
-    private void expectReturnVersionBehavior(final int version)
+    private void setExpectedBehaviorVersion(Version kernelVsn, Version utilsVsn)
+    {
+        String hexFormat = "%02X%02X%02X";
+        String kernelHex = String.format(hexFormat, kernelVsn.getMajor(), kernelVsn.getMinor(), kernelVsn.getPatch());
+        String utilsHex = String.format(hexFormat, utilsVsn.getMajor(), utilsVsn.getMinor(), utilsVsn.getPatch());
+        String stdOut = "DRBDADM_BUILDTAG=not-needed\n" +
+            "DRBDADM_API_VERSION=not-needed\n" +
+            "DRBD_KERNEL_VERSION_CODE=0x" + kernelHex + "\n" +
+            "DRBD_KERNEL_VERSION=" + kernelVsn + "\n" +
+            "DRBDADM_VERSION_CODE=0x" + utilsHex + "\n" +
+            "DRBDADM_VERSION=" + utilsVsn;
+        setExpectedBehavior(stdOut, "", 0);
+    }
+
+    private void setExpectedBehavior(String stdOut, String stdErr, int rc)
     {
         final TestExtCmd.Command command = new TestExtCmd.Command(VSN_QUERY_COMMAND);
-        final ExtCmd.OutputData outputData;
-
-        if (version == UNDETERMINED_VERSION)
-        {
-            outputData = new TestExtCmd.TestOutputData(
-                    command.getRawCommand(),
-                    "-bash: /usr/sbin/drbdadm: No such file or directory",
-                    "",
-                    0
-            );
-        }
-        else
-        if (version >= DRBD9_MAJOR_VSN)
-        {
-            outputData = new TestExtCmd.TestOutputData(
-                    command.getRawCommand(),
-                    "DRBDADM_BUILDTAG=GIT-hash:\\ db0782dac005c9c9899670feea28c249bcddbfa1\\ build\\ by\\ buildd@lcy01-amd64-008\\,\\ 2018-12-05\\ 10:50:48\n" +
-                            "DRBDADM_API_VERSION=2\n" +
-                            "DRBD_KERNEL_VERSION_CODE=0x090010\n" +
-                            "DRBD_KERNEL_VERSION=9.0.16\n" +
-                            "DRBDADM_VERSION_CODE=0x090700\n" +
-                            "DRBDADM_VERSION=9.7.0",
-                    "",
-                    0);
-        }
-        else
-        if (version == DRBD8_MAJOR_VSN)
-        {
-            outputData = new TestExtCmd.TestOutputData(
-                    command.getRawCommand(),
-                    "DRBDADM_BUILDTAG=GIT-hash:\\ db0782dac005c9c9899670feea28c249bcddbfa1\\ build\\ by\\ buildd@lcy01-amd64-008\\,\\ 2018-12-05\\ 10:50:48\n" +
-                            "DRBDADM_API_VERSION=2\n" +
-                            "DRBD_KERNEL_VERSION_CODE=0x08040B\n" +
-                            "DRBD_KERNEL_VERSION=8.4.11\n" +
-                            "DRBDADM_VERSION_CODE=0x090700\n" +
-                            "DRBDADM_VERSION=9.7.0",
-                    "",
-                    0);
-        }
-        else
-        if (version == PROVOKE_NUMBER_FORMAT_EXCEPTION)
-        {
-            outputData = new TestExtCmd.TestOutputData(
-                    command.getRawCommand(),
-                    "DRBD_KERNEL_VERSION_CODE=0xthisIsNotParsable\n",
-                    "",
-                    0);
-        }
-        else
-        {
-            outputData = new TestExtCmd.TestOutputData(
-                    command.getRawCommand(),
-                    "",
-                    "",
-                    -1);
-        }
-
+        final ExtCmd.OutputData outputData = new TestExtCmd.TestOutputData(command.getRawCommand(), stdOut, stdErr, rc);
         testExtCmd.setExpectedBehavior(command, outputData);
     }
 
@@ -139,11 +96,11 @@ public class DrbdVersionTest
     @Test
     public void checkVersionHasNoVersion()
     {
-        expectReturnVersionBehavior(UNDETERMINED_VERSION);
-        drbdVersion.checkVersion();
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getMajorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getMinorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getPatchLvl());
+        setExpectedBehavior("", "bash: drbdadm: command not found", 127);
+        drbdVersion.checkDrbdVersions();
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdMajorVsn());
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdMinorVsn());
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdPatchLvl());
     }
 
     /**
@@ -152,21 +109,52 @@ public class DrbdVersionTest
     @Test
     public void checkVersionHasVersion9()
     {
-        expectReturnVersionBehavior(DRBD9_MAJOR_VSN);
-        drbdVersion.checkVersion();
+        Version expectedKernel = new Version(9, 0, 16);
+        Version expectedUtils = new Version(9, 7, 0);
+        setExpectedBehaviorVersion(expectedKernel, expectedUtils);
+        drbdVersion.checkDrbdVersions();
         assertTrue(drbdVersion.hasDrbd9());
+        assertTrue(drbdVersion.hasUtils());
+        assertEquals(expectedKernel, drbdVersion.getKernelVsn());
+        assertEquals(expectedUtils, drbdVersion.getUtilsVsn());
+    }
+
+    @Test
+    public void checkVersionHasBadKernel()
+    {
+        Version expectedKernel = new Version(8, 0, 16);
+        Version expectedUtils = new Version(9, 7, 0);
+        setExpectedBehaviorVersion(expectedKernel, expectedUtils);
+        drbdVersion.checkDrbdVersions();
+        assertFalse(drbdVersion.hasDrbd9());
+        assertTrue(drbdVersion.hasUtils());
+        assertEquals(expectedKernel, drbdVersion.getKernelVsn());
+        assertEquals(expectedUtils, drbdVersion.getUtilsVsn());
+    }
+
+    @Test
+    public void checkVersionHasBadUtils()
+    {
+        Version expectedKernel = new Version(9, 0, 16);
+        Version expectedUtils = new Version(8, 7, 0);
+        setExpectedBehaviorVersion(expectedKernel, expectedUtils);
+        drbdVersion.checkDrbdVersions();
+        assertTrue(drbdVersion.hasDrbd9());
+        assertFalse(drbdVersion.hasUtils());
+        assertEquals(expectedKernel, drbdVersion.getKernelVsn());
+        assertEquals(expectedUtils, drbdVersion.getUtilsVsn());
     }
 
     /**
      * Runs checkVersion() with an invalid DRBD_KERNEL_VERSION_CODE from the cmd.
      */
     @Test
-    public void checkVersionThrowsNumberFormatException() throws NumberFormatException
+    public void checkVersionThrowsNumberFormatException()
     {
-        expectReturnVersionBehavior(PROVOKE_NUMBER_FORMAT_EXCEPTION);
-        drbdVersion.checkVersion();
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getMajorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getMinorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getPatchLvl());
+        setExpectedBehavior("DRBD_KERNEL_VERSION_CODE=0xthisIsNotParsable\n", "", 0);
+        drbdVersion.checkKernelVersion();
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdMajorVsn());
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdMinorVsn());
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdPatchLvl());
     }
 }

@@ -19,16 +19,31 @@ public class ExtToolsInfo
         Integer versionMajorRef,
         Integer versionMinorRef,
         /**
-         * versionPath might be null even if the ExtTool is supported (versionMajor and versionMinor have to be not
+         * versionPatch might be null even if the ExtTool is supported (versionMajor and versionMinor have to be not
          * null)
          */
         Integer versionPatchRef,
         List<String> notSupportedReasonsRef
     )
     {
+        this(
+            extToolRef,
+            isSupportedRef,
+            new Version(versionMajorRef, versionMinorRef, versionPatchRef),
+            notSupportedReasonsRef
+        );
+    }
+
+    public ExtToolsInfo(
+        ExtTools extToolRef,
+        boolean isSupportedRef,
+        Version versionRef,
+        List<String> notSupportedReasonsRef
+    )
+    {
         extTool = extToolRef;
         isSupported = isSupportedRef;
-        version = new Version(versionMajorRef, versionMinorRef, versionPatchRef);
+        version = versionRef;
         notSupportedReasons = new ArrayList<>();
         if (notSupportedReasonsRef != null)
         {
@@ -67,7 +82,7 @@ public class ExtToolsInfo
     }
 
     /**
-     * versionPath might be null even if the ExtTool is supported (versionMajor and versionMinor have to be not null)
+     * versionPatch might be null even if the ExtTool is supported (versionMajor and versionMinor have to be not null)
      */
     public final Integer getVersionPatch()
     {
@@ -145,6 +160,21 @@ public class ExtToolsInfo
             minor = minRef;
             patch = patchRef;
             additionalInfo = additionalInfoRef;
+        }
+
+        public Integer getMajor()
+        {
+            return major;
+        }
+
+        public Integer getMinor()
+        {
+            return minor;
+        }
+
+        public Integer getPatch()
+        {
+            return patch;
         }
 
         /**

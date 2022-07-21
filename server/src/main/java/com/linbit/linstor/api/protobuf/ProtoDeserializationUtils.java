@@ -356,7 +356,10 @@ public class ProtoDeserializationUtils
         switch (extToolsRef)
         {
             case DRBD9:
-                tool = ExtTools.DRBD9;
+                tool = ExtTools.DRBD9_KERNEL;
+                break;
+            case DRBD_UTILS:
+                tool = ExtTools.DRBD9_UTILS;
                 break;
             case DRBD_PROXY:
                 tool = ExtTools.DRBD_PROXY;

@@ -305,7 +305,7 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
     {
         return node.getPeer(accCtx)
             .getExtToolsManager()
-            .getExtToolInfo(ExtTools.DRBD9)
+            .getExtToolInfo(ExtTools.DRBD9_KERNEL)
             .hasVersionOrHigher(new ExtToolsInfo.Version(9, 0, 18));
     }
 }

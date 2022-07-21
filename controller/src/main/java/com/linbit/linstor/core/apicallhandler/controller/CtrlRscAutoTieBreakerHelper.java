@@ -604,7 +604,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     {
         return node.getPeer(peerAccCtx)
             .getExtToolsManager()
-            .getExtToolInfo(ExtTools.DRBD9)
+            .getExtToolInfo(ExtTools.DRBD9_KERNEL)
             .isSupportedAndHasVersionOrHigher(new ExtToolsInfo.Version(9, 0, 19));
     }
 

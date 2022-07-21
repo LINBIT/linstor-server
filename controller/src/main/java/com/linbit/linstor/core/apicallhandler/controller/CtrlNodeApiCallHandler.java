@@ -984,7 +984,7 @@ public class CtrlNodeApiCallHandler
         /*
          * Checks that only generate warnings
          */
-        ExtToolsInfo drbd9 = node.getPeer(apiCtx).getExtToolsManager().getExtToolInfo(ExtTools.DRBD9);
+        ExtToolsInfo drbd9 = node.getPeer(apiCtx).getExtToolsManager().getExtToolInfo(ExtTools.DRBD9_KERNEL);
         ExtToolsInfo drbdProxy = node.getPeer(apiCtx).getExtToolsManager().getExtToolInfo(ExtTools.DRBD_PROXY);
         boolean isDrbd9Supported = drbd9 != null && drbd9.isSupported();
         boolean isDrbdProxySupported = drbdProxy != null && drbdProxy.isSupported();

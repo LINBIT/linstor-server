@@ -39,6 +39,7 @@ import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.numberpool.SatelliteNumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -64,6 +65,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -74,8 +76,6 @@ import java.util.stream.Stream;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
-import java.util.LinkedList;
 import org.slf4j.event.Level;
 
 /**
@@ -217,7 +217,7 @@ public final class Satellite
                 errorReporter.reportError(ioExc);
             }
 
-            vsnCheck.checkVersion();
+            vsnCheck.checkDrbdVersions();
             ensureDrbdConfigSetup();
 
             AccessContext initCtx = sysCtx.clone();
