@@ -1008,7 +1008,7 @@ public class CtrlBackupApiCallHandler
             S3Consts.DATE_FORMAT.format(info.backupTime),
             info.backupTime.getTime(),
             null,
-            null, // TODO: should not be null if success == true
+            null,
             nodeName,
             shipping,
             success,

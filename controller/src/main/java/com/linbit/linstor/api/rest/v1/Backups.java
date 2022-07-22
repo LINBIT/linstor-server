@@ -314,11 +314,6 @@ public class Backups
         );
     }
 
-    /*
-     * TODO: maybe rename current 'create' and 'ship' into 'create/s3' and 'create/linstor'
-     * could also be used similar for 'schedule/s3' and 'schedule/linstor', although those will definitely need
-     * different parameters / Json objects
-     */
     @POST
     @Path("ship")
     public void shipBackup(

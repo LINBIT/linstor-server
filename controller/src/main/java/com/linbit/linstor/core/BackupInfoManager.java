@@ -286,7 +286,6 @@ public class BackupInfoManager
         boolean addFlag;
         synchronized (backupsToDownload)
         {
-            // TODO: change to Map<Snapshot, Snapshot>
             addFlag = !backupsToDownload.containsKey(snap);
             if (addFlag)
             {
