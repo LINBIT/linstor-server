@@ -388,39 +388,6 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         }
     }
 
-    private void ensureNotLastDisk(ResourceName rscName, Resource rsc)
-    {
-        try
-        {
-            AccessContext accCtx = peerAccCtx.get();
-            boolean isDiskless = rsc.isDrbdDiskless(accCtx) || rsc.isNvmeInitiator(accCtx);
-            if (
-                !isDiskless &&
-                rsc.getDefinition().hasDisklessNotDeleting(accCtx) &&
-                rsc.getDefinition().diskfullCount(accCtx) == 1)
-            {
-                throw new ApiRcException(ApiCallRcImpl
-                    .entryBuilder(
-                        ApiConsts.FAIL_IN_USE,
-                        String.format(
-                            "Last resource of '%s' with disk still has diskless resources attached.", rscName)
-                    )
-                    .setCause("Resource still has diskless users.")
-                    .setCorrection("Before deleting this resource, delete the diskless resources attached to it.")
-                    .build()
-                );
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "check whether is last with disk " + getRscDescriptionInline(rsc),
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-    }
-
     private void failIfDependentSnapshot(Resource rsc)
     {
         try

@@ -307,7 +307,8 @@ public class CtrlRscDeleteApiHelper
             if (
                 !isDiskless &&
                     rsc.getDefinition().hasDisklessNotDeleting(accCtx) &&
-                    rsc.getDefinition().diskfullCount(accCtx) == 1)
+                    rsc.getDefinition().notDeletedDiskfulCount(accCtx) == 1
+            )
             {
                 ApiCallRcImpl.ApiCallRcEntry err = ApiCallRcImpl
                     .entryBuilder(
