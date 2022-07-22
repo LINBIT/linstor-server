@@ -32,7 +32,6 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemote
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.URL;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LinstorRemotes.UUID;
-import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_EXTERNAL_NAME;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -171,7 +170,7 @@ public class LinstorRemoteDbDriver extends AbsDatabaseDriver<LinstorRemote, Lins
         {
             case ETCD:
                 initFlags = Long.parseLong(raw.get(FLAGS));
-                String encPassphraseBase64 = raw.get(RESOURCE_EXTERNAL_NAME);
+                String encPassphraseBase64 = raw.get(ENCRYPTED_PASSPHRASE);
                 encryptedPassphrase = encPassphraseBase64 != null ? Base64.decode(encPassphraseBase64) : null;
                 break;
             case SQL: // fall-through
