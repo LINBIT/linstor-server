@@ -47,8 +47,7 @@ public class DrbdVersion
     public static final int MASK_VSN_ELEM = 0xFF;
 
     public static final Version DRBD9_VSN = new Version(9);
-    // TODO: figure out the necessary version
-    public static final Version DRBD_UTILS_VSN = new Version(9);
+    public static final Version DRBD_UTILS_VSN = new Version(8, 9, 10);
 
     public static final int UNDETERMINED_VERSION = -1;
 
