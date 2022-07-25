@@ -217,7 +217,7 @@ public final class Satellite
                 errorReporter.reportError(ioExc);
             }
 
-            vsnCheck.checkDrbdVersions();
+            vsnCheck.checkVersions();
             ensureDrbdConfigSetup();
 
             AccessContext initCtx = sysCtx.clone();

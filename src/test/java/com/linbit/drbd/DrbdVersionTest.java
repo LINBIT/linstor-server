@@ -97,10 +97,10 @@ public class DrbdVersionTest
     public void checkVersionHasNoVersion()
     {
         setExpectedBehavior("", "bash: drbdadm: command not found", 127);
-        drbdVersion.checkDrbdVersions();
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdMajorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdMinorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdPatchLvl());
+        drbdVersion.checkVersions();
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModMajorVsn());
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModMinorVsn());
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModPatchLvl());
     }
 
     /**
@@ -112,10 +112,10 @@ public class DrbdVersionTest
         Version expectedKernel = new Version(9, 0, 16);
         Version expectedUtils = new Version(9, 7, 0);
         setExpectedBehaviorVersion(expectedKernel, expectedUtils);
-        drbdVersion.checkDrbdVersions();
+        drbdVersion.checkVersions();
         assertTrue(drbdVersion.hasDrbd9());
         assertTrue(drbdVersion.hasUtils());
-        assertEquals(expectedKernel, drbdVersion.getKernelVsn());
+        assertEquals(expectedKernel, drbdVersion.getKModVsn());
         assertEquals(expectedUtils, drbdVersion.getUtilsVsn());
     }
 
@@ -125,10 +125,10 @@ public class DrbdVersionTest
         Version expectedKernel = new Version(8, 0, 16);
         Version expectedUtils = new Version(9, 7, 0);
         setExpectedBehaviorVersion(expectedKernel, expectedUtils);
-        drbdVersion.checkDrbdVersions();
+        drbdVersion.checkVersions();
         assertFalse(drbdVersion.hasDrbd9());
         assertTrue(drbdVersion.hasUtils());
-        assertEquals(expectedKernel, drbdVersion.getKernelVsn());
+        assertEquals(expectedKernel, drbdVersion.getKModVsn());
         assertEquals(expectedUtils, drbdVersion.getUtilsVsn());
     }
 
@@ -138,10 +138,10 @@ public class DrbdVersionTest
         Version expectedKernel = new Version(9, 0, 16);
         Version expectedUtils = new Version(8, 7, 0);
         setExpectedBehaviorVersion(expectedKernel, expectedUtils);
-        drbdVersion.checkDrbdVersions();
+        drbdVersion.checkVersions();
         assertTrue(drbdVersion.hasDrbd9());
         assertFalse(drbdVersion.hasUtils());
-        assertEquals(expectedKernel, drbdVersion.getKernelVsn());
+        assertEquals(expectedKernel, drbdVersion.getKModVsn());
         assertEquals(expectedUtils, drbdVersion.getUtilsVsn());
     }
 
@@ -152,9 +152,9 @@ public class DrbdVersionTest
     public void checkVersionThrowsNumberFormatException()
     {
         setExpectedBehavior("DRBD_KERNEL_VERSION_CODE=0xthisIsNotParsable\n", "", 0);
-        drbdVersion.checkKernelVersion();
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdMajorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdMinorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getDrbdPatchLvl());
+        drbdVersion.checkVersions();
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModMajorVsn());
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModMinorVsn());
+        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModPatchLvl());
     }
 }

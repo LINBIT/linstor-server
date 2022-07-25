@@ -94,6 +94,9 @@ public class StltExtToolsChecker
         {
             List<String> loadedModules = getLoadedModules();
 
+            // needed by getDrbd9Info() and getDrbdUtilsInfo(). however, calling checkVersions() once is enough
+            drbdVersionCheck.checkVersions();
+
             ExtToolsInfo[] infoArray =
             {
                 getDrbd9Info(),
@@ -149,13 +152,12 @@ public class StltExtToolsChecker
     private ExtToolsInfo getDrbd9Info()
     {
         ExtToolsInfo drbdInfo;
-        drbdVersionCheck.checkKernelVersion();
         if (drbdVersionCheck.hasDrbd9())
         {
             drbdInfo = new ExtToolsInfo(
                 ExtTools.DRBD9_KERNEL,
                 true,
-                drbdVersionCheck.getKernelVsn(),
+                drbdVersionCheck.getKModVsn(),
                 Collections.emptyList()
             );
         }
@@ -176,7 +178,6 @@ public class StltExtToolsChecker
     private ExtToolsInfo getDrbdUtilsInfo()
     {
         ExtToolsInfo drbdInfo;
-        drbdVersionCheck.checkUtilsVersion();
         if (drbdVersionCheck.hasUtils())
         {
             drbdInfo = new ExtToolsInfo(
