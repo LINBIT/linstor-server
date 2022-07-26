@@ -22,6 +22,8 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
@@ -46,6 +48,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
+import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuardFactory;
@@ -64,6 +67,7 @@ import javax.inject.Singleton;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -109,6 +113,9 @@ public class CtrlConfApiCallHandler
     private final ReconnectorTask reconnectorTask;
     private final CtrlRscDfnAutoVerfiyAlgoHelper ctrlRscDfnAutoVerfiyAlgoHelper;
 
+    private final AutoSnapshotTask autoSnapshotTask;
+    private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
+
     @FunctionalInterface
     private interface SpecialPropHandler
     {
@@ -147,7 +154,9 @@ public class CtrlConfApiCallHandler
         AutoDiskfulTask autoDiskfulTaskRef,
         ReconnectorTask reconnectorTaskRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        CtrlRscDfnAutoVerfiyAlgoHelper ctrlRscDfnAutoVerfiyAlgoHelperRef
+        CtrlRscDfnAutoVerfiyAlgoHelper ctrlRscDfnAutoVerfiyAlgoHelperRef,
+        AutoSnapshotTask autoSnapshotTaskRef,
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -172,6 +181,8 @@ public class CtrlConfApiCallHandler
         autoDiskfulTask = autoDiskfulTaskRef;
         reconnectorTask = reconnectorTaskRef;
         ctrlRscDfnAutoVerfiyAlgoHelper = ctrlRscDfnAutoVerfiyAlgoHelperRef;
+        autoSnapshotTask = autoSnapshotTaskRef;
+        ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
     }
 
     public void updateSatelliteConf() throws AccessDeniedException
@@ -282,6 +293,29 @@ public class CtrlConfApiCallHandler
             notifyStlts |= result.objB;
         }
 
+        Flux<ApiCallRc> autoSnapFlux;
+        try
+        {
+            autoSnapFlux = ResourceDefinitionUtils.handleAutoSnapProps(
+                autoSnapshotTask,
+                ctrlSnapDeleteHandler,
+                filteredOverrideProps,
+                filteredDeletePropKeys,
+                filteredDeleteNamespaces,
+                Collections.unmodifiableCollection(rscDfnMap.values()),
+                peerAccCtx.get(),
+                systemConfRepository.getStltConfForView(peerAccCtx.get())
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "Checking props for auto-snapshot",
+                ApiConsts.FAIL_ACC_DENIED_CTRL_CFG
+            );
+        }
+
         transMgrProvider.get().commit();
         if (notifyStlts)
         {
@@ -337,7 +371,9 @@ public class CtrlConfApiCallHandler
             }
         }
 
-        return Flux.<ApiCallRc>just(apiCallRc).concatWith(evictionFlux);
+        return Flux.<ApiCallRc>just(apiCallRc)
+            .concatWith(evictionFlux)
+            .concatWith(autoSnapFlux);
     }
 
     public Flux<ApiCallRc> setCtrlConfig(

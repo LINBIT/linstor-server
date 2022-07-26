@@ -26,6 +26,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -647,27 +648,18 @@ public class CtrlRscDfnApiCallHandler
             retFlux = retFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldShippedSnapshots(rscDfn));
         }
 
-        String autoSnapKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_RUN_EVERY;
-        String autoSnapVal = overrideProps.get(autoSnapKey);
-        if (autoSnapVal != null)
-        {
-            retFlux = retFlux.concatWith(
-                autoSnapshotTask.addAutoSnapshotting(rscNameStr, Long.parseLong(autoSnapVal))
-            );
-        }
-        else
-        {
-            if (deletePropKeys.contains(autoSnapKey))
-            {
-                autoSnapshotTask.removeAutoSnapshotting(rscNameStr);
-            }
-        }
-
-        String autoSnapKeepKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP;
-        if (overrideProps.containsKey(autoSnapKeepKey) || deletePropKeys.contains(autoSnapKeepKey))
-        {
-            retFlux = retFlux.concatWith(ctrlSnapDeleteHandler.cleanupOldAutoSnapshots(rscDfn));
-        }
+        retFlux = retFlux.concatWith(
+            ResourceDefinitionUtils.handleAutoSnapProps(
+                autoSnapshotTask,
+                ctrlSnapDeleteHandler,
+                overrideProps,
+                deletePropKeys,
+                deletePropNamespacesRef,
+                Collections.singletonList(rscDfn),
+                peerAccCtx.get(),
+                systemConfRepository.getStltConfForView(peerAccCtx.get())
+            )
+        );
 
         String autoTiebreakerKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
         if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey))

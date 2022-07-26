@@ -50,6 +50,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -61,6 +62,7 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
+import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -113,6 +115,9 @@ public class CtrlRscGrpApiCallHandler
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
     private final AutoDiskfulTask autoDiskfulTask;
     private final StorPoolDefinitionRepository spdRepo;
+    private final AutoSnapshotTask autoSnapshotTask;
+    private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
+    private final SystemConfRepository systemConfRepository;
 
     @Inject
     public CtrlRscGrpApiCallHandler(
@@ -135,7 +140,10 @@ public class CtrlRscGrpApiCallHandler
         FreeCapacityFetcher freeCapacityFetcherRef,
         LockGuardFactory lockGuardFactoryRef,
         AutoDiskfulTask autoDiskfulTaskRef,
-        StorPoolDefinitionRepository spdRepoRef
+        StorPoolDefinitionRepository spdRepoRef,
+        AutoSnapshotTask autoSnapshotTaskRef,
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef,
+        SystemConfRepository systemConfRepositoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -158,6 +166,9 @@ public class CtrlRscGrpApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         autoDiskfulTask = autoDiskfulTaskRef;
         spdRepo = spdRepoRef;
+        autoSnapshotTask = autoSnapshotTaskRef;
+        ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
+        systemConfRepository = systemConfRepositoryRef;
     }
 
     List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames, List<String> propFilters)
@@ -568,6 +579,7 @@ public class CtrlRscGrpApiCallHandler
         Set<String> deletePropKeys,
         Set<String> deletePropNamespacesRef
     )
+        throws AccessDeniedException
     {
         Flux<ApiCallRc> retFlux = Flux.empty();
         String autoDiskfulKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_DISKFUL;
@@ -578,6 +590,19 @@ public class CtrlRscGrpApiCallHandler
         {
             autoDiskfulTask.update(rscGrp);
         }
+
+        retFlux = retFlux.concatWith(
+            ResourceDefinitionUtils.handleAutoSnapProps(
+                autoSnapshotTask,
+                ctrlSnapDeleteHandler,
+                overrideProps,
+                deletePropKeys,
+                deletePropNamespacesRef,
+                rscGrp.getRscDfns(peerAccCtx.get()),
+                peerAccCtx.get(),
+                systemConfRepository.getStltConfForView(peerAccCtx.get())
+            )
+        );
         return retFlux;
     }
 
