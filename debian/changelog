@@ -1,3 +1,19 @@
+linstor-server (1.19.1-1) experimental; urgency=medium
+
+  [ Johanna Kucera ]
+  * BackupShipping: Refactoring of CtrlBackupApiCallHandler
+  * Cleanup: Removed unnecessary TODOs
+  * Remotes, DB: fix ETCD bug
+  * RscDfn: replace diskfullCount method
+  * ExtTools: Add DRBD utils as dependency for DRBD layer
+
+  [ Gabor Hernadi ]
+  * DrbdVersion: Set 8.9.10 as minimum DrbdUtils
+  * DrbdVersion: Simplyfied version check
+  * AutoSnap: Allowed on RG and C
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 27 Jul 2022 06:35:40 +0000
+
 linstor-server (1.19.0-1) experimental; urgency=medium
 
   [ Johanna Kucera ]
