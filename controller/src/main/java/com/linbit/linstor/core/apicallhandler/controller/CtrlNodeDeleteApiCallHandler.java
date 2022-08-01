@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.events.EventNodeHandlerBridge;
+import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
@@ -76,6 +77,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandler;
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
+    private final SpecialSatelliteProcessManager specTargetProcMgr;
 
     @Inject
     public CtrlNodeDeleteApiCallHandler(
@@ -91,7 +93,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef,
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
-        EventNodeHandlerBridge eventNodeHandlerBridgeRef
+        EventNodeHandlerBridge eventNodeHandlerBridgeRef,
+        SpecialSatelliteProcessManager specTargetProcMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -107,6 +110,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         ctrlSnapshotDeleteApiCallHandler = ctrlSnapshotDeleteApiCallHandlerRef;
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
+        specTargetProcMgr = specTargetProcMgrRef;
     }
 
     @Override
@@ -635,7 +639,12 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     {
         try
         {
-                node.delete(apiCtx);
+            Node.Type nodeType = node.getNodeType(apiCtx);
+            if (nodeType.isSpecial())
+            {
+                specTargetProcMgr.stopProcess(node);
+            }
+            node.delete(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

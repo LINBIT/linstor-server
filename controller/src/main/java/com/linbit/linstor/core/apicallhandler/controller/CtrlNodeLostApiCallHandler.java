@@ -402,11 +402,11 @@ public class CtrlNodeLostApiCallHandler
         try
         {
             Node.Type nodeType = node.getNodeType(apiCtx);
-            node.delete(peerAccCtx.get());
-            if (Node.Type.OPENFLEX_TARGET.equals(nodeType) || Node.Type.REMOTE_SPDK.equals(nodeType))
+            if (nodeType.isSpecial())
             {
                 ofTargetProcMgr.stopProcess(node);
             }
+            node.delete(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
