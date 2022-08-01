@@ -60,9 +60,8 @@ public class SatelliteConnectorImpl implements SatelliteConnector
             Node.Type nodeType = node.getNodeType(accCtx);
             if (
                 nodeType.equals(Node.Type.SATELLITE) ||
-                nodeType.equals(Node.Type.OPENFLEX_TARGET) ||
-                    nodeType.equals(Node.Type.REMOTE_SPDK) ||
-                nodeType.equals(Node.Type.COMBINED)
+                    nodeType.equals(Node.Type.COMBINED) ||
+                    nodeType.isSpecial()
             )
             {
                 NetInterface activeStltConn = node.getActiveStltConn(accCtx);

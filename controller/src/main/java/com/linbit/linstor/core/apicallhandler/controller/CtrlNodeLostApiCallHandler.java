@@ -66,7 +66,7 @@ public class CtrlNodeLostApiCallHandler
     private final ScopeRunner scopeRunner;
     private final CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifier;
     private final ReconnectorTask reconnectorTask;
-    private final SpecialSatelliteProcessManager ofTargetProcMgr;
+    private final SpecialSatelliteProcessManager specTargetProcMgr;
     private final DynamicNumberPool specStltPortPool;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -82,7 +82,7 @@ public class CtrlNodeLostApiCallHandler
         ScopeRunner scopeRunnerRef,
         CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifierRef,
         ReconnectorTask reconnectorTaskRef,
-        SpecialSatelliteProcessManager ofTargetProcMgrRef,
+        SpecialSatelliteProcessManager specStltTargetProcMgrRef,
         @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltPortPoolRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
@@ -97,7 +97,7 @@ public class CtrlNodeLostApiCallHandler
         scopeRunner = scopeRunnerRef;
         ctrlSatelliteConnectionNotifier = ctrlSatelliteConnectionNotifierRef;
         reconnectorTask = reconnectorTaskRef;
-        ofTargetProcMgr = ofTargetProcMgrRef;
+        specTargetProcMgr = specStltTargetProcMgrRef;
         specStltPortPool = specStltPortPoolRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
@@ -409,7 +409,7 @@ public class CtrlNodeLostApiCallHandler
             Node.Type nodeType = node.getNodeType(apiCtx);
             if (nodeType.isSpecial())
             {
-                Integer port = ofTargetProcMgr.stopProcess(node);
+                Integer port = specTargetProcMgr.stopProcess(node);
                 if (port != null)
                 {
                     specStltPortPool.deallocate(port);

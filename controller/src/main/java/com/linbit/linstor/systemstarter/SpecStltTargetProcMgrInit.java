@@ -8,20 +8,20 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 
-public class OpenflexTargetProceMgrInit implements StartupInitializer
+public class SpecStltTargetProcMgrInit implements StartupInitializer
 {
-    private final SpecialSatelliteProcessManager openFlexTargetProcessManager;
+    private final SpecialSatelliteProcessManager specStltTargetProcessManager;
 
     @Inject
-    public OpenflexTargetProceMgrInit(SpecialSatelliteProcessManager openFlexTargetProcessManagerRef)
+    public SpecStltTargetProcMgrInit(SpecialSatelliteProcessManager specStltTargetProcessManagerRef)
     {
-        openFlexTargetProcessManager = openFlexTargetProcessManagerRef;
+        specStltTargetProcessManager = specStltTargetProcessManagerRef;
     }
 
     @Override
     public void initialize() throws InitializationException, AccessDeniedException, DatabaseException,
         SystemServiceStartException
     {
-        openFlexTargetProcessManager.initialize();
+        specStltTargetProcessManager.initialize();
     }
 }

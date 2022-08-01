@@ -58,7 +58,7 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.systemstarter.ConnectNodesInitializer;
 import com.linbit.linstor.systemstarter.GrizzlyInitializer;
-import com.linbit.linstor.systemstarter.OpenflexTargetProceMgrInit;
+import com.linbit.linstor.systemstarter.SpecStltTargetProcMgrInit;
 import com.linbit.linstor.systemstarter.PassphraseInitializer;
 import com.linbit.linstor.systemstarter.PreConnectInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
@@ -152,7 +152,7 @@ public final class Controller
     private final DebugConsoleCreator debugConsoleCreator;
     private final ControllerNetComInitializer controllerNetComInitializer;
 
-    private final SpecialSatelliteProcessManager openflexTargetProcessManager;
+    private final SpecialSatelliteProcessManager specStltTargetProcessManager;
     private final WhitelistProps whitelistProps;
 
     private final RetryResourcesTask retryResourcesTask;
@@ -193,7 +193,7 @@ public final class Controller
         ExosEnclosurePingTask exosPingTaskRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
-        SpecialSatelliteProcessManager openFlexTargetProcessManagerRef,
+        SpecialSatelliteProcessManager specialStltTargetProcessManagerRef,
         WhitelistProps whitelistPropsRef,
         CtrlConfig ctrlCfgRef,
         PassphraseInitializer passphraseInitializerRef,
@@ -226,7 +226,7 @@ public final class Controller
         exosPingTask = exosPingTaskRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
-        openflexTargetProcessManager = openFlexTargetProcessManagerRef;
+        specStltTargetProcessManager = specialStltTargetProcessManagerRef;
         whitelistProps = whitelistPropsRef;
         ctrlCfg = ctrlCfgRef;
         passphraseInitializer = passphraseInitializerRef;
@@ -317,8 +317,8 @@ public final class Controller
                 systemServicesMap
             );
 
-            OpenflexTargetProceMgrInit openflexTargetProcessMgrInit = new OpenflexTargetProceMgrInit(
-                openflexTargetProcessManager
+            SpecStltTargetProcMgrInit openflexTargetProcessMgrInit = new SpecStltTargetProcMgrInit(
+                specStltTargetProcessManager
             );
 
             ArrayList<StartupInitializer> startOrderlist = new ArrayList<>();

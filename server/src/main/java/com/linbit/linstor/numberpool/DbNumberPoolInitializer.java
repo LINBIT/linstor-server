@@ -32,7 +32,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
     private final AccessContext initCtx;
     private final DynamicNumberPool minorNrPool;
     private final DynamicNumberPool tcpPortPool;
-    private final DynamicNumberPool ofTargetPortPool;
+    private final DynamicNumberPool specStltTargetPortPool;
     private final DynamicNumberPool layerRscIdPool;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.NodesMap nodesMap;
@@ -44,7 +44,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
         @SystemContext AccessContext initCtxRef,
         @Named(MINOR_NUMBER_POOL) DynamicNumberPool minorNrPoolRef,
         @Named(TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
-        @Named(SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool ofTargetPortPoolRef,
+        @Named(SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltTargetPortPoolRef,
         @Named(LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPoolRef,
         @Named(SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapShipPortPoolRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
@@ -55,7 +55,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
         initCtx = initCtxRef;
         minorNrPool = minorNrPoolRef;
         tcpPortPool = tcpPortPoolRef;
-        ofTargetPortPool = ofTargetPortPoolRef;
+        specStltTargetPortPool = specStltTargetPortPoolRef;
         layerRscIdPool = layerRscIdPoolRef;
         snapShipPortPool = snapShipPortPoolRef;
         rscDfnMap = rscDfnMapRef;
@@ -67,7 +67,7 @@ public class DbNumberPoolInitializer implements StartupInitializer
     {
         initializeMinorNrPool();
         initializeTcpPortPool();
-        initializeOpenflexTargetPortPool();
+        initializeSpecStltTargetPortPool();
         initializeLayerRscIdPool();
         initializeSnapShipPortPool();
     }
@@ -82,15 +82,15 @@ public class DbNumberPoolInitializer implements StartupInitializer
         tcpPortPool.reloadRange();
     }
 
-    private void initializeOpenflexTargetPortPool()
+    private void initializeSpecStltTargetPortPool()
     {
-        ofTargetPortPool.reloadRange();
+        specStltTargetPortPool.reloadRange();
         try
         {
             for (Node curNode : nodesMap.values())
             {
                 Type nodeType = curNode.getNodeType(initCtx);
-                if (Node.Type.OPENFLEX_TARGET.equals(nodeType) || Node.Type.REMOTE_SPDK.equals(nodeType))
+                if (nodeType.isSpecial())
                 {
                     try
                     {
@@ -101,16 +101,16 @@ public class DbNumberPoolInitializer implements StartupInitializer
                             if (++netIfCount > 1)
                             {
                                 throw new ImplementationError(
-                                    "Openflex target node has more than one network interface!"
+                                    "Special target node has more than one network interface!"
                                 );
                             }
                             NetInterface netIf = netIfIt.next();
-                            ofTargetPortPool.allocate(netIf.getStltConnPort(initCtx).value);
+                            specStltTargetPortPool.allocate(netIf.getStltConnPort(initCtx).value);
                         }
                         if (netIfCount == 0)
                         {
                             throw new ImplementationError(
-                                "Openflex target node has no network interface!"
+                                "Special target node has no network interface!"
                             );
                         }
                     }

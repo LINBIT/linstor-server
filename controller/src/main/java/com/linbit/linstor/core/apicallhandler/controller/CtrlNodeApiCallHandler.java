@@ -169,8 +169,8 @@ public class CtrlNodeApiCallHandler
         Provider<Peer> peerRef,
         StorPoolHelper storPoolHelperRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool sfTargetPortPoolRef,
-        SpecialSatelliteProcessManager ofTargetProcMgrRef,
+        @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltTargetPortPoolRef,
+        SpecialSatelliteProcessManager specStltTargetProcMgrRef,
         ReconnectorTask reconnectorTaskRef,
         Scheduler schedulerRef,
         ScopeRunner scopeRunnerRef,
@@ -203,8 +203,8 @@ public class CtrlNodeApiCallHandler
         peer = peerRef;
         storPoolHelper = storPoolHelperRef;
         peerAccCtx = peerAccCtxRef;
-        specStltPortPool = sfTargetPortPoolRef;
-        specStltProcMgr = ofTargetProcMgrRef;
+        specStltPortPool = specStltTargetPortPoolRef;
+        specStltProcMgr = specStltTargetProcMgrRef;
         reconnectorTask = reconnectorTaskRef;
         scheduler = schedulerRef;
         scopeRunner = scopeRunnerRef;
@@ -850,8 +850,7 @@ public class CtrlNodeApiCallHandler
                     .build()
                 );
             }
-            if ((Node.Type.OPENFLEX_TARGET.equals(nodeType) || Node.Type.REMOTE_SPDK.equals(nodeType)) &&
-                node.streamNetInterfaces(apiCtx).count() != 1)
+            if (nodeType.isSpecial() && node.streamNetInterfaces(apiCtx).count() != 1)
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.entryBuilder(

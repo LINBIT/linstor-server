@@ -12,7 +12,6 @@ import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.core.objects.Node.Type;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -44,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 public class SpecialSatelliteProcessManager
 {
     private static final String LOCALHOST = "localhost";
-    private static final String SATELLITE_LOG_DIRECTORY = "ofTargets";
+    private static final String SATELLITE_LOG_DIRECTORY = "specialTargets";
     private static final String SATELLITE_ERR_LOG_DIRECTORY = "satellite-%d-logs";
     private static final String SATELLITE_OUT_FILE_FORMAT = SATELLITE_LOG_DIRECTORY + "/satellite-%d.log";
 
@@ -78,11 +77,7 @@ public class SpecialSatelliteProcessManager
     public void initialize()
     {
         nodesMap.values().stream()
-            .filter(node ->
-            {
-                Type nodeType = getNodeType(node);
-                return nodeType.equals(Node.Type.OPENFLEX_TARGET) || nodeType.equals(Node.Type.REMOTE_SPDK);
-            })
+            .filter(node -> getNodeType(node).isSpecial())
             .forEach(this::sneakyStart);
     }
 
@@ -115,13 +110,13 @@ public class SpecialSatelliteProcessManager
                 exc,
                 sysCtx,
                 null,
-                "Could not start necessary openflex target node due to IO error"
+                "Could not start necessary special target node due to IO error"
             );
         }
         catch (PortAlreadyInUseException exc)
         {
             errorReporter.logWarning(
-                "Could not start openflex target '%s' as the required port %d is already in use.\n" +
+                "Could not start special target '%s' as the required port %d is already in use.\n" +
                     "Please change the port of the given node",
                 node.getName().displayValue,
                 exc.getPort()
@@ -147,6 +142,7 @@ public class SpecialSatelliteProcessManager
         }
         catch (URISyntaxException ignored)
         {
+            // ignored
         }
 
         return satellitePath;
@@ -164,13 +160,13 @@ public class SpecialSatelliteProcessManager
                 NetInterface netIf = netIfIt.next();
                 if (port != null)
                 {
-                    throw new ImplementationError("Openflex target node has more than one network interface!");
+                    throw new ImplementationError("Special target node has more than one network interface!");
                 }
                 port = netIf.getStltConnPort(sysCtx).value;
             }
             if (port == null)
             {
-                throw new ImplementationError("Openflex target node has no network interfaces");
+                throw new ImplementationError("Special target node has no network interfaces");
             }
 
             startLocalSatelliteProcess(node.getName().displayValue, port, node.getNodeType(sysCtx));
@@ -206,8 +202,8 @@ public class SpecialSatelliteProcessManager
     public void startLocalSatelliteProcess(String nodeNameStr, Integer port, Node.Type nodeType)
         throws IOException, PortAlreadyInUseException
     {
-        Path ofSatLogDir = errorReporter.getLogDirectory().resolve(SATELLITE_LOG_DIRECTORY);
-        Path ofErrLogDir = ofSatLogDir.resolve(String.format(SATELLITE_ERR_LOG_DIRECTORY, port));
+        Path specialSatLogDir = errorReporter.getLogDirectory().resolve(SATELLITE_LOG_DIRECTORY);
+        Path specialErrLogDir = specialSatLogDir.resolve(String.format(SATELLITE_ERR_LOG_DIRECTORY, port));
 
         String option;
         switch (nodeType)
@@ -248,7 +244,7 @@ public class SpecialSatelliteProcessManager
             "-d",
             "--override-node-name", nodeNameStr,
             "--logs",
-            ofErrLogDir.toAbsolutePath().toString(),
+            specialErrLogDir.toAbsolutePath().toString(),
             "-c", confPath.toString(),
             option
         );
@@ -305,7 +301,7 @@ public class SpecialSatelliteProcessManager
              throw new ApiRcException(
                  ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_LINSTOR_MANAGED_SATELLITE_DID_NOT_START_PROPERLY,
-                    "The started satellite which should represent the openflex storage device did not start properly"
+                     "The started satellite which should represent the special storage device did not start properly"
                 )
             );
         }
@@ -319,11 +315,11 @@ public class SpecialSatelliteProcessManager
         final Path specStltConfPath = getSpecStltConfPath(port);
         if (process == null)
         {
-            errorReporter.logWarning("No openflex-target satellite process found");
+            errorReporter.logWarning("No special target satellite process found");
         }
         else
         {
-            errorReporter.logTrace("Stopping openflex-target process...");
+            errorReporter.logTrace("Stopping special target process...");
             process.destroy();
             try
             {
@@ -331,10 +327,11 @@ public class SpecialSatelliteProcessManager
             }
             catch (InterruptedException ignored)
             {
+                // ignored
             }
             if (process.isAlive())
             {
-                errorReporter.logTrace("Killing openflex-target process...");
+                errorReporter.logTrace("Killing special target process...");
                 process.destroyForcibly();
             }
         }

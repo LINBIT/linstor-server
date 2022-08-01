@@ -58,8 +58,8 @@ class CtrlNetIfApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
-    private final SpecialSatelliteProcessManager ofTargetProcMgr;
-    private final DynamicNumberPool ofTargetPortPool;
+    private final SpecialSatelliteProcessManager specStltTargetProcMgr;
+    private final DynamicNumberPool specStltTargetPortPool;
 
     @Inject
     CtrlNetIfApiCallHandler(
@@ -72,8 +72,8 @@ class CtrlNetIfApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        SpecialSatelliteProcessManager ofTargetProcMgrRef,
-        @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool ofTargetPortPoolRef
+        SpecialSatelliteProcessManager specStltTargetProcMgrRef,
+        @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltTargetPortPoolRef
     )
     {
         apiCtx = apiCtxRef;
@@ -85,8 +85,8 @@ class CtrlNetIfApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
-        ofTargetProcMgr = ofTargetProcMgrRef;
-        ofTargetPortPool = ofTargetPortPoolRef;
+        specStltTargetProcMgr = specStltTargetProcMgrRef;
+        specStltTargetPortPool = specStltTargetPortPoolRef;
     }
 
     public ApiCallRc createNetIf(
@@ -111,8 +111,7 @@ class CtrlNetIfApiCallHandler
         {
             Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
 
-            if (Node.Type.OPENFLEX_TARGET.equals(node.getNodeType(apiCtx)) ||
-                Node.Type.REMOTE_SPDK.equals(node.getNodeType(apiCtx)))
+            if (node.getNodeType(apiCtx).isSpecial())
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
@@ -196,8 +195,7 @@ class CtrlNetIfApiCallHandler
                 !isModifyingActiveStltConn && setActive ||
                 isModifyingActiveStltConn && (addressStr != null || stltPort != null && stltEncrType != null);
 
-            if (needsReconnect &&
-                (Node.Type.OPENFLEX_TARGET.equals(nodeType) || Node.Type.REMOTE_SPDK.equals(nodeType)))
+            if (needsReconnect && nodeType.isSpecial())
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.entryBuilder(
@@ -219,20 +217,17 @@ class CtrlNetIfApiCallHandler
                 TcpPortNumber oldPort = netIf.getStltConnPort(apiCtx);
                 boolean needsStartProc = false;
 
-                if (
-                    oldPort != null && stltPort != oldPort.value &&
-                    Node.Type.OPENFLEX_TARGET.equals(nodeType)
-                )
+                if (oldPort != null && stltPort != oldPort.value && nodeType.isSpecial())
                 {
-                    ofTargetProcMgr.stopProcess(netIf.getNode());
-                    ofTargetPortPool.deallocate(oldPort.value);
-                    ofTargetPortPool.allocate(stltPort);
+                    specStltTargetProcMgr.stopProcess(netIf.getNode());
+                    specStltTargetPortPool.deallocate(oldPort.value);
+                    specStltTargetPortPool.allocate(stltPort);
                     needsStartProc = true;
                 }
                 needsReconnect = setStltConn(netIf, stltPort, stltEncrType) || setActive;
                 if (needsStartProc)
                 {
-                    ofTargetProcMgr.startLocalSatelliteProcess(node);
+                    specStltTargetProcMgr.startLocalSatelliteProcess(node);
                 }
             }
 
