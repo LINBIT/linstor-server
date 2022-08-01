@@ -351,7 +351,11 @@ public class CtrlNodeApiCallHandler
                 specStltPort = specStltPortPool.autoAllocate();
 
                 // throws PortAlreadyInUseException
-                specStltProcMgr.startLocalSatelliteProcess(nodeNameStr, specStltPort);
+                specStltProcMgr.startLocalSatelliteProcess(
+                    nodeNameStr,
+                    specStltPort,
+                    Node.Type.valueOfIgnoreCase(nodeTypeStr, null)
+                );
 
                 retry = false;
             }

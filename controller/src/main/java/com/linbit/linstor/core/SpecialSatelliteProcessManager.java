@@ -168,7 +168,7 @@ public class SpecialSatelliteProcessManager
                 throw new ImplementationError("Openflex target node has no network interfaces");
             }
 
-            startLocalSatelliteProcess(node.getName().displayValue, port);
+            startLocalSatelliteProcess(node.getName().displayValue, port, node.getNodeType(sysCtx));
         }
         catch (AccessDeniedException exc)
         {
@@ -198,11 +198,29 @@ public class SpecialSatelliteProcessManager
      * @throws IOException
      * @throws PortAlreadyInUseException
      */
-    public void startLocalSatelliteProcess(String nodeNameStr, Integer port)
+    public void startLocalSatelliteProcess(String nodeNameStr, Integer port, Node.Type nodeType)
         throws IOException, PortAlreadyInUseException
     {
         Path ofSatLogDir = errorReporter.getLogDirectory().resolve(SATELLITE_LOG_DIRECTORY);
         Path ofErrLogDir = ofSatLogDir.resolve(String.format(SATELLITE_ERR_LOG_DIRECTORY, port));
+
+        String option;
+        switch (nodeType)
+        {
+            case OPENFLEX_TARGET:
+                option = "--openflex";
+                break;
+            case REMOTE_SPDK:
+                option = "--remote-spdk";
+                break;
+
+            case AUXILIARY: // fall-through
+            case COMBINED:// fall-through
+            case CONTROLLER:// fall-through
+            case SATELLITE:
+            default:
+                throw new ImplementationError(nodeType + " is not a special type. Use regular node create API");
+        }
         ProcessBuilder pb = new ProcessBuilder(
             getSatellitePath().toString(),
             "-s",
@@ -212,7 +230,7 @@ public class SpecialSatelliteProcessManager
             "--override-node-name", nodeNameStr,
             "--logs", ofErrLogDir.toAbsolutePath().toString(),
             "-c", ctrlConf.getConfigDir(),
-            "--openflex"
+            option
         );
         pb.redirectErrorStream(true);
         File stltLog = errorReporter.getLogDirectory().resolve(
