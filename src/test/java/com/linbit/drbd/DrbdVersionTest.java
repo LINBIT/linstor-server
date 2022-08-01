@@ -6,7 +6,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
 import com.linbit.linstor.timer.CoreTimerImpl;
 
-import static com.linbit.drbd.DrbdVersion.UNDETERMINED_VERSION;
+import static com.linbit.drbd.DrbdVersion.UNDETERMINED_VERSION_INT;
 import static com.linbit.drbd.DrbdVersion.VSN_QUERY_COMMAND;
 
 import java.util.HashSet;
@@ -98,9 +98,9 @@ public class DrbdVersionTest
     {
         setExpectedBehavior("", "bash: drbdadm: command not found", 127);
         drbdVersion.checkVersions();
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModMajorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModMinorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModPatchLvl());
+        assertEquals(UNDETERMINED_VERSION_INT, drbdVersion.getKModMajorVsn());
+        assertEquals(UNDETERMINED_VERSION_INT, drbdVersion.getKModMinorVsn());
+        assertEquals(UNDETERMINED_VERSION_INT, drbdVersion.getKModPatchLvl());
     }
 
     /**
@@ -153,8 +153,8 @@ public class DrbdVersionTest
     {
         setExpectedBehavior("DRBD_KERNEL_VERSION_CODE=0xthisIsNotParsable\n", "", 0);
         drbdVersion.checkVersions();
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModMajorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModMinorVsn());
-        assertEquals(UNDETERMINED_VERSION, drbdVersion.getKModPatchLvl());
+        assertEquals(UNDETERMINED_VERSION_INT, drbdVersion.getKModMajorVsn());
+        assertEquals(UNDETERMINED_VERSION_INT, drbdVersion.getKModMinorVsn());
+        assertEquals(UNDETERMINED_VERSION_INT, drbdVersion.getKModPatchLvl());
     }
 }

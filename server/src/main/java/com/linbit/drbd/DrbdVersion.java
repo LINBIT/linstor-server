@@ -49,15 +49,15 @@ public class DrbdVersion
     public static final Version DRBD9_VSN = new Version(9);
     public static final Version DRBD_UTILS_VSN = new Version(8, 9, 10);
 
-    public static final int UNDETERMINED_VERSION = -1;
-    public static final Version UNDETERMINED_DRBD_VERSION = new Version(
-        UNDETERMINED_VERSION,
-        UNDETERMINED_VERSION,
-        UNDETERMINED_VERSION
+    public static final int UNDETERMINED_VERSION_INT = -1;
+    public static final Version UNDETERMINED_VERSION = new Version(
+        UNDETERMINED_VERSION_INT,
+        UNDETERMINED_VERSION_INT,
+        UNDETERMINED_VERSION_INT
     );
 
-    private Version drbdVsn = new Version();
-    private Version utilsVsn = new Version();
+    private Version drbdVsn = UNDETERMINED_VERSION;
+    private Version utilsVsn = UNDETERMINED_VERSION;
 
     private final CoreTimer timerRef;
     private final ErrorReporter errorLogRef;
@@ -122,7 +122,7 @@ public class DrbdVersion
 
     private Version getVersion(OutputData cmdDataRef, String key) throws IOException
     {
-        Version ret = UNDETERMINED_DRBD_VERSION;
+        Version ret = UNDETERMINED_VERSION;
         String value = null;
         try (BufferedReader vsnReader = new BufferedReader(new InputStreamReader(cmdDataRef.getStdoutStream())))
         {
@@ -311,8 +311,8 @@ public class DrbdVersion
      */
     private void restoreDefaults()
     {
-        utilsVsn = new Version();
-        drbdVsn = new Version();
+        utilsVsn = UNDETERMINED_VERSION;
+        drbdVsn = UNDETERMINED_VERSION;
         drbdNotSupportedReasons.clear();
         utilsNotSupportedReasons.clear();
     }
