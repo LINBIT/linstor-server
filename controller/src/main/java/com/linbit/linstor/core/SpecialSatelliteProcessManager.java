@@ -311,11 +311,12 @@ public class SpecialSatelliteProcessManager
         }
     }
 
-    public void stopProcess(Node node)
+    public Integer stopProcess(Node node)
     {
         final String nodeName = node.getName().value;
         final Process process = childSatellites.get(nodeName);
-        final Path specStltConfPath = getSpecStltConfPath(childPorts.get(nodeName));
+        Integer port = childPorts.get(nodeName);
+        final Path specStltConfPath = getSpecStltConfPath(port);
         if (process == null)
         {
             errorReporter.logWarning("No openflex-target satellite process found");
@@ -352,6 +353,7 @@ public class SpecialSatelliteProcessManager
 
         childSatellites.remove(nodeName);
         childPorts.remove(nodeName);
+        return port;
     }
 
     private void ensurePortisAvailable(Integer port) throws PortAlreadyInUseException

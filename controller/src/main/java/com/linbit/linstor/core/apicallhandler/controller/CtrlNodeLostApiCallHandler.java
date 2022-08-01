@@ -28,6 +28,8 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -65,6 +67,7 @@ public class CtrlNodeLostApiCallHandler
     private final CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifier;
     private final ReconnectorTask reconnectorTask;
     private final SpecialSatelliteProcessManager ofTargetProcMgr;
+    private final DynamicNumberPool specStltPortPool;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeRepository nodeRepository;
@@ -80,6 +83,7 @@ public class CtrlNodeLostApiCallHandler
         CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifierRef,
         ReconnectorTask reconnectorTaskRef,
         SpecialSatelliteProcessManager ofTargetProcMgrRef,
+        @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltPortPoolRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeRepository nodeRepositoryRef,
@@ -94,6 +98,7 @@ public class CtrlNodeLostApiCallHandler
         ctrlSatelliteConnectionNotifier = ctrlSatelliteConnectionNotifierRef;
         reconnectorTask = reconnectorTaskRef;
         ofTargetProcMgr = ofTargetProcMgrRef;
+        specStltPortPool = specStltPortPoolRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodeRepository = nodeRepositoryRef;
@@ -404,7 +409,11 @@ public class CtrlNodeLostApiCallHandler
             Node.Type nodeType = node.getNodeType(apiCtx);
             if (nodeType.isSpecial())
             {
-                ofTargetProcMgr.stopProcess(node);
+                Integer port = ofTargetProcMgr.stopProcess(node);
+                if (port != null)
+                {
+                    specStltPortPool.deallocate(port);
+                }
             }
             node.delete(apiCtx);
         }

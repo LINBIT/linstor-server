@@ -32,6 +32,8 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.numberpool.DynamicNumberPool;
+import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -43,6 +45,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallH
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -78,6 +81,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
     private final SpecialSatelliteProcessManager specTargetProcMgr;
+    private final DynamicNumberPool specStltPortPool;
 
     @Inject
     public CtrlNodeDeleteApiCallHandler(
@@ -94,7 +98,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef,
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
         EventNodeHandlerBridge eventNodeHandlerBridgeRef,
-        SpecialSatelliteProcessManager specTargetProcMgrRef
+        SpecialSatelliteProcessManager specTargetProcMgrRef,
+        @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltPortPoolRef
     )
     {
         apiCtx = apiCtxRef;
@@ -111,6 +116,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
         specTargetProcMgr = specTargetProcMgrRef;
+        specStltPortPool = specStltPortPoolRef;
     }
 
     @Override
@@ -642,7 +648,11 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             Node.Type nodeType = node.getNodeType(apiCtx);
             if (nodeType.isSpecial())
             {
-                specTargetProcMgr.stopProcess(node);
+                Integer port = specTargetProcMgr.stopProcess(node);
+                if (port != null)
+                {
+                    specStltPortPool.deallocate(port);
+                }
             }
             node.delete(apiCtx);
         }
