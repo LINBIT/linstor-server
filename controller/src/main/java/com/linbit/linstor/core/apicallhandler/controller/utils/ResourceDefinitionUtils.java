@@ -13,6 +13,7 @@ import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.utils.ExceptionThrowingPredicate;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -49,7 +50,8 @@ public class ResourceDefinitionUtils
         Set<String> deletedNamespaces,
         Collection<ResourceDefinition> affectedRscDfnListRef,
         AccessContext accCtxRef,
-        Props ctrlProps
+        Props ctrlProps,
+        boolean forceCheckAllRscDfnRef
     )
         throws AccessDeniedException
     {
@@ -57,7 +59,9 @@ public class ResourceDefinitionUtils
         String autoSnapKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_RUN_EVERY;
         String autoSnapVal = overrideProps.get(autoSnapKey);
         boolean namespaceDeleted = deletedNamespaces.contains(ApiConsts.NAMESPC_AUTO_SNAPSHOT);
-        if (autoSnapVal != null)
+
+        Set<ResourceDefinition> modifiedRscDfnSet = new HashSet<>();
+        if (autoSnapVal != null || forceCheckAllRscDfnRef)
         {
             for (ResourceDefinition rscDfn : affectedRscDfnListRef)
             {
@@ -67,19 +71,23 @@ public class ResourceDefinitionUtils
                     ctrlProps
                 );
                 String prioPropVal = prioProps.getProp(autoSnapKey);
-                retFlux = retFlux.concatWith(
-                    autoSnapshotTaskRef.addAutoSnapshotting(
-                        rscDfn.getName().displayValue,
-                        Long.parseLong(prioPropVal)
-                    )
-                );
+                if (prioPropVal != null)
+                {
+                    retFlux = retFlux.concatWith(
+                        autoSnapshotTaskRef.addAutoSnapshotting(
+                            rscDfn.getName().displayValue,
+                            Long.parseLong(prioPropVal)
+                        )
+                    );
+                    modifiedRscDfnSet.add(rscDfn);
+                }
             }
         }
-        else
+        if (deletePropKeys.contains(autoSnapKey) || namespaceDeleted || forceCheckAllRscDfnRef)
         {
-            if (deletePropKeys.contains(autoSnapKey) || namespaceDeleted)
+            for (ResourceDefinition rscDfn : affectedRscDfnListRef)
             {
-                for (ResourceDefinition rscDfn : affectedRscDfnListRef)
+                if (!modifiedRscDfnSet.contains(rscDfn))
                 {
                     PriorityProps prioProps = new PriorityProps(
                         rscDfn.getProps(accCtxRef),
@@ -100,16 +108,21 @@ public class ResourceDefinitionUtils
                             )
                         );
                     }
+                    modifiedRscDfnSet.add(rscDfn);
                 }
             }
         }
 
         String autoSnapKeepKey = ApiConsts.NAMESPC_AUTO_SNAPSHOT + "/" + ApiConsts.KEY_KEEP;
-        if (overrideProps.containsKey(autoSnapKeepKey) || deletePropKeys.contains(autoSnapKeepKey))
+        if (overrideProps.containsKey(autoSnapKeepKey) || deletePropKeys.contains(autoSnapKeepKey) ||
+            forceCheckAllRscDfnRef)
         {
             for (ResourceDefinition rscDfn : affectedRscDfnListRef)
             {
-                retFlux = retFlux.concatWith(ctrlSnapDeleteHandlerRef.cleanupOldAutoSnapshots(rscDfn));
+                if (!modifiedRscDfnSet.contains(rscDfn))
+                {
+                    retFlux = retFlux.concatWith(ctrlSnapDeleteHandlerRef.cleanupOldAutoSnapshots(rscDfn));
+                }
             }
         }
         return retFlux;

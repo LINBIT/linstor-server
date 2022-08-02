@@ -657,7 +657,8 @@ public class CtrlRscDfnApiCallHandler
                 deletePropNamespacesRef,
                 Collections.singletonList(rscDfn),
                 peerAccCtx.get(),
-                systemConfRepository.getStltConfForView(peerAccCtx.get())
+                systemConfRepository.getStltConfForView(peerAccCtx.get()),
+                false
             )
         );
 

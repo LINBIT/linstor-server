@@ -304,7 +304,8 @@ public class CtrlConfApiCallHandler
                 filteredDeleteNamespaces,
                 Collections.unmodifiableCollection(rscDfnMap.values()),
                 peerAccCtx.get(),
-                systemConfRepository.getStltConfForView(peerAccCtx.get())
+                systemConfRepository.getStltConfForView(peerAccCtx.get()),
+                false
             );
         }
         catch (AccessDeniedException exc)

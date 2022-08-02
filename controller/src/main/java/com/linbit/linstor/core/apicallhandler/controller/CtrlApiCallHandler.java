@@ -2,11 +2,14 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
+import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.ControllerConfigApi;
@@ -24,13 +27,17 @@ import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.ResourceConnection;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
+import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 
@@ -48,6 +55,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
@@ -87,6 +95,10 @@ public class CtrlApiCallHandler
     private final DbEngine dbEngine;
 
     private final LockGuardFactory lockGuardFactory;
+    private final AutoSnapshotTask autoSnapshotTask;
+    private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
+    private final Provider<AccessContext> peerAccCtx;
+    private final SystemConfRepository systemConfRepository;
 
     @Inject
     CtrlApiCallHandler(
@@ -110,6 +122,10 @@ public class CtrlApiCallHandler
         CtrlKvsApiCallHandler kvsApiCallHandlerRef,
         CtrlRscGrpApiCallHandler rscGrpApiCallHandlerRef,
         CtrlVlmGrpApiCallHandler vlmGrpApiCallHandlerRef,
+        AutoSnapshotTask autoSnapshotTaskRef,
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef,
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        SystemConfRepository systemConfRepositoryRef,
         DbEngine dbEngineRef,
         LockGuardFactory lockGuardFactoryRef
     )
@@ -134,6 +150,10 @@ public class CtrlApiCallHandler
         kvsApiCallHandler = kvsApiCallHandlerRef;
         rscGrpApiCallHandler = rscGrpApiCallHandlerRef;
         vlmGrpApiCallHandler = vlmGrpApiCallHandlerRef;
+        autoSnapshotTask = autoSnapshotTaskRef;
+        ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
+        peerAccCtx = peerAccCtxRef;
+        systemConfRepository = systemConfRepositoryRef;
         dbEngine = dbEngineRef;
         lockGuardFactory = lockGuardFactoryRef;
     }
@@ -217,7 +237,7 @@ public class CtrlApiCallHandler
         }
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_DFN_MAP))
         {
-            rscDfnApiCallHandler.createResourceDefinition(
+            ResourceDefinition rscDfn = rscDfnApiCallHandler.createResourceDefinition(
                 resourceName,
                 extName,
                 props,
@@ -228,6 +248,28 @@ public class CtrlApiCallHandler
                 false,
                 apiCallRc,
                 true
+            );
+
+            // we can ignore the flux for now, since we are not creating resources that would need the flux executed
+            ResourceDefinitionUtils.handleAutoSnapProps(
+                autoSnapshotTask,
+                ctrlSnapDeleteHandler,
+                Collections.emptyMap(),
+                Collections.emptySet(),
+                Collections.emptySet(),
+                Collections.singletonList(rscDfn),
+                peerAccCtx.get(),
+                systemConfRepository.getStltConfForView(peerAccCtx.get()),
+                true
+            );
+
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "create resource definition",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
         return apiCallRc;

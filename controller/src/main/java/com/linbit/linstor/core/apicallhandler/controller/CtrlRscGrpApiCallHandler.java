@@ -600,7 +600,8 @@ public class CtrlRscGrpApiCallHandler
                 deletePropNamespacesRef,
                 rscGrp.getRscDfns(peerAccCtx.get()),
                 peerAccCtx.get(),
-                systemConfRepository.getStltConfForView(peerAccCtx.get())
+                systemConfRepository.getStltConfForView(peerAccCtx.get()),
+                false
             )
         );
         return retFlux;
@@ -853,7 +854,7 @@ public class CtrlRscGrpApiCallHandler
         ResponseContext contextRef
     )
     {
-        Flux<ApiCallRc> deployedResources;
+        Flux<ApiCallRc> deployedResources = Flux.empty();
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
@@ -990,7 +991,19 @@ public class CtrlRscGrpApiCallHandler
                     )
                 );
             }
-
+            deployedResources = deployedResources.concatWith(
+                ResourceDefinitionUtils.handleAutoSnapProps(
+                    autoSnapshotTask,
+                    ctrlSnapDeleteHandler,
+                    Collections.emptyMap(),
+                    Collections.emptySet(),
+                    Collections.emptySet(),
+                    Collections.singletonList(rscDfn),
+                    peerAccCtx.get(),
+                    systemConfRepository.getStltConfForView(peerAccCtx.get()),
+                    true
+                )
+            );
         }
         catch (AccessDeniedException accDeniedExc)
         {
