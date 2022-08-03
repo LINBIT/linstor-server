@@ -1,6 +1,7 @@
 package com.linbit.linstor.tasks;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -9,10 +10,10 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallH
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingApiCallHandler;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerController;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -41,6 +42,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
      * Only used to populate configSet when initializing
      */
     private final ResourceDefinitionRepository rscDfnRepo;
+    private final SystemConfRepository sysConfRepo;
     private final AccessContext sysCtx;
 
     private final SortedSet<AutoSnapshotConfig> configSet = new TreeSet<>();
@@ -50,12 +52,14 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtApiCallHandlerRef,
         CtrlSnapshotShippingApiCallHandler ctrlSnapshotShippingApiCallHandlerRef,
         ResourceDefinitionRepository rscDfnRepoRef,
+        SystemConfRepository sysConfRepoRef,
         @SystemContext AccessContext sysCtxRef
     )
     {
         ctrlSnapshotCrtApiCallHandler = ctrlSnapshotCrtApiCallHandlerRef;
         ctrlSnapshotShippingApiCallHandler = ctrlSnapshotShippingApiCallHandlerRef;
         rscDfnRepo = rscDfnRepoRef;
+        sysConfRepo = sysConfRepoRef;
         sysCtx = sysCtxRef;
 
     }
@@ -67,8 +71,12 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         {
             for (ResourceDefinition rscDfn : rscDfnRepo.getMapForView(sysCtx).values())
             {
-                Props rscDfnProps = rscDfn.getProps(sysCtx);
-                String autoShipping = rscDfnProps.getProp(
+                PriorityProps prioProps = new PriorityProps(
+                    rscDfn.getProps(sysCtx),
+                    rscDfn.getResourceGroup().getProps(sysCtx),
+                    sysConfRepo.getStltConfForView(sysCtx)
+                );
+                String autoShipping = prioProps.getProp(
                     ApiConsts.KEY_RUN_EVERY,
                     ApiConsts.NAMESPC_SNAPSHOT_SHIPPING
                 );
@@ -84,7 +92,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                     cfg.nextRerunAt += TASK_TIMEOUT;
                 }
 
-                String autoSnapshot = rscDfnProps.getProp(
+                String autoSnapshot = prioProps.getProp(
                     ApiConsts.KEY_RUN_EVERY,
                     ApiConsts.NAMESPC_AUTO_SNAPSHOT
                 );
@@ -105,7 +113,6 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         {
             throw new ImplementationError(exc);
         }
-
     }
 
     public Flux<ApiCallRc> addAutoSnapshotting(String rscName, long runEveryInMinRef)
