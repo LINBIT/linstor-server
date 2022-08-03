@@ -120,6 +120,27 @@ public class CtrlPropsHelper
         }
     }
 
+    public Props getStltPropsForView()
+    {
+        return getStltPropsForView(peerAccCtx.get());
+    }
+
+    public Props getStltPropsForView(AccessContext accessContextRef)
+    {
+        try
+        {
+            return systemConfRepository.getStltConfForView(accessContextRef);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access satellite properties",
+                ApiConsts.FAIL_ACC_DENIED_CTRL_CFG
+            );
+        }
+    }
+
     public Props getProps(Node node)
     {
         return getProps(peerAccCtx.get(), node);

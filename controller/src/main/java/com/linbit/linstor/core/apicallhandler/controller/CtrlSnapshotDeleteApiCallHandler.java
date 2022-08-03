@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -26,7 +27,6 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -451,8 +451,12 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         Flux<ApiCallRc> flux = Flux.empty();
         try
         {
-            Props rscDfnProps = propsHelper.getProps(rscDfnRef);
-            String keepStr = rscDfnProps.getPropWithDefault(
+            PriorityProps prioProps = new PriorityProps(
+                propsHelper.getProps(rscDfnRef),
+                propsHelper.getProps(rscDfnRef.getResourceGroup()),
+                propsHelper.getStltPropsForView()
+            );
+            String keepStr = prioProps.getProp(
                 rscDfnPropKeepKey,
                 rscDfnPropNameSpc,
                 rscDfnPropKeepDfltValue
@@ -464,7 +468,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
                 if (keep > 0)
                 {
-                    String snapPrefix = rscDfnProps.getPropWithDefault(
+                    String snapPrefix = prioProps.getProp(
                         rscDfnPropPrefixKey,
                         rscDfnPropNameSpc,
                         rscDfnPropPrefixDfltValue
