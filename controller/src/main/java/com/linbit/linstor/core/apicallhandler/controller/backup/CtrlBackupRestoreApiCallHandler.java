@@ -1594,8 +1594,7 @@ public class CtrlBackupRestoreApiCallHandler
                             // unavoidable.
                             // This will be fixed with the linstor2 issue 19 (Combine Changed* proto messages for atomic
                             // updates)
-                            l2lCleanupFlux = tmpFlux
-                                .concatWith(backupHelper.cleanupStltRemote((StltRemote) remote));
+                            l2lCleanupFlux = tmpFlux.concatWith(backupHelper.cleanupStltRemote((StltRemote) remote));
                         }
                     }
                 }

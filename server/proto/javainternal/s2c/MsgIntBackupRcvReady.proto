@@ -9,4 +9,5 @@ message MsgIntBackupRcvReady
     string snap_name = 2;
     string rsc_name = 3;
     string node_name = 4;
+    string src_stlt_remote_name = 5;
 }

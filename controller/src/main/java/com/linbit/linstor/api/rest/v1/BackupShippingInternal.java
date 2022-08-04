@@ -93,7 +93,8 @@ public class BackupShippingInternal
                 shipRequest.storPoolRenameMap,
                 shipRequest.useZstd,
                 shipRequest.downloadOnly,
-                shipRequest.srcL2LRemoteName
+                shipRequest.srcL2LRemoteName, // linstorRemoteName, not StltRemoteName
+                shipRequest.srcStltRemoteName
             ).subscriberContext(
                 requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
             );
@@ -156,9 +157,9 @@ public class BackupShippingInternal
         try
         {
             receiveRequest = objectMapper.readValue(jsonData, BackupShippingReceiveRequest.class);
-            RemoteName remote = new RemoteName(receiveRequest.remoteName);
-            BackupShippingData data = backupInfoMgr.getL2LSrcData(remote);
-            backupInfoMgr.removeL2LSrcData(remote);
+            RemoteName linstorRemoteName = new RemoteName(receiveRequest.linstorRemoteName);
+            RemoteName stltRemoteName = new RemoteName(receiveRequest.srcStltRemoteName, true);
+            BackupShippingData data = backupInfoMgr.removeL2LSrcData(linstorRemoteName, stltRemoteName);
             responses = backupL2LSrcApiCallHandler.startShipping(receiveRequest, data)
                 .subscriberContext(
                     requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)

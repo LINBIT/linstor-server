@@ -643,7 +643,11 @@ public class CtrlBackupL2LSrcApiCallHandler
                         final int badRequest = Response.Status.BAD_REQUEST.getStatusCode();
                         final int internalServerError = Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
 
-                        backupInfoMgr.addL2LSrcData(data.linstorRemote.getName(), data);
+                        backupInfoMgr.addL2LSrcData(
+                            data.linstorRemote.getName(),
+                            data.stltRemote.getName(),
+                            data
+                        );
                         String restURL = data.linstorRemote.getUrl(accCtx).toExternalForm() +
                             "/v1/internal/backups/requestShip";
                         RestResponse<BackupShippingResponse> response = restClient.execute(
@@ -658,6 +662,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                                     data.srcBackupName,
                                     data.srcClusterId,
                                     data.linstorRemote.getName().displayValue,
+                                    data.stltRemote.getName().displayValue,
                                     data.srcSnapDfnUuids,
                                     data.dstRscName,
                                     data.dstNodeName,
@@ -755,8 +760,9 @@ public class CtrlBackupL2LSrcApiCallHandler
 
                             if (response.getStatusCode() == internalServerError)
                             {
+                                System.out.println("copying responses: " + data.responses.getEntries().size());
                                 apiCallRc = ApiCallRcImpl.copyAndPrefix(
-                                    "Remote '" + data.remoteName + "': ",
+                                    "Remote '" + data.linstorRemoteName + "': ",
                                     data.responses
                                 );
                             }

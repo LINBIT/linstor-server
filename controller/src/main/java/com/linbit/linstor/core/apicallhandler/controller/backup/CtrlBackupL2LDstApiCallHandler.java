@@ -62,6 +62,7 @@ import javax.inject.Singleton;
 
 import java.math.BigInteger;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -93,6 +94,12 @@ public class CtrlBackupL2LDstApiCallHandler
     private final CtrlBackupL2LSrcApiCallHandler.BackupShippingRestClient backupShippingRestClient;
     private final Provider<Peer> peerProvider;
     private final CtrlBackupApiHelper backupHelper;
+
+    /**
+     * LookUpTable so that we can tell the src-controller its own stltRemoteName which it needs
+     * to find the corresponding BackupShippingData
+     */
+    private final Map<RemoteName, String> dstToSrcStltRemoteNameMap;
 
     @Inject
     public CtrlBackupL2LDstApiCallHandler(
@@ -134,6 +141,8 @@ public class CtrlBackupL2LDstApiCallHandler
         peerProvider = peerProviderRef;
         backupHelper = backupHelperRef;
         backupShippingRestClient = helperReference.new BackupShippingRestClient(errorReporter);
+
+        dstToSrcStltRemoteNameMap = new HashMap<>();
     }
 
     public Flux<BackupShippingResponse> startReceiving(
@@ -149,7 +158,8 @@ public class CtrlBackupL2LDstApiCallHandler
         @Nullable Map<String, String> storPoolRenameMapRef,
         boolean useZstd,
         boolean downloadOnly,
-        String srcL2LRemoteName
+        String srcL2LRemoteName, // linstorRemoteName, not StltRemoteName
+        String srcStltRemoteName
     )
     {
         Flux<BackupShippingResponse> flux;
@@ -191,6 +201,7 @@ public class CtrlBackupL2LDstApiCallHandler
                 BackupShippingData data = new BackupShippingData(
                     srcVersionRef,
                     srcL2LRemoteName,
+                    srcStltRemoteName,
                     srcRemote.getUrl(apiCtx).toExternalForm(),
                     dstRscNameRef,
                     metaDataRef,
@@ -368,6 +379,11 @@ public class CtrlBackupL2LDstApiCallHandler
         data.snapName = snapName;
         data.stltRemote = stltRemote;
 
+        synchronized (dstToSrcStltRemoteNameMap)
+        {
+            dstToSrcStltRemoteNameMap.put(stltRemote.getName(), data.srcStltRemoteName);
+        }
+
         Map<String, String> snapPropsFromSource = data.metaData.getRsc().getProps();
         snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_UUID, data.srcClusterId);
         snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_SHORT_HASH, clusterHash);
@@ -515,6 +531,12 @@ public class CtrlBackupL2LDstApiCallHandler
             }
 
 
+            String srcStltRemoteName;
+            synchronized (dstToSrcStltRemoteNameMap)
+            {
+                srcStltRemoteName = dstToSrcStltRemoteNameMap.remove(data.stltRemote.getName());
+            }
+
             boolean useZstd = data.stltRemote.useZstd(apiCtx);
 
             return backupShippingRestClient.sendBackupReceiveRequest(
@@ -522,11 +544,13 @@ public class CtrlBackupL2LDstApiCallHandler
                     true,
                     responses,
                     data.srcL2LRemoteName,
+                    data.stltRemote.getName().value,
                     data.srcL2LRemoteUrl,
                     netIf.getAddress(apiCtx).getAddress(),
                     ports,
                     data.incrBaseSnapDfnUuid,
-                    useZstd
+                    useZstd,
+                    srcStltRemoteName
                 )
             ).thenMany(Flux.empty()); // request is from stlt, so instead of converting from JsonGenTypes.ApiCallRc to
                                       // ApiCallRc the response gets ignored
@@ -565,7 +589,8 @@ public class CtrlBackupL2LDstApiCallHandler
     {
         public StltRemote stltRemote;
         public SnapshotName snapName;
-        public final String srcL2LRemoteName;
+        public final String srcL2LRemoteName; // linstorRemoteName, not StltRemoteName
+        public final String srcStltRemoteName;
         public final String srcL2LRemoteUrl;
         public final int[] srcVersion;
         public final String dstRscName;
@@ -584,7 +609,8 @@ public class CtrlBackupL2LDstApiCallHandler
 
         BackupShippingData(
             int[] srcVersionRef,
-            String srcL2LRemoteNameRef,
+            String srcL2LRemoteNameRef, // linstorRemoteName, not StltRemoteName
+            String srcStltRemoteNameRef,
             String srcL2LRemoteUrlRef,
             String dstRscNameRef,
             BackupMetaDataPojo metaDataRef,
@@ -602,6 +628,7 @@ public class CtrlBackupL2LDstApiCallHandler
         {
             srcVersion = srcVersionRef;
             srcL2LRemoteName = srcL2LRemoteNameRef;
+            srcStltRemoteName = srcStltRemoteNameRef;
             srcL2LRemoteUrl = srcL2LRemoteUrlRef;
             dstRscName = dstRscNameRef;
             metaData = metaDataRef;

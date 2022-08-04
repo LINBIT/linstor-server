@@ -593,7 +593,7 @@ public class CtrlScheduledBackupsApiCallHandler
             }
             rscDfnsToCheck.addAll(rscGrp.getRscDfns(peerAccCtx.get()));
             msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully " + (add ? "enabled" : "disabled") +
-                " for resource group '" + rscNameRef + "' to remote '" + remoteNameRef + "'.";
+                " for resource group '" + grpNameRef + "' to remote '" + remoteNameRef + "'.";
         }
         else
         {

@@ -18,7 +18,8 @@ public class BackupShippingReceiveRequest
     public final boolean canReceive;
 
     public final ApiCallRcImpl responses;
-    public final String remoteName;
+    public final String linstorRemoteName;
+    public final String stltRemoteName;
     public final String remoteUrl;
     /**
      * The actual IP of the target satellite.
@@ -29,27 +30,31 @@ public class BackupShippingReceiveRequest
     public final @Nullable String srcSnapDfnUuid;
 
     public final boolean useZstd;
+    public final String srcStltRemoteName;
 
     @JsonCreator
     public BackupShippingReceiveRequest(
         @JsonProperty("canReceive") boolean canReceiveRef,
         @JsonProperty("responses") ApiCallRcImpl responsesRef,
-        @JsonProperty("remoteName") String remoteNameRef,
+        @JsonProperty("linstorRemoteName") String linstorRemoteNameRef,
+        @JsonProperty("stltRemoteName") String stltRemoteNameRef,
         @JsonProperty("remoteUrl") String remoteUrlRef,
         @JsonProperty("dstStltIp") @Nullable String dstStltIpRef,
         @JsonProperty("dstStltPort") @Nullable Map<String, Integer> snapShipPortsRef,
         @JsonProperty("srcBaseSnapDfnUuid") @Nullable String srcSnapDfnUuidRef,
-        @JsonProperty("useZstd") boolean useZstdRef
+        @JsonProperty("useZstd") boolean useZstdRef,
+        @JsonProperty("srcStltRemoteName") String srcStltRemoteNameRef
     )
     {
         canReceive = canReceiveRef;
         responses = responsesRef;
-        remoteName = remoteNameRef;
+        linstorRemoteName = linstorRemoteNameRef;
+        stltRemoteName = stltRemoteNameRef;
         remoteUrl = remoteUrlRef;
         dstStltIp = dstStltIpRef;
         dstStltPorts = snapShipPortsRef;
         srcSnapDfnUuid = srcSnapDfnUuidRef;
         useZstd = useZstdRef;
+        srcStltRemoteName = srcStltRemoteNameRef;
     }
-
 }

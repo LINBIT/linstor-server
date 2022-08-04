@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LDstApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -30,7 +31,8 @@ public class BackupInfoManager
     private final Map<NodeName, Map<SnapshotDefinition.Key, AbortInfo>> abortCreateMap;
     private final Map<ResourceName, Set<Snapshot>> abortRestoreMap;
     private final Map<Snapshot, Snapshot> backupsToDownload;
-    private final Map<RemoteName, CtrlBackupL2LSrcApiCallHandler.BackupShippingData> l2lSrcData;
+    // Map<LinstorRemoteName, Map<StltRemoteName, Data>>
+    private final Map<RemoteName, Map<RemoteName, CtrlBackupL2LSrcApiCallHandler.BackupShippingData>> l2lSrcData;
     private final Map<Snapshot, CtrlBackupL2LDstApiCallHandler.BackupShippingData> l2lDstData;
 
     @Inject
@@ -321,19 +323,52 @@ public class BackupInfoManager
         }
     }
 
-    public void addL2LSrcData(RemoteName name, CtrlBackupL2LSrcApiCallHandler.BackupShippingData data)
+    public void addL2LSrcData(
+        RemoteName linstorRemoteName,
+        RemoteName stltRemoteName,
+        CtrlBackupL2LSrcApiCallHandler.BackupShippingData data
+    )
     {
-        l2lSrcData.put(name, data);
+        synchronized (l2lSrcData)
+        {
+            Map<RemoteName, BackupShippingData> innerMap = l2lSrcData.computeIfAbsent(
+                linstorRemoteName,
+                ignore -> new HashMap<>()
+            );
+            innerMap.put(stltRemoteName, data);
+        }
     }
 
-    public CtrlBackupL2LSrcApiCallHandler.BackupShippingData getL2LSrcData(RemoteName name)
+    public CtrlBackupL2LSrcApiCallHandler.BackupShippingData getL2LSrcData(
+        RemoteName linstorRemoteName,
+        RemoteName stltRemoteName
+    )
     {
-        return l2lSrcData.get(name);
+        synchronized (l2lSrcData)
+        {
+            return l2lSrcData.get(linstorRemoteName).get(stltRemoteName);
+        }
     }
 
-    public void removeL2LSrcData(RemoteName name)
+    public CtrlBackupL2LSrcApiCallHandler.BackupShippingData removeL2LSrcData(
+        RemoteName linstorRemoteName,
+        RemoteName stltRemoteName
+    )
     {
-        l2lSrcData.remove(name);
+        BackupShippingData ret;
+        synchronized (l2lSrcData)
+        {
+            Map<RemoteName, BackupShippingData> innerMap = l2lSrcData.get(linstorRemoteName);
+            if (innerMap != null)
+            {
+                ret = innerMap.remove(stltRemoteName);
+            }
+            else
+            {
+                ret = null;
+            }
+        }
+        return ret;
     }
 
     public void addL2LDstData(Snapshot snap, CtrlBackupL2LDstApiCallHandler.BackupShippingData data)
