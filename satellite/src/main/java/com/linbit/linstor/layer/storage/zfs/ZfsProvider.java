@@ -14,13 +14,13 @@ import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -186,7 +186,13 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected String asSnapLvIdentifierRaw(String rscNameRef, String rscNameSuffixRef, String snapNameRef, int vlmNrRef)
+    protected String asSnapLvIdentifierRaw(
+        String ignoredSpName,
+        String rscNameRef,
+        String rscNameSuffixRef,
+        String snapNameRef,
+        int vlmNrRef
+    )
     {
         return String.format(
             FORMAT_SNAP_TO_ZFS_ID,
@@ -198,7 +204,12 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected String asLvIdentifier(ResourceName resourceName, String rscNameSuffix, VolumeNumber volumeNumber)
+    protected String asLvIdentifier(
+        StorPoolName ignoredSpName,
+        ResourceName resourceName,
+        String rscNameSuffix,
+        VolumeNumber volumeNumber
+    )
     {
         return String.format(
             FORMAT_RSC_TO_ZFS_ID,
@@ -231,11 +242,6 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             asIdentifierRaw(zfsData);
     }
 
-    private String asLvIdentifier(String rscNameSuffix, SnapshotVolume snapVlm)
-    {
-        return asLvIdentifier(rscNameSuffix, snapVlm.getSnapshotVolumeDefinition()) + "@" +
-            snapVlm.getSnapshotName().displayValue;
-    }
 
     @Override
     protected void createLvImpl(ZfsData<Resource> vlmData)
@@ -407,6 +413,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 String clonedFromRsc = vlmData.getRscLayerObject().getAbsResource()
                     .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_CLONED_FROM);
                 String srcFullSnapshotName = asSnapLvIdentifierRaw(
+                    vlmData.getStorPool().getName().displayValue,
                     clonedFromRsc,
                     vlmData.getRscLayerObject().getResourceNameSuffix(),
                     getCloneSnapshotName(vlmData),

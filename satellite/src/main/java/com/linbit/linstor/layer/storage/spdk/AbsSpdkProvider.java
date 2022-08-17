@@ -12,6 +12,7 @@ import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -338,7 +339,12 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
     }
 
     @Override
-    protected String asLvIdentifier(ResourceName resourceName, String rscNameSuffix, VolumeNumber volumeNumber)
+    protected String asLvIdentifier(
+        StorPoolName ignoredSpName,
+        ResourceName resourceName,
+        String rscNameSuffix,
+        VolumeNumber volumeNumber
+    )
     {
         return String.format(
             FORMAT_RSC_TO_SPDK_ID,
@@ -349,7 +355,13 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
     }
 
     @Override
-    protected String asSnapLvIdentifierRaw(String rscNameRef, String rscNameSuffixRef, String snapNameRef, int vlmNrRef)
+    protected String asSnapLvIdentifierRaw(
+        String ignoredSpName,
+        String rscNameRef,
+        String rscNameSuffixRef,
+        String snapNameRef,
+        int vlmNrRef
+    )
     {
         return String.format(
             FORMAT_SNAP_TO_SPDK_ID,
@@ -518,6 +530,7 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
         String vlmGrp = vlmDataRef.getVolumeGroup();
 
         String fullQualSnapName = vlmGrp + "/" + asSnapLvIdentifierRaw(
+            vlmDataRef.getStorPool().getName().displayValue,
             vlmDataRef.getRscLayerObject().getResourceName().displayValue,
             vlmDataRef.getRscLayerObject().getResourceNameSuffix(),
             rollbackTargetSnapshotNameRef,

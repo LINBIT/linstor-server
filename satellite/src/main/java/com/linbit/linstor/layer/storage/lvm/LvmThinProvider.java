@@ -311,6 +311,7 @@ public class LvmThinProvider extends LvmProvider
         String thinPool = vlmData.getThinPool();
         String targetLvId = asLvIdentifier(vlmData);
         String snapshotId = asSnapLvIdentifierRaw(
+            vlmData.getStorPool().getName().displayValue,
             vlmData.getRscLayerObject().getResourceName().displayValue,
             vlmData.getRscLayerObject().getResourceNameSuffix(),
             rollbackTargetSnapshotName,

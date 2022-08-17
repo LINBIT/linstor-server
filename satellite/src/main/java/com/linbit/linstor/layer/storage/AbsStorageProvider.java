@@ -19,6 +19,7 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.NetInterface;
@@ -1394,6 +1395,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 restoreVlmName =
                     getMigrationId(vlmData.getVolume().getVolumeDefinition())
                     .orElse(asLvIdentifier(
+                        vlmData.getStorPool().getName(),
                         new ResourceName(restoreFromResourceName),
                         vlmData.getRscLayerObject().getResourceNameSuffix(),
                         vlmData.getVlmNr())
@@ -1608,6 +1610,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected String asLvIdentifier(LAYER_DATA vlmData)
     {
         return asLvIdentifier(
+            vlmData.getStorPool(),
             vlmData.getRscLayerObject().getResourceNameSuffix(),
             vlmData.getVolume().getVolumeDefinition()
         );
@@ -1616,15 +1619,17 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected String asSnapLvIdentifier(LAYER_SNAP_DATA snapVlmData)
     {
         return asSnapLvIdentifier(
+            snapVlmData.getStorPool(),
             snapVlmData.getRscLayerObject().getResourceNameSuffix(),
             ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotVolumeDefinition()
         );
     }
 
-    protected String asLvIdentifier(String rscNameSuffix, VolumeDefinition vlmDfn)
+    protected String asLvIdentifier(StorPool storPool, String rscNameSuffix, VolumeDefinition vlmDfn)
     {
         return getMigrationId(vlmDfn).orElse(
             asLvIdentifier(
+                storPool.getName(),
                 vlmDfn.getResourceDefinition().getName(),
                 rscNameSuffix,
                 vlmDfn.getVolumeNumber()
@@ -1632,9 +1637,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         );
     }
 
-    protected String asSnapLvIdentifier(String rscNameSuffix, SnapshotVolumeDefinition snapVlmDfn)
+    protected String asSnapLvIdentifier(StorPool storPool, String rscNameSuffix, SnapshotVolumeDefinition snapVlmDfn)
     {
         return asSnapLvIdentifier(
+            storPool.getName(),
             snapVlmDfn.getResourceName(),
             rscNameSuffix,
             snapVlmDfn.getSnapshotName(),
@@ -1642,24 +1648,15 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         );
     }
 
-    protected String asLvIdentifier(String rscNameSuffix, SnapshotVolumeDefinition snapVlmDfn)
-    {
-        return getMigrationId(snapVlmDfn).orElse(
-            asLvIdentifier(
-                snapVlmDfn.getResourceName(),
-                rscNameSuffix,
-                snapVlmDfn.getVolumeNumber()
-            )
-        );
-    }
-
     protected abstract String asLvIdentifier(
+        StorPoolName spName,
         ResourceName resourceName,
         String rscNameSuffix,
         VolumeNumber volumeNumber
     );
 
     protected String asSnapLvIdentifier(
+        StorPoolName spName,
         ResourceName rscName,
         String rscNameSuffix,
         SnapshotName snapName,
@@ -1667,6 +1664,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     )
     {
         return asSnapLvIdentifierRaw(
+            spName.displayValue,
             rscName.displayValue,
             rscNameSuffix,
             snapName.displayValue,
@@ -1675,6 +1673,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     protected abstract String asSnapLvIdentifierRaw(
+        String spName,
         String rscName,
         String rscNameSuffix,
         String snapName,

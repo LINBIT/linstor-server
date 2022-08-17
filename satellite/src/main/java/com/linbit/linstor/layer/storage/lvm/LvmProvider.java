@@ -11,6 +11,7 @@ import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -517,7 +518,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    protected String asLvIdentifier(ResourceName resourceName, String rscNameSuffix, VolumeNumber volumeNumber)
+    protected String asLvIdentifier(
+        StorPoolName ignoredSpName,
+        ResourceName resourceName,
+        String rscNameSuffix,
+        VolumeNumber volumeNumber
+    )
     {
         return String.format(
             FORMAT_RSC_TO_LVM_ID,
@@ -528,7 +534,13 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    protected String asSnapLvIdentifierRaw(String rscNameRef, String rscNameSuffixRef, String snapNameRef, int vlmNrRef)
+    protected String asSnapLvIdentifierRaw(
+        String ignoredSpName,
+        String rscNameRef,
+        String rscNameSuffixRef,
+        String snapNameRef,
+        int vlmNrRef
+    )
     {
         return String.format(
             FORMAT_SNAP_TO_LVM_ID,
