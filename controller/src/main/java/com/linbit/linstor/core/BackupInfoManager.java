@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 @Singleton
@@ -46,12 +47,47 @@ public class BackupInfoManager
         l2lDstData = new HashMap<>();
     }
 
+    public boolean addAllRestoreEntries(
+        ResourceDefinition rscDfn,
+        String metaName,
+        String rscNameStr,
+        List<Snapshot> snaps,
+        Map<Snapshot, Snapshot> snapsToDownload
+    )
+    {
+        boolean newShipping = restoreAddEntry(rscDfn, metaName);
+        boolean addedSuccessfully = true;
+        if (newShipping)
+        {
+            for (Snapshot snap : snaps)
+            {
+                abortRestoreAddEntry(rscNameStr, snap);
+            }
+            for (Entry<Snapshot, Snapshot> toDownload : snapsToDownload.entrySet())
+            {
+                addedSuccessfully = backupsToDownloadAddEntry(toDownload.getKey(), toDownload.getValue());
+                if (!addedSuccessfully)
+                {
+                    break;
+                }
+            }
+        }
+        return newShipping && addedSuccessfully;
+    }
+
+    public void removeAllRestoreEntries(ResourceDefinition rscDfn, String rscName, Snapshot snap)
+    {
+        restoreRemoveEntry(rscDfn);
+        abortRestoreDeleteAllEntries(rscName);
+        backupsToDownloadCleanUp(snap);
+    }
+
     /**
      * mark a rscDfn as target of a backup restore. rscDfns in this map should not be modified in any way
      * also add the backup that is the source of the restore, to avoid multiple restores
      * of the same backup at the same time
      */
-    public boolean restoreAddEntry(ResourceDefinition rscDfn, String metaName)
+    private boolean restoreAddEntry(ResourceDefinition rscDfn, String metaName)
     {
         boolean addFlag;
         synchronized (restoreMap)
@@ -69,7 +105,7 @@ public class BackupInfoManager
      * unmark the rscDfn to signify the backup restore is done and allow other modifications to take place
      * and also free the source backup for the next restore
      */
-    public void restoreRemoveEntry(ResourceDefinition rscDfn)
+    private void restoreRemoveEntry(ResourceDefinition rscDfn)
     {
         synchronized (restoreMap)
         {
@@ -103,7 +139,7 @@ public class BackupInfoManager
      * abortRestore saves a list of snapshots used in a restore for each rscDfn that need to be
      * taken care of in case of an abort. This method adds a snapshot to that list
      */
-    public void abortRestoreAddEntry(String rscNameStr, Snapshot snap)
+    private void abortRestoreAddEntry(String rscNameStr, Snapshot snap)
     {
         try
         {
@@ -142,7 +178,7 @@ public class BackupInfoManager
     /**
      * remove the rscDfn and all the remaining snapshots in the list, signifying that the restore or abort is done
      */
-    public void abortRestoreDeleteAllEntries(String rscNameStr)
+    private void abortRestoreDeleteAllEntries(String rscNameStr)
     {
         try
         {
@@ -283,7 +319,7 @@ public class BackupInfoManager
      * add a pair of snapshots, with the second snapshot being the first snapshot's successor
      * these are used to determine which backups need to be downloaded during a restore
      */
-    public boolean backupsToDownloadAddEntry(Snapshot snap, Snapshot successor)
+    private boolean backupsToDownloadAddEntry(Snapshot snap, Snapshot successor)
     {
         boolean addFlag;
         synchronized (backupsToDownload)
@@ -311,7 +347,7 @@ public class BackupInfoManager
     /**
      * clean up the download-map when the restore is aborted by anything
      */
-    public void backupsToDownloadCleanUp(Snapshot snap)
+    private void backupsToDownloadCleanUp(Snapshot snap)
     {
         synchronized (backupsToDownload)
         {

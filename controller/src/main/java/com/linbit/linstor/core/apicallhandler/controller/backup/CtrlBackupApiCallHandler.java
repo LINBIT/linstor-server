@@ -1046,21 +1046,10 @@ public class CtrlBackupApiCallHandler
         boolean create = createPrm;
         if (!restore && !create)
         {
-            if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
-            {
-                restore = true;
-                if (snapDfns.size() > 1)
-                {
-                    create = true;
-                }
-            }
-            else
-            {
-                create = true;
-            }
+            restore = true;
+            create = true;
         }
 
-        Set<Snapshot> abortRestoreSnaps = backupInfoMgr.abortRestoreGetEntries(rscNameRef);
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateStlts = Flux.empty();
         List<SnapshotDefinition> snapDfnsToUpdate = new ArrayList<>();
         for (SnapshotDefinition snapDfn : snapDfns)
@@ -1070,11 +1059,12 @@ public class CtrlBackupApiCallHandler
             for (Snapshot snap : snaps)
             {
                 if (
-                    abortRestoreSnaps != null && abortRestoreSnaps.contains(snap) && restore ||
-                        snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE) && create
+                    snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE) && create ||
+                        snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET) && restore
                 )
                 {
                     abort = true;
+                    break;
                 }
             }
             if (abort)

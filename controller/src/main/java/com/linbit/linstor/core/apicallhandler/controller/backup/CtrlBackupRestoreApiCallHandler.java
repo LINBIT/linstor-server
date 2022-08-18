@@ -417,6 +417,8 @@ public class CtrlBackupRestoreApiCallHandler
 
             // 3c. Create snapshot objects for backups, setting the restore property to the source metadata file
             ApiCallRcImpl responses = new ApiCallRcImpl();
+            List<Snapshot> allSnaps = new ArrayList<>();
+            Map<Snapshot, Snapshot> restoreOrder = new TreeMap<>();
             for (Pair<S3MetafileNameInfo, BackupMetaDataPojo> metadata : metadataChain)
             {
                 Snapshot snap = createSnapshotByS3Meta(
@@ -432,7 +434,7 @@ public class CtrlBackupRestoreApiCallHandler
                     resetData,
                     downloadOnly
                 );
-                backupInfoMgr.abortRestoreAddEntry(targetRscName, snap);
+                allSnaps.add(snap);
                 // all other "basedOn" snapshots should not change props / size / etc..
                 resetData = false;
                 snap.getProps(peerAccCtx.get()).setProp(
@@ -442,14 +444,17 @@ public class CtrlBackupRestoreApiCallHandler
                 );
                 if (nextBackup != null)
                 {
-                    backupInfoMgr.backupsToDownloadAddEntry(snap, nextBackup);
+                    restoreOrder.put(snap, nextBackup);
                 }
                 nextBackup = snap;
             }
 
             // 3d. nextBackup now points to the end of the chain, i.e. the full backup. Start restoring from here
             nextBackup.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
-            if (!backupInfoMgr.restoreAddEntry(nextBackup.getResourceDefinition(), toRestore.toString()))
+            if (!backupInfoMgr.addAllRestoreEntries(
+                    nextBackup.getResourceDefinition(), toRestore.toString(), targetRscName, allSnaps, restoreOrder
+                )
+            )
             {
                 throw new ImplementationError(
                     "Tried to overwrite existing backup-info-mgr entry for rscDfn " + targetRscName
@@ -464,7 +469,7 @@ public class CtrlBackupRestoreApiCallHandler
             SnapshotDefinition nextBackSnapDfn = nextBackup.getSnapshotDefinition();
             return snapshotCrtHandler.postCreateSnapshot(nextBackSnapDfn)
                 .concatWith(Flux.just(responses))
-                .onErrorResume(error -> cleanupAfterFailedRestore(error, nextBackSnapDfn));
+                .onErrorResume(error -> cleanupAfterFailedRestore(error, nextBackSnapDfn, targetRscName));
         }
         catch (IOException | ParseException exc)
         {
@@ -579,7 +584,7 @@ public class CtrlBackupRestoreApiCallHandler
 
         // 3. Create definitions based on metadata
         SnapshotName snapName = LinstorParsingUtils.asSnapshotName(metafileNameInfo.snapName);
-        ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, false, resetData);
+        ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, resetData);
         SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses, downloadOnly);
         Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
         createSnapVlmDfnForBackupRestore(
@@ -639,7 +644,11 @@ public class CtrlBackupRestoreApiCallHandler
         return snap;
     }
 
-    private Flux<ApiCallRc> cleanupAfterFailedRestore(Throwable throwable, SnapshotDefinition snapDfnRef)
+    private Flux<ApiCallRc> cleanupAfterFailedRestore(
+        Throwable throwable,
+        SnapshotDefinition snapDfnRef,
+        String rscName
+    )
     {
         return scopeRunner.fluxInTransactionalScope(
             "cleanup after failed restore", lockGuardFactory.buildDeferred(
@@ -647,7 +656,8 @@ public class CtrlBackupRestoreApiCallHandler
             ),
             () -> cleanupAfterFailedRestoreInTransaction(
                 throwable,
-                snapDfnRef
+                snapDfnRef,
+                rscName
             )
         );
     }
@@ -657,14 +667,14 @@ public class CtrlBackupRestoreApiCallHandler
      */
     private Flux<ApiCallRc> cleanupAfterFailedRestoreInTransaction(
         Throwable throwableRef,
-        SnapshotDefinition snapDfnRef
+        SnapshotDefinition snapDfnRef,
+        String rscName
     ) throws AccessDeniedException
     {
         for (Snapshot snap : snapDfnRef.getAllSnapshots(sysCtx))
         {
-            backupInfoMgr.backupsToDownloadCleanUp(snap);
+            backupInfoMgr.removeAllRestoreEntries(snapDfnRef.getResourceDefinition(), rscName, snap);
         }
-        backupInfoMgr.restoreRemoveEntry(snapDfnRef.getResourceDefinition());
         ctrlTransactionHelper.commit();
 
         return Flux.error(throwableRef);
@@ -833,7 +843,6 @@ public class CtrlBackupRestoreApiCallHandler
         String targetRscName,
         SnapshotName snapName,
         BackupMetaDataPojo metadata,
-        boolean isL2L,
         boolean resetData
     )
     {
@@ -874,10 +883,6 @@ public class CtrlBackupRestoreApiCallHandler
                         "A backup is currently being restored to resource definition " + targetRscName + "."
                     )
                 );
-            }
-            if (isL2L)
-            {
-                backupInfoMgr.restoreAddEntry(rscDfn, "");
             }
             if (resetData)
             {
@@ -956,7 +961,6 @@ public class CtrlBackupRestoreApiCallHandler
                 data.dstRscName,
                 data.snapName,
                 data.metaData,
-                true,
                 resetData
             );
             SnapshotDefinition snapDfn;
@@ -1088,7 +1092,15 @@ public class CtrlBackupRestoreApiCallHandler
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
                 );
                 snap.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
-                backupInfoMgr.abortRestoreAddEntry(data.dstRscName, snap);
+                if (!backupInfoMgr.addAllRestoreEntries(
+                        rscDfn, "", data.dstRscName, Collections.singletonList(snap), Collections.emptyMap()
+                    )
+                )
+                {
+                    throw new ImplementationError(
+                        "Tried to overwrite existing backup-info-mgr entry for rscDfn " + data.dstRscName
+                    );
+                }
 
                 // LUKS
                 Set<AbsRscLayerObject<Snapshot>> luksLayerData = LayerRscUtils.getRscDataByProvider(
@@ -1166,7 +1178,7 @@ public class CtrlBackupRestoreApiCallHandler
                 ret = ctrlSatelliteUpdateCaller.updateSatellites(data.stltRemote)
                     .thenMany(
                         snapshotCrtHandler.postCreateSnapshotSuppressingErrorClasses(snapDfn)
-                            .onErrorResume(error -> cleanupAfterFailedRestore(error, snapDfn))
+                            .onErrorResume(error -> cleanupAfterFailedRestore(error, snapDfn, data.dstRscName))
                             .map(apiCallRcList ->
                             {
                                 responses.addEntries(apiCallRcList);
@@ -1499,9 +1511,7 @@ public class CtrlBackupRestoreApiCallHandler
                         if (successRef)
                         {
                             snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
-                            backupInfoMgr.abortRestoreDeleteAllEntries(rscNameRef);
-                            backupInfoMgr.backupsToDownloadCleanUp(snap);
-                            backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
+                            backupInfoMgr.removeAllRestoreEntries(snapDfn.getResourceDefinition(), rscNameRef, snap);
                             // start snap-restore
                             if (snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS))
                             {
@@ -1531,7 +1541,6 @@ public class CtrlBackupRestoreApiCallHandler
                             List<SnapshotDefinition> snapsToDelete = new ArrayList<>();
                             snapsToDelete.add(snapDfn);
                             backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
-                            backupInfoMgr.restoreRemoveEntry(snapDfn.getResourceDefinition());
                             Snapshot nextSnapToDel = nextSnap;
                             while (nextSnapToDel != null)
                             {
@@ -1544,7 +1553,8 @@ public class CtrlBackupRestoreApiCallHandler
                             Set<Snapshot> leftovers = backupInfoMgr.abortRestoreGetEntries(rscNameRef);
                             if (leftovers != null && leftovers.isEmpty())
                             {
-                                backupInfoMgr.abortRestoreDeleteAllEntries(rscNameRef);
+                                backupInfoMgr
+                                    .removeAllRestoreEntries(snapDfn.getResourceDefinition(), rscNameRef, snap);
                             }
                             else
                             {
