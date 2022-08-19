@@ -207,7 +207,8 @@ public class K8sCrdEngine implements DbEngine
         Column colRef,
         Function<INPUT_TYPE, DB_TYPE> ignoredTypeMapper,
         DataToString<DATA> dataIdToString,
-        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef,
+        DataToString<INPUT_TYPE> ignoredInputToString
     )
     {
         final DatabaseTable table = colRef.getTable();

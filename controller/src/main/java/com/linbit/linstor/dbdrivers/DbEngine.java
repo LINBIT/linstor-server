@@ -161,7 +161,8 @@ public interface DbEngine
         Column colRef,
         Function<INPUT_TYPE, DB_TYPE> typeMapperRef,
         DataToString<DATA> dataToStringRef,
-        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef,
+        DataToString<INPUT_TYPE> inputToStringRef
     );
 
     /**

@@ -280,7 +280,8 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         Column col,
         Function<INPUT_TYPE, DB_TYPE> typeMapper,
         DataToString<DATA> dataToString,
-        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToString
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToString,
+        DataToString<INPUT_TYPE> ignoredInputToString
     )
     {
         return (data, colValue) ->

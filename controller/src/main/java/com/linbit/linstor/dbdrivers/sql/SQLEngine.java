@@ -261,7 +261,8 @@ public class SQLEngine implements DbEngine
         Column colRef,
         Function<INPUT_TYPE, DB_TYPE> typeMapperRef,
         DataToString<DATA> dataToStringRef,
-        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef,
+        DataToString<INPUT_TYPE> inputToStringRef
     )
     {
         return new SQLSingleColumnDriver<>(
@@ -271,7 +272,8 @@ public class SQLEngine implements DbEngine
             colRef,
             typeMapperRef,
             dataToStringRef,
-            dataValueToStringRef
+            dataValueToStringRef,
+            inputToStringRef
         );
     }
 

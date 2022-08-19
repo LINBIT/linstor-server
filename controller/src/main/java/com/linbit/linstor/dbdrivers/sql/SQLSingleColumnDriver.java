@@ -15,7 +15,6 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Types;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 
 class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDatabaseDriver<DATA, INPUT_TYPE>
@@ -31,6 +30,8 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
     private final DatabaseTable table;
     private final String updateStatement;
 
+    private final DataToString<INPUT_TYPE> inputToStringFct;
+
     SQLSingleColumnDriver(
         SQLEngine sqlEngineRef,
         ErrorReporter errorReporterRef,
@@ -38,7 +39,8 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
         Column colToUpdateRef,
         Function<INPUT_TYPE, DB_TYPE> mapperRef,
         DataToString<DATA> dataToStringRef,
-        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToStringRef,
+        DataToString<INPUT_TYPE> inputToStringRef
     )
     {
         sqlEngine = sqlEngineRef;
@@ -48,6 +50,7 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
         dataToString = dataToStringRef;
         dataValueToString = dataValueToStringRef;
         mapper = mapperRef;
+        inputToStringFct = inputToStringRef;
 
         table = colToUpdateRef.getTable();
         updateStatement = sqlEngine.generateUpdateStatement(colToUpdateRef);
@@ -76,7 +79,7 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
                     table.getName(),
                     colToUpdate.getName(),
                     dataValueToString.accept(parentRef),
-                    Objects.toString(elementRef),
+                    elementRef == null ? "null" : inputToStringFct.toString(elementRef),
                     dataToString.toString(parentRef)
                 );
             }
@@ -105,7 +108,7 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
                     table.getName(),
                     colToUpdate.getName(),
                     dataValueToString.accept(parentRef),
-                    Objects.toString(elementRef),
+                    elementRef == null ? "null" : inputToStringFct.toString(elementRef),
                     dataToString.toString(parentRef)
                 );
             }

@@ -8,6 +8,7 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
+import com.linbit.linstor.dbdrivers.DbEngine.DataToString;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.GenericDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
@@ -29,6 +30,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -145,7 +147,25 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
             col,
             typeMapper,
             this::getId,
-            dataValueToString
+            dataValueToString,
+            Objects::toString
+        );
+    }
+
+    protected <INPUT_TYPE, DB_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateSingleColumnDriver(
+        Column col,
+        ExceptionThrowingFunction<DATA, String, AccessDeniedException> dataValueToString,
+        Function<INPUT_TYPE, DB_TYPE> typeMapper,
+        DataToString<INPUT_TYPE> inputToStringRef
+    )
+    {
+        return dbEngine.generateSingleColumnDriver(
+            setters,
+            col,
+            typeMapper,
+            this::getId,
+            dataValueToString,
+            inputToStringRef
         );
     }
 
