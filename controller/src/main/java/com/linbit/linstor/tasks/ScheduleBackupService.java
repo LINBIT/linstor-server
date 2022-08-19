@@ -321,6 +321,8 @@ public class ScheduleBackupService implements SystemService
     /**
      * Add a rscDfn to be scheduled for automated backup shipping.
      * Use this method if an automated shipping just finished and the rscDfn needs to be re-scheduled
+     * This method assumes that currently there is no task for this rscDfn-schedule-remote triplet and will therefore
+     * create a new task.
      * DO NOT set lastStartTime to a negative number - if this seems neccessary for any reason, use addNewTask(...)
      * instead
      *
@@ -409,40 +411,44 @@ public class ScheduleBackupService implements SystemService
                     infoPair,
                     now.toEpochSecond() * 1000
                 );
-                BackupShippingTask task = new BackupShippingTask(
-                    accCtx,
-                    errorReporter,
-                    backupCrtApiCallHandler.get(),
-                    backupL2LSrcApiCallHandler.get(),
-                    config,
-                    this,
-                    rscDfn.getName().displayValue,
-                    prefNode,
-                    incremental,
-                    lastStartTime
-                );
-                config.task = task;
-                synchronized (syncObj)
+                boolean confIsActive = activeShippings.contains(config);
+                if (lastStartTime >= 0 && confIsActive || lastStartTime == NOT_STARTED_YET)
                 {
-                    rscDfnLookupMap.computeIfAbsent(rscDfn, ignored -> new HashSet<>()).add(config);
-                    scheduleLookupMap.computeIfAbsent(schedule, ignored -> new HashSet<>()).add(config);
-                    remoteLookupMap.computeIfAbsent(remote, ignored -> new HashSet<>()).add(config);
-                }
-                if (timeout != null)
-                {
-                    // it should not be possible for timeout to be null here...
-                    if (timeout == 0)
+                    BackupShippingTask task = new BackupShippingTask(
+                        accCtx,
+                        errorReporter,
+                        backupCrtApiCallHandler.get(),
+                        backupL2LSrcApiCallHandler.get(),
+                        config,
+                        this,
+                        rscDfn.getName().displayValue,
+                        prefNode,
+                        incremental,
+                        lastStartTime
+                    );
+                    config.task = task;
+                    synchronized (syncObj)
                     {
-                        taskScheduleService.addTask(task);
+                        rscDfnLookupMap.computeIfAbsent(rscDfn, ignored -> new HashSet<>()).add(config);
+                        scheduleLookupMap.computeIfAbsent(schedule, ignored -> new HashSet<>()).add(config);
+                        remoteLookupMap.computeIfAbsent(remote, ignored -> new HashSet<>()).add(config);
                     }
-                    else
+                    if (timeout != null)
                     {
-                        taskScheduleService.rescheduleAt(task, timeout);
-                    }
-                    if (!activeShippings.contains(config))
-                    {
-                        // DO NOT overwrite with a new config if an entry already exists!
-                        activeShippings.add(config);
+                        // it should not be possible for timeout to be null here...
+                        if (timeout == 0)
+                        {
+                            taskScheduleService.addTask(task);
+                        }
+                        else
+                        {
+                            taskScheduleService.rescheduleAt(task, timeout);
+                        }
+                        if (!confIsActive)
+                        {
+                            // DO NOT overwrite with a new config if an entry already exists!
+                            activeShippings.add(config);
+                        }
                     }
                 }
             }
