@@ -161,7 +161,8 @@ public class PhysicalStorage
                 break;
 
             case EXOS: // fall-through for now
-
+            case EBS_INIT: // fall-through
+            case EBS_TARGET: // fall-through
             case OPENFLEX_TARGET: // fall-through
             case DISKLESS: // fall-through
             case FILE: // fall-through

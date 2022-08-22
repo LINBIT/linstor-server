@@ -5,11 +5,13 @@ import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.core.cfg.StltConfig;
+import com.linbit.linstor.layer.storage.ebs.EbsInitiatorProvider;
 import com.linbit.linstor.layer.storage.utils.SysClassUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -109,6 +111,8 @@ public class StltExtToolsChecker
                 getZfsInfo(),
                 getNvmeInfo(loadedModules),
                 getSpdkInfo(),
+                getEbsTargetInfo(),
+                getEbsInitInfo(),
                 getWritecacheInfo(loadedModules),
                 getCacheInfo(loadedModules),
                 getBCacheInfo(loadedModules),
@@ -281,6 +285,38 @@ public class StltExtToolsChecker
             false,
             SPDK_RPC_SCRIPT,
             "spdk_get_version" // "get_spdk_version" is deprecated
+        );
+    }
+
+    private ExtToolsInfo getEbsTargetInfo()
+    {
+        boolean isSupported = stltCfg.isEbs();
+        errorReporter.logTrace(
+            "Checking support for %s:%s supported ",
+            ExtTools.EBS_TARGET.name(),
+            isSupported ? "" : " NOT"
+        );
+        return new ExtToolsInfo(
+            ExtTools.EBS_TARGET,
+            isSupported,
+            new Version(),
+            isSupported ? Collections.emptyList() : Arrays.asList("Satellite is not a (special) EBS satellite")
+        );
+    }
+
+    private ExtToolsInfo getEbsInitInfo()
+    {
+        final boolean isSupported = EbsInitiatorProvider.isSupported(errorReporter);
+        errorReporter.logTrace(
+            "Checking support for %s:%s supported ",
+            ExtTools.EBS_INIT.name(),
+            isSupported ? "" : " NOT"
+        );
+        return new ExtToolsInfo(
+            ExtTools.EBS_INIT,
+            isSupported,
+            new Version(),
+            isSupported ? Collections.emptyList() : Arrays.asList("Satellite could not contact internal AWS endpoint.")
         );
     }
 

@@ -19,7 +19,10 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.exos.ExosEnclosurePingTask;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
+import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -56,6 +59,7 @@ public class CtrlStorPoolCrtApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final StorPoolHelper storPoolHelper;
     private final ExosEnclosurePingTask exosPingTask;
+    private final CtrlApiDataLoader dataLoader;
 
     @Inject
     public CtrlStorPoolCrtApiCallHandler(
@@ -69,7 +73,8 @@ public class CtrlStorPoolCrtApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        ExosEnclosurePingTask exosPingTaskRef
+        ExosEnclosurePingTask exosPingTaskRef,
+        CtrlApiDataLoader dataLoaderRef
     )
     {
         apiCtx = apiCtxRef;
@@ -83,6 +88,7 @@ public class CtrlStorPoolCrtApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         exosPingTask = exosPingTaskRef;
+        dataLoader = dataLoaderRef;
     }
 
     public Flux<ApiCallRc> createStorPool(
@@ -141,27 +147,93 @@ public class CtrlStorPoolCrtApiCallHandler
             requireStorPoolDfnMapChangeAccess();
 
             String modifiedNameStr = sharedStorPoolNameStr;
-            if (deviceProviderKindRef == DeviceProviderKind.EXOS)
+            switch (deviceProviderKindRef)
             {
-                // exos always needs this
-                String enclosureName = storPoolPropsMap.get(
-                    ApiConsts.NAMESPC_EXOS + "/" + ApiConsts.KEY_STOR_POOL_EXOS_ENCLOSURE
-                );
-                String poolSn = storPoolPropsMap.get(
-                    ApiConsts.NAMESPC_EXOS + "/" + ApiConsts.KEY_STOR_POOL_EXOS_POOL_SN
-                );
-                modifiedNameStr = enclosureName + "_" + poolSn;
-
-                if (exosPingTask.getClient(enclosureName) == null)
+                case EXOS:
                 {
+                    // exos always needs this
+                    String enclosureName = storPoolPropsMap.get(
+                        ApiConsts.NAMESPC_EXOS + "/" + ApiConsts.KEY_STOR_POOL_EXOS_ENCLOSURE
+                    );
+                    String poolSn = storPoolPropsMap.get(
+                        ApiConsts.NAMESPC_EXOS + "/" + ApiConsts.KEY_STOR_POOL_EXOS_POOL_SN
+                    );
+                    modifiedNameStr = enclosureName + "_" + poolSn;
+
+                    if (exosPingTask.getClient(enclosureName) == null)
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_NOT_FOUND_EXOS_ENCLOSURE,
+                                "The given EXOS enclosure " + enclosureName + " was not registered yet."
+                            )
+                        );
+                    }
+                    break;
+                }
+                case EBS_INIT:
+                {
+                    String ebsRemoteName = storPoolPropsMap.get(
+                        ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.NAMESPC_EBS + "/" + ApiConsts.KEY_REMOTE
+                    );
+                    if (ebsRemoteName == null || ebsRemoteName.isEmpty())
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_INVLD_PROP,
+                                "Invalid EBS remote name: '" + ebsRemoteName + "'"
+                            )
+                        );
+                    }
+                    Remote remote = dataLoader.loadRemote(ebsRemoteName, true);
+                    if (!(remote instanceof EbsRemote))
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_INVLD_PROP,
+                                "Remote '" + ebsRemoteName + "' is not an EBS remote"
+                            )
+                        );
+                    }
+                    break;
+                }
+                case EBS_TARGET:
+                {
+                    Node node = dataLoader.loadNode(nodeNameStr, true);
+                    if (node.getStorPoolCount() > 0)
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.MASK_ERROR,
+                                "An EBS target can only have one storage pool. Please use the node create-ebs-target " +
+                                    "command instead"
+                            )
+                        );
+                    }
+                    break;
+                }
+                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_NOT_FOUND_EXOS_ENCLOSURE,
-                            "The given EXOS enclosure " + enclosureName + " was not registered yet."
+                            ApiConsts.MASK_ERROR,
+                            "nice try :)"
                         )
                     );
-                }
+                case DISKLESS: // fall-through
+                case FILE: // fall-through
+                case FILE_THIN: // fall-through
+                case LVM: // fall-through
+                case LVM_THIN: // fall-through
+                case OPENFLEX_TARGET: // fall-through
+                case REMOTE_SPDK: // fall-through
+                case SPDK: // fall-through
+                case ZFS: // fall-through
+                case ZFS_THIN: // fall-through
+                default:
+                    // no special checks
+                    break;
             }
+
 
             StorPool storPool = storPoolHelper.createStorPool(
                 nodeNameStr,

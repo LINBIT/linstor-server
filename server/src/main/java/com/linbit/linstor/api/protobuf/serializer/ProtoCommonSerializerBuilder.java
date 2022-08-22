@@ -96,6 +96,7 @@ import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.DisklessVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.EbsVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ExosVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.FileThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.FileVlm;
@@ -309,6 +310,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         String stltOverrideNodeNamePrm,
         boolean openflex,
         boolean remoteSpdk,
+        boolean ebs,
         Pattern drbdKeepResPatternPrm,
         String netBindAddress,
         Integer netPort,
@@ -343,6 +345,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                         stltOverrideNodeName,
                         openflex,
                         remoteSpdk,
+                        ebs,
                         drbdKeepResPattern,
                         netBindAddress,
                         netPort,
@@ -670,6 +673,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         String stltOverrideNodeName,
         boolean openflex,
         boolean remoteSpdk,
+        boolean ebs,
         Pattern drbdKeepResPattern,
         String netBindAddress,
         Integer netPort,
@@ -686,6 +690,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setStltOverrideNodeName(stltOverrideNodeName)
             .setOpenflex(openflex)
             .setRemoteSpdk(remoteSpdk)
+            .setEbs(ebs)
             .setDrbdKeepResPattern(drbdKeepResPattern.toString())
             .setNetBindAddress(netBindAddress)
             .setNetPort(netPort)
@@ -1228,6 +1233,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case EXOS:
                 type = ProviderType.EXOS;
                 break;
+            case EBS_INIT:
+                type = ProviderType.EBS_INIT;
+                break;
+            case EBS_TARGET:
+                type = ProviderType.EBS_TARGET;
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unknown storage driver: " + deviceProviderKindRef);
@@ -1479,6 +1490,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 break;
             case SAS_PHY:
                 ret = ExternalTools.SAS_PHY;
+                break;
+            case EBS_INIT:
+                ret = ExternalTools.EBS_INIT;
+                break;
+            case EBS_TARGET:
+                ret = ExternalTools.EBS_TARGET;
                 break;
             default:
                 throw new RuntimeException("Not implemented.");
@@ -1900,6 +1917,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case EXOS:
                     builder.setExos(ExosVlm.newBuilder().build());
+                    break;
+                case EBS_INIT: // fall-through
+                case EBS_TARGET:
+                    EbsVlm.Builder ebsVlmBuilder = EbsVlm.newBuilder();
+                    builder.setEbs(ebsVlmBuilder.build());
                     break;
                 case OPENFLEX_TARGET:
                     throw new ImplementationError(

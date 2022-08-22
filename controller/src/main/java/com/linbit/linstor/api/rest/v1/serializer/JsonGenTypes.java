@@ -79,6 +79,13 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class NodeCreateEbs
+    {
+        public String name;
+        public String ebs_remote_name;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class NodeModify
     {
         public String node_type;
@@ -943,6 +950,7 @@ public class JsonGenTypes
         public String stlt_override_node_name;
         public Boolean openflex;
         public Boolean remote_spdk;
+        public Boolean ebs;
         public Boolean special_satellite;
         public String drbd_keep_res_pattern;
         public SatelliteConfigNet net;

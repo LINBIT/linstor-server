@@ -126,7 +126,6 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
         Long totalCapacityRef
     )
     {
-
         if (vlm.getVolume() instanceof Volume)
         {
             synchronizedRemove(pendingVolumesToAdd, (VlmProviderObject<Resource>) vlm);

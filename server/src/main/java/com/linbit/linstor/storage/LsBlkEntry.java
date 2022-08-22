@@ -17,6 +17,8 @@ public class LsBlkEntry
     private String model;
     private String serial;
     private String wwn;
+    private String state;
+    private String type;
 
     public enum LsBlkFields {
         NAME("NAME"),
@@ -24,11 +26,13 @@ public class LsBlkEntry
         PKNAME("PKNAME"),
         KNAME("KNAME"),
         ROTA("ROTA"),
+        TYPE("TYPE"),
         FSTYPE("FSTYPE"),
         MAJ_MIN("MAJ:MIN"),
         MODEL("MODEL"),
         SERIAL("SERIAL"),
-        WWN("WWN");
+        WWN("WWN"),
+        STATE("STATE");
 
         private final String value;
 
@@ -136,6 +140,12 @@ public class LsBlkEntry
             case WWN:
                 wwn = value;
                 break;
+            case STATE:
+                state = value;
+                break;
+            case TYPE:
+                type = value;
+                break;
             default:
                 throw new RuntimeException(String.format("Field name '%s' unknown.", fieldName));
         }
@@ -194,6 +204,16 @@ public class LsBlkEntry
     public String getWwn()
     {
         return wwn;
+    }
+
+    public String getState()
+    {
+        return state;
+    }
+
+    public String getType()
+    {
+        return type;
     }
 
     public Map<String, String> asMap()

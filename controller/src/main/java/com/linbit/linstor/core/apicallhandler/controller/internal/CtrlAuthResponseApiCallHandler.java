@@ -11,6 +11,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -124,6 +125,7 @@ public class CtrlAuthResponseApiCallHandler
 
         if (success)
         {
+            Node node = peer.getNode();
             if (LinStor.VERSION_INFO_PROVIDER.equalsVersion(
                     linstorVersionMajor,
                     linstorVersionMinor,
@@ -170,7 +172,7 @@ public class CtrlAuthResponseApiCallHandler
                     newCtx.getLimitPrivs().disablePrivileges(Privilege.PRIV_SYS_ALL);
                     peer.setAccessContext(privCtx, newCtx);
 
-                    peer.getNode().getProps(sysCtx).setProp(InternalApiConsts.NODE_UNAME, nodeUname);
+                    node.getProps(sysCtx).setProp(InternalApiConsts.NODE_UNAME, nodeUname);
 
                     ctrlTransactionHelper.commit();
                 }
@@ -189,23 +191,38 @@ public class CtrlAuthResponseApiCallHandler
                 {
                     errorReporter.reportError(exc);
                 }
-                errorReporter.logDebug("Satellite '" + peer.getNode().getName() + "' authenticated");
+                errorReporter.logDebug("Satellite '" + node.getName() + "' authenticated");
 
                 flux = ctrlFullSyncApiCallHandler.sendFullSync(
-                    peer.getNode(),
+                    node,
                     expectedFullSyncId,
                     waitForFullSyncAnswerRef
                 );
 
-                if (!nodeUname.equalsIgnoreCase(peer.getNode().getName().displayValue))
+                try
                 {
-                    flux = flux.concatWith(Flux.just(
-                        ApiCallRcImpl.singleApiCallRc(
-                            ApiConsts.INFO_NODE_NAME_MISMATCH,
-                            String.format("Linstor node name '%s' and hostname '%s' doesn't match.",
-                                peer.getNode().getName().displayValue,
-                                nodeUname)
-                        ))
+                    if (!node.getNodeType(sysCtx).isSpecial() &&
+                        !nodeUname.equalsIgnoreCase(node.getName().displayValue))
+                    {
+                        flux = flux.concatWith(
+                            Flux.just(
+                                ApiCallRcImpl.singleApiCallRc(
+                                    ApiConsts.INFO_NODE_NAME_MISMATCH,
+                                    String.format(
+                                        "Linstor node name '%s' and hostname '%s' doesn't match.",
+                                        node.getName().displayValue,
+                                        nodeUname
+                                    )
+                                )
+                            )
+                        );
+                    }
+                }
+                catch (AccessDeniedException accExc)
+                {
+                    errorReporter.reportError(
+                        Level.ERROR,
+                        new ImplementationError(accExc)
                     );
                 }
             }
@@ -215,7 +232,7 @@ public class CtrlAuthResponseApiCallHandler
                 errorReporter.logError(
                     String.format(
                         "Satellite '%s' version mismatch(v%d.%d.%d).",
-                        peer.getNode().getName(),
+                        node.getName(),
                         linstorVersionMajor,
                         linstorVersionMinor,
                         linstorVersionPatch

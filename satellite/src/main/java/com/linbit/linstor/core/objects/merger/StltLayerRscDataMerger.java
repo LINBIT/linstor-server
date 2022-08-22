@@ -1123,4 +1123,27 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         }
         return ofRscDfnData;
     }
+
+    @Override
+    protected VlmProviderObject<Resource> createEbsData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        return layerDataFactory.createEbsData(
+            vlmRef,
+            storRscDataRef,
+            storPoolRef
+        );
+    }
+
+    @Override
+    protected void mergeEbsData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
+    {
+        // no-op
+    }
 }

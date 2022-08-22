@@ -1060,4 +1060,27 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
         // TODO Auto-generated method stub
         throw new ImplementationError("Not implemented yet");
     }
+
+    @Override
+    protected VlmProviderObject<Snapshot> createEbsData(
+        AbsVolume<Snapshot> vlmRef,
+        StorageRscData<Snapshot> storSnapDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        return layerDataFactory.createEbsData(
+            vlmRef,
+            storSnapDataRef,
+            storPoolRef
+        );
+    }
+
+    @Override
+    protected void mergeEbsData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Snapshot> vlmDataRef)
+        throws DatabaseException
+    {
+        // no-op
+    }
 }

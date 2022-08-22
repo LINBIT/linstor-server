@@ -24,6 +24,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
@@ -313,6 +314,18 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
                 vlmProviderObj = new ExosData<>(
                     vlmRef,
                     rscDataRef,
+                    vlmInfo.storPool,
+                    this,
+                    transObjFactory,
+                    transMgrProvider
+                );
+                break;
+            case EBS_INIT: // fall-through
+            case EBS_TARGET:
+                vlmProviderObj = new EbsData<>(
+                    vlmRef,
+                    rscDataRef,
+                    vlmInfo.kind,
                     vlmInfo.storPool,
                     this,
                     transObjFactory,

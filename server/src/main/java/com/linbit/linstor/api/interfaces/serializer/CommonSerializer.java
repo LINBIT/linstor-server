@@ -54,6 +54,7 @@ public interface CommonSerializer
             String stltOverrideNodeName,
             boolean openflex,
             boolean remoteSpdk,
+            boolean ebs,
             Pattern drbdKeepResPattern,
             String netBindAddress,
             Integer netPort,

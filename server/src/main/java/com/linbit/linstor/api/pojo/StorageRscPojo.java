@@ -8,6 +8,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.DISKLESS;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.EBS_INIT;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.EXOS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE_THIN;
@@ -258,7 +259,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
-                storPoolApiRef, DISKLESS
+                storPoolApiRef,
+                DISKLESS
             );
         }
     }
@@ -307,7 +309,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
-                storPoolApiRef, LVM
+                storPoolApiRef,
+                LVM
             );
         }
     }
@@ -356,7 +359,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
-                storPoolApiRef, SPDK
+                storPoolApiRef,
+                SPDK
             );
         }
     }
@@ -432,7 +436,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
-                storPoolApiRef, LVM_THIN
+                storPoolApiRef,
+                LVM_THIN
             );
         }
     }
@@ -481,7 +486,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
-                storPoolApiRef, ZFS
+                storPoolApiRef,
+                ZFS
             );
         }
     }
@@ -530,7 +536,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
-                storPoolApiRef, ZFS_THIN
+                storPoolApiRef,
+                ZFS_THIN
             );
         }
     }
@@ -579,7 +586,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
-                storPoolApiRef, FILE
+                storPoolApiRef,
+                FILE
             );
         }
     }
@@ -628,7 +636,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
-                storPoolApiRef, FILE_THIN
+                storPoolApiRef,
+                FILE_THIN
             );
         }
     }
@@ -656,6 +665,56 @@ public class StorageRscPojo implements RscLayerDataApi
                 diskStateRef,
                 storPoolApiRef,
                 EXOS
+            );
+        }
+    }
+
+    public static class EbsVlmPojo extends AbsVlmProviderPojo
+    {
+        public EbsVlmPojo(
+            int vlmNrRef,
+            String devicePathRef,
+            long allocatedSizeRef,
+            long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
+        )
+        {
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                storPoolApiRef,
+                EBS_INIT
+            );
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public EbsVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
+        )
+        {
+            super(
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
+                storPoolApiRef,
+                EBS_INIT
             );
         }
     }

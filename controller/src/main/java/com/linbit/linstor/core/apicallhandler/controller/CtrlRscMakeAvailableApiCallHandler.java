@@ -12,6 +12,7 @@ import com.linbit.linstor.api.pojo.ResourceWithPayloadPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.VlmPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
+import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
@@ -34,6 +35,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.layer.resource.RscStorageLayerHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -41,6 +43,7 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
@@ -86,6 +89,7 @@ public class CtrlRscMakeAvailableApiCallHandler
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
+    private final RemoteMap remoteMap;
 
     @Inject
     public CtrlRscMakeAvailableApiCallHandler(
@@ -104,7 +108,8 @@ public class CtrlRscMakeAvailableApiCallHandler
         SharedResourceManager sharedRscMgrRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
-        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
+        RemoteMap remoteMapRef
     )
     {
         errorReporter = errorReporterRef;
@@ -123,6 +128,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
+        remoteMap = remoteMapRef;
     }
 
     public Flux<ApiCallRc> makeResourceAvailable(
@@ -551,6 +557,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         long rscFlags = 0;
         boolean disklessForErrorMsg = false;
 
+        AccessContext peerAccCtx = peerCtxProvider.get();
         if (layerStack.contains(DeviceLayerKind.DRBD))
         {
             if (!diskfulRef && hasDrbdDiskfulPeer(rscDfn))
@@ -592,11 +599,74 @@ public class CtrlRscMakeAvailableApiCallHandler
                 }
                 else
                 {
-                    errorReporter.logTrace("Searching diskful storage pool for DRBD resource");
-                    // default diskful DRBD setup with the given layers
-                    autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, null);
-                    rscFlags = 0;
-                    disklessForErrorMsg = false;
+                    Node node = dataLoader.loadNode(nodeNameRef, true);
+                    boolean isEbsInitSupported;
+                    boolean hasEbsTargetWithoutInit = false;
+                    try
+                    {
+                        isEbsInitSupported = node.getPeer(peerAccCtx).getExtToolsManager()
+                            .isProviderSupported(DeviceProviderKind.EBS_INIT);
+                    }
+                    catch (AccessDeniedException exc)
+                    {
+                        throw new ApiAccessDeniedException(
+                            exc,
+                            "checking for EBS_INIT support",
+                            ApiConsts.FAIL_ACC_DENIED_NODE
+                        );
+                    }
+                    if (isEbsInitSupported)
+                    {
+                        String nodeName = node.getName().displayValue;
+                        Iterator<StorPool> spIt;
+                        try
+                        {
+                            spIt = node.iterateStorPools(peerAccCtx);
+                            while (spIt.hasNext() && !hasEbsTargetWithoutInit)
+                            {
+                                StorPool sp = spIt.next();
+                                if (sp.getDeviceProviderKind().equals(DeviceProviderKind.EBS_INIT))
+                                {
+                                    String az = RscStorageLayerHelper.getAvailabilityZone(peerAccCtx, remoteMap, sp);
+                                    Resource targetEbsResource = RscStorageLayerHelper.findTargetEbsResource(
+                                        peerAccCtx,
+                                        remoteMap,
+                                        rscDfn,
+                                        az,
+                                        nodeName
+                                    );
+                                    hasEbsTargetWithoutInit = targetEbsResource != null;
+                                }
+                            }
+                        }
+                        catch (AccessDeniedException exc1)
+                        {
+                            hasEbsTargetWithoutInit = false; // redundant, but for clarity
+                        }
+
+                    }
+                    if (hasEbsTargetWithoutInit)
+                    {
+                        errorReporter.logTrace(
+                            "Searching diskless storage pool for DRBD over EBS (initiator) resource"
+                        );
+                        // we want to connect as initiator
+                        autoSelect = createAutoSelectConfig(
+                            nodeNameRef,
+                            layerStack,
+                            Resource.Flags.EBS_INITIATOR
+                        );
+                        rscFlags = Resource.Flags.EBS_INITIATOR.flagValue;
+                        disklessForErrorMsg = true;
+                    }
+                    else
+                    {
+                        errorReporter.logTrace("Searching diskful storage pool for DRBD resource");
+                        // default diskful DRBD setup with the given layers
+                        autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, null);
+                        rscFlags = 0;
+                        disklessForErrorMsg = false;
+                    }
                 }
             }
         }
@@ -617,7 +687,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                 rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
             ),
             rscDfn,
-            CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerCtxProvider.get())
+            CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerAccCtx)
         );
 
         StorPool sp = getStorPoolOrFail(storPoolSet, nodeNameRef, disklessForErrorMsg);

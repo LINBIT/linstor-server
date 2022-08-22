@@ -7,7 +7,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.Set;
 
@@ -50,8 +52,27 @@ public class DrbdLayerUtils
             boolean hasNvmeBelow = !LayerRscUtils.getRscDataByProvider(rscData, DeviceLayerKind.NVME).isEmpty();
             boolean hasOpenflexBelow = !LayerRscUtils.getRscDataByProvider(rscData, DeviceLayerKind.OPENFLEX).isEmpty();
             boolean isNvmeTarget = !rscFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR);
+            boolean isEbsTarget = false;
+            for (AbsRscLayerObject<Resource> storRscData : LayerRscUtils.getRscDataByProvider(
+                rscData,
+                DeviceLayerKind.STORAGE
+            ))
+            {
+                for (VlmProviderObject<Resource> vlmData : storRscData.getVlmLayerObjects().values())
+                {
+                    if (vlmData.getProviderKind().equals(DeviceProviderKind.EBS_TARGET))
+                    {
+                        isEbsTarget = true;
+                        break;
+                    }
+                }
+                if (isEbsTarget)
+                {
+                    break;
+                }
+            }
             boolean isInactive = rscFlags.isSet(accCtx, Resource.Flags.INACTIVE);
-            if ((hasNvmeBelow || hasOpenflexBelow) && isNvmeTarget || isInactive)
+            if ((hasNvmeBelow || hasOpenflexBelow) && isNvmeTarget || isEbsTarget || isInactive)
             {
                 // target NVME or inactive resource will never return a device, so drbd will not exist
                 isDevExpected = false;

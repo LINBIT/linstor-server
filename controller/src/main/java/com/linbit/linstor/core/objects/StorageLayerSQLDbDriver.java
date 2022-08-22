@@ -21,6 +21,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
@@ -354,6 +355,18 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
                 throw new ImplementationError(
                     "Openflex volumes should be loaded by openflex db driver, not by storage layer driver"
                 );
+            case EBS_INIT: // fall-through
+            case EBS_TARGET:
+                vlmProviderObj = new EbsData<>(
+                    vlmRef,
+                    rscDataRef,
+                    vlmInfo.kind,
+                    vlmInfo.storPool,
+                    this,
+                    transObjFactory,
+                    transMgrProvider
+                );
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unhandled storage type: " + vlmInfo.kind);

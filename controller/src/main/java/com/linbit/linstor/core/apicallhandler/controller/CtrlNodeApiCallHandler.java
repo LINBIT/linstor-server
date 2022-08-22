@@ -32,7 +32,6 @@ import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
-import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -64,7 +63,6 @@ import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.core.utils.ResourceUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -152,7 +150,6 @@ public class CtrlNodeApiCallHandler
     private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
     private final Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProvider;
-    private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -186,8 +183,7 @@ public class CtrlNodeApiCallHandler
         CtrlRscToggleDiskApiCallHandler rscToggleDiskApiCallHandlerRef,
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
         EventNodeHandlerBridge eventNodeHandlerBridgeRef,
-        Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProviderRef,
-        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef
+        Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProviderRef
     )
     {
         apiCtx = apiCtxRef;
@@ -221,7 +217,6 @@ public class CtrlNodeApiCallHandler
         ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
         ctrlNodeCrtApiCallHandlerProvider = ctrlNodeCrtApiCallHandlerProviderRef;
-        ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
     }
 
     Node createNodeImpl(
@@ -1291,8 +1286,6 @@ public class CtrlNodeApiCallHandler
                                 {
                                     flags.enableFlags(peerCtx, Resource.Flags.INACTIVE);
                                     flags.disableFlags(peerCtx, Resource.Flags.INACTIVE_BEFORE_EVICTION);
-
-                                    ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
                                 }
                                 // although we will perform a FullSync soon, the other satellites also need to be
                                 // updated that this resource is back online

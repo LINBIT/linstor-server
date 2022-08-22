@@ -3,6 +3,8 @@ package com.linbit.linstor.layer.storage;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.layer.storage.diskless.DisklessProvider;
+import com.linbit.linstor.layer.storage.ebs.EbsInitiatorProvider;
+import com.linbit.linstor.layer.storage.ebs.EbsTargetProvider;
 import com.linbit.linstor.layer.storage.exos.ExosProvider;
 import com.linbit.linstor.layer.storage.file.FileProvider;
 import com.linbit.linstor.layer.storage.file.FileThinProvider;
@@ -33,6 +35,8 @@ public class DeviceProviderMapper
     private final SpdkLocalProvider spdkLocalProvider;
     private final SpdkRemoteProvider spdkRemoteProvider;
     private final ExosProvider exosProvider;
+    private final EbsInitiatorProvider ebsInitProvider;
+    private final EbsTargetProvider ebsTargetProvider;
     private final List<DeviceProvider> driverList;
 
     @Inject
@@ -46,7 +50,9 @@ public class DeviceProviderMapper
         FileThinProvider fileThinProviderRef,
         SpdkLocalProvider spdkLocalProviderRef,
         SpdkRemoteProvider spdkRemoteProviderRef,
-        ExosProvider exosProviderRef
+        ExosProvider exosProviderRef,
+        EbsInitiatorProvider ebsInitProviderRef,
+        EbsTargetProvider ebsTargetProviderRef
     )
     {
         lvmProvider = lvmProviderRef;
@@ -59,6 +65,8 @@ public class DeviceProviderMapper
         spdkLocalProvider = spdkLocalProviderRef;
         spdkRemoteProvider = spdkRemoteProviderRef;
         exosProvider = exosProviderRef;
+        ebsInitProvider = ebsInitProviderRef;
+        ebsTargetProvider = ebsTargetProviderRef;
 
         driverList = Arrays.asList(
             lvmProvider,
@@ -69,8 +77,10 @@ public class DeviceProviderMapper
             fileProvider,
             fileThinProvider,
             spdkLocalProvider,
-            spdkRemoteProviderRef,
-            exosProvider
+            spdkRemoteProvider,
+            exosProvider,
+            ebsInitProvider,
+            ebsTargetProvider
         );
     }
 
@@ -118,6 +128,12 @@ public class DeviceProviderMapper
                 break;
             case EXOS:
                 devProvider = exosProvider;
+                break;
+            case EBS_INIT:
+                devProvider = ebsInitProvider;
+                break;
+            case EBS_TARGET:
+                devProvider = ebsTargetProvider;
                 break;
             case OPENFLEX_TARGET:
                 throw new ImplementationError("Openflex does not have a deviceProvider, but is a layer instead");

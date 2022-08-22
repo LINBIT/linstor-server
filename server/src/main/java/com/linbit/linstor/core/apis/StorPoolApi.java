@@ -71,33 +71,24 @@ public interface StorPoolApi
         String result;
         switch (getDeviceProviderKind())
         {
-            case LVM_THIN:
-                // fall-through
-            case ZFS:
-                // fall-through
-            case ZFS_THIN:
-                // fall-through
-            case FILE_THIN:
-                // fall-through
-            case FILE:
-                // fall-through
-            case EXOS:
-                // fall-through
+            case LVM_THIN: // fall-through
+            case ZFS: // fall-through
+            case ZFS_THIN: // fall-through
+            case FILE_THIN: // fall-through
+            case FILE: // fall-through
+            case EXOS: // fall-through
+            case EBS_INIT: // fall-through
+            case EBS_TARGET: // fall-through
             case LVM:
                 result = getStorPoolProps().get(
                     StorageConstants.NAMESPACE_STOR_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME
                 );
                 break;
-            case SPDK:
-                // fall-through
-            case REMOTE_SPDK:
-                // fall-through
-            case DISKLESS:
-                // fall-through
-            case OPENFLEX_TARGET:
-                // fall-through
-            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
-                // fall-through
+            case SPDK: // fall-through
+            case REMOTE_SPDK: // fall-through
+            case DISKLESS: // fall-through
+            case OPENFLEX_TARGET: // fall-through
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             default:
                 result = "";
                 break;

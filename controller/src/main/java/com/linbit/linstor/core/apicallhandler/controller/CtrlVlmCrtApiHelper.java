@@ -27,6 +27,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
@@ -38,6 +39,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -257,11 +259,24 @@ public class CtrlVlmCrtApiHelper
                     );
                 }
             }
-            if (storPool.getDeviceProviderKind().equals(DeviceProviderKind.OPENFLEX_TARGET))
+            if (rsc.getVolumeCount() == 1)
             {
-                if (rsc.getVolumeCount() == 1)
+                final String errorObj;
+                final DeviceProviderKind providerKind = storPool.getDeviceProviderKind();
+                if (providerKind.equals(DeviceProviderKind.OPENFLEX_TARGET))
                 {
-                    // rsc is an openflex target and has already one volume
+                    errorObj = "OpenFlex";
+                }
+                else if (providerKind.equals(DeviceProviderKind.EBS_TARGET))
+                {
+                    errorObj = "EBS";
+                }
+                else
+                {
+                    errorObj = null;
+                }
+                if (errorObj != null)
+                {
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_INVLD_VLM_COUNT,
@@ -274,21 +289,25 @@ public class CtrlVlmCrtApiHelper
 
         if (!disklessPools.isEmpty())
         {
-            if (!LayerUtils.hasLayer(
-                    CtrlRscToggleDiskApiCallHandler.getLayerData(peerAccCtx.get(), rsc),
-                    DeviceLayerKind.DRBD) &&
-                !LayerUtils.hasLayer(
-                    CtrlRscToggleDiskApiCallHandler.getLayerData(peerAccCtx.get(), rsc),
-                    DeviceLayerKind.NVME) &&
-                !LayerUtils.hasLayer(
-                    CtrlRscToggleDiskApiCallHandler.getLayerData(peerAccCtx.get(), rsc),
-                    DeviceLayerKind.OPENFLEX)
-            )
+            List<StorPool> nonEbsDisklessPools = disklessPools.stream()
+                .filter(sp -> !sp.getDeviceProviderKind().equals(DeviceProviderKind.EBS_INIT))
+                .collect(Collectors.toList());
+
+            if (!nonEbsDisklessPools.isEmpty())
             {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_LAYER_STACK,
-                    "Diskless volume is only supported in combination with DRBD, NVME or OPENFLEX"
-                ));
+                AbsRscLayerObject<Resource> rscData = CtrlRscToggleDiskApiCallHandler
+                    .getLayerData(peerAccCtx.get(), rsc);
+                if (!LayerUtils.hasLayer(rscData, DeviceLayerKind.DRBD) &&
+                    !LayerUtils.hasLayer(rscData, DeviceLayerKind.NVME) &&
+                    !LayerUtils.hasLayer(rscData, DeviceLayerKind.OPENFLEX))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_LAYER_STACK,
+                            "Diskless volume is only supported in combination with DRBD, NVME or OPENFLEX"
+                        )
+                    );
+                }
             }
         }
     }
@@ -342,8 +361,12 @@ public class CtrlVlmCrtApiHelper
         try
         {
             StateFlags<Flags> stateFlags = rsc.getStateFlags();
-            isDiskless = stateFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) ||
-                stateFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+            isDiskless = stateFlags.isSomeSet(
+                apiCtx,
+                Resource.Flags.DRBD_DISKLESS,
+                Resource.Flags.NVME_INITIATOR,
+                Resource.Flags.EBS_INITIATOR
+            );
         }
         catch (AccessDeniedException implError)
         {

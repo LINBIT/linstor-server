@@ -665,8 +665,12 @@ public class CtrlRscLayerDataFactory
         try
         {
             StateFlags<Flags> stateFlags = rsc.getStateFlags();
-            isDiskless = stateFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) ||
-                stateFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+            isDiskless = stateFlags.isSomeSet(
+                apiCtx,
+                Resource.Flags.DRBD_DISKLESS,
+                Resource.Flags.NVME_INITIATOR,
+                Resource.Flags.EBS_INITIATOR
+            );
         }
         catch (AccessDeniedException implError)
         {

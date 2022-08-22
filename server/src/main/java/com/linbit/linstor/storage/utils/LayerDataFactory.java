@@ -42,6 +42,7 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
@@ -689,5 +690,36 @@ public class LayerDataFactory
         );
         storageDbDriver.persist(exosData);
         return exosData;
+    }
+
+    /**
+     *
+     * @param vlm
+     * @param rscData
+     * @param storPool
+     * @param ebsVlmId can be null for target (will be filled after creation on special satellite)
+     *
+     * @return
+     *
+     * @throws DatabaseException
+     */
+    public <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> EbsData<RSC> createEbsData(
+        VLM vlm,
+        StorageRscData<RSC> rscData,
+        StorPool storPool
+    )
+        throws DatabaseException
+    {
+        EbsData<RSC> ebsData = new EbsData<>(
+            vlm,
+            rscData,
+            storPool.getDeviceProviderKind(),
+            storPool,
+            storageDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
+        storageDbDriver.persist(ebsData);
+        return ebsData;
     }
 }

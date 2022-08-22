@@ -31,6 +31,7 @@ message StorageVlm
     optional SpdkVlm             spdk = 16;
     optional ExosVlm             exos = 17;
     optional RemoteSpdkVlm       remote_spdk = 18;
+    optional EbsVlm              ebs = 19;
 }
 
 message StorageVlmDfn
@@ -86,4 +87,9 @@ message FileThinVlm
 message ExosVlm
 {
     // currently no special payload
+}
+
+message EbsVlm
+{
+    optional string ebs_vlm_id = 1;
 }

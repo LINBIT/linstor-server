@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -15,6 +16,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoH
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
@@ -23,11 +25,14 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
+import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -40,6 +45,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -59,11 +65,13 @@ public class CtrlNodeCrtApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlNodeApiCallHandler ctrlNodeApiCallHandler;
+    private final CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtHandler;
     private final ResourceDefinitionRepository rscDfnRepo;
     private final Provider<CtrlAuthenticator> ctrlAuthenticator;
     private final ReconnectorTask reconnectorTask;
     private final CtrlRscAutoHelper autoHelper;
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
+    private final CtrlApiDataLoader dataLoader;
 
     @Inject
     public CtrlNodeCrtApiCallHandler(
@@ -76,11 +84,13 @@ public class CtrlNodeCrtApiCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlNodeApiCallHandler ctrlNodeApiCallHandlerRef,
+        CtrlStorPoolCrtApiCallHandler ctrlStorPoolCrtHandlerRef,
         ResourceDefinitionRepository rscDfnRepoRef,
         Provider<CtrlAuthenticator> ctrlAuthenticatorRef,
         ReconnectorTask reconnectorTaskRef,
         CtrlRscAutoHelper autoHelperRef,
-        EventNodeHandlerBridge eventNodeHandlerBridgeRef
+        EventNodeHandlerBridge eventNodeHandlerBridgeRef,
+        CtrlApiDataLoader dataLoaderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -92,11 +102,13 @@ public class CtrlNodeCrtApiCallHandler
         peerAccCtx = peerAccCtxRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
+        ctrlStorPoolCrtHandler = ctrlStorPoolCrtHandlerRef;
         rscDfnRepo = rscDfnRepoRef;
         ctrlAuthenticator = ctrlAuthenticatorRef;
         reconnectorTask = reconnectorTaskRef;
         autoHelper = autoHelperRef;
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
+        dataLoader = dataLoaderRef;
     }
 
     /**
@@ -203,6 +215,90 @@ public class CtrlNodeCrtApiCallHandler
             throw new ApiAccessDeniedException(
                 exc,
                 "create " + getNodeDescriptionInline(nodeNameStr),
+                ApiConsts.FAIL_ACC_DENIED_NODE
+            );
+        }
+        return flux;
+    }
+
+    public Flux<ApiCallRc> createEbsNode(
+        String nodeNameStr,
+        String ebsRemoteNameRef
+    )
+    {
+        ResponseContext context = CtrlNodeApiCallHandler.makeNodeContext(
+            ApiOperation.makeCreateOperation(),
+            nodeNameStr
+        );
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Create EBS node",
+            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
+            () -> createEbsNodeInTransaction(
+                context,
+                nodeNameStr,
+                ebsRemoteNameRef
+            )
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> createEbsNodeInTransaction(
+        ResponseContext contextRef,
+        String nodeNameStrRef,
+        String ebsRemoteNameStrRef
+    )
+    {
+        Flux<ApiCallRc> flux;
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        Remote remote = dataLoader.loadRemote(ebsRemoteNameStrRef, true);
+        if (!(remote instanceof EbsRemote))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_EXISTS_REMOTE,
+                    "The remote with the name '" + ebsRemoteNameStrRef +
+                        "' is not a EBS remote."
+                )
+            );
+        }
+        Node node;
+        try
+        {
+            node = ctrlNodeApiCallHandler.createSpecialSatellite(
+                nodeNameStrRef,
+                Node.Type.EBS_TARGET.name(),
+                Collections.emptyMap()
+            ).extractApiCallRc(responses);
+
+            Flux<ApiCallRc> createStorPoolFlux = ctrlStorPoolCrtHandler.createStorPool(
+                nodeNameStrRef,
+                InternalApiConsts.EBS_DFTL_STOR_POOL_NAME,
+                DeviceProviderKind.EBS_TARGET,
+                null,
+                false,
+                Collections.singletonMap(
+                    ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.NAMESPC_EBS + "/" +
+                        ApiConsts.KEY_REMOTE,
+                    ebsRemoteNameStrRef
+                ),
+                Flux.empty()
+            );
+
+            ctrlTransactionHelper.commit();
+
+            eventNodeHandlerBridge.triggerNodeCreate(node.getApiData(apiCtx, null, null));
+
+            flux = Flux.<ApiCallRc>just(responses)
+                .log()
+                .concatWith(connectNow(contextRef, node))
+                .log()
+                .concatWith(createStorPoolFlux);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "create " + getNodeDescriptionInline(nodeNameStrRef),
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
         }

@@ -14,6 +14,8 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.SelectionManager;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils.DrbdResourceResult;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -499,14 +501,10 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 
     private boolean isDrbdResource(AccessContext peerAccCtx, Resource rsc) throws AccessDeniedException
     {
-        StateFlags<Resource.Flags> rscFlags = rsc.getStateFlags();
+        final DrbdResourceResult result = ResourceDataUtils.isDrbdResource(rsc, peerAccCtx);
+        final StateFlags<Resource.Flags> rscFlags = rsc.getStateFlags();
 
-        List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
-        boolean hasDrbdLayer = layerStack.contains(DeviceLayerKind.DRBD);
-        boolean hasNvmeLayer = layerStack.contains(DeviceLayerKind.NVME);
-        boolean countAsDrbd = !hasNvmeLayer || rscFlags.isSet(peerAccCtx, Resource.Flags.NVME_INITIATOR);
-
-        return hasDrbdLayer && countAsDrbd &&
+        return result != DrbdResourceResult.NO_DRBD &&
             rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE) &&
             rscFlags.isUnset(peerAccCtx, Resource.Flags.DRBD_DELETE) &&
             rscFlags.isUnset(peerAccCtx, Resource.Flags.INACTIVE);

@@ -117,6 +117,8 @@ public class DevicePoolHandler
 
             case EXOS: // for now, fall-through, might change in future
             case REMOTE_SPDK: // for now, fall-through, might change in future
+            case EBS_INIT: // for now, fall-through, might change in future
+            case EBS_TARGET: // for now, fall-through, might change in future
 
             // the following cases make no sense, hence the fall-throughs
             case DISKLESS: // fall-through
@@ -501,6 +503,8 @@ public class DevicePoolHandler
 
             case EXOS: // for now, fall-through, might change in future
             case REMOTE_SPDK: // for now, fall-through, might change in future
+            case EBS_INIT: // for now, fall-through, might change in future
+            case EBS_TARGET: // for now, fall-through, might change in future
 
             // the following cases make no sense, hence the fall-throughs
             case DISKLESS: // fall-through
@@ -548,6 +552,8 @@ public class DevicePoolHandler
 
                 case EXOS: // for now, fall-through, might change in future
                 case REMOTE_SPDK: // for now, fall-through, might change in future
+                case EBS_INIT: // for now, fall-through, might change in future
+                case EBS_TARGET: // for now, fall-through, might change in future
 
                 case SPDK: // fall-through for now
                 // the following cases make no sense, hence the fall-throughs

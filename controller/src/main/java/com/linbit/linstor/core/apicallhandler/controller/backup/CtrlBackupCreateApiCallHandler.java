@@ -624,10 +624,13 @@ public class CtrlBackupCreateApiCallHandler
         while (rscIt.hasNext())
         {
             Resource rsc = rscIt.next();
-            if (
-                !rsc.getStateFlags()
-                    .isSomeSet(peerAccCtx.get(), Resource.Flags.DRBD_DISKLESS, Resource.Flags.NVME_INITIATOR)
-            )
+            boolean isSomeSortOfDiskless = rsc.getStateFlags().isSomeSet(
+                peerAccCtx.get(),
+                Resource.Flags.DRBD_DISKLESS,
+                Resource.Flags.NVME_INITIATOR,
+                Resource.Flags.EBS_INITIATOR
+            );
+            if (!isSomeSortOfDiskless)
             {
                 ApiCallRcImpl backupShippingSupported = backupShippingSupported(rsc);
                 if (backupShippingSupported.isEmpty())

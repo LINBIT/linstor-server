@@ -25,6 +25,8 @@ info:
       - Added GET, POST /v1/remotes/ebs
       - Added PUT /v1/remotes/ebs/{remoteName}
       - Extended RemoteList with ebs_remotes
+      - Added POST /v1/nodes/ebs
+      - Extended SatelliteConfig with ebs boolean
     * 1.14.0
       - Added /v1/physical-storage/{node} to view devices for a single node
       - Added /v1/schedules/ and /v1/schedules/{scheduleName} endpoints as well as Schedule to create, delete, modify and list schedules
@@ -1091,6 +1093,33 @@ paths:
                 $ref: '#/components/schemas/ApiCallRcList'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/nodes/ebs:
+    post:
+      tags:
+        - developers
+      summary: add an EBS (special) node to Linstor
+      operationId: nodeAddEbs
+      description: Adds an EBS node to Linstor
+      responses:
+        '201':
+          description: node created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeCreateEbs'
+            example:
+              name: nodeA
+              ebs_remote_name: EbsRemote
+        description: Node to add to Linstor
   /v1/resource-definitions:
     get:
       tags:
@@ -6225,6 +6254,18 @@ components:
           type: integer
           format: int64
           description: milliseconds since unix epoch in UTC
+    NodeCreateEbs:
+      type: object
+      required:
+        - name
+        - ebs_remote_name
+      properties:
+        name:
+          type: string
+          example: nodeA
+        ebs_remote_name:
+          type: string
+          example: EbsRemote
     NodeModify:
       type: object
       properties:
@@ -6293,6 +6334,8 @@ components:
         - FILE
         - FILE_THIN
         - SPDK
+        - EBS_TARGET
+        - EBS_INIT
     StoragePool:
       description: |
         Contains information about a storage pool.
@@ -7421,6 +7464,8 @@ components:
         openflex:
           type: boolean
         remote_spdk:
+          type: boolean
+        ebs:
           type: boolean
         special_satellite:
           type: boolean

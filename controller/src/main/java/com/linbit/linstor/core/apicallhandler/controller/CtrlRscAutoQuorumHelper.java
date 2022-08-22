@@ -6,10 +6,13 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils.DrbdResourceResult;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -20,7 +23,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
@@ -32,7 +34,6 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -240,18 +241,13 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
         while (rscIt.hasNext())
         {
             Resource rsc = rscIt.next();
+            StateFlags<Flags> rscFlags = rsc.getStateFlags();
 
-            StateFlags<Resource.Flags> rscFlags = rsc.getStateFlags();
-            List<DeviceLayerKind> layerStack = layerDataHelper.getLayerStack(rsc);
-            boolean hasDrbdLayer = layerStack.contains(DeviceLayerKind.DRBD);
-            boolean hasNvmeLayer = layerStack.contains(DeviceLayerKind.NVME);
-            boolean countAsDrbd = !hasNvmeLayer ||
-                (hasNvmeLayer && rscFlags.isSet(peerAccCtx, Resource.Flags.NVME_INITIATOR));
+            DrbdResourceResult result = ResourceDataUtils.isDrbdResource(rsc, peerAccCtx);
 
-            if (
-                hasDrbdLayer && countAsDrbd &&
-                    rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE) &&
-                    rscFlags.isUnset(peerAccCtx, Resource.Flags.INACTIVE)
+            if (result != DrbdResourceResult.NO_DRBD &&
+                rscFlags.isUnset(peerAccCtx, Resource.Flags.DELETE) &&
+                rscFlags.isUnset(peerAccCtx, Resource.Flags.INACTIVE)
             )
             {
                 if (rscFlags.isSet(peerAccCtx, Resource.Flags.DRBD_DISKLESS))

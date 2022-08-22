@@ -26,6 +26,7 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -34,6 +35,8 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -171,6 +174,45 @@ public class StltCryptApiCallHelper
         return decryptedResources;
     }
 
+    /**
+     * Although this method does not decrypt anything (decryption is done in the EBS Providers), we sill want to include
+     * the EBS resources in the next deviceManager run
+     *
+     * @throws AccessDeniedException
+     */
+    private Collection<? extends ResourceName> getAllEBSResources() throws AccessDeniedException
+    {
+        Set<ResourceName> resourcesToProcess = new HashSet<>();
+        for (ResourceDefinition rscDfn : rscDfnMap.values())
+        {
+            Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+            while (rscIt.hasNext())
+            {
+
+                Resource rsc = rscIt.next();
+                AbsRscLayerObject<Resource> layerData = rsc.getLayerData(apiCtx);
+                // also add EBS resources to the new devMgr run
+                List<AbsRscLayerObject<Resource>> storRscData = LayerUtils.getChildLayerDataByKind(
+                    layerData,
+                    DeviceLayerKind.STORAGE
+                );
+                for (AbsRscLayerObject<Resource> rscData : storRscData)
+                {
+                    for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
+                    {
+                        DeviceProviderKind deviceProviderKind = vlmData.getStorPool().getDeviceProviderKind();
+                        if (deviceProviderKind.equals(DeviceProviderKind.EBS_INIT) ||
+                            deviceProviderKind.equals(DeviceProviderKind.EBS_TARGET))
+                        {
+                            resourcesToProcess.add(rscDfn.getName());
+                        }
+                    }
+                }
+            }
+        }
+        return resourcesToProcess;
+    }
+
     public void decryptVolumesAndDrives(boolean updateDevMgr)
     {
         try
@@ -183,6 +225,7 @@ public class StltCryptApiCallHelper
 
                 decryptedResources.addAll(decryptSEDDrives(masterKey));
                 decryptedResources.addAll(decryptLuksVlmKeys(masterKey));
+                decryptedResources.addAll(getAllEBSResources());
 
                 transMgrProvider.get().commit();
                 if (updateDevMgr)

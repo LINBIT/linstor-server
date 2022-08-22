@@ -14,6 +14,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -87,6 +88,7 @@ public class RscDrbdLayerHelper extends
 
     private final Provider<RscNvmeLayerHelper> nvmeHelperProvider;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
+    private final RemoteMap remoteMap;
 
     @Inject
     RscDrbdLayerHelper(
@@ -99,7 +101,8 @@ public class RscDrbdLayerHelper extends
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
-        ModularCryptoProvider cryptoProviderRef
+        ModularCryptoProvider cryptoProviderRef,
+        RemoteMap remoteMapRef
     )
     {
         super(
@@ -119,6 +122,7 @@ public class RscDrbdLayerHelper extends
         nvmeHelperProvider = nvmeHelperProviderRef;
         storPoolResolveHelper = storPoolResolveHelperRef;
         cryptoProvider = cryptoProviderRef;
+        remoteMap = remoteMapRef;
     }
 
     @Override
@@ -286,8 +290,8 @@ public class RscDrbdLayerHelper extends
 
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
         boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
-        boolean isNvmeInitiator = rscRef.getStateFlags()
-            .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        boolean isNvmeInitiator = rscRef.getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        boolean isEbsInitiator = rscRef.getStateFlags().isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
 
         Set<StorPool> allStorPools = layerDataHelperProvider.get()
             .getAllNeededStorPools(rscRef, payloadRef, layerListRef);
@@ -297,10 +301,41 @@ public class RscDrbdLayerHelper extends
 
         boolean isStoragePoolShared = areAllShared(allStorPools);
 
-        if ((isNvmeBelow || isOpenflexBelow) && isNvmeInitiator)
+        if ((isNvmeBelow || isOpenflexBelow) && isNvmeInitiator || isEbsInitiator)
         {
-            // we need to find our nvme-target resource and copy the node-id from that target-resource
-            Resource targetRsc = nvmeHelperProvider.get().getTarget(rscRef);
+            // we need to find our target resource and copy the node-id from that target-resource
+            final Resource targetRsc;
+            if (isNvmeInitiator)
+            {
+                targetRsc = nvmeHelperProvider.get().getTarget(rscRef);
+            }
+            else if (isEbsInitiator)
+            {
+                Set<String> availabilityZones = new HashSet<>();
+                for (StorPool sp : allStorPools)
+                {
+                    availabilityZones.add(RscStorageLayerHelper.getAvailabilityZone(apiCtx, remoteMap, sp));
+                }
+                if (availabilityZones.size() != 1)
+                {
+                    throw new ImplementationError(
+                        "Unexpected count of availability zone. 1 entry expected. Found: " + availabilityZones +
+                            " in storage pools: " + allStorPools
+                    );
+                }
+
+                targetRsc = RscStorageLayerHelper.findTargetEbsResource(
+                    apiCtx,
+                    remoteMap,
+                    rscRef.getDefinition(),
+                    availabilityZones.iterator().next(),
+                    rscRef.getNode().getName().displayValue
+                );
+            }
+            else
+            {
+                throw new ImplementationError("Unknown target type");
+            }
             if (targetRsc != null)
             {
                 AbsRscLayerObject<Resource> rootLayerData = targetRsc.getLayerData(apiCtx);
@@ -317,9 +352,22 @@ public class RscDrbdLayerHelper extends
             }
             if (nodeId == null)
             {
+                final long errorId;
+                if (isNvmeInitiator)
+                {
+                    errorId = ApiConsts.FAIL_MISSING_NVME_TARGET;
+                }
+                else if (isEbsInitiator)
+                {
+                    errorId = ApiConsts.FAIL_MISSING_EBS_TARGET;
+                }
+                else
+                {
+                    throw new ImplementationError("Missing target resource of unknown kind");
+                }
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_MISSING_NVME_TARGET,
+                        errorId,
                         "Failed to find nvme-target "
                     )
                 );
@@ -629,14 +677,27 @@ public class RscDrbdLayerHelper extends
                 }
             }
 
+            /*
+             * We cannot use ResourceDataUtils.isDrbdResource here since that method is based on the not yet created
+             * drbdRscData. As that object is yet to be created, the .isDrbdResource will (at this stage) always
+             * return NO_DRBD (or throws a NullPointerException).
+             */
             StateFlags<Flags> rscFlags = rsc.getStateFlags();
+            // skip ignoreReasonCheck
+            boolean needsMetaDisk = !rscFlags.isSomeSet(
+                apiCtx,
+                Resource.Flags.DELETE,
+                Resource.Flags.INACTIVATING,
+                Resource.Flags.INACTIVE,
+                Resource.Flags.INACTIVE_PERMANENTLY,
+                Resource.Flags.DRBD_DISKLESS
+            );
             boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
             boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
             boolean isNvmeInitiator = rscFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
-            boolean isDrbdDiskless = rscFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS);
 
-            ret = !allVlmsUseInternalMetaData && !isDrbdDiskless &&
-                (!(isNvmeBelow || isOpenflexBelow) || isNvmeInitiator);
+            needsMetaDisk &= (!(isNvmeBelow || isOpenflexBelow) || isNvmeInitiator);
+            ret = !allVlmsUseInternalMetaData && needsMetaDisk;
         }
         return ret;
     }

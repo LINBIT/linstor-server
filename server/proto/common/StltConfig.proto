@@ -20,4 +20,5 @@ message StltConfig
 	uint32 net_port = 11;
 	string net_type = 12;
 	bool remote_spdk = 13;
+	bool ebs = 14;
 }

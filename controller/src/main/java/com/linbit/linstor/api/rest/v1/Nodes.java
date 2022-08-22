@@ -171,6 +171,31 @@ public class Nodes
         }
     }
 
+    @POST
+    @Path("ebs")
+    public void createEbsNode(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        try
+        {
+            JsonGenTypes.NodeCreateEbs data = objectMapper.readValue(jsonData, JsonGenTypes.NodeCreateEbs.class);
+            Flux<ApiCallRc> flux = ctrlNodeCrtApiCallHandler.createEbsNode(
+                data.name,
+                data.ebs_remote_name
+            )
+                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_NODE, request));
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
+        }
+        catch (IOException ioExc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
+        }
+    }
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Path("{nodeName}")
@@ -503,7 +528,9 @@ public class Nodes
                         stltConfig.stlt_override_node_name = stltConf.getStltOverrideNodeName();
                         stltConfig.openflex = stltConf.isOpenflex();
                         stltConfig.remote_spdk = stltConf.isRemoteSpdk();
-                        stltConfig.special_satellite = stltConf.isOpenflex() || stltConf.isRemoteSpdk();
+                        stltConfig.ebs = stltConf.isEbs();
+                        stltConfig.special_satellite = stltConf.isOpenflex() || stltConf.isRemoteSpdk() ||
+                            stltConf.isEbs();
                         stltConfig.drbd_keep_res_pattern = stltConf.getDrbdKeepResPattern().toString();
                         stltConfig.net = new JsonGenTypes.SatelliteConfigNet();
                         stltConfig.net.bind_address = stltConf.getNetBindAddress();

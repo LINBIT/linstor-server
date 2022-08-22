@@ -29,7 +29,9 @@ message ExternalToolsInfo
         SAS_PHY = 18;
         SAS_DEVICE = 19;
         BCACHE_TOOLS = 20;
-        // next id: 22
+        EBS_INIT = 22;
+        EBS_TARGET = 23;
+        // next id: 24
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

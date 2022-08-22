@@ -234,6 +234,7 @@ public class CtrlRscCrtApiHelper
                                                                                               // compatibility
                 FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DRBD_DISKLESS) ||
                 FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.NVME_INITIATOR) ||
+                FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.EBS_INITIATOR) ||
                 (storPool != null && storPool.getDeviceProviderKind().equals(DeviceProviderKind.DISKLESS));
 
             if (FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.INACTIVE))
@@ -344,9 +345,10 @@ public class CtrlRscCrtApiHelper
             boolean isDisklessSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DISKLESS);
             boolean isDrbdDisklessSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DRBD_DISKLESS);
             boolean isNvmeInitiatorSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.NVME_INITIATOR);
+            boolean isEbsInitiatorSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.EBS_INITIATOR);
 
             if (
-                (isDisklessSet && !isDrbdDisklessSet && !isNvmeInitiatorSet) ||
+                (isDisklessSet && !isDrbdDisklessSet && !isNvmeInitiatorSet && !isEbsInitiatorSet) ||
                 (!isDisklessSet && isStorPoolDiskless)
             )
             {
@@ -570,17 +572,14 @@ public class CtrlRscCrtApiHelper
                             DeviceProviderKind devProviderKind = storPool.getDeviceProviderKind();
                             switch (devProviderKind)
                             {
-                                case OPENFLEX_TARGET:
-                                    // fall-through
-                                case DISKLESS:
-                                    // ignored
+                                case OPENFLEX_TARGET: // fall-through
+                                case DISKLESS: // ignored
                                     break;
-                                case LVM:
-                                    // fall-through
-                                case SPDK:
-                                    // fall-through
-                                case REMOTE_SPDK:
-                                    // fall-through
+                                case LVM: // fall-through
+                                case SPDK: // fall-through
+                                case REMOTE_SPDK: // fall-through
+                                case EBS_INIT: // fall-through
+                                case EBS_TARGET: // fall-through
                                 case EXOS:
                                     hasFatStorPool = true;
                                     break;
@@ -1089,10 +1088,13 @@ public class CtrlRscCrtApiHelper
             while (rscIter.hasNext())
             {
                 StateFlags<Flags> stateFlags = rscIter.next().getStateFlags();
-                if (
-                    !stateFlags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS)  &&
-                    !stateFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR)
-                )
+                final boolean hasAnyDisklessFlagSet = stateFlags.isSomeSet(
+                    accCtx,
+                    Resource.Flags.DRBD_DISKLESS,
+                    Resource.Flags.NVME_INITIATOR,
+                    Resource.Flags.EBS_INITIATOR
+                );
+                if (!hasAnyDisklessFlagSet)
                 {
                     allDiskless = false;
                 }
@@ -1154,7 +1156,7 @@ public class CtrlRscCrtApiHelper
     {
         return ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl.simpleEntry(
             ApiConsts.WARN_ALL_DISKLESS,
-            "Resource '" + rscName + "' unusable because it is diskless on all its nodes"
+            "Resource '" + rscName + "' is unusable because it is diskless on all its nodes"
         ));
     }
 

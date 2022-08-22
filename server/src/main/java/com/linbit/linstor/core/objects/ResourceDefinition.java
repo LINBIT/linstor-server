@@ -376,8 +376,12 @@ public class ResourceDefinition extends BaseTransactionObject
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
             StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
-            hasDiskless = stateFlags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS) ||
-                stateFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR);
+            hasDiskless = stateFlags.isSomeSet(
+                accCtx,
+                Resource.Flags.DRBD_DISKLESS,
+                Resource.Flags.NVME_INITIATOR,
+                Resource.Flags.EBS_INITIATOR
+            );
             if (hasDiskless)
             {
                 break;
@@ -392,11 +396,14 @@ public class ResourceDefinition extends BaseTransactionObject
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
             StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
-            if (
-                (stateFlags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS) ||
-                 stateFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR)
-                ) &&
-                stateFlags.isUnset(accCtx, Resource.Flags.DELETE))
+            boolean isDiskless = stateFlags.isSomeSet(
+                accCtx,
+                Resource.Flags.DRBD_DISKLESS,
+                Resource.Flags.NVME_INITIATOR,
+                Resource.Flags.EBS_INITIATOR
+            );
+            boolean isNotDeleting = stateFlags.isUnset(accCtx, Resource.Flags.DELETE);
+            if (isDiskless && isNotDeleting)
             {
                 hasDisklessNotDeleting = true;
                 break;

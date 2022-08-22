@@ -18,4 +18,6 @@ enum ProviderType
     OPENFLEX_TARGET = 11;
     EXOS = 12;
     REMOTE_SPDK = 13;
+    EBS_INIT = 14;
+    EBS_TARGET = 15;
 }

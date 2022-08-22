@@ -1057,6 +1057,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                 case REMOTE_SPDK: // fall-through
                 case ZFS: // fall-through
                 case ZFS_THIN: // fall-through
+                case EBS_INIT: // fall-through
+                case EBS_TARGET: // fall-through
                 case EXOS:
                     layer = storageLayer;
                     break;

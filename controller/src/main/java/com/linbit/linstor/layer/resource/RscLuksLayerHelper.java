@@ -1,12 +1,14 @@
 package com.linbit.linstor.layer.resource;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
@@ -46,6 +48,7 @@ import javax.inject.Singleton;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -65,6 +68,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     ModularCryptoProvider cryptoProvider;
     private final EncryptionHelper encryptionHelper;
 
+    private final RemoteMap remoteMap;
+
     @Inject
     RscLuksLayerHelper(
         ErrorReporter errorReporterRef,
@@ -76,7 +81,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
         SharedResourceManager sharedRscMgrRef,
-        EncryptionHelper encryptionHelperRef
+        EncryptionHelper encryptionHelperRef,
+        RemoteMap remoteMapRef
     )
     {
         super(
@@ -96,6 +102,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         nvmeHelperProvider = nvmeHelperProviderRef;
         sharedRscMgr = sharedRscMgrRef;
         encryptionHelper = encryptionHelperRef;
+        remoteMap = remoteMapRef;
     }
 
     @Override
@@ -192,19 +199,50 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         Resource rsc = vlm.getAbsResource();
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
         boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
-        boolean isNvmeInitiator = rsc.getStateFlags()
-            .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        boolean isNvmeInitiator = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        boolean isEbsInitiator = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
 
         Set<StorPool> allStorPools = layerDataHelperProvider.get()
             .getAllNeededStorPools(rsc, payload, layerListRef);
 
         boolean isStoragePoolShared = areAllShared(allStorPools);
 
-        if ((isNvmeBelow || isOpenflexBelow) && isNvmeInitiator)
+        if ((isNvmeBelow || isOpenflexBelow) && isNvmeInitiator || isEbsInitiator)
         {
-            // we need to find our nvme-target resource and copy the node-id from that target-resource
-            errorReporter.logTrace("Nvme- / OpenFlex-initiator below us.. looking for target");
-            Resource targetRsc = nvmeHelperProvider.get().getTarget(rsc);
+            // we need to find our target resource and copy the node-id from that target-resource
+            errorReporter.logTrace("Nvme-, OpenFlex or EBS initiator below us.. looking for target");
+            final Resource targetRsc;
+            if (isNvmeInitiator)
+            {
+                targetRsc = nvmeHelperProvider.get().getTarget(rsc);
+            }
+            else if (isEbsInitiator)
+            {
+                Set<String> availabilityZones = new HashSet<>();
+                for (StorPool sp : allStorPools)
+                {
+                    availabilityZones.add(RscStorageLayerHelper.getAvailabilityZone(apiCtx, remoteMap, sp));
+                }
+                if (availabilityZones.size() != 1)
+                {
+                    throw new ImplementationError(
+                        "Unexpected count of availability zone. 1 entry expected. Found: " + availabilityZones +
+                            " in storage pools: " + allStorPools
+                    );
+                }
+
+                targetRsc = RscStorageLayerHelper.findTargetEbsResource(
+                    apiCtx,
+                    remoteMap,
+                    rsc.getDefinition(),
+                    availabilityZones.iterator().next(),
+                    rsc.getNode().getName().displayValue
+                );
+            }
+            else
+            {
+                throw new ImplementationError("Unknown target type");
+            }
             if (targetRsc != null)
             {
                 AbsRscLayerObject<Resource> rootLayerData = targetRsc.getLayerData(apiCtx);
@@ -215,7 +253,8 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
                     if (targetRscData.getResourceNameSuffix().equals(luksRscData.getResourceNameSuffix()))
                     {
                         LuksRscData<Resource> targetLuksRscData = (LuksRscData<Resource>) targetRscData;
-                        LuksVlmData<Resource> targetLuksVlmData = targetLuksRscData.getVlmLayerObjects().get(vlm.getVolumeNumber());
+                        LuksVlmData<Resource> targetLuksVlmData = targetLuksRscData.getVlmLayerObjects()
+                            .get(vlm.getVolumeNumber());
                         encryptedVlmKey = targetLuksVlmData.getEncryptedKey();
                         errorReporter.logTrace("encryptedVlmKey found and copied from %s", targetRsc);
                         break;

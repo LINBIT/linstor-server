@@ -6,20 +6,26 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
+import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
@@ -33,6 +39,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -45,7 +52,9 @@ import com.linbit.linstor.storage.utils.ExosMappingManager;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 import com.linbit.linstor.utils.NameShortener;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -54,11 +63,13 @@ import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 @Singleton
-class RscStorageLayerHelper extends AbsRscLayerHelper<
+public class RscStorageLayerHelper extends
+    AbsRscLayerHelper<
     StorageRscData<Resource>, VlmProviderObject<Resource>,
     RscDfnLayerObject, VlmDfnLayerObject
 >
@@ -67,6 +78,7 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     private final NameShortener exosNameShortener;
     private final ExosMappingManager exosMapMgr;
     private final CtrlSecurityObjects secObjs;
+    private final RemoteMap remoteMap;
 
     @Inject
     RscStorageLayerHelper(
@@ -78,7 +90,8 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
         @Named(NameShortener.EXOS) NameShortener exosNameShortenerRef,
         ExosMappingManager exosMapMgrRef,
-        CtrlSecurityObjects securityObjectsRef
+        CtrlSecurityObjects secObjsRef,
+        RemoteMap remoteMapRef
     )
     {
         super(
@@ -96,7 +109,8 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         storPoolResolveHelper = storPoolResolveHelperRef;
         exosNameShortener = exosNameShortenerRef;
         exosMapMgr = exosMapMgrRef;
-        secObjs = securityObjectsRef;
+        secObjs = secObjsRef;
+        remoteMap = remoteMapRef;
     }
 
     @Override
@@ -308,6 +322,64 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                     exosData.updateShortName(apiCtx);
                     vlmData = exosData;
                     break;
+                case EBS_TARGET:
+                    vlmData = layerDataFactory.createEbsData(
+                        vlm,
+                        rscData,
+                        storPool
+                    );
+                    break;
+                case EBS_INIT:
+                    Pair<String, Resource> unusedTargetEbsPair = findUnusedTargetEbsPair(
+                        apiCtx,
+                        remoteMap,
+                        rscData,
+                        vlm,
+                        storPool
+                    );
+
+                    String unusedTargetEbsVlmId = unusedTargetEbsPair.objA;
+                    Resource targetRsc = unusedTargetEbsPair.objB;
+                    vlmData = layerDataFactory.createEbsData(
+                        vlm,
+                        rscData,
+                        storPool
+                    );
+                    try
+                    {
+                        vlm.getProps(apiCtx).setProp(
+                            InternalApiConsts.KEY_EBS_VLM_ID + rscData.getResourceNameSuffix(),
+                            unusedTargetEbsVlmId,
+                            ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+                        );
+                        Props rscProp = targetRsc.getProps(apiCtx);
+                        // double check, just to be sure
+                        String connectedInitNodeName = rscProp.getProp(
+                            InternalApiConsts.KEY_EBS_CONNECTED_INIT_NODE_NAME,
+                            ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+                        );
+                        String currentNodeName = vlm.getAbsResource().getNode().getName().displayValue;
+                        if (connectedInitNodeName == null)
+                        {
+                            rscProp.setProp(
+                                InternalApiConsts.KEY_EBS_CONNECTED_INIT_NODE_NAME,
+                                currentNodeName,
+                                ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+                            );
+                        }
+                        else if (!currentNodeName.equals(connectedInitNodeName))
+                        {
+                            throw new StorageException(
+                                "Cannot connect to target resource '" + targetRsc +
+                                    "' since it has already a connected EBS initiator"
+                            );
+                        }
+                    }
+                    catch (InvalidKeyException | InvalidValueException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
+                    break;
                 case OPENFLEX_TARGET:
                     throw new ImplementationError(
                         "Openflex volumes should be handled by openflex, not by storage helper"
@@ -319,6 +391,174 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             storPool.putVolume(apiCtx, vlmData);
         }
         return vlmData;
+    }
+
+    public static String getEbsVlmId(
+        AccessContext accCtxRef,
+        StorageRscData<Resource> rscDataRef,
+        Volume vlmRef
+    )
+        throws AccessDeniedException
+    {
+        return getEbsVlmId(accCtxRef, rscDataRef.getResourceNameSuffix(), vlmRef);
+    }
+
+    private static String getEbsVlmId(
+        AccessContext accCtxRef,
+        String rscNameSuffix,
+        Volume vlmRef
+    )
+        throws AccessDeniedException
+    {
+        return vlmRef.getProps(accCtxRef).getProp(
+            InternalApiConsts.KEY_EBS_VLM_ID + rscNameSuffix,
+            ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+        );
+    }
+
+    /**
+     * If a target resource has an initiator, the resource itself should have a property containing the node name of the
+     * initiator. This method searches for a resource in the given resource definition, that is an EBS target resource
+     * in the given availabilityZone and has either the "connectedInitiator" property not set or set to the optional
+     * nodeName parameter.
+     *
+     * @param accCtx
+     * @param remoteMap
+     * @param rscDfn
+     * @param availabilityZone
+     * @param nodeName
+     *
+     * @return A target resource if one exists
+     *
+     * @throws AccessDeniedException
+     */
+    public static @Nullable Resource findTargetEbsResource(
+        AccessContext accCtx,
+        RemoteMap remoteMap,
+        ResourceDefinition rscDfn,
+        String availabilityZone,
+        @Nullable String nodeName
+    )
+        throws AccessDeniedException
+    {
+        Resource ret = null;
+        Iterator<Resource> rscIt = rscDfn.iterateResource(accCtx);
+        while (rscIt.hasNext())
+        {
+            Resource rsc = rscIt.next();
+
+            Node targetNode = rsc.getNode();
+            if (targetNode.getNodeType(accCtx).equals(Node.Type.EBS_TARGET))
+            {
+                if (targetNode.getStorPoolCount() != 1)
+                {
+                    throw new ImplementationError(
+                        "EBS target node has unexpectedly many storage pools: " + targetNode.getStorPoolCount()
+                    );
+                }
+                StorPool ebsStorPool = targetNode.iterateStorPools(accCtx).next();
+                String ebsStorPoolAZ = getAvailabilityZone(accCtx, remoteMap, ebsStorPool);
+
+                if (ebsStorPoolAZ.equals(availabilityZone))
+                {
+                    Props rscProp = rsc.getProps(accCtx);
+                    String connectedInitiator = rscProp.getProp(
+                        InternalApiConsts.KEY_EBS_CONNECTED_INIT_NODE_NAME,
+                        ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+                    );
+                    if (connectedInitiator == null || connectedInitiator.equals(nodeName))
+                    {
+                        ret = rsc;
+                        break;
+                    }
+                }
+
+            }
+        }
+        return ret;
+    }
+
+    public static String getAvailabilityZone(AccessContext accCtx, RemoteMap remoteMap, StorPool ebsStorPool)
+        throws AccessDeniedException, ImplementationError
+    {
+        Remote remote;
+        try
+        {
+            remote = remoteMap.get(
+                new RemoteName(
+                    ebsStorPool.getProps(accCtx).getProp(
+                        ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.NAMESPC_EBS + "/" +
+                            ApiConsts.KEY_REMOTE
+                    ),
+                    true
+                )
+            );
+        }
+        catch (InvalidKeyException | InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        if (!(remote instanceof EbsRemote))
+        {
+            throw new ImplementationError(
+                "Remote was unexpectedly not an EBS remote, but: " + (remote == null ?
+                    "null" :
+                    remote.getClass().getSimpleName())
+            );
+        }
+        return ((EbsRemote) remote).getAvailabilityZone(accCtx);
+    }
+
+    private static Pair<String, Resource> findUnusedTargetEbsPair(
+        AccessContext accCtxRef,
+        RemoteMap remoteMap,
+        StorageRscData<Resource> rscDataRef,
+        Volume vlmRef,
+        StorPool storPool
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+        String storedEbsVlmId = getEbsVlmId(accCtxRef, rscDataRef, vlmRef);
+        Pair<String, Resource> ret;
+
+        if (storedEbsVlmId != null)
+        {
+            ret = new Pair<>(storedEbsVlmId, vlmRef.getAbsResource());
+        }
+        else
+        {
+            Resource targetRsc = findTargetEbsResource(
+                accCtxRef,
+                remoteMap,
+                vlmRef.getResourceDefinition(),
+                getAvailabilityZone(accCtxRef, remoteMap, storPool),
+                vlmRef.getAbsResource().getNode().getName().displayValue
+            );
+
+            if (targetRsc == null)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_MISSING_EBS_TARGET,
+                        "No unused EBS target resource available"
+                    )
+                );
+            }
+
+            Volume targetVlm = targetRsc.getVolume(vlmRef.getVolumeNumber());
+            String targetEbsVlmId = targetVlm.getProps(accCtxRef).getProp(
+                InternalApiConsts.KEY_EBS_VLM_ID + rscDataRef.getResourceNameSuffix(),
+                ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+            );
+
+            if (targetEbsVlmId == null)
+            {
+                throw new ImplementationError("Target volume '" + targetVlm + "' does not have an EBSVlmId");
+            }
+
+            ret = new Pair<>(targetEbsVlmId, targetRsc);
+        }
+        return ret;
     }
 
     @Override
@@ -430,6 +670,10 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
             {
                 reason = IGNORE_REASON_OF_TARGET;
             }
+            else if (providerKindSet.contains(DeviceProviderKind.EBS_TARGET))
+            {
+                reason = IGNORE_REASON_EBS_TARGET;
+            }
             else if (providerKindSet.contains(DeviceProviderKind.SPDK) ||
                 providerKindSet.contains(DeviceProviderKind.REMOTE_SPDK))
             {
@@ -454,6 +698,20 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         ))
         {
             changed |= setIgnoreReason(rscDataRef, IGNORE_REASON_RSC_CLONING, true, false, true);
+        }
+
+        if (!secObjs.areAllSet())
+        {
+            for (VlmProviderObject<Resource> vlmData : vlmLayerObjects)
+            {
+                DeviceProviderKind devProviderKind = vlmData.getStorPool().getDeviceProviderKind();
+                if (devProviderKind.equals(DeviceProviderKind.EBS_INIT) ||
+                    devProviderKind.equals(DeviceProviderKind.EBS_TARGET))
+                {
+                    changed |= setIgnoreReason(rscDataRef, IGNORE_REASON_EBS_MISSING_KEY, false, false, false);
+                    break;
+                }
+            }
         }
         return changed;
     }
@@ -549,7 +807,7 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                 );
                 break;
             case OPENFLEX_TARGET:
-                throw new ImplementationError("Restoring from snapshots is not supported for openflex-setups");
+                throw new ImplementationError("Restoring from snapshots is not supported for OpenFlex-setups");
             case FILE:
             case FILE_THIN:
                 vlmData = layerDataFactory.createFileData(vlmRef, storRscData, providerKind, storPool);
@@ -579,6 +837,9 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
                 exosData.updateShortName(apiCtx);
                 vlmData = exosData;
                 break;
+            case EBS_INIT:
+            case EBS_TARGET:
+                throw new ImplementationError("Restoring from snapshot is not supported for EBs-setups");
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unexpected kind: " + kind);

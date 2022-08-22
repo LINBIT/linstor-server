@@ -1,6 +1,8 @@
 package com.linbit.linstor.storage.kinds;
 
 import com.linbit.linstor.storage.DisklessDriverKind;
+import com.linbit.linstor.storage.EbsInitiatorDriverKind;
+import com.linbit.linstor.storage.EbsTargetDriverKind;
 import com.linbit.linstor.storage.ExosDriverKind;
 import com.linbit.linstor.storage.FileDriverKind;
 import com.linbit.linstor.storage.FileThinDriverKind;
@@ -158,6 +160,30 @@ public enum DeviceProviderKind
         false,
         new OpenflexTargetDriverKind()
     ),
+    EBS_INIT(
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        new EbsInitiatorDriverKind()
+    ),
+    EBS_TARGET(
+        false,
+        false,
+        false,
+        false,
+        false,
+        true,
+        false,
+        false,
+        false,
+        new EbsTargetDriverKind()
+    ),
     FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER(
         false,
         false,
@@ -296,6 +322,10 @@ public enum DeviceProviderKind
                 break;
             case EXOS:
                 allowed = kind2.equals(EXOS) || kind2.equals(LVM);
+                break;
+            case EBS_INIT: // fall-through
+            case EBS_TARGET:
+                allowed = kind2.equals(EBS_INIT) || kind2.equals(EBS_TARGET);
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:

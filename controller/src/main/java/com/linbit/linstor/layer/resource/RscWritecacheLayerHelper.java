@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
@@ -29,6 +30,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
@@ -223,13 +225,12 @@ class RscWritecacheLayerHelper
     {
         boolean isNvmeOrOpenflexBelow = DeviceLayerKind.WRITECACHE.isAncestorOf(layerListRef, DeviceLayerKind.NVME) ||
             DeviceLayerKind.WRITECACHE.isAncestorOf(layerListRef, DeviceLayerKind.OPENFLEX);
-        boolean isNvmeInitiator = rscDataRef.getAbsResource().getStateFlags()
-            .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        StateFlags<Flags> rscFlags = rscDataRef.getAbsResource().getStateFlags();
+        boolean isNvmeInitiator = rscFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        boolean isEbsInitiator = rscFlags.isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
 
-        boolean needsCacheDevice = (isNvmeInitiator && isNvmeOrOpenflexBelow) ||
-            (!isNvmeInitiator && !isNvmeOrOpenflexBelow);
-
-        return needsCacheDevice;
+        return (isNvmeInitiator && isNvmeOrOpenflexBelow) ||
+            (!isNvmeInitiator && !isNvmeOrOpenflexBelow) || isEbsInitiator;
     }
 
     @Override

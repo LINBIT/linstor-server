@@ -214,6 +214,9 @@ public class SpecialSatelliteProcessManager
             case REMOTE_SPDK:
                 option = "--remote-spdk";
                 break;
+            case EBS_TARGET:
+                option = "--ebs";
+                break;
 
             case AUXILIARY: // fall-through
             case COMBINED:// fall-through

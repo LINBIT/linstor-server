@@ -18,13 +18,16 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -392,16 +395,33 @@ public class CtrlRscActivateApiCallHandler
         boolean ret = false;
         try
         {
-            // check if rscRef is an nvme-target. if so, check if there is already an initiator -> inUse = true
+            // check if rscRef is an nvme- or ebs-target. if so, check if there is already an initiator -> inUse = true
             AccessContext peerCtx = peerAccCtx.get();
-            List<DeviceLayerKind> layerStack = LayerRscUtils.getLayerStack(rscRef, peerCtx);
-            if (layerStack.contains(DeviceLayerKind.NVME))
+            boolean isNvmeTarget = false;
+            boolean isEbsTarget = false;
+            {
+                List<DeviceLayerKind> layerStack = LayerRscUtils.getLayerStack(rscRef, peerCtx);
+                isNvmeTarget = layerStack.contains(DeviceLayerKind.NVME);
+
+                for (StorPool storPool : LayerVlmUtils.getStorPools(rscRef, peerCtx))
+                {
+                    if (storPool.getDeviceProviderKind().equals(DeviceProviderKind.EBS_TARGET))
+                    {
+                        isEbsTarget = true;
+                    }
+                }
+            }
+            if (isNvmeTarget || isEbsTarget)
             {
                 Iterator<Resource> rscIt = rscRef.getResourceDefinition().iterateResource(peerCtx);
                 while (rscIt.hasNext())
                 {
                     Resource otherRsc = rscIt.next();
-                    if (otherRsc.getStateFlags().isSet(peerCtx, Resource.Flags.NVME_INITIATOR))
+                    if (otherRsc.getStateFlags().isSomeSet(
+                        peerCtx,
+                        Resource.Flags.NVME_INITIATOR,
+                        Resource.Flags.EBS_INITIATOR
+                    ))
                     {
                         ret = true;
                         break;

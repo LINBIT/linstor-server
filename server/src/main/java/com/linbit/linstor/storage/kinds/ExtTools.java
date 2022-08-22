@@ -16,5 +16,6 @@ public enum ExtTools
     UTIL_LINUX,
     UDEVADM,
     LSSCSI, SAS_PHY, SAS_DEVICE,
-    BCACHE_TOOLS
+    BCACHE_TOOLS,
+    EBS_INIT, EBS_TARGET
 }

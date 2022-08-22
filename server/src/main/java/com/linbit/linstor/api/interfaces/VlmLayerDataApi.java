@@ -6,6 +6,7 @@ import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.DisklessVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.EbsVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.FileVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
@@ -47,7 +48,10 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         @Type(value = LuksVlmPojo.class, name = "luks"),
         @Type(value = NvmeVlmPojo.class, name = "nvme"),
         @Type(value = WritecacheVlmPojo.class, name = "writecache"),
-        @Type(value = BCacheVlmPojo.class, name = "bcache")
+        @Type(value = BCacheVlmPojo.class, name = "bcache"),
+        @Type(value = EbsVlmPojo.class, name = "ebs")
+    // remoteSPDK and Exos are missing as we cannot ship backups from those
+    // since we have no direct access to the snapshots
     }
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)

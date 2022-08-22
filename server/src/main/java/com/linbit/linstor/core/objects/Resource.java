@@ -347,6 +347,11 @@ public class Resource extends AbsResource<Resource>
         return getStateFlags().isSet(accCtx, Flags.NVME_INITIATOR);
     }
 
+    public boolean isEbsInitiator(AccessContext accCtx) throws AccessDeniedException
+    {
+        return getStateFlags().isSet(accCtx, Flags.EBS_INITIATOR);
+    }
+
     public boolean isDiskless(AccessContext accCtx) throws AccessDeniedException
     {
         return isDrbdDiskless(accCtx) || isNvmeInitiator(accCtx);
@@ -537,6 +542,7 @@ public class Resource extends AbsResource<Resource>
          * inactivating, the {@link #INACTIVE} flag should be placed. Should be a short state
          */
         INACTIVATING(1L << 19),
+        EBS_INITIATOR(1L << 20 | DISKLESS.getFlagValue()),
         ;
 
         public final long flagValue;

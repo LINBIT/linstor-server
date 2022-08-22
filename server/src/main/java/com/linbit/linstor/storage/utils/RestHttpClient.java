@@ -9,6 +9,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.jr.ob.JSON;
 import org.apache.http.Header;
 import org.apache.http.HttpEntityEnclosingRequest;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -39,6 +41,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 public class RestHttpClient implements RestClient
 {
     public static final ObjectMapper OBJECT_MAPPER;
+    private static final Charset UTF8 = Charset.forName("UTF8");
 
     private static final long DEFAULT_RETRY_DELAY = 1000;
     private static final long KIB = 1024;
@@ -51,6 +54,7 @@ public class RestHttpClient implements RestClient
 
     private final ErrorReporter errorReporter;
 
+
     static
     {
         OBJECT_MAPPER = new ObjectMapper();
@@ -58,8 +62,25 @@ public class RestHttpClient implements RestClient
 
     public RestHttpClient(ErrorReporter errorReporterRef)
     {
+        this(errorReporterRef, 0, 0, 0);
+    }
+
+    public RestHttpClient(
+        ErrorReporter errorReporterRef,
+        int requestTimeoutMsRef,
+        int connectTimeoutMsRef,
+        int socketTimeoutMsRef
+    )
+    {
         errorReporter = errorReporterRef;
-        httpClient = HttpClientBuilder.create().build();
+
+        httpClient = HttpClientBuilder.create().setDefaultRequestConfig(
+            RequestConfig.custom()
+                .setConnectionRequestTimeout(requestTimeoutMsRef)
+                .setConnectTimeout(connectTimeoutMsRef)
+                .setSocketTimeout(socketTimeoutMsRef)
+                .build()
+        ).build();
         handlers = new ArrayList<>();
     }
 
@@ -116,9 +137,12 @@ public class RestHttpClient implements RestClient
                 )
             );
         }
-        for (Entry<String, String> entry : request.httpHeaders.entrySet())
+        if (request.httpHeaders != null)
         {
-            req.addHeader(entry.getKey(), entry.getValue());
+            for (Entry<String, String> entry : request.httpHeaders.entrySet())
+            {
+                req.addHeader(entry.getKey(), entry.getValue());
+            }
         }
 
         RestHttpResponse<T> restResponse = null;
@@ -140,31 +164,39 @@ public class RestHttpClient implements RestClient
                 T respObj;
                 if (jsonData.length > 0 && request.responseClass != null)
                 {
-                    /*
-                     * Technically JSON allows duplicate keys, even with different value types.
-                     * In some cases we need to get rid of this. (sorry for this ugly hack)
-                     */
-                    if (request.responseClass.isArray())
+                    if (request.responseClass == String.class)
                     {
-                        Map<String, Object>[] obj = OBJECT_MAPPER.readValue(
-                            jsonData,
-                            new TypeReference<Map<String, Object>[]>()
-                            {
-                            }
-                        );
-                        respObj = OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(obj), request.responseClass);
+                        respObj = (T) new String(jsonData, UTF8);
                     }
                     else
                     {
-                        Map<String, Object> obj = OBJECT_MAPPER.readValue(
-                            jsonData,
-                            new TypeReference<Map<String, Object>>()
-                            {
-                            }
-                        );
-                        respObj = OBJECT_MAPPER.readValue(OBJECT_MAPPER.writeValueAsString(obj), request.responseClass);
+                        /*
+                         * Technically JSON allows duplicate keys, even with different value types.
+                         * In some cases we need to get rid of this. (sorry for this ugly hack)
+                         */
+                        if (request.responseClass.isArray())
+                        {
+                            Map<String, Object>[] obj = OBJECT_MAPPER.readValue(
+                                jsonData,
+                                new TypeReference<Map<String, Object>[]>()
+                                {
+                                }
+                            );
+                            respObj = OBJECT_MAPPER
+                                .readValue(OBJECT_MAPPER.writeValueAsString(obj), request.responseClass);
+                        }
+                        else
+                        {
+                            Map<String, Object> obj = OBJECT_MAPPER.readValue(
+                                jsonData,
+                                new TypeReference<Map<String, Object>>()
+                                {
+                                }
+                            );
+                            respObj = OBJECT_MAPPER
+                                .readValue(OBJECT_MAPPER.writeValueAsString(obj), request.responseClass);
+                        }
                     }
-
                 }
                 else
                 {

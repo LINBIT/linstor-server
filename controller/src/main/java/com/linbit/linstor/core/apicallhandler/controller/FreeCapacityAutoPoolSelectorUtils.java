@@ -62,7 +62,8 @@ public class FreeCapacityAutoPoolSelectorUtils
             thinFreeCapacities.get(new StorPool.Key(storPool));
 
         Optional<Long> freeCapacity = freeCapacityOverride != null ?
-            Optional.of(freeCapacityOverride) : getFreeSpaceLastUpdatedPrivileged(accCtx, storPool);
+            Optional.of(freeCapacityOverride) :
+            getFreeSpaceLastUpdatedPrivileged(accCtx, storPool);
 
         Optional<Long> usableCapacity = freeCapacity.map(
             capacity -> storPool.getDeviceProviderKind().usesThinProvisioning() ?

@@ -51,6 +51,7 @@ import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
 import com.linbit.linstor.core.objects.WritecacheLayerETCDDriver;
 import com.linbit.linstor.core.objects.WritecacheLayerK8sCrdDriver;
 import com.linbit.linstor.core.objects.WritecacheLayerSQLDbDriver;
+import com.linbit.linstor.core.objects.remotes.EbsRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.LinstorRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.S3RemoteDbDriver;
 import com.linbit.linstor.dbcp.DbConnectionPool;
@@ -120,6 +121,8 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.remotes.EbsRemoteCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.remotes.EbsRemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.LinstorRemoteCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.LinstorRemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteCtrlDatabaseDriver;
@@ -194,6 +197,8 @@ public class ControllerDbModule extends AbstractModule
         bind(S3RemoteDatabaseDriver.class).to(S3RemoteDbDriver.class);
         bind(LinstorRemoteCtrlDatabaseDriver.class).to(LinstorRemoteDbDriver.class);
         bind(LinstorRemoteDatabaseDriver.class).to(LinstorRemoteDbDriver.class);
+        bind(EbsRemoteCtrlDatabaseDriver.class).to(EbsRemoteDbDriver.class);
+        bind(EbsRemoteDatabaseDriver.class).to(EbsRemoteDbDriver.class);
         bind(ScheduleCtrlDatabaseDriver.class).to(ScheduleDbDriver.class);
         bind(ScheduleDatabaseDriver.class).to(ScheduleDbDriver.class);
         switch (dbType)

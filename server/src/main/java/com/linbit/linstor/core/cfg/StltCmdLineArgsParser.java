@@ -76,6 +76,9 @@ class StltCmdLineArgsParser
     @CommandLine.Option(names = { "--remote-spdk" }, hidden = true)
     private boolean remoteSpdk;
 
+    @CommandLine.Option(names = {"--ebs" }, hidden = true)
+    private boolean ebs;
+
     @CommandLine.Option(names = "--allow-ext-files", split = ",", description = "Whitelist paths for external files")
     private String[] extFilesWhitelist;
 
@@ -122,6 +125,7 @@ class StltCmdLineArgsParser
 
         stltCfg.setOpenflex(linArgParser.openflex);
         stltCfg.setRemoteSpdk(linArgParser.remoteSpdk);
+        stltCfg.setEbs(linArgParser.ebs);
 
         stltCfg.setLogDirectory(linArgParser.logDirectory);
 

@@ -441,6 +441,12 @@ public class LinstorParsingUtils
             case "EXOS_TARGET":
                 kind = DeviceProviderKind.EXOS;
                 break;
+            case "EBS_TARGET":
+                kind = DeviceProviderKind.EBS_TARGET;
+                break;
+            case "EBS_INIT":
+                kind = DeviceProviderKind.EBS_INIT;
+                break;
             default:
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

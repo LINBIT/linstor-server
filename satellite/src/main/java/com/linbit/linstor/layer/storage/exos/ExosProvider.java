@@ -256,9 +256,6 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         }
     }
 
-    /*
-     * Expected to be overridden (extended) by LvmThinProvider
-     */
     protected void updateInfo(ExosData<?> vlmDataRef, ExosRestVolume exosVlm)
         throws DatabaseException, AccessDeniedException, StorageException
     {

@@ -227,10 +227,10 @@ class RscBCacheLayerHelper
     {
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
         boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
-        boolean isNvmeInitiator = rsc.getStateFlags()
-            .isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
-        boolean needsCacheDevice = (!isNvmeBelow && !isOpenflexBelow) || isNvmeInitiator;
-        return needsCacheDevice;
+        boolean isNvmeInitiator = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
+        boolean isEbsInitiator = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
+
+        return (!isNvmeBelow && !isOpenflexBelow) || isNvmeInitiator || isEbsInitiator;
     }
 
     @Override

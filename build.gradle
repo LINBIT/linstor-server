@@ -73,8 +73,10 @@ subprojects {
             implementation group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
             implementation group: 'com.h2database', name: 'h2', version: '1.4.197'
 
-            implementation platform('com.amazonaws:aws-java-sdk-bom:1.11.932')
+            implementation platform('com.amazonaws:aws-java-sdk-bom:1.12.192')
             implementation 'com.amazonaws:aws-java-sdk-s3'
+            implementation 'com.amazonaws:aws-java-sdk-ebs'
+            implementation 'com.amazonaws:aws-java-sdk-ec2'
 
             implementation group: 'com.cronutils', name: 'cron-utils', version: cronVersion
 

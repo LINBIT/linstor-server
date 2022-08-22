@@ -970,7 +970,8 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.FILE_THIN,
                 DeviceProviderKind.SPDK,
                 DeviceProviderKind.OPENFLEX_TARGET,
-                DeviceProviderKind.EXOS
+                DeviceProviderKind.EXOS,
+                DeviceProviderKind.EBS_INIT
             ),
             false
         ),
@@ -986,7 +987,8 @@ public class Node extends BaseTransactionObject
                 DeviceProviderKind.FILE_THIN,
                 DeviceProviderKind.SPDK,
                 DeviceProviderKind.OPENFLEX_TARGET,
-                DeviceProviderKind.EXOS
+                DeviceProviderKind.EXOS,
+                DeviceProviderKind.EBS_INIT
             ),
             false
         ),
@@ -1006,6 +1008,13 @@ public class Node extends BaseTransactionObject
             6,
             Arrays.asList(
                 DeviceProviderKind.REMOTE_SPDK
+            ),
+            true
+        ),
+        EBS_TARGET(
+            7,
+            Arrays.asList(
+                DeviceProviderKind.EBS_TARGET
             ),
             true
         );

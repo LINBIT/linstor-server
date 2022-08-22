@@ -240,6 +240,17 @@ class StorPoolFilter
                     }
                 }
             }
+            else if (disklessTypeRef.equals(Resource.Flags.EBS_INITIATOR))
+            {
+                if (filterProviderList == null || !filterProviderList.contains(DeviceProviderKind.EBS_INIT))
+                {
+                    if (filterProviderList == null)
+                    {
+                        filterProviderList = new ArrayList<>();
+                    }
+                    filterProviderList.add(DeviceProviderKind.EBS_INIT);
+                }
+            }
         }
         else
         {

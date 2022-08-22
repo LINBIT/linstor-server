@@ -53,6 +53,7 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
@@ -688,5 +689,27 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         );
         ofRscDfnData.setNqn(ofRscDfnPojoRef.getNqn());
         return ofRscDfnData;
+    }
+
+    @Override
+    protected VlmProviderObject<Resource> createEbsData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        throw new ImplementationError("Received unknown EBS resource from satellite");
+    }
+
+    @Override
+    protected void mergeEbsData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
+    {
+        EbsData<Resource> ebsData = (EbsData<Resource>) vlmDataRef;
+        ebsData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
+        ebsData.setDevicePath(vlmPojoRef.getDevicePath());
+        ebsData.setUsableSize(vlmPojoRef.getUsableSize());
     }
 }

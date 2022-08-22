@@ -408,6 +408,10 @@ public class ConfFileBuilderTest
             .thenReturn(!diskless);
         when(rscStateFlags.isSet(any(AccessContext.class), eq(Resource.Flags.NVME_INITIATOR)))
             .thenReturn(diskless);
+        when(rscStateFlags.isUnset(any(AccessContext.class), eq(Resource.Flags.EBS_INITIATOR)))
+            .thenReturn(!diskless);
+        when(rscStateFlags.isSet(any(AccessContext.class), eq(Resource.Flags.EBS_INITIATOR)))
+            .thenReturn(diskless);
 
         when(resourceDefinition.getName()).thenReturn(new ResourceName("testResource"));
         when(resourceDefinition.getProps(accessContext)).thenReturn(rscDfnProps);

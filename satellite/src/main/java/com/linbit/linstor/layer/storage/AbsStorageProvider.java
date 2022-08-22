@@ -83,7 +83,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     implements DeviceProvider
 {
     private static final long DFLT_WAIT_UNTIL_DEVICE_CREATED_TIMEOUT_IN_MS = 5000;
-    public static final long SIZE_OF_NOT_FOUND_STOR_POOL = -1;
+    public static final long SIZE_OF_NOT_FOUND_STOR_POOL = ApiConsts.VAL_STOR_POOL_SPACE_NOT_FOUND;
 
     private static final String CLONE_PREFIX = "CF_";
 
@@ -1682,7 +1682,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     public abstract String getDevicePath(String storageName, String lvId);
 
-    protected abstract String getStorageName(LAYER_DATA vlmData) throws DatabaseException, AccessDeniedException;
+    protected abstract String getStorageName(LAYER_DATA vlmData)
+        throws DatabaseException, AccessDeniedException, StorageException;
 
     protected abstract void setDevicePath(LAYER_DATA vlmData, String devicePath) throws DatabaseException;
 

@@ -75,6 +75,7 @@ public class SizeConvTest
         new TestEntry(63L, UNIT_GiB, UNIT_KiB, 66060288L, false),
         new TestEntry(40516976640L, UNIT_MiB, UNIT_TiB, 38640L, false),
         new TestEntry(48510, UNIT_GB, UNIT_KiB, 47373046875L, false),
+        new TestEntry(1, UNIT_KiB, UNIT_MiB, 0, true),
         new TestEntry(1023, UNIT_KiB, UNIT_MiB, 0, true),
         new TestEntry(2047, UNIT_KiB, UNIT_MiB, 1, true),
         new TestEntry(58273485671283L, UNIT_B, UNIT_KiB, 56907700850L, true),

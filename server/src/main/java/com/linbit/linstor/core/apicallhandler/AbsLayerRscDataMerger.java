@@ -50,6 +50,7 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
+import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
@@ -470,6 +471,21 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
                 else
                 {
                     mergeExosData(vlmPojo, vlmData);
+                }
+                break;
+            case EBS_INIT: // fall-through
+            case EBS_TARGET:
+                if (vlmData == null || !(vlmData instanceof EbsData))
+                {
+                    if (vlmData != null)
+                    {
+                        removeStorageVlm(storRscData, vlmNr);
+                    }
+                    vlmData = createEbsData(vlm, storRscData, vlmPojo, storPool);
+                }
+                else
+                {
+                    mergeEbsData(vlmPojo, vlmData);
                 }
                 break;
             case OPENFLEX_TARGET:
@@ -1045,6 +1061,17 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         throws DatabaseException, AccessDeniedException;
 
     protected abstract void mergeExosData(VlmLayerDataApi vlmPojo, VlmProviderObject<RSC> vlmData)
+        throws DatabaseException;
+
+    protected abstract VlmProviderObject<RSC> createEbsData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> storRscData,
+        VlmLayerDataApi vlmPojo,
+        StorPool storPool
+    )
+        throws DatabaseException, AccessDeniedException;
+
+    protected abstract void mergeEbsData(VlmLayerDataApi vlmPojo, VlmProviderObject<RSC> vlmData)
         throws DatabaseException;
 
     /*

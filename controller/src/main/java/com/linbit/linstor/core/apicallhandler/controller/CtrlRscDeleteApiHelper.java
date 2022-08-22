@@ -303,7 +303,8 @@ public class CtrlRscDeleteApiHelper
         try
         {
             AccessContext accCtx = peerAccCtx.get();
-            boolean isDiskless = rsc.isDrbdDiskless(accCtx) || rsc.isNvmeInitiator(accCtx);
+            boolean isDiskless = rsc.isDrbdDiskless(accCtx) || rsc.isNvmeInitiator(accCtx) ||
+                rsc.isEbsInitiator(accCtx);
             if (
                 !isDiskless &&
                     rsc.getDefinition().hasDisklessNotDeleting(accCtx) &&

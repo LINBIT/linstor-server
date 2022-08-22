@@ -167,6 +167,12 @@ public class ProtoDeserializationUtils
                 case EXOS:
                     kind = DeviceProviderKind.EXOS;
                     break;
+                case EBS_INIT:
+                    kind = DeviceProviderKind.EBS_INIT;
+                    break;
+                case EBS_TARGET:
+                    kind = DeviceProviderKind.EBS_TARGET;
+                    break;
                 case UNKNOWN_PROVIDER: // fall-through
                 case UNRECOGNIZED: // fall-through
                 default:
@@ -417,6 +423,12 @@ public class ProtoDeserializationUtils
                 break;
             case SAS_DEVICE:
                 tool = ExtTools.SAS_DEVICE;
+                break;
+            case EBS_INIT:
+                tool = ExtTools.EBS_INIT;
+                break;
+            case EBS_TARGET:
+                tool = ExtTools.EBS_TARGET;
                 break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through
