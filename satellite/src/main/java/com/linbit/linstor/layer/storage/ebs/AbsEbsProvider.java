@@ -70,6 +70,9 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     protected static final String TAG_KEY_LINSTOR_ID = "LinstorID";
     protected static final String TAG_KEY_LINSTOR_INIT_DEV = "LinstorInitDevice";
 
+    protected static final int WAIT_AFTER_RESIZE_COUNT = 300;
+    protected static final long WAIT_AFTER_RESIZE_TIMEOUT_IN_MS = 100;
+
     protected static final SpaceInfo ENOUGH_SPACE_INFO = new SpaceInfo(
         ApiConsts.VAL_STOR_POOL_SPACE_ENOUGH,
         ApiConsts.VAL_STOR_POOL_SPACE_ENOUGH
@@ -387,5 +390,41 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     }
 
     protected abstract EbsRemote getEbsRemote(StorPool storPoolRef);
+
+    protected void waitUntilResizeFinished(AmazonEC2 client, String ebsVlmId, long expectedNewSizeInGib)
+        throws StorageException
+    {
+        DescribeVolumesRequest describeVolumesRequest = new DescribeVolumesRequest()
+            .withVolumeIds(ebsVlmId);
+
+        boolean hasExpectedSize = false;
+        int waitCount = WAIT_AFTER_RESIZE_COUNT;
+        while (!hasExpectedSize && waitCount-- > 0)
+        {
+            DescribeVolumesResult describeVolumes = client.describeVolumes(describeVolumesRequest);
+            if (describeVolumes.getVolumes().size() != 1)
+            {
+                throw new StorageException(
+                    "Unexpected volume count for id: " + ebsVlmId + ", count: " + describeVolumes.getVolumes().size()
+                );
+            }
+            hasExpectedSize = describeVolumes.getVolumes().get(0).getSize() == expectedNewSizeInGib;
+            try
+            {
+                Thread.sleep(WAIT_AFTER_RESIZE_TIMEOUT_IN_MS);
+            }
+            catch (InterruptedException exc)
+            {
+                // ignored
+            }
+        }
+        if (!hasExpectedSize)
+        {
+            throw new StorageException(
+                "EBS Volume " + ebsVlmId + " unexpectedly did not resize within " +
+                    (WAIT_AFTER_RESIZE_COUNT * WAIT_AFTER_RESIZE_TIMEOUT_IN_MS) + "ms"
+            );
+        }
+    }
 
 }

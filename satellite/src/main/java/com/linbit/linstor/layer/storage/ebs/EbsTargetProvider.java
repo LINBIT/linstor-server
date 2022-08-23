@@ -55,6 +55,9 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.CreateVolumeRequest;
 import com.amazonaws.services.ec2.model.CreateVolumeResult;
 import com.amazonaws.services.ec2.model.DeleteVolumeRequest;
+import com.amazonaws.services.ec2.model.DescribeVolumesRequest;
+import com.amazonaws.services.ec2.model.DescribeVolumesResult;
+import com.amazonaws.services.ec2.model.ModifyVolumeRequest;
 import com.amazonaws.services.ec2.model.ResourceType;
 import com.amazonaws.services.ec2.model.Tag;
 import com.amazonaws.services.ec2.model.TagSpecification;
@@ -300,8 +303,36 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     protected void resizeLvImpl(EbsData<Resource> vlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        // TODO: try to implement
-        throw new ImplementationError("Not implemented (yet?)");
+        AmazonEC2 client = getClient(vlmDataRef.getStorPool());
+
+        String ebsVlmId = vlmDataRef.getVolume().getProps(storDriverAccCtx).getProp(
+            InternalApiConsts.KEY_EBS_VLM_ID,
+            ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+            );
+        long newSizeInGib = SizeConv.convert(vlmDataRef.getExpectedSize(), SizeUnit.UNIT_KiB, SizeUnit.UNIT_GiB);
+        if (newSizeInGib > Integer.MAX_VALUE)
+        {
+            throw new StorageException(
+                "Can only grow to max " + Integer.MAX_VALUE + "GiB, but " + newSizeInGib + " was given"
+            );
+        }
+
+        client.modifyVolume(
+            new ModifyVolumeRequest()
+                .withSize((int) newSizeInGib)
+                .withVolumeId(ebsVlmId)
+        );
+
+        // wait until amazon also reports the correct size as otherwise the next
+        // DevMgrRun would read the old size and will try another resize which will
+        // fail since the amazon volume will be still in optimizing state (which might
+        // take up to a few hours. See requirements for resizing (growing):
+        // https://docs.amazonaws.cn/en_us/AWSEC2/latest/UserGuide/modify-volume-requirements.html
+
+        waitUntilResizeFinished(client, ebsVlmId, newSizeInGib);
+
+        vlmDataRef.setAllocatedSize(newSizeInGib);
+        vlmDataRef.setUsableSize(newSizeInGib);
     }
 
     @Override
@@ -325,6 +356,36 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         throws StorageException, AccessDeniedException, DatabaseException
     {
         // noop
+    }
+
+    @Override
+    protected long getAllocatedSize(EbsData<Resource> vlmDataRef) throws StorageException
+    {
+        long ret = -1;
+        String ebsVlmId = getEbsVlmId(vlmDataRef);
+        if (ebsVlmId != null)
+        {
+            AmazonEC2 client = getClient(vlmDataRef.getStorPool());
+            DescribeVolumesResult volumesResult = client.describeVolumes(
+                new DescribeVolumesRequest().withVolumeIds(ebsVlmId)
+            );
+            if (volumesResult.getVolumes().size() > 1)
+            {
+                throw new StorageException(
+                    "Unexected count of volumes for EBS vol-id: " + ebsVlmId + ", count: " +
+                        volumesResult.getVolumes().size()
+                );
+            }
+            if (!volumesResult.getVolumes().isEmpty())
+            {
+                ret = SizeConv.convert(
+                    volumesResult.getVolumes().get(0).getSize(),
+                    SizeUnit.UNIT_GiB,
+                    SizeUnit.UNIT_KiB
+                );
+            }
+        }
+        return ret;
     }
 
     @Override

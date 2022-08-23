@@ -508,8 +508,47 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     protected void resizeLvImpl(EbsData<Resource> vlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        // TODO: try to implement
-        throw new ImplementationError("Not implemented (yet?)");
+        waitUntilResizeFinished(
+            getClient(vlmDataRef.getStorPool()),
+            getEbsVlmId(vlmDataRef),
+            SizeConv.convert(vlmDataRef.getExpectedSize(), SizeUnit.UNIT_KiB, SizeUnit.UNIT_GiB)
+        );
+        // also wait until local device got resized
+        final String devicePath = vlmDataRef.getDevicePath();
+        int waitCount = WAIT_AFTER_RESIZE_COUNT;
+        boolean resized = false;
+        long entrySizeInKib = -1;
+        while (waitCount > 0 && !resized)
+        {
+            try
+            {
+                Thread.sleep(WAIT_AFTER_RESIZE_TIMEOUT_IN_MS);
+            }
+            catch (InterruptedException ignored)
+            {
+            }
+            List<LsBlkEntry> lsblkPostResize = LsBlkUtils.lsblk(extCmdFactory.create());
+            for (LsBlkEntry entry : lsblkPostResize)
+            {
+                if (devicePath.equals(entry.getKernelName()))
+                {
+                    entrySizeInKib = SizeConv.convert(
+                        entry.getSize(),
+                        SizeUnit.UNIT_B,
+                        SizeUnit.UNIT_KiB
+                    );
+                    resized = entrySizeInKib == vlmDataRef.getExpectedSize();
+                    break;
+                }
+            }
+        }
+        if (!resized)
+        {
+            throw new StorageException(
+                "Device [" + devicePath + "] did not resize. Size: " + entrySizeInKib + "kib, expected: " +
+                    vlmDataRef.getExpectedSize() + "kib"
+            );
+        }
     }
 
     @Override
