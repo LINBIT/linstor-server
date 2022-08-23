@@ -122,12 +122,12 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
         amazonEc2ClientLUT = new HashMap<>();
     }
 
-    protected AmazonEC2 getClient(StorPool storPoolRef) throws AccessDeniedException, StorageException
+    protected AmazonEC2 getClient(StorPool storPoolRef) throws StorageException
     {
         return getClient(getEbsRemote(storPoolRef));
     }
 
-    protected AmazonEC2 getClient(EbsRemote remoteRef) throws AccessDeniedException, StorageException
+    protected AmazonEC2 getClient(EbsRemote remoteRef) throws StorageException
     {
         AmazonEC2 client = amazonEc2ClientLUT.get(remoteRef); // to avoid double-locking problem
         if (client == null)
@@ -137,13 +137,13 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
                 client = amazonEc2ClientLUT.get(remoteRef); // update, just to make sure
                 if (client == null)
                 {
-                    EndpointConfiguration endpointConfiguration = new EndpointConfiguration(
-                        remoteRef.getUrl(storDriverAccCtx).toString(),
-                        remoteRef.getRegion(storDriverAccCtx)
-                    );
                     byte[] masterKey = stltSecObj.getCryptKey();
                     try
                     {
+                        EndpointConfiguration endpointConfiguration = new EndpointConfiguration(
+                            remoteRef.getUrl(storDriverAccCtx).toString(),
+                            remoteRef.getRegion(storDriverAccCtx)
+                        );
                         client = AmazonEC2ClientBuilder.standard()
                             .withEndpointConfiguration(endpointConfiguration)
                             .withCredentials(
@@ -164,6 +164,10 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
                                     )
                                 )
                             ).build();
+                    }
+                    catch (AccessDeniedException exc)
+                    {
+                        throw new ImplementationError(exc);
                     }
                     catch (LinStorException exc)
                     {
@@ -366,7 +370,6 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     }
 
     protected String getEbsVlmId(EbsData<?> vlmDataRef)
-        throws AccessDeniedException
     {
         String ret;
         try
@@ -376,13 +379,13 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
                 ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
             );
         }
-        catch (InvalidKeyException exc)
+        catch (InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
         return ret;
     }
 
-    protected abstract EbsRemote getEbsRemote(StorPool storPoolRef) throws AccessDeniedException;
+    protected abstract EbsRemote getEbsRemote(StorPool storPoolRef);
 
 }

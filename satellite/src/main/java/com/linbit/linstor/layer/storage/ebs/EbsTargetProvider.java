@@ -204,7 +204,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
                     throw new ImplementationError(exc);
                 }
             }
-            vlmDataRef.setAllocatedSize(vlmDataRef.getUsableSize());
+            vlmDataRef.setAllocatedSize(SizeConv.convert(amazonVlmRef.getSize(), SizeUnit.UNIT_GiB, SizeUnit.UNIT_KiB));
 
             vlmDataRef.setExists(true);
         }
@@ -233,10 +233,14 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         String ebsVlmId = createVolumeResult.getVolume().getVolumeId();
         setEbsVlmId(vlmDataRef, ebsVlmId);
         EbsProviderUtils.waitUntilVolumeHasState(client, ebsVlmId, EBS_VLM_STATE_AVAILABLE, EBS_VLM_STATE_CREATING);
+
+        long allocatedSize = getAllocatedSize(vlmDataRef); // queries online
+        vlmDataRef.setAllocatedSize(allocatedSize);
+        vlmDataRef.setUsableSize(allocatedSize);
     }
 
     @Override
-    protected EbsRemote getEbsRemote(StorPool storPoolRef) throws AccessDeniedException
+    protected EbsRemote getEbsRemote(StorPool storPoolRef)
     {
         Remote remote;
         try
@@ -250,7 +254,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
                 )
             );
         }
-        catch (InvalidKeyException | InvalidNameException exc)
+        catch (InvalidKeyException | InvalidNameException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }

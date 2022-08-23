@@ -289,6 +289,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
             }
             vlmDataRef.setExists(true);
             vlmDataRef.setDevicePath(getFromTags(amaVlmRef.getTags(), TAG_KEY_LINSTOR_INIT_DEV));
+            vlmDataRef.setAllocatedSize(SizeConv.convert(amaVlmRef.getSize(), SizeUnit.UNIT_GiB, SizeUnit.UNIT_KiB));
         }
     }
 
