@@ -283,12 +283,12 @@ public class CtrlStorPoolResolveHelper
                     "for volume number '" + vlmDfn.getVolumeNumber().value + "' " +
                     "is not deployed on node '" + rsc.getNode().getName().displayValue + "'.")
                 .setDetails("The resource which should be deployed had at least one volume definition " +
-                    "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LinStor " +
+                    "(volume number '" + vlmDfn.getVolumeNumber().value + "') which LINSTOR " +
                     "tried to automatically create. " +
-                    "The storage pool name for this new volume was looked for in order in " +
+                    "The storage pool name for this new volume was looked for, in order, in: " +
                     "the properties of the resource, volume definition, resource definition and node, " +
                     "and finally in a system wide default storage pool name defined by " +
-                    "the LinStor controller.")
+                    "the LINSTOR Controller.")
                 .build(),
                 new LinStorException("Dependency not found")
             );
