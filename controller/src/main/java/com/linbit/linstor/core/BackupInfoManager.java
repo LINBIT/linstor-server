@@ -32,6 +32,7 @@ public class BackupInfoManager
     private final Map<NodeName, Map<SnapshotDefinition.Key, AbortInfo>> abortCreateMap;
     private final Map<ResourceName, Set<Snapshot>> abortRestoreMap;
     private final Map<Snapshot, Snapshot> backupsToDownload;
+    private final Object restoreSyncObj = new Object();
     // Map<LinstorRemoteName, Map<StltRemoteName, Data>>
     private final Map<RemoteName, Map<RemoteName, CtrlBackupL2LSrcApiCallHandler.BackupShippingData>> l2lSrcData;
     private final Map<Snapshot, CtrlBackupL2LDstApiCallHandler.BackupShippingData> l2lDstData;
@@ -55,31 +56,37 @@ public class BackupInfoManager
         Map<Snapshot, Snapshot> snapsToDownload
     )
     {
-        boolean newShipping = restoreAddEntry(rscDfn, metaName);
-        boolean addedSuccessfully = true;
-        if (newShipping)
+        synchronized (restoreSyncObj)
         {
-            for (Snapshot snap : snaps)
+            boolean newShipping = restoreAddEntry(rscDfn, metaName);
+            boolean addedSuccessfully = true;
+            if (newShipping)
             {
-                abortRestoreAddEntry(rscNameStr, snap);
-            }
-            for (Entry<Snapshot, Snapshot> toDownload : snapsToDownload.entrySet())
-            {
-                addedSuccessfully = backupsToDownloadAddEntry(toDownload.getKey(), toDownload.getValue());
-                if (!addedSuccessfully)
+                for (Snapshot snap : snaps)
                 {
-                    break;
+                    abortRestoreAddEntry(rscNameStr, snap);
+                }
+                for (Entry<Snapshot, Snapshot> toDownload : snapsToDownload.entrySet())
+                {
+                    addedSuccessfully = backupsToDownloadAddEntry(toDownload.getKey(), toDownload.getValue());
+                    if (!addedSuccessfully)
+                    {
+                        break;
+                    }
                 }
             }
+            return newShipping && addedSuccessfully;
         }
-        return newShipping && addedSuccessfully;
     }
 
     public void removeAllRestoreEntries(ResourceDefinition rscDfn, String rscName, Snapshot snap)
     {
-        restoreRemoveEntry(rscDfn);
-        abortRestoreDeleteAllEntries(rscName);
-        backupsToDownloadCleanUp(snap);
+        synchronized (restoreSyncObj)
+        {
+            restoreRemoveEntry(rscDfn);
+            abortRestoreDeleteAllEntries(rscName);
+            backupsToDownloadCleanUp(snap);
+        }
     }
 
     /**
@@ -89,14 +96,10 @@ public class BackupInfoManager
      */
     private boolean restoreAddEntry(ResourceDefinition rscDfn, String metaName)
     {
-        boolean addFlag;
-        synchronized (restoreMap)
+        boolean addFlag = !restoreMap.containsKey(rscDfn);
+        if (addFlag)
         {
-            addFlag = !restoreMap.containsKey(rscDfn);
-            if (addFlag)
-            {
-                restoreMap.put(rscDfn, metaName);
-            }
+            restoreMap.put(rscDfn, metaName);
         }
         return addFlag;
     }
@@ -107,10 +110,7 @@ public class BackupInfoManager
      */
     private void restoreRemoveEntry(ResourceDefinition rscDfn)
     {
-        synchronized (restoreMap)
-        {
-            restoreMap.remove(rscDfn);
-        }
+        restoreMap.remove(rscDfn);
     }
 
     /**
@@ -118,7 +118,7 @@ public class BackupInfoManager
      */
     public boolean restoreContainsRscDfn(ResourceDefinition rscDfn)
     {
-        synchronized (restoreMap)
+        synchronized (restoreSyncObj)
         {
             return restoreMap.containsKey(rscDfn);
         }
@@ -129,7 +129,7 @@ public class BackupInfoManager
      */
     public boolean restoreContainsMetaFile(String metaName)
     {
-        synchronized (restoreMap)
+        synchronized (restoreSyncObj)
         {
             return restoreMap.containsValue(metaName);
         }
@@ -143,12 +143,9 @@ public class BackupInfoManager
     {
         try
         {
-            synchronized (abortRestoreMap)
-            {
-                ResourceName rscName = new ResourceName(rscNameStr);
-                Set<Snapshot> snaps = abortRestoreMap.computeIfAbsent(rscName, k -> new HashSet<>());
-                snaps.add(snap);
-            }
+            ResourceName rscName = new ResourceName(rscNameStr);
+            Set<Snapshot> snaps = abortRestoreMap.computeIfAbsent(rscName, k -> new HashSet<>());
+            snaps.add(snap);
         }
         catch (InvalidNameException exc)
         {
@@ -157,16 +154,16 @@ public class BackupInfoManager
     }
 
     /**
-     * get all the restore-related snapshots that need to be aborted of a specific rscDfn
+     * get a copy of all the restore-related snapshots that need to be aborted of a specific rscDfn
      */
     public Set<Snapshot> abortRestoreGetEntries(String rscNameStr)
     {
         try
         {
-            synchronized (abortRestoreMap)
+            synchronized (restoreSyncObj)
             {
                 ResourceName rscName = new ResourceName(rscNameStr);
-                return abortRestoreMap.get(rscName);
+                return new HashSet<>(abortRestoreMap.get(rscName));
             }
         }
         catch (InvalidNameException exc)
@@ -182,11 +179,8 @@ public class BackupInfoManager
     {
         try
         {
-            synchronized (abortRestoreMap)
-            {
-                ResourceName rscName = new ResourceName(rscNameStr);
-                abortRestoreMap.remove(rscName);
-            }
+            ResourceName rscName = new ResourceName(rscNameStr);
+            abortRestoreMap.remove(rscName);
         }
         catch (InvalidNameException exc)
         {
@@ -202,7 +196,7 @@ public class BackupInfoManager
     {
         try
         {
-            synchronized (abortRestoreMap)
+            synchronized (restoreSyncObj)
             {
                 ResourceName rscName = new ResourceName(rscNameStr);
                 Set<Snapshot> snaps = abortRestoreMap.get(rscName);
@@ -322,13 +316,10 @@ public class BackupInfoManager
     private boolean backupsToDownloadAddEntry(Snapshot snap, Snapshot successor)
     {
         boolean addFlag;
-        synchronized (backupsToDownload)
+        addFlag = !backupsToDownload.containsKey(snap);
+        if (addFlag)
         {
-            addFlag = !backupsToDownload.containsKey(snap);
-            if (addFlag)
-            {
-                backupsToDownload.put(snap, successor);
-            }
+            backupsToDownload.put(snap, successor);
         }
         return addFlag;
     }
@@ -338,7 +329,7 @@ public class BackupInfoManager
      */
     public Snapshot getNextBackupToDownload(Snapshot snap)
     {
-        synchronized (backupsToDownload)
+        synchronized (restoreSyncObj)
         {
             return backupsToDownload.remove(snap);
         }
@@ -349,13 +340,10 @@ public class BackupInfoManager
      */
     private void backupsToDownloadCleanUp(Snapshot snap)
     {
-        synchronized (backupsToDownload)
+        Snapshot toDelete = backupsToDownload.remove(snap);
+        while (toDelete != null)
         {
-            Snapshot toDelete = backupsToDownload.remove(snap);
-            while (toDelete != null)
-            {
-                toDelete = backupsToDownload.remove(toDelete);
-            }
+            toDelete = backupsToDownload.remove(toDelete);
         }
     }
 
