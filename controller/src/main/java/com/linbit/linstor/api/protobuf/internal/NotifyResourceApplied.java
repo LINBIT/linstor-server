@@ -7,7 +7,8 @@ import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.RscInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
-import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.VlmProps;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.Props;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.SnapVlmProps;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -46,11 +47,30 @@ public class NotifyResourceApplied implements ApiCall
         // If so, we could display to the client if a resource-adjustment is pending or if the
         // satellite is basically idle
 
-        Map<Integer, VlmProps> vlmPropsMap = msgIntAppliedRsc.getVlmPropsMap();
+        Map<Integer, Props> vlmPropsMap = msgIntAppliedRsc.getVlmPropsMap();
+
+
         Map<Integer, Map<String, String>> vlmProps = new HashMap<>();
-        for (Entry<Integer, VlmProps> entry : vlmPropsMap.entrySet())
+        for (Entry<Integer, Props> entry : vlmPropsMap.entrySet())
         {
-            vlmProps.put(entry.getKey(), entry.getValue().getVlmPropMap());
+            vlmProps.put(entry.getKey(), entry.getValue().getPropMap());
+        }
+
+        Map<String, Map<String, String>> snapProps = new HashMap<>();
+        for (Entry<String, Props> entry : msgIntAppliedRsc.getSnapPropsMap().entrySet())
+        {
+            snapProps.put(entry.getKey(), entry.getValue().getPropMap());
+        }
+
+        Map<String, Map<Integer, Map<String, String>>> snapVlmProps = new HashMap<>();
+        for (Entry<String, SnapVlmProps> entry : msgIntAppliedRsc.getSnapVlmPropsMap().entrySet())
+        {
+            Map<Integer, Map<String, String>> curSnapVlmProps = new HashMap<>();
+            for (Entry<Integer, Props> vlmEntry : entry.getValue().getSnapVlmPropsMap().entrySet())
+            {
+                curSnapVlmProps.put(vlmEntry.getKey(), vlmEntry.getValue().getPropMap());
+            }
+            snapVlmProps.put(entry.getKey(), curSnapVlmProps);
         }
 
         rscInternalCallHandler.updateVolume(
@@ -62,6 +82,8 @@ public class NotifyResourceApplied implements ApiCall
             ),
             msgIntAppliedRsc.getRscPropsMap(),
             vlmProps,
+            snapProps,
+            snapVlmProps,
             ProtoStorPoolFreeSpaceUtils.toFreeSpacePojo(
                 msgIntAppliedRsc.getFreeSpaceList()
             )

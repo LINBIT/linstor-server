@@ -424,6 +424,16 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                     ctrlApiDataLoader.loadSnapshotVlm(snapshot, vlm.getVolumeDefinition().getVolumeNumber());
                 }
             }
+            else if (isEbsInitiator(rsc))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE,
+                        "Cannot rollback EBS volume while attached."
+                    )
+                        .setCorrection("Delete the EBS initiator resource(s) first")
+                );
+            }
         }
     }
 
@@ -463,7 +473,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         try
         {
             AccessContext accCtx = peerAccCtx.get();
-            diskless = rsc.isDrbdDiskless(accCtx) || rsc.isNvmeInitiator(accCtx);
+            diskless = rsc.isDrbdDiskless(accCtx) || rsc.isNvmeInitiator(accCtx) || rsc.isEbsInitiator(accCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -474,6 +484,25 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
             );
         }
         return diskless;
+    }
+
+    private boolean isEbsInitiator(Resource rsc)
+    {
+        boolean ebsInit;
+        try
+        {
+            AccessContext accCtx = peerAccCtx.get();
+            ebsInit = rsc.isEbsInitiator(accCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check if " + getRscDescriptionInline(rsc) + " is an EBS initiator",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return ebsInit;
     }
 
     private long getMaxSequenceNumber(ResourceDefinition rscDfn)

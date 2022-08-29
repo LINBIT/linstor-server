@@ -215,6 +215,7 @@ public class InternalApiConsts
     // ebs
     public static final String EBS_REMOTE_NAME = "EbsRemoteName";
     public static final String KEY_EBS_VLM_ID = "EbsVlmId";
+    public static final String KEY_EBS_SNAP_ID = "EbsSnapId";
     public static final String EBS_DFTL_STOR_POOL_NAME = "EbsPool";
     public static final String KEY_EBS_CONNECTED_INIT_NODE_NAME = "ConnectedInitiator";
 

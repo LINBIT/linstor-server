@@ -839,7 +839,8 @@ public class RscStorageLayerHelper extends
                 break;
             case EBS_INIT:
             case EBS_TARGET:
-                throw new ImplementationError("Restoring from snapshot is not supported for EBs-setups");
+                vlmData = layerDataFactory.createEbsData(vlmRef, storRscData, storPool);
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unexpected kind: " + kind);

@@ -47,6 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -60,10 +61,23 @@ import com.amazonaws.services.ec2.model.Tag;
 
 public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsData<Resource>, EbsData<Snapshot>>
 {
-    /** <code>"${spName}/${rscName}$[rscSuffix}_${snapName}_${vlmNr}"</code> */
-    public static final String FORMAT_SNAP_TO_LVM_ID = "%s/%s%s_%s_%05d";
     /** <code>"${spName}/${rscName}$[rscSuffix}_${vlmNr}"</code> */
     public static final String FORMAT_RSC_TO_LVM_ID = "%s/%s%s_%05d";
+    /** <code>"${spName}/${rscName}$[rscSuffix}_${vlmNr}_${snapName}"</code> */
+    public static final String FORMAT_SNAP_TO_LVM_ID = FORMAT_RSC_TO_LVM_ID + "_%s";
+
+    public static final String FORMAT_PATTERN_KEY_SP_NAME = "spName";
+    public static final String FORMAT_PATTERN_KEY_RSC_NAME = "rscName";
+    public static final String FORMAT_PATTERN_KEY_RSC_SUFFIX = "suffix";
+    public static final String FORMAT_PATTERN_KEY_VLM_NR = "vlmNr";
+    public static final String FORMAT_PATTERN_KEY_SNAP_NAME = "snapName";
+    public static final Pattern FORMAT_PATTERN = Pattern.compile(
+        "(?<" + FORMAT_PATTERN_KEY_SP_NAME + ">[^/]+)/" +
+        "(?<" + FORMAT_PATTERN_KEY_RSC_NAME + ">[^_.]+)" +
+        "(?<" + FORMAT_PATTERN_KEY_RSC_SUFFIX + ">.[^_]+)?_" +
+        "(?<" + FORMAT_PATTERN_KEY_VLM_NR + ">[0-9]{5})" +
+        "(?:_(?<" + FORMAT_PATTERN_KEY_SNAP_NAME + ">.*))?"
+    );
 
     protected static final String EBS_VLM_STATE_AVAILABLE = "available";
     protected static final String EBS_VLM_STATE_CREATING = "creating";
@@ -379,6 +393,40 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
         {
             ret = vlmDataRef.getVolume().getProps(storDriverAccCtx).getProp(
                 InternalApiConsts.KEY_EBS_VLM_ID + vlmDataRef.getRscLayerObject().getResourceNameSuffix(),
+                ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+            );
+        }
+        catch (InvalidKeyException | AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ret;
+    }
+
+    protected void setEbsSnapId(EbsData<Snapshot> snapVlmDataRef, String ebsSnapIdRef)
+        throws AccessDeniedException, DatabaseException
+    {
+        try
+        {
+            snapVlmDataRef.getVolume().getProps(storDriverAccCtx).setProp(
+                InternalApiConsts.KEY_EBS_SNAP_ID + snapVlmDataRef.getRscLayerObject().getResourceNameSuffix(),
+                ebsSnapIdRef,
+                ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+            );
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    protected String getEbsSnapId(EbsData<Snapshot> snapVlmDataRef)
+    {
+        String ret;
+        try
+        {
+            ret = snapVlmDataRef.getVolume().getProps(storDriverAccCtx).getProp(
+                InternalApiConsts.KEY_EBS_SNAP_ID + snapVlmDataRef.getRscLayerObject().getResourceNameSuffix(),
                 ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
             );
         }

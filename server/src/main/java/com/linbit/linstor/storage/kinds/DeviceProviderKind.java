@@ -173,7 +173,7 @@ public enum DeviceProviderKind
         new EbsInitiatorDriverKind()
     ),
     EBS_TARGET(
-        false,
+        true,
         false,
         false,
         true,

@@ -148,7 +148,8 @@ class SnapStorageLayerHelper extends AbsSnapLayerHelper<
                 break;
             case EBS_INIT:
             case EBS_TARGET:
-                throw new ImplementationError("Snapshots are not supported for EBS-setups");
+                snapVlmData = layerDataFactory.createEbsData(snapVlmRef, snapDataRef, storPool);
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             default:
                 throw new ImplementationError("Unexpected kind: " + kind);

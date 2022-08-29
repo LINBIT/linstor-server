@@ -9,8 +9,10 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltS
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
@@ -827,10 +829,40 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 builder.putVlmProps(
                     vlm.getVolumeNumber().value,
-                    MsgIntApplyRscSuccessOuterClass.VlmProps.newBuilder()
-                        .putAllVlmProp(vlm.getProps(serializerCtx).map())
+                    MsgIntApplyRscSuccessOuterClass.Props.newBuilder()
+                        .putAllProp(vlm.getProps(serializerCtx).map())
                         .build()
                 );
+            }
+
+            final NodeName localNodeName = resource.getNode().getName();
+            for (SnapshotDefinition snapDfn : resource.getDefinition().getSnapshotDfns(serializerCtx))
+            {
+                Snapshot snap = snapDfn.getSnapshot(serializerCtx, localNodeName);
+                String snapName = snapDfn.getName().value;
+                builder.putSnapProps(
+                    snapName,
+                    MsgIntApplyRscSuccessOuterClass.Props.newBuilder()
+                        .putAllProp(snap.getProps(serializerCtx).map())
+                        .build()
+                );
+
+                MsgIntApplyRscSuccessOuterClass.SnapVlmProps.Builder allSnapVlmPropsBuilder =
+                    MsgIntApplyRscSuccessOuterClass.SnapVlmProps.newBuilder();
+                for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(serializerCtx))
+                {
+                    VolumeNumber vlmNr = snapVlmDfn.getVolumeNumber();
+                    SnapshotVolume snapVlm = snap.getVolume(vlmNr);
+
+                    allSnapVlmPropsBuilder.putSnapVlmProps(
+                        vlmNr.value,
+                        MsgIntApplyRscSuccessOuterClass.Props.newBuilder()
+                            .putAllProp(snapVlm.getProps(serializerCtx).map())
+                            .build()
+                    );
+
+                }
+                builder.putSnapVlmProps(snapName, allSnapVlmPropsBuilder.build());
             }
 
             builder

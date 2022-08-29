@@ -11,12 +11,22 @@ import java.util.HashSet;
 import java.util.List;
 
 import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.model.DescribeSnapshotsRequest;
+import com.amazonaws.services.ec2.model.DescribeSnapshotsResult;
 import com.amazonaws.services.ec2.model.DescribeVolumesRequest;
 import com.amazonaws.services.ec2.model.DescribeVolumesResult;
 
 public class EbsProviderUtils
 {
+    private static final int DFLT_WAIT_TIMEOUT = 60_000;
     private static final int ONE_SECOND = 1000;
+
+    private static final String SNAP_CREATE_STATE_COMPLETED = "completed";
+
+    private EbsProviderUtils()
+    {
+        // utility class
+    }
 
     public static HashMap<String, LsBlkEntry> getEbsInfo(ExtCmd extCmd) throws StorageException
     {
@@ -38,13 +48,34 @@ public class EbsProviderUtils
     )
         throws StorageException
     {
+        waitUntilVolumeHasState(
+            client,
+            DFLT_WAIT_TIMEOUT,
+            ebsVlmId,
+            expectedTargetState,
+            expectedTransitionState
+        );
+    }
+
+    public static void waitUntilVolumeHasState(
+        AmazonEC2 client,
+        int waitTimeoutInMs,
+        String ebsVlmId,
+        String expectedTargetState,
+        String... expectedTransitionState
+    )
+        throws StorageException
+    {
         HashSet<String> expectedTransitionStateSet = new HashSet<>(Arrays.asList(expectedTransitionState));
         boolean targetStateReached = false;
-        while (!targetStateReached)
-        {
-            DescribeVolumesRequest describeVolumesRequest = new DescribeVolumesRequest();
-            describeVolumesRequest.withVolumeIds(ebsVlmId);
 
+        DescribeVolumesRequest describeVolumesRequest = new DescribeVolumesRequest()
+            .withVolumeIds(ebsVlmId);
+
+        String currentState = null;
+        long start = System.currentTimeMillis();
+        while (!targetStateReached && (System.currentTimeMillis() - start <= waitTimeoutInMs))
+        {
             DescribeVolumesResult describeVolumes = client.describeVolumes(describeVolumesRequest);
 
             if (describeVolumes.getVolumes().size() != 1)
@@ -54,14 +85,14 @@ public class EbsProviderUtils
                         describeVolumes.getVolumes()
                 );
             }
-            String state = describeVolumes.getVolumes().get(0).getState();
-            targetStateReached = state.equals(expectedTargetState);
+            currentState = describeVolumes.getVolumes().get(0).getState();
+            targetStateReached = currentState.equals(expectedTargetState);
 
             if (!targetStateReached)
             {
-                if (!expectedTransitionStateSet.contains(state))
+                if (!expectedTransitionStateSet.contains(currentState))
                 {
-                    throw new StorageException("Unexpected state: " + state);
+                    throw new StorageException("Unexpected state: " + currentState);
                 }
                 try
                 {
@@ -72,6 +103,58 @@ public class EbsProviderUtils
                     exc.printStackTrace();
                 }
             }
+        }
+        if (!targetStateReached)
+        {
+            throw new StorageException(
+                "Did not reach target state within " + waitTimeoutInMs + "ms. Last known state: " + currentState
+            );
+        }
+    }
+
+    public static void waitUntilSnapshotCreated(
+        AmazonEC2 client,
+        String ebsSnapId
+    )
+        throws StorageException
+    {
+        waitUntilSnapshotCreated(
+            client,
+            DFLT_WAIT_TIMEOUT,
+            ebsSnapId
+        );
+    }
+
+    public static void waitUntilSnapshotCreated(
+        AmazonEC2 client,
+        int waitTimeoutInMs,
+        String ebsSnapId
+    )
+        throws StorageException
+    {
+        boolean created = false;
+        long start = System.currentTimeMillis();
+
+        DescribeSnapshotsRequest describeSnapshotsRequest = new DescribeSnapshotsRequest().withSnapshotIds(ebsSnapId);
+        while (!created && (System.currentTimeMillis() - start <= waitTimeoutInMs))
+        {
+            DescribeSnapshotsResult describeSnapshots = client.describeSnapshots(describeSnapshotsRequest);
+
+            int snapCount = describeSnapshots.getSnapshots().size();
+            if (snapCount > 1)
+            {
+                throw new StorageException(
+                    "Unexpected snapshot count for EBS snapshot id: " + ebsSnapId + ": " + snapCount
+                );
+            }
+            created = snapCount == 1 &&
+                describeSnapshots.getSnapshots().get(0).getState().equalsIgnoreCase(SNAP_CREATE_STATE_COMPLETED);
+        }
+        if (!created)
+        {
+            throw new StorageException(
+                "Snapshot was not created within " + waitTimeoutInMs + "ms"
+            );
         }
     }
 }

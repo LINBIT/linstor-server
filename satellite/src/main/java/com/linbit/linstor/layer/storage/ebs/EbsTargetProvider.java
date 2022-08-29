@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
@@ -13,14 +14,20 @@ import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -37,11 +44,17 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -50,11 +63,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
 
 import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.model.CreateSnapshotRequest;
+import com.amazonaws.services.ec2.model.CreateSnapshotResult;
 import com.amazonaws.services.ec2.model.CreateVolumeRequest;
 import com.amazonaws.services.ec2.model.CreateVolumeResult;
+import com.amazonaws.services.ec2.model.DeleteSnapshotRequest;
 import com.amazonaws.services.ec2.model.DeleteVolumeRequest;
+import com.amazonaws.services.ec2.model.DescribeSnapshotsRequest;
+import com.amazonaws.services.ec2.model.DescribeSnapshotsResult;
 import com.amazonaws.services.ec2.model.DescribeVolumesRequest;
 import com.amazonaws.services.ec2.model.DescribeVolumesResult;
 import com.amazonaws.services.ec2.model.ModifyVolumeRequest;
@@ -65,6 +85,8 @@ import com.amazonaws.services.ec2.model.TagSpecification;
 @Singleton
 public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2.model.Volume>
 {
+    private final ResourceDefinitionMap rscDfnMap;
+
     @Inject
     public EbsTargetProvider(
         ErrorReporter errorReporter,
@@ -80,7 +102,8 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         BackupShippingMgr backupShipMgrRef,
         RemoteMap remoteMapRef,
         DecryptionHelper decHelperRef,
-        StltSecurityObjects stltSecObjRef
+        StltSecurityObjects stltSecObjRef,
+        ResourceDefinitionMap rscDfnMapRef
     )
     {
         super(
@@ -101,6 +124,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
             decHelperRef,
             stltSecObjRef
         );
+        rscDfnMap = rscDfnMapRef;
 
         isDevPathExpectedToBeNull = true;
     }
@@ -217,21 +241,32 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     protected void createLvImpl(EbsData<Resource> vlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
+        createEbsVolume(vlmDataRef, null);
+    }
+
+    private void createEbsVolume(EbsData<Resource> vlmDataRef, @Nullable String restoreFromSnapEbsId)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
         EbsRemote remote = getEbsRemote(vlmDataRef.getStorPool());
         AmazonEC2 client = getClient(remote);
-        CreateVolumeResult createVolumeResult = client.createVolume(
-            new CreateVolumeRequest(
-                (int) SizeConv.convertRoundUp(vlmDataRef.getExpectedSize(), SizeUnit.UNIT_KiB, SizeUnit.UNIT_GiB),
-                remote.getAvailabilityZone(storDriverAccCtx)
+
+        CreateVolumeRequest createVlmRequest = new CreateVolumeRequest()
+            .withAvailabilityZone(remote.getAvailabilityZone(storDriverAccCtx))
+            .withSize(
+                (int) SizeConv.convertRoundUp(vlmDataRef.getExpectedSize(), SizeUnit.UNIT_KiB, SizeUnit.UNIT_GiB)
             )
-                .withTagSpecifications(
-                    new TagSpecification()
-                        .withResourceType(ResourceType.Volume)
-                        .withTags(
-                            new Tag(TAG_KEY_LINSTOR_ID, asLvIdentifier(vlmDataRef))
-                        )
-                )
-        );
+            .withTagSpecifications(
+                new TagSpecification()
+                    .withResourceType(ResourceType.Volume)
+                    .withTags(
+                        new Tag(TAG_KEY_LINSTOR_ID, asLvIdentifier(vlmDataRef))
+                    )
+            );
+        if (restoreFromSnapEbsId != null)
+        {
+            createVlmRequest.withSnapshotId(restoreFromSnapEbsId);
+        }
+        CreateVolumeResult createVolumeResult = client.createVolume(createVlmRequest);
 
         String ebsVlmId = createVolumeResult.getVolume().getVolumeId();
         setEbsVlmId(vlmDataRef, ebsVlmId);
@@ -240,6 +275,251 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         long allocatedSize = getAllocatedSize(vlmDataRef); // queries online
         vlmDataRef.setAllocatedSize(allocatedSize);
         vlmDataRef.setUsableSize(allocatedSize);
+    }
+
+    @Override
+    protected boolean snapshotExists(EbsData<Snapshot> snapVlmRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        boolean snapshotExists = false;
+
+        EbsRemote remote = getEbsRemote(snapVlmRef.getStorPool());
+        AmazonEC2 client = getClient(remote);
+        String ebsSnapId = getEbsSnapId(snapVlmRef);
+        if (ebsSnapId != null)
+        {
+            // no need to check if we have no ebsSnapId
+            DescribeSnapshotsResult describeSnapshots = client.describeSnapshots(
+                new DescribeSnapshotsRequest()
+                .withSnapshotIds(ebsSnapId)
+            );
+            String linstorSnapId = asSnapLvIdentifier(snapVlmRef);
+            for (com.amazonaws.services.ec2.model.Snapshot amaSnap : describeSnapshots.getSnapshots())
+            {
+                String amaTagLinstorId = getFromTags(amaSnap.getTags(), TAG_KEY_LINSTOR_ID);
+                if (linstorSnapId.equals(amaTagLinstorId))
+                {
+                    snapshotExists = true;
+                    break;
+                }
+            }
+        }
+        return snapshotExists;
+    }
+
+    @Override
+    protected void createSnapshot(EbsData<Resource> vlmDataRef, EbsData<Snapshot> snapVlmRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        EbsRemote remote = getEbsRemote(vlmDataRef.getStorPool());
+        AmazonEC2 client = getClient(remote);
+
+        String snapLvIdentifier = asSnapLvIdentifier(snapVlmRef);
+        CreateSnapshotResult createSnapshotResult = client.createSnapshot(
+            new CreateSnapshotRequest()
+                .withVolumeId(getEbsVlmId(vlmDataRef))
+                .withDescription(snapLvIdentifier)
+                .withTagSpecifications(
+                    new TagSpecification()
+                        .withResourceType(ResourceType.Snapshot)
+                        .withTags(
+                            new Tag()
+                                .withKey(TAG_KEY_LINSTOR_ID)
+                                .withValue(snapLvIdentifier)
+                        )
+                )
+        );
+        String snapshotId = createSnapshotResult.getSnapshot().getSnapshotId();
+
+        EbsProviderUtils.waitUntilSnapshotCreated(client, snapshotId);
+
+        errorReporter.logTrace("EBS Snapshot created. EBS Snapshot ID: %s", snapshotId);
+        setEbsSnapId(snapVlmRef, snapshotId);
+        snapVlmRef.setExists(true);
+    }
+
+    @Override
+    protected void restoreSnapshot(String sourceLvIdRef, String sourceSnapNameRef, EbsData<Resource> vlmDataRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        EbsData<Snapshot> srcEbsData = findSourceEbsData(
+            sourceLvIdRef,
+            sourceSnapNameRef,
+            vlmDataRef.getRscLayerObject().getAbsResource().getNode().getName()
+        );
+        if (srcEbsData == null)
+        {
+            throw new StorageException(
+                "Failed to find source snapshot by LV ID: " + sourceLvIdRef + " and snapshot name: " + sourceSnapNameRef
+            );
+        }
+
+        createEbsVolume(vlmDataRef, getEbsSnapId(srcEbsData));
+    }
+
+    @Override
+    protected void rollbackImpl(EbsData<Resource> vlmDataRef, String rollbackTargetSnapshotNameRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        AbsRscLayerObject<Resource> rscData = vlmDataRef.getRscLayerObject();
+        EbsData<Snapshot> srcEbsData = findSourceEbsData(
+            rscData.getAbsResource().getNode().getName(),
+            rscData.getResourceName().displayValue,
+            rscData.getResourceNameSuffix(),
+            vlmDataRef.getVolume().getVolumeNumber(),
+            rollbackTargetSnapshotNameRef
+        );
+        if (srcEbsData == null)
+        {
+            throw new StorageException(
+                "Failed to find source snapshot by LV ID: " + asLvIdentifier(vlmDataRef) + " and snapshot name: " +
+                    rollbackTargetSnapshotNameRef
+            );
+        }
+
+        // we will need to delete the old volume if the rollback/restore worked
+        String oldEbsVlmId = getEbsVlmId(vlmDataRef);
+
+        // will override the EbsVlmId property
+        createEbsVolume(vlmDataRef, getEbsSnapId(srcEbsData));
+
+        AmazonEC2 client = getClient(vlmDataRef.getStorPool());
+
+        errorReporter.logTrace("Deleting old EBS volumd ID: %s", oldEbsVlmId);
+        client.deleteVolume(new DeleteVolumeRequest(oldEbsVlmId));
+    }
+
+    private EbsData<Snapshot> findSourceEbsData(
+        String sourceLvIdRef,
+        String sourceSnapNameRef,
+        NodeName localNodeNameRef
+    )
+    {
+        EbsData<Snapshot> ret;
+
+        Matcher matcher = FORMAT_PATTERN.matcher(sourceLvIdRef);
+        if (!matcher.find())
+        {
+            throw new ImplementationError("Unknown source LV ID format: " + sourceLvIdRef);
+        }
+        String srcRscName = matcher.group(FORMAT_PATTERN_KEY_RSC_NAME);
+        String srcRscNameSuffix = matcher.group(FORMAT_PATTERN_KEY_RSC_SUFFIX);
+        if (srcRscNameSuffix == null)
+        {
+            // regex will return null instead of "". we correct this so we can use .equals later in this method
+            srcRscNameSuffix = RscLayerSuffixes.SUFFIX_DATA;
+        }
+        String srcVlmNrStr = matcher.group(FORMAT_PATTERN_KEY_VLM_NR);
+
+        try
+        {
+            ret = findSourceEbsData(
+                localNodeNameRef,
+                srcRscName,
+                srcRscNameSuffix,
+                new VolumeNumber(Integer.parseInt(srcVlmNrStr)),
+                sourceSnapNameRef
+            );
+        }
+        catch (NumberFormatException | ValueOutOfRangeException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ret;
+    }
+
+    private EbsData<Snapshot> findSourceEbsData(
+        NodeName localNodeNameRef,
+        String srcRscName,
+        String rscNameSuffix,
+        VolumeNumber srcVlmNr,
+        String srcSnapNameRef
+    )
+    {
+        EbsData<Snapshot> srcEbsData = null;
+        try
+        {
+            ResourceDefinition srcRscDfn = rscDfnMap.get(new ResourceName(srcRscName));
+            if (srcRscDfn == null)
+            {
+                throw new ImplementationError(
+                    String.format(
+                        "Unknown source resource definition [%s]",
+                        srcRscName
+                    )
+                );
+            }
+            SnapshotDefinition srcSnapDfn = srcRscDfn.getSnapshotDfn(
+                storDriverAccCtx,
+                new SnapshotName(srcSnapNameRef)
+            );
+            if (srcSnapDfn == null)
+            {
+                throw new ImplementationError(
+                    String.format(
+                        "Unknown snapshot definition [%s] of resource definition [%s]",
+                        srcSnapNameRef,
+                        srcRscName
+                    )
+                );
+            }
+            Snapshot srcSnap = srcSnapDfn.getSnapshot(
+                storDriverAccCtx,
+                localNodeNameRef
+            );
+            if (srcSnap == null)
+            {
+                throw new ImplementationError(
+                    String.format(
+                        "Unknown snapshot [%s] of resource [%s] on node [%s]",
+                        srcSnapNameRef,
+                        srcRscName,
+                        localNodeNameRef.displayValue
+                    )
+                );
+            }
+            Set<AbsRscLayerObject<Snapshot>> srcStorSnapDataSet = LayerRscUtils.getRscDataByProvider(
+                srcSnap.getLayerData(storDriverAccCtx),
+                DeviceLayerKind.STORAGE
+            );
+
+            for (AbsRscLayerObject<Snapshot> srcStorSnapData : srcStorSnapDataSet)
+            {
+                if (srcStorSnapData.getResourceNameSuffix().equals(rscNameSuffix))
+                {
+                    VlmProviderObject<Snapshot> srcVlmData = srcStorSnapData.getVlmProviderObject(srcVlmNr);
+                    if (!(srcVlmData instanceof EbsData))
+                    {
+                        throw new ImplementationError(
+                            String.format(
+                                "Source volume data is of instance %s instead of EbsData!",
+                                srcVlmData == null ? "null " : srcVlmData.getClass().getSimpleName()
+                            )
+                        );
+                    }
+                    srcEbsData = (EbsData<Snapshot>) srcVlmData;
+                    break;
+                }
+            }
+        }
+        catch (AccessDeniedException | NumberFormatException | InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return srcEbsData;
+    }
+
+    @Override
+    protected void deleteSnapshot(EbsData<Snapshot> snapVlmRef)
+        throws StorageException, AccessDeniedException, DatabaseException
+    {
+        EbsRemote remote = getEbsRemote(snapVlmRef.getStorPool());
+        AmazonEC2 client = getClient(remote);
+
+        String ebsSnapId = getEbsSnapId(snapVlmRef);
+        errorReporter.logTrace("Deleting EBS snapshot. EBS Snapshot ID: %s", ebsSnapId);
+        client.deleteSnapshot(new DeleteSnapshotRequest(ebsSnapId));
+        snapVlmRef.setExists(false);
     }
 
     @Override
@@ -341,10 +621,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     {
         AmazonEC2 client = getClient(vlmDataRef.getStorPool());
 
-        String ebsVlmId = vlmDataRef.getVolume().getProps(storDriverAccCtx).getProp(
-            InternalApiConsts.KEY_EBS_VLM_ID,
-            ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
-        );
+        String ebsVlmId = getEbsVlmId(vlmDataRef);
         errorReporter.logTrace("Deleting EBS volumd ID: %s", ebsVlmId);
         client.deleteVolume(new DeleteVolumeRequest(ebsVlmId));
 

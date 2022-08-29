@@ -249,6 +249,19 @@ public class CtrlSnapshotRestoreApiCallHandler
                 }
             }
 
+            // clear possible EBS properties
+            for (Resource rsc : restoredResources)
+            {
+                Iterator<Volume> vlmIt = rsc.iterateVolumes();
+                while (vlmIt.hasNext())
+                {
+                    Volume vlm = vlmIt.next();
+                    vlm.getProps(peerAccCtx.get()).removeNamespace(
+                        ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+                    );
+                }
+            }
+
             autoFlux = autoHelper.manage(new AutoHelperContext(responses, context, toRscDfn)).getFlux();
 
             ctrlTransactionHelper.commit();

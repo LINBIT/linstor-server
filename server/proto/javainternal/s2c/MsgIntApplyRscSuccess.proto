@@ -12,11 +12,22 @@ message MsgIntApplyRscSuccess
     repeated common.StorPoolFreeSpace free_space = 2;
     common.RscLayerData layer_object = 3;
 
-    map<string,string> rsc_props = 4;
-    map<sint32, VlmProps> vlm_props = 5;
+    // <key, value>
+    map<string, string> rsc_props = 4;
+    // <vlm_nr, <key, value>>
+    map<sint32, Props> vlm_props = 5;
+    // <snap_name, <key, value>>
+    map<string, Props> snap_props = 6;
+    // <snap_name, <vlm_nr, <key, value>>
+    map<string, SnapVlmProps> snap_vlm_props = 7;
 }
 
-message VlmProps
+message Props
 {
-    map<string, string> vlm_prop = 1;
+    map<string, string> prop = 1;
+}
+
+message SnapVlmProps
+{
+    map<sint32, Props> snap_vlm_props = 1;
 }

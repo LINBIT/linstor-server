@@ -27,6 +27,8 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -48,6 +50,7 @@ import com.linbit.linstor.tasks.RetryResourcesTask;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuard;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -205,6 +208,8 @@ public class RscInternalCallHandler
         RscLayerDataApi rscLayerDataPojoRef,
         Map<String, String> rscPropsRef,
         Map<Integer, Map<String, String>> vlmPropsRef,
+        Map<String, Map<String, String>> snapPropsRef,
+        Map<String, Map<Integer, Map<String, String>>> snapVlmPropsRef,
         List<CapacityInfoPojo> capacityInfos
     )
     {
@@ -238,6 +243,31 @@ public class RscInternalCallHandler
 
             layerRscDataMerger.mergeLayerData(rsc, rscLayerDataPojoRef, false);
             mergeStltProps(rscPropsRef, rsc.getProps(apiCtx));
+
+            // also merge snap and snapVlm props
+            for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(apiCtx))
+            {
+                Snapshot snapshot = snapDfn.getSnapshot(apiCtx, nodeName);
+                if (snapshot != null)
+                {
+                    mergeStltProps(snapPropsRef.get(snapDfn.getName().value), snapshot.getProps(apiCtx));
+
+                    Map<Integer, Map<String, String>> allSnapVlmProps = snapVlmPropsRef.get(snapDfn.getName().value);
+                    if (allSnapVlmProps != null)
+                    {
+                        for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(apiCtx))
+                        {
+                            VolumeNumber snapVlmNr = snapVlmDfn.getVolumeNumber();
+                            SnapshotVolume snapVlm = snapshot.getVolume(snapVlmNr);
+                            Map<String, String> snapVlmPropPojo = allSnapVlmProps.get(snapVlmNr.value);
+                            if (snapVlm != null && snapVlmPropPojo != null)
+                            {
+                                mergeStltProps(snapVlmPropPojo, snapVlm.getProps(apiCtx));
+                            }
+                        }
+                    }
+                }
+            }
 
             Set<AbsRscLayerObject<Resource>> storageResources = LayerRscUtils.getRscDataByProvider(
                 rsc.getLayerData(apiCtx),
@@ -359,37 +389,40 @@ public class RscInternalCallHandler
         }
     }
 
-    private void mergeStltProps(Map<String, String> srcPropsMap, Props targetProps)
+    private void mergeStltProps(@Nullable Map<String, String> srcPropsMap, Props targetProps)
     {
-        /*
-         * only merge properties from the "Satellite" namespace.
-         * other properties might have been added or deleted in the meantime, but the satellite
-         * did not get the update yet so those properties would be undone / restored now.
-         */
-        Optional<Props> stltNs = targetProps.getNamespace(ApiConsts.NAMESPC_STLT);
-        if (stltNs.isPresent())
+        if (srcPropsMap != null)
         {
-            Props stltProps = stltNs.get();
-            stltProps.keySet().retainAll(srcPropsMap.keySet());
-        }
-        try
-        {
-            for (Entry<String, String> entry : srcPropsMap.entrySet())
+            /*
+             * only merge properties from the "Satellite" namespace.
+             * other properties might have been added or deleted in the meantime, but the satellite
+             * did not get the update yet so those properties would be undone / restored now.
+             */
+            Optional<Props> stltNs = targetProps.getNamespace(ApiConsts.NAMESPC_STLT);
+            if (stltNs.isPresent())
             {
-                String key = entry.getKey();
-                if (key.startsWith(ApiConsts.NAMESPC_STLT))
+                Props stltProps = stltNs.get();
+                stltProps.keySet().retainAll(srcPropsMap.keySet());
+            }
+            try
+            {
+                for (Entry<String, String> entry : srcPropsMap.entrySet())
                 {
-                    targetProps.setProp(key, entry.getValue());
+                    String key = entry.getKey();
+                    if (key.startsWith(ApiConsts.NAMESPC_STLT))
+                    {
+                        targetProps.setProp(key, entry.getValue());
+                    }
                 }
             }
-        }
-        catch (InvalidKeyException | InvalidValueException | AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
+            catch (InvalidKeyException | InvalidValueException | AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (DatabaseException exc)
+            {
+                throw new ApiDatabaseException(exc);
+            }
         }
     }
 }
