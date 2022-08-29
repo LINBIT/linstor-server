@@ -131,7 +131,8 @@ public abstract class AbsBackupShippingService implements SystemService
 
     public void killAllShipping(boolean doPostShipping)
     {
-        for (ShippingInfo shippingInfo : shippingInfoMap.values())
+        Map<Snapshot, ShippingInfo> copy = new TreeMap<>(shippingInfoMap);
+        for (ShippingInfo shippingInfo : copy.values())
         {
             for (SnapVlmDataInfo snapVlmDataInfo : shippingInfo.snapVlmDataInfoMap.values())
             {

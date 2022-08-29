@@ -12,6 +12,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition.Key;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
 import javax.inject.Inject;
@@ -163,7 +164,8 @@ public class BackupInfoManager
             synchronized (restoreSyncObj)
             {
                 ResourceName rscName = new ResourceName(rscNameStr);
-                return new HashSet<>(abortRestoreMap.get(rscName));
+                Set<Snapshot> ret = abortRestoreMap.get(rscName);
+                return ret != null ? new HashSet<>(ret) : null;
             }
         }
         catch (InvalidNameException exc)
@@ -299,13 +301,14 @@ public class BackupInfoManager
     }
 
     /**
-     * get the abort-information to use it
+     * get a copy of the abort-information to use it
      */
     public Map<SnapshotDefinition.Key, AbortInfo> abortCreateGetEntries(NodeName nodeName)
     {
         synchronized (abortCreateMap)
         {
-            return abortCreateMap.get(nodeName);
+            Map<Key, AbortInfo> ret = abortCreateMap.get(nodeName);
+            return ret != null ? new HashMap<>(ret) : null;
         }
     }
 
