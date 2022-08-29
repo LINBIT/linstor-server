@@ -66,12 +66,50 @@ public class FreeCapacityAutoPoolSelectorUtils
             getFreeSpaceLastUpdatedPrivileged(accCtx, storPool);
 
         Optional<Long> usableCapacity = freeCapacity.map(
-            capacity -> storPool.getDeviceProviderKind().usesThinProvisioning() ?
-                (long) (capacity * getMaxOversubscriptionRatio(accCtx, storPool)) :
-                capacity
+            capacity ->
+            {
+                final long ret;
+                boolean thinPool = storPool.getDeviceProviderKind().usesThinProvisioning();
+                if (thinPool && capacity != Long.MAX_VALUE)
+                {
+                    long oversubscriptionCapacity = (long) (capacity * getMaxOversubscriptionRatio(accCtx, storPool));
+                    if (oversubscriptionCapacity < capacity)
+                    {
+                        // overflow
+                        ret = Long.MAX_VALUE;
+                    }
+                    else
+                    {
+                        ret = oversubscriptionCapacity;
+                    }
+                }
+                else
+                {
+                    ret = capacity;
+                }
+                return ret;
+            }
         );
-
-        return usableCapacity.map(capacity -> capacity - reservedCapacity);
+        return usableCapacity.map(capacity ->
+        {
+            final long ret;
+            if (reservedCapacity < 0 && -reservedCapacity > Long.MAX_VALUE - capacity)
+            {
+                /*
+                 * we cannot check for overflow with:
+                 * c - r > M
+                 * if r is negative, since (c - r) would go beyond M, missing the point of the check
+                 * -r > M - c
+                 * should not have this problem
+                 */
+                ret = Long.MAX_VALUE; // prevent overflow
+            }
+            else
+            {
+                ret = capacity - reservedCapacity;
+            }
+            return ret;
+        });
     }
 
     private static StorPool getStorPoolPrivileged(AccessContext accCtx, Node node, StorPoolName storPoolName)
