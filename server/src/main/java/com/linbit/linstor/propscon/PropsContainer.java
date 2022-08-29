@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
@@ -368,7 +369,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
         Optional<PropsContainer> currCon = findNamespace(namespace);
         if (currCon.isPresent())
         {
-            changed = removeAllProps(currCon.get().map().keySet(), null);
+            // copy keySet to avoid ConcurrentModificationException
+            changed = removeAllProps(new HashSet<>(currCon.get().map().keySet()), null);
         }
         return changed;
     }

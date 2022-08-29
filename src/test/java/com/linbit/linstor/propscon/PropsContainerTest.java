@@ -655,6 +655,7 @@ public class PropsContainerTest extends GenericDbBase
         map.put("a", "a");
         map.put("b", "b");
         map.put("a/a2", "aa2");
+        map.put("a/a3", "aa3");
         map.put("", "root");
 
         root.setAllProps(map, null);
@@ -697,6 +698,7 @@ public class PropsContainerTest extends GenericDbBase
         map.put("a", "a");
         map.put("b", "b");
         map.put("a/a2", "aa2");
+        map.put("a/a3", "aa3");
         map.put("", "root");
 
         root.setAllProps(map, null);
@@ -736,6 +738,7 @@ public class PropsContainerTest extends GenericDbBase
         map.put("a", "a");
         map.put("b", "b");
         map.put("a/a2", "aa2");
+        map.put("a/a3", "aa3");
         map.put("", "root");
 
         root.setAllProps(map, null);
@@ -755,6 +758,7 @@ public class PropsContainerTest extends GenericDbBase
         map.put("a", "a");
         map.put("b", "b");
         map.put("a/a2", "aa2");
+        map.put("a/a3", "aa3");
         map.put("", "root");
 
         root.setAllProps(map, null);
@@ -767,6 +771,7 @@ public class PropsContainerTest extends GenericDbBase
 
         map.remove("b");
         map.remove("a/a2");
+        map.remove("a/a3");
 
         final Set<Entry<String, String>> entrySet = root.entrySet();
 
