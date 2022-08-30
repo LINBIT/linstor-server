@@ -80,6 +80,8 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
         transObjs.add(parent);
         transObjs.add(children);
         transObjs.add(vlmMap);
+        transObjs.add(suspend);
+        transObjs.add(ignoreReason);
     }
 
     @Override
