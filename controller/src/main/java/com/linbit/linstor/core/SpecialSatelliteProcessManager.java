@@ -9,12 +9,14 @@ import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
+import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Node.Type;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.utils.FileUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -30,6 +32,7 @@ import java.net.URL;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -54,6 +57,7 @@ public class SpecialSatelliteProcessManager
     private final CtrlConfig ctrlConf;
 
     private final transient Map<String, Process> childSatellites;
+    private final transient Map<String, Integer> childPorts;
 
     @Inject
     public SpecialSatelliteProcessManager(
@@ -68,6 +72,7 @@ public class SpecialSatelliteProcessManager
         sysCtx = initCtxRef;
         ctrlConf = ctrlConfRef;
         childSatellites = new HashMap<>();
+        childPorts = new HashMap<>();
     }
 
     public void initialize()
@@ -221,6 +226,20 @@ public class SpecialSatelliteProcessManager
             default:
                 throw new ImplementationError(nodeType + " is not a special type. Use regular node create API");
         }
+
+        Path confPath = getSpecStltConfPath(port);
+        if (!Files.exists(confPath))
+        {
+            Files.createDirectories(confPath);
+            Path dfltSpecialStltConfPath = confPath.getParent().resolve(LinstorConfig.LINSTOR_STLT_CONFIG);
+            if (Files.exists(dfltSpecialStltConfPath))
+            {
+                // copy /etc/linstor/linstor_satellite.toml (if exists) to
+                // /etc/linstor/specialStlt_<port>/linstor_satellite.toml
+                Files.copy(dfltSpecialStltConfPath, confPath.resolve(LinstorConfig.LINSTOR_STLT_CONFIG));
+            }
+        }
+
         ProcessBuilder pb = new ProcessBuilder(
             getSatellitePath().toString(),
             "-s",
@@ -228,8 +247,9 @@ public class SpecialSatelliteProcessManager
             "--bind-address", LOCALHOST,
             "-d",
             "--override-node-name", nodeNameStr,
-            "--logs", ofErrLogDir.toAbsolutePath().toString(),
-            "-c", ctrlConf.getConfigDir(),
+            "--logs",
+            ofErrLogDir.toAbsolutePath().toString(),
+            "-c", confPath.toString(),
             option
         );
         pb.redirectErrorStream(true);
@@ -249,6 +269,12 @@ public class SpecialSatelliteProcessManager
         waitForStart(port);
 
         childSatellites.put(nodeNameStr.toUpperCase(), proc);
+        childPorts.put(nodeNameStr.toUpperCase(), port);
+    }
+
+    private Path getSpecStltConfPath(Integer port)
+    {
+        return Paths.get(ctrlConf.getConfigDir(), "specialStlt_" + port);
     }
 
     private void waitForStart(Integer portRef)
@@ -287,7 +313,9 @@ public class SpecialSatelliteProcessManager
 
     public void stopProcess(Node node)
     {
-        Process process = childSatellites.get(node.getName().value);
+        final String nodeName = node.getName().value;
+        final Process process = childSatellites.get(nodeName);
+        final Path specStltConfPath = getSpecStltConfPath(childPorts.get(nodeName));
         if (process == null)
         {
             errorReporter.logWarning("No openflex-target satellite process found");
@@ -309,6 +337,21 @@ public class SpecialSatelliteProcessManager
                 process.destroyForcibly();
             }
         }
+
+        if (Files.exists(specStltConfPath))
+        {
+            try
+            {
+                FileUtils.deleteDirectoryWithContent(specStltConfPath, errorReporter);
+            }
+            catch (IOException exc)
+            {
+                errorReporter.reportError(exc);
+            }
+        }
+
+        childSatellites.remove(nodeName);
+        childPorts.remove(nodeName);
     }
 
     private void ensurePortisAvailable(Integer port) throws PortAlreadyInUseException
