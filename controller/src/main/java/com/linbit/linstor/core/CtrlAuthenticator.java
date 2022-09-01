@@ -19,13 +19,13 @@ import com.linbit.linstor.netcom.TcpConnectorPeer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.PingTask;
-import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+import javax.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -33,6 +33,7 @@ import java.io.IOException;
 import reactor.core.publisher.Flux;
 import reactor.util.context.Context;
 
+@Singleton
 public class CtrlAuthenticator
 {
     private final ErrorReporter errorReporter;
@@ -42,7 +43,6 @@ public class CtrlAuthenticator
     private final Provider<AccessContext> peerAccCtx;
     private final AccessContext apiCtx;
     private final IntAuthResponse intAuthResponse;
-    private final ReconnectorTask reconnectorTask;
     private final PingTask pingTask;
 
     @Inject
@@ -54,7 +54,6 @@ public class CtrlAuthenticator
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         @SystemContext AccessContext apiCtxRef,
         IntAuthResponse intAuthResponseRef,
-        ReconnectorTask reconnectorTaskRef,
         PingTask pingTaskRef
     )
     {
@@ -65,7 +64,6 @@ public class CtrlAuthenticator
         peerAccCtx = peerAccCtxRef;
         apiCtx = apiCtxRef;
         intAuthResponse = intAuthResponseRef;
-        reconnectorTask = reconnectorTaskRef;
         pingTask = pingTaskRef;
     }
 

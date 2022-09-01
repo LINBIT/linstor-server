@@ -9,9 +9,11 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ErrorReporterContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.core.ApiTestModule;
 import com.linbit.linstor.core.ControllerCoreModule;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DbDataInitializer;
+import com.linbit.linstor.core.SatelliteConnectorImpl;
 import com.linbit.linstor.core.SeedDefaultPeerRule;
 import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.CtrlConfig;
@@ -192,6 +194,9 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     protected DynamicNumberPool layerRscIdPoolMock;
     protected AtomicInteger layerRscIdAtomicId = new AtomicInteger();
 
+    // mocked manually in setUp and bound in ApiTestModule
+    protected SatelliteConnectorImpl satelliteConnector;
+
     // @Inject private DbAccessor secureDbDriver;
     // @Inject private DatabaseDriver persistenceDbDriver;
     @Inject
@@ -321,6 +326,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
         Mockito.when(mockPeer.getAccessContext()).thenReturn(PUBLIC_CTX);
 
+        SatelliteConnectorImpl stltConnector = Mockito.mock(SatelliteConnectorImpl.class);
         Injector injector = Guice.createInjector(
             new GuiceConfigModule(),
             new LoggingModule(errorReporter),
@@ -338,8 +344,12 @@ public abstract class GenericDbBase implements GenericDbTestConstants
             additionalModule,
             BoundFieldModule.of(this),
             new NameShortenerModule(),
-            new JclCryptoModule()
+            new JclCryptoModule(),
+            new ApiTestModule(stltConnector)
         );
+        // super.setUpWithoutEnteringScope has also initialized satelliteConnector, but with a different
+        // mock as we just gave guice to bind to. i.e. override with our local mock
+        satelliteConnector = stltConnector;
 
         injector.getInstance(DbCoreObjProtInitializer.class).initialize();
         injector.getInstance(DbDataInitializer.class).initialize();

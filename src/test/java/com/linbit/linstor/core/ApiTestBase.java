@@ -51,9 +51,6 @@ public abstract class ApiTestBase extends GenericDbBase
     @Mock
     protected TcpConnector tcpConnectorMock;
 
-    // mocked manually in setUp and bound in ApiTestModule
-    protected SatelliteConnectorImpl satelliteConnector;
-
     @Bind @Mock
     protected NetComContainer netComContainer;
 
@@ -73,14 +70,11 @@ public abstract class ApiTestBase extends GenericDbBase
     @SuppressWarnings("checkstyle:variabledeclarationusagedistance")
     public void setUp() throws Exception
     {
-        SatelliteConnectorImpl stltConnector = Mockito.mock(SatelliteConnectorImpl.class);
+        // SatelliteConnectorImpl stltConnector = Mockito.mock(SatelliteConnectorImpl.class);
         super.setUpWithoutEnteringScope(Modules.combine(
-            new CtrlApiCallHandlerModule(),
-            new ApiTestModule(stltConnector)
+            new CtrlApiCallHandlerModule()
+            // new ApiTestModule(stltConnector)
         ));
-        // super.setUpWithoutEnteringScope has also initialized satelliteConnector, but with a different
-        // mock as we just gave guice to bind to. i.e. override with our local mock
-        satelliteConnector = stltConnector;
 
         testScope.enter();
 

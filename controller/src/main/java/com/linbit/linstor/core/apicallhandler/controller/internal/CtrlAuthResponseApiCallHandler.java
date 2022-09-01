@@ -22,7 +22,6 @@ import com.linbit.linstor.security.Identity;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
-import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
@@ -45,7 +44,6 @@ public class CtrlAuthResponseApiCallHandler
 
     private final CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandler;
     private final ReconnectorTask reconnectorTask;
-    private final PingTask pingTask;
     private final LockGuardFactory lockGuardFactory;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -58,7 +56,6 @@ public class CtrlAuthResponseApiCallHandler
         @SystemContext AccessContext sysCtxRef,
         CtrlFullSyncApiCallHandler ctrlFullSyncApiCallHandlerRef,
         ReconnectorTask reconnectorTaskRef,
-        PingTask pingTaskRef,
         LockGuardFactory lockGuardFactoryRef,
         ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
@@ -70,7 +67,6 @@ public class CtrlAuthResponseApiCallHandler
         sysCtx = sysCtxRef;
         ctrlFullSyncApiCallHandler = ctrlFullSyncApiCallHandlerRef;
         reconnectorTask = reconnectorTaskRef;
-        pingTask = pingTaskRef;
         lockGuardFactory = lockGuardFactoryRef;
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;

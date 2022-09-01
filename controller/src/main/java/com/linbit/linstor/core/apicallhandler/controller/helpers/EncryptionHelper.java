@@ -36,6 +36,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Base64;
 
+import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.nio.charset.StandardCharsets;
@@ -45,8 +47,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import reactor.core.publisher.Flux;
 
 @Singleton

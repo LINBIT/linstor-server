@@ -12,9 +12,12 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
 import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
+import javax.inject.Singleton;
+
 import com.google.inject.Inject;
 import reactor.core.publisher.Flux;
 
+@Singleton
 public class PassphraseInitializer implements StartupInitializer
 {
     private CtrlConfig ctrlCfg;

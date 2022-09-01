@@ -8,7 +8,6 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
-import com.linbit.linstor.core.CtrlAuthenticator;
 import com.linbit.linstor.core.SatelliteConnectorImpl;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
@@ -57,7 +56,6 @@ public class CtrlSatelliteUpdateCaller
     private final CtrlStltSerializer internalComSerializer;
     private final Provider<RetryResourcesTask> retryResourceTaskProvider;
     private final SatelliteConnectorImpl stltConnector;
-    private final Provider<CtrlAuthenticator> ctrlAuthenticator;
     private final NodeRepository nodeRepo;
 
     @Inject
@@ -66,7 +64,6 @@ public class CtrlSatelliteUpdateCaller
         CtrlStltSerializer serializerRef,
         Provider<RetryResourcesTask> retryResourceTaskProviderRef,
         SatelliteConnectorImpl stltConnectorRef,
-        Provider<CtrlAuthenticator> ctrlAuthenticatorRef,
         NodeRepository nodeRepoRef
     )
     {
@@ -74,7 +71,6 @@ public class CtrlSatelliteUpdateCaller
         internalComSerializer = serializerRef;
         retryResourceTaskProvider = retryResourceTaskProviderRef;
         stltConnector = stltConnectorRef;
-        ctrlAuthenticator = ctrlAuthenticatorRef;
         nodeRepo = nodeRepoRef;
     }
 
