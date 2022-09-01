@@ -241,16 +241,6 @@ public class CtrlBackupCreateApiCallHandler
             }
 
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
-            Collection<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn);
-            if (!snapDfns.isEmpty())
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_SNAPSHOT_SHIPPING,
-                        "Backup shipping of resource '" + rscNameRef + "' already in progress"
-                    )
-                );
-            }
             Remote remote = null;
             RemoteName linstorRemoteName = null;
             SnapshotDefinition prevSnapDfn = null;
@@ -272,6 +262,17 @@ public class CtrlBackupCreateApiCallHandler
                     linstorRemoteName = ((StltRemote) remote).getLinstorRemoteName();
                     prevSnapDfn = getIncrementalBase(rscDfn, linstorRemoteName.displayValue, remote, allowIncremental);
                 }
+            }
+
+            Collection<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn, remote);
+            if (!snapDfns.isEmpty())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_SNAPSHOT_SHIPPING,
+                        "Backup shipping of resource '" + rscNameRef + "' already in progress"
+                    )
+                );
             }
 
             Pair<Node, List<String>> chooseNodeResult = chooseNode(
@@ -852,7 +853,7 @@ public class CtrlBackupCreateApiCallHandler
                     snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                     ctrlTransactionHelper.commit();
                     cleanupFlux = ctrlSnapShipAbortHandler
-                        .abortBackupShippingPrivileged(snapDfn.getResourceDefinition())
+                        .abortBackupShippingPrivileged(snapDfn)
                         .concatWith(
                             backupHelper.startStltCleanup(
                                 peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()

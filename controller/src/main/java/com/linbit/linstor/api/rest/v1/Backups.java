@@ -271,7 +271,8 @@ public class Backups
             Flux<ApiCallRc> deleteFlux = backupApiCallHandler.backupAbort(
                 data.rsc_name,
                 data.restore != null && data.restore,
-                data.create != null && data.create
+                data.create != null && data.create,
+                remoteName
             ).subscriberContext(requestHelper.createContext(ApiConsts.API_ABORT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,

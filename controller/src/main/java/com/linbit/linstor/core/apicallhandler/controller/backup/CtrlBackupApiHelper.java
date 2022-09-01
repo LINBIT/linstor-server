@@ -26,6 +26,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Remote;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.S3Remote;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
@@ -37,6 +38,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -173,7 +175,14 @@ public class CtrlBackupApiHelper
     /**
      * Get all snapDfns that are currently shipping a backup.
      */
-    Set<SnapshotDefinition> getInProgressBackups(ResourceDefinition rscDfn) throws AccessDeniedException
+    Set<SnapshotDefinition> getInProgressBackups(ResourceDefinition rscDfn)
+        throws AccessDeniedException, InvalidNameException
+    {
+        return getInProgressBackups(rscDfn, null);
+    }
+
+    Set<SnapshotDefinition> getInProgressBackups(ResourceDefinition rscDfn, @Nullable Remote remote)
+        throws AccessDeniedException, InvalidNameException
     {
         Set<SnapshotDefinition> snapDfns = new HashSet<>();
         for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
@@ -183,10 +192,63 @@ public class CtrlBackupApiHelper
                     snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.BACKUP)
             )
             {
-                snapDfns.add(snapDfn);
+                if (remote == null)
+                {
+                    snapDfns.add(snapDfn);
+                }
+                else
+                {
+                    for (Snapshot snap : snapDfn.getAllSnapshots(peerAccCtx.get()))
+                    {
+                        String remoteName = "";
+                        if (snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE))
+                        {
+                            remoteName = snap.getProps(peerAccCtx.get())
+                                .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        }
+                        else if (snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET))
+                        {
+                            remoteName = snap.getProps(peerAccCtx.get())
+                                .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        }
+
+                        if (hasShippingToRemote(remoteName, remote.getName().displayValue))
+                        {
+                            snapDfns.add(snapDfn);
+                            break;
+                        }
+                    }
+                }
             }
         }
         return snapDfns;
+    }
+
+    boolean hasShippingToRemote(String remoteToCheck, String expectedRemote)
+        throws AccessDeniedException, InvalidNameException
+    {
+        boolean ret = expectedRemote != null;
+        if (ret && !expectedRemote.equalsIgnoreCase(remoteToCheck))
+        {
+            Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteToCheck, true));
+            if (remote instanceof StltRemote)
+            {
+                // we checked the stlt-remote instead of the correct remote, check again
+                if (!((StltRemote) remote).getLinstorRemoteName().displayValue.equalsIgnoreCase(expectedRemote))
+                {
+                    // the correct remote doesn't have the same name either
+                    ret = false;
+                }
+                // the correct remote had the same name, ret stays true
+            }
+            else if (remote instanceof S3Remote)
+            {
+                // it already is the correct remote, and the name is not the same
+                ret = false;
+            }
+        }
+        // the remote has the same name, ret stays true
+        return ret;
     }
 
     /**

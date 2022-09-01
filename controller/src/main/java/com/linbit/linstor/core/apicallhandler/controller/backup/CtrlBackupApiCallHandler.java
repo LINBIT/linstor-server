@@ -44,6 +44,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -107,6 +108,7 @@ public class CtrlBackupApiCallHandler
     private final SystemConfProtectionRepository sysCfgRepo;
     private final ResourceDefinitionRepository rscDfnRepo;
     private final CtrlBackupApiHelper backupHelper;
+    private final RemoteRepository remoteRepo;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -124,7 +126,8 @@ public class CtrlBackupApiCallHandler
         BackupInfoManager backupInfoMgrRef,
         SystemConfProtectionRepository sysCfgRepoRef,
         ResourceDefinitionRepository rscDfnRepoRef,
-        CtrlBackupApiHelper backupHelperRef
+        CtrlBackupApiHelper backupHelperRef,
+        RemoteRepository remoteRepoRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -142,6 +145,7 @@ public class CtrlBackupApiCallHandler
         sysCfgRepo = sysCfgRepoRef;
         rscDfnRepo = rscDfnRepoRef;
         backupHelper = backupHelperRef;
+        remoteRepo = remoteRepoRef;
     }
 
     public Flux<ApiCallRc> deleteBackup(
@@ -1019,12 +1023,12 @@ public class CtrlBackupApiCallHandler
         );
     }
 
-    public Flux<ApiCallRc> backupAbort(String rscNameRef, boolean restore, boolean create)
+    public Flux<ApiCallRc> backupAbort(String rscNameRef, boolean restore, boolean create, String remoteNameRef)
     {
         return scopeRunner.fluxInTransactionalScope(
             "abort backup",
             lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
-            () -> backupAbortInTransaction(rscNameRef, restore, create)
+            () -> backupAbortInTransaction(rscNameRef, restore, create, remoteNameRef)
         );
     }
 
@@ -1032,8 +1036,13 @@ public class CtrlBackupApiCallHandler
      * Check if create or restore needs to be aborted if not specified by the parameters, then set SHIPPING_ABORT on all
      * affected snapDfns
      */
-    private Flux<ApiCallRc> backupAbortInTransaction(String rscNameRef, boolean restorePrm, boolean createPrm)
-        throws AccessDeniedException, DatabaseException
+    private Flux<ApiCallRc> backupAbortInTransaction(
+        String rscNameRef,
+        boolean restorePrm,
+        boolean createPrm,
+        String remoteNameRef
+    )
+        throws AccessDeniedException, DatabaseException, InvalidNameException
     {
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
         Set<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn);
@@ -1058,10 +1067,21 @@ public class CtrlBackupApiCallHandler
             boolean abort = false;
             for (Snapshot snap : snaps)
             {
-                if (
-                    snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE) && create ||
-                        snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET) && restore
-                )
+                boolean crt = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE) && create;
+                boolean rst = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET) && restore;
+                if (crt && remoteNameRef != null)
+                {
+                    String remoteName = snap.getProps(peerAccCtx.get())
+                        .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                    crt = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
+                }
+                if (rst && remoteNameRef != null)
+                {
+                    String remoteName = snap.getProps(peerAccCtx.get())
+                        .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                    rst = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
+                }
+                if (crt || rst)
                 {
                     abort = true;
                     break;

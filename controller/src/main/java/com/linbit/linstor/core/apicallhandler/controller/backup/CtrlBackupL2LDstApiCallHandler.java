@@ -222,7 +222,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     lockGuardFactory.create()
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP).buildDeferred(),
-                    () -> startReceivingInTransaction(data)
+                    () -> startReceivingInTransaction(data, srcRemote)
                 ).map(startInfo -> snapshotToResponse(startInfo));
                 // .onErrorResume(err -> errorToResponse(err));
             }
@@ -361,7 +361,7 @@ public class CtrlBackupL2LDstApiCallHandler
         }
     }
 
-    private Flux<BackupShippingStartInfo> startReceivingInTransaction(BackupShippingData data)
+    private Flux<BackupShippingStartInfo> startReceivingInTransaction(BackupShippingData data, Remote srcRemote)
     {
         String clusterHash = getSrcClusterShortId(data.srcClusterId);
 
@@ -373,7 +373,7 @@ public class CtrlBackupL2LDstApiCallHandler
             data.dstRscName,
             snapName.displayValue,
             data.snapShipPorts,
-            null    // needed for scheduled shipping which does not concern dst
+            srcRemote.getName()
         );
 
         data.snapName = snapName;
