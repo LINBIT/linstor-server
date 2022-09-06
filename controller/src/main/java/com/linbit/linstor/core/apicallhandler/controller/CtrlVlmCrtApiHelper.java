@@ -221,6 +221,17 @@ public class CtrlVlmCrtApiHelper
                 !isOverrideVlmIdPropertySetPrivileged(vlmDfn)
             )
             {
+                /*
+                 * TODO: improve this size check. Problem is that i.e. snapshot (and backup) restore have layerData to
+                 * grab meta-storage pools from.
+                 * Resource create kinda has that information but no accurate sizes for the meta-devices since those are
+                 * only calculated on the satellite.
+                 *
+                 * That is why (for now) the snapshot restore is dumbed down (in
+                 * CtrlSnapshotRestoreApiCallHAndler#restoreOnNode) to only include the data-storage pool to
+                 * this set of SP that will be checked here. This might fail later if a metapool runs out of space on
+                 * the satellite which is also not really what one would desire.
+                 */
                 if (!FreeCapacityAutoPoolSelectorUtils
                     .isStorPoolUsable(
                         getVolumeSizePrivileged(vlmDfn),

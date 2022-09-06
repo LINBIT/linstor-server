@@ -41,6 +41,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -482,7 +483,10 @@ public class CtrlSnapshotRestoreApiCallHandler
             LayerPayload payload = new LayerPayload();
             for (Entry<String, StorPool> storPoolEntry : storPool.entrySet())
             {
-                payload.putStorageVlmPayload(storPoolEntry.getKey(), volumeNumber.value, storPoolEntry.getValue());
+                if (storPoolEntry.getKey().equals(RscLayerSuffixes.SUFFIX_DATA))
+                {
+                    payload.putStorageVlmPayload(storPoolEntry.getKey(), volumeNumber.value, storPoolEntry.getValue());
+                }
             }
             Volume toVlm = ctrlVlmCrtApiHelper
                 .createVolumeFromAbsVolume(rsc, toVlmDfn, payload, null, fromSnapshotVolume);
