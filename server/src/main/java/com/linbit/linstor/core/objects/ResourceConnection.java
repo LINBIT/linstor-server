@@ -87,7 +87,7 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
 
         NodeName sourceNodeName = connectionKey.getSourceNodeName();
         NodeName targetNodeName = connectionKey.getTargetNodeName();
-        if (!sourceResourceRef.getDefinition().equals(targetResourceRef.getDefinition()))
+        if (!sourceResourceRef.getResourceDefinition().equals(targetResourceRef.getResourceDefinition()))
         {
             throw new ImplementationError(
                 String.format(
@@ -95,9 +95,9 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
                         "Volume1: NodeName=%s, ResName=%s %n" +
                         "Volume2: NodeName=%s, ResName=%s.",
                         sourceNodeName.value,
-                        sourceResourceRef.getDefinition().getName().value,
+                        sourceResourceRef.getResourceDefinition().getName().value,
                         targetNodeName.value,
-                        targetResourceRef.getDefinition().getName().value
+                        targetResourceRef.getResourceDefinition().getName().value
                     ),
                 null
             );
@@ -107,7 +107,7 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
             PropsContainer.buildPath(
                 connectionKey.getSourceNodeName(),
                 connectionKey.getTargetNodeName(),
-                sourceResourceRef.getDefinition().getName()
+                sourceResourceRef.getResourceDefinition().getName()
             )
         );
 

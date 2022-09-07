@@ -1430,7 +1430,7 @@ public class DrbdLayer implements DeviceLayer
 
                 { // check drbd connections
                     Resource localResource = drbdRscData.getAbsResource();
-                    localResource.getDefinition().streamResource(workerCtx)
+                    localResource.getResourceDefinition().streamResource(workerCtx)
                         .filter(otherRsc -> !otherRsc.equals(localResource))
                         .forEach(
                             otherRsc ->
@@ -1759,7 +1759,7 @@ public class DrbdLayer implements DeviceLayer
         try
         {
             Resource rsc = drbdRscData.getAbsResource();
-            ResourceDefinition rscDfn = rsc.getDefinition();
+            ResourceDefinition rscDfn = rsc.getResourceDefinition();
 
             if (rscDfn.getProps(workerCtx).getProp(InternalApiConsts.PROP_PRIMARY_SET) == null &&
                     !rsc.getStateFlags().isSet(workerCtx, Resource.Flags.DRBD_DISKLESS)

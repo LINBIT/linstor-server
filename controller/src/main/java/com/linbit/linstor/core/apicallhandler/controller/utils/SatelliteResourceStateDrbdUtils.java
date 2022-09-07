@@ -59,7 +59,7 @@ public class SatelliteResourceStateDrbdUtils
         if (checkState)
         {
             Peer peer = rsc.getNode().getPeer(accCtx);
-            ResourceName rscName = rsc.getDefinition().getName();
+            ResourceName rscName = rsc.getResourceDefinition().getName();
             SatelliteState stltState = peer.getSatelliteState();
             if (stltState != null)
             {

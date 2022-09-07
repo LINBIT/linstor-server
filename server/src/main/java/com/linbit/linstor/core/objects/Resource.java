@@ -137,7 +137,8 @@ public class Resource extends AbsResource<Resource>
         return objProt;
     }
 
-    public ResourceDefinition getDefinition()
+    @Override
+    public ResourceDefinition getResourceDefinition()
     {
         checkDeleted();
         return resourceDfn;
@@ -380,10 +381,10 @@ public class Resource extends AbsResource<Resource>
             rscConns.add(rscConn.getApiData(accCtx));
         }
         return new RscPojo(
-            getDefinition().getName().getDisplayName(),
+            getResourceDefinition().getName().getDisplayName(),
             getNode().getName().getDisplayName(),
             getNode().getUuid(),
-            getDefinition().getApiData(accCtx),
+            getResourceDefinition().getApiData(accCtx),
             getUuid(),
             getStateFlags().getFlagsBits(accCtx),
             getProps(accCtx).map(),
@@ -415,7 +416,7 @@ public class Resource extends AbsResource<Resource>
             eq = getNode().compareTo(otherRsc.getNode());
             if (eq == 0)
             {
-                eq = getDefinition().compareTo(((Resource) otherRsc).getDefinition());
+                eq = getResourceDefinition().compareTo(((Resource) otherRsc).getResourceDefinition());
             }
         }
         return eq;
@@ -454,7 +455,7 @@ public class Resource extends AbsResource<Resource>
     public static String getStringId(Resource rsc)
     {
         return rsc.getNode().getName().value + "/" +
-            rsc.getDefinition().getName().value;
+            rsc.getResourceDefinition().getName().value;
     }
 
     /**
@@ -467,7 +468,7 @@ public class Resource extends AbsResource<Resource>
 
         public ResourceKey(Resource resource)
         {
-            this(resource.getNode().getName(), resource.getDefinition().getName());
+            this(resource.getNode().getName(), resource.getResourceDefinition().getName());
         }
 
         public ResourceKey(NodeName nodeNameRef, ResourceName resourceNameRef)
@@ -646,12 +647,5 @@ public class Resource extends AbsResource<Resource>
         {
             return value;
         }
-    }
-
-    @Override
-    public ResourceDefinition getResourceDefinition()
-    {
-        checkDeleted();
-        return resourceDfn;
     }
 }

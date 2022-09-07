@@ -213,7 +213,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         if (isFlagSet(tieBreaker, Resource.Flags.DRBD_DELETE))
                         {
                             // user requested to delete tiebreaker.
-                            tieBreaker.getDefinition().getProps(peerCtx.get()).setProp(
+                            tieBreaker.getResourceDefinition().getProps(peerCtx.get()).setProp(
                                 KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER,
                                 VAL_FALSE,
                                 NAMESPC_DRBD_OPTIONS
@@ -222,7 +222,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                 ApiCallRcImpl.singleApiCallRc(
                                     ApiConsts.INFO_PROP_SET,
                                     "Disabling auto-tiebreaker on resource-definition '" +
-                                        tieBreaker.getDefinition().getName() +
+                                        tieBreaker.getResourceDefinition().getName() +
                                         "' as tiebreaker resource was manually deleted"
                                 )
                             );
@@ -295,7 +295,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 ctx.additionalFluxList.add(
                     rscToggleDiskHelper.resourceToggleDisk(
                         rsc.getNode().getName().displayValue,
-                        rsc.getDefinition().getName().displayValue,
+                        rsc.getResourceDefinition().getName().displayValue,
                         null,
                         null,
                         null,
@@ -675,7 +675,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         ResponseContext context = CtrlRscApiCallHandler.makeRscContext(
             ApiOperation.makeModifyOperation(),
             tiebreaker.getNode().getName().getDisplayName(),
-            tiebreaker.getDefinition().getName().getDisplayName()
+            tiebreaker.getResourceDefinition().getName().getDisplayName()
         );
 
         return scopeRunner

@@ -113,7 +113,7 @@ public class RscDfnInternalCallHandler
         try (LockGuard ignored = LockGuard.createLocked(rscDfnMapLock.writeLock()))
         {
             Resource res = ctrlApiDataLoader.loadRsc(currentPeer.getNode().getName().displayValue, rscNameStr, true);
-            ResourceDefinition resDfn = res.getDefinition();
+            ResourceDefinition resDfn = res.getResourceDefinition();
 
             Props resDfnProps = ctrlPropsHelper.getProps(resDfn);
             if (resDfnProps.getProp(InternalApiConsts.PROP_PRIMARY_SET) == null)

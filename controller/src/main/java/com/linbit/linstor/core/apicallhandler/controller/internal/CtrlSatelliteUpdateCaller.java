@@ -156,7 +156,7 @@ public class CtrlSatelliteUpdateCaller
         Publisher<ApiCallRc> nextStepRef
     )
     {
-        return updateSatellites(rsc.getDefinition(), nextStepRef);
+        return updateSatellites(rsc.getResourceDefinition(), nextStepRef);
     }
 
     /**
@@ -305,7 +305,7 @@ public class CtrlSatelliteUpdateCaller
                         .headerlessBuilder()
                         .changedResource(
                             currentRsc.getUuid(),
-                            currentRsc.getDefinition().getName().displayValue
+                            currentRsc.getResourceDefinition().getName().displayValue
                         )
                         .build()
                 )

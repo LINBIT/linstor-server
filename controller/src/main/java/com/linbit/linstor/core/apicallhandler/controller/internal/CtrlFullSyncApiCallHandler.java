@@ -143,7 +143,7 @@ public class CtrlFullSyncApiCallHandler
             for (Resource rsc : satelliteNode.streamResources(apiCtx).collect(toList()))
             {
                 rscs.add(rsc);
-                Iterator<Resource> otherRscIterator = rsc.getDefinition().iterateResource(apiCtx);
+                Iterator<Resource> otherRscIterator = rsc.getResourceDefinition().iterateResource(apiCtx);
                 while (otherRscIterator.hasNext())
                 {
                     Resource otherRsc = otherRscIterator.next();

@@ -1277,13 +1277,13 @@ public class CtrlNodeApiCallHandler
                                 flux = flux.concatWithValues(
                                     ApiCallRcImpl.singleApiCallRc(
                                         ApiConsts.WARN_STLT_NOT_UPDATED,
-                                        "Not deleting resource " + rsc.getDefinition().getName().displayValue +
+                                        "Not deleting resource " + rsc.getResourceDefinition().getName().displayValue +
                                             " since it is the last non-deleting diskful resource of this resource-definition"
                                     )
                                 );
                                 errorReporter.logDebug(
                                     "Auto-evict: ignoring resource %s since it is the last non-deleting diskful resource",
-                                    rsc.getDefinition().getName()
+                                    rsc.getResourceDefinition().getName()
                                 );
                             }
                         }
@@ -1320,7 +1320,7 @@ public class CtrlNodeApiCallHandler
                                         .transform(
                                             responses -> CtrlResponseUtils.combineResponses(
                                                 responses,
-                                                rsc.getDefinition().getName(),
+                                                rsc.getResourceDefinition().getName(),
                                                 "Resource restored on {0}"
                                             )
                                         )
@@ -1443,20 +1443,20 @@ public class CtrlNodeApiCallHandler
                         if (LayerRscUtils.getLayerStack(res, apiCtx).contains(DeviceLayerKind.DRBD))
                         {
                             Map<String, String> objRefs = new TreeMap<>();
-                            objRefs.put(ApiConsts.KEY_RSC_DFN, res.getDefinition().getName().displayValue);
+                            objRefs.put(ApiConsts.KEY_RSC_DFN, res.getResourceDefinition().getName().displayValue);
                             objRefs.put(ApiConsts.KEY_NODE, res.getNode().getName().displayValue);
 
                             ResponseContext context = new ResponseContext(
                                 ApiOperation.makeDeleteOperation(),
-                                "Auto-evicting resource: " + res.getDefinition().getName(),
-                                "auto-evicting resource: " + res.getDefinition().getName(),
+                                "Auto-evicting resource: " + res.getResourceDefinition().getName(),
+                                "auto-evicting resource: " + res.getResourceDefinition().getName(),
                                 ApiConsts.MASK_MOD,
                                 objRefs
                             );
                             AutoHelperContext autoHelperCtx = new AutoHelperContext(
                                 new ApiCallRcImpl(),
                                 context,
-                                res.getDefinition()
+                                res.getResourceDefinition()
                             );
 
                             StateFlags<Flags> rscFlags = res.getStateFlags();
@@ -1473,7 +1473,7 @@ public class CtrlNodeApiCallHandler
                                     this.ctrlSatelliteUpdateCaller.updateSatellites(res, Flux.empty()).transform(
                                         responses -> CtrlResponseUtils.combineResponses(
                                             responses,
-                                            res.getDefinition().getName(),
+                                            res.getResourceDefinition().getName(),
                                             "Resource updated on {0}"
                                         )
                                     )
@@ -1483,7 +1483,7 @@ public class CtrlNodeApiCallHandler
                         {
                             errorReporter.logDebug(
                                 "Auto-evict: ignoring resource %s since it is a non-DRBD resource",
-                                res.getDefinition().getName()
+                                res.getResourceDefinition().getName()
                             );
                         }
                     }
@@ -1532,7 +1532,7 @@ public class CtrlNodeApiCallHandler
                 Resource rsc = rscIt.next();
                 rsc.getStateFlags().enableFlags(peerCtx, Resource.Flags.EVACUATE);
                 rsc.getProps(peerAccCtx.get()).map().put(ApiConsts.KEY_RSC_MIGRATE_FROM, nodeNameEvacuateSource.value);
-                affectedRscDfnList.add(rsc.getDefinition());
+                affectedRscDfnList.add(rsc.getResourceDefinition());
             }
             ctrlTransactionHelper.commit();
 

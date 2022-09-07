@@ -392,7 +392,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
         for (Resource rsc : resourceList)
         {
-            ResourceName rscName = rsc.getDefinition().getName();
+            ResourceName rscName = rsc.getResourceDefinition().getName();
 
             ApiCallRcImpl apiCallRc = failedRscs.get(rsc);
             if (apiCallRc == null)
@@ -518,7 +518,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private ApiCallRcImpl handleException(Resource rsc, Throwable exc)
     {
-        ResourceName rscName = rsc.getDefinition().getName();
+        ResourceName rscName = rsc.getResourceDefinition().getName();
         ApiCallRcImpl apiCallRc;
         String errorId = errorReporter.reportError(
             exc,

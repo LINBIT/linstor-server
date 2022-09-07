@@ -631,7 +631,7 @@ public class CtrlRscLayerDataFactory
         throws AccessDeniedException
     {
         boolean needsLuksLayer = false;
-        Iterator<VolumeDefinition> iterateVolumeDefinitions = rscRef.getDefinition().iterateVolumeDfn(apiCtx);
+        Iterator<VolumeDefinition> iterateVolumeDefinitions = rscRef.getResourceDefinition().iterateVolumeDfn(apiCtx);
         while (iterateVolumeDefinitions.hasNext())
         {
             VolumeDefinition vlmDfn = iterateVolumeDefinitions.next();

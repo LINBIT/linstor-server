@@ -36,7 +36,7 @@ public class SharedResourceManager
             Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, sysCtx);
             Set<SharedStorPoolName> sharedSpNames = SharedStorPoolManager.getSharedSpNames(storPools);
 
-            Iterator<Resource> rscIt = rsc.getDefinition().iterateResource(sysCtx);
+            Iterator<Resource> rscIt = rsc.getResourceDefinition().iterateResource(sysCtx);
             while (rscIt.hasNext())
             {
                 Resource tmpRsc = rscIt.next();
@@ -81,7 +81,7 @@ public class SharedResourceManager
             Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, sysCtx);
             Set<SharedStorPoolName> sharedSpNames = SharedStorPoolManager.getSharedSpNames(storPools);
 
-            result = getSharedResources(sharedSpNames, rsc.getDefinition());
+            result = getSharedResources(sharedSpNames, rsc.getResourceDefinition());
             result.remove(rsc);
         }
         catch (AccessDeniedException exc)

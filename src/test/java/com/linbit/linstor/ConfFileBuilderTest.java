@@ -206,7 +206,7 @@ public class ConfFileBuilderTest
     @Test(expected = ImplementationError.class)
     public void testRscDfnNull() throws Exception
     {
-        when(localRscData.getAbsResource().getDefinition()).thenReturn(null);
+        when(localRscData.getAbsResource().getResourceDefinition()).thenReturn(null);
         confFileBuilder = new ConfFileBuilder(
             errorReporter,
             accessContext,
@@ -441,7 +441,7 @@ public class ConfFileBuilderTest
         when(vlmDfnProps.getNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS)).thenReturn(drbdprops);
 
         when(resource.getObjProt()).thenReturn(dummyObjectProtection);
-        when(resource.getDefinition()).thenReturn(resourceDefinition);
+        when(resource.getResourceDefinition()).thenReturn(resourceDefinition);
         when(resource.getResourceDefinition()).thenReturn(resourceDefinition);
         when(resource.getStateFlags()).thenReturn(rscStateFlags);
         when(rscConn.getStateFlags()).thenReturn(rscConnStateFlags);

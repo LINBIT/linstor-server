@@ -853,7 +853,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setRscId(
                     IntObjectId.newBuilder()
                         .setUuid(resource.getUuid().toString())
-                        .setName(resource.getDefinition().getName().displayValue)
+                        .setName(resource.getResourceDefinition().getName().displayValue)
                         .build()
                 )
                 .addAllFreeSpace(
@@ -878,7 +878,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             }
 
             final NodeName localNodeName = resource.getNode().getName();
-            for (SnapshotDefinition snapDfn : resource.getDefinition().getSnapshotDfns(serializerCtx))
+            for (SnapshotDefinition snapDfn : resource.getResourceDefinition().getSnapshotDfns(serializerCtx))
             {
                 Snapshot snap = snapDfn.getSnapshot(serializerCtx, localNodeName);
                 String snapName = snapDfn.getName().value;
@@ -1610,7 +1610,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             throws AccessDeniedException
         {
             List<Resource> otherResources = new ArrayList<>();
-            Iterator<Resource> rscIterator = localResource.getDefinition().iterateResource(serializerCtx);
+            Iterator<Resource> rscIterator = localResource.getResourceDefinition().iterateResource(serializerCtx);
             while (rscIterator.hasNext())
             {
                 Resource rsc = rscIterator.next();
@@ -1620,7 +1620,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 }
             }
 
-            ResourceDefinition rscDfn = localResource.getDefinition();
+            ResourceDefinition rscDfn = localResource.getResourceDefinition();
 
             return IntRsc.newBuilder()
                 .setLocalRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, localResource))

@@ -315,6 +315,6 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
 
     public void addNeedRePlaceRsc(Resource rsc)
     {
-        needRePlaceRsc.add(rsc.getDefinition());
+        needRePlaceRsc.add(rsc.getResourceDefinition());
     }
 }

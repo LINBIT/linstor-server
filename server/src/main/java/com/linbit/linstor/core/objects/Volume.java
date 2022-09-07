@@ -90,14 +90,14 @@ public class Volume extends AbsVolume<Resource>
             propsContainerFactory.getInstance(
                 PropsContainer.buildPath(
                     rscRef.getNode().getName(),
-                    rscRef.getDefinition().getName(),
+                    rscRef.getResourceDefinition().getName(),
                     vlmDfnRef.getVolumeNumber()
                 )
             ),
             transObjFactory,
             transMgrProviderRef
         );
-        resourceDfn = rscRef.getDefinition();
+        resourceDfn = rscRef.getResourceDefinition();
         volumeDfn = vlmDfnRef;
         devicePath = transObjFactory.createTransactionSimpleObject(this, null, null);
         dbDriver = dbDriverRef;

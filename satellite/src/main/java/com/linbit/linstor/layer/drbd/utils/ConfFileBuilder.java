@@ -129,7 +129,7 @@ public class ConfFileBuilder
         peerRscSet.addAll(remoteResourceData); // node-alphabetically sorted
 
         Resource localRsc = localRscData.getAbsResource();
-        final ResourceDefinition rscDfn = localRsc.getDefinition();
+        final ResourceDefinition rscDfn = localRsc.getResourceDefinition();
         if (rscDfn == null)
         {
             throw new ImplementationError("No resource definition found for " + localRsc + "!");
@@ -796,8 +796,8 @@ public class ConfFileBuilder
                 }
             }
             prioProps.addProps(rsc.getProps(accCtx));
-            prioProps.addProps(rsc.getDefinition().getProps(accCtx));
-            prioProps.addProps(rsc.getDefinition().getResourceGroup().getProps(accCtx));
+            prioProps.addProps(rsc.getResourceDefinition().getProps(accCtx));
+            prioProps.addProps(rsc.getResourceDefinition().getResourceGroup().getProps(accCtx));
             prioProps.addProps(node.getProps(accCtx));
             prioProps.addProps(stltProps);
 

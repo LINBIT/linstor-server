@@ -742,7 +742,7 @@ class StltRscApiCallHandler
         throws AccessDeniedException, InvalidNameException, DivergentDataException, ValueOutOfRangeException,
         DatabaseException
     {
-        VolumeDefinition vlmDfn = rsc.getDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
+        VolumeDefinition vlmDfn = rsc.getResourceDefinition().getVolumeDfn(apiCtx, new VolumeNumber(vlmApi.getVlmNr()));
 
         Volume vlm = volumeFactory.getInstanceSatellite(
             apiCtx,
@@ -896,7 +896,7 @@ class StltRscApiCallHandler
             "Resource",
             String.format("Node: '%s', Rsc: '%s'",
                 rsc.getNode().getName().displayValue,
-                rsc.getDefinition().getName().displayValue
+                rsc.getResourceDefinition().getName().displayValue
             ),
             String.format("Node: '%s', Rsc: '%s'",
                 otherRsc.getNodeName(),
@@ -938,7 +938,7 @@ class StltRscApiCallHandler
             vlm.getKey().toString(),
             String.format(
                 "Rsc: '%s', VlmNr: '%d'",
-                vlm.getAbsResource().getDefinition().getName().displayValue,
+                vlm.getAbsResource().getResourceDefinition().getName().displayValue,
                 vlmRaw.getVlmNr()
             )
         );

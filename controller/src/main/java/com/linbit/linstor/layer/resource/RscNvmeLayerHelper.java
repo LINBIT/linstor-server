@@ -150,7 +150,7 @@ class RscNvmeLayerHelper
         if (rscProps.getProp(InternalApiConsts.PROP_NVME_TARGET_NODE_NAME) == null &&
             rscRef.isNvmeInitiator(apiCtx))
         {
-            ResourceDefinition rscDfn = rscRef.getDefinition();
+            ResourceDefinition rscDfn = rscRef.getResourceDefinition();
             Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
 
             HashMap<String, Integer> initCountPerTarget = new HashMap<>();

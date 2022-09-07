@@ -138,7 +138,7 @@ public class RetryResourcesTask implements Task
                         errorReporter.logDebug(
                             "RetryTask: Contact satellite '%s' to retry resource '%s'.",
                             nodeName.displayValue,
-                            rsc.getDefinition().getName().displayValue
+                            rsc.getResourceDefinition().getName().displayValue
                         );
 
                         // only update the one satellite, not every involved satellites
@@ -154,7 +154,7 @@ public class RetryResourcesTask implements Task
                                 .headerlessBuilder()
                                 .changedResource(
                                     rsc.getUuid(),
-                                    rsc.getDefinition().getName().displayValue
+                                    rsc.getResourceDefinition().getName().displayValue
                                 )
                                 .build()
                         ).map(

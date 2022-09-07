@@ -473,7 +473,7 @@ public class CtrlSnapshotCrtHelper
     private Snapshot createSnapshot(SnapshotDefinition snapshotDfn, Resource rsc)
     {
         String snapshotNameStr = snapshotDfn.getName().displayValue;
-        String rscNameStr = rsc.getDefinition().getName().displayValue;
+        String rscNameStr = rsc.getResourceDefinition().getName().displayValue;
         String nodeNameStr = rsc.getNode().getName().displayValue;
 
         Snapshot snapshot;

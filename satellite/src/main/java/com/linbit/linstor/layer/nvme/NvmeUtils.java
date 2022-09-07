@@ -137,7 +137,7 @@ public class NvmeUtils
         );
         try
         {
-            ResourceDefinition rscDfn = nvmeRscData.getAbsResource().getDefinition();
+            ResourceDefinition rscDfn = nvmeRscData.getAbsResource().getResourceDefinition();
             final PriorityProps nvmePrioProps = new PriorityProps(
                 rscDfn.getProps(accCtx),
                 rscDfn.getResourceGroup().getProps(accCtx),
@@ -367,7 +367,7 @@ public class NvmeUtils
                 getNvmeSubsystemPrefix(nvmeRscData) + nvmeRscData.getSuffixedResourceName(),
                 getIpAddr(
                     // TODO: check on controller
-                    nvmeRscData.getAbsResource().getDefinition().getResource(
+                    nvmeRscData.getAbsResource().getResourceDefinition().getResource(
                         accCtx,
                         new NodeName(
                             nvmeRscData
@@ -1197,7 +1197,7 @@ public class NvmeUtils
         throws AccessDeniedException, StorageException
     {
         Optional<Resource> targetRscOpt = initiatorRsc
-            .getDefinition()
+            .getResourceDefinition()
             .streamResource(accCtx).filter(
                 rsc ->
                 {

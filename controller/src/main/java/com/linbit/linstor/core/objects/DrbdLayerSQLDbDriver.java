@@ -628,7 +628,7 @@ public class DrbdLayerSQLDbDriver implements DrbdLayerCtrlDatabaseDriver
                         Resource rsc = (Resource) absRsc;
 
                         Pair<DrbdRscDfnData<Resource>, List<DrbdRscData<Resource>>> drbdRscDfnDataPair = drbdRscDfnCache
-                            .get(new Pair<>(rsc.getDefinition(), rscSuffixRef));
+                            .get(new Pair<>(rsc.getResourceDefinition(), rscSuffixRef));
                         Map<VolumeNumber, DrbdVlmData<Resource>> vlmMap = new TreeMap<>();
 
                         DrbdRscData<Resource> drbdRscData = new DrbdRscData<>(

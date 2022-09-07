@@ -424,8 +424,8 @@ public class DatabaseLoader implements DatabaseDriver
             {
                 Resource rsc = (Resource) absEntry.getKey();
                 loadedNodesMap.get(rsc.getNode()).getRscMap()
-                    .put(rsc.getDefinition().getName(), rsc);
-                loadedRscDfnsMap.get(rsc.getDefinition()).getRscMap()
+                    .put(rsc.getResourceDefinition().getName(), rsc);
+                loadedRscDfnsMap.get(rsc.getResourceDefinition()).getRscMap()
                     .put(rsc.getNode().getName(), rsc);
 
                 loadedResources.put(rsc, absEntry.getValue());
@@ -435,7 +435,7 @@ public class DatabaseLoader implements DatabaseDriver
             Map<Pair<NodeName, ResourceName>, Resource> tmpRscMap =
                 mapByName(loadedResources, rsc -> new Pair<>(
                     rsc.getNode().getName(),
-                    rsc.getDefinition().getName()
+                    rsc.getResourceDefinition().getName()
                 )
             );
 

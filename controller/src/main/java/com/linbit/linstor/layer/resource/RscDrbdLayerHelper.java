@@ -251,7 +251,7 @@ public class RscDrbdLayerHelper extends
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException, ImplementationError, InvalidNameException, LinStorException
     {
-        ResourceDefinition rscDfn = rscRef.getDefinition();
+        ResourceDefinition rscDfn = rscRef.getResourceDefinition();
         DrbdRscDfnData<Resource> drbdRscDfnData = ensureResourceDefinitionExists(
             rscDfn,
             rscNameSuffixRef,
@@ -346,7 +346,7 @@ public class RscDrbdLayerHelper extends
                 targetRsc = RscStorageLayerHelper.findTargetEbsResource(
                     apiCtx,
                     remoteMap,
-                    rscRef.getDefinition(),
+                    rscRef.getResourceDefinition(),
                     availabilityZones.iterator().next(),
                     rscRef.getNode().getName().displayValue
                 );
@@ -680,7 +680,7 @@ public class RscDrbdLayerHelper extends
         {
             boolean allVlmsUseInternalMetaData = true;
             Resource rsc = drbdRscDataRef.getAbsResource();
-            ResourceDefinition rscDfn = rsc.getDefinition();
+            ResourceDefinition rscDfn = rsc.getResourceDefinition();
 
             Iterator<VolumeDefinition> iterateVolumeDfn = rscDfn.iterateVolumeDfn(apiCtx);
             Props rscProps = rsc.getProps(apiCtx);
@@ -904,7 +904,7 @@ public class RscDrbdLayerHelper extends
     {
         DrbdRscData<Snapshot> drbdSnapData = (DrbdRscData<Snapshot>) fromAbsRscDataRef;
         String resourceNameSuffix = drbdSnapData.getResourceNameSuffix();
-        DrbdRscDfnData<Resource> drbdRscDfnData = rscRef.getDefinition().getLayerData(
+        DrbdRscDfnData<Resource> drbdRscDfnData = rscRef.getResourceDefinition().getLayerData(
             apiCtx,
             DeviceLayerKind.DRBD,
             resourceNameSuffix

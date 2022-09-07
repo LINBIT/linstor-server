@@ -349,7 +349,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
-        resourceMap.put(resRef.getDefinition().getName(), resRef);
+        resourceMap.put(resRef.getResourceDefinition().getName(), resRef);
     }
 
     void removeResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
@@ -357,7 +357,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
-        resourceMap.remove(resRef.getDefinition().getName());
+        resourceMap.remove(resRef.getResourceDefinition().getName());
     }
 
 

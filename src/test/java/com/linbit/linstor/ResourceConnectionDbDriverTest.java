@@ -253,10 +253,10 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
         Resource sourceResource = loadedConDfn.getSourceResource(SYS_CTX);
         Resource targetResource = loadedConDfn.getTargetResource(SYS_CTX);
 
-        assertEquals(resName, sourceResource.getDefinition().getName());
+        assertEquals(resName, sourceResource.getResourceDefinition().getName());
         assertEquals(sourceName, sourceResource.getNode().getName());
         assertEquals(targetName, targetResource.getNode().getName());
-        assertEquals(sourceResource.getDefinition().getName(), targetResource.getDefinition().getName());
+        assertEquals(sourceResource.getResourceDefinition().getName(), targetResource.getResourceDefinition().getName());
     }
 
     @Test (expected = LinStorDataAlreadyExistsException.class)

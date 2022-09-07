@@ -43,10 +43,10 @@ public class CtrlSatelliteConnectionNotifier
 
     public Flux<?> resourceConnected(Resource rsc, ResponseContext context)
     {
-        ResourceDefinition rscDfn = rsc.getDefinition();
+        ResourceDefinition rscDfn = rsc.getResourceDefinition();
 
         return Flux.merge(
-            checkResourceDefinitionConnected(rsc.getDefinition(), context),
+            checkResourceDefinitionConnected(rsc.getResourceDefinition(), context),
             notifyListeners(
                 "connecting to node '" + rsc.getNode().getName() + "' for resource '" + rscDfn.getName() + "'",
                 connectionListener -> connectionListener.resourceConnected(rsc)

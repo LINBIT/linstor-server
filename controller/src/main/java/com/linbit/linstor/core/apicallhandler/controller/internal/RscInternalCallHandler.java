@@ -367,7 +367,7 @@ public class RscInternalCallHandler
              * TODO: instead of this loop, we should introduce a "notifySnapshotApplied"
              * and put the logic of this loop there
              */
-            for (SnapshotDefinition snapDfn : rsc.getDefinition().getSnapshotDfns(apiCtx))
+            for (SnapshotDefinition snapDfn : rsc.getResourceDefinition().getSnapshotDfns(apiCtx))
             {
                 Snapshot snap = snapDfn.getSnapshot(apiCtx, nodeName);
                 if (

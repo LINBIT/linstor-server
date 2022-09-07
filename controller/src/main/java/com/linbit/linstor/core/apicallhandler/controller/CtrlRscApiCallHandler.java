@@ -199,7 +199,7 @@ public class CtrlRscApiCallHandler
             if (notifyStlts)
             {
                 flux = ctrlSatelliteUpdateCaller
-                        .updateSatellites(rsc.getDefinition(), Flux.empty())
+                        .updateSatellites(rsc.getResourceDefinition(), Flux.empty())
                         .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2());
             }
         }
@@ -411,7 +411,7 @@ public class CtrlRscApiCallHandler
     public static String getRscDescription(Resource resource)
     {
         return getRscDescription(
-            resource.getNode().getName().displayValue, resource.getDefinition().getName().displayValue);
+            resource.getNode().getName().displayValue, resource.getResourceDefinition().getName().displayValue);
     }
 
     public static String getRscDescription(String nodeNameStr, String rscNameStr)
@@ -421,7 +421,7 @@ public class CtrlRscApiCallHandler
 
     public static String getRscDescriptionInline(Resource rsc)
     {
-        return getRscDescriptionInline(rsc.getNode(), rsc.getDefinition());
+        return getRscDescriptionInline(rsc.getNode(), rsc.getResourceDefinition());
     }
 
     public static String getRscDescriptionInline(Node node, ResourceDefinition rscDfn)

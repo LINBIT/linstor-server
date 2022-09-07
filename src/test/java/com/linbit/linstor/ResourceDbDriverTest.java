@@ -193,8 +193,8 @@ public class ResourceDbDriverTest extends GenericDbBase
         assertEquals(resUuid, loadedRes.getUuid());
         assertNotNull(loadedRes.getNode());
         assertEquals(nodeName, loadedRes.getNode().getName());
-        assertNotNull(loadedRes.getDefinition());
-        assertEquals(resName, loadedRes.getDefinition().getName());
+        assertNotNull(loadedRes.getResourceDefinition());
+        assertEquals(resName, loadedRes.getResourceDefinition().getName());
         assertEquals(Resource.Flags.CLEAN.flagValue, loadedRes.getStateFlags().getFlagsBits(SYS_CTX));
     }
 
@@ -230,8 +230,8 @@ public class ResourceDbDriverTest extends GenericDbBase
         assertEquals(resUuid, resData.getUuid());
         assertNotNull(resData.getNode());
         assertEquals(nodeName, resData.getNode().getName());
-        assertNotNull(resData.getDefinition());
-        assertEquals(resName, resData.getDefinition().getName());
+        assertNotNull(resData.getResourceDefinition());
+        assertEquals(resName, resData.getResourceDefinition().getName());
         assertEquals(Resource.Flags.CLEAN.flagValue, resData.getStateFlags().getFlagsBits(SYS_CTX));
     }
 

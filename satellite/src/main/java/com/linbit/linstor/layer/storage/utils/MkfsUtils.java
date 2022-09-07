@@ -237,7 +237,7 @@ public class MkfsUtils
                                 {
                                     tempFile = File.createTempFile(
                                         "linstor",
-                                        "xfs_proto_" + rsc.getDefinition().getName().displayValue
+                                        "xfs_proto_" + rsc.getResourceDefinition().getName().displayValue
                                     );
                                     Long mkfsUID = getUserId(extCmdFactory, mkfsUser);
                                     Long mkfsGID = getGroupId(extCmdFactory, mkfsGroup);

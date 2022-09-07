@@ -225,7 +225,7 @@ public class CtrlRscCrtApiCallHandler
             );
             vlmCreatedRcEntry.setReturnCode(ApiConsts.MASK_CRT | ApiConsts.MASK_VLM | ApiConsts.CREATED);
             vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_NODE, rsc.getNode().getName().displayValue);
-            vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rsc.getDefinition().getName().displayValue);
+            vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_RSC_DFN, rsc.getResourceDefinition().getName().displayValue);
             vlmCreatedRcEntry.putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr));
 
             responses.addEntry(vlmCreatedRcEntry);

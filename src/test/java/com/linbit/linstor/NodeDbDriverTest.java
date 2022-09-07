@@ -545,7 +545,7 @@ public class NodeDbDriverTest extends GenericDbBase
             assertNotNull(res);
             assertEquals(loadedNode, res.getNode());
             {
-                ResourceDefinition resDfn = res.getDefinition();
+                ResourceDefinition resDfn = res.getResourceDefinition();
                 assertNotNull(resDfn);
                 assertEquals(ResourceDefinition.Flags.DELETE.flagValue, resDfn.getFlags().getFlagsBits(SYS_CTX));
                 assertEquals(resName, resDfn.getName());
@@ -586,7 +586,7 @@ public class NodeDbDriverTest extends GenericDbBase
                     assertEquals(1, volProps.size());
                 }
                 assertEquals(res, vol.getAbsResource());
-                assertEquals(res.getDefinition(), vol.getResourceDefinition());
+                assertEquals(res.getResourceDefinition(), vol.getResourceDefinition());
                 assertEquals(vol1Uuid, vol.getUuid());
                 {
                     VolumeDefinition volDfn = vol.getVolumeDefinition();
@@ -597,7 +597,7 @@ public class NodeDbDriverTest extends GenericDbBase
                         assertEquals(volDfnTestValue, volDfnProps.getProp(volDfnTestKey));
                         assertEquals(1, volDfnProps.size());
                     }
-                    assertEquals(res.getDefinition(), volDfn.getResourceDefinition());
+                    assertEquals(res.getResourceDefinition(), volDfn.getResourceDefinition());
                     assertEquals(volDfnUuid, volDfn.getUuid());
                     assertEquals(volDfnNr, volDfn.getVolumeNumber());
                     assertEquals(volDfnSize, volDfn.getVolumeSize(SYS_CTX));

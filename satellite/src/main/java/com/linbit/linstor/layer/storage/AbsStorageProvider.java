@@ -553,7 +553,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 }
 
                 AbsRscLayerObject<Resource> rscData = vlmData.getRscLayerObject();
-                SnapshotDefinition snapshotDfn = rscData.getAbsResource().getDefinition()
+                SnapshotDefinition snapshotDfn = rscData.getAbsResource().getResourceDefinition()
                     .getSnapshotDfn(storDriverAccCtx, snapshotName);
 
                 boolean localRestore = false;
@@ -610,7 +610,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             else
             {
                 final AbsRscLayerObject<Resource> absRscLayer = vlmData.getRscLayerObject();
-                final ResourceDefinition rscDfn = absRscLayer.getAbsResource().getDefinition();
+                final ResourceDefinition rscDfn = absRscLayer.getAbsResource().getResourceDefinition();
                 if (cloneVolume)
                 {
                     if (!cloneService.isRunning(

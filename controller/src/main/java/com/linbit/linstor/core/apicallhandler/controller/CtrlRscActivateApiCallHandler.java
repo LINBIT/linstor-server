@@ -160,7 +160,7 @@ public class CtrlRscActivateApiCallHandler
                     ).concatWith(
                         completeActivation(
                             rsc.getNode().getName().displayValue,
-                            rsc.getDefinition().getName().displayValue
+                            rsc.getResourceDefinition().getName().displayValue
                         )
                     )
                 );
@@ -435,7 +435,7 @@ public class CtrlRscActivateApiCallHandler
                 SatelliteResourceState stltRscState = rscRef.getNode().getPeer(peerCtx)
                     .getSatelliteState()
                     .getResourceStates()
-                    .get(rscRef.getDefinition().getName());
+                    .get(rscRef.getResourceDefinition().getName());
                 if (stltRscState != null && stltRscState.isInUse() != null)
                 {
                     ret = stltRscState.isInUse();

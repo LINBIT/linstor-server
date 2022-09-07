@@ -111,8 +111,8 @@ public class CtrlStorPoolResolveHelper
         {
             Props rscProps = ctrlPropsHelper.getProps(accCtx, rsc);
             Props vlmDfnProps = ctrlPropsHelper.getProps(accCtx, vlmDfn);
-            Props rscDfnProps = ctrlPropsHelper.getProps(accCtx, rsc.getDefinition());
-            Props rscGrpProps = ctrlPropsHelper.getProps(accCtx, rsc.getDefinition().getResourceGroup());
+            Props rscDfnProps = ctrlPropsHelper.getProps(accCtx, rsc.getResourceDefinition());
+            Props rscGrpProps = ctrlPropsHelper.getProps(accCtx, rsc.getResourceDefinition().getResourceGroup());
             Props nodeProps = ctrlPropsHelper.getProps(accCtx, rsc.getNode());
 
             PriorityProps vlmPrioProps = new PriorityProps(
@@ -228,7 +228,7 @@ public class CtrlStorPoolResolveHelper
         throws AccessDeniedException
     {
         ArrayList<StorPoolName> storpools = new ArrayList<>();
-        for (Resource peerRsc : rsc.getDefinition().streamResource(apiCtx).collect(Collectors.toList()))
+        for (Resource peerRsc : rsc.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
         {
             if (!peerRsc.isDiskless(apiCtx) && !peerRsc.getNode().getName().equals(rsc.getNode().getName()))
             {
@@ -259,7 +259,7 @@ public class CtrlStorPoolResolveHelper
                               "Storage pool with backing disk not allowed with diskless resource.")
                 .setCause(String.format("Resource '%s' flagged as diskless, but a storage pool '%s' " +
                         "with backing disk was specified.",
-                    rsc.getDefinition().getName().displayValue,
+                    rsc.getResourceDefinition().getName().displayValue,
                     storPool.getName().displayValue))
                 .setCorrection("Use a storage pool with a diskless driver or remove the diskless flag.")
                 .build(),
@@ -279,7 +279,7 @@ public class CtrlStorPoolResolveHelper
         {
             throw new ApiRcException(ApiCallRcImpl
                 .entryBuilder(FAIL_NOT_FOUND_DFLT_STOR_POOL, "The storage pool '" + storPoolNameStr + "' " +
-                    "for resource '" + rsc.getDefinition().getName().displayValue + "' " +
+                    "for resource '" + rsc.getResourceDefinition().getName().displayValue + "' " +
                     "for volume number '" + vlmDfn.getVolumeNumber().value + "' " +
                     "is not deployed on node '" + rsc.getNode().getName().displayValue + "'.")
                 .setDetails("The resource which should be deployed had at least one volume definition " +

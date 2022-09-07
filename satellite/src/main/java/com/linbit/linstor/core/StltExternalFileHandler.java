@@ -129,7 +129,7 @@ public class StltExternalFileHandler
     {
         Set<ExternalFileName> ret = new HashSet<>();
 
-        ResourceDefinition rscDfn = rscRef.getDefinition();
+        ResourceDefinition rscDfn = rscRef.getResourceDefinition();
         ResourceName rscName = rscDfn.getName();
         Set<ExternalFileName> alreadyRequestedExtFileSet = rscDfnToExtFilesMap.get(rscName);
         Set<ExternalFileName> unrequestExtFileSet;

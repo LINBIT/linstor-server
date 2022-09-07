@@ -279,7 +279,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                 }
 
                 List<Flux<ApiCallRc>> resourceDeletionResponses = getRscStreamPrivileged(node)
-                    .map(rsc -> updateSatellites(nodeName, rsc.getDefinition().getName(), context))
+                    .map(rsc -> updateSatellites(nodeName, rsc.getResourceDefinition().getName(), context))
                     .collect(toList());
 
                 responseFlux = Flux
@@ -372,7 +372,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             Node node = rsc.getNode();
             UUID nodeUuid = node.getUuid();
             String nodeDescription = firstLetterCaps(getNodeDescriptionInline(node));
-            ResourceDefinition rscDfn = rsc.getDefinition();
+            ResourceDefinition rscDfn = rsc.getResourceDefinition();
 
             ctrlRscDeleteApiHelper.cleanupAndDelete(rsc);
 

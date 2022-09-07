@@ -102,7 +102,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
             ExhaustedPoolException, ValueInUseException
     {
         // nothing to merge
-        return rsc.getDefinition().getLayerData(
+        return rsc.getResourceDefinition().getLayerData(
             apiCtx,
             DeviceLayerKind.DRBD,
             drbdRscDfnPojo.getRscNameSuffix()

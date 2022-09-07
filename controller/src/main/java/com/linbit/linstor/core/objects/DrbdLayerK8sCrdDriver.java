@@ -524,7 +524,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
         {
             Resource rsc = (Resource) absRsc;
             Pair<DrbdRscDfnData<Resource>, List<DrbdRscData<Resource>>> drbdRscDfnDataPair = drbdRscDfnCache.get(
-                new Pair<>(rsc.getDefinition(), rscSuffix)
+                new Pair<>(rsc.getResourceDefinition(), rscSuffix)
             );
 
             Map<VolumeNumber, DrbdVlmData<Resource>> vlmMap = new TreeMap<>();

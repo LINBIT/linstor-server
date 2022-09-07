@@ -507,7 +507,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
 
         public Key(Resource rscRef, VolumeNumber vlmNrRef)
         {
-            rscName = rscRef.getDefinition().getName();
+            rscName = rscRef.getResourceDefinition().getName();
             vlmNr = vlmNrRef;
         }
 

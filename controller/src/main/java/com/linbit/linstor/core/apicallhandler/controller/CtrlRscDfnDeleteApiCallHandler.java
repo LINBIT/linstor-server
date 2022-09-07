@@ -319,7 +319,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                     {
                         flux = ctrlRscActivateApiCallHandler.activateRsc(
                             rscToActivate.getNode().getName().displayValue,
-                            rscToActivate.getDefinition().getName().displayValue
+                            rscToActivate.getResourceDefinition().getName().displayValue
                         );
                     }
                 }

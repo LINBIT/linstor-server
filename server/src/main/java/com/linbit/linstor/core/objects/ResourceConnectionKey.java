@@ -17,7 +17,7 @@ public class ResourceConnectionKey implements Comparable<ResourceConnectionKey>
     {
         final NodeName rscNameA = resourceA.getNode().getName();
         final NodeName rscNameB = resourceB.getNode().getName();
-        if (!resourceA.getDefinition().equals(resourceB.getDefinition()))
+        if (!resourceA.getResourceDefinition().equals(resourceB.getResourceDefinition()))
         {
             throw new ImplementationError(
                 String.format(
@@ -25,9 +25,9 @@ public class ResourceConnectionKey implements Comparable<ResourceConnectionKey>
                         "Volume1: NodeName=%s, ResName=%s %n" +
                         "Volume2: NodeName=%s, ResName=%s.",
                     rscNameA.value,
-                    resourceA.getDefinition().getName().value,
+                    resourceA.getResourceDefinition().getName().value,
                     rscNameB.value,
-                    resourceB.getDefinition().getName().value
+                    resourceB.getResourceDefinition().getName().value
                 ),
                 null
             );

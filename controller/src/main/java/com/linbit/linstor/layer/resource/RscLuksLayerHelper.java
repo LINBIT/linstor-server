@@ -234,7 +234,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
                 targetRsc = RscStorageLayerHelper.findTargetEbsResource(
                     apiCtx,
                     remoteMap,
-                    rsc.getDefinition(),
+                    rsc.getResourceDefinition(),
                     availabilityZones.iterator().next(),
                     rsc.getNode().getName().displayValue
                 );
@@ -267,7 +267,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
             errorReporter.logTrace("searching for encryptedVlmKey in shared resources");
             Set<SharedStorPoolName> sharedSpNames = allStorPools.stream().map(StorPool::getSharedStorPoolName)
                 .collect(Collectors.toSet());
-            for (Resource otherRsc : sharedRscMgr.getSharedResources(sharedSpNames, rsc.getDefinition()))
+            for (Resource otherRsc : sharedRscMgr.getSharedResources(sharedSpNames, rsc.getResourceDefinition()))
             {
                 if (otherRsc != rsc)
                 {

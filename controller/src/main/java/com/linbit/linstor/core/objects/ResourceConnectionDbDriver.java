@@ -80,7 +80,7 @@ public class ResourceConnectionDbDriver
         setColumnSetter(UUID, rc -> rc.getUuid().toString());
         setColumnSetter(NODE_NAME_SRC, rc -> rc.getSourceResource(dbCtxRef).getNode().getName().value);
         setColumnSetter(NODE_NAME_DST, rc -> rc.getTargetResource(dbCtxRef).getNode().getName().value);
-        setColumnSetter(RESOURCE_NAME, rc -> rc.getSourceResource(dbCtxRef).getDefinition().getName().value);
+        setColumnSetter(RESOURCE_NAME, rc -> rc.getSourceResource(dbCtxRef).getResourceDefinition().getName().value);
         setColumnSetter(FLAGS, rc -> rc.getStateFlags().getFlagsBits(dbCtxRef));
         setColumnSetter(TCP_PORT, rc -> TcpPortNumber.getValueNullable(rc.getPort(dbCtxRef)));
 
@@ -168,7 +168,7 @@ public class ResourceConnectionDbDriver
         Resource sourceRsc = rc.getSourceResource(dbCtx);
         return "(SourceNode=" + sourceRsc.getNode().getName().displayValue +
             " TargetNode=" + rc.getTargetResource(dbCtx).getNode().getName().displayValue +
-            " ResName=" + sourceRsc.getDefinition().getName().displayValue + ")";
+            " ResName=" + sourceRsc.getResourceDefinition().getName().displayValue + ")";
     }
 
 }

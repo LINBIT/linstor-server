@@ -212,18 +212,18 @@ public class CtrlRscMakeAvailableApiCallHandler
                 {
                     flux = ctrlRscActivateApiCallHandler.activateRsc(
                         rsc.getNode().getName().displayValue,
-                        rsc.getDefinition().getName().displayValue
+                        rsc.getResourceDefinition().getName().displayValue
                     );
                 }
                 else
                 {
                     flux = ctrlRscActivateApiCallHandler.deactivateRsc(
                         activeRsc.getNode().getName().displayValue,
-                        activeRsc.getDefinition().getName().displayValue
+                        activeRsc.getResourceDefinition().getName().displayValue
                     ).concatWith(
                         ctrlRscActivateApiCallHandler.activateRsc(
                             rsc.getNode().getName().displayValue,
-                            rsc.getDefinition().getName().displayValue
+                            rsc.getResourceDefinition().getName().displayValue
                         )
                     ).onErrorResume(error -> abortDeactivateOldRsc(activeRsc, rsc));
                 }

@@ -76,7 +76,7 @@ public class VolumeConnectionDbDriver extends
         );
         setColumnSetter(
             RESOURCE_NAME,
-            vc -> vc.getSourceVolume(dbCtxRef).getAbsResource().getDefinition().getName().value
+            vc -> vc.getSourceVolume(dbCtxRef).getAbsResource().getResourceDefinition().getName().value
         );
 
         setColumnSetter(VLM_NR, vc -> vc.getSourceVolume(dbCtxRef).getVolumeDefinition().getVolumeNumber().value);

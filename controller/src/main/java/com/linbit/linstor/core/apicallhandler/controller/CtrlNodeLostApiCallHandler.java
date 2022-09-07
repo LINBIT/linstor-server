@@ -170,7 +170,7 @@ public class CtrlNodeLostApiCallHandler
 
         for (Resource rsc : getRscStreamPrivileged(node).collect(toList()))
         {
-            ResourceDefinition rscDfn = rsc.getDefinition();
+            ResourceDefinition rscDfn = rsc.getResourceDefinition();
             rscDfnToCheck.add(rscDfn);
 
             if (!isMarkedForDeletion(rsc))

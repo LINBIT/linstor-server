@@ -389,7 +389,7 @@ class CtrlRscConnectionApiCallHandler
             descriptionInline = getResourceConnectionDescriptionInline(
                 rscConn.getSourceResource(accCtx).getNode().getName().displayValue,
                 rscConn.getTargetResource(accCtx).getNode().getName().displayValue,
-                rscConn.getSourceResource(accCtx).getDefinition().getName().displayValue
+                rscConn.getSourceResource(accCtx).getResourceDefinition().getName().displayValue
             );
         }
         catch (AccessDeniedException exc)

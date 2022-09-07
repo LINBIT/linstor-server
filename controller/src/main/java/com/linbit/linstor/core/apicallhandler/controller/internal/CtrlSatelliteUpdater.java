@@ -60,7 +60,7 @@ public class CtrlSatelliteUpdater
             }
             for (Resource rsc : node.streamResources(accCtx).collect(toList()))
             {
-                ResourceDefinition rscDfn = rsc.getDefinition();
+                ResourceDefinition rscDfn = rsc.getResourceDefinition();
                 Iterator<Resource> allRscsIterator = rscDfn.iterateResource(accCtx);
                 while (allRscsIterator.hasNext())
                 {
@@ -126,7 +126,7 @@ public class CtrlSatelliteUpdater
 
     public ApiCallRc updateSatellites(Resource rsc)
     {
-        return updateSatellites(rsc.getDefinition());
+        return updateSatellites(rsc.getResourceDefinition());
     }
 
     public ApiCallRc updateSatellites(ResourceDefinition rscDfn)
@@ -156,7 +156,7 @@ public class CtrlSatelliteUpdater
                                 .onewayBuilder(InternalApiConsts.API_CHANGED_RSC)
                                 .changedResource(
                                     currentRsc.getUuid(),
-                                    currentRsc.getDefinition().getName().displayValue
+                                    currentRsc.getResourceDefinition().getName().displayValue
                                 )
                                 .build()
                         );

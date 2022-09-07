@@ -618,7 +618,7 @@ public class ReconnectorTask implements Task
         while (localRscIt.hasNext())
         {
             Resource localRsc = localRscIt.next();
-            ResourceDefinition rscDfn = localRsc.getDefinition();
+            ResourceDefinition rscDfn = localRsc.getResourceDefinition();
             Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
             while (rscIt.hasNext())
             {

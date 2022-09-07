@@ -238,12 +238,12 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                     new AutoHelperContext(
                         responses,
                         context,
-                        rsc.getDefinition()
+                        rsc.getResourceDefinition()
                     )
                 );
 
                 Flux<ApiCallRc> abortSnapShipFlux = snapShipAbortHandler
-                    .abortSnapshotShippingPrivileged(rsc.getDefinition());
+                    .abortSnapshotShippingPrivileged(rsc.getResourceDefinition());
 
                 ctrlTransactionHelper.commit();
 
@@ -266,7 +266,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                         )
                     );
 
-                    ResourceName rscName = rsc.getDefinition().getName();
+                    ResourceName rscName = rsc.getResourceDefinition().getName();
                     flux = flux.concatWith(
                         ctrlSatelliteUpdateCaller.updateSatellites(rsc, next).transform(
                             updateResponses -> CtrlResponseUtils.combineResponses(
@@ -341,12 +341,12 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                 new AutoHelperContext(
                     responses,
                     context,
-                    rsc.getDefinition()
+                    rsc.getResourceDefinition()
                 )
             );
 
             Flux<ApiCallRc> abortSnapShipFlux = snapShipAbortHandler.abortSnapshotShippingPrivileged(
-                rsc.getDefinition()
+                rsc.getResourceDefinition()
             );
 
             ctrlTransactionHelper.commit();
@@ -367,7 +367,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                 );
                 flux = Flux.just(responses);
 
-                ResourceName rscName = rsc.getDefinition().getName();
+                ResourceName rscName = rsc.getResourceDefinition().getName();
                 flux = flux.concatWith(
                     ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(nodeNamesToDelete, rscName)
                 );
@@ -408,7 +408,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             {
                 ret = ctrlRscActivateApiCallHandler.activateRsc(
                     rsc.getNode().getName().displayValue,
-                    rsc.getDefinition().getName().displayValue
+                    rsc.getResourceDefinition().getName().displayValue
                 );
             }
         }
@@ -434,7 +434,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     {
         try
         {
-            for (SnapshotDefinition snapshotDfn : rsc.getDefinition().getSnapshotDfns(peerAccCtx.get()))
+            for (SnapshotDefinition snapshotDfn : rsc.getResourceDefinition().getSnapshotDfns(peerAccCtx.get()))
             {
                 Snapshot snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), rsc.getNode().getName());
                 if (snapshot != null)
@@ -451,7 +451,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                                 throw new ApiRcException(
                                     ApiCallRcImpl.simpleEntry(
                                         ApiConsts.FAIL_EXISTS_SNAPSHOT,
-                                        "Resource '" + rsc.getDefinition().getName() +
+                                        "Resource '" + rsc.getResourceDefinition().getName() +
                                             "' cannot be deleted because volume " +
                                             snapshotVlm.getVolumeNumber() + " has dependent snapshot '" +
                                             snapshot.getSnapshotName() + "'"

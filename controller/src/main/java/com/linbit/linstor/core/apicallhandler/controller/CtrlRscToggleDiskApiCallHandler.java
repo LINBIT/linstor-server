@@ -213,7 +213,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             Collections.emptySet() :
             Collections.singleton(Flux.from(waitForMigration(
                 rsc.getNode().getName(),
-                rsc.getDefinition().getName(),
+                rsc.getResourceDefinition().getName(),
                 ctrlApiDataLoader.loadNode(migrateFromNodeNameStr, true).getName()
             )));
     }
@@ -332,7 +332,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         if (removeDisk)
         {
             // Prevent removal of the last disk
-            int haveDiskCount = countDisksAndIsOnline(rsc.getDefinition());
+            int haveDiskCount = countDisksAndIsOnline(rsc.getResourceDefinition());
             if (haveDiskCount <= 1)
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
@@ -446,7 +446,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     );
                 deactivateFlux = ctrlRscActivateApiCallHandler.deactivateRsc(
                     rsc.getNode().getName().displayValue,
-                    rsc.getDefinition().getName().displayValue
+                    rsc.getResourceDefinition().getName().displayValue
                 );
 
                 /*
@@ -470,7 +470,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 errorReporter,
                 layerListStr,
                 responses,
-                rsc.getDefinition()
+                rsc.getResourceDefinition()
             );
 
             ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
@@ -496,7 +496,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "toggle disk resource " + rsc.getDefinition().getName().displayValue + " on node " +
+                "toggle disk resource " + rsc.getResourceDefinition().getName().displayValue + " on node " +
                     rsc.getNode().getName(),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
@@ -507,7 +507,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String action = removeDisk ? "Removal of disk from" : "Addition of disk to";
         responses.addEntry(ApiCallRcImpl.simpleEntry(
             ApiConsts.MODIFIED,
-            action + " resource '" + rsc.getDefinition().getName().displayValue + "' " +
+            action + " resource '" + rsc.getResourceDefinition().getName().displayValue + "' " +
                 "on node '" + rsc.getNode().getName().displayValue + "' registered"
         ));
 
@@ -569,7 +569,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             if (sp.isShared())
             {
                 SharedStorPoolName sharedStorPoolName = sp.getSharedStorPoolName();
-                ResourceDefinition rscDfn = rscRef.getDefinition();
+                ResourceDefinition rscDfn = rscRef.getResourceDefinition();
                 Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
                 while (rscIt.hasNext())
                 {
@@ -723,7 +723,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             String actionPeer = removeDisk ? null : "Prepared {0} to expect disk on ''" + nodeName.displayValue + "''";
             Flux<ApiCallRc> nextStep = finishOperation(nodeName, rscName, removeDisk, context);
             Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(
-                    rsc.getDefinition(), CtrlSatelliteUpdateCaller.notConnectedIgnoreIfNot(nodeName), nextStep)
+                    rsc.getResourceDefinition(), CtrlSatelliteUpdateCaller.notConnectedIgnoreIfNot(nodeName), nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,
@@ -834,7 +834,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
 
         Flux<ApiCallRc> autoFlux = rscAutoHelper.get().manage(
-            new AutoHelperContext(responses, context, rsc.getDefinition())
+            new AutoHelperContext(responses, context, rsc.getResourceDefinition())
         ).getFlux();
 
         ctrlTransactionHelper.commit();
@@ -863,7 +863,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             .concatWith(activateFlux)
             .concatWith(
                 ctrlSatelliteUpdateCaller.updateSatellites(
-                    rsc.getDefinition(),
+                    rsc.getResourceDefinition(),
                     CtrlSatelliteUpdateCaller.notConnectedErrorForNodesWarnForOthers(nodeName),
                     migrationFlux
                 )
@@ -1099,14 +1099,14 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     {
         try
         {
-            for (SnapshotDefinition snapshotDfn : rsc.getDefinition().getSnapshotDfns(peerAccCtx.get()))
+            for (SnapshotDefinition snapshotDfn : rsc.getResourceDefinition().getSnapshotDfns(peerAccCtx.get()))
             {
                 Snapshot snapshot = snapshotDfn.getSnapshot(peerAccCtx.get(), rsc.getNode().getName());
                 if (snapshot != null)
                 {
                     throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_EXISTS_SNAPSHOT,
-                        "Cannot migrate '" + rsc.getDefinition().getName() + "' " +
+                        "Cannot migrate '" + rsc.getResourceDefinition().getName() + "' " +
                             "from '" + rsc.getNode().getName() + "' because snapshots are present " +
                             "and snapshots cannot be migrated"
                     ));

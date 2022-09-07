@@ -303,7 +303,7 @@ public class CmdChangeObjProt extends BaseDebugCmd
                     setObjInfo(
                         responseMsg,
                         rscObj.getNode().getName().displayValue + "/" +
-                        rscObj.getDefinition().getName().displayValue,
+                        rscObj.getResourceDefinition().getName().displayValue,
                         CLS_RSC
                     );
                     obj = rscObj;

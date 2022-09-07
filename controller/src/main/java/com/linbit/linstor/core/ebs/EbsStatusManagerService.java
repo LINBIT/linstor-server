@@ -511,7 +511,7 @@ public class EbsStatusManagerService implements SystemService
                             try
                             {
                                 SatelliteState rscStates = peer.getSatelliteState();
-                                ResourceName rscName = rsc.getDefinition().getName();
+                                ResourceName rscName = rsc.getResourceDefinition().getName();
                                 rscStates.setOnResource(
                                     rscName,
                                     SatelliteResourceState::setInUse,

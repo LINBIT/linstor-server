@@ -93,7 +93,7 @@ public class CtrlRscDeleteApiHelper
     {
         try
         {
-            ResourceDefinition rscDfn = rsc.getDefinition();
+            ResourceDefinition rscDfn = rsc.getResourceDefinition();
             rsc.markDeleted(peerAccCtx.get());
             if (rscDfn.getNotDeletedDiskfulCount(apiCtx) == 0)
             {
@@ -166,7 +166,7 @@ public class CtrlRscDeleteApiHelper
             Resource rsc = ctrlApiDataLoader.loadRsc(nodeName, rscName, false);
             if (rsc != null)
             {
-                rscDfn = rsc.getDefinition();
+                rscDfn = rsc.getResourceDefinition();
                 break;
             }
         }
@@ -229,7 +229,7 @@ public class CtrlRscDeleteApiHelper
             {
                 UUID rscUuid = rsc.getUuid();
                 String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
-                ResourceDefinition rscDfn = rsc.getDefinition();
+                ResourceDefinition rscDfn = rsc.getResourceDefinition();
 
                 cleanupAndDelete(rsc);
 
@@ -265,7 +265,7 @@ public class CtrlRscDeleteApiHelper
     public ApiCallRc ensureNotInUse(Resource rsc, boolean throwApiExc)
     {
         ApiCallRcImpl resp = new ApiCallRcImpl();
-        ResourceName rscName = rsc.getDefinition().getName();
+        ResourceName rscName = rsc.getResourceDefinition().getName();
         NodeName nodeName = rsc.getNode().getName();
 
         Boolean inUse;
@@ -311,8 +311,8 @@ public class CtrlRscDeleteApiHelper
                 rsc.isEbsInitiator(accCtx);
             if (
                 !isDiskless &&
-                    rsc.getDefinition().hasDisklessNotDeleting(accCtx) &&
-                    rsc.getDefinition().getNotDeletedDiskfulCount(accCtx) == 1
+                    rsc.getResourceDefinition().hasDisklessNotDeleting(accCtx) &&
+                    rsc.getResourceDefinition().getNotDeletedDiskfulCount(accCtx) == 1
             )
             {
                 ApiCallRcImpl.ApiCallRcEntry err = ApiCallRcImpl
@@ -320,7 +320,7 @@ public class CtrlRscDeleteApiHelper
                         ApiConsts.FAIL_IN_USE,
                         String.format(
                             "Last resource of '%s' with disk still has diskless resources attached.",
-                            rsc.getDefinition().getName())
+                            rsc.getResourceDefinition().getName())
                     )
                     .setCause("Resource still has diskless users.")
                     .setCorrection("Before deleting this resource, delete the diskless resources attached to it.")

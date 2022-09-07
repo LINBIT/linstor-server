@@ -55,7 +55,7 @@ public class ResourceCreateCheck
         // first check RD if it has already other resources with some properties like nvmeTarget, drbd, ...
         try
         {
-            ResourceDefinition rscDfn = rsc.getDefinition();
+            ResourceDefinition rscDfn = rsc.getResourceDefinition();
 
             boolean rdHasNvmeTarget = false;
             boolean rdHasNvmeInitiator = false;

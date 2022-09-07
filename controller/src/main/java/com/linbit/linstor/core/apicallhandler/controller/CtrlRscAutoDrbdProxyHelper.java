@@ -107,7 +107,7 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
                 null, // no uuid to check against
                 firstRscRef.getNode().getName().displayValue,
                 secondRscRef.getNode().getName().displayValue,
-                firstRscRef.getDefinition().getName().displayValue,
+                firstRscRef.getResourceDefinition().getName().displayValue,
                 null // generate new tcp port for drbd proxy
             );
             if (rscConn == null)
@@ -196,7 +196,7 @@ public class CtrlRscAutoDrbdProxyHelper implements AutoHelper
         return new PriorityProps(
             rsc.getProps(peerCtx),
             rsc.getResourceDefinition().getProps(peerCtx),
-            rsc.getDefinition().getResourceGroup().getProps(peerCtx),
+            rsc.getResourceDefinition().getResourceGroup().getProps(peerCtx),
             rsc.getNode().getProps(peerCtx),
             systemConfRepository.getCtrlConfForView(peerCtx)
         );

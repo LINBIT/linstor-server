@@ -136,7 +136,7 @@ public class RscOpenflexLayerHelper
         ValueInUseException, ImplementationError, InvalidNameException, LinStorException
     {
         RscNvmeLayerHelper.ensureTargetNodeNameIsSet(rscRef, apiCtx);
-        ResourceDefinition rscDfn = rscRef.getDefinition();
+        ResourceDefinition rscDfn = rscRef.getResourceDefinition();
         OpenflexRscDfnData<Resource> ofRscDfnData = ensureResourceDefinitionExists(
             rscDfn,
             rscNameSuffixRef,
@@ -306,7 +306,7 @@ public class RscOpenflexLayerHelper
         AbsRscLayerObject<Resource> rscParentRef
     ) throws DatabaseException, AccessDeniedException, ExhaustedPoolException
     {
-        OpenflexRscDfnData<Resource> ofRscDfnData = rscRef.getDefinition().getLayerData(
+        OpenflexRscDfnData<Resource> ofRscDfnData = rscRef.getResourceDefinition().getLayerData(
             apiCtx,
             DeviceLayerKind.OPENFLEX,
             fromAbsRscDataRef.getResourceNameSuffix()

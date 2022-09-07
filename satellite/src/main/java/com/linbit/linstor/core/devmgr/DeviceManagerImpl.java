@@ -1971,7 +1971,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         // Remember the resource for removal after the DeviceHandler instances have finished
         synchronized (sched)
         {
-            deletedRscSet.add(rsc.getDefinition().getName());
+            deletedRscSet.add(rsc.getResourceDefinition().getName());
         }
     }
 

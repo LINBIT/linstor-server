@@ -101,7 +101,7 @@ public class NodeInternalCallHandler
                     // the nodeConnections.
                     for (Resource rsc : currentPeer.getNode().streamResources(apiCtx).collect(toList()))
                     {
-                        Iterator<Resource> otherRscIterator = rsc.getDefinition().iterateResource(apiCtx);
+                        Iterator<Resource> otherRscIterator = rsc.getResourceDefinition().iterateResource(apiCtx);
                         while (otherRscIterator.hasNext())
                         {
                             Resource otherRsc = otherRscIterator.next();

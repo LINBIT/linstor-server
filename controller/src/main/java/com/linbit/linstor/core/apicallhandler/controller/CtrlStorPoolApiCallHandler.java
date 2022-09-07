@@ -335,7 +335,7 @@ public class CtrlStorPoolApiCallHandler
                     volListSb.append("\n   Node name: '")
                          .append(rsc.getNode().getName().displayValue)
                          .append("', resource name: '")
-                         .append(rsc.getDefinition().getName().displayValue)
+                         .append(rsc.getResourceDefinition().getName().displayValue)
                          .append("', volume number: ")
                          .append(vlmObj.getVlmNr().value);
                 }

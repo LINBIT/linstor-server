@@ -452,7 +452,7 @@ public abstract class AbsRscLayerHelper<
         ValueInUseException, LinStorException
     {
         ensureResourceDefinitionDataCopiedFromAbsRsc(
-            rsc.getDefinition(),
+            rsc.getResourceDefinition(),
             fromAbsRscDataRef
         );
 

@@ -148,7 +148,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                     String autoDiskful = getPrioProps(rsc)
                         .getProp(ApiConsts.KEY_DRBD_AUTO_DISKFUL, ApiConsts.NAMESPC_DRBD_OPTIONS);
                     Boolean isPrimary = rsc.getNode().getPeer(sysCtx).getSatelliteState().getResourceStates()
-                        .get(rsc.getDefinition().getName()).isInUse();
+                        .get(rsc.getResourceDefinition().getName()).isInUse();
 
                     boolean enableAutoDiskful = autoDiskful != null && isPrimary != null && isPrimary;
                     synchronized (configSet)
@@ -220,8 +220,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         return new PriorityProps(
             rsc.getProps(sysCtx),
             rsc.getNode().getProps(sysCtx),
-            rsc.getDefinition().getProps(sysCtx),
-            rsc.getDefinition().getResourceGroup().getProps(sysCtx),
+            rsc.getResourceDefinition().getProps(sysCtx),
+            rsc.getResourceDefinition().getResourceGroup().getProps(sysCtx),
             stltConfigAccesor.getReadonlyProps()
         );
     }
@@ -372,7 +372,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                         String storPoolNameStr = autoPlace.iterator().next().getName().displayValue;
                         toggleDisklHandler.resourceToggleDisk(
                             rsc.getNode().getName().displayValue,
-                            rsc.getDefinition().getName().displayValue,
+                            rsc.getResourceDefinition().getName().displayValue,
                             storPoolNameStr,
                             null,
                             null, // TODO: could be a bad idea if not all layers from peer-resources are supported by
@@ -410,7 +410,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                 "Remove excess rsc",
                 eventWaiter.waitForStream(
                     resourceStateEvent.get(),
-                    ObjectIdentifier.resource(rsc.getNode().getName(), rsc.getDefinition().getName())
+                    ObjectIdentifier.resource(rsc.getNode().getName(), rsc.getResourceDefinition().getName())
                 )
                     .skipUntil(usage -> usage.getUpToDate() != null && usage.getUpToDate())
                     .next()
@@ -446,7 +446,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
             );
             retFlux = rscDeleteApiCallHandler.deleteResource(
                 excessRsc.getNode().getName().displayValue,
-                excessRsc.getDefinition().getName().displayValue
+                excessRsc.getResourceDefinition().getName().displayValue
             ).subscriberContext(
                 Context.of(
                     ApiModule.API_CALL_NAME,

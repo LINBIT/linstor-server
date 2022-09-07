@@ -111,7 +111,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         throws IllegalArgumentException, DatabaseException, ValueOutOfRangeException, AccessDeniedException,
         ExhaustedPoolException, ValueInUseException
     {
-        ResourceDefinition rscDfn = rsc.getDefinition();
+        ResourceDefinition rscDfn = rsc.getResourceDefinition();
         DrbdRscDfnData<Resource> rscDfnData = rscDfn.getLayerData(
             apiCtx,
             DeviceLayerKind.DRBD,
@@ -1108,7 +1108,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         OpenflexRscDfnPojo ofRscDfnPojoRef
     ) throws DatabaseException, AccessDeniedException
     {
-        ResourceDefinition rscDfn = rscRef.getDefinition();
+        ResourceDefinition rscDfn = rscRef.getResourceDefinition();
         OpenflexRscDfnData<Resource> ofRscDfnData = rscDfn.getLayerData(
             apiCtx, DeviceLayerKind.OPENFLEX, ofRscDfnPojoRef.getRscNameSuffix()
         );

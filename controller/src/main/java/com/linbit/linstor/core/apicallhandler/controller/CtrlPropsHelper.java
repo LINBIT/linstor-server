@@ -275,7 +275,7 @@ public class CtrlPropsHelper
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "access properties for resource '" + rsc.getDefinition().getName().displayValue + "' on node '" +
+                "access properties for resource '" + rsc.getResourceDefinition().getName().displayValue + "' on node '" +
                     rsc.getNode().getName().displayValue + "'",
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );

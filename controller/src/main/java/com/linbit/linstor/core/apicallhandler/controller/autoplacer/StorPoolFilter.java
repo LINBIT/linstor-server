@@ -630,7 +630,7 @@ public class StorPoolFilter
                 Resource rsc = iterateResources.next();
                 if (!rsc.getStateFlags().isSet(apiAccCtx, Resource.Flags.DELETE))
                 {
-                    String rscName = rsc.getDefinition().getName().displayValue;
+                    String rscName = rsc.getResourceDefinition().getName().displayValue;
 
                     boolean hasRscDeployed = matchesRegex.test(rscName) || containedInList.test(rscName);
                     ret = !hasRscDeployed;

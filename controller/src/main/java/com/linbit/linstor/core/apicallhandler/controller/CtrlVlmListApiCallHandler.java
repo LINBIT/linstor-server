@@ -359,7 +359,7 @@ public class CtrlVlmListApiCallHandler
     {
         return getVlmDescriptionInline(
             rsc.getNode().getName().displayValue,
-            rsc.getDefinition().getName().displayValue,
+            rsc.getResourceDefinition().getName().displayValue,
             vlmDfn.getVolumeNumber().value
         );
     }
@@ -378,7 +378,7 @@ public class CtrlVlmListApiCallHandler
     {
         return getVlmDescription(
             rsc.getNode().getName().displayValue,
-            rsc.getDefinition().getName().displayValue,
+            rsc.getResourceDefinition().getName().displayValue,
             vlmDfn.getVolumeNumber().value
         );
     }

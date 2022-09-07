@@ -402,7 +402,7 @@ public class VolumeDbDriverTest extends GenericDbBase
         assertNotNull(loadedVol.getFlags());
         assertTrue(loadedVol.getFlags().isSet(SYS_CTX, Volume.Flags.DELETE));
         assertNotNull(loadedVol.getProps(SYS_CTX));
-        assertEquals(res.getDefinition().getName(), loadedVol.getAbsResource().getDefinition().getName());
+        assertEquals(res.getResourceDefinition().getName(), loadedVol.getAbsResource().getResourceDefinition().getName());
         assertEquals(volDfn.getVolumeNumber(), loadedVol.getVolumeDefinition().getVolumeNumber());
         assertEquals(volDfn.getVolumeSize(SYS_CTX), loadedVol.getVolumeDefinition().getVolumeSize(SYS_CTX));
         assertEquals(volDfn.getUuid(), loadedVol.getVolumeDefinition().getUuid());

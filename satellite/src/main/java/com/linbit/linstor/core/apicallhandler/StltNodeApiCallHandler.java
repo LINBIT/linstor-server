@@ -109,7 +109,7 @@ public class StltNodeApiCallHandler
                 List<Resource> rscToDelete = removedNode.streamResources(apiCtx).collect(Collectors.toList());
                 for (Resource rsc : rscToDelete)
                 {
-                    rscToDeleteNames.add(rsc.getDefinition().getName());
+                    rscToDeleteNames.add(rsc.getResourceDefinition().getName());
                     rsc.delete(apiCtx);
                 }
                 removedNode.delete(apiCtx);
@@ -180,7 +180,7 @@ public class StltNodeApiCallHandler
             }
 
             Set<ResourceName> rscSet = curNode.streamResources(apiCtx)
-                .map(Resource::getDefinition)
+                .map(Resource::getResourceDefinition)
                 .map(ResourceDefinition::getName)
                 .collect(Collectors.toSet());
 

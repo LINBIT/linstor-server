@@ -267,7 +267,7 @@ public class CtrlVlmCrtApiHelper
                             String.format(
                                 "Not enough free space available for volume %d of resource '%s'.",
                                 vlmDfn.getVolumeNumber().value,
-                                rsc.getDefinition().getName().getDisplayName()
+                                rsc.getResourceDefinition().getName().getDisplayName()
                             )
                         )
                     );

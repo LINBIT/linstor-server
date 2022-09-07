@@ -284,7 +284,7 @@ public class CtrlRscCrtApiHelper
                     NodeName tiebreakerNodeName = rscForToggleDiskful.getNode().getName();
                     autoFlux.add(
                         ctrlSatelliteUpdateCaller.updateSatellites(
-                            rscForToggleDiskful.getDefinition(),
+                            rscForToggleDiskful.getResourceDefinition(),
                             Flux.empty() // if failed, there is no need for the retry-task to wait for readyState
                             // this is only true as long as there is no other flux concatenated after readyResponses
                         )
@@ -810,7 +810,7 @@ public class CtrlRscCrtApiHelper
         boolean waitForReady)
     {
         long rscDfnCount = deployedResources.stream()
-            .map(Resource::getDefinition)
+            .map(Resource::getResourceDefinition)
             .map(ResourceDefinition::getName)
             .distinct()
             .count();
@@ -819,7 +819,7 @@ public class CtrlRscCrtApiHelper
             throw new IllegalArgumentException("Resources belonging to precisely one resource definition expected");
         }
 
-        ResourceDefinition rscDfn = deployedResources.iterator().next().getDefinition();
+        ResourceDefinition rscDfn = deployedResources.iterator().next().getResourceDefinition();
         ResourceName rscName = rscDfn.getName();
 
         Set<NodeName> nodeNames = deployedResources.stream()
