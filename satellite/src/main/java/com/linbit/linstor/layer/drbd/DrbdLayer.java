@@ -801,7 +801,7 @@ public class DrbdLayer implements DeviceLayer
                          * Basically a similar scenario as "we have the current peer and ALL other peers were removed".
                          * See delete-case's forget-peer comment
                          */
-                        String ids = drbdRscData.getAbsResource().getProps(workerCtx).getProp(
+                        String ids = drbdRscData.getAbsResource().getResourceDefinition().getProps(workerCtx).getProp(
                             InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );

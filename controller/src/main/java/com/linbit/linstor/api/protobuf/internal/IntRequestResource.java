@@ -40,6 +40,6 @@ public class IntRequestResource implements ApiCall
         UUID rscUuid = UUID.fromString(rscId.getUuid());
         String rscName = rscId.getName();
 
-        rscInternalCallHandler.handleResourceRequest(nodeName, rscUuid, rscName);
+        rscInternalCallHandler.handleResourceRequest(nodeName, rscName);
     }
 }

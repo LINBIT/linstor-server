@@ -66,26 +66,16 @@ public class BackupShippingTask implements TaskScheduleService.Task
 
         if (conf.remote instanceof S3Remote)
         {
-            Flux<ApiCallRc> dumbDummyFluxBecauseFinal;
-            try
-            {
-                dumbDummyFluxBecauseFinal = cfg.getBackupCreateApiCallHandler()
-                    .createBackup(
-                        rscName,
-                        "",
-                        conf.remote.getName().displayValue,
-                        nodeName,
-                        conf.schedule.getName().displayValue,
-                        inc,
-                        true
-                    );
-            }
-            catch (AccessDeniedException exc)
-            {
-                dumbDummyFluxBecauseFinal = Flux.empty();
-                errorReporter.reportError(exc);
-            }
-            flux = dumbDummyFluxBecauseFinal;
+            flux = cfg.getBackupCreateApiCallHandler()
+                .createBackup(
+                    rscName,
+                    "",
+                    conf.remote.getName().displayValue,
+                    nodeName,
+                    conf.schedule.getName().displayValue,
+                    inc,
+                    true
+                );
         }
         else if (conf.remote instanceof LinstorRemote)
         {

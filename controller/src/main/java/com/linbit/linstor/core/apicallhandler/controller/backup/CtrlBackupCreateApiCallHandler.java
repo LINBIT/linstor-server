@@ -81,8 +81,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -159,7 +157,6 @@ public class CtrlBackupCreateApiCallHandler
         boolean incremental,
         boolean runInBackgroundRef
     )
-        throws AccessDeniedException
     {
         return scopeRunner.fluxInTransactionalScope(
             "Backup snapshot",
@@ -401,11 +398,7 @@ public class CtrlBackupCreateApiCallHandler
         {
             throw new ApiDatabaseException(dbExc);
         }
-        catch (InvalidKeyException | InvalidNameException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (InvalidValueException exc)
+        catch (InvalidKeyException | InvalidNameException | InvalidValueException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -472,7 +465,7 @@ public class CtrlBackupCreateApiCallHandler
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
         Props snapProps = snap.getProps(peerAccCtx.get());
-        snapProps.setProp(
+        snapDfn.getProps(peerAccCtx.get()).setProp(
             InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
             StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
             ApiConsts.NAMESPC_BACKUP_SHIPPING
@@ -543,7 +536,8 @@ public class CtrlBackupCreateApiCallHandler
                 if (prevSnapDfn == null)
                 {
                     errorReporter.logWarning(
-                        "Could not create an incremental backup for resource %s as the previous snapshot %s needed for the incremental backup has already been deleted. Creating a full backup instead.",
+                        "Could not create an incremental backup for resource %s as the previous snapshot %s needed " +
+                            "for the incremental backup has already been deleted. Creating a full backup instead.",
                         rscDfn.getName(),
                         prevSnapName
                     );
@@ -571,7 +565,8 @@ public class CtrlBackupCreateApiCallHandler
                         if (!found)
                         {
                             errorReporter.logWarning(
-                                "Could not create an incremental backup for resource %s as the previous backup created by snapshot %s has already been deleted. Creating a full backup instead.",
+                                "Could not create an incremental backup for resource %s as the previous backup " +
+                                    "created by snapshot %s has already been deleted. Creating a full backup instead.",
                                 rscDfn.getName(),
                                 prevSnapName
                             );
@@ -589,7 +584,8 @@ public class CtrlBackupCreateApiCallHandler
                             if (prevSnapVlmDfnSize != vlmDfnSize)
                             {
                                 errorReporter.logDebug(
-                                    "Current vlmDfn size (%d) does not match with prev snapDfn (%s) size (%d). Forcing full backup.",
+                                    "Current vlmDfn size (%d) does not match with prev snapDfn (%s) size (%d). " +
+                                        "Forcing full backup.",
                                     vlmDfnSize,
                                     snapVlmDfn,
                                     prevSnapVlmDfnSize
@@ -603,7 +599,8 @@ public class CtrlBackupCreateApiCallHandler
             else
             {
                 errorReporter.logWarning(
-                    "Could not create an incremental backup for resource %s as there is no previous full backup. Creating a full backup instead.",
+                    "Could not create an incremental backup for resource %s as there is no previous full backup. " +
+                        "Creating a full backup instead.",
                     rscDfn.getName()
                 );
             }
@@ -784,8 +781,8 @@ public class CtrlBackupCreateApiCallHandler
             if (scheduleName != null)
             {
                 rscDfnProps.setProp(
-                    remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR
-                        + InternalApiConsts.KEY_LAST_BACKUP_INC,
+                    remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR +
+                        InternalApiConsts.KEY_LAST_BACKUP_INC,
                     ApiConsts.VAL_FALSE,
                     InternalApiConsts.NAMESPC_SCHEDULE
                 );
@@ -809,8 +806,8 @@ public class CtrlBackupCreateApiCallHandler
             if (scheduleName != null)
             {
                 rscDfnProps.setProp(
-                    remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR
-                        + InternalApiConsts.KEY_LAST_BACKUP_INC,
+                    remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR +
+                        InternalApiConsts.KEY_LAST_BACKUP_INC,
                     ApiConsts.VAL_TRUE,
                     InternalApiConsts.NAMESPC_SCHEDULE
                 );
@@ -819,8 +816,8 @@ public class CtrlBackupCreateApiCallHandler
         if (scheduleName != null)
         {
             rscDfnProps.setProp(
-                remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR
-                    + InternalApiConsts.KEY_LAST_BACKUP_TIME,
+                remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR +
+                    InternalApiConsts.KEY_LAST_BACKUP_TIME,
                 Long.toString(System.currentTimeMillis()),
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
@@ -853,7 +850,7 @@ public class CtrlBackupCreateApiCallHandler
      * gets started on time and all backups and snaps that go over the limit are deleted.
      */
     private Flux<ApiCallRc> shippingSentInTransaction(String rscNameRef, String snapNameRef, boolean successRef)
-        throws JsonParseException, JsonMappingException, IOException
+        throws IOException
     {
         errorReporter.logInfo(
             "Backup shipping for snapshot %s of resource %s %s", snapNameRef, rscNameRef,
@@ -916,10 +913,6 @@ public class CtrlBackupCreateApiCallHandler
                     {
                         String remoteName = snap.getProps(peerAccCtx.get()).removeProp(
                             InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
-                        );
-                        snap.getProps(peerAccCtx.get()).removeProp(
-                            InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
                         snap.getFlags().disableFlags(sysCtx, Snapshot.Flags.BACKUP_SOURCE);

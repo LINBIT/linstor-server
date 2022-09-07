@@ -5,7 +5,6 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
-import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
@@ -45,7 +44,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
-import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -67,7 +65,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -134,7 +131,6 @@ public class RscInternalCallHandler
 
     public void handleResourceRequest(
         String nodeNameStr,
-        UUID rscUuid,
         String rscNameStr
     )
     {
@@ -374,12 +370,11 @@ public class RscInternalCallHandler
             for (SnapshotDefinition snapDfn : rsc.getDefinition().getSnapshotDfns(apiCtx))
             {
                 Snapshot snap = snapDfn.getSnapshot(apiCtx, nodeName);
-                if (snap != null && snap.getFlags().isSet(apiCtx, Snapshot.Flags.SHIPPING_TARGET))
+                if (
+                    snap != null && snap.getFlags().isSet(apiCtx, Snapshot.Flags.SHIPPING_TARGET) &&
+                    snapShipIntHandler.startShipping(snap))
                 {
-                    if (snapShipIntHandler.startShipping(snap))
-                    {
-                        updateSatellite = true;
-                    }
+                    updateSatellite = true;
                 }
             }
 
@@ -388,7 +383,7 @@ public class RscInternalCallHandler
             if (rscFlags.isSet(apiCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT))
             {
                 rscFlags.disableFlags(apiCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT);
-                rsc.getProps(apiCtx)
+                rsc.getResourceDefinition().getProps(apiCtx)
                     .removeProp(InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                 updateSatellite = true;
             }
@@ -408,7 +403,7 @@ public class RscInternalCallHandler
         }
     }
 
-    public void handleResourceFailed(String nodeName, String rscName, ApiCallRc apiCallRc)
+    public void handleResourceFailed(String nodeName, String rscName)
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.readLock()))
         {
@@ -456,42 +451,5 @@ public class RscInternalCallHandler
                 throw new ApiDatabaseException(exc);
             }
         }
-    }
-
-    /**
-     * @return
-     * null if something unexpected happens, the EbsData otherwise
-     */
-    private <RSC extends AbsResource<RSC>> @Nullable EbsData<RSC> getEbsData(
-        AbsRscLayerObject<RSC> layerData,
-        VolumeNumber vlmNrRef
-    )
-    {
-        EbsData<RSC> ret = null;
-        Set<AbsRscLayerObject<RSC>> storVlmDataSet = LayerRscUtils.getRscDataByProvider(
-            layerData,
-            DeviceLayerKind.STORAGE
-        );
-        for (AbsRscLayerObject<RSC> storSnapData : storVlmDataSet)
-        {
-            VlmProviderObject<RSC> vlmData = storSnapData.getVlmLayerObjects().get(vlmNrRef);
-            if (vlmData instanceof EbsData)
-            {
-                if (ret != null)
-                {
-                    // we found the second EbsData...
-                    errorReporter.logError(
-                        "Cannot register EBS snapshot for status polling since there are " +
-                            "unexpectedly %d volume data",
-                        storVlmDataSet.size()
-                    );
-                    ret = null;
-                    break;
-                }
-
-                ret = (EbsData<RSC>) vlmData;
-            }
-        }
-        return ret;
     }
 }

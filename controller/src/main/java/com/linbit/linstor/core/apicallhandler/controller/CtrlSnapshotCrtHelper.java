@@ -68,7 +68,6 @@ import java.util.Set;
 public class CtrlSnapshotCrtHelper
 {
     private final AccessContext apiCtx;
-    private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlSnapshotHelper ctrlSnapshotHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final SnapshotDefinitionControllerFactory snapshotDefinitionFactory;
@@ -81,7 +80,6 @@ public class CtrlSnapshotCrtHelper
     @Inject
     public CtrlSnapshotCrtHelper(
         @ApiContext AccessContext apiCtxRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlSnapshotHelper ctrlSnapshotHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         SnapshotDefinitionControllerFactory snapshotDefinitionFactoryRef,
@@ -93,7 +91,6 @@ public class CtrlSnapshotCrtHelper
     )
     {
         apiCtx = apiCtxRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlSnapshotHelper = ctrlSnapshotHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         snapshotDefinitionFactory = snapshotDefinitionFactoryRef;
@@ -107,8 +104,7 @@ public class CtrlSnapshotCrtHelper
     public SnapshotDefinition createSnapshots(
         List<String> nodeNameStrs,
         String rscNameStr,
-        String snapshotNameStr,
-        ApiCallRcImpl responses
+        String snapshotNameStr, ApiCallRcImpl responses
     )
     {
         final ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
@@ -239,7 +235,7 @@ public class CtrlSnapshotCrtHelper
                     }
                 }
             }
-            snap.getProps(apiCtx).setProp(
+            snap.getSnapshotDefinition().getProps(apiCtx).setProp(
                 InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
                 StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
@@ -441,7 +437,8 @@ public class CtrlSnapshotCrtHelper
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN,
                     String.format(
-                        "Volume %d of snapshot definition with the name '%s' already exists in resource definition '%s'.",
+                        "Volume %d of snapshot definition with the name '%s' already exists in " +
+                            "resource definition '%s'.",
                         vlmDfn.getVolumeNumber().value,
                         snapshotDfn.getName().displayValue,
                         snapshotDfn.getResourceName().displayValue
@@ -460,8 +457,8 @@ public class CtrlSnapshotCrtHelper
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_VLM_SIZE,
                     String.format(
-                        "The " + descriptionInline + " has an invalid size of '%d'. " +
-                            "Valid sizes range from %d to %d.",
+                        "The %s has an invalid size of '%d'. Valid sizes range from %d to %d.",
+                        descriptionInline,
                         volumeSize,
                         MetaData.DRBD_MIN_NET_kiB,
                         MetaData.DRBD_MAX_kiB

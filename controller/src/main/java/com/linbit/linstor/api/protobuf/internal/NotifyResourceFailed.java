@@ -2,7 +2,6 @@ package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
-import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.RscInternalCallHandler;
 import com.linbit.linstor.proto.javainternal.s2c.MsgRscFailedOuterClass.MsgRscFailed;
@@ -37,8 +36,7 @@ public class NotifyResourceFailed implements ApiCall
 
         rscInternalCallHandler.handleResourceFailed(
             msgRscFailed.getRsc().getNodeName(),
-            msgRscFailed.getRsc().getName(),
-            ProtoDeserializationUtils.parseApiCallRcList(msgRscFailed.getResponsesList())
+            msgRscFailed.getRsc().getName()
         );
     }
 }

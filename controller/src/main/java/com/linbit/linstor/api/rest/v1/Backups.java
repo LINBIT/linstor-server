@@ -1,6 +1,5 @@
 package com.linbit.linstor.api.rest.v1;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -16,7 +15,6 @@ import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupRestor
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlScheduledBackupsApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.BackupApi;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
@@ -126,10 +124,6 @@ public class Backups
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
             );
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
         }
         catch (JsonProcessingException exc)
         {
