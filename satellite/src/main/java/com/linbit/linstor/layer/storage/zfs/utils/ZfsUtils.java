@@ -122,64 +122,70 @@ public class ZfsUtils
 
     }
 
-    public static HashMap<String, ZfsInfo> getZfsList(final ExtCmd extCmd)
+    public static HashMap<String, ZfsInfo> getZfsList(
+        final ExtCmd extCmd, 
+        HashSet<String> fullQualifiedIds
+    )
         throws StorageException
     {
-        final OutputData output = ZfsCommands.list(extCmd);
-        final String stdOut = new String(output.stdoutData);
-
         final HashMap<String, ZfsInfo> infoByIdentifier = new HashMap<>();
 
-        final String[] lines = stdOut.split("\n");
-        final int expectedColCount = 5;
-        for (final String line : lines)
+        for (String fullQualifiedId : fullQualifiedIds)
         {
-            final String[] data = line.trim().split(DELIMITER);
-            try
+            // get zpool name
+            final OutputData output = ZfsCommands.list(extCmd, fullQualifiedId);
+            final String stdOut = new String(output.stdoutData);
+            final String[] lines = stdOut.split("\n");
+            final int expectedColCount = 5;
+            for (final String line : lines)
             {
-                if (data.length == expectedColCount)
+                final String[] data = line.trim().split(DELIMITER);
+                try
                 {
-                    final String identifier = data[ZFS_LIST_COL_IDENTIFIER];
-                    final String snapSizeStr = data[ZFS_LIST_COL_USED_SIZE]; // USED size seems to be right for snapshot
-                    final String allocatedSizeStr = data[ZFS_LIST_COL_REFER_SIZE]; // volumes use REFER
-                    final String usableSizeStr = data[ZFS_LIST_COL_USABLE_SIZE];
-                    final String type = data[ZFS_LIST_COL_TYPE];
-
-                    if (type.equals(ZFS_TYPE_VOLUME) || type.equals(ZFS_TYPE_SNAPSHOT))
+                    if (data.length == expectedColCount)
                     {
-                        String allocateByteSizeStr = type.equals(ZFS_TYPE_SNAPSHOT) ? snapSizeStr : allocatedSizeStr;
-                        long allocatedSize = SizeConv.convert(
-                            StorageUtils.parseDecimalAsLong(allocateByteSizeStr.trim()),
-                            SizeUnit.UNIT_B,
-                            SizeUnit.UNIT_KiB
-                        );
+                        final String identifier = data[ZFS_LIST_COL_IDENTIFIER];
+                        final String snapSizeStr = data[ZFS_LIST_COL_USED_SIZE]; // USED size seems to be right for snapshot
+                        final String allocatedSizeStr = data[ZFS_LIST_COL_REFER_SIZE]; // volumes use REFER
+                        final String usableSizeStr = data[ZFS_LIST_COL_USABLE_SIZE];
+                        final String type = data[ZFS_LIST_COL_TYPE];
 
-                        long usableSize = SizeConv.convert(
-                            StorageUtils.parseDecimalAsLong(usableSizeStr.trim()),
-                            SizeUnit.UNIT_B,
-                            SizeUnit.UNIT_KiB
-                        );
-
-                        int poolNameEndIndex = identifier.lastIndexOf(File.separator);
-                        if (poolNameEndIndex == -1)
+                        if (type.equals(ZFS_TYPE_VOLUME) || type.equals(ZFS_TYPE_SNAPSHOT))
                         {
-                            poolNameEndIndex = identifier.length() - 1;
+                            String allocateByteSizeStr = type.equals(ZFS_TYPE_SNAPSHOT) ? snapSizeStr : allocatedSizeStr;
+                            long allocatedSize = SizeConv.convert(
+                                StorageUtils.parseDecimalAsLong(allocateByteSizeStr.trim()),
+                                SizeUnit.UNIT_B,
+                                SizeUnit.UNIT_KiB
+                            );
+
+                            long usableSize = SizeConv.convert(
+                                StorageUtils.parseDecimalAsLong(usableSizeStr.trim()),
+                                SizeUnit.UNIT_B,
+                                SizeUnit.UNIT_KiB
+                            );
+
+                            int poolNameEndIndex = identifier.lastIndexOf(File.separator);
+                            if (poolNameEndIndex == -1)
+                            {
+                                poolNameEndIndex = identifier.length() - 1;
+                            }
+                            final ZfsInfo state = new ZfsInfo(
+                                identifier.substring(0, poolNameEndIndex),
+                                identifier.substring(poolNameEndIndex + 1),
+                                type,
+                                buildZfsPath(identifier),
+                                allocatedSize,
+                                usableSize
+                            );
+                            infoByIdentifier.put(identifier, state);
                         }
-                        final ZfsInfo state = new ZfsInfo(
-                            identifier.substring(0, poolNameEndIndex),
-                            identifier.substring(poolNameEndIndex + 1),
-                            type,
-                            buildZfsPath(identifier),
-                            allocatedSize,
-                            usableSize
-                        );
-                        infoByIdentifier.put(identifier, state);
                     }
                 }
-            }
-            catch (NumberFormatException ignored)
-            {
-                // we could not parse a number so we ignore the whole line
+                catch (NumberFormatException ignored)
+                {
+                    // we could not parse a number so we ignore the whole line
+                }
             }
         }
         return infoByIdentifier;

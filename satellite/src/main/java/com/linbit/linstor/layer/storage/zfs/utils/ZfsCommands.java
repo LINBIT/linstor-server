@@ -17,17 +17,19 @@ import java.util.Set;
 
 public class ZfsCommands
 {
-    public static OutputData list(ExtCmd extCmd) throws StorageException
+    public static OutputData list(ExtCmd extCmd, String fullQualifiedId) throws StorageException
     {
         return genericExecutor(
             extCmd,
             new String[] {
                 "zfs",
                 "list",
+                "-r",
                 "-H",   // no headers, single tab instead of spaces
                 "-p",   // sizes in bytes
                 "-o", "name,used,refer,volsize,type", // columns: name, used space, refered space, available space, type
-                "-t", "volume,snapshot"
+                "-t", "volume,snapshot",
+                fullQualifiedId
             },
             "Failed to list zfs volumes",
             "Failed to query 'zfs' info"

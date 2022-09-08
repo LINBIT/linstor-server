@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -164,7 +165,21 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     )
         throws StorageException
     {
-        return ZfsUtils.getZfsList(extCmdFactory.create());
+        final List<ZfsData<?>> combinedList = new ArrayList<>();
+        combinedList.addAll(vlmDataListRef);
+        combinedList.addAll(snapVlmsRef);
+
+        final HashSet<String> fullQualifiedIds = new HashSet<>();
+
+        for (ZfsData<?> vlmData : combinedList)
+        {
+            fullQualifiedIds.add(getZPool(vlmData.getStorPool()));
+        }
+
+        return ZfsUtils.getZfsList(
+            extCmdFactory.create(),
+            fullQualifiedIds
+        );
     }
 
     @Override
