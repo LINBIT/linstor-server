@@ -12,23 +12,29 @@ import static com.linbit.linstor.layer.storage.utils.Commands.genericExecutor;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 public class ZfsCommands
 {
-    public static OutputData list(ExtCmd extCmd) throws StorageException
+    public static OutputData list(ExtCmd extCmd, Collection<String> datasets) throws StorageException
     {
         return genericExecutor(
             extCmd,
-            new String[] {
-                "zfs",
-                "list",
-                "-H",   // no headers, single tab instead of spaces
-                "-p",   // sizes in bytes
-                "-o", "name,used,refer,volsize,type", // columns: name, used space, refered space, available space, type
-                "-t", "volume,snapshot"
-            },
+            StringUtils.concat(
+                new String[] {
+                    "zfs",
+                    "list",
+                    "-r",   // recursive
+                    "-H",   // no headers, single tab instead of spaces
+                    "-p",   // sizes in bytes
+                    // columns: name, used space, refered space, available space, type
+                    "-o", "name,used,refer,volsize,type",
+                    "-t", "volume,snapshot"
+                },
+                datasets
+            ),
             "Failed to list zfs volumes",
             "Failed to query 'zfs' info"
         );
@@ -298,18 +304,23 @@ public class ZfsCommands
         );
     }
 
-    public static OutputData listThinPools(ExtCmd extCmd) throws StorageException
+    public static OutputData listThinPools(ExtCmd extCmd, Collection<String> datasets) throws StorageException
     {
         return genericExecutor(
             extCmd,
-            new String[] {
-                "zfs",
-                "list",
-                "-H",   // no headers, single tab instead of spaces
-                "-p",   // sizes in bytes
-                "-o", "name,available,type", // columns: name, available space, type
-                "-t", "filesystem"
-            },
+            StringUtils.concat(
+                new String[] {
+                    "zfs",
+                    "list",
+                    "-r",   // recursive
+                    "-H",   // no headers, single tab instead of spaces
+                    "-p",   // sizes in bytes
+                    // columns: name, available space, type
+                    "-o", "name,available,type",
+                    "-t", "filesystem"
+                },
+                datasets
+            ),
             "Failed to list zfs filesystem types",
             "Failed to query 'zfs' info"
         );

@@ -114,7 +114,10 @@ public class ZfsThinProvider extends ZfsProvider
             );
         }
         thinZpoolName = thinZpoolName.trim();
-        HashMap<String, ZfsInfo> zfsList = ZfsUtils.getThinZPoolsList(extCmdFactory.create());
+        HashMap<String, ZfsInfo> zfsList = ZfsUtils.getThinZPoolsList(
+            extCmdFactory.create(),
+            Collections.singleton(thinZpoolName)
+        );
         if (!zfsList.containsKey(thinZpoolName))
         {
             throw new StorageException("no zfs dataset found with name '" + thinZpoolName + "'");
@@ -137,7 +140,8 @@ public class ZfsThinProvider extends ZfsProvider
         ).get(zPool);
 
         long freeSpace = ZfsUtils.getThinZPoolsList(
-            extCmdFactory.create()
+            extCmdFactory.create(),
+            Collections.singleton(zPool)
         ).get(zPool).usableSize;
 
         return new SpaceInfo(capacity, freeSpace);

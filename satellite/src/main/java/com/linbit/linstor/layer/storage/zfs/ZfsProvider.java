@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -164,7 +165,24 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     )
         throws StorageException
     {
-        return ZfsUtils.getZfsList(extCmdFactory.create());
+        return ZfsUtils.getZfsList(
+            extCmdFactory.create(),
+            getDataSets(vlmDataListRef, snapVlmsRef)
+        );
+    }
+
+    private Set<String> getDataSets(List<ZfsData<Resource>> vlmDataListRef, List<ZfsData<Snapshot>> snapVlmsRef)
+    {
+        List<ZfsData<?>> combinedList = new ArrayList<>();
+        combinedList.addAll(vlmDataListRef);
+        combinedList.addAll(snapVlmsRef);
+
+        Set<String> dataSets = new HashSet<>();
+        for (ZfsData<?> data : combinedList)
+        {
+            dataSets.add(getZPool(data.getStorPool()));
+        }
+        return dataSets;
     }
 
     @Override
@@ -480,7 +498,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected String getStorageName(StorPool storPoolRef) throws AccessDeniedException
+    protected String getStorageName(StorPool storPoolRef)
     {
         return getZPool(storPoolRef);
     }
@@ -513,7 +531,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             );
         }
         zpoolName = zpoolName.trim();
-        HashMap<String, ZfsInfo> zfsPoolMap = ZfsUtils.getThinZPoolsList(extCmdFactory.create());
+        HashMap<String, ZfsInfo> zfsPoolMap = ZfsUtils.getThinZPoolsList(
+            extCmdFactory.create(),
+            Collections.singleton(zpoolName)
+        );
         if (!zfsPoolMap.containsKey(zpoolName))
         {
             throw new StorageException("no zpool found with name '" + zpoolName + "'");
