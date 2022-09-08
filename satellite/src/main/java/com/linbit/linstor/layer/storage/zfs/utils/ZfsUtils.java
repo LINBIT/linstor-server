@@ -11,6 +11,7 @@ import com.linbit.linstor.storage.StorageUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -68,10 +69,10 @@ public class ZfsUtils
         }
     }
 
-    public static HashMap<String, ZfsInfo> getThinZPoolsList(ExtCmd extCmd)
+    public static HashMap<String, ZfsInfo> getThinZPoolsList(ExtCmd extCmd, Collection<String> datasets)
         throws StorageException
     {
-        final OutputData output = ZfsCommands.listThinPools(extCmd);
+        final OutputData output = ZfsCommands.listThinPools(extCmd, datasets);
         final String stdOut = new String(output.stdoutData);
 
         final HashMap<String, ZfsInfo> infoByIdentifier = new HashMap<>();
@@ -122,10 +123,10 @@ public class ZfsUtils
 
     }
 
-    public static HashMap<String, ZfsInfo> getZfsList(final ExtCmd extCmd)
+    public static HashMap<String, ZfsInfo> getZfsList(final ExtCmd extCmd, Collection<String> datasets)
         throws StorageException
     {
-        final OutputData output = ZfsCommands.list(extCmd);
+        final OutputData output = ZfsCommands.list(extCmd, datasets);
         final String stdOut = new String(output.stdoutData);
 
         final HashMap<String, ZfsInfo> infoByIdentifier = new HashMap<>();
