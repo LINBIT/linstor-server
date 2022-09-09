@@ -50,16 +50,15 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
-import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -312,54 +311,21 @@ public class CtrlBackupCreateApiCallHandler
                 .createSnapshots(nodes, rscDfn.getName().displayValue, snapName, responses);
             setBackupSnapDfnFlagsAndProps(snapDfn, scheduleNameRef, nowRef);
 
-            Resource rsc = rscDfn.getResource(peerAccCtx.get(), chosenNodeName);
             List<Integer> nodeIds = new ArrayList<>();
-            Set<AbsRscLayerObject<Resource>> drbdLayers = LayerRscUtils
-                .getRscDataByProvider(rsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD);
-            if (drbdLayers.size() > 1)
+            DrbdRscDfnData<Resource> rscDfnData = rscDfn.getLayerData(
+                peerAccCtx.get(),
+                DeviceLayerKind.DRBD,
+                RscLayerSuffixes.SUFFIX_DATA
+            );
+            for (DrbdRscData<Resource> rscData : rscDfnData.getDrbdRscDataList())
             {
-                throw new ImplementationError("Only one instance of DRBD-layer supported");
-            }
-            for (AbsRscLayerObject<Resource> layer : drbdLayers)
-            {
-                DrbdRscData<Resource> drbdLayer = (DrbdRscData<Resource>) layer;
-                boolean extMeta = false;
-                boolean intMeta = false;
-                for (DrbdVlmData<Resource> drbdVlm : drbdLayer.getVlmLayerObjects().values())
+                if (!rscData.isDiskless(sysCtx))
                 {
-                    if (drbdVlm.isUsingExternalMetaData())
-                    {
-                        extMeta = true;
-                    }
-                    else
-                    {
-                        intMeta = true;
-                    }
-                }
-                if (intMeta && extMeta)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_BACKUP_CONFIG,
-                            "Backup shipping of resource '" + rscDfn.getName().displayValue +
-                                "' cannot be started since there is no support for mixing external and internal " +
-                                "drbd-metadata among volumes."
-                        )
-                    );
-                }
-                if (!extMeta)
-                {
-                    for (DrbdRscData<Resource> rscData : drbdLayer.getRscDfnLayerObject().getDrbdRscDataList())
-                    {
-                        if (!rscData.isDiskless(sysCtx))
-                        {
-                            /*
-                             * diskless nodes do reserve a node-id for themselves, but the peer-slot is not used in the
-                             * metadata of diskfull peers
-                             */
-                            nodeIds.add(rscData.getNodeId().value);
-                        }
-                    }
+                    /*
+                     * diskless nodes do reserve a node-id for themselves, but the peer-slot is not used in the
+                     * metadata of diskfull peers
+                     */
+                    nodeIds.add(rscData.getNodeId().value);
                 }
             }
 
