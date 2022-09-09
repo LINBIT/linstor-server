@@ -151,6 +151,17 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     @Override
+    public Map<String, String> cloneMap()
+    {
+        Map<String, String> clonedMap = new HashMap<>();
+        for (Entry<String, String> entry : entrySet())
+        {
+            clonedMap.put(entry.getKey(), entry.getValue());
+        }
+        return clonedMap;
+    }
+
+    @Override
     public synchronized Set<String> keySet()
     {
         if (keySetAccessor == null)

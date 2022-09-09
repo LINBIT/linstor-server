@@ -51,6 +51,7 @@ public interface Props extends TransactionObject, Iterable<Map.Entry<String, Str
     String getPath();
 
     Map<String, String> map();
+    Map<String, String> cloneMap();
     Set<Map.Entry<String, String>> entrySet();
     Set<String> keySet();
     Collection<String> values();

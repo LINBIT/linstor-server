@@ -166,6 +166,12 @@ public class ReadOnlyProps implements Props
     }
 
     @Override
+    public Map<String, String> cloneMap()
+    {
+        return Collections.unmodifiableMap(propsMap.cloneMap());
+    }
+
+    @Override
     public Set<Map.Entry<String, String>> entrySet()
     {
         return Collections.unmodifiableSet(propsMap.entrySet());
