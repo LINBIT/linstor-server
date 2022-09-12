@@ -294,14 +294,15 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected void recalculateVolatilePropertiesImpl(
+    protected boolean recalculateVolatilePropertiesImpl(
         CacheRscData<Resource> rscDataRef,
         List<DeviceLayerKind> layerListRef,
         LayerPayload payloadRef
     )
     {
-        // no-op
+        return false; // no change
     }
+
 
     @Override
     protected boolean isExpectedToProvideDevice(CacheRscData<Resource> cacheRscData) throws AccessDeniedException

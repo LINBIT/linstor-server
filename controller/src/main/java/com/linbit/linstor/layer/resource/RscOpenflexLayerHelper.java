@@ -229,23 +229,25 @@ public class RscOpenflexLayerHelper
     }
 
     @Override
-    protected void recalculateVolatilePropertiesImpl(
+    protected boolean recalculateVolatilePropertiesImpl(
         OpenflexRscData<Resource> rscDataRef,
         List<DeviceLayerKind> layerListRef,
         LayerPayload payloadRef
     )
         throws AccessDeniedException, DatabaseException
     {
+        boolean changed = false;
         if (rscDataRef.getAbsResource().isNvmeInitiator(apiCtx))
         {
             // we are initiator, ignore everything below us
-            setIgnoreReason(rscDataRef, IGNORE_REASON_NVME_INITIATOR, false, true, true);
+            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_NVME_INITIATOR, false, true, true);
         }
         else
         {
             // we are target, so tell all of our ancestors to ignoreNonDataPaths
-            setIgnoreReason(rscDataRef, IGNORE_REASON_NVME_TARGET, true, false, true);
+            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_NVME_TARGET, true, false, true);
         }
+        return changed;
     }
 
     @Override

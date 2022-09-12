@@ -1167,26 +1167,6 @@ public class CtrlApiCallHandler
         return listSnapshotShippings;
     }
 
-    public ApiCallRc setMasterPassphrase(String newPassphrase, String oldPassphrase)
-    {
-        ApiCallRc apiCallRc;
-        try (LockGuard lg = lockGuardFactory.build(WRITE, CTRL_CONFIG))
-        {
-            apiCallRc = ctrlConfApiCallHandler.setPassphrase(newPassphrase, oldPassphrase);
-        }
-        return apiCallRc;
-    }
-
-    public ApiCallRc enterPassphrase(String passphrase)
-    {
-        ApiCallRc apiCallRc;
-        try (LockGuard lg = lockGuardFactory.build(WRITE, CTRL_CONFIG))
-        {
-            apiCallRc = ctrlConfApiCallHandler.enterPassphrase(passphrase);
-        }
-        return apiCallRc;
-    }
-
     /**
      * Modifies the DRBD Proxy configuration for a given resource definition.
      *

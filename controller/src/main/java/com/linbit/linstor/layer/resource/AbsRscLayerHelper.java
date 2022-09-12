@@ -316,8 +316,10 @@ public abstract class AbsRscLayerHelper<
      * Clear known volatile information so they have to be recalculated.
      * This way we can prevent calling i.e. setIgnoreReason with null reason, which might override still valid reasons
      * from ancestors
+     *
+     * @return true if recalculation changed something that requires an updateSatellites, false otherwise
      */
-    protected void recalculateVolatileProperties(
+    protected boolean recalculateVolatileProperties(
         RSC_LO rscDataRef,
         List<DeviceLayerKind> layerListRef,
         LayerPayload payloadRef
@@ -325,7 +327,7 @@ public abstract class AbsRscLayerHelper<
         throws AccessDeniedException, DatabaseException
     {
         setIgnoreReasonImpl(rscDataRef, IGNORE_REASON_NONE);
-        recalculateVolatilePropertiesImpl(rscDataRef, layerListRef, payloadRef);
+        return recalculateVolatilePropertiesImpl(rscDataRef, layerListRef, payloadRef);
     }
 
     /**
@@ -333,8 +335,10 @@ public abstract class AbsRscLayerHelper<
      * layerHelper class matching the rscDataRef's DeviceLayerKind AND upwards until the parent is null.
      *
      * If a layerHelper has set the new ignoreReason, its children are also iterated (recursively)
+     *
+     * @return true if recalculation changed something that requires an updateSatellites, false otherwise
      */
-    protected void setIgnoreReason(
+    protected boolean setIgnoreReason(
         @Nullable AbsRscLayerObject<Resource> rscDataRef,
         String ignoreReasonNvmeTargetRef,
         boolean goUpRef,
@@ -366,7 +370,7 @@ public abstract class AbsRscLayerHelper<
                 }
             }
         }
-        setIgnoreReasonRec(
+        return setIgnoreReasonRec(
             rscDataRef,
             ignoreReasonNvmeTargetRef,
             skipSelfRef,
@@ -374,7 +378,7 @@ public abstract class AbsRscLayerHelper<
         );
     }
 
-    private void setIgnoreReasonRec(
+    private boolean setIgnoreReasonRec(
         AbsRscLayerObject<Resource> rscDataRef,
         String ignoreReasonNvmeTargetRef,
         boolean skipRef,
@@ -382,6 +386,7 @@ public abstract class AbsRscLayerHelper<
     )
         throws DatabaseException
     {
+        boolean changed = false;
         if (rscDataRef != null && !visitedRef.contains(rscDataRef))
         {
             visitedRef.add(rscDataRef);
@@ -392,10 +397,10 @@ public abstract class AbsRscLayerHelper<
 
             if (!skipRef)
             {
-                layerHelperByKind.setIgnoreReasonImpl(rscDataRef, ignoreReasonNvmeTargetRef);
+                changed |= layerHelperByKind.setIgnoreReasonImpl(rscDataRef, ignoreReasonNvmeTargetRef);
             }
 
-            setIgnoreReasonRec(
+            changed |= setIgnoreReasonRec(
                 rscDataRef.getParent(),
                 ignoreReasonNvmeTargetRef,
                 false, // only first might be skipped
@@ -408,7 +413,7 @@ public abstract class AbsRscLayerHelper<
             {
                 for (AbsRscLayerObject<Resource> childRscData : rscDataRef.getChildren())
                 {
-                    setIgnoreReasonRec(
+                    changed |= setIgnoreReasonRec(
                         childRscData,
                         ignoreReasonNvmeTargetRef,
                         false, // only first might be skipped
@@ -417,19 +422,23 @@ public abstract class AbsRscLayerHelper<
                 }
             }
         }
+        return changed;
     }
 
-    protected void setIgnoreReasonImpl(
+    protected boolean setIgnoreReasonImpl(
         AbsRscLayerObject<Resource> rscDataRef,
         String ignoreReasonRef
     )
         throws DatabaseException
     {
+        boolean reasonChanged = false;
         // by default, always set the ignoreReason
         if (!Objects.equals(rscDataRef.getIgnoreReason(), ignoreReasonRef))
         {
             rscDataRef.setIgnoreReason(ignoreReasonRef);
+            reasonChanged = true;
         }
+        return reasonChanged;
     }
 
     public <RSC extends AbsResource<RSC>> RSC_LO restoreFromAbsRsc(
@@ -690,8 +699,10 @@ public abstract class AbsRscLayerHelper<
      * Such properties are not persisted as well as their requirements can change fast (i.e. Resource.Flags.INACTIVE
      * causes all layers above Storage to be ignored since no device should be provided/accessed when the resource is
      * inactive)
+     *
+     * @return true if recalculation changed something that requires an updateSatellites, false otherwise
      */
-    protected abstract void recalculateVolatilePropertiesImpl(
+    protected abstract boolean recalculateVolatilePropertiesImpl(
         RSC_LO rscDataRef,
         List<DeviceLayerKind> layerListRef,
         LayerPayload payloadRef

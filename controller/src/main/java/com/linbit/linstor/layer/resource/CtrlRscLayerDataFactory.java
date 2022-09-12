@@ -564,15 +564,15 @@ public class CtrlRscLayerDataFactory
         }
     }
 
-    public void recalculateVolatileRscData(Resource rscRef) throws AccessDeniedException, DatabaseException
+    public boolean recalculateVolatileRscData(Resource rscRef) throws AccessDeniedException, DatabaseException
     {
         AbsRscLayerObject<Resource> rscData = rscRef.getLayerData(apiCtx);
         List<DeviceLayerKind> layerStack = getLayerStack(rscRef);
-        recalculateVolatileRscDataRec(rscData, layerStack, new LayerPayload());
+        return recalculateVolatileRscDataRec(rscData, layerStack, new LayerPayload());
     }
 
     @SuppressWarnings("unchecked")
-    private <RSC_LO extends AbsRscLayerObject<Resource>> void recalculateVolatileRscDataRec(
+    private <RSC_LO extends AbsRscLayerObject<Resource>> boolean recalculateVolatileRscDataRec(
         AbsRscLayerObject<Resource> rscDataRef,
         List<DeviceLayerKind> layerStackRef,
         LayerPayload layerPayloadRef
@@ -582,10 +582,12 @@ public class CtrlRscLayerDataFactory
         AbsRscLayerHelper<RSC_LO, ?, ?, ?> layerHelper = getLayerHelperByKind(rscDataRef.getLayerKind());
         layerHelper.recalculateVolatileProperties((RSC_LO) rscDataRef, layerStackRef, layerPayloadRef);
 
+        boolean changed = false;
         for (AbsRscLayerObject<Resource> child : rscDataRef.getChildren())
         {
-            recalculateVolatileRscDataRec(child, layerStackRef, layerPayloadRef);
+            changed |= recalculateVolatileRscDataRec(child, layerStackRef, layerPayloadRef);
         }
+        return changed;
     }
 
     protected <RSC_LO extends AbsRscLayerObject<Resource>> AbsRscLayerHelper<RSC_LO, ?, ?, ?> getLayerHelperByKind(

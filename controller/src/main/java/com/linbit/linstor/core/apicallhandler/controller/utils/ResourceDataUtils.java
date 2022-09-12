@@ -16,11 +16,15 @@ public class ResourceDataUtils
     {
     }
 
-    public static void recalculateVolatileRscData(CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef, Resource rscRef)
+    public static boolean recalculateVolatileRscData(
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
+        Resource rscRef
+    )
     {
+        boolean changed = false;
         try
         {
-            ctrlRscLayerDataFactoryRef.recalculateVolatileRscData(rscRef);
+            changed = ctrlRscLayerDataFactoryRef.recalculateVolatileRscData(rscRef);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -34,5 +38,6 @@ public class ResourceDataUtils
         {
             throw new ApiDatabaseException(sqlExc);
         }
+        return changed;
     }
 }

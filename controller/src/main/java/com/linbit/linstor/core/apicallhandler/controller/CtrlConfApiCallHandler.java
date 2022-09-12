@@ -1231,8 +1231,24 @@ public class CtrlConfApiCallHandler
         return new Pair<>(apiCallRc, notifyStlts);
     }
 
-    public ApiCallRc enterPassphrase(String passphrase)
+    public Flux<ApiCallRc> enterPassphrase(String passphrase)
     {
+        ResponseContext context = makeCtrlConfContext(
+            ApiOperation.makeModifyOperation()
+        );
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Entering passphrase",
+            lockGuardFactory.buildDeferred(WRITE, LockObj.CTRL_CONFIG),
+            () -> enterPassphraseInTransaction(
+                passphrase
+            )
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> enterPassphraseInTransaction(String passphrase)
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
@@ -1255,7 +1271,9 @@ public class CtrlConfApiCallHandler
                 byte[] decryptedMasterKey = encHelper.getDecryptedMasterKey(namespace, passphrase);
                 if (decryptedMasterKey != null)
                 {
-                    encHelper.setCryptKey(decryptedMasterKey, namespace, true);
+                    flux = encHelper.setCryptKey(decryptedMasterKey, namespace, true);
+                    // setCryptKey might have changed volatileRscData (ignoreReason, etc..)
+                    transMgrProvider.get().commit();
 
                     ResponseUtils.reportSuccessStatic(
                         "Passphrase accepted",
@@ -1340,11 +1358,28 @@ public class CtrlConfApiCallHandler
             );
         }
 
-        return apiCallRc;
+        return Flux.<ApiCallRc>just(apiCallRc).concatWith(flux);
     }
 
-    public ApiCallRc setPassphrase(String newPassphrase, String oldPassphrase)
+    public Flux<ApiCallRc> setPassphrase(String newPassphrase, String oldPassphrase)
     {
+        ResponseContext context = makeCtrlConfContext(
+            ApiOperation.makeCreateOperation()
+        );
+
+        return scopeRunner.fluxInTransactionalScope(
+            (oldPassphrase == null ? "Creating" : "Modifying") + " passphrase",
+            lockGuardFactory.buildDeferred(WRITE, LockObj.CTRL_CONFIG),
+            () -> setPassphraseInTransaction(
+                newPassphrase,
+                oldPassphrase
+            )
+        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> setPassphraseInTransaction(String newPassphrase, String oldPassphrase)
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         long mask = ApiConsts.MASK_CTRL_CONF;
         try
@@ -1366,7 +1401,11 @@ public class CtrlConfApiCallHandler
                     );
                     // setPassphraseImpl sets the props in this namespace; to ensure they are there, get it again
                     namespace = encHelper.getEncryptedNamespace(peerAccCtx.get());
-                    encHelper.setCryptKey(masterKey, namespace, true);
+                    flux = encHelper.setCryptKey(masterKey, namespace, true);
+
+                    // setCryptKey could have changed voaltileRscData (ignoreReasons, etc...)
+                    transMgrProvider.get().commit();
+
                     ResponseUtils.reportSuccessStatic(
                          "Crypt passphrase created.",
                          null, // details
@@ -1525,7 +1564,8 @@ public class CtrlConfApiCallHandler
                 peerProvider.get()
             );
         }
-        return apiCallRc;
+        return Flux.<ApiCallRc>just(apiCallRc)
+            .concatWith(flux);
     }
 
     private void setTcpPort(

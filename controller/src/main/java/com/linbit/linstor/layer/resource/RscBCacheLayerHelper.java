@@ -262,14 +262,14 @@ class RscBCacheLayerHelper
     }
 
     @Override
-    protected void recalculateVolatilePropertiesImpl(
+    protected boolean recalculateVolatilePropertiesImpl(
         BCacheRscData<Resource> rscDataRef,
         List<DeviceLayerKind> layerListRef,
         LayerPayload payloadRef
     )
         throws AccessDeniedException, DatabaseException
     {
-        // no-op
+        return false; // no change
     }
 
     @Override

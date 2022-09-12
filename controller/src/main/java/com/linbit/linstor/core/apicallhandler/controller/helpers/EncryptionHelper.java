@@ -1,22 +1,32 @@
 package com.linbit.linstor.core.apicallhandler.controller.helpers;
 
 import com.linbit.ImplementationError;
+import com.linbit.crypto.ByteArrayCipher;
 import com.linbit.crypto.LengthPadding;
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule.NodesMap;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -31,12 +41,13 @@ import javax.inject.Singleton;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.linbit.crypto.ByteArrayCipher;
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+import reactor.core.publisher.Flux;
 
 @Singleton
 public class EncryptionHelper
@@ -58,7 +69,10 @@ public class EncryptionHelper
     private final CtrlSecurityObjects ctrlSecObj;
     private final CtrlStltSerializer ctrlStltSrzl;
     private final NodesMap nodesMap;
+    private final ResourceDefinitionMap rscDfnMap;
     private final AccessContext apiCtx;
+    private final Provider<CtrlRscLayerDataFactory> rscLayerDataFactoryProvider;
+    private final CtrlSatelliteUpdateCaller ctrlstltUpdateCaller;
 
     static
     {
@@ -80,12 +94,18 @@ public class EncryptionHelper
         CtrlSecurityObjects ctrlSecObjRef,
         CtrlStltSerializer ctrlStltSrzlRef,
         NodesMap nodesMapRef,
+        ResourceDefinitionMap rscDfnMapRef,
         @ApiContext
-        AccessContext apiCtxRef
+        AccessContext apiCtxRef,
+        Provider<CtrlRscLayerDataFactory> rscLayerDataFactoryProviderRef,
+        CtrlSatelliteUpdateCaller ctrlstltUpdateCallerRef
     )
     {
         systemConfRepository = systemConfRepositoryRef;
         cryptoProvider = cryptoProviderRef;
+        rscDfnMap = rscDfnMapRef;
+        rscLayerDataFactoryProvider = rscLayerDataFactoryProviderRef;
+        ctrlstltUpdateCaller = ctrlstltUpdateCallerRef;
         secretGen = cryptoProviderRef.createSecretGenerator();
         cryptoLenPad = cryptoProviderRef.createLengthPadding();
         transMgrProvider = transMgrProviderRef;
@@ -215,11 +235,13 @@ public class EncryptionHelper
         return ret;
     }
 
-    public void setCryptKey(byte[] cryptKey, Props namespace, boolean updateSatellites)
+    public Flux<ApiCallRc> setCryptKey(byte[] cryptKey, Props namespace, boolean updateSatellites)
     {
+        Flux<ApiCallRc> flux = Flux.empty();
         byte[] cryptHash = Base64.decode(namespace.getProp(KEY_CRYPT_HASH));
         byte[] cryptSalt = Base64.decode(namespace.getProp(KEY_PASSPHRASE_SALT));
         byte[] encKey = Base64.decode(namespace.getProp(KEY_CRYPT_KEY));
+        final boolean allSetBefore = ctrlSecObj.areAllSet();
         ctrlSecObj.setCryptKey(cryptKey, cryptHash, cryptSalt, encKey);
 
         if (updateSatellites)
@@ -249,6 +271,50 @@ public class EncryptionHelper
                 }
             }
         }
+        if (!allSetBefore)
+        {
+            try
+            {
+                // before updating satellites, we need to recalculate rscLayerData (i.e. to update ignoreReasons)
+                CtrlRscLayerDataFactory ctrlRscLayerDataFactory = rscLayerDataFactoryProvider.get();
+
+                ArrayList<ResourceDefinition> rscDfnToUpdate = new ArrayList<>();
+
+                for (ResourceDefinition rscDfn : rscDfnMap.values())
+                {
+                    Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+                    while (rscIt.hasNext())
+                    {
+                        Resource rsc = rscIt.next();
+                        boolean changed = ResourceDataUtils.recalculateVolatileRscData(
+                            ctrlRscLayerDataFactory,
+                            rsc
+                        );
+                        if (changed)
+                        {
+                            rscDfnToUpdate.add(rscDfn);
+                        }
+                    }
+                    if (updateSatellites)
+                    {
+                        flux = flux.concatWith(
+                            ctrlstltUpdateCaller.updateSatellites(rscDfn, Flux.empty()).transform(
+                                updateResponses -> CtrlResponseUtils.combineResponses(
+                                    updateResponses,
+                                    rscDfn.getName(),
+                                    "Updated resource definition " + rscDfn.getName().displayValue
+                                )
+                            )
+                        );
+                    }
+                }
+            }
+            catch (AccessDeniedException implErr)
+            {
+                throw new ImplementationError(implErr);
+            }
+        }
+        return flux;
     }
 
     public byte[] encrypt(String plainKey) throws LinStorException

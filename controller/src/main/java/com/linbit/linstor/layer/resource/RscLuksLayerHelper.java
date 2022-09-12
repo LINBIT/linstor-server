@@ -285,30 +285,34 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected void recalculateVolatilePropertiesImpl(
+    protected boolean recalculateVolatilePropertiesImpl(
         LuksRscData<Resource> rscDataRef,
         List<DeviceLayerKind> layerListRef,
         LayerPayload payloadRef
     )
         throws AccessDeniedException, DatabaseException
     {
+        boolean changed = false;
         if (!secObjs.areAllSet())
         {
-            setIgnoreReason(rscDataRef, IGNORE_REASON_LUKS_MISSING_KEY, true, false, true);
+            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_LUKS_MISSING_KEY, true, false, true);
         }
+        return changed;
     }
 
     @Override
-    protected void setIgnoreReasonImpl(
+    protected boolean setIgnoreReasonImpl(
         AbsRscLayerObject<Resource> rscDataRef,
         String ignoreReasonRef
     )
         throws DatabaseException
     {
+        boolean changed = false;
         if (!IGNORE_REASON_LUKS_MISSING_KEY.equals(ignoreReasonRef))
         {
-            super.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
+            changed = super.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
         }
+        return changed;
     }
 
     @Override

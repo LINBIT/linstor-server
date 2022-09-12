@@ -661,30 +661,34 @@ public class RscDrbdLayerHelper extends
     }
 
     @Override
-    protected void recalculateVolatilePropertiesImpl(
+    protected boolean recalculateVolatilePropertiesImpl(
         DrbdRscData<Resource> rscDataRef,
         List<DeviceLayerKind> layerListRef,
         LayerPayload payloadRef
     )
         throws AccessDeniedException, DatabaseException
     {
+        boolean changed = false;
         if (isDrbdDiskless(rscDataRef))
         {
-            setIgnoreReason(rscDataRef, IGNORE_REASON_DRBD_DISKLESS, false, true, true);
+            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_DRBD_DISKLESS, false, true, true);
         }
+        return changed;
     }
 
     @Override
-    protected void setIgnoreReasonImpl(
+    protected boolean setIgnoreReasonImpl(
         AbsRscLayerObject<Resource> rscDataRef,
         String ignoreReasonRef
     )
         throws DatabaseException
     {
+        boolean changed = false;
         if (!IGNORE_REASON_DRBD_DISKLESS.equals(ignoreReasonRef))
         {
-            super.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
+            changed = super.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
         }
+        return changed;
     }
 
     public StorPool getMetaStorPool(Volume vlmRef, AccessContext accCtx)

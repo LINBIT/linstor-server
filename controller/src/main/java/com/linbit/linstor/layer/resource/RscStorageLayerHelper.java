@@ -378,64 +378,40 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected void recalculateVolatilePropertiesImpl(
+    protected boolean recalculateVolatilePropertiesImpl(
         StorageRscData<Resource> rscDataRef,
         List<DeviceLayerKind> layerListRef,
         LayerPayload payloadRef
     )
         throws AccessDeniedException, DatabaseException
     {
+        boolean changed = false;
         Resource rsc = rscDataRef.getAbsResource();
 
-        if (layerListRef.contains(DeviceLayerKind.NVME))
+        Collection<VlmProviderObject<Resource>> vlmLayerObjects = rscDataRef.getVlmLayerObjects().values();
+
+        // first run some checks depending on the storageProvider.
         {
-            if (!rsc.isNvmeInitiator(apiCtx))
+            Set<DeviceProviderKind> providerKindSet = new HashSet<>();
+            for (VlmProviderObject<Resource> vlmData : vlmLayerObjects)
             {
-                // we are target, so tell all of our ancestors to ignoreNonDataPaths
-                String reason = IGNORE_REASON_NONE;
-                Collection<VlmProviderObject<Resource>> vlmLayerObjects = rscDataRef.getVlmLayerObjects().values();
-                if (!vlmLayerObjects.isEmpty())
-                {
-                    VlmProviderObject<Resource> vlmData = vlmLayerObjects.iterator().next();
-                    DeviceProviderKind providerKind = vlmData.getProviderKind();
-                    switch (providerKind)
-                    {
-                        case OPENFLEX_TARGET:
-                            reason = IGNORE_REASON_OF_TARGET;
-                            break;
-                        case REMOTE_SPDK:
-                        case SPDK:
-                            reason = IGNORE_REASON_SPDK_TARGET;
-                            break;
-                        case DISKLESS:
-                        case EXOS:
-                        case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
-                        case FILE:
-                        case FILE_THIN:
-                        case LVM:
-                        case LVM_THIN:
-                        case ZFS:
-                        case ZFS_THIN:
-                        default:
-                            reason = IGNORE_REASON_NONE;
-                            break;
-                    }
-                    if (reason != null) // IGNORE_REASON_NONE == null
-                    {
-                        setIgnoreReason(rscDataRef, reason, true, false, true);
-                    }
-                }
-                // else - it does not matter
+                providerKindSet.add(vlmData.getProviderKind());
             }
-            else
+
+            String reason = IGNORE_REASON_NONE;
+            if (providerKindSet.contains(DeviceProviderKind.OPENFLEX_TARGET))
             {
-                if (rscDataRef.hasIgnoreReason() && !rscDataRef.getVlmLayerObjects().isEmpty())
-                {
-                    throw new ImplementationError(
-                        rscDataRef.getSuffixedResourceName() +
-                            " is an NVMe initiator so at least the storage layer should have be ignored, but is not"
-                    );
-                }
+                reason = IGNORE_REASON_OF_TARGET;
+            }
+            else if (providerKindSet.contains(DeviceProviderKind.SPDK) ||
+                providerKindSet.contains(DeviceProviderKind.REMOTE_SPDK))
+            {
+                reason = IGNORE_REASON_SPDK_TARGET;
+            }
+
+            if (reason != null) // IGNORE_REASON_NONE == null
+            {
+                changed |= setIgnoreReason(rscDataRef, reason, true, false, true);
             }
         }
 
@@ -443,15 +419,16 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         if (rscFlags.isSet(apiCtx, Resource.Flags.INACTIVE) && rscFlags.isUnset(apiCtx, Resource.Flags.INACTIVATING))
         {
             // do not propagate the reason while we are still inactivating the resource.
-            setIgnoreReason(rscDataRef, IGNORE_REASON_RSC_INACTIVE, true, false, true);
+            changed |= setIgnoreReason(rscDataRef, IGNORE_REASON_RSC_INACTIVE, true, false, true);
         }
         if (rsc.streamVolumes().anyMatch(
             vlm -> isAnyVolumeFlagSetPrivileged(vlm, Volume.Flags.CLONING, Volume.Flags.CLONING_START) &&
                 !areAllVolumeFlagsSetPrivileged(vlm, Volume.Flags.CLONING_FINISHED)
         ))
         {
-            setIgnoreReason(rscDataRef, IGNORE_REASON_RSC_CLONING, true, false, true);
+            changed |= setIgnoreReason(rscDataRef, IGNORE_REASON_RSC_CLONING, true, false, true);
         }
+        return changed;
     }
 
     private boolean areAllVolumeFlagsSetPrivileged(Volume vlm, Volume.Flags... flags)
