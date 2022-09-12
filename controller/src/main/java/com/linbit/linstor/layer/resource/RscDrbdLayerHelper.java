@@ -419,7 +419,15 @@ public class RscDrbdLayerHelper extends
         {
             if (needsMetaData((DrbdRscData<Resource>) drbdRscData, layerListRef))
             {
-                storPools.add(getMetaStorPool(rsc, vlmDfn, apiCtx));
+                StorPool metaStorPool = getMetaStorPool(rsc, vlmDfn, apiCtx);
+                if (metaStorPool != null)
+                {
+                    /*
+                     * needsMetaData returns true if any of our vlms need external metadata
+                     * but that does not mean that all vlms do.
+                     */
+                    storPools.add(metaStorPool);
+                }
             }
         }
         return storPools;
