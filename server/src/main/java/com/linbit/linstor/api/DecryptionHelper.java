@@ -4,6 +4,7 @@ import com.linbit.crypto.ByteArrayCipher;
 import com.linbit.crypto.LengthPadding;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -30,5 +31,11 @@ public class DecryptionHelper
         byte[] decryptedKey = cryptoLenPad.retrieve(decryptedData);
 
         return decryptedKey;
+    }
+
+    public String decryptB64ToString(byte[] masterKey, String encryptedKeyB64) throws LinStorException
+    {
+        byte[] encryptedKey = Base64.decode(encryptedKeyB64);
+        return new String(decrypt(masterKey, encryptedKey));
     }
 }
