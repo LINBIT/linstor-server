@@ -8,7 +8,6 @@ import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -141,30 +140,27 @@ public class LsBlkUtils
     }
 
     /**
-     * Returns a Array of blkid identifed devices.
+     * Check if blkid can access the device.
      *
-     * Was used for physical devices listening, but is slow on lot of devices.
      * @param extCmd
      * @return
      * @throws StorageException
      */
-    public static String[] blkid(@Nonnull ExtCmd extCmd)
+    public static String blkid(@Nonnull ExtCmd extCmd, @Nonnull String device)
         throws StorageException
     {
         ExtCmd.OutputData outputData = Commands.genericExecutor(
             extCmd,
             new String[]{
                 "blkid",
-                "-o", "device"
+                device
             },
             "Failed execute blkid",
             "Failed to execute blkid",
-            Commands.NO_RETRY,
-            Collections.singletonList(2)
+            Commands.NO_RETRY
         );
 
-        final String blkIdResult = new String(outputData.stdoutData, StandardCharsets.UTF_8);
-        return blkIdResult.split("\n");
+        return new String(outputData.stdoutData, StandardCharsets.UTF_8);
     }
 
     public static List<LsBlkEntry> filterDeviceCandidates(List<LsBlkEntry> entries)
