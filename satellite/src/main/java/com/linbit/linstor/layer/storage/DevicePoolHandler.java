@@ -104,8 +104,8 @@ public class DevicePoolHandler
                 apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, poolName));
                 break;
             case LVM_THIN:
-                apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, LvmThinDriverKind.VG_PREFIX + poolName));
-                apiCallRc.addEntries(createLVMThinPool(LvmThinDriverKind.VG_PREFIX + poolName, poolName));
+                apiCallRc.addEntries(createLVMPool(devicePaths, raidLevel, LvmThinDriverKind.VGName(poolName)));
+                apiCallRc.addEntries(createLVMThinPool(LvmThinDriverKind.VGName(poolName), LvmThinDriverKind.LVName(poolName)));
                 break;
             case ZFS_THIN: // no differentiation between ZFS and ZFS_THIN pool. fall-through
             case ZFS:
@@ -486,7 +486,7 @@ public class DevicePoolHandler
         switch (deviceProviderKind)
         {
             case LVM_THIN:
-                apiCallRc.addEntries(deleteLVMThinPool(devicePaths, LvmThinDriverKind.VG_PREFIX + poolName, poolName));
+                apiCallRc.addEntries(deleteLVMThinPool(devicePaths, LvmThinDriverKind.VGName(poolName), LvmThinDriverKind.LVName(poolName)));
                 break;
             case LVM:
                 apiCallRc.addEntries(deleteLVMPool(devicePaths, poolName));

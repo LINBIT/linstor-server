@@ -8,7 +8,27 @@ import java.util.Set;
 
 public class LvmThinDriverKind implements StorageDriverKind
 {
-    public static final String VG_PREFIX = "linstor_";
+    private static final String VG_PREFIX = "linstor_";
+
+    public static String VGName(String poolName)
+    {
+        String vgName;
+        int sepIndex = poolName.indexOf('/');
+        if (sepIndex == -1)
+        {
+            vgName = VG_PREFIX + poolName;
+        }
+        else
+        {
+            vgName = poolName.substring(0, sepIndex);
+        }
+        return vgName;
+    }
+
+    public static String LVName(String poolName)
+    {
+        return poolName.substring(poolName.indexOf('/') + 1);
+    }
 
     @Override
     public String getDriverName()

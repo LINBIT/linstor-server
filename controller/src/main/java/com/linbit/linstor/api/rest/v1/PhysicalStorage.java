@@ -148,7 +148,7 @@ public class PhysicalStorage
         {
             case LVM_THIN:
                 map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME,
-                    LvmThinDriverKind.VG_PREFIX + pool + "/" + pool);
+                    LvmThinDriverKind.VGName(pool) + "/" + LvmThinDriverKind.LVName(pool));
                 break;
             case ZFS:
             case ZFS_THIN:
