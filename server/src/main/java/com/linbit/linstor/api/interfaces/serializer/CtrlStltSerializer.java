@@ -212,7 +212,9 @@ public interface CtrlStltSerializer extends CommonSerializer
             String poolName,
             boolean vdoEnabled,
             long vdoLogicalSizeKib,
-            long vdoSlabSizeKib
+            long vdoSlabSizeKib,
+            boolean sed,
+            String sedPassword
         );
 
         CtrlStltSerializerBuilder deleteDevicePool(

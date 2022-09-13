@@ -21,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.exos.ExosEnclosurePingTask;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -36,6 +37,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collections;
 import java.util.Map;
 
 import reactor.core.publisher.Flux;
@@ -194,7 +196,8 @@ public class CtrlStorPoolCrtApiCallHandler
                 responses,
                 LinStorObject.STORAGEPOOL,
                 storPoolPropsMap, ctrlPropsHelper.getProps(storPool),
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL,
+                Collections.singletonList(ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR)
             );
 
             updateStorPoolDfnMap(storPool);

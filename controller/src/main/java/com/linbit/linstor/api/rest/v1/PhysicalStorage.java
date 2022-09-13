@@ -2,11 +2,13 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPhysicalStorageApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolCrtApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.storage.LvmThinDriverKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -193,6 +195,13 @@ public class PhysicalStorage
             {
                 LinstorParsingUtils.asStorPoolName(createData.with_storage_pool.name);
             }
+            else if (createData.sed)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.MASK_PHYSICAL_DEVICE | ApiConsts.MASK_CRT | ApiConsts.MASK_ERROR,
+                        "SED option needs to be used in combination with a Linstor storage-pool."));
+            }
 
             final String poolName = CtrlPhysicalStorageApiCallHandler.getDevicePoolName(
                 createData.pool_name,
@@ -200,6 +209,7 @@ public class PhysicalStorage
             );
 
             final DeviceProviderKind deviceProviderKind = LinstorParsingUtils.asProviderKind(createData.provider_kind);
+            Map<String, String> storPoolProps = deviceProviderToStorPoolProperty(deviceProviderKind, poolName);
             Flux<ApiCallRc> responses = physicalStorageApiCallHandler.createDevicePool(
                 nodeName,
                 createData.device_paths,
@@ -208,12 +218,13 @@ public class PhysicalStorage
                 poolName,
                 createData.vdo_enable,
                 createData.vdo_logical_size_kib,
-                createData.vdo_slab_size_kib
+                createData.vdo_slab_size_kib,
+                createData.sed,
+                storPoolProps
             ).subscriberContext(requestHelper.createContext(ApiConsts.API_CREATE_DEVICE_POOL, request));
 
             if (createData.with_storage_pool != null)
             {
-                Map<String, String> storPoolProps = deviceProviderToStorPoolProperty(deviceProviderKind, poolName);
                 storPoolProps.putAll(createData.with_storage_pool.props);
                 Boolean externalLocking = createData.with_storage_pool.external_locking;
                 responses = responses.concatWith(

@@ -17,4 +17,6 @@ message MsgCreateDevicePool {
     string pool_name = 4;
     uint64 logical_size_kib = 5;
     VdoArguments vdo_arguments = 6;
+    bool sed = 7;
+    string sed_password = 8;
 }

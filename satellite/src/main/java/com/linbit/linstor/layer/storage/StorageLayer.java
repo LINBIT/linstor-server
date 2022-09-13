@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
@@ -19,6 +20,8 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
+import com.linbit.linstor.layer.storage.utils.SEDUtils;
 import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -44,6 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -55,19 +59,22 @@ public class StorageLayer implements DeviceLayer
     private final DeviceProviderMapper deviceProviderMapper;
     private final ExtCmdFactory extCmdFactory;
     private final Provider<DeviceHandler> resourceProcessorProvider;
+    private final StltSecurityObjects secObjs;
 
     @Inject
     public StorageLayer(
         @DeviceManagerContext AccessContext storDriverAccCtxRef,
         DeviceProviderMapper deviceProviderMapperRef,
         ExtCmdFactory extCmdFactoryRef,
-        Provider<DeviceHandler> resourceProcessorProviderRef
+        Provider<DeviceHandler> resourceProcessorProviderRef,
+        StltSecurityObjects secObjsRef
     )
     {
         storDriverAccCtx = storDriverAccCtxRef;
         deviceProviderMapper = deviceProviderMapperRef;
         extCmdFactory = extCmdFactoryRef;
         resourceProcessorProvider = resourceProcessorProviderRef;
+        secObjs = secObjsRef;
     }
 
     @Override
@@ -408,6 +415,29 @@ public class StorageLayer implements DeviceLayer
         if (update)
         {
             deviceProvider.update(storPool);
+        }
+
+        // check for locked SEDs
+        Optional<Props> sedNSProps = storPool.getProps(storDriverAccCtx).getNamespace(ApiConsts.NAMESPC_SED);
+        if (sedNSProps.isPresent())
+        {
+            byte[] masterKey = secObjs.getCryptKey();
+            if (masterKey == null)
+            {
+                Map<String, String> sedMap = SEDUtils.drivePasswordMap(sedNSProps.get().cloneMap());
+                for (String device : sedMap.keySet())
+                {
+                    try
+                    {
+                        // check if SEDs is really locked, blkid on the device
+                        LsBlkUtils.blkid(extCmdFactory.create(), device);
+                    }
+                    catch (StorageException stoExc)
+                    {
+                        throw new StorageException("SED drive '" + device + "' locked. Need master-passphrase!");
+                    }
+                }
+            }
         }
         LocalPropsChangePojo checkCfgPropsPojo = deviceProvider.checkConfig(storPool);
 

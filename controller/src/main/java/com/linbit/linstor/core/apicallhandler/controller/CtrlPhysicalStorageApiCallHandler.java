@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -8,6 +10,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
@@ -15,8 +18,10 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass.MsgPhysicalDevices;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -24,6 +29,7 @@ import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.locks.LockGuardFactory;
+import com.linbit.utils.Base64;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -45,6 +51,7 @@ import reactor.util.function.Tuples;
 @Singleton
 public class CtrlPhysicalStorageApiCallHandler
 {
+    private static final int SED_PASSWORD_LENGTH = 20;
     private final ErrorReporter errorReporter;
     private final Provider<AccessContext> peerAccCtx;
     private final ScopeRunner scopeRunner;
@@ -53,6 +60,8 @@ public class CtrlPhysicalStorageApiCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
 
     private final NodeRepository nodeRepository;
+    private final ModularCryptoProvider cryptoProvider;
+    private final EncryptionHelper encryptionHelper;
 
     @Inject
     public CtrlPhysicalStorageApiCallHandler(
@@ -62,7 +71,9 @@ public class CtrlPhysicalStorageApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        NodeRepository nodeRepositoryRef
+        NodeRepository nodeRepositoryRef,
+        ModularCryptoProvider cryptoProviderRef,
+        EncryptionHelper encryptionHelperRef
     )
     {
         this.errorReporter = errorReporterRef;
@@ -72,6 +83,8 @@ public class CtrlPhysicalStorageApiCallHandler
         this.ctrlStltSerializer = ctrlStltSerializerRef;
         this.ctrlApiDataLoader = ctrlApiDataLoaderRef;
         this.nodeRepository = nodeRepositoryRef;
+        this.cryptoProvider = cryptoProviderRef;
+        this.encryptionHelper = encryptionHelperRef;
     }
 
     public Flux<List<LsBlkEntry>> getPhysicalStorage(String nodeName)
@@ -181,7 +194,9 @@ public class CtrlPhysicalStorageApiCallHandler
         String poolName,
         boolean vdoEnabled,
         long vdoLogicalSizeKib,
-        long vdoSlabSize
+        long vdoSlabSize,
+        boolean sed,
+        Map<String, String> storagePoolProps
     )
     {
         return scopeRunner.fluxInTransactionlessScope(
@@ -195,7 +210,9 @@ public class CtrlPhysicalStorageApiCallHandler
                 poolName,
                 vdoEnabled,
                 vdoLogicalSizeKib,
-                vdoSlabSize
+                vdoSlabSize,
+                sed,
+                storagePoolProps
             )
         );
     }
@@ -208,7 +225,9 @@ public class CtrlPhysicalStorageApiCallHandler
         String poolNameArg,
         boolean vdoEnabled,
         long vdoLogicalSizeKib,
-        long vdoSlabSize
+        long vdoSlabSize,
+        boolean sed,
+        Map<String, String> storagePoolProps
     )
     {
         if (vdoEnabled && providerKindRef.usesThinProvisioning())
@@ -225,9 +244,22 @@ public class CtrlPhysicalStorageApiCallHandler
         }
 
         String poolName = getDevicePoolName(poolNameArg, devicePaths);
-
         try
         {
+            String sedPassword = "";
+            if (sed)
+            {
+                for (String device : devicePaths)
+                {
+                    final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
+                    sedPassword = secretGen.generateSecretString(SED_PASSWORD_LENGTH);
+                    byte[] sedEncBytePassword = encryptionHelper.encrypt(sedPassword);
+                    storagePoolProps.put(
+                        ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR + device,
+                        Base64.encode(sedEncBytePassword));
+                }
+            }
+
             response = node.getPeer(peerAccCtx.get())
                 .apiCall(
                     InternalApiConsts.API_CREATE_DEVICE_POOL,
@@ -239,7 +271,9 @@ public class CtrlPhysicalStorageApiCallHandler
                             poolName,
                             vdoEnabled,
                             vdoLogicalSizeKib,
-                            vdoSlabSize
+                            vdoSlabSize,
+                            sed,
+                            sedPassword
                         ).build()
                 )
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
@@ -252,6 +286,10 @@ public class CtrlPhysicalStorageApiCallHandler
                 "get peer from node",
                 ApiConsts.FAIL_ACC_DENIED_NODE
             );
+        }
+        catch (LinStorException exc)
+        {
+            throw new ApiException(exc);
         }
 
         return response;

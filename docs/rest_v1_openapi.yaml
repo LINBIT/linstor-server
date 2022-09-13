@@ -8127,6 +8127,10 @@ components:
           default: 0
         with_storage_pool:
           $ref: '#/components/schemas/PhysicalStorageStoragePoolCreate'
+        sed:
+          type: boolean
+          default: false
+          description: initialize SED with a random password
     EventMayPromoteChange:
       type: object
       description: may-promote-change

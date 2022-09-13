@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.protobuf;
 
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -7,6 +8,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.layer.storage.DevicePoolHandler;
+import com.linbit.linstor.layer.storage.utils.SEDUtils;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.javainternal.c2s.MsgCreateDevicePoolOuterClass.MsgCreateDevicePool;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -31,22 +34,28 @@ public class CreateDevicePool implements ApiCall
 {
     private static final String VDO_POOL_SUFFIX = "-vdobase";
     private final Provider<Peer> peerProvider;
-    private Provider<Long> apiCallId;
+    private final Provider<Long> apiCallId;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final DevicePoolHandler devicePoolHandler;
+    private final ErrorReporter errorReporter;
+    private final ExtCmdFactory extCmdFactory;
 
     @Inject
     public CreateDevicePool(
         Provider<Peer> peerProviderRef,
         @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
         CtrlStltSerializer ctrlStltSerializerRef,
-        DevicePoolHandler devicePoolHandlerRef
+        DevicePoolHandler devicePoolHandlerRef,
+        ErrorReporter errorReporterRef,
+        ExtCmdFactory extCmdFactoryRef
     )
     {
         this.peerProvider = peerProviderRef;
         this.apiCallId = apiCallIdRef;
         this.ctrlStltSerializer = ctrlStltSerializerRef;
         this.devicePoolHandler = devicePoolHandlerRef;
+        this.errorReporter = errorReporterRef;
+        this.extCmdFactory = extCmdFactoryRef;
     }
 
     @Override
@@ -63,7 +72,22 @@ public class CreateDevicePool implements ApiCall
 
         if (!apiCallRc.hasErrors())
         {
-            List<String> devicePaths = msgCreateDevicePool.getDevicePathsList();
+            final List<String> devicePaths = msgCreateDevicePool.getDevicePathsList();
+
+            // check if sed enabled and prepare sed device
+            if (msgCreateDevicePool.getSed())
+            {
+                for (String devicePath : devicePaths)
+                {
+                    SEDUtils.initializeSED(
+                        extCmdFactory.create(),
+                        errorReporter,
+                        apiCallRc,
+                        devicePath,
+                        msgCreateDevicePool.getSedPassword());
+                }
+            }
+
             ArrayList<String> lvmDevicePaths = new ArrayList<>(devicePaths);
             if (msgCreateDevicePool.hasVdoArguments())
             {

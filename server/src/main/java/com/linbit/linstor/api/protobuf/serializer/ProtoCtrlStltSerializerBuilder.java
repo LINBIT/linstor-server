@@ -1185,7 +1185,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         String poolName,
         boolean vdoEnabled,
         long vdoLogicalSizeKib,
-        long vdoSlabSize
+        long vdoSlabSize,
+        boolean sed,
+        String sedPassword
     )
     {
         try
@@ -1195,7 +1197,9 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setProviderKind(asProviderType(providerKindRef))
                 .setRaidLevel(MsgCreateDevicePool.RaidLevel.valueOf(raidLevel.name()))
                 .setPoolName(poolName)
-                .setLogicalSizeKib(vdoLogicalSizeKib);
+                .setLogicalSizeKib(vdoLogicalSizeKib)
+                .setSed(sed)
+                .setSedPassword(sedPassword);
 
             if (vdoEnabled)
             {

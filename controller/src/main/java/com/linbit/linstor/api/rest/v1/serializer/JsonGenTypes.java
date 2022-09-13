@@ -1525,6 +1525,7 @@ public class JsonGenTypes
         public long vdo_slab_size_kib = 0;
         public long vdo_logical_size_kib = 0;
         public PhysicalStorageStoragePoolCreate with_storage_pool;
+        public boolean sed = false;
     }
 
     /**

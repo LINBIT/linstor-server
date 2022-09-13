@@ -1,11 +1,14 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
@@ -22,6 +25,7 @@ import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.Base64;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
@@ -50,6 +54,8 @@ public class CtrlStorPoolListApiCallHandler
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
     private final Provider<AccessContext> peerAccCtx;
+    private final DecryptionHelper decryptionHelper;
+    private final CtrlSecurityObjects secObjs;
 
     @Inject
     public CtrlStorPoolListApiCallHandler(
@@ -57,7 +63,9 @@ public class CtrlStorPoolListApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        DecryptionHelper decryptionHelperRef,
+        CtrlSecurityObjects secObjsRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -65,6 +73,8 @@ public class CtrlStorPoolListApiCallHandler
         freeCapacityFetcher = freeCapacityFetcherRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
         peerAccCtx = peerAccCtxRef;
+        decryptionHelper = decryptionHelperRef;
+        secObjs = secObjsRef;
     }
 
     public Flux<List<StorPoolApi>> listStorPools(
@@ -117,6 +127,43 @@ public class CtrlStorPoolListApiCallHandler
         try (LockGuard ignored = lockGuardFactory.build(READ, STOR_POOL_DFN_MAP))
         {
             return assembleList(nodesFilter, storPoolsFilter, propFilters, null);
+        }
+    }
+
+    /**
+     * Change listed props to only show user allowed things
+     *
+     * Currently, SED passwords will be masked until the master-passphrase is entered.
+     *
+     * @param props
+     */
+    private void patchStorPoolProps(Map<String, String> props)
+    {
+        for (String key : props.keySet())
+        {
+            if (key.startsWith(ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR))
+            {
+                byte[] masterKey = secObjs.getCryptKey();
+                if (masterKey == null)
+                {
+                    props.put(key, "***MASTER-PASSPHRASE-REQUIRED***");
+                }
+                else
+                {
+                    String sedEncPassword = props.get(key);
+                    byte[] sedByteEncPassword = Base64.decode(sedEncPassword);
+                    try
+                    {
+                        byte[] decryptedKey = decryptionHelper.decrypt(masterKey, sedByteEncPassword);
+                        String sedPassword = new String(decryptedKey);
+                        props.put(key, sedPassword);
+                    }
+                    catch (LinStorException linExc)
+                    {
+                        props.put(key, "***ERROR-DECRYPTING-PASSWORD***");
+                    }
+                }
+            }
         }
     }
 
@@ -188,15 +235,15 @@ public class CtrlStorPoolListApiCallHandler
                                     }
 
                                     // fullSyncId and updateId null, as they are not going to be serialized anyway
-                                    storPools.add(
-                                        storPool.getApiData(
-                                            totalCapacity,
-                                            freeCapacity,
-                                            peerAccCtx.get(),
-                                            null,
-                                            null
-                                        )
+                                    StorPoolApi apiData = storPool.getApiData(
+                                        totalCapacity,
+                                        freeCapacity,
+                                        peerAccCtx.get(),
+                                        null,
+                                        null
                                     );
+                                    patchStorPoolProps(apiData.getStorPoolProps());
+                                    storPools.add(apiData);
                                 }
                             }
                         }

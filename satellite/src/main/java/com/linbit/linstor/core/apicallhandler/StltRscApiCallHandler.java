@@ -661,7 +661,7 @@ class StltRscApiCallHandler
 
             layerRscDataMerger.mergeLayerData(localRsc, rscRawData.getLayerData(), false);
 
-            cryptHelper.decryptAllNewLuksVlmKeys(false);
+            cryptHelper.decryptVolumesAndDrives(false);
 
             transMgrProvider.get().commit();
 

@@ -10,6 +10,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -28,6 +29,7 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -64,6 +66,7 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
     private final NameShortener exosNameShortener;
     private final ExosMappingManager exosMapMgr;
+    private final CtrlSecurityObjects secObjs;
 
     @Inject
     RscStorageLayerHelper(
@@ -74,7 +77,8 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         CtrlStorPoolResolveHelper storPoolResolveHelperRef,
         @Named(NameShortener.EXOS) NameShortener exosNameShortenerRef,
-        ExosMappingManager exosMapMgrRef
+        ExosMappingManager exosMapMgrRef,
+        CtrlSecurityObjects securityObjectsRef
     )
     {
         super(
@@ -92,6 +96,7 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         storPoolResolveHelper = storPoolResolveHelperRef;
         exosNameShortener = exosNameShortenerRef;
         exosMapMgr = exosMapMgrRef;
+        secObjs = securityObjectsRef;
     }
 
     @Override
@@ -377,6 +382,25 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
         }
     }
 
+    private boolean ignoreLockedSEDResources(StorageRscData<Resource> rscData)
+        throws AccessDeniedException, DatabaseException
+    {
+        boolean ret = false;
+        for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
+        {
+            Props storPoolProps = vlmData.getStorPool().getProps(apiCtx);
+            if (storPoolProps.getNamespace(ApiConsts.NAMESPC_SED).isPresent() && !secObjs.areAllSet())
+            {
+                CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();
+                ctrlRscLayerDataFactory.getLayerHelperByKind(DeviceLayerKind.STORAGE)
+                    .setIgnoreReason(rscData, "Sed drive locked", true, false, false);
+                ret = true;
+                break;
+            }
+        }
+        return ret;
+    }
+
     @Override
     protected boolean recalculateVolatilePropertiesImpl(
         StorageRscData<Resource> rscDataRef,
@@ -385,12 +409,15 @@ class RscStorageLayerHelper extends AbsRscLayerHelper<
     )
         throws AccessDeniedException, DatabaseException
     {
-        boolean changed = false;
         Resource rsc = rscDataRef.getAbsResource();
 
         Collection<VlmProviderObject<Resource>> vlmLayerObjects = rscDataRef.getVlmLayerObjects().values();
 
+        // ignore SED drives if master-passphrase not entered
+        boolean changed = ignoreLockedSEDResources(rscDataRef);
+
         // first run some checks depending on the storageProvider.
+        if (!changed)
         {
             Set<DeviceProviderKind> providerKindSet = new HashSet<>();
             for (VlmProviderObject<Resource> vlmData : vlmLayerObjects)

@@ -6,8 +6,10 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -28,6 +30,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.locks.LockGuardFactory;
+import com.linbit.utils.Base64;
 
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescription;
 import static com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper.getStorPoolDescriptionInline;
@@ -41,6 +44,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -60,6 +64,8 @@ public class CtrlStorPoolApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
+    private final CtrlSecurityObjects securityObjects;
+    private final EncryptionHelper encryptionHelper;
 
     @Inject
     public CtrlStorPoolApiCallHandler(
@@ -71,7 +77,9 @@ public class CtrlStorPoolApiCallHandler
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        CtrlSecurityObjects ctrlSecurityObjects,
+        EncryptionHelper encryptionHelperRef
     )
     {
         ctrlTransactionHelper = ctrlTransactionHelperRef;
@@ -83,6 +91,8 @@ public class CtrlStorPoolApiCallHandler
         peerAccCtx = peerAccCtxRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
+        securityObjects = ctrlSecurityObjects;
+        encryptionHelper = encryptionHelperRef;
     }
 
     public Flux<ApiCallRc> modify(
@@ -159,12 +169,42 @@ public class CtrlStorPoolApiCallHandler
                 ApiConsts.MASK_STOR_POOL
             );
 
+            for (Map.Entry<String, String> entry : overrideProps.entrySet())
+            {
+                if (entry.getKey().startsWith(ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR))
+                {
+                    if (!storPool.getNode().getPeer(peerAccCtx.get()).isConnected(true))
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                            ApiConsts.MASK_ERROR | ApiConsts.MASK_STOR_POOL | ApiConsts.FAIL_INVLD_PROP,
+                            "Cannot change SED password while node not connected.",
+                            true
+                        ));
+                    }
+
+                    if (securityObjects.getCryptKey() == null)
+                    {
+                        throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                            ApiConsts.MASK_ERROR | ApiConsts.MASK_STOR_POOL | ApiConsts.FAIL_INVLD_PROP,
+                            "Need master-passphrase to change SED password.",
+                            true
+                        ));
+                    }
+
+                    // on the fly encrypt new SED password
+                    byte[] sedEncBytePassword = encryptionHelper.encrypt(entry.getValue());
+                    overrideProps.put(entry.getKey(),
+                        Base64.encode(sedEncBytePassword));
+                }
+            }
+
             notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,
                 LinStorObject.STORAGEPOOL,
                 overrideProps,
                 props,
-                ApiConsts.FAIL_ACC_DENIED_STOR_POOL
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL,
+                Collections.singletonList(ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR)
             ) || notifyStlts;
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs, LinStorObject.STORAGEPOOL, props, deletePropKeys, deletePropNamespaces) || notifyStlts;
@@ -296,7 +336,7 @@ public class CtrlStorPoolApiCallHandler
                                 nodeNameStr
                             )
                     )
-                    .setDetails("Volumes / snapshot-volumes that are still using the storage pool: " + volListSb.toString())
+                    .setDetails("Volumes / snapshot-volumes that are still using the storage pool: " + volListSb)
                     .setCorrection("Delete the listed volumes and snapshot-volumes first.")
                     .build()
                 );

@@ -1,11 +1,13 @@
 package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
@@ -13,6 +15,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
+import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -26,6 +29,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
+import com.linbit.linstor.layer.storage.utils.SEDUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -61,6 +65,9 @@ class StltStorPoolApiCallHandler
     private final FreeSpaceMgrSatelliteFactory freeSpaceMgrFactory;
     private final StltApiCallHandlerUtils apiCallHandlerUtils;
     private final CtrlStltSerializer ctrlStltSerializer;
+    private final ExtCmdFactory extCmdFactory;
+    private final DecryptionHelper decryptionHelper;
+    private final StltSecurityObjects securityObjects;
 
     @Inject
     StltStorPoolApiCallHandler(
@@ -74,7 +81,10 @@ class StltStorPoolApiCallHandler
         Provider<TransactionMgr> transMgrProviderRef,
         FreeSpaceMgrSatelliteFactory freeSpaceMgrFactoryRef,
         StltApiCallHandlerUtils apiCallHandlerUtilsRef,
-        CtrlStltSerializer ctrlStltSerializerRef
+        CtrlStltSerializer ctrlStltSerializerRef,
+        ExtCmdFactory extCmdFactoryRef,
+        DecryptionHelper decryptionHelperRef,
+        StltSecurityObjects securityObjectsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -88,6 +98,9 @@ class StltStorPoolApiCallHandler
         freeSpaceMgrFactory = freeSpaceMgrFactoryRef;
         apiCallHandlerUtils = apiCallHandlerUtilsRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
+        extCmdFactory = extCmdFactoryRef;
+        decryptionHelper = decryptionHelperRef;
+        securityObjects = securityObjectsRef;
     }
     /**
      * We requested an update to a storPool and the controller is telling us that the requested storPool
@@ -156,6 +169,29 @@ class StltStorPoolApiCallHandler
                 checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
 
                 Props storPoolProps = storPool.getProps(apiCtx);
+                Map<String, String> oldSEDMap = SEDUtils.drivePasswordMap(storPoolProps.cloneMap());
+                Map<String, String> newSEDMap = SEDUtils.drivePasswordMap(storPoolRaw.getStorPoolProps());
+                for (String sedDevice : oldSEDMap.keySet())
+                {
+                    String oldPassEnc = oldSEDMap.get(sedDevice);
+                    if (newSEDMap.containsKey(sedDevice) && !newSEDMap.get(sedDevice).equals(oldPassEnc))
+                    {
+                        byte[] masterKey = securityObjects.getCryptKey();
+                        if (masterKey != null)
+                        {
+                            // SED password changed
+                            String newPassEnc = newSEDMap.get(sedDevice);
+                            String oldPass = decryptionHelper.decryptB64ToString(masterKey, oldPassEnc);
+                            String newPass = decryptionHelper.decryptB64ToString(masterKey, newPassEnc);
+                            SEDUtils.changeSEDPassword(
+                                extCmdFactory.create(), errorReporter, sedDevice, oldPass, newPass);
+                        }
+                        else
+                        {
+                            throw new LinStorException("Master passphrase missing, cannot change SED password.");
+                        }
+                    }
+                }
                 storPoolProps.map().putAll(storPoolRaw.getStorPoolProps());
                 storPoolProps.keySet().retainAll(storPoolRaw.getStorPoolProps().keySet());
 

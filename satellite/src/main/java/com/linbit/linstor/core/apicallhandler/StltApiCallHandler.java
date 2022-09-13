@@ -416,10 +416,7 @@ public class StltApiCallHandler
                 Node localNode = controllerPeerConnector.getLocalNode();
                 if (localNode != null)
                 {
-                    if (deviceManager != null)
-                    {
-                        deviceManager.fullSyncApplied(localNode);
-                    }
+                    deviceManager.fullSyncApplied(localNode);
                 }
                 else
                 {
@@ -432,7 +429,7 @@ public class StltApiCallHandler
                 {
                     stltSecObj.setCryptKey(cryptKey, cryptHash, cryptSalt, encCryptKey);
 
-                    vlmDfnHandler.decryptAllNewLuksVlmKeys(true);
+                    vlmDfnHandler.decryptVolumesAndDrives(true);
                 }
 
                 whiteListPropsReconfigurator.reconfigure();
@@ -1189,7 +1186,7 @@ public class StltApiCallHandler
             {
                 stltSecObj.setCryptKey(cryptKey, hash, salt, encKey);
 
-                vlmDfnHandler.decryptAllNewLuksVlmKeys(true);
+                vlmDfnHandler.decryptVolumesAndDrives(true);
             }
         }
     }
