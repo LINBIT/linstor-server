@@ -16,7 +16,6 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -25,7 +24,6 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -48,6 +46,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.SortedSet;
@@ -68,6 +67,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
 
     private static final long TASK_TIMEOUT = 10_000;
 
+    private static final HashSet<String> DO_NOT_CLEANUP_TYPES = new HashSet<>();
+
     private final AccessContext sysCtx;
     private final ErrorReporter errorReporter;
     private final CtrlRscToggleDiskApiCallHandler toggleDisklHandler;
@@ -87,7 +88,12 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscDeleteApiCallHandler rscDeleteApiCallHandler;
 
-    private final CtrlTransactionHelper ctrlTransactionHelper;
+
+    static
+    {
+        DO_NOT_CLEANUP_TYPES.add(Resource.DiskfulBy.USER.getValue());
+        DO_NOT_CLEANUP_TYPES.add(Resource.DiskfulBy.AUTO_PLACER.getValue());
+    }
 
     @Inject
     public AutoDiskfulTask(
@@ -103,8 +109,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         EventWaiter eventWaiterRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlRscDeleteApiCallHandler rscDeleteApiCallHandlerRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef
+        CtrlRscDeleteApiCallHandler rscDeleteApiCallHandlerRef
     )
     {
         sysCtx = sysCtxRef;
@@ -120,7 +125,6 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         rscDeleteApiCallHandler = rscDeleteApiCallHandlerRef;
-        ctrlTransactionHelper = ctrlTransactionHelperRef;
     }
 
     /**
@@ -355,7 +359,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                     if (autoPlace == null || autoPlace.isEmpty())
                     {
                         errorReporter.logError(
-                            "Failed to automatically make %s diskful as autoplacer failed to find suitable storage pool",
+                            "Failed to automatically make %s diskful as autoplacer failed to find suitable " +
+                                "storage pool",
                             CtrlRscApiCallHandler.getRscDescription(rsc)
                         );
                     }
@@ -369,7 +374,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                             null,
                             null, // TODO: could be a bad idea if not all layers from peer-resources are supported by
                                   // the local node...
-                            false
+                            false,
+                            Resource.DiskfulBy.AUTO_DISKFUL
                         )
                             .concatWith(removeExcessFlux(rsc))
                             .subscriberContext(
@@ -417,7 +423,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         );
     }
 
-    private Flux<ApiCallRc> removeExcessFluxInTransaction(Resource rsc) throws InvalidKeyException, AccessDeniedException
+    private Flux<ApiCallRc> removeExcessFluxInTransaction(Resource rsc)
+        throws InvalidKeyException, AccessDeniedException
     {
         Flux<ApiCallRc> retFlux;
         Resource excessRsc = getExcessRsc(rsc);
@@ -457,7 +464,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         /*
          * Instead of asking the not yet implemented auto-unplacer, we simply create the following unplacement rule:
          * * only unplace if we have already >= replica-count diskful resources
-         * * only unplace resources that became diskful via previous auto-diskful events
+         * * only unplace resources that became diskful via previous auto-diskful or make-available events
          */
 
         ResourceDefinition rscDfn = rscRef.getResourceDefinition();
@@ -468,30 +475,23 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
-                if (!rsc.equals(rscRef) && rsc.getStateFlags().isSet(sysCtx, Resource.Flags.AUTO_DISKFUL))
+                if (!rsc.equals(rscRef))
                 {
-                    excessRsc = rsc;
-                    break;
+                    String createdBy = rsc.getProps(sysCtx).getProp(ApiConsts.KEY_RSC_DISKFUL_BY);
+                    boolean explicitlyAllowed = "true".equalsIgnoreCase(
+                        getPrioProps(rsc).getProp(
+                            ApiConsts.KEY_DRBD_AUTO_DISKFUL_ALLOW_CLEANUP,
+                            ApiConsts.NAMESPC_DRBD_OPTIONS
+                        )
+                    );
+                    if ((createdBy != null && !DO_NOT_CLEANUP_TYPES.contains(createdBy)) || explicitlyAllowed)
+                    {
+                        excessRsc = rsc;
+                        break;
+                    }
                 }
             }
         }
-        /*
-         * Finally, for the second rule, we mark the current resource (which is being toggle-disked)
-         */
-        try
-        {
-            rscRef.getStateFlags().enableFlags(sysCtx, Resource.Flags.AUTO_DISKFUL);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        catch (DatabaseException exc)
-        {
-            errorReporter.reportError(exc);
-        }
-
-        ctrlTransactionHelper.commit();
 
         return excessRsc;
     }

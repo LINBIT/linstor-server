@@ -436,7 +436,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                 Collections.emptyList(),
                 null,
                 thinFreeCapacities,
-                layerStackStrList
+                layerStackStrList,
+                Resource.DiskfulBy.AUTO_PLACER
             );
             Resource rsc = createdRsc.objB.extractApiCallRc(responses);
             autoFlux.addAll(createdRsc.objA);
@@ -472,7 +473,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                                 Collections.emptyList(),
                                 null,
                                 thinFreeCapacities,
-                                layerStackStrList
+                                layerStackStrList,
+                                null
                         );
                         deployedResources.add(createdRsc.objB.extractApiCallRc(responses));
                         autoFlux.addAll(createdRsc.objA);

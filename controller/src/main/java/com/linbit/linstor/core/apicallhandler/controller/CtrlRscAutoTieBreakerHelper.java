@@ -188,7 +188,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                     Collections.emptyList(),
                                     null,
                                     Collections.emptyMap(),
-                                    Collections.emptyList()
+                                    Collections.emptyList(),
+                                    null
                                 ).objB.extractApiCallRc(ctx.responses);
 
                                 ctx.responses.addEntries(
@@ -298,7 +299,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         null,
                         null,
                         null,
-                        true
+                        true,
+                        null
                     ).concatWith(setTiebreakerFlag(rsc))
                 );
 

@@ -17,6 +17,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCal
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
+import com.linbit.linstor.core.objects.Resource;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -198,7 +199,10 @@ public class Resources
                 .map(resourceCreateData -> new ResourceWithPayload(resourceCreateData, rscName))
                 .collect(Collectors.toList());
 
-            Flux<ApiCallRc> flux = ctrlRscCrtApiCallHandler.createResource(rscWithPayloadApiList)
+            Flux<ApiCallRc> flux = ctrlRscCrtApiCallHandler.createResource(
+                rscWithPayloadApiList,
+                Resource.DiskfulBy.USER
+            )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_RSC, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
@@ -338,7 +342,8 @@ public class Resources
             disklessPool,
             null,
             null,
-            true
+            true,
+            null
         )
             .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
@@ -382,7 +387,8 @@ public class Resources
                 storagePool,
                 null,
                 layerList,
-                false
+                false,
+                Resource.DiskfulBy.USER
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
@@ -433,7 +439,8 @@ public class Resources
                 storagePool,
                 fromNode,
                 layerList,
-                false
+                false,
+                Resource.DiskfulBy.USER
             )
                 .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 

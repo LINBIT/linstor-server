@@ -255,7 +255,8 @@ public class CtrlRscMakeAvailableApiCallHandler
                         sp.getName().displayValue,
                         null,
                         layerStackRef,
-                        false
+                        false,
+                        Resource.DiskfulBy.MAKE_AVAILABLE
                     );
                 }
                 else
@@ -296,7 +297,10 @@ public class CtrlRscMakeAvailableApiCallHandler
                                 LockObj.RSC_DFN_MAP,
                                 LockObj.STOR_POOL_DFN_MAP
                             ),
-                            () -> ctrlRscCrtApiCallHandler.createResource(Collections.singletonList(createRscPojo))
+                            () -> ctrlRscCrtApiCallHandler.createResource(
+                                Collections.singletonList(createRscPojo),
+                                Resource.DiskfulBy.MAKE_AVAILABLE
+                            )
                         )
                     )
                 ).onErrorResume(
@@ -705,7 +709,10 @@ public class CtrlRscMakeAvailableApiCallHandler
             null
         );
         ctrlTransactionHelper.commit();
-        return ctrlRscCrtApiCallHandler.createResource(Collections.singletonList(createRscPojo));
+        return ctrlRscCrtApiCallHandler.createResource(
+            Collections.singletonList(createRscPojo),
+            Resource.DiskfulBy.MAKE_AVAILABLE
+        );
     }
 
     private boolean hasDrbdDiskfulPeer(ResourceDefinition rscDfnRef)

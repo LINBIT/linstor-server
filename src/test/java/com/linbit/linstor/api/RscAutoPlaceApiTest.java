@@ -2396,7 +2396,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     Collections.emptyList(),
                     null,
                     null,
-                    Collections.emptyList()
+                    Collections.emptyList(),
+                    Resource.DiskfulBy.USER
                 );
             }
 

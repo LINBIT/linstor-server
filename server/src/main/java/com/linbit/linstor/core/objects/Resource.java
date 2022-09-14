@@ -597,6 +597,26 @@ public class Resource extends AbsResource<Resource>
         }
     }
 
+    public enum DiskfulBy
+    {
+        USER("user"),
+        AUTO_PLACER("auto-placer"),
+        AUTO_DISKFUL("auto-diskful"),
+        MAKE_AVAILABLE("make-available");
+
+        private String value;
+
+        DiskfulBy(String valueRef)
+        {
+            value = valueRef;
+        }
+
+        public String getValue()
+        {
+            return value;
+        }
+    }
+
     @Override
     public ResourceDefinition getResourceDefinition()
     {

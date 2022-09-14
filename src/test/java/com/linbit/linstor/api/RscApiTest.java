@@ -10,6 +10,7 @@ import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
@@ -223,7 +224,8 @@ public class RscApiTest extends ApiTestBase
                             )
                             .build()
                     )
-                )
+                ),
+                Resource.DiskfulBy.USER
             )
             .subscriberContext(subscriberContext()).toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;

@@ -183,7 +183,8 @@ public class CtrlRscCrtApiHelper
         List<? extends VolumeApi> vlmApiList,
         Integer nodeIdInt,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        List<String> layerStackStrListRef
+        List<String> layerStackStrListRef,
+        Resource.DiskfulBy diskfulByRef
     )
     {
         long adjustedFlags = flags;
@@ -252,7 +253,8 @@ public class CtrlRscCrtApiHelper
                         storPoolNameStr,
                         null,
                         layerStackStrListRef,
-                        false
+                        false,
+                        diskfulByRef
                     )
                 );
             }

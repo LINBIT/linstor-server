@@ -1601,7 +1601,8 @@ public class CtrlNodeApiCallHandler
                                         sp.getName().displayValue,
                                         nodeNameEvacuateSourceStrRef,
                                         null,
-                                        false
+                                        false,
+                                        Resource.DiskfulBy.AUTO_PLACER
                                     );
                                 }
                             }
@@ -1623,7 +1624,10 @@ public class CtrlNodeApiCallHandler
                                     null
                                 );
                                 createOrToggleDiskFlux = ctrlRscCrtApiCallHandler
-                                    .createResource(Collections.singletonList(createRscPojo));
+                                    .createResource(
+                                        Collections.singletonList(createRscPojo),
+                                        Resource.DiskfulBy.AUTO_PLACER
+                                    );
                             }
                             fluxList.add(
                                 createOrToggleDiskFlux.concatWith(
@@ -1700,7 +1704,9 @@ public class CtrlNodeApiCallHandler
         long rscSize = CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerCtx);
         if (!disklessRscSet.isEmpty())
         {
-            List<String> disklessNodeNameStrList = disklessRscSet.stream().map(rsc -> rsc.getNode().getName().displayValue).collect(Collectors.toList());
+            List<String> disklessNodeNameStrList = disklessRscSet.stream()
+                .map(rsc -> rsc.getNode().getName().displayValue)
+                .collect(Collectors.toList());
             storPoolSet = autoplacer.autoPlace(
                 AutoSelectFilterPojo.merge(
                     new AutoSelectFilterBuilder()

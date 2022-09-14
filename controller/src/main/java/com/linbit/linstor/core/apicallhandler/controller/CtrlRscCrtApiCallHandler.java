@@ -21,6 +21,7 @@ import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceWithPayloadApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.DiskfulBy;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -99,7 +100,8 @@ public class CtrlRscCrtApiCallHandler
     }
 
     public Flux<ApiCallRc> createResource(
-        List<ResourceWithPayloadApi> rscApiList
+        List<ResourceWithPayloadApi> rscApiList,
+        DiskfulBy diskfulByRef
     )
     {
         List<String> rscNames = rscApiList.stream()
@@ -140,7 +142,7 @@ public class CtrlRscCrtApiCallHandler
                             LockType.WRITE,
                             LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP
                         ),
-                        () -> createResourceInTransaction(rscApiList, context, thinFreeCapacities)
+                        () -> createResourceInTransaction(rscApiList, context, thinFreeCapacities, diskfulByRef)
                     )
                     .transform(responses -> responseConverter.reportingExceptions(context, responses)));
         }
@@ -150,12 +152,14 @@ public class CtrlRscCrtApiCallHandler
 
     /**
      * @param rscApiList Resources to create; at least one; all must belong to the same resource definition
+     * @param diskfulByRef
      * @param layerStackStrListRef
      */
     private Flux<ApiCallRc> createResourceInTransaction(
         List<ResourceWithPayloadApi> rscApiList,
         ResponseContext context,
-        Map<StorPool.Key, Long> thinFreeCapacities
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        DiskfulBy diskfulByRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -176,7 +180,8 @@ public class CtrlRscCrtApiCallHandler
                 rscapi.getVlmList(),
                 rscWithPayloadApi.getDrbdNodeId(),
                 thinFreeCapacities,
-                rscWithPayloadApi.getLayerStack()
+                rscWithPayloadApi.getLayerStack(),
+                diskfulByRef
             );
 
             autoFlux.addAll(createdRsc.objA);

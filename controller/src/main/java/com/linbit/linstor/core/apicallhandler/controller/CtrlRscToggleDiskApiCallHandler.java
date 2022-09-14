@@ -28,6 +28,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Resource.DiskfulBy;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -44,6 +45,8 @@ import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.layer.resource.RscDrbdLayerHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -218,7 +221,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String storPoolNameStr,
         String migrateFromNodeNameStr,
         List<String> layerListRef,
-        boolean removeDisk
+        boolean removeDisk,
+        Resource.DiskfulBy diskfulByRef
     )
     {
         ResponseContext context = makeRscContext(
@@ -238,6 +242,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     migrateFromNodeNameStr,
                     layerListRef,
                     removeDisk,
+                    diskfulByRef,
                     context
                 )
             )
@@ -251,6 +256,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String migrateFromNodeNameStr,
         List<String> layerListStr,
         boolean removeDisk,
+        Resource.DiskfulBy diskfulByRef,
         ResponseContext context
     )
     {
@@ -381,6 +387,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             // that means we can only update the storage layer if the deviceManager already got rid
             // of the actual volume(s)
 
+            removeDiskfulByProp(rsc);
         }
         else
         {
@@ -439,6 +446,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             );
 
             ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
+
+            setDiskfulByProp(rsc, diskfulByRef);
         }
 
         try
@@ -1105,6 +1114,54 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             throw new ApiAccessDeniedException(
                 exc,
                 "setting flags " + FlagsHelper.toStringList(Resource.Flags.class, FlagsHelper.getBits(flags)),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private void removeDiskfulByProp(Resource rscRef)
+    {
+        try
+        {
+            rscRef.getProps(peerAccCtx.get()).removeProp(ApiConsts.KEY_RSC_DISKFUL_BY);
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "removing property 'DiskfulBy'",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private void setDiskfulByProp(Resource rscRef, DiskfulBy diskfulByRef)
+    {
+        try
+        {
+            rscRef.getProps(peerAccCtx.get()).setProp(ApiConsts.KEY_RSC_DISKFUL_BY, diskfulByRef.getValue());
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "removing property 'DiskfulBy'",
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
         }
