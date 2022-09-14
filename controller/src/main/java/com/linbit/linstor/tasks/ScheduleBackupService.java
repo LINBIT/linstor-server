@@ -346,7 +346,7 @@ public class ScheduleBackupService implements SystemService
     ) throws AccessDeniedException
     {
         if (
-            running && schedule != null && remote != null && rscDfn != null && rscDfn.notDeletedDiskfulCount(accCtx) > 0
+            running && schedule != null && remote != null && rscDfn != null && rscDfn.getNotDeletedDiskfulCount(accCtx) > 0
         )
         {
             boolean isNew = true;

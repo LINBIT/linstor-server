@@ -16,6 +16,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscToggleDiskApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -24,6 +25,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -36,17 +38,16 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
-import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.SortedSet;
@@ -63,6 +64,8 @@ import reactor.util.context.Context;
 @Singleton
 public class AutoDiskfulTask implements TaskScheduleService.Task
 {
+    private static final long MINUTES_TO_MS = 1000 * 60;
+
     private static final long TASK_TIMEOUT = 10_000;
 
     private final AccessContext sysCtx;
@@ -84,6 +87,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
     private final LockGuardFactory lockGuardFactory;
     private final CtrlRscDeleteApiCallHandler rscDeleteApiCallHandler;
 
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+
     @Inject
     public AutoDiskfulTask(
         @SystemContext AccessContext sysCtxRef,
@@ -98,7 +103,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         EventWaiter eventWaiterRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlRscDeleteApiCallHandler rscDeleteApiCallHandlerRef
+        CtrlRscDeleteApiCallHandler rscDeleteApiCallHandlerRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef
     )
     {
         sysCtx = sysCtxRef;
@@ -114,6 +120,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         rscDeleteApiCallHandler = rscDeleteApiCallHandlerRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
     }
 
     /**
@@ -157,7 +164,8 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                         }
                         else
                         {
-                            long toggleDiskAfter = Long.parseLong(autoDiskful) * 1000 * 60; // property is in minutes
+                            // property is in minutes
+                            long toggleDiskAfter = Long.parseLong(autoDiskful) * MINUTES_TO_MS;
                             if (cfg != null)
                             {
                                 /*
@@ -443,32 +451,49 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         return retFlux;
     }
 
-    private Resource getExcessRsc(Resource rscRef) throws InvalidKeyException, AccessDeniedException
+    private @Nullable Resource getExcessRsc(Resource rscRef) throws InvalidKeyException, AccessDeniedException
     {
-        ResourceDefinition rscDfn = rscRef.getDefinition();
+        Resource excessRsc = null;
+        /*
+         * Instead of asking the not yet implemented auto-unplacer, we simply create the following unplacement rule:
+         * * only unplace if we have already >= replica-count diskful resources
+         * * only unplace resources that became diskful via previous auto-diskful events
+         */
 
-        Set<Resource> rscsToIgnore = new HashSet<>();
-        rscsToIgnore.add(rscRef);
-
-        Iterator<Resource> rscIt = rscDfn.iterateResource(sysCtx);
-        while (rscIt.hasNext())
+        ResourceDefinition rscDfn = rscRef.getResourceDefinition();
+        Integer replicaCount = rscDfn.getResourceGroup().getAutoPlaceConfig().getReplicaCount(sysCtx);
+        if (replicaCount != null && replicaCount < rscDfn.getNotDeletedDiskfulCount(sysCtx))
         {
-            Resource rsc = rscIt.next();
-            String cleanupAllowed = getPrioProps(rsc).getProp(
-                ApiConsts.KEY_DRBD_AUTO_DISKFUL_ALLOW_CLEANUP,
-                ApiConsts.NAMESPC_DRBD_OPTIONS
-            );
-            if (
-                !LayerRscUtils.getLayerStack(rsc, sysCtx).contains(DeviceLayerKind.DRBD) ||
-                rsc.getStateFlags().isSet(sysCtx, Resource.Flags.DRBD_DISKLESS) ||
-                ApiConsts.VAL_FALSE.equalsIgnoreCase(cleanupAllowed) // cleanupAllowed might be null
-            )
+            Iterator<Resource> rscIt = rscDfn.iterateResource(sysCtx);
+            while (rscIt.hasNext())
             {
-                rscsToIgnore.add(rsc);
+                Resource rsc = rscIt.next();
+                if (!rsc.equals(rscRef) && rsc.getStateFlags().isSet(sysCtx, Resource.Flags.AUTO_DISKFUL))
+                {
+                    excessRsc = rsc;
+                    break;
+                }
             }
         }
+        /*
+         * Finally, for the second rule, we mark the current resource (which is being toggle-disked)
+         */
+        try
+        {
+            rscRef.getStateFlags().enableFlags(sysCtx, Resource.Flags.AUTO_DISKFUL);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            errorReporter.reportError(exc);
+        }
 
-        return autoplacer.autoUnplace(rscDfn, rscsToIgnore);
+        ctrlTransactionHelper.commit();
+
+        return excessRsc;
     }
 
     private long getSize(ResourceDefinition rscDfnRef) throws AccessDeniedException

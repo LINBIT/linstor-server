@@ -252,7 +252,7 @@ public class ResourceDefinition extends BaseTransactionObject
         return resourceMap.size();
     }
 
-    public int notDeletedDiskfulCount(AccessContext accCtx) throws AccessDeniedException
+    public int getNotDeletedDiskfulCount(AccessContext accCtx) throws AccessDeniedException
     {
         int count = 0;
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))

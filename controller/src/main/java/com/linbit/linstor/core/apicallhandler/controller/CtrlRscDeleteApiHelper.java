@@ -91,7 +91,7 @@ public class CtrlRscDeleteApiHelper
         {
             ResourceDefinition rscDfn = rsc.getDefinition();
             rsc.markDeleted(peerAccCtx.get());
-            if (rscDfn.notDeletedDiskfulCount(apiCtx) == 0)
+            if (rscDfn.getNotDeletedDiskfulCount(apiCtx) == 0)
             {
                 scheduleService.removeTasks(rscDfn);
             }
@@ -308,7 +308,7 @@ public class CtrlRscDeleteApiHelper
             if (
                 !isDiskless &&
                     rsc.getDefinition().hasDisklessNotDeleting(accCtx) &&
-                    rsc.getDefinition().notDeletedDiskfulCount(accCtx) == 1
+                    rsc.getDefinition().getNotDeletedDiskfulCount(accCtx) == 1
             )
             {
                 ApiCallRcImpl.ApiCallRcEntry err = ApiCallRcImpl

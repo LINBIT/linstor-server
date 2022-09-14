@@ -543,6 +543,7 @@ public class Resource extends AbsResource<Resource>
          */
         INACTIVATING(1L << 19),
         EBS_INITIATOR(1L << 20 | DISKLESS.getFlagValue()),
+        AUTO_DISKFUL(1L << 21),
         ;
 
         public final long flagValue;
