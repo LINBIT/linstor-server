@@ -102,6 +102,7 @@ stages:
 
 check-openapi:
   stage: build
+  interruptible: true
   image:
     name: jamescooke/openapi-validator:0.51.3
     entrypoint: [""] # force empty entrypoint to workaround a gitlab issue
@@ -118,6 +119,7 @@ check-openapi:
 
 test:
   stage: test
+  interruptible: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
     - if: '$CI_COMMIT_BRANCH == "master"'
@@ -179,6 +181,7 @@ deploy-nexus:
 
 test-e2e-all:
   stage: integration-all
+  interruptible: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: manual
@@ -202,6 +205,7 @@ test-e2e-all:
 
 test-e2e:
   stage: integration
+  interruptible: true
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
