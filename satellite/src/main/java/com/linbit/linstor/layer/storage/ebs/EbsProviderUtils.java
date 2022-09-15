@@ -22,6 +22,8 @@ public class EbsProviderUtils
     private static final int ONE_SECOND = 1000;
 
     private static final String SNAP_CREATE_STATE_COMPLETED = "completed";
+    private static final String SNAP_CREATE_STATE_PENDING = "pending";
+    private static final String SNAP_CREATE_STATE_ERROR = "error";
 
     private EbsProviderUtils()
     {
@@ -147,8 +149,25 @@ public class EbsProviderUtils
                     "Unexpected snapshot count for EBS snapshot id: " + ebsSnapId + ": " + snapCount
                 );
             }
+            String snapshotState = describeSnapshots.getSnapshots().get(0).getState();
+
+            if (snapshotState.equalsIgnoreCase(SNAP_CREATE_STATE_ERROR))
+            {
+                throw new StorageException("EBS snapshot has state: '" + snapshotState + "'");
+            }
+
             created = snapCount == 1 &&
-                describeSnapshots.getSnapshots().get(0).getState().equalsIgnoreCase(SNAP_CREATE_STATE_COMPLETED);
+                (snapshotState.equalsIgnoreCase(SNAP_CREATE_STATE_COMPLETED) ||
+                    snapshotState.equalsIgnoreCase(SNAP_CREATE_STATE_PENDING));
+
+            try
+            {
+                Thread.sleep(ONE_SECOND);
+            }
+            catch (InterruptedException exc)
+            {
+                exc.printStackTrace();
+            }
         }
         if (!created)
         {
