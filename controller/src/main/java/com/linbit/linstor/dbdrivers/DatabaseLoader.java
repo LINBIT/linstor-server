@@ -602,8 +602,6 @@ public class DatabaseLoader implements DatabaseDriver
                 );
             }
 
-            // load layer objects
-            loadLayerObects(tmpRscDfnMap, tmpSnapshotDfnMap, tmpStorPoolMapForLayers);
 
             nodesMap.putAll(tmpNodesMap);
             rscDfnMap.putAll(tmpRscDfnMap);
@@ -613,6 +611,10 @@ public class DatabaseLoader implements DatabaseDriver
             extFileMap.putAll(tmpExtFileMap);
             remoteMap.putAll(tmpRemoteMap);
             scheduleMap.putAll(tmpScheduleMap);
+
+
+            // load layer objects
+            loadLayerObects(tmpRscDfnMap, tmpSnapshotDfnMap, tmpStorPoolMapForLayers);
 
             // load external names
             for (ResourceDefinition rscDfn : tmpRscDfnMap.values())
