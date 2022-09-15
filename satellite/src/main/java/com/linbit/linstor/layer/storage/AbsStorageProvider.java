@@ -664,7 +664,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
             else
             {
-                postCreate(vlmData, snapRestore);
+                postCreate(vlmData, !snapRestore && kind.hasBackingDevice());
             }
 
             addCreatedMsg(vlmData, apiCallRc);
@@ -696,7 +696,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             DmStatCommands.create(extCmdFactory.create(), vlmData.getDevicePath());
         }
 
-        if (!wipeData)
+        if (wipeData)
         {
             wipeHandler.quickWipe(vlmData.getDevicePath());
         }

@@ -817,7 +817,12 @@ public class DeviceHandlerImpl implements DeviceHandler
         Set<AbsRscLayerObject<RSC>> ret = new HashSet<>();
         for (AbsRscLayerObject<RSC> data : dataSetRef)
         {
-            errorReporter.logTrace("DEBUG: %s has reason: %s", data.getSuffixedResourceName(), data.getIgnoreReason());
+            errorReporter.logTrace(
+                "%s: %s has reason: %s",
+                data.getLayerKind(),
+                data.getSuffixedResourceName(),
+                data.getIgnoreReason()
+            );
             if (!data.hasIgnoreReason())
             {
                 ret.add(data);
