@@ -1407,7 +1407,7 @@ paths:
 
         - `SnapshotShipping/Keep` - long
 
-            Keeps the last X sihpped snapshots. Removing this property or having a value <= 0 disables auto-cleanup, all auto-snapshots will be kept
+            Keeps the last X shipped snapshots. Removing this property or having a value <= 0 disables auto-cleanup, all auto-snapshots will be kept
 
         - `AutoSnapshot/RunEvery` - long
 
