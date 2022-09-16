@@ -751,6 +751,12 @@ public class CtrlBackupApiCallHandler
                 String rscName = rscDfn.getName().displayValue;
                 String snapName = snapDfn.getName().displayValue;
 
+                if (snapNameRef != null && !snapNameRef.isEmpty() && snapNameRef.equals(snapName))
+                {
+                    // Doesn't match the requested snapshot name, skip it.
+                    continue;
+                }
+
                 String s3Suffix = snapDfn.getProps(peerCtx).getProp(
                     ApiConsts.KEY_BACKUP_S3_SUFFIX,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
