@@ -3,6 +3,7 @@ package com.linbit.linstor.transaction;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.RollbackCrd;
@@ -15,9 +16,6 @@ import java.util.HashSet;
 import java.util.Map.Entry;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 
 public class ControllerK8sCrdRollbackMgr
 {
@@ -48,7 +46,7 @@ public class ControllerK8sCrdRollbackMgr
         for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToReplace.entrySet())
         {
             DatabaseTable dbTable = entry.getKey();
-            MixedOperation<LinstorCrd<LinstorSpec>, KubernetesResourceList<LinstorCrd<LinstorSpec>>, Resource<LinstorCrd<LinstorSpec>>> client = currentTransactionRef
+            K8sResourceClient<LinstorCrd<LinstorSpec>> client = currentTransactionRef
                 .getClient(dbTable);
 
             for (Entry<String, LinstorCrd<?>> rsc : entry.getValue().entrySet())
@@ -56,7 +54,7 @@ public class ControllerK8sCrdRollbackMgr
                 numberOfUpdates++;
                 LinstorCrd<?> updatedRsc = rsc.getValue();
 
-                LinstorCrd<?> resource = client.withName(updatedRsc.getK8sKey()).get();
+                LinstorCrd<?> resource = client.get(updatedRsc.getK8sKey());
                 if (resource == null)
                 {
                     throw new DatabaseException(
@@ -74,7 +72,7 @@ public class ControllerK8sCrdRollbackMgr
         for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToDelete.entrySet())
         {
             DatabaseTable dbTable = entry.getKey();
-            MixedOperation<LinstorCrd<LinstorSpec>, KubernetesResourceList<LinstorCrd<LinstorSpec>>, Resource<LinstorCrd<LinstorSpec>>> client = currentTransactionRef
+            K8sResourceClient<LinstorCrd<LinstorSpec>> client = currentTransactionRef
                 .getClient(dbTable);
 
             for (Entry<String, LinstorCrd<?>> rsc : entry.getValue().entrySet())
@@ -82,7 +80,7 @@ public class ControllerK8sCrdRollbackMgr
                 numberOfUpdates++;
                 LinstorCrd<?> deletedRsc = rsc.getValue();
 
-                LinstorCrd<?> resource = client.withName(deletedRsc.getK8sKey()).get();
+                LinstorCrd<?> resource = client.get(deletedRsc.getK8sKey());
                 if (resource == null)
                 {
                     throw new DatabaseException(
@@ -163,11 +161,11 @@ public class ControllerK8sCrdRollbackMgr
         HashSet<String> keysToDelete
     )
     {
-        MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = currentTransaction
+        K8sResourceClient<CRD> client = currentTransaction
             .getClient(dbTable);
         for (String name : keysToDelete)
         {
-            client.withName(name).delete();
+            client.delete(name);
         }
     }
 
@@ -178,10 +176,10 @@ public class ControllerK8sCrdRollbackMgr
         Collection<GenericKubernetesResource> valuesToRestore
     )
     {
-        MixedOperation<LinstorCrd<SPEC>, KubernetesResourceList<LinstorCrd<SPEC>>, Resource<LinstorCrd<SPEC>>> client = currentTransaction
+        K8sResourceClient<LinstorCrd<SPEC>> client = currentTransaction
             .getClient(dbTable);
         Object typeErasure = client;
-        MixedOperation<GenericKubernetesResource, KubernetesResourceList<GenericKubernetesResource>, Resource<GenericKubernetesResource>> gkrClient = (MixedOperation<GenericKubernetesResource, KubernetesResourceList<GenericKubernetesResource>, Resource<GenericKubernetesResource>>) typeErasure;
+        K8sResourceClient<GenericKubernetesResource> gkrClient = (K8sResourceClient<GenericKubernetesResource>) typeErasure;
         for (GenericKubernetesResource gkr : valuesToRestore)
         {
             // Reset resource version, otherwise we incur extra requests while solving conflicts

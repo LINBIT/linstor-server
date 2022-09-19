@@ -5,6 +5,7 @@ import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
@@ -35,7 +36,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
 
     private K8sCrdTransaction currentTransaction;
 
-    private final Map<DatabaseTable, MixedOperation<?, ?, ?>> crdClientLut;
+    private final Map<DatabaseTable, K8sResourceClient<?>> crdClientLut;
     private final MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClient;
     private final MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClient;
     private final KubernetesClient k8sClient;
@@ -73,12 +74,12 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
             {
                 /*
                  * otherwise GeneratedDatabaseTables.ALL_TABLES contains a table that the current version of the db /
-                 * migration simply does not know. It should be save to ignore this case, since the migration will most
+                 * migration simply does not know. It should be safe to ignore this case, since the migration will most
                  * likely not try to access a table it does not know?
                  */
                 crdClientLut.put(
                     tbl,
-                    k8sClient.resources(clazz)
+                    controllerK8sCrdDatabaseRef.getCachingClient(clazz)
                 );
             }
         }
@@ -175,7 +176,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
         HashMap<String, LinstorCrd<?>> changedCrds
     )
     {
-        MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = currentTransaction
+        K8sResourceClient<CRD> client = currentTransaction
             .getClient(dbTableRef);
         for (LinstorCrd<?> linstorCrd : changedCrds.values())
         {
@@ -189,7 +190,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
         HashMap<String, LinstorCrd<?>> changedCrds
     )
     {
-        MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = currentTransaction
+        K8sResourceClient<CRD> client = currentTransaction
             .getClient(dbTableRef);
         for (LinstorCrd<?> linstorCrd : changedCrds.values())
         {
@@ -203,7 +204,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
         HashMap<String, LinstorCrd<?>> createdCrds
     )
     {
-        MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = currentTransaction
+        K8sResourceClient<CRD> client = currentTransaction
             .getClient(dbTableRef);
         for (LinstorCrd<?> linstorCrd : createdCrds.values())
         {

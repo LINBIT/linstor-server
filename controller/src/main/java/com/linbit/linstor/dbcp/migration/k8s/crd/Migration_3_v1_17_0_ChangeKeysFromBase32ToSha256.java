@@ -3,6 +3,7 @@ package com.linbit.linstor.dbcp.migration.k8s.crd;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
+import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_17_0;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
@@ -13,9 +14,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
 
 @K8sCrdMigration(
     description = "change keys from base32 to sha256",
@@ -51,7 +49,7 @@ public class Migration_3_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCrd
              * although the RollbackManager is now (hopefully) fixed, it cannot create any rollback instance because the
              * old (1.15.0) data are missing critical deserialization-information.
              */
-            MixedOperation<LinstorCrd<LinstorSpec>, KubernetesResourceList<LinstorCrd<LinstorSpec>>, Resource<LinstorCrd<LinstorSpec>>> txFromClient = txFrom
+            K8sResourceClient<LinstorCrd<LinstorSpec>> txFromClient = txFrom
                 .getClient(dbTable);
             if (txFromClient != null)
             {

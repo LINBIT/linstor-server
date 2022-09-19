@@ -12,6 +12,10 @@ import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.migration.k8s.crd.BaseK8sCrdMigration;
 import com.linbit.linstor.dbcp.migration.k8s.crd.K8sCrdMigration;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.k8s.K8sCachingClient;
+import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorVersionCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.RollbackCrd;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -22,6 +26,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +56,8 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     private final Provider<ControllerK8sCrdDatabase> controllerDatabaseProvider;
 
     private KubernetesClient k8sClient;
+
+    private HashMap<Class<? extends LinstorCrd<? extends LinstorSpec>>, K8sResourceClient<?>> k8sCachingClient;
 
     static
     {
@@ -263,6 +270,7 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
 
         k8sClient = new DefaultKubernetesClient();
         k8sClient.getConfiguration().setRequestRetryBackoffLimit(ctrlCfg.getK8sRequestRetries());
+        k8sCachingClient = new HashMap<>();
         atomicStarted.set(true);
     }
 
@@ -300,5 +308,11 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     public KubernetesClient getClient()
     {
         return k8sClient;
+    }
+
+    @Override
+    public K8sResourceClient<?> getCachingClient(Class<? extends LinstorCrd<? extends LinstorSpec>> clazz)
+    {
+        return k8sCachingClient.computeIfAbsent(clazz, c -> new K8sCachingClient<>(k8sClient.resources(c)));
     }
 }

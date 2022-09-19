@@ -3,6 +3,7 @@ package com.linbit.linstor.transaction;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
+import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorVersionCrd;
@@ -13,18 +14,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
 public class K8sCrdTransaction
 {
-    private final Map<DatabaseTable, MixedOperation<?, ?, ?>> crdClientLut;
+    private final Map<DatabaseTable, K8sResourceClient<?>> crdClientLut;
     private final MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClient;
     private final MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClient;
     private final String crdVersion;
@@ -35,7 +36,7 @@ public class K8sCrdTransaction
     private RollbackCrd rollback;
 
     public K8sCrdTransaction(
-        Map<DatabaseTable, MixedOperation<?, ?, ?>> crdClientLutRef,
+        Map<DatabaseTable, K8sResourceClient<?>> crdClientLutRef,
         MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClientRef,
         MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClientRef,
         String crdVersionRef
@@ -83,11 +84,11 @@ public class K8sCrdTransaction
     }
 
     @SuppressWarnings("unchecked")
-    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> getClient(
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> K8sResourceClient<CRD> getClient(
         DatabaseTable dbTable
     )
     {
-        return (MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>>) crdClientLut
+        return (K8sResourceClient<CRD>) crdClientLut
             .get(dbTable);
     }
 
@@ -96,7 +97,7 @@ public class K8sCrdTransaction
         LinstorCrd<?> k8sRsc
     )
     {
-        LinstorCrd<LinstorSpec> existingCrd = getClient(dbTable).withName(k8sRsc.getK8sKey()).get();
+        LinstorCrd<LinstorSpec> existingCrd = getClient(dbTable).get(k8sRsc.getK8sKey());
         createOrReplace(dbTable, k8sRsc, existingCrd == null);
     }
 
@@ -223,12 +224,11 @@ public class K8sCrdTransaction
     )
     {
         HashMap<String, SPEC> ret = new HashMap<>();
-        MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = getClient(
+        K8sResourceClient<CRD> client = getClient(
             dbTable
         );
-        ListOptionsBuilder builder = new ListOptionsBuilder();
-        // builder.withApiVersion(crdVersion);
-        KubernetesResourceList<CRD> list = client.list(builder.build());
+
+        List<CRD> list = client.list();
         ArrayList<CRD> updatedList = updateK8sList(list, dbTable);
         for (CRD item : updatedList)
         {
@@ -279,7 +279,7 @@ public class K8sCrdTransaction
     )
     {
         HashMap<String, CRD> ret = new HashMap<>();
-        MixedOperation<CRD, KubernetesResourceList<CRD>, Resource<CRD>> client = getClient(
+        K8sResourceClient<CRD> client = getClient(
             dbTable
         );
         if (client != null)
@@ -291,7 +291,7 @@ public class K8sCrdTransaction
              *
              * Returning an empty map should be fine in this case
              */
-            KubernetesResourceList<CRD> list = client.list();
+            List<CRD> list = client.list();
             ArrayList<CRD> updatedList = updateK8sList(list, dbTable);
             for (CRD item : updatedList)
             {
@@ -306,7 +306,7 @@ public class K8sCrdTransaction
 
     @SuppressWarnings("unchecked")
     private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> ArrayList<CRD> updateK8sList(
-        KubernetesResourceList<CRD> list,
+        List<CRD> list,
         DatabaseTable dbTable
     )
     {
@@ -326,7 +326,7 @@ public class K8sCrdTransaction
         {
             deleteMap = Collections.emptyMap();
         }
-        for (CRD item : list.getItems())
+        for (CRD item : list)
         {
             String key = item.getK8sKey();
             CRD rep = (CRD) replaceMap.get(key);
