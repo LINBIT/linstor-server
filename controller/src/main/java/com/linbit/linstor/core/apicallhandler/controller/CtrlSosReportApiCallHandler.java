@@ -575,6 +575,7 @@ public class CtrlSosReportApiCallHandler
                 ).map(
                     answer -> CtrlSatelliteUpdateCaller.deserializeApiCallRc(node.getName(), answer)
                 )
+                    .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
                     // not sure why this is needed when we .thenMany later on... but without this, we get
                     // ClassCastExceptions as ApiCallRcImpl cannot be casted to String
                     .ignoreElements()
