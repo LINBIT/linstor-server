@@ -1,3 +1,66 @@
+linstor-server (1.20.0~rc.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * DrbdVersion: Changed default version to undertermined
+  * AutoSnap: Also start AutoSnap for spawned resources
+  * AutoSnap: run after ctrl restart
+  * AutoSnap: Read AutoSnapshot/Keep from PrioProps
+  * PropsCon: fixed ConcurrentModExc
+  * BackupShipL2L: Fixed NullPointerException
+  * Layer: Add IgnoreReason
+  * EncryptionHelper: reevaluate volatile rscdata after setCryptKey
+  * EncryptionHelper: Fixed tests
+  * Drbd,extMd: Fixed mixing internal and external metadata
+  * Zfs: list only necessary datasets
+  * CrtVlm: Fix size-check for storage pools
+  * SpecStlt: use correct --option
+  * SpecStlt: Changed conf dir
+  * SpecStlt: shutdown specStltProcess on node delete
+  * SpecStlt: Deallocate port on node delete
+  * SpecStlt: refactored "openflex" variable names and strings
+  * RemoteName: Introducing prefix
+  * Remote: Moved into dedicated package
+  * Remote: Add EbsRemote
+  * AbsStorProv: Added SPName to asLvIdentifier method
+  * EbsProvider: Added EbsTarget- and EbsInitiatorProvider
+  * EBS: fixed reported allocated size
+  * EBS: Added resize support
+  * FreeCapacityUtils: Fix overflow
+  * EBS: Add snapshot support
+  * AbsRscData: Add suspend and ignoreReason to txObjs
+  * Db,EbsRemote: Fix loading EBS resources
+  * EbsTarget: Do not wait until snapshot is complete
+  * Storage: do not wipefs on initiator
+  * Auto-diskful: only cleanup auto-diskful resources
+  * Auto-diskful: only cleanup auto-diskful or make-available resources
+  * Sos: Do not fail if satellite is offline.
+
+  [ Michael Troutman ]
+  * corrects "LinStor" misspellings in help message
+
+  [ Johanna Kucera ]
+  * BackupShipping: simplify and fix abort
+  * BackupShipping: fix backup schedule delete
+  * BackupShipping: treat restore-abort-maps atomically
+  * BackupShipping: return copy instead of actual map
+  * BackupShipping: abort failed shippings after ctrl-restart
+  * BackupShipping: Allow shipping of rsc to several remotes at once
+  * DB: Improve DB-update-logging
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * physical-storage: set VG during thin pool creation
+  * crd: implement local caching of resources
+
+  [ Rene Peinthor ]
+  * storpool/getApiData: clone props map, so we don't expose the real props
+  * DecryptionHelper: add base64ToString variant
+  * LsBlkUtils: reuse blkid to check device access
+  * Add Self Encrypting Drive (SED) support
+  * gitlab-ci: mark stages interruptible
+  * Add a changelog file
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 20 Sep 2022 12:43:10 +0000
+
 linstor-server (1.19.1-1) experimental; urgency=medium
 
   [ Johanna Kucera ]

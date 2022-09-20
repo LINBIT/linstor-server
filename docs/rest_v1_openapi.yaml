@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.15.0
       - Added GET, POST /v1/remotes/ebs
       - Added PUT /v1/remotes/ebs/{remoteName}
       - Extended RemoteList with ebs_remotes
