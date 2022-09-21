@@ -29,6 +29,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Base64;
 
@@ -298,6 +299,19 @@ public class CtrlStorPoolApiCallHandler
                     .build()
                 );
             }
+            if (storPool.getDeviceProviderKind().equals(DeviceProviderKind.EBS_TARGET))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_INVLD_STOR_POOL_NAME,
+                            "Deletion of " + getStorPoolDescriptionInline(nodeNameStr, storPoolNameStr) +
+                                " is not allowed, since you cannot re-create it."
+                        )
+                        .setSkipErrorReport(true)
+                        .build()
+                );
+            }
+
             Collection<VlmProviderObject<Resource>> volumes = getVolumes(storPool);
             Collection<VlmProviderObject<Snapshot>> snapVlms = getSnapshotVolumes(storPool);
             if (!volumes.isEmpty() || !snapVlms.isEmpty())
