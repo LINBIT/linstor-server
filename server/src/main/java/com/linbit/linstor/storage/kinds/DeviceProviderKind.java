@@ -325,7 +325,7 @@ public enum DeviceProviderKind
                 break;
             case EBS_INIT: // fall-through
             case EBS_TARGET:
-                allowed = kind2.equals(EBS_INIT) || kind2.equals(EBS_TARGET);
+                allowed = kind2.equals(EBS_INIT) || kind2.equals(EBS_TARGET) || kind2.equals(DISKLESS);
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:

@@ -33,6 +33,7 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.utils.ResourceUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.layer.resource.RscStorageLayerHelper;
@@ -581,8 +582,8 @@ public class CtrlRscMakeAvailableApiCallHandler
             {
                 /*
                  * No diskful peer (or forced diskful). "make resource available" is interpreted in this case as
-                 * creating the first
-                 * diskful resource. However, this might still mean that other layers like NVMe are involved
+                 * creating the first diskful resource. However, this might still mean that other layers like NVMe are
+                 * involved
                  */
                 if (layerStack.contains(DeviceLayerKind.NVME) || layerStack.contains(DeviceLayerKind.OPENFLEX))
                 {
@@ -717,7 +718,20 @@ public class CtrlRscMakeAvailableApiCallHandler
 
     private boolean hasDrbdDiskfulPeer(ResourceDefinition rscDfnRef)
     {
-        return hasPeerWithoutFlag(rscDfnRef, Resource.Flags.DRBD_DISKLESS);
+        boolean ret;
+        try
+        {
+            ret = !ResourceUtils.filterResourcesDrbdDiskfulActive(rscDfnRef, peerCtxProvider.get()).isEmpty();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "checking active diskful DRBD peers for resource-definition: " + rscDfnRef.getName(),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        return ret;
     }
 
     private boolean hasNvmeTarget(ResourceDefinition rscDfnRef)

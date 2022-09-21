@@ -248,6 +248,12 @@ class StorPoolFilter
                     {
                         filterProviderList = new ArrayList<>();
                     }
+                    else
+                    {
+                        // copy the list since we are modifying it. Also to prevent UnsupportedOperationException in
+                        // case we were called with Collection.unmodifyableList or singleton or something like that
+                        filterProviderList = new ArrayList<>(filterProviderList);
+                    }
                     filterProviderList.add(DeviceProviderKind.EBS_INIT);
                 }
             }
