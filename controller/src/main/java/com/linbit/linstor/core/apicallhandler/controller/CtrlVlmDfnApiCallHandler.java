@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.ByteArrayCipher;
 import com.linbit.crypto.LengthPadding;
+import com.linbit.crypto.SecretGenerator;
 import com.linbit.drbd.md.GidGenerator;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
@@ -15,7 +16,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
-import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
@@ -33,6 +33,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -41,7 +42,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Base64;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
@@ -292,9 +292,17 @@ class CtrlVlmDfnApiCallHandler
             Props vlmDfnProps = getVlmDfnProps(vlmDfn);
             Map<String, String> propsMap = vlmDfnProps.map();
 
+            List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+            prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
             ctrlPropsHelper.fillProperties(
-                responses, LinStorObject.VOLUME_DEFINITION, vlmDfnApiRef.getVlmDfn().getProps(),
-                vlmDfnProps, ApiConsts.FAIL_ACC_DENIED_VLM_DFN);
+                responses,
+                LinStorObject.VOLUME_DEFINITION,
+                vlmDfnApiRef.getVlmDfn().getProps(),
+                vlmDfnProps,
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN,
+                prefixesIgnoringWhitelistCheck
+            );
 
             if (vlmDfnProps.getProp(ApiConsts.KEY_DRBD_CURRENT_GI, ApiConsts.NAMESPC_DRBD_OPTIONS) == null)
             {

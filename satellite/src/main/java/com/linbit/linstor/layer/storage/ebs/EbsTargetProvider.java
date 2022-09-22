@@ -23,11 +23,13 @@ import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -60,6 +62,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,9 +72,11 @@ import java.util.regex.Matcher;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.CreateSnapshotRequest;
 import com.amazonaws.services.ec2.model.CreateSnapshotResult;
+import com.amazonaws.services.ec2.model.CreateTagsRequest;
 import com.amazonaws.services.ec2.model.CreateVolumeRequest;
 import com.amazonaws.services.ec2.model.CreateVolumeResult;
 import com.amazonaws.services.ec2.model.DeleteSnapshotRequest;
+import com.amazonaws.services.ec2.model.DeleteTagsRequest;
 import com.amazonaws.services.ec2.model.DeleteVolumeRequest;
 import com.amazonaws.services.ec2.model.DescribeSnapshotsRequest;
 import com.amazonaws.services.ec2.model.DescribeSnapshotsResult;
@@ -186,6 +191,8 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
                 {
                     vlmData.setSizeState(Size.AS_EXPECTED);
                 }
+
+                updateTags(vlmData, amazonVlm);
             }
         }
     }
@@ -237,6 +244,86 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         }
     }
 
+    private void updateTags(EbsData<?> vlmDataRef, com.amazonaws.services.ec2.model.Volume amazonVlmRef)
+        throws AccessDeniedException, StorageException
+    {
+        Map<String, String> missingTags = getEbsTags(vlmDataRef);
+        List<Tag> tagsToDelete = new ArrayList<>();
+        for (Tag tag : amazonVlmRef.getTags())
+        {
+            String amaKey = tag.getKey();
+            // dont touch linstor internal tags
+            if (!LINSTOR_TAGS.contains(amaKey))
+            {
+                String linstorValue = missingTags.get(amaKey);
+                if (linstorValue == null)
+                {
+                    tagsToDelete.add(tag);
+                }
+                else if (linstorValue.equals(tag.getValue()))
+                {
+                    missingTags.remove(amaKey);
+                }
+            }
+        }
+
+        if (!missingTags.isEmpty() || !tagsToDelete.isEmpty())
+        {
+            List<String> vlmIdAsList = Arrays.asList(amazonVlmRef.getVolumeId());
+
+            AmazonEC2 client = getClient(vlmDataRef.getStorPool());
+            if (!missingTags.isEmpty())
+            {
+                client.createTags(new CreateTagsRequest(vlmIdAsList, asAmazonTagList(missingTags)));
+            }
+            if (!tagsToDelete.isEmpty())
+            {
+                client.deleteTags(new DeleteTagsRequest(vlmIdAsList).withTags(tagsToDelete));
+            }
+        }
+    }
+
+    private Map<String, String> getEbsTags(EbsData<?> vlmDataRef) throws AccessDeniedException
+    {
+        PriorityProps prioProps;
+        AbsVolume<?> absVlm = vlmDataRef.getVolume();
+        if (absVlm instanceof Volume)
+        {
+            VolumeDefinition vlmDfn = absVlm.getVolumeDefinition();
+            ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
+            ResourceGroup rscGrp = rscDfn.getResourceGroup();
+            prioProps = new PriorityProps(
+                vlmDfn.getProps(storDriverAccCtx),
+                rscDfn.getProps(storDriverAccCtx),
+                rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmDfn.getVolumeNumber()),
+                rscGrp.getProps(storDriverAccCtx),
+                localNodeProps,
+                stltConfigAccessor.getReadonlyProps()
+            );
+        }
+        else
+        {
+            SnapshotVolume snapVlm = (SnapshotVolume) absVlm;
+            prioProps = new PriorityProps(
+                snapVlm.getSnapshotVolumeDefinition().getProps(storDriverAccCtx),
+                snapVlm.getSnapshotDefinition().getProps(storDriverAccCtx),
+                localNodeProps,
+                stltConfigAccessor.getReadonlyProps()
+            );
+        }
+        return prioProps.renderRelativeMap(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS);
+    }
+
+    private ArrayList<Tag> asAmazonTagList(Map<String, String> missingTags)
+    {
+        ArrayList<Tag> tagListToAdd = new ArrayList<>();
+        for (Map.Entry<String, String> entry : missingTags.entrySet())
+        {
+            tagListToAdd.add(new Tag(entry.getKey(), entry.getValue()));
+        }
+        return tagListToAdd;
+    }
+
     @Override
     protected void createLvImpl(EbsData<Resource> vlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
@@ -250,6 +337,9 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         EbsRemote remote = getEbsRemote(vlmDataRef.getStorPool());
         AmazonEC2 client = getClient(remote);
 
+        ArrayList<Tag> tags = asAmazonTagList(getEbsTags(vlmDataRef));
+        tags.add(new Tag(TAG_KEY_LINSTOR_ID, asLvIdentifier(vlmDataRef)));
+
         CreateVolumeRequest createVlmRequest = new CreateVolumeRequest()
             .withAvailabilityZone(remote.getAvailabilityZone(storDriverAccCtx))
             .withSize(
@@ -258,9 +348,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
             .withTagSpecifications(
                 new TagSpecification()
                     .withResourceType(ResourceType.Volume)
-                    .withTags(
-                        new Tag(TAG_KEY_LINSTOR_ID, asLvIdentifier(vlmDataRef))
-                    )
+                    .withTags(tags)
             );
         if (restoreFromSnapEbsId != null)
         {
@@ -315,6 +403,10 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         AmazonEC2 client = getClient(remote);
 
         String snapLvIdentifier = asSnapLvIdentifier(snapVlmRef);
+
+        ArrayList<Tag> tags = asAmazonTagList(getEbsTags(vlmDataRef));
+        tags.add(new Tag(TAG_KEY_LINSTOR_ID, snapLvIdentifier));
+
         CreateSnapshotResult createSnapshotResult = client.createSnapshot(
             new CreateSnapshotRequest()
                 .withVolumeId(getEbsVlmId(vlmDataRef))
@@ -322,11 +414,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
                 .withTagSpecifications(
                     new TagSpecification()
                         .withResourceType(ResourceType.Snapshot)
-                        .withTags(
-                            new Tag()
-                                .withKey(TAG_KEY_LINSTOR_ID)
-                                .withValue(snapLvIdentifier)
-                        )
+                        .withTags(tags)
                 )
         );
         String snapshotId = createSnapshotResult.getSnapshot().getSnapshotId();

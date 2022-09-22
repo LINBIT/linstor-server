@@ -240,12 +240,16 @@ public class CtrlRscGrpApiCallHandler
 
             ResourceGroup rscGrp = createResourceGroup(rscGrpPojoRef);
 
+            List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+            prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
             ctrlPropsHelper.fillProperties(
                 responses,
                 LinStorObject.RESOURCE_DEFINITION,
                 rscGrpPojoRef.getProps(),
                 rscGrp.getProps(peerAccCtx.get()),
-                ApiConsts.FAIL_ACC_DENIED_RSC_GRP
+                ApiConsts.FAIL_ACC_DENIED_RSC_GRP,
+                prefixesIgnoringWhitelistCheck
             );
 
             List<VolumeGroup> createdVlmGrps = ctrlVlmGrpApiCallHandler.createVlmGrps(
@@ -475,20 +479,25 @@ public class CtrlRscGrpApiCallHandler
 
             if (!overrideProps.isEmpty() || !deletePropKeysRef.isEmpty() || !deleteNamespacesRef.isEmpty())
             {
+                List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+                prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
                 Props rscDfnGrpProps = rscGrpData.getProps(peerCtx);
                 notifyStlts = ctrlPropsHelper.fillProperties(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     overrideProps,
                     rscDfnGrpProps,
-                    ApiConsts.FAIL_ACC_DENIED_RSC_GRP
+                    ApiConsts.FAIL_ACC_DENIED_RSC_GRP,
+                    prefixesIgnoringWhitelistCheck
                 ) || notifyStlts;
                 notifyStlts = ctrlPropsHelper.remove(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     rscDfnGrpProps,
                     deletePropKeysRef,
-                    deleteNamespacesRef
+                    deleteNamespacesRef,
+                    prefixesIgnoringWhitelistCheck
                 ) || notifyStlts;
 
                 reRunAutoPlace = reRunAutoPlace.concatWith(

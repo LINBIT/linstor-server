@@ -15,6 +15,7 @@ import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteU
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -31,6 +32,8 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -58,6 +61,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -66,6 +70,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import com.google.common.base.Objects;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -197,17 +202,30 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             );
         }
 
-        notifyStlts = ctrlPropsHelper.fillProperties(responses, LinStorObject.VOLUME_DEFINITION, overrideProps,
-            getVlmDfnProps(vlmDfn), ApiConsts.FAIL_ACC_DENIED_VLM_DFN) || notifyStlts;
+        Props vlmDfnProps = getVlmDfnProps(vlmDfn);
+
+        List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+        prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
+        notifyStlts = ctrlPropsHelper.fillProperties(
+            responses,
+            LinStorObject.VOLUME_DEFINITION,
+            overrideProps,
+            vlmDfnProps,
+            ApiConsts.FAIL_ACC_DENIED_VLM_DFN,
+            prefixesIgnoringWhitelistCheck
+        ) || notifyStlts;
 
         try
         {
             notifyStlts = ctrlPropsHelper.remove(
                 responses,
                 LinStorObject.VOLUME_DEFINITION,
-                getVlmDfnProps(vlmDfn),
+                vlmDfnProps,
                 deletePropKeys,
-                Collections.emptyList()) || notifyStlts;
+                Collections.emptyList(),
+                prefixesIgnoringWhitelistCheck
+            ) || notifyStlts;
         }
         catch (AccessDeniedException exc)
         {
@@ -336,6 +354,74 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         return Flux.just((ApiCallRc) responses)
             .concatWith(updateResponses);
+    }
+
+    private boolean handleSpecialProps(
+        Props vlmDfnPropsRef,
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef,
+        Set<String> deleteNamespacesRef
+    )
+    {
+        boolean changed = false;
+        try
+        {
+            Iterator<Entry<String, String>> entryIt = overridePropsRef.entrySet().iterator();
+            while (entryIt.hasNext())
+            {
+                Map.Entry<String, String> entry = entryIt.next();
+                String key = entry.getKey();
+                if (key.startsWith(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS))
+                {
+                    String value = entry.getValue();
+                    changed |= !Objects.equal(vlmDfnPropsRef.setProp(key, value), value);
+                    // remove entry from map so that the normal fillProperties method does not complain
+                    entryIt.remove();
+                }
+            }
+
+            Iterator<String> delKeyIt = deletePropKeysRef.iterator();
+            while (delKeyIt.hasNext())
+            {
+                String delKey = delKeyIt.next();
+                if (delKey.startsWith(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS))
+                {
+                    changed |= vlmDfnPropsRef.removeProp(delKey) != null;
+                    // remove entry from set so that the normal fillProperties method does not complain
+                    delKeyIt.remove();
+                }
+            }
+
+            Iterator<String> delNameSpcIt = deleteNamespacesRef.iterator();
+            while (delNameSpcIt.hasNext())
+            {
+                String delNameSpc = delNameSpcIt.next();
+                if (delNameSpc.startsWith(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS))
+                {
+                    changed |= vlmDfnPropsRef.removeNamespace(delNameSpc);
+                    // remove entry from set so that the normal fillProperties method does not complain
+                    delNameSpcIt.remove();
+                }
+            }
+
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ApiException(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "Handling properties",
+                ApiConsts.FAIL_ACC_DENIED_VLM_DFN
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        return changed;
     }
 
     /**

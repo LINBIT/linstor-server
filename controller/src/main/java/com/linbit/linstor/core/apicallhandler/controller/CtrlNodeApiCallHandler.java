@@ -246,12 +246,17 @@ public class CtrlNodeApiCallHandler
 
             node = createNode(nodeName, type);
 
+            List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+            prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
             ctrlPropsHelper.fillProperties(
                 responses,
                 LinStorObject.NODE,
                 propsMap,
                 ctrlPropsHelper.getProps(node),
-                ApiConsts.FAIL_ACC_DENIED_NODE);
+                ApiConsts.FAIL_ACC_DENIED_NODE,
+                prefixesIgnoringWhitelistCheck
+            );
 
             for (NetInterfaceApi netIfApi : netIfs)
             {
@@ -504,7 +509,6 @@ public class CtrlNodeApiCallHandler
                     "UUID-check failed"
                 ));
             }
-            NodeApi oldNodeData = node.getApiData(peerAccCtx.get(), null, null);
             if (nodeTypeStr != null)
             {
                 boolean needsReconnect = setNodeType(node, nodeTypeStr);
@@ -515,6 +519,10 @@ public class CtrlNodeApiCallHandler
                 notifyStlts = true;
             }
 
+            List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+            prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EXOS);
+            prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
             Props props = ctrlPropsHelper.getProps(node);
             notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,
@@ -522,12 +530,20 @@ public class CtrlNodeApiCallHandler
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_NODE,
-                Collections.singletonList(ApiConsts.NAMESPC_EXOS)
+                prefixesIgnoringWhitelistCheck
             ) || notifyStlts;
             notifyStlts = ctrlPropsHelper.remove(
-                apiCallRcs, LinStorObject.NODE, props, deletePropKeys, deleteNamespaces) || notifyStlts;
+                apiCallRcs,
+                LinStorObject.NODE,
+                props,
+                deletePropKeys,
+                deleteNamespaces,
+                prefixesIgnoringWhitelistCheck
+            ) || notifyStlts;
 
             flux = flux.concatWith(checkProperties(apiCallRcs, node, overrideProps, deletePropKeys, deleteNamespaces));
+
+            NodeApi oldNodeData = node.getApiData(peerAccCtx.get(), null, null);
 
             ctrlTransactionHelper.commit();
 

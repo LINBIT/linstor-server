@@ -282,8 +282,17 @@ public class CtrlRscDfnApiCallHandler
                 context.getObjRefs().put(ApiConsts.KEY_RSC_DFN, rscDfn.getName().displayValue);
             }
 
-            ctrlPropsHelper.fillProperties(responses, LinStorObject.RESOURCE_DEFINITION, props,
-                ctrlPropsHelper.getProps(rscDfn), ApiConsts.FAIL_ACC_DENIED_RSC_DFN);
+            List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+            prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
+            ctrlPropsHelper.fillProperties(
+                responses,
+                LinStorObject.RESOURCE_DEFINITION,
+                props,
+                ctrlPropsHelper.getProps(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN,
+                prefixesIgnoringWhitelistCheck
+            );
 
             List<VolumeDefinition> createdVlmDfns = vlmDfnHandler.createVlmDfns(responses, rscDfn, volDescrMap);
 
@@ -486,19 +495,24 @@ public class CtrlRscDfnApiCallHandler
                 Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
                 ImmutableMap<String, String> origProps = ImmutableMap.copyOf(rscDfnProps.map());
 
+                List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+                prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
                 notifyStlts = ctrlPropsHelper.fillProperties(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     overrideProps,
                     rscDfnProps,
-                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN,
+                    prefixesIgnoringWhitelistCheck
                 ) || notifyStlts;
                 notifyStlts = ctrlPropsHelper.remove(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     rscDfnProps,
                     deletePropKeys,
-                    deletePropNamespaces
+                    deletePropNamespaces,
+                    prefixesIgnoringWhitelistCheck
                 ) || notifyStlts;
 
                 autoFlux = autoFlux.concatWith(

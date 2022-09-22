@@ -567,7 +567,9 @@ public class CtrlConfApiCallHandler
                 Iterator<String> iterateNamespaces = optNamespace.get().iterateNamespaces();
                 while (iterateNamespaces.hasNext())
                 {
-                    Pair<ApiCallRc, Boolean> result = deleteNamespace(deleteNamespaceRef + "/" + iterateNamespaces.next());
+                    Pair<ApiCallRc, Boolean> result = deleteNamespace(
+                        deleteNamespaceRef + "/" + iterateNamespaces.next()
+                    );
                     apiCallRc.addEntries(result.objA);
                     notifyStlts |= result.objB;
                 }
@@ -658,6 +660,7 @@ public class CtrlConfApiCallHandler
              * on other levels whitelisting is active
              */
             ignoredKeys.add(ApiConsts.NAMESPC_EXOS + "/");
+            ignoredKeys.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
 
             if (fullKey.startsWith(ApiConsts.NAMESPC_CLUSTER_REMOTE))
             {
@@ -1150,6 +1153,8 @@ public class CtrlConfApiCallHandler
              * on other levels whitelisting is active
              */
             ignoredKeys.add(ApiConsts.NAMESPC_EXOS + "/");
+            ignoredKeys.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
             boolean isPropWhitelisted = whitelistProps.isAllowed(
                 LinStorObject.CONTROLLER,
                 ignoredKeys,

@@ -283,6 +283,9 @@ public class CtrlVlmGrpApiCallHandler
         );
         try
         {
+            List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+            prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
             VolumeGroup vlmGrp = ctrlApiDataLoader.loadVlmGrp(rscGrpNameStr, vlmNrInt, true);
             Props props = vlmGrp.getProps(peerAccCtx.get());
             notifyStlts = ctrlPropsHelper.fillProperties(
@@ -290,14 +293,16 @@ public class CtrlVlmGrpApiCallHandler
                 LinStorObject.VOLUME_DEFINITION,
                 overrideProps,
                 props,
-                ApiConsts.FAIL_ACC_DENIED_VLM_GRP
+                ApiConsts.FAIL_ACC_DENIED_VLM_GRP,
+                prefixesIgnoringWhitelistCheck
             );
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs,
                 LinStorObject.VOLUME_DEFINITION,
                 props,
                 deletePropKeys,
-                deleteNamespaces
+                deleteNamespaces,
+                prefixesIgnoringWhitelistCheck
             ) || notifyStlts;
 
             Pair<Set<VolumeGroup.Flags>, Set<VolumeGroup.Flags>> pair = FlagsHelper.extractFlagsToEnableOrDisable(
@@ -431,12 +436,16 @@ public class CtrlVlmGrpApiCallHandler
                 vlmGrpApiRef.getFlags()
             );
 
+            List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
+            prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
             ctrlPropsHelper.fillProperties(
                 responses,
                 LinStorObject.VOLUME_DEFINITION,
                 vlmGrpApiRef.getProps(),
                 getVlmGrpProps(vlmGrp),
-                ApiConsts.FAIL_ACC_DENIED_VLM_GRP
+                ApiConsts.FAIL_ACC_DENIED_VLM_GRP,
+                prefixesIgnoringWhitelistCheck
             );
         }
         catch (Exception | ImplementationError exc)

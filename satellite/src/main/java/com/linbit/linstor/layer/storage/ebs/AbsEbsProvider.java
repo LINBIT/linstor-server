@@ -81,6 +81,8 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
 
     protected static final String EBS_VLM_STATE_AVAILABLE = "available";
     protected static final String EBS_VLM_STATE_CREATING = "creating";
+
+    protected static final HashSet<String> LINSTOR_TAGS = new HashSet<>();
     protected static final String TAG_KEY_LINSTOR_ID = "LinstorID";
     protected static final String TAG_KEY_LINSTOR_INIT_DEV = "LinstorInitDevice";
 
@@ -92,6 +94,12 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
         ApiConsts.VAL_STOR_POOL_SPACE_ENOUGH
     );
     protected static final int TOLERANCE_FACTOR = 3;
+
+    static
+    {
+        LINSTOR_TAGS.add(TAG_KEY_LINSTOR_ID);
+        LINSTOR_TAGS.add(TAG_KEY_LINSTOR_INIT_DEV);
+    }
 
     private final Map<EbsRemote, AmazonEC2> amazonEc2ClientLUT;
     protected final RemoteMap remoteMap;
