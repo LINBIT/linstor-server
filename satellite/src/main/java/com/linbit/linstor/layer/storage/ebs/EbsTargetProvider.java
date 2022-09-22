@@ -193,6 +193,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
                 }
 
                 updateTags(vlmData, amazonVlm);
+                updateVolumeType(vlmData, amazonVlm);
             }
         }
     }
@@ -324,6 +325,31 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         return tagListToAdd;
     }
 
+    @SuppressWarnings("unchecked")
+    private void updateVolumeType(EbsData<?> vlmDataRef, com.amazonaws.services.ec2.model.Volume amazonVlmRef)
+        throws StorageException, AccessDeniedException
+    {
+        if (vlmDataRef.getVolume() instanceof Volume)
+        {
+            String linstorVlmType = getVolumeType((EbsData<Resource>) vlmDataRef);
+            String amaVlmType = amazonVlmRef.getVolumeType();
+            if (linstorVlmType != null && !linstorVlmType.equals(amaVlmType))
+            {
+                getClient(vlmDataRef.getStorPool()).modifyVolume(
+                    new ModifyVolumeRequest()
+                        .withVolumeId(amazonVlmRef.getVolumeId())
+                        .withVolumeType(linstorVlmType)
+                );
+            }
+        }
+        // else: we do not touch snapshots :)
+    }
+
+    private @Nullable String getVolumeType(EbsData<Resource> vlmDataRef) throws AccessDeniedException
+    {
+        return getPrioProps(vlmDataRef).getProp(ApiConsts.KEY_EBS_VOLUME_TYPE);
+    }
+
     @Override
     protected void createLvImpl(EbsData<Resource> vlmDataRef)
         throws StorageException, AccessDeniedException, DatabaseException
@@ -340,6 +366,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         ArrayList<Tag> tags = asAmazonTagList(getEbsTags(vlmDataRef));
         tags.add(new Tag(TAG_KEY_LINSTOR_ID, asLvIdentifier(vlmDataRef)));
 
+
         CreateVolumeRequest createVlmRequest = new CreateVolumeRequest()
             .withAvailabilityZone(remote.getAvailabilityZone(storDriverAccCtx))
             .withSize(
@@ -353,6 +380,11 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         if (restoreFromSnapEbsId != null)
         {
             createVlmRequest.withSnapshotId(restoreFromSnapEbsId);
+        }
+        String vlmType = getVolumeType(vlmDataRef);
+        if (vlmType != null)
+        {
+            createVlmRequest.withVolumeType(vlmType);
         }
         CreateVolumeResult createVolumeResult = client.createVolume(createVlmRequest);
 
