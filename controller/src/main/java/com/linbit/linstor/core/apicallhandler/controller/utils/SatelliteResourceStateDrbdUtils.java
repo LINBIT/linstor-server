@@ -25,7 +25,10 @@ public class SatelliteResourceStateDrbdUtils
         {
             try
             {
-                if (!SatelliteResourceStateDrbdUtils.allVolumesUpToDate(accCtx, node.getResource(accCtx, rscName)))
+                Resource rsc = node.getResource(accCtx, rscName);
+                // list of nodes might have been created from a list of snapshot, where the corresponding
+                // resource is already deleted
+                if (rsc != null && !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(accCtx, rsc))
                 {
                     ret = false;
                 }
