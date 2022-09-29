@@ -11,6 +11,7 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.Remote;
@@ -25,6 +26,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -35,6 +37,12 @@ public class EbsUtils
 
     private static final String EBS_SNAP_ID_BASE_KEY = EBS_NAMESPC + "/" + InternalApiConsts.KEY_EBS_SNAP_ID;
     private static final String EBS_VLM_ID_BASE_KEY = EBS_NAMESPC + "/" + InternalApiConsts.KEY_EBS_VLM_ID;
+
+    public static final String EBS_VLM_STATE_IN_USE = "in-use";
+    public static final String EBS_VLM_STATE_COMPLETED = "completed";
+
+    public static final String EBS_SNAP_STATE_COMPLETED = "completed";
+
 
     private EbsUtils()
     {
@@ -180,5 +188,18 @@ public class EbsUtils
             }
         }
         return hasEbsVlm;
+    }
+
+    public static boolean isSnapshotCompleted(AccessContext accessContextRef, Snapshot snapshotRef)
+        throws AccessDeniedException
+    {
+        boolean allCompleted = true;
+        Iterator<SnapshotVolume> snapVlmIt = snapshotRef.iterateVolumes();
+        while (snapVlmIt.hasNext())
+        {
+            SnapshotVolume snapVlm = snapVlmIt.next();
+            allCompleted &= snapVlm.getState(accessContextRef).equals(EBS_SNAP_STATE_COMPLETED);
+        }
+        return allCompleted;
     }
 }

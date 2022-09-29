@@ -9,7 +9,9 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.layer.storage.ebs.EbsUtils;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -87,6 +89,22 @@ public class CtrlSnapshotHelper
                     ApiConsts.FAIL_UNKNOWN_ERROR,
                     "Unable to use failed snapshot"
                 ));
+            }
+
+            for (Snapshot snapshot : snapshotDfn.getAllSnapshots(peerAccCtx.get()))
+            {
+                if (EbsUtils.isEbs(peerAccCtx.get(), snapshot) &&
+                    !EbsUtils.isSnapshotCompleted(peerAccCtx.get(), snapshot))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_IN_USE,
+                            snapshotDfn.getName().displayValue +
+                                " is not yet completed and cannot be restored right now. " +
+                                "Please wait until the snapshot is completed"
+                        )
+                    );
+                }
             }
         }
         catch (AccessDeniedException accDeniedExc)

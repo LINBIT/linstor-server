@@ -78,11 +78,6 @@ public class EbsStatusManagerService implements SystemService
     // private static final long DFLT_POLL_TIMEOUT_MS = 10_000;
     private static final int MAX_ENTRIES_PER_PAGE = 1000;
 
-    private static final String EBS_VLM_STATE_IN_USE = "in-use";
-    private static final String EBS_SNAP_STATE_COMPLETED = "completed";
-
-    private static final String EBS_VLM_STATE_COMPLETED = "completed";
-
     public static final ServiceName SERVICE_NAME;
     public static final String SERVICE_INFO = "EbsStatusPoll";
 
@@ -520,13 +515,13 @@ public class EbsStatusManagerService implements SystemService
                                 rscStates.setOnResource(
                                     rscName,
                                     SatelliteResourceState::setInUse,
-                                    EBS_VLM_STATE_IN_USE.equalsIgnoreCase(amaVlm.getState())
+                                    EbsUtils.EBS_VLM_STATE_IN_USE.equalsIgnoreCase(amaVlm.getState())
                                 );
                                 String diskState = amaVlm.getState();
                                 if (vlmMod != null)
                                 {
                                     String modState = vlmMod.getModificationState();
-                                    if (!modState.isEmpty() && !EBS_VLM_STATE_COMPLETED.equals(modState))
+                                    if (!modState.isEmpty() && !EbsUtils.EBS_VLM_STATE_COMPLETED.equals(modState))
                                     {
                                         diskState += ", " +
                                             vlmMod.getModificationState() + ": " +
@@ -609,7 +604,7 @@ public class EbsStatusManagerService implements SystemService
                     if (!snapVlm.isDeleted())
                     {
                         String diskState = amaSnap.getState();
-                        if (!EBS_SNAP_STATE_COMPLETED.equalsIgnoreCase(diskState))
+                        if (!EbsUtils.EBS_SNAP_STATE_COMPLETED.equalsIgnoreCase(diskState))
                         {
                             // "%" is already included from .getProgress()
                             diskState += ": " + amaSnap.getProgress();
