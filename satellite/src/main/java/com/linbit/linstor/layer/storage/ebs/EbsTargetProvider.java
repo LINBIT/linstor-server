@@ -19,7 +19,6 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.NodeName;
-import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -34,7 +33,6 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
@@ -640,43 +638,6 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
         errorReporter.logTrace("Deleting EBS snapshot. EBS Snapshot ID: %s", ebsSnapId);
         client.deleteSnapshot(new DeleteSnapshotRequest(ebsSnapId));
         snapVlmRef.setExists(false);
-    }
-
-    @Override
-    protected EbsRemote getEbsRemote(StorPool storPoolRef)
-    {
-        Remote remote;
-        try
-        {
-            remote = remoteMap.get(
-                new RemoteName(
-                    getPrioProps(storPoolRef).getProp(
-                        ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.NAMESPC_EBS + "/" + ApiConsts.KEY_REMOTE
-                    ),
-                    true
-                )
-            );
-        }
-        catch (InvalidKeyException | InvalidNameException | AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        if (!(remote instanceof EbsRemote))
-        {
-            throw new ImplementationError(
-                "Unexpected remote type: " + (remote == null ? "null" : remote.getClass().getSimpleName())
-            );
-        }
-        return (EbsRemote) remote;
-    }
-
-    private PriorityProps getPrioProps(StorPool spRef) throws AccessDeniedException
-    {
-        return new PriorityProps(
-            spRef.getProps(storDriverAccCtx),
-            localNodeProps,
-            stltConfigAccessor.getReadonlyProps()
-        );
     }
 
     protected PriorityProps getPrioProps(EbsData<Resource> vlmDataRef) throws AccessDeniedException

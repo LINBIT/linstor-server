@@ -27,6 +27,7 @@ info:
       - Extended RemoteList with ebs_remotes
       - Added POST /v1/nodes/ebs
       - Extended SatelliteConfig with ebs boolean
+      - Added SnapshotVolumeNode which includes an optional state
     * 1.14.0
       - Added /v1/physical-storage/{node} to view devices for a single node
       - Added /v1/schedules/ and /v1/schedules/{scheduleName} endpoints as well as Schedule to create, delete, modify and list schedules
@@ -7685,7 +7686,7 @@ components:
             - Complete
     SnapshotNode:
       type: object
-      description: Actual snapshot data from a node
+      description: Objects holding one or multiple SnapshotVolumeNode objects for the given node
       properties:
         snapshot_name:
           type: string
@@ -7705,6 +7706,27 @@ components:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        snapshot_volumes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapshotVolumeNode'
+    SnapshotVolumeNode:
+      type: object
+      description: Actual snapshot data from a node
+      properties:
+        uuid:
+          type: string
+          description: unique object id
+          example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        vlm_nr:
+          type: integer
+          format: int32
+          description: Volume number of the snapshot
+        props:
+          $ref: '#/components/schemas/Properties'
+        state:
+          type: string
+          description: Optional state for the given snapshot
     SnapshotVolumeDefinition:
       type: object
       properties:

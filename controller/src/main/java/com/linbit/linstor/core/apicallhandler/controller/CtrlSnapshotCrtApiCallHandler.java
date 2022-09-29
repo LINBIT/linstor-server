@@ -20,6 +20,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.ebs.EbsStatusManagerService;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -29,6 +30,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.storage.ebs.EbsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -71,6 +73,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private final CtrlSnapshotCrtHelper ctrlSnapshotCrtHelper;
     private final ErrorReporter errorReporter;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandler;
+    private final EbsStatusManagerService ebsStatusMgr;
 
     @Inject
     public CtrlSnapshotCrtApiCallHandler(
@@ -84,7 +87,8 @@ public class CtrlSnapshotCrtApiCallHandler
         CtrlSnapshotCrtHelper ctrlSnapshotCrtHelperRef,
         CtrlPropsHelper propsHelperRef,
         ErrorReporter errorReporterRef,
-        CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef,
+        EbsStatusManagerService ebsStatusManagerServiceRef
     )
     {
         apiCtx = apiCtxRef;
@@ -98,6 +102,7 @@ public class CtrlSnapshotCrtApiCallHandler
         propsHelper = propsHelperRef;
         errorReporter = errorReporterRef;
         ctrlSnapshotDeleteApiCallHandler = ctrlSnapshotDeleteApiCallHandlerRef;
+        ebsStatusMgr = ebsStatusManagerServiceRef;
     }
 
     /**
@@ -628,8 +633,10 @@ public class CtrlSnapshotCrtApiCallHandler
 
         unsetInCreationPrivileged(snapshotDfn);
 
+        boolean isEbsSnapshot = false;
         for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
         {
+            isEbsSnapshot |= isEbsSnapshot(snapshot);
             setTakeSnapshotPrivileged(snapshot, false);
         }
 
@@ -637,9 +644,40 @@ public class CtrlSnapshotCrtApiCallHandler
 
         ctrlTransactionHelper.commit();
 
+        if (isEbsSnapshot)
+        {
+            pollEbs();
+        }
+
         return ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
             // ensure that the individual node update fluxes are subscribed to, but ignore responses from cleanup
             .flatMap(Tuple2::getT2).thenMany(Flux.empty());
+    }
+
+    private void pollEbs()
+    {
+        try
+        {
+            ebsStatusMgr.pollAndWait(EbsStatusManagerService.DFLT_POlL_WAIT);
+        }
+        catch (InterruptedException exc)
+        {
+            errorReporter.reportError(exc);
+        }
+    }
+
+    private boolean isEbsSnapshot(Snapshot snapshotRef)
+    {
+        boolean ret;
+        try
+        {
+            ret = EbsUtils.isEbs(apiCtx, snapshotRef);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        return ret;
     }
 
     private void unsetInCreationPrivileged(SnapshotDefinition snapshotDfn)

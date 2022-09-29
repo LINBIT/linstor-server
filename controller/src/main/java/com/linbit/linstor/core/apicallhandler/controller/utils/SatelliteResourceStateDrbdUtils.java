@@ -3,12 +3,16 @@ package com.linbit.linstor.core.apicallhandler.controller.utils;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.layer.storage.ebs.EbsUtils;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 
 import java.util.Collection;
 
@@ -21,7 +25,7 @@ public class SatelliteResourceStateDrbdUtils
         {
             try
             {
-                if (!SatelliteResourceStateDrbdUtils.allVolumesUpToDate(node.getPeer(accCtx), rscName))
+                if (!SatelliteResourceStateDrbdUtils.allVolumesUpToDate(accCtx, node.getResource(accCtx, rscName)))
                 {
                     ret = false;
                 }
@@ -34,36 +38,48 @@ public class SatelliteResourceStateDrbdUtils
         return ret;
     }
 
-    public static boolean allVolumesUpToDate(Peer peer, ResourceName rscName)
+    public static boolean allVolumesUpToDate(AccessContext accCtx, Resource rsc) throws AccessDeniedException
     {
-        return allVolumesUpToDate(peer, rscName, true);
+        return allVolumesUpToDate(accCtx, rsc, true);
     }
 
-    public static boolean allVolumesUpToDate(Peer peer, ResourceName rscName, boolean defaultIfUnknown)
+    public static boolean allVolumesUpToDate(AccessContext accCtx, Resource rsc, boolean defaultIfUnknown)
+        throws AccessDeniedException
     {
         boolean ret = defaultIfUnknown;
 
-        SatelliteState stltState = peer.getSatelliteState();
-        if (stltState != null)
+        boolean checkState = LayerRscUtils.getLayerStack(rsc, accCtx).contains(DeviceLayerKind.DRBD);
+        // do not check EBS target resource, only initiator resource
+        checkState &= (!EbsUtils.hasEbsVlms(rsc, accCtx) ||
+            rsc.getStateFlags().isSet(accCtx, Resource.Flags.EBS_INITIATOR));
+
+        if (checkState)
         {
-            SatelliteResourceState rscState = stltState.getResourceStates().get(rscName);
-            if (rscState != null)
+            Peer peer = rsc.getNode().getPeer(accCtx);
+            ResourceName rscName = rsc.getDefinition().getName();
+            SatelliteState stltState = peer.getSatelliteState();
+            if (stltState != null)
             {
-                Collection<SatelliteVolumeState> vlmStates = rscState.getVolumeStates().values();
-                if (vlmStates != null)
+                SatelliteResourceState rscState = stltState.getResourceStates().get(rscName);
+                if (rscState != null)
                 {
-                    ret = true;
-                    for (SatelliteVolumeState stltVlmStates : vlmStates)
+                    Collection<SatelliteVolumeState> vlmStates = rscState.getVolumeStates().values();
+                    if (vlmStates != null)
                     {
-                        if (!stltVlmStates.getDiskState().equalsIgnoreCase("uptodate"))
+                        ret = true;
+                        for (SatelliteVolumeState stltVlmStates : vlmStates)
                         {
-                            ret = false;
-                            break;
+                            if (!stltVlmStates.getDiskState().equalsIgnoreCase("uptodate"))
+                            {
+                                ret = false;
+                                break;
+                            }
                         }
                     }
                 }
             }
         }
+
         return ret;
     }
 }

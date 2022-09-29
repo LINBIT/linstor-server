@@ -10,19 +10,25 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule.NodesMap;
+import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
+import com.linbit.linstor.core.ebs.EbsStatusManagerService;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
+import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
@@ -73,6 +79,9 @@ public class EncryptionHelper
     private final AccessContext apiCtx;
     private final Provider<CtrlRscLayerDataFactory> rscLayerDataFactoryProvider;
     private final CtrlSatelliteUpdateCaller ctrlstltUpdateCaller;
+    private final RemoteMap remoteMap;
+    private final DecryptionHelper decryptionHelper;
+    private final EbsStatusManagerService ebsStatusMgr;
 
     static
     {
@@ -95,10 +104,12 @@ public class EncryptionHelper
         CtrlStltSerializer ctrlStltSrzlRef,
         NodesMap nodesMapRef,
         ResourceDefinitionMap rscDfnMapRef,
-        @ApiContext
-        AccessContext apiCtxRef,
+        @ApiContext AccessContext apiCtxRef,
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactoryProviderRef,
-        CtrlSatelliteUpdateCaller ctrlstltUpdateCallerRef
+        CtrlSatelliteUpdateCaller ctrlstltUpdateCallerRef,
+        RemoteMap remoteMapRef,
+        DecryptionHelper decryptionHelperRef,
+        EbsStatusManagerService ebsStatusMgrRef
     )
     {
         systemConfRepository = systemConfRepositoryRef;
@@ -106,6 +117,9 @@ public class EncryptionHelper
         rscDfnMap = rscDfnMapRef;
         rscLayerDataFactoryProvider = rscLayerDataFactoryProviderRef;
         ctrlstltUpdateCaller = ctrlstltUpdateCallerRef;
+        remoteMap = remoteMapRef;
+        decryptionHelper = decryptionHelperRef;
+        ebsStatusMgr = ebsStatusMgrRef;
         secretGen = cryptoProviderRef.createSecretGenerator();
         cryptoLenPad = cryptoProviderRef.createLengthPadding();
         transMgrProvider = transMgrProviderRef;
@@ -308,10 +322,54 @@ public class EncryptionHelper
                         );
                     }
                 }
+
+                // also decrypt EBS remote settings, since we will need them for periodic polling
+                boolean anyEbsRemoteDecrypted = false;
+                for (Remote remote : remoteMap.values())
+                {
+                    if (remote instanceof EbsRemote)
+                    {
+                        EbsRemote ebsRemote = (EbsRemote) remote;
+                        ebsRemote.setDecryptedAccessKey(
+                            apiCtx,
+                            new String(
+                                decryptionHelper.decrypt(
+                                    cryptKey,
+                                    ebsRemote.getEncryptedAccessKey(apiCtx)
+                                )
+                            )
+                        );
+                        ebsRemote.setDecryptedSecretKey(
+                            apiCtx,
+                            new String(
+                                decryptionHelper.decrypt(
+                                    cryptKey,
+                                    ebsRemote.getEncryptedSecretKey(apiCtx)
+                                )
+                            )
+                        );
+                        anyEbsRemoteDecrypted = true;
+                    }
+                }
+                if (anyEbsRemoteDecrypted)
+                {
+                    ebsStatusMgr.pollAsync();
+                }
             }
             catch (AccessDeniedException implErr)
             {
                 throw new ImplementationError(implErr);
+            }
+            catch (DatabaseException dbExc)
+            {
+                throw new ApiDatabaseException(dbExc);
+            }
+            catch (LinStorException linstorExc)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_CRYPT_PASSPHRASE, "Failed to decrypt secrets"),
+                    linstorExc
+                );
             }
         }
         return flux;

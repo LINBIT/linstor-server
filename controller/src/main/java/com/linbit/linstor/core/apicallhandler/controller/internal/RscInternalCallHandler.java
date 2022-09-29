@@ -16,6 +16,7 @@ import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.ebs.EbsStatusManagerService;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -34,6 +35,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.storage.ebs.EbsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -42,6 +44,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
+import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.data.provider.utils.ProviderUtils;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -87,6 +91,7 @@ public class RscInternalCallHandler
     private final RetryResourcesTask retryResourceTask;
     private final CtrlSatelliteUpdater stltUpdater;
     private final SnapshotShippingInternalApiCallHandler snapShipIntHandler;
+    private final EbsStatusManagerService ebsStatusMgr;
 
     @Inject
     public RscInternalCallHandler(
@@ -104,7 +109,8 @@ public class RscInternalCallHandler
         RetryResourcesTask retryResourceTaskRef,
         CtrlApiDataLoader ctrlApiDataLoader,
         CtrlSatelliteUpdater stltUpdaterRef,
-        SnapshotShippingInternalApiCallHandler snapShipIntHandlerRef
+        SnapshotShippingInternalApiCallHandler snapShipIntHandlerRef,
+        EbsStatusManagerService ebsStatusMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -123,6 +129,7 @@ public class RscInternalCallHandler
         apiDataLoader = ctrlApiDataLoader;
         stltUpdater = stltUpdaterRef;
         snapShipIntHandler = snapShipIntHandlerRef;
+        ebsStatusMgr = ebsStatusMgrRef;
     }
 
     public void handleResourceRequest(
@@ -262,7 +269,20 @@ public class RscInternalCallHandler
                             Map<String, String> snapVlmPropPojo = allSnapVlmProps.get(snapVlmNr.value);
                             if (snapVlm != null && snapVlmPropPojo != null)
                             {
-                                mergeStltProps(snapVlmPropPojo, snapVlm.getProps(apiCtx));
+                                Props snapVlmProps = snapVlm.getProps(apiCtx);
+
+                                // check has to be done before merging, but adding has to be done after merge is
+                                // complete
+                                boolean addToEbsStatusMgr = EbsUtils.isEbs(apiCtx, snapshot) &&
+                                    EbsUtils.getEbsSnapId(snapVlmProps, RscLayerSuffixes.SUFFIX_DATA) == null &&
+                                    EbsUtils.getEbsSnapId(snapVlmPropPojo, RscLayerSuffixes.SUFFIX_DATA) != null;
+                                mergeStltProps(snapVlmPropPojo, snapVlmProps);
+                                if (addToEbsStatusMgr)
+                                {
+                                    // pojo has prop which is not (yet) stored / merged.
+                                    // -> register this snapshot
+                                    ebsStatusMgr.addIfEbs(snapshot);
+                                }
                             }
                         }
                     }
@@ -282,7 +302,20 @@ public class RscInternalCallHandler
 
                 VlmLayerDataApi vlmLayerDataPojo = rscLayerDataPojoRef.getVolumeMap().get(vlmNr.value);
 
-                mergeStltProps(vlmPropsRef.get(vlmNr.value), vlm.getProps(apiCtx));
+                Map<String, String> vlmPropPojo = vlmPropsRef.get(vlmNr.value);
+                Props vlmProps = vlm.getProps(apiCtx);
+
+                // check before merge before add
+                boolean addVlmToEbsStatusMgr = EbsUtils.isEbs(apiCtx, rsc) &&
+                    !EbsUtils.hasAnyEbsProp(vlmProps) &&
+                    EbsUtils.hasAnyEbsProp(vlmPropPojo);
+                mergeStltProps(vlmPropPojo, vlmProps);
+                if (addVlmToEbsStatusMgr)
+                {
+                    // pojo has prop which is not (yet) stored / merged.
+                    // -> register this resource
+                    ebsStatusMgr.addIfEbs(rsc);
+                }
 
                 if (vlmLayerDataPojo != null)
                 {
@@ -375,7 +408,6 @@ public class RscInternalCallHandler
         }
     }
 
-
     public void handleResourceFailed(String nodeName, String rscName, ApiCallRc apiCallRc)
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.readLock()))
@@ -424,5 +456,42 @@ public class RscInternalCallHandler
                 throw new ApiDatabaseException(exc);
             }
         }
+    }
+
+    /**
+     * @return
+     * null if something unexpected happens, the EbsData otherwise
+     */
+    private <RSC extends AbsResource<RSC>> @Nullable EbsData<RSC> getEbsData(
+        AbsRscLayerObject<RSC> layerData,
+        VolumeNumber vlmNrRef
+    )
+    {
+        EbsData<RSC> ret = null;
+        Set<AbsRscLayerObject<RSC>> storVlmDataSet = LayerRscUtils.getRscDataByProvider(
+            layerData,
+            DeviceLayerKind.STORAGE
+        );
+        for (AbsRscLayerObject<RSC> storSnapData : storVlmDataSet)
+        {
+            VlmProviderObject<RSC> vlmData = storSnapData.getVlmLayerObjects().get(vlmNrRef);
+            if (vlmData instanceof EbsData)
+            {
+                if (ret != null)
+                {
+                    // we found the second EbsData...
+                    errorReporter.logError(
+                        "Cannot register EBS snapshot for status polling since there are " +
+                            "unexpectedly %d volume data",
+                        storVlmDataSet.size()
+                    );
+                    ret = null;
+                    break;
+                }
+
+                ret = (EbsData<RSC>) vlmData;
+            }
+        }
+        return ret;
     }
 }

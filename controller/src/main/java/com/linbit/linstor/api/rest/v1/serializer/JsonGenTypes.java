@@ -1130,7 +1130,7 @@ public class JsonGenTypes
     }
 
     /**
-     * Actual snapshot data from a node
+     * Objects holding one or multiple SnapshotVolumeNode objects for the given node
      */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class SnapshotNode
@@ -1152,6 +1152,28 @@ public class JsonGenTypes
          * unique object id
          */
         public String uuid;
+        public List<SnapshotVolumeNode> snapshot_volumes = Collections.emptyList();
+    }
+
+    /**
+     * Actual snapshot data from a node
+     */
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SnapshotVolumeNode
+    {
+        /**
+         * unique object id
+         */
+        public String uuid;
+        /**
+         * Volume number of the snapshot
+         */
+        public Integer vlm_nr;
+        public Map<String, String> props = Collections.emptyMap();
+        /**
+         * Optional state for the given snapshot
+         */
+        public String state;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

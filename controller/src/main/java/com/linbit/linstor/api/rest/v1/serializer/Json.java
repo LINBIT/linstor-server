@@ -51,6 +51,7 @@ import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.SnapshotApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
+import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
@@ -946,7 +947,21 @@ public class Json
         nodeSnap.flags = FlagsHelper.toStringList(Snapshot.Flags.class, snapshotApi.getFlags());
         nodeSnap.uuid = snapshotApi.getSnapshotUuid().toString();
         snapshotApi.getCreateTimestamp().ifPresent(d -> nodeSnap.create_timestamp = d.getTime());
+        nodeSnap.snapshot_volumes = snapshotApi.getSnapshotVlmList()
+            .stream()
+            .map(Json::apiToSnapshotVolumeNode)
+            .collect(Collectors.toList());
         return nodeSnap;
+    }
+
+    public static JsonGenTypes.SnapshotVolumeNode apiToSnapshotVolumeNode(SnapshotVolumeApi snapshotVolumeApi)
+    {
+        JsonGenTypes.SnapshotVolumeNode nodeSnapVlm = new JsonGenTypes.SnapshotVolumeNode();
+        nodeSnapVlm.uuid = snapshotVolumeApi.getSnapshotVlmUuid().toString();
+        nodeSnapVlm.vlm_nr = snapshotVolumeApi.getSnapshotVlmNr();
+        nodeSnapVlm.props = snapshotVolumeApi.getPropsMap();
+        nodeSnapVlm.state = snapshotVolumeApi.getState();
+        return nodeSnapVlm;
     }
 
     public static JsonGenTypes.Snapshot apiToSnapshot(

@@ -47,4 +47,5 @@ message SnapshotVlm
     string snapshot_vlm_dfn_uuid = 2;
     sint32 vlm_nr = 3;
     map<string, string> snapshot_vlm_props = 5;
+    string state = 6;
 }

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added SnapshotVolumeNode as part of SnapshotNode to include a snapshot state
+- Status of EBS volumes and snapshots are now queried periodically
+
 ### Fixed
 - Snapshots and SnapshotVolumes now properly delete their properties + cleanup migration existing DB entries
 

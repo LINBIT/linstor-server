@@ -74,7 +74,8 @@ public class ApplySnapshot implements ApiCall
                     UUID.fromString(snapshotVlm.getSnapshotVlmDfnUuid()),
                     UUID.fromString(snapshotVlm.getSnapshotVlmUuid()),
                     snapshotVlm.getVlmNr(),
-                    snapshotVlm.getSnapshotVlmPropsMap()
+                    snapshotVlm.getSnapshotVlmPropsMap(),
+                    snapshotVlm.getState()
                 ))
                 .collect(Collectors.toList());
 

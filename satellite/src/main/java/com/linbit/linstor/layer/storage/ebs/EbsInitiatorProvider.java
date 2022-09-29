@@ -1,7 +1,5 @@
 package com.linbit.linstor.layer.storage.ebs;
 
-import com.linbit.ImplementationError;
-import com.linbit.InvalidNameException;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactoryStlt;
@@ -16,7 +14,6 @@ import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
-import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -24,8 +21,6 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.remotes.EbsRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
@@ -33,7 +28,6 @@ import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.ebs.rest.AwsRestClient;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -556,40 +550,6 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         throws StorageException, AccessDeniedException, DatabaseException
     {
         disconnect(vlmDataRef);
-    }
-
-    @Override
-    protected EbsRemote getEbsRemote(StorPool storPoolRef)
-    {
-        Remote remote;
-        String remoteName;
-        try
-        {
-            remoteName = storPoolRef.getProps(storDriverAccCtx).getProp(
-                ApiConsts.KEY_REMOTE,
-                ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.NAMESPC_EBS
-            );
-            remote = remoteMap.get(new RemoteName(remoteName, true));
-        }
-        catch (InvalidKeyException | AccessDeniedException | InvalidNameException exc)
-        {
-            throw new ImplementationError(exc);
-        }
-        if (!(remote instanceof EbsRemote))
-        {
-            if (remote == null)
-            {
-                throw new ImplementationError("EbsRemote '" + remoteName + "' not found");
-            }
-            else
-            {
-                throw new ImplementationError(
-                    "Unexpected remote type: " + remote.getClass().getSimpleName() + ". RemoteName: '" + remoteName +
-                        "'"
-                );
-            }
-        }
-        return (EbsRemote) remote;
     }
 
     @Override

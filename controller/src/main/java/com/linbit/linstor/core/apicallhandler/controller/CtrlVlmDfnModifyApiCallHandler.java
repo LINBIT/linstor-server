@@ -22,6 +22,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.ebs.EbsStatusManagerService;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -32,6 +33,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.storage.ebs.EbsUtils;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -86,6 +88,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     private final ReadWriteLock rscDfnMapLock;
     private final Provider<AccessContext> peerAccCtx;
     private final BackupInfoManager backupInfoMgr;
+    private final EbsStatusManagerService ebsStatusMgr;
 
     @Inject
     CtrlVlmDfnModifyApiCallHandler(
@@ -98,7 +101,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         ResponseConverter responseConverterRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        BackupInfoManager backupInfoMgrRef
+        BackupInfoManager backupInfoMgrRef,
+        EbsStatusManagerService ebsStatusMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -111,6 +115,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         rscDfnMapLock = rscDfnMapLockRef;
         peerAccCtx = peerAccCtxRef;
         backupInfoMgr = backupInfoMgrRef;
+        ebsStatusMgr = ebsStatusMgrRef;
     }
 
     @Override
@@ -301,7 +306,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 {
                     final Resource rsc = itRsc.next();
                     if (!rsc.isDiskless(apiCtx) &&
-                        !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(rsc.getNode().getPeer(apiCtx), rscName))
+                        !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(apiCtx, rsc))
                     {
                         throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
                             ApiConsts.FAIL_NOT_ALL_UPTODATE,
@@ -789,17 +794,27 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         if (vlmDfn != null)
         {
-            streamVolumesPrivileged(vlmDfn).forEach(
-                vlm ->
-                {
-                    unmarkVlmDrbdResizePrivileged(vlm);
-                    unmarkVlmResizePrivileged(vlm);
-                }
-            );
+            boolean ebsResize = false;
+            Iterator<Volume> vlmsIt = iterateVolumes(vlmDfn);
+            while (vlmsIt.hasNext())
+            {
+                Volume vlm = vlmsIt.next();
 
+                unmarkVlmDrbdResizePrivileged(vlm);
+                unmarkVlmResizePrivileged(vlm);
+                if (!ebsResize)
+                {
+                    ebsResize |= isEbsPrivileged(vlm);
+                }
+            }
             unmarkVlmDfnResizePrivileged(vlmDfn);
 
             ctrlTransactionHelper.commit();
+
+            if (ebsResize)
+            {
+                ebsStatusMgr.pollAsync();
+            }
         }
 
         return updateSatellites(rscName, vlmNr);
@@ -1088,6 +1103,18 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         catch (DatabaseException dbExc)
         {
             throw new ApiDatabaseException(dbExc);
+        }
+    }
+
+    private boolean isEbsPrivileged(Volume vlmRef)
+    {
+        try
+        {
+            return EbsUtils.isEbs(apiCtx, vlmRef.getAbsResource());
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 

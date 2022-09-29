@@ -32,6 +32,9 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
 
     private final SnapshotVolumeDatabaseDriver dbDriver;
 
+    // deliberately not a TransactionObject to behave the same as SatelliteResourceStates
+    private volatile String state;
+
     public SnapshotVolume(
         UUID objIdRef,
         Snapshot snapshotRef,
@@ -73,6 +76,20 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
     {
         checkDeleted();
         return snapshotVolumeDefinition;
+    }
+
+    public String getState(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return state;
+    }
+
+    public void setState(AccessContext accCtx, String stateRef) throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
+        state = stateRef;
     }
 
     @Override
@@ -123,7 +140,8 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
             getSnapshotVolumeDefinition().getUuid(),
             getUuid(),
             getVolumeNumber().value,
-            props.map()
+            props.map(),
+            state
         );
     }
 

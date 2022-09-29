@@ -9,4 +9,5 @@ public interface SnapshotVolumeApi
     UUID getSnapshotVlmDfnUuid();
     int getSnapshotVlmNr();
     Map<String, String> getPropsMap();
+    String getState();
 }

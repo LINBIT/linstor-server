@@ -716,6 +716,8 @@ public class CtrlRemoteApiCallHandler
                 encryptedAccessKey,
                 encryptedSecretKey
             );
+            remote.setDecryptedAccessKey(apiCtx, accessKeyRef);
+            remote.setDecryptedSecretKey(apiCtx, secretKeyRef);
             remoteRepository.put(apiCtx, remote);
 
             // TODO perform check if accessKey and secretKey are correct if possible
@@ -902,10 +904,12 @@ public class CtrlRemoteApiCallHandler
             if (accessKeyRef != null && !accessKeyRef.isEmpty())
             {
                 ebsRemote.setEncryptedAccessKey(pAccCtx, encryptionHelper.encrypt(accessKeyRef));
+                ebsRemote.setDecryptedAccessKey(pAccCtx, accessKeyRef);
             }
             if (secretKeyRef != null && !secretKeyRef.isEmpty())
             {
                 ebsRemote.setEncryptedSecretKey(pAccCtx, encryptionHelper.encrypt(secretKeyRef));
+                ebsRemote.setDecryptedSecretKey(pAccCtx, secretKeyRef);
             }
         }
         catch (AccessDeniedException exc)

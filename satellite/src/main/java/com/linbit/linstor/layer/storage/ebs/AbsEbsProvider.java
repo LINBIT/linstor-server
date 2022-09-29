@@ -163,6 +163,13 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
                 if (client == null)
                 {
                     byte[] masterKey = stltSecObj.getCryptKey();
+                    if (masterKey == null)
+                    {
+                        throw new StorageException(
+                            "Cannot operate on EBS volumes/Snapshots without having linstor's encryption enabled" +
+                                " (enter passphrase)"
+                        );
+                    }
                     try
                     {
                         EndpointConfiguration endpointConfiguration = new EndpointConfiguration(
@@ -396,19 +403,14 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
 
     protected String getEbsVlmId(EbsData<?> vlmDataRef)
     {
-        String ret;
         try
         {
-            ret = vlmDataRef.getVolume().getProps(storDriverAccCtx).getProp(
-                InternalApiConsts.KEY_EBS_VLM_ID + vlmDataRef.getRscLayerObject().getResourceNameSuffix(),
-                ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
-            );
+            return EbsUtils.getEbsVlmId(storDriverAccCtx, vlmDataRef);
         }
         catch (InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
-        return ret;
     }
 
     protected void setEbsSnapId(EbsData<Snapshot> snapVlmDataRef, String ebsSnapIdRef)
@@ -417,9 +419,8 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
         try
         {
             snapVlmDataRef.getVolume().getProps(storDriverAccCtx).setProp(
-                InternalApiConsts.KEY_EBS_SNAP_ID + snapVlmDataRef.getRscLayerObject().getResourceNameSuffix(),
-                ebsSnapIdRef,
-                ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
+                EbsUtils.getEbsSnapIdKey(snapVlmDataRef),
+                ebsSnapIdRef
             );
         }
         catch (InvalidKeyException | InvalidValueException exc)
@@ -430,22 +431,24 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
 
     protected String getEbsSnapId(EbsData<Snapshot> snapVlmDataRef)
     {
-        String ret;
         try
         {
-            ret = snapVlmDataRef.getVolume().getProps(storDriverAccCtx).getProp(
-                InternalApiConsts.KEY_EBS_SNAP_ID + snapVlmDataRef.getRscLayerObject().getResourceNameSuffix(),
-                ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
-            );
+            return EbsUtils.getEbsSnapId(storDriverAccCtx, snapVlmDataRef);
         }
         catch (InvalidKeyException | AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
-        return ret;
     }
 
-    protected abstract EbsRemote getEbsRemote(StorPool storPoolRef);
+    protected EbsRemote getEbsRemote(StorPool storPoolRef) {
+        return EbsUtils.getEbsRemote(
+            storDriverAccCtx,
+            remoteMap,
+            storPoolRef,
+            stltConfigAccessor.getReadonlyProps()
+        );
+    }
 
     protected void waitUntilResizeFinished(AmazonEC2 client, String ebsVlmId, long expectedNewSizeInGib)
         throws StorageException

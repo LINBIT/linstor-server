@@ -21,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlConfigModule;
+import com.linbit.linstor.core.ebs.EbsStatusManagerService;
 import com.linbit.linstor.core.exos.ExosEnclosurePingTask;
 import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
@@ -58,10 +59,10 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.systemstarter.ConnectNodesInitializer;
 import com.linbit.linstor.systemstarter.GrizzlyInitializer;
-import com.linbit.linstor.systemstarter.SpecStltTargetProcMgrInit;
 import com.linbit.linstor.systemstarter.PassphraseInitializer;
 import com.linbit.linstor.systemstarter.PreConnectInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
+import com.linbit.linstor.systemstarter.SpecStltTargetProcMgrInit;
 import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
@@ -164,6 +165,7 @@ public final class Controller
 
     private final PreConnectInitializer preConnectCleanupInitializer;
     private final ScheduleBackupService scheduleBackupService;
+    private final EbsStatusManagerService ebsStatusManagerService;
 
     @Inject
     public Controller(
@@ -198,7 +200,8 @@ public final class Controller
         CtrlConfig ctrlCfgRef,
         PassphraseInitializer passphraseInitializerRef,
         PreConnectInitializer preConnectCleanupInitializerRef,
-        ScheduleBackupService scheduleBackupServiceRef
+        ScheduleBackupService scheduleBackupServiceRef,
+        EbsStatusManagerService ebsStatusManagerServiceRef
     )
     {
         errorReporter = errorReporterRef;
@@ -232,6 +235,7 @@ public final class Controller
         passphraseInitializer = passphraseInitializerRef;
         preConnectCleanupInitializer = preConnectCleanupInitializerRef;
         scheduleBackupService = scheduleBackupServiceRef;
+        ebsStatusManagerService = ebsStatusManagerServiceRef;
     }
 
     public void start(Injector injector, CtrlConfig linstorCfgRef)
@@ -290,6 +294,7 @@ public final class Controller
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);
             systemServicesMap.put(scheduleBackupService.getInstanceName(), scheduleBackupService);
             systemServicesMap.put(timerEventSvc.getInstanceName(), timerEventSvc);
+            systemServicesMap.put(ebsStatusManagerService.getInstanceName(), ebsStatusManagerService);
             SystemService spaceTrackingService = null;
             try
             {
@@ -349,6 +354,7 @@ public final class Controller
                 startOrderlist.add(new ServiceStarter(spaceTrackingService));
             }
             startOrderlist.add(new ServiceStarter(scheduleBackupService));
+            startOrderlist.add(new ServiceStarter(ebsStatusManagerService));
             startOrderlist.add(grizzlyInit);
 
             applicationLifecycleManager.startSystemServices(startOrderlist);

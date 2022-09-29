@@ -1561,8 +1561,8 @@ public class CtrlNodeApiCallHandler
                     {
                         // no use to keep a non-UpToDate resource that should be evacuated
                         justDeleteRscToEvac = !SatelliteResourceStateDrbdUtils.allVolumesUpToDate(
-                            nodeToEvacuate.getPeer(peerCtx),
-                            rscName
+                            apiCtx,
+                            rscToEvacuate
                         );
                     }
 
@@ -1696,8 +1696,8 @@ public class CtrlNodeApiCallHandler
             ))
             {
                 boolean allDrbdVolumesUpToDate = SatelliteResourceStateDrbdUtils.allVolumesUpToDate(
-                    rsc.getNode().getPeer(accCtx),
-                    rscName,
+                    accCtx,
+                    rsc,
                     false
                 );
                 if (allDrbdVolumesUpToDate)

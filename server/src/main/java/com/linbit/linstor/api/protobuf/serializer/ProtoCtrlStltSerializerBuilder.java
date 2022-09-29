@@ -1660,14 +1660,18 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             while (snapVlmIt.hasNext())
             {
                 SnapshotVolume snapshotVolume = snapVlmIt.next();
-                snapshotVlms.add(
-                    IntSnapshotOuterClass.SnapshotVlm.newBuilder()
-                        .setSnapshotVlmUuid(snapshotVolume.getUuid().toString())
-                        .setSnapshotVlmDfnUuid(snapshotDfn.getUuid().toString())
-                        .setVlmNr(snapshotVolume.getVolumeNumber().value)
-                        .putAllSnapshotVlmProps(snapshotVolume.getProps(serializerCtx).map())
-                        .build()
-                );
+                IntSnapshotOuterClass.SnapshotVlm.Builder builder = IntSnapshotOuterClass.SnapshotVlm
+                    .newBuilder()
+                    .setSnapshotVlmUuid(snapshotVolume.getUuid().toString())
+                    .setSnapshotVlmDfnUuid(snapshotDfn.getUuid().toString())
+                    .setVlmNr(snapshotVolume.getVolumeNumber().value)
+                    .putAllSnapshotVlmProps(snapshotVolume.getProps(serializerCtx).map());
+                final String state = snapshotVolume.getState(serializerCtx);
+                if (state != null)
+                {
+                    builder.setState(state);
+                }
+                snapshotVlms.add(builder.build());
             }
 
             return IntSnapshot.newBuilder()
