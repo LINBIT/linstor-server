@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Snapshots and SnapshotVolumes now properly delete their properties + cleanup migration existing DB entries
+
 ## [1.20.0-rc.1] - 2022-09-20
 
 ### Added

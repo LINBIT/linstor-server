@@ -86,6 +86,8 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
             absRsc.removeVolume(accCtx, this);
             snapshotVolumeDefinition.removeSnapshotVolume(accCtx, this);
 
+            props.delete();
+
             activateTransMgr();
             dbDriver.delete(this);
 

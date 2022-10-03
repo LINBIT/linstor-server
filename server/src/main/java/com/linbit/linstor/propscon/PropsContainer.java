@@ -67,7 +67,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     private static final String PATH_RESOURCE_CON_DEFINITIONS = "/conDfn/resources/";
     private static final String PATH_VOLUME_CON_DEFINITIONS   = "/conDfn/volume/";
     private static final String PATH_SNAPSHOTS = "/snapshots/";
-    private static final String PATH_SNAPSHOT_VOLUMES = "/snapshotvolumes/";
+    // private static final String PATH_SNAPSHOT_VOLUMES = "/snapshotvolumes/";
     private static final String PATH_SNAPSHOT_DEFINITIONS     = "/snapshotdefinitions/";
     private static final String PATH_SNAPSHOT_VOLUME_DEFINITIONS = "/snapshotvolumedefinitions/";
     private static final String PATH_KVS                      = "/keyvaluestores/";
