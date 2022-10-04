@@ -11,4 +11,6 @@ public interface ControllerK8sCrdDatabase extends ControllerDatabase
     KubernetesClient getClient();
 
     K8sResourceClient<?> getCachingClient(Class<? extends LinstorCrd<? extends LinstorSpec>> clazz);
+
+    void clearCache();
 }

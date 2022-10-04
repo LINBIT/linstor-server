@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
@@ -36,7 +37,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
 
     private K8sCrdTransaction currentTransaction;
 
-    private final Map<DatabaseTable, K8sResourceClient<?>> crdClientLut;
+    private final Map<DatabaseTable, Supplier<K8sResourceClient<?>>> crdClientLut;
     private final MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClient;
     private final MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClient;
     private final KubernetesClient k8sClient;
@@ -79,7 +80,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
                  */
                 crdClientLut.put(
                     tbl,
-                    controllerK8sCrdDatabaseRef.getCachingClient(clazz)
+                    () -> controllerK8sCrdDatabaseRef.getCachingClient(clazz)
                 );
             }
         }

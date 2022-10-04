@@ -315,4 +315,10 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     {
         return k8sCachingClient.computeIfAbsent(clazz, c -> new K8sCachingClient<>(k8sClient.resources(c)));
     }
+
+    @Override
+    public void clearCache()
+    {
+        k8sCachingClient.clear();
+    }
 }

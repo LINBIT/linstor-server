@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -25,7 +26,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 
 public class K8sCrdTransaction
 {
-    private final Map<DatabaseTable, K8sResourceClient<?>> crdClientLut;
+    private final Map<DatabaseTable, Supplier<K8sResourceClient<?>>> crdClientLut;
     private final MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClient;
     private final MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClient;
     private final String crdVersion;
@@ -36,7 +37,7 @@ public class K8sCrdTransaction
     private RollbackCrd rollback;
 
     public K8sCrdTransaction(
-        Map<DatabaseTable, K8sResourceClient<?>> crdClientLutRef,
+        Map<DatabaseTable, Supplier<K8sResourceClient<?>>> crdClientLutRef,
         MixedOperation<RollbackCrd, KubernetesResourceList<RollbackCrd>, Resource<RollbackCrd>> rollbackClientRef,
         MixedOperation<LinstorVersionCrd, KubernetesResourceList<LinstorVersionCrd>, Resource<LinstorVersionCrd>> linstorVersionClientRef,
         String crdVersionRef
@@ -88,8 +89,13 @@ public class K8sCrdTransaction
         DatabaseTable dbTable
     )
     {
-        return (K8sResourceClient<CRD>) crdClientLut
-            .get(dbTable);
+        Supplier<?> supplier =  crdClientLut.get(dbTable);
+        if (supplier == null)
+        {
+            return null;
+        }
+
+        return (K8sResourceClient<CRD>)supplier.get();
     }
 
     public void upsert(

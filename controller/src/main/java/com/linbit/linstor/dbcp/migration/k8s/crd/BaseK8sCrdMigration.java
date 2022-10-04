@@ -265,6 +265,8 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             }
             throw exc;
         }
+
+        k8sDbRef.clearCache();
     }
 
     public abstract MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception;

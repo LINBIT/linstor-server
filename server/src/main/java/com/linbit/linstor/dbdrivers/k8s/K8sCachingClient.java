@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
@@ -29,21 +28,10 @@ public class K8sCachingClient<T extends HasMetadata, L extends KubernetesResourc
     {
         client = clientRef;
         cache = new ConcurrentHashMap<>();
-        try
+
+        for (T item : client.list().getItems())
         {
-            for (T item : client.list().getItems())
-            {
-                cache.put(item.getMetadata().getName(), item);
-            }
-        }
-        catch (KubernetesClientException exception)
-        {
-            // We ignore 404 errors here: This happens if the CRD is not yet applied, which in turn means the cache
-            // can be left empty. An actual error will be reported once we actually request something.
-            if (exception.getCode() != 404)
-            {
-                throw exception;
-            }
+            cache.put(item.getMetadata().getName(), item);
         }
     }
 
