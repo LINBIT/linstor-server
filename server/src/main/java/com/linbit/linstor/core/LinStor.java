@@ -13,6 +13,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +46,7 @@ public abstract class LinStor
     public static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
     public static final DateFormat JOURNALCTL_DF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    public static final ZoneOffset LOCAL_ZONE_OFFSET = OffsetDateTime.now(ZoneId.systemDefault()).getOffset();
 
     // ============================================================
     // Product and version information

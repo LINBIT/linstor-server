@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -10,6 +11,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
@@ -56,6 +58,8 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -68,6 +72,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -78,6 +83,10 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionListener
 {
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss");
+    private static final long EBS_DFLT_COOLDOWN_PERIOD_IN_SEC = TimeUnit.HOURS.toSeconds(6) +
+        TimeUnit.MINUTES.toSeconds(5); // 6 hours and 5 min in sec
+
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -212,6 +221,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
         prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
 
+        boolean changedEbsPropsWithAction = propChangeCausingEbsAction(vlmDfnProps, overrideProps, deletePropKeys);
+
         notifyStlts = ctrlPropsHelper.fillProperties(
             responses,
             LinStorObject.VOLUME_DEFINITION,
@@ -296,6 +307,11 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             setVlmDfnSize(vlmDfn, size);
         }
 
+        if (hasEbsResource(vlmDfn))
+        {
+            ensureAllowedEbsAction(vlmDfn, sizeChanges, changedEbsPropsWithAction);
+        }
+
         Flux<ApiCallRc> updateResponses = Flux.empty();
         if (updateForResize)
         {
@@ -348,17 +364,133 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
             notifyStlts = true;
         }
+
+        ctrlTransactionHelper.commit();
+
         if (notifyStlts)
         {
             updateResponses = updateResponses.concatWith(updateSatellites(rscName, vlmNr));
         }
 
-        ctrlTransactionHelper.commit();
 
         responses.addEntry(ApiSuccessUtils.defaultModifiedEntry(vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn)));
 
         return Flux.just((ApiCallRc) responses)
             .concatWith(updateResponses);
+    }
+
+    private boolean propChangeCausingEbsAction(
+        Props vlmDfnPropsRef,
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef
+    )
+    {
+        boolean ret = false;
+        String ebsVlmTypeVal = overridePropsRef.get(ApiConsts.KEY_EBS_VOLUME_TYPE);
+        if (ebsVlmTypeVal != null && !ebsVlmTypeVal.equals(vlmDfnPropsRef.getProp(ApiConsts.KEY_EBS_VOLUME_TYPE)))
+        {
+            ret = true;
+        }
+        // deleting prop does not cause change. EBS volume will stay as it is
+
+        return ret;
+    }
+
+    private boolean hasEbsResource(VolumeDefinition vlmDfnRef)
+    {
+        boolean hasEbsResource = false;
+        Iterator<Resource> rscIt;
+        try
+        {
+            rscIt = vlmDfnRef.getResourceDefinition().iterateResource(apiCtx);
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                if (EbsUtils.isEbs(apiCtx, rsc))
+                {
+                    hasEbsResource = true;
+                    break;
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return hasEbsResource;
+    }
+
+    private void ensureAllowedEbsAction(
+        VolumeDefinition vlmDfnRef,
+        boolean sizeChangesRef,
+        boolean propChangeCausingEbsAction
+    )
+    {
+        if (sizeChangesRef || propChangeCausingEbsAction)
+        {
+            try
+            {
+                Props props = vlmDfnRef.getProps(apiCtx);
+                String lastModStr = props.getProp(
+                    InternalApiConsts.KEY_EBS_COOLDOWN_UNTIL_TIMESTAMP,
+                    ApiConsts.NAMESPC_EBS
+                );
+                long nowInSeconds = TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
+
+                long cooldownUntil;
+                if (lastModStr != null && !lastModStr.isEmpty())
+                {
+                    cooldownUntil = Long.parseLong(lastModStr);
+                    long coolingDownRemainingSecs = cooldownUntil - nowInSeconds;
+                    if (coolingDownRemainingSecs > 0)
+                    {
+                        long hours = TimeUnit.SECONDS.toHours(coolingDownRemainingSecs);
+                        long hoursInSec = TimeUnit.HOURS.toSeconds(hours);
+
+                        long min = TimeUnit.SECONDS.toMinutes(coolingDownRemainingSecs - hoursInSec);
+                        long secs = coolingDownRemainingSecs - hoursInSec - TimeUnit.MINUTES.toSeconds(min);
+                        throw new ApiRcException(
+                            ApiCallRcImpl.simpleEntry(
+                                ApiConsts.FAIL_EBS_COOLDOWN,
+                                String.format(
+                                    "EBS volumes need a cooldown period of 6 hours. You still need to wait " +
+                                    "until %s (%02d:%02d:%02d left)",
+                                    props.getProp(InternalApiConsts.KEY_EBS_COOLDOWN_UNTIL, ApiConsts.NAMESPC_EBS),
+                                    hours,
+                                    min,
+                                    secs
+                                )
+                            )
+                        );
+                    }
+                }
+
+                props.setProp(
+                    InternalApiConsts.KEY_EBS_COOLDOWN_UNTIL_TIMESTAMP,
+                    Long.toString(nowInSeconds + EBS_DFLT_COOLDOWN_PERIOD_IN_SEC),
+                    ApiConsts.NAMESPC_EBS
+                );
+                props.setProp(
+                    InternalApiConsts.KEY_EBS_COOLDOWN_UNTIL,
+                    DATE_TIME_FORMATTER.format(
+                        LocalDateTime.ofEpochSecond(
+                            nowInSeconds + EBS_DFLT_COOLDOWN_PERIOD_IN_SEC,
+                            0,
+                            LinStor.LOCAL_ZONE_OFFSET
+                        )
+                    ),
+                    ApiConsts.NAMESPC_EBS
+                );
+            }
+            catch (AccessDeniedException | InvalidKeyException | InvalidValueException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (DatabaseException exc)
+            {
+                throw new ApiDatabaseException(exc);
+            }
+        }
     }
 
     private boolean handleSpecialProps(

@@ -218,6 +218,8 @@ public class InternalApiConsts
     public static final String KEY_EBS_SNAP_ID = "EbsSnapId";
     public static final String EBS_DFTL_STOR_POOL_NAME = "EbsPool";
     public static final String KEY_EBS_CONNECTED_INIT_NODE_NAME = "ConnectedInitiator";
+    public static final String KEY_EBS_COOLDOWN_UNTIL = "CooldownUntil";
+    public static final String KEY_EBS_COOLDOWN_UNTIL_TIMESTAMP = "CooldownUntilTimestamp";
 
     private InternalApiConsts()
     {
