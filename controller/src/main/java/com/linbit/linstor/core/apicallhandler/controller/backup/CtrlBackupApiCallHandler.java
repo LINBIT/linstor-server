@@ -681,7 +681,7 @@ public class CtrlBackupApiCallHandler
             try
             {
                 S3MetafileNameInfo info = new S3MetafileNameInfo(s3key);
-                if (snapNameRef != null && !snapNameRef.isEmpty() && !snapNameRef.equals(info.snapName))
+                if (snapNameRef != null && !snapNameRef.isEmpty() && !snapNameRef.equalsIgnoreCase(info.snapName))
                 {
                     // Doesn't match the requested snapshot name, skip it.
                     continue;
@@ -727,7 +727,7 @@ public class CtrlBackupApiCallHandler
                 try
                 {
                     S3VolumeNameInfo info = new S3VolumeNameInfo(s3key);
-                    if (snapNameRef != null && !snapNameRef.isEmpty() && snapNameRef.equals(info.snapName))
+                    if (snapNameRef != null && !snapNameRef.isEmpty() && snapNameRef.equalsIgnoreCase(info.snapName))
                     {
                         // Doesn't match the requested snapshot name, skip it.
                         continue;
@@ -749,11 +749,25 @@ public class CtrlBackupApiCallHandler
         // only be shown in the list when it is completed)
         for (ResourceDefinition rscDfn : rscDfnRepo.getMapForView(peerCtx).values())
         {
+            if (
+                rscNameRef != null && !rscNameRef.isEmpty() &&
+                    rscDfn.getName().displayValue.equalsIgnoreCase(rscNameRef)
+            )
+            {
+                // Doesn't match the given rsc name, skip it.
+                continue;
+            }
             // only check in-progress snapDfns
             for (SnapshotDefinition snapDfn : backupHelper.getInProgressBackups(rscDfn))
             {
                 String rscName = rscDfn.getName().displayValue;
                 String snapName = snapDfn.getName().displayValue;
+
+                if (snapNameRef != null && !snapNameRef.isEmpty() && snapNameRef.equalsIgnoreCase(snapName))
+                {
+                    // Doesn't match the requested snapshot name, skip it.
+                    continue;
+                }
 
                 String s3Suffix = snapDfn.getProps(peerCtx).getProp(
                     ApiConsts.KEY_BACKUP_S3_SUFFIX,
