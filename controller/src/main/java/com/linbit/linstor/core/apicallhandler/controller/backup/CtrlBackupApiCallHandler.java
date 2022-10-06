@@ -576,7 +576,7 @@ public class CtrlBackupApiCallHandler
         {
             try
             {
-                Date date = S3Consts.DATE_FORMAT.parse(timestampRef);
+                Date date = S3Consts.parse(timestampRef);
                 timestampCheck = timestamp -> date.after(new Date(timestamp));
             }
             catch (ParseException exc)
@@ -862,7 +862,7 @@ public class CtrlBackupApiCallHandler
                             long vlmFinishedTime = s3BackVlmInfo.getFinishedTimestamp();
                             BackupVolumePojo retVlmPojo = new BackupVolumePojo(
                                 s3MetaVlmNr,
-                                S3Consts.DATE_FORMAT.format(new Date(vlmFinishedTime)),
+                                S3Consts.format(new Date(vlmFinishedTime)),
                                 vlmFinishedTime,
                                 new BackupVlmS3Pojo(s3BackVlmInfo.getName())
                             );
@@ -894,9 +894,9 @@ public class CtrlBackupApiCallHandler
                 id,
                 info.rscName,
                 info.snapName,
-                S3Consts.DATE_FORMAT.format(new Date(s3MetaFile.getStartTimestamp())),
+                S3Consts.format(new Date(s3MetaFile.getStartTimestamp())),
                 s3MetaFile.getStartTimestamp(),
-                S3Consts.DATE_FORMAT.format(new Date(s3MetaFile.getFinishTimestamp())),
+                S3Consts.format(new Date(s3MetaFile.getFinishTimestamp())),
                 s3MetaFile.getFinishTimestamp(),
                 s3MetaFile.getNodeName(),
                 false,
@@ -1023,7 +1023,7 @@ public class CtrlBackupApiCallHandler
             id,
             info.rscName,
             info.snapName,
-            S3Consts.DATE_FORMAT.format(info.backupTime),
+            S3Consts.format(info.backupTime),
             info.backupTime.getTime(),
             null,
             null,

@@ -171,7 +171,7 @@ public class BackupShippingUtils
 
     public static String generateBackupName(Date now)
     {
-        return S3Consts.BACKUP_PREFIX + S3Consts.DATE_FORMAT.format(now);
+        return S3Consts.BACKUP_PREFIX + S3Consts.format(now);
     }
 
     public static String defaultEmpty(String s)

@@ -31,7 +31,7 @@ public class S3VolumeNameInfo
         rscName = rscNameRef;
         layerSuffix = BackupShippingUtils.defaultEmpty(layerSuffixRef);
         vlmNr = vlmNrRef;
-        backupId = S3Consts.BACKUP_PREFIX + S3Consts.DATE_FORMAT.format(backupTimeRef);
+        backupId = S3Consts.BACKUP_PREFIX + S3Consts.format(backupTimeRef);
         backupTime = backupTimeRef;
         s3Suffix = BackupShippingUtils.defaultEmpty(s3SuffixRef);
         if (snapNameRef == null || snapNameRef.isEmpty())
@@ -56,7 +56,7 @@ public class S3VolumeNameInfo
         backupId = m.group("backupId");
         layerSuffix = BackupShippingUtils.defaultEmpty(m.group("rscSuffix"));
         vlmNr = Integer.parseInt(m.group("vlmNr"));
-        backupTime = S3Consts.DATE_FORMAT.parse(backupId.substring(S3Consts.BACKUP_PREFIX_LEN));
+        backupTime = S3Consts.parse(backupId.substring(S3Consts.BACKUP_PREFIX_LEN));
         s3Suffix = BackupShippingUtils.defaultEmpty(m.group("s3Suffix"));
 
         String snapNameRef = BackupShippingUtils.defaultEmpty(m.group("snapName"));
