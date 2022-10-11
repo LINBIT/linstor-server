@@ -21,6 +21,10 @@ info:
 
     Changelog:
 
+    * unreleased
+      - Added GET /v1/node-connections/  with filter-options ?node_a and ?node_b
+      - Added PUT /v1/node-connections/{nodeA}/{nodeB}
+      - Added NodeConnection and NodeConnectionModify objects
     * 1.15.0
       - Added GET, POST /v1/remotes/ebs
       - Added PUT /v1/remotes/ebs/{remoteName}
@@ -190,7 +194,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.15.0
+  version: 1.16.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -1121,6 +1125,64 @@ paths:
               name: nodeA
               ebs_remote_name: EbsRemote
         description: Node to add to Linstor
+  /v1/node-connections:
+    get:
+      tags:
+        - developers
+      operationId: nodeConnectionsList
+      summary: list all node connections
+      description: List all node connections resource
+      parameters:
+        - name: node_a
+          in: query
+          description: Filter only for node-connections from or to the given node
+          schema:
+            type: string
+        - name: node_b
+          in: query
+          description: Filter only for node-connections from or to the given node
+          schema:
+            type: string
+      responses:
+        '200':
+          description: list of node connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NodeConnection'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+  /v1/node-connections/{node_a}/{node_b}:
+    parameters:
+      - $ref: '#/components/parameters/NodeA'
+      - $ref: '#/components/parameters/NodeB'
+    put:
+      tags:
+        - developers
+      operationId: nodeConnectionModify
+      summary: modify a node connection
+      description: |
+        Sets or modifies properties
+      responses:
+        '200':
+          description: node connection modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '404':
+          $ref: '#/components/responses/ObjectNotFound'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NodeConnectionModify'
   /v1/resource-definitions:
     get:
       tags:
@@ -7599,6 +7661,30 @@ components:
         props:
           $ref: '#/components/schemas/Properties'
     KeyValueStoreModify:
+      type: object
+      properties:
+        override_props:
+          $ref: '#/components/schemas/Properties'
+        delete_props:
+          type: array
+          items:
+            type: string
+        delete_namespaces:
+          type: array
+          items:
+            type: string
+    NodeConnection:
+      type: object
+      properties:
+        node_a:
+          type: string
+          description: source node of the connection
+        node_b:
+          type: string
+          description: target node of the connection
+        props:
+          $ref: '#/components/schemas/Properties'
+    NodeConnectionModify:
       type: object
       properties:
         override_props:

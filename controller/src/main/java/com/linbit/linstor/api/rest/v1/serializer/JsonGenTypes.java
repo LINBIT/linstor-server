@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.15.0";
+    public static final String REST_API_VERSION = "1.16.0";
 
     /**
      * Common api reply structure
@@ -1074,6 +1074,28 @@ public class JsonGenTypes
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class KeyValueStoreModify
+    {
+        public Map<String, String> override_props = Collections.emptyMap();
+        public List<String> delete_props = Collections.emptyList();
+        public List<String> delete_namespaces = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class NodeConnection
+    {
+        /**
+         * source node of the connection
+         */
+        public String node_a;
+        /**
+         * target node of the connection
+         */
+        public String node_b;
+        public Map<String, String> props = Collections.emptyMap();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class NodeConnectionModify
     {
         public Map<String, String> override_props = Collections.emptyMap();
         public List<String> delete_props = Collections.emptyList();
