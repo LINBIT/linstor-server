@@ -1645,11 +1645,13 @@ public class DrbdLayer implements DeviceLayer
 
 
                 /*
-                 * since we just created this resource, becoming briefly primary (without --force)
-                 * should not be an issue.
+                 * since we just created this resource, becoming briefly primary should not be an issue.
+                 * primary needs to be done with --force since we might configured quorum but did not give DRBD
+                 * enough time to connect to peers.
+                 *
                  * we need to be primary even if autoPromote is deactivated to create the filesystem
                  */
-                drbdUtils.primary(drbdRscData, false, false);
+                drbdUtils.primary(drbdRscData, true, false);
                 MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
                 try
                 {
