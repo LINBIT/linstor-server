@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -252,12 +253,13 @@ public class CtrlBackupL2LDstApiCallHandler
         try
         {
             LinstorRemote ret = null;
+            UUID srcClusterId = UUID.fromString(srcClusterIdRef);
             for (Remote remote : remoteRepo.getMapForView(apiCtx).values())
             {
                 if (remote instanceof LinstorRemote)
                 {
                     LinstorRemote linRem = (LinstorRemote) remote;
-                    if(linRem.getClusterId(apiCtx).equals(UUID.fromString(srcClusterIdRef)))
+                    if (Objects.equals(linRem.getClusterId(apiCtx), srcClusterId))
                     {
                         ret = linRem;
                         break;

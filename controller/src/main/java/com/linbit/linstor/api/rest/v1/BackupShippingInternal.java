@@ -112,6 +112,10 @@ public class BackupShippingInternal
                 )
             );
         }
+        catch (Exception exc)
+        {
+            responses = Flux.error(exc);
+        }
         responses.single()
             .map(shipResponse ->
             {

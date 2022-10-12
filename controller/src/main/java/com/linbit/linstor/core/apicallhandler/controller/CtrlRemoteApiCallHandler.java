@@ -466,6 +466,8 @@ public class CtrlRemoteApiCallHandler
                 encryptedTargetPassphrase = encryptionHelper.encrypt(passphraseRef);
             }
 
+            // TODO: check if remoteClusterId (if given) is unique. We could use
+            // CtrlBackupL2LDstApiCallHandler#loadLinstorRemote for that
             remote = linstorRemoteFactory.create(
                 peerAccCtx.get(),
                 remoteName,
