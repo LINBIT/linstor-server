@@ -87,6 +87,14 @@ subprojects {
             implementation group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.18'
 
             implementation group: 'io.fabric8', name: 'kubernetes-client', version: '5.12.2'
+            constraints {
+                implementation('com.squareup.okhttp3:okhttp:4.10.0') {
+                    because('previous versions had a bug when validationg certificates against IPv6 addresses')
+                }
+                implementation('com.squareup.okhttp3:logging-interceptor:4.10.0') {
+                    because('previous versions had a bug when validationg certificates against IPv6 addresses')
+                }
+            }
 
             testImplementation group: 'junit', name: 'junit', version: '4.+'
         }
