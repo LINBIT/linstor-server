@@ -3,6 +3,7 @@ package com.linbit.linstor.api.pojo;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
+import com.linbit.linstor.core.apis.NodeConnectionApi;
 
 import javax.annotation.Nullable;
 
@@ -170,34 +171,47 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         return evictionTimestamp;
     }
 
-    public static class NodeConnPojo
+    public static class NodeConnPojo implements NodeConnectionApi
     {
         private final UUID uuid;
-        private final NodePojo otherNode;
+        private final String localNodeName;
+        private final NodePojo otherNodePojo;
+
         private final Map<String, String> props;
 
         public NodeConnPojo(
             UUID nodeConnUuidRef,
-            NodePojo otherNodeRef,
+            String localNodeNameRef,
+            NodePojo otherNodePojoRef,
             Map<String, String> nodeConnPropsRef
         )
         {
             uuid = nodeConnUuidRef;
-            otherNode = otherNodeRef;
+            localNodeName = localNodeNameRef;
+            otherNodePojo = otherNodePojoRef;
             props = nodeConnPropsRef;
         }
 
-        public UUID getNodeConnUuid()
+        @Override
+        public UUID getUuid()
         {
             return uuid;
         }
 
-        public NodePojo getOtherNode()
+        @Override
+        public String getLocalNodeName()
         {
-            return otherNode;
+            return localNodeName;
         }
 
-        public Map<String, String> getNodeConnProps()
+        @Override
+        public NodePojo getOtherNodeApi()
+        {
+            return otherNodePojo;
+        }
+
+        @Override
+        public Map<String, String> getProps()
         {
             return props;
         }

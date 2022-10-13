@@ -153,7 +153,7 @@ class StltNodeApiCallHandler
 
             for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
             {
-                NodePojo otherNodePojo = nodeConn.getOtherNode();
+                NodePojo otherNodePojo = nodeConn.getOtherNodeApi();
                 Node otherNode = nodeFactory.getInstanceSatellite(
                     apiCtx,
                     otherNodePojo.getUuid(),
@@ -163,13 +163,13 @@ class StltNodeApiCallHandler
                 );
                 NodeConnection nodeCon = nodeConnectionFactory.getInstanceSatellite(
                     apiCtx,
-                    nodeConn.getNodeConnUuid(),
+                    nodeConn.getUuid(),
                     node,
                     otherNode
                 );
                 Props nodeConnProps = nodeCon.getProps(apiCtx);
-                nodeConnProps.map().putAll(nodeConn.getNodeConnProps());
-                nodeConnProps.keySet().retainAll(nodeConn.getNodeConnProps().keySet());
+                nodeConnProps.map().putAll(nodeConn.getProps());
+                nodeConnProps.keySet().retainAll(nodeConn.getProps().keySet());
             }
 
             for (NetInterfaceApi netIfApi : nodePojo.getNetInterfaces())

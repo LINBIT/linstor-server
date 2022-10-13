@@ -779,26 +779,15 @@ public class Node extends BaseTransactionObject
         }
 
         List<NodeConnPojo> nodeConns = new ArrayList<>();
-        for (NodeConnection nodeConn : nodeConnections.values())
+        if (includeOtherNode)
         {
-            Node otherNode;
-
-            Node sourceNode = nodeConn.getSourceNode(accCtx);
-            if (this.equals(sourceNode))
+            /*
+             * otherNode's node connection must not be included to prevent an endless recursion between the two nodes
+             */
+            for (NodeConnection nodeConn : nodeConnections.values())
             {
-                otherNode = nodeConn.getTargetNode(accCtx);
+                nodeConns.add(nodeConn.getApiData(this, accCtx, fullSyncId, updateId));
             }
-            else
-            {
-                otherNode = sourceNode;
-            }
-            nodeConns.add(
-                new NodeConnPojo(
-                    nodeConn.getUuid(),
-                    otherNode.getApiData(accCtx, false, fullSyncId, updateId),
-                    nodeConn.getProps(accCtx).map()
-                )
-            );
         }
 
         Peer tmpPeer = getPeer(accCtx);

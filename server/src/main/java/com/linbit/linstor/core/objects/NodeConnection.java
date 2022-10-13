@@ -61,6 +61,7 @@ public class NodeConnection extends BaseTransactionObject
         dbDriver = dbDriverRef;
         dbgInstanceId = UUID.randomUUID();
 
+        // if this is changed, please also update Json#apiToNodeConnection method
         if (node1.getName().compareTo(node2.getName()) < 0)
         {
             sourceNode = node1;
@@ -136,6 +137,37 @@ public class NodeConnection extends BaseTransactionObject
         checkDeleted();
         sourceNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return targetNode;
+    }
+
+    public NodeConnPojo getApiData(Node localNode, AccessContext accCtx, Long fullSyncId, Long updateId)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        sourceNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        sourceNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+
+        NodePojo otherNodePojo;
+        if (sourceNode.equals(localNode))
+        {
+            otherNodePojo = targetNode.getApiData(accCtx, false, fullSyncId, updateId);
+        }
+        else if (targetNode.equals(localNode))
+        {
+            otherNodePojo = sourceNode.getApiData(accCtx, false, fullSyncId, updateId);
+        }
+        else
+        {
+            throw new ImplementationError(
+                "Given localNode '" + localNode.getName() + "' is neither source node (" + sourceNode.getName() +
+                    ") nor target node (" + targetNode.getName() + ")"
+            );
+        }
+        return new NodeConnPojo(
+            objId,
+            localNode.getName().displayValue,
+            otherNodePojo,
+            props.map()
+        );
     }
 
     public Props getProps(AccessContext accCtx) throws AccessDeniedException

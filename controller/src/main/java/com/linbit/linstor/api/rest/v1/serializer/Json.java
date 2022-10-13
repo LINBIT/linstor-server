@@ -38,12 +38,14 @@ import com.linbit.linstor.api.pojo.backups.ScheduleDetailsPojo;
 import com.linbit.linstor.api.pojo.backups.ScheduledRscsPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ExosDefaults;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.NodeConnection;
 import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.apis.BackupApi.BackupS3Api;
 import com.linbit.linstor.core.apis.BackupApi.BackupVlmApi;
 import com.linbit.linstor.core.apis.BackupApi.BackupVlmS3Api;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.apis.NodeApi;
+import com.linbit.linstor.core.apis.NodeConnectionApi;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
@@ -165,6 +167,27 @@ public class Json
             netif.satellite_port,
             netif.satellite_encryption_type
         );
+    }
+
+    public static JsonGenTypes.NodeConnection apiToNodeConnection(
+        NodeConnectionApi nodeConnApi
+    )
+    {
+        NodeConnection nodeCon = new JsonGenTypes.NodeConnection();
+        String localNodeName = nodeConnApi.getLocalNodeName();
+        String otherNodeName = nodeConnApi.getOtherNodeApi().getName();
+        if (localNodeName.compareTo(otherNodeName) < 0)
+        {
+            nodeCon.node_a = localNodeName;
+            nodeCon.node_b = otherNodeName;
+        }
+        else
+        {
+            nodeCon.node_a = otherNodeName;
+            nodeCon.node_b = localNodeName;
+        }
+        nodeCon.props = nodeConnApi.getProps();
+        return nodeCon;
     }
 
     public static JsonGenTypes.StoragePoolDefinition storPoolDfnApiToStoragePoolDefinition(
