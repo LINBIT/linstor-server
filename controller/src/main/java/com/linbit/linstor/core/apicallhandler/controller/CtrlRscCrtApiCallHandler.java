@@ -1,16 +1,12 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.LinstorParsingUtils;
-import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperResult;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
-import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -24,16 +20,8 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.DiskfulBy;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventStreamClosedException;
 import com.linbit.linstor.event.EventStreamTimeoutException;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -42,7 +30,6 @@ import com.linbit.utils.Pair;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
@@ -65,11 +52,7 @@ public class CtrlRscCrtApiCallHandler
     private final ResponseConverter responseConverter;
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final LockGuardFactory lockGuardFactory;
-    private final Provider<AccessContext> peerCtxProvider;
     private final CtrlRscAutoHelper autoHelper;
-    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
-    private final CtrlRscToggleDiskApiCallHandler toggleDiskHelper;
-    private final CtrlApiDataLoader dataLoader;
 
     @Inject
     public CtrlRscCrtApiCallHandler(
@@ -79,11 +62,7 @@ public class CtrlRscCrtApiCallHandler
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
-        @PeerContext Provider<AccessContext> peerCtxProviderRef,
-        CtrlRscAutoHelper autoHelperRef,
-        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
-        CtrlRscToggleDiskApiCallHandler toggleDiskHelperRef,
-        CtrlApiDataLoader dataLoaderRef
+        CtrlRscAutoHelper autoHelperRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -92,11 +71,7 @@ public class CtrlRscCrtApiCallHandler
         responseConverter = responseConverterRef;
         lockGuardFactory = lockGuardFactoryRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
-        peerCtxProvider = peerCtxProviderRef;
         autoHelper = autoHelperRef;
-        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
-        toggleDiskHelper = toggleDiskHelperRef;
-        dataLoader = dataLoaderRef;
     }
 
     public Flux<ApiCallRc> createResource(
@@ -221,53 +196,12 @@ public class CtrlRscCrtApiCallHandler
 
         return Flux.<ApiCallRc>just(responses)
             .concatWith(deploymentResponses)
-            .concatWith(setInitialized(deployedResources))
             .concatWith(Flux.merge(autoFlux))
             .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty())
             .onErrorResume(EventStreamTimeoutException.class,
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeResourceDidNotAppearMessage(context)))
             .onErrorResume(EventStreamClosedException.class,
                 ignored -> Flux.just(ctrlRscCrtApiHelper.makeEventStreamDisappearedUnexpectedlyMessage(context)));
-    }
-
-    public Flux<ApiCallRc> setInitialized(Set<Resource> deployedResourcesRef)
-    {
-        return scopeRunner
-            .fluxInTransactionalScope(
-                "Create resource",
-                lockGuardFactory.buildDeferred(
-                    LockType.WRITE,
-                    LockObj.NODES_MAP, LockObj.RSC_DFN_MAP, LockObj.STOR_POOL_DFN_MAP
-                ),
-                () -> setInitializedInTransaction(deployedResourcesRef)
-            );
-    }
-
-    private Flux<ApiCallRc> setInitializedInTransaction(Set<Resource> deployedResourcesRef)
-    {
-        try
-        {
-            AccessContext peerCtx = peerCtxProvider.get();
-            for (Resource rsc : deployedResourcesRef)
-            {
-                List<AbsRscLayerObject<Resource>> drbdRscList = LayerUtils
-                    .getChildLayerDataByKind(rsc.getLayerData(peerCtx), DeviceLayerKind.DRBD);
-                for (AbsRscLayerObject<Resource> drbdRsc : drbdRscList)
-                {
-                    ((DrbdRscData<Resource>) drbdRsc).getFlags().enableFlags(peerCtx, DrbdRscFlags.INITIALIZED);
-                }
-            }
-            ctrlTransactionHelper.commit();
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(exc, "setting resource to initialized", ApiConsts.FAIL_ACC_DENIED_RSC);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-        return Flux.empty();
     }
 
     static ApiCallRc makeVolumeRegisteredEntries(Resource rsc)

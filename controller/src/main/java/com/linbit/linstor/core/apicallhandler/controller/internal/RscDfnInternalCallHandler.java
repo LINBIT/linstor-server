@@ -12,7 +12,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -57,7 +57,7 @@ public class RscDfnInternalCallHandler
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlStltSerializer ctrlStltSerializer;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
-    private final CtrlRscCrtApiCallHandler ctrlRscCrtHandler;
+    private final CtrlRscCrtApiHelper ctrlRscCrtHelper;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
     private final ScopeRunner scopeRunner;
@@ -76,7 +76,7 @@ public class RscDfnInternalCallHandler
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlStltSerializer ctrlStltSerializerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
-        CtrlRscCrtApiCallHandler crtlRscCrtHandlerRef,
+        CtrlRscCrtApiHelper crtlRscCrtHelperRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
@@ -93,7 +93,7 @@ public class RscDfnInternalCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlStltSerializer = ctrlStltSerializerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
-        ctrlRscCrtHandler = crtlRscCrtHandlerRef;
+        ctrlRscCrtHelper = crtlRscCrtHelperRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
         rscDfnMapLock = rscDfnMapLockRef;
@@ -342,7 +342,8 @@ public class RscDfnInternalCallHandler
                     "Update RscDfn {1} on {0}",
                     "Notified {0} that {1} is being updated on Node(s)"
                     )
-                ).concatWith(ctrlRscCrtHandler.setInitialized(resources));
+                )
+                .concatWith(ctrlRscCrtHelper.setInitialized(resources));
         }
         catch (AccessDeniedException | DatabaseException exc)
         {

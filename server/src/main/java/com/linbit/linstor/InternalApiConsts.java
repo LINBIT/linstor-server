@@ -159,6 +159,7 @@ public class InternalApiConsts
     public static final String KEY_LAST_BACKUP_TIME = "LastBackupTime";
     public static final String KEY_LAST_BACKUP_INC = "LastBackupInc";
     public static final String KEY_BACKUP_SHIPPED_BY_SCHEDULE = "BackupShippedBySchedule";
+    public static final String KEY_FORCE_INITIAL_SYNC_PERMA = "ForceInitialSyncPermanent";
     /*
      * Cluster
      */

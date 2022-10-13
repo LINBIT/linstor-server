@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer.drbd;
 
+import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.md.AlStripesException;
 import com.linbit.drbd.md.MaxAlSizeException;
@@ -8,6 +9,7 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinAlSizeException;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.drbd.md.PeerCountException;
+import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
@@ -616,7 +618,9 @@ public class DrbdLayer implements DeviceLayer
                     // do not try to create meta data while the resource is diskless....
                     for (DrbdVlmData<Resource> drbdVlmData : checkMetaData)
                     {
-                        if (!hasMetaData(drbdVlmData))
+                        if (
+                            !hasMetaData(drbdVlmData) || forceCreateNewMetaData(drbdVlmData)
+                        )
                         {
                             createMetaData.add(drbdVlmData);
                         }
@@ -737,12 +741,16 @@ public class DrbdLayer implements DeviceLayer
                         false
                     );
 
+
                     if (
                         drbdRscData.getAbsResource().getStateFlags()
-                            .isSet(workerCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT)
+                            .isSet(workerCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT) &&
+                            !DrbdLayerUtils.forceInitialSync(workerCtx, drbdRscData)
                     )
                     {
                         /*
+                         * If forceInitialSync is set, we already created new metadata, so no resetting needed.
+                         *
                          * Basically a similar scenario as "we have the current peer and ALL other peers were removed".
                          * See delete-case's forget-peer comment
                          */
@@ -815,6 +823,23 @@ public class DrbdLayer implements DeviceLayer
             }
         }
         return contProcess;
+    }
+
+    private boolean forceCreateNewMetaData(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException,
+        StorageException
+    {
+        boolean isRscUp;
+        try
+        {
+            OutputData output = extCmdFactory.create()
+                .exec("drbdsetup", "status", drbdVlmData.getRscLayerObject().getSuffixedResourceName());
+            isRscUp = output.exitCode == 0;
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException("Checking drbd state failed", exc);
+        }
+        return !drbdVlmData.getRscLayerObject().getFlags().isSet(workerCtx, DrbdRscFlags.INITIALIZED) && !isRscUp;
     }
 
     private boolean areBothResizeFlagsSet(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException
@@ -1133,21 +1158,32 @@ public class DrbdLayer implements DeviceLayer
             );
             drbdVlmData.setMetaDataIsNew(true);
 
-            boolean skipInitSync = VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true);
-            if (!skipInitSync)
+            boolean skipInitSync;
+            if (DrbdLayerUtils.forceInitialSync(workerCtx, drbdVlmData.getRscLayerObject()))
             {
-                skipInitSync = VolumeUtils.getStorageDevices(
-                    drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
-                )
-                    .stream()
-                    .map(VlmProviderObject::getProviderKind)
-                    .allMatch(kind -> kind == DeviceProviderKind.ZFS || kind == DeviceProviderKind.ZFS_THIN);
+                skipInitSync = false;
+            }
+            else
+            {
+                skipInitSync = VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true);
 
                 if (!skipInitSync)
                 {
                     skipInitSync = VolumeUtils.getStorageDevices(
-                        drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)).stream()
+                        drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+                    )
+                        .stream()
+                        .map(VlmProviderObject::getProviderKind)
+                        .allMatch(kind -> kind == DeviceProviderKind.ZFS || kind == DeviceProviderKind.ZFS_THIN);
+
+                    if (!skipInitSync)
+                    {
+                        skipInitSync = VolumeUtils.getStorageDevices(
+                            drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+                        )
+                            .stream()
                             .allMatch(prov -> prov.getStorPool().isVDO());
+                    }
                 }
             }
 
@@ -1627,7 +1663,10 @@ public class DrbdLayer implements DeviceLayer
                 boolean haveFatVlm = false;
                 for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
-                    if (!VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false))
+                    if (
+                        !VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false) ||
+                            DrbdLayerUtils.forceInitialSync(workerCtx, drbdRscData)
+                    )
                     {
                         haveFatVlm = true;
                         break;

@@ -1,7 +1,10 @@
 package com.linbit.linstor.utils.layer;
 
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -87,6 +90,17 @@ public class DrbdLayerUtils
         return rscData.streamVlmLayerObjects().allMatch(
             vlmData -> vlmData.exists() && vlmData.getDevicePath() != null
         );
+    }
+
+    public static boolean forceInitialSync(AccessContext accCtx, DrbdRscData<Resource> drbdRscData)
+        throws InvalidKeyException,
+        AccessDeniedException
+    {
+        String forceSync = drbdRscData.getAbsResource()
+            .getResourceDefinition()
+            .getProps(accCtx)
+            .getProp(InternalApiConsts.KEY_FORCE_INITIAL_SYNC_PERMA, ApiConsts.NAMESPC_DRBD_OPTIONS);
+        return forceSync != null && Boolean.parseBoolean(forceSync);
     }
 
 

@@ -42,6 +42,12 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.utils.layer.DrbdLayerUtils;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -515,6 +521,18 @@ public class CtrlSnapshotRestoreApiCallHandler
             vlmProps.setProp(
                 ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT, fromSnapshotVlmDfn.getSnapshotName().displayValue
             );
+        }
+        Set<AbsRscLayerObject<Resource>> drbdLayers = LayerRscUtils.getRscDataByProvider(
+            rsc.getLayerData(peerAccCtx.get()),
+            DeviceLayerKind.DRBD
+        );
+        for (AbsRscLayerObject<Resource> layer : drbdLayers)
+        {
+            DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) layer;
+            if (DrbdLayerUtils.forceInitialSync(peerAccCtx.get(), drbdRscData))
+            {
+                drbdRscData.getFlags().disableFlags(peerAccCtx.get(), DrbdRscFlags.INITIALIZED);
+            }
         }
 
         return rsc;

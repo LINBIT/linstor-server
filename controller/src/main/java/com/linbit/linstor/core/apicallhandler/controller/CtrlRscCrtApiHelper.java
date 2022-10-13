@@ -18,6 +18,7 @@ import com.linbit.linstor.compat.CompatibilityUtils;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SharedResourceManager;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceCreateCheck;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -61,11 +62,15 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -116,8 +121,10 @@ public class CtrlRscCrtApiHelper
     private final SharedResourceManager sharedRscMgr;
     private final BackupInfoManager backupInfoMgr;
     private final ScheduleBackupService scheduleBackupService;
-    private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
+    private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -139,8 +146,10 @@ public class CtrlRscCrtApiHelper
         SharedResourceManager sharedRscMgrRef,
         BackupInfoManager backupInfoMgrRef,
         ScheduleBackupService scheduleBackupServiceRef,
-        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
-        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         apiCtx = apiCtxRef;
@@ -161,8 +170,10 @@ public class CtrlRscCrtApiHelper
         sharedRscMgr = sharedRscMgrRef;
         backupInfoMgr = backupInfoMgrRef;
         scheduleBackupService = scheduleBackupServiceRef;
-        ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
+        ctrlTransactionHelper = ctrlTransactionHelperRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
     }
 
     /**
@@ -782,10 +793,12 @@ public class CtrlRscCrtApiHelper
         Publisher<ApiCallRc> readyResponses = waitForReady ?
             waitResourcesReady(context, rscDfn, deployedResources) : Flux.empty();
 
-        Flux<ApiCallRc> taskFlux = scheduleBackupService.fluxAllNewTasks(rscDfn, peerAccCtx.get());
+        Flux<ApiCallRc> nextSteps = setInitialized(deployedResources).concatWith(
+            scheduleBackupService.fluxAllNewTasks(rscDfn, peerAccCtx.get())
+        );
         return ctrlSatelliteUpdateCaller.updateSatellites(
             rscDfn,
-            taskFlux
+            nextSteps
             // if failed, there is no need for the retry-task to wait for readyState
             // this is only true as long as there is no other flux concatenated after readyResponses
         )
@@ -798,7 +811,65 @@ public class CtrlRscCrtApiHelper
                 )
             )
             .concatWith(readyResponses)
-            .concatWith(taskFlux);
+            .concatWith(nextSteps);
+    }
+
+    public Flux<ApiCallRc> setInitialized(Set<Resource> deployedResourcesRef)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Create resource",
+                lockGuardFactory.buildDeferred(
+                    LockType.WRITE,
+                    LockObj.NODES_MAP,
+                    LockObj.RSC_DFN_MAP,
+                    LockObj.STOR_POOL_DFN_MAP
+                ),
+                () -> setInitializedInTransaction(deployedResourcesRef)
+            );
+    }
+
+    private Flux<ApiCallRc> setInitializedInTransaction(Set<Resource> deployedResourcesRef)
+    {
+        ResourceDefinition rscDfn = null;
+        try
+        {
+            AccessContext peerCtx = peerAccCtx.get();
+            for (Resource rsc : deployedResourcesRef)
+            {
+                if (rscDfn == null)
+                {
+                    rscDfn = rsc.getResourceDefinition();
+                }
+                List<AbsRscLayerObject<Resource>> drbdRscList = LayerUtils
+                    .getChildLayerDataByKind(rsc.getLayerData(peerCtx), DeviceLayerKind.DRBD);
+                for (AbsRscLayerObject<Resource> drbdRsc : drbdRscList)
+                {
+                    ((DrbdRscData<Resource>) drbdRsc).getFlags().enableFlags(peerCtx, DrbdRscFlags.INITIALIZED);
+                }
+            }
+            ctrlTransactionHelper.commit();
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(exc, "setting resource to initialized", ApiConsts.FAIL_ACC_DENIED_RSC);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        if (rscDfn != null)
+        {
+            return ctrlSatelliteUpdateCaller.updateSatellites(
+                rscDfn,
+                null
+            ).thenMany(Flux.empty());
+            // user doesn't need info about setting an internal flag
+        }
+        else
+        {
+            return Flux.empty();
+        }
     }
 
     private Mono<ApiCallRc> makeRdyTimeoutApiRc(NodeName nodeName)

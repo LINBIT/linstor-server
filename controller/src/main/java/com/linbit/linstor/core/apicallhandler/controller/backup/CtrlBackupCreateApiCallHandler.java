@@ -425,6 +425,12 @@ public class CtrlBackupCreateApiCallHandler
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
         }
+        snapDfn.getProps(peerAccCtx.get())
+            .setProp(
+                InternalApiConsts.KEY_FORCE_INITIAL_SYNC_PERMA,
+                ApiConsts.VAL_TRUE,
+                ApiConsts.NAMESPC_DRBD_OPTIONS
+            );
 
         // save the s3 suffix as prop so that when restoring the satellite can reconstruct the .meta name
         // (s3 suffix is NOT part of snapshot name)

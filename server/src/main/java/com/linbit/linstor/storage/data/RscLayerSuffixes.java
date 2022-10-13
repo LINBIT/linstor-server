@@ -32,7 +32,14 @@ public final class RscLayerSuffixes
 
     static
     {
-        SUFFIXES_TO_SHIP = Collections.unmodifiableList(Arrays.asList(SUFFIX_DATA, SUFFIX_DRBD_META));
+        SUFFIXES_TO_SHIP = Collections.unmodifiableList(
+            Arrays.asList(
+                SUFFIX_DATA
+                /*
+                 * Metadata does not need to be shipped since it will be recreated anyways
+                 */
+            )
+        );
     }
 
     private RscLayerSuffixes()
