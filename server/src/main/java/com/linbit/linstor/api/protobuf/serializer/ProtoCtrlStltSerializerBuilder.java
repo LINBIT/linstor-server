@@ -104,6 +104,7 @@ import com.linbit.utils.Either;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -1438,27 +1439,14 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             for (Node otherNode : otherNodes)
             {
                 NodeConnection nodeConnection = node.getNodeConnection(serializerCtx, otherNode);
-                String otherName;
 
                 if (nodeConnection != null)
                 {
-                    if (nodeConnection.getSourceNode(serializerCtx) == node)
-                    {
-                        otherName = otherNode.getName().displayValue;
-                    }
-                    else
-                    {
-                        otherName = node.getName().displayValue;
-                    }
-
                     nodeConns.add(
                         IntNodeConn.newBuilder()
-                            .setOtherNodeUuid(otherNode.getUuid().toString())
-                            .setOtherNodeName(otherName)
-                            .setOtherNodeType(otherNode.getNodeType(serializerCtx).name())
-                            .setOtherNodeFlags(otherNode.getFlags().getFlagsBits(serializerCtx))
-                            .setNodeConnUuid(nodeConnection.getUuid().toString())
-                            .putAllNodeConnProps(nodeConnection.getProps(serializerCtx).map())
+                            .setUuid(nodeConnection.getUuid().toString())
+                            .setOtherNode(buildNodeMsg(otherNode, Collections.emptyList()))
+                            .putAllProps(nodeConnection.getProps(serializerCtx).map())
                             .build()
                     );
                 }

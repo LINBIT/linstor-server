@@ -172,58 +172,34 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
 
     public static class NodeConnPojo
     {
-        private final UUID nodeConnUuid;
-        private final UUID otherNodeUuid;
-        private final String otherNodeName;
-        private final String otherNodeType;
-        private final long otherNodeFlags;
-        private final Map<String, String> nodeConnProps;
+        private final UUID uuid;
+        private final NodePojo otherNode;
+        private final Map<String, String> props;
 
         public NodeConnPojo(
             UUID nodeConnUuidRef,
-            UUID otherNodeUuidRef,
-            String otherNodeNameRef,
-            String otherNodeTypeRef,
-            long otherNodeFlagsRef,
+            NodePojo otherNodeRef,
             Map<String, String> nodeConnPropsRef
         )
         {
-            nodeConnUuid = nodeConnUuidRef;
-            otherNodeUuid = otherNodeUuidRef;
-            otherNodeName = otherNodeNameRef;
-            otherNodeType = otherNodeTypeRef;
-            otherNodeFlags = otherNodeFlagsRef;
-            nodeConnProps = nodeConnPropsRef;
+            uuid = nodeConnUuidRef;
+            otherNode = otherNodeRef;
+            props = nodeConnPropsRef;
         }
 
         public UUID getNodeConnUuid()
         {
-            return nodeConnUuid;
+            return uuid;
         }
 
-        public UUID getOtherNodeUuid()
+        public NodePojo getOtherNode()
         {
-            return otherNodeUuid;
-        }
-
-        public String getOtherNodeName()
-        {
-            return otherNodeName;
-        }
-
-        public String getOtherNodeType()
-        {
-            return otherNodeType;
-        }
-
-        public long getOtherNodeFlags()
-        {
-            return otherNodeFlags;
+            return otherNode;
         }
 
         public Map<String, String> getNodeConnProps()
         {
-            return nodeConnProps;
+            return props;
         }
     }
 }

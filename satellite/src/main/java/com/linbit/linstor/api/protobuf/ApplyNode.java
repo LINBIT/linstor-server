@@ -59,7 +59,7 @@ public class ApplyNode implements ApiCall
             nodeMsg.getFlags(),
             extractNetIfs(nodeMsg.getNetIfsList()),
             null,
-            extractNodeConns(nodeMsg.getNodeConnsList()),
+            extractNodeConns(nodeMsg.getNodeConnsList(), fullSyncId, updateId),
             nodeMsg.getPropsMap(),
             ApiConsts.ConnectionStatus.ONLINE, // we just assume that we are connected to the other satellite / controller
             fullSyncId,
@@ -90,19 +90,16 @@ public class ApplyNode implements ApiCall
         return netIfs;
     }
 
-    static ArrayList<NodeConnPojo> extractNodeConns(List<IntNodeConn> nodeConnPropsList)
+    static ArrayList<NodeConnPojo> extractNodeConns(List<IntNodeConn> nodeConnPropsList, long fullSyncId, long updateId)
     {
         ArrayList<NodeConnPojo> nodeConns = new ArrayList<>();
         for (IntNodeConn nodeConn : nodeConnPropsList)
         {
             nodeConns.add(
                 new NodeConnPojo(
-                    UUID.fromString(nodeConn.getNodeConnUuid()),
-                    UUID.fromString(nodeConn.getOtherNodeUuid()),
-                    nodeConn.getOtherNodeName(),
-                    nodeConn.getOtherNodeType(),
-                    nodeConn.getOtherNodeFlags(),
-                    nodeConn.getNodeConnPropsMap()
+                    UUID.fromString(nodeConn.getUuid()),
+                    asNodePojo(nodeConn.getOtherNode(), fullSyncId, updateId),
+                    nodeConn.getPropsMap()
                 )
             );
         }

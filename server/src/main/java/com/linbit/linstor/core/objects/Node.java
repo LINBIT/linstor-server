@@ -763,11 +763,13 @@ public class Node extends BaseTransactionObject
         getFlags().disableFlags(accCtx, Flags.EVICTED);
     }
 
-    public NodeApi getApiData(
-        AccessContext accCtx,
-        Long fullSyncId,
-        Long updateId
-    )
+    public NodeApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+        throws AccessDeniedException
+    {
+        return getApiData(accCtx, true, fullSyncId, updateId);
+    }
+
+    private NodePojo getApiData(AccessContext accCtx, boolean includeOtherNode, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
         List<NetInterfaceApi> netInterfaces = new ArrayList<>();
@@ -793,10 +795,7 @@ public class Node extends BaseTransactionObject
             nodeConns.add(
                 new NodeConnPojo(
                     nodeConn.getUuid(),
-                    otherNode.getUuid(),
-                    otherNode.getName().displayValue,
-                    otherNode.getNodeType(accCtx).name(),
-                    otherNode.getFlags().getFlagsBits(accCtx),
+                    otherNode.getApiData(accCtx, false, fullSyncId, updateId),
                     nodeConn.getProps(accCtx).map()
                 )
             );

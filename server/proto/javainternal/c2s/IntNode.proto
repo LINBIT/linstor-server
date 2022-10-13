@@ -26,11 +26,9 @@ message IntNetIf
 
 message IntNodeConn
 {
-    string                      other_node_uuid = 1;
-    string                      other_node_name = 2;
-    string                      other_node_type = 3;
-    sint64                      other_node_flags = 4;
-    string                      node_conn_uuid = 5;
-    map<string, string>         node_conn_props = 6;
-    string                      other_node_diskless_stor_pool_uuid = 7;
+    string                      uuid = 1;
+    // other_node will not include node_connections (any, not even this) to prevent
+    // recursive node-chaining
+    IntNode                     other_node = 2;
+    map<string, string>         props = 3;
 }

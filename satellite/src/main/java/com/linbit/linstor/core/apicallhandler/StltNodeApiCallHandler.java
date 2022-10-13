@@ -153,12 +153,13 @@ class StltNodeApiCallHandler
 
             for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
             {
+                NodePojo otherNodePojo = nodeConn.getOtherNode();
                 Node otherNode = nodeFactory.getInstanceSatellite(
                     apiCtx,
-                    nodeConn.getOtherNodeUuid(),
-                    new NodeName(nodeConn.getOtherNodeName()),
-                    Node.Type.valueOf(nodeConn.getOtherNodeType()),
-                    Node.Flags.restoreFlags(nodeConn.getOtherNodeFlags())
+                    otherNodePojo.getUuid(),
+                    new NodeName(otherNodePojo.getName()),
+                    Node.Type.valueOf(otherNodePojo.getType()),
+                    Node.Flags.restoreFlags(otherNodePojo.getFlags())
                 );
                 NodeConnection nodeCon = nodeConnectionFactory.getInstanceSatellite(
                     apiCtx,
