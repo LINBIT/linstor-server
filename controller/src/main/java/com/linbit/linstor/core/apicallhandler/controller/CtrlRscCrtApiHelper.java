@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
@@ -927,6 +928,8 @@ public class CtrlRscCrtApiHelper
                 layerStackRef
             );
 
+            copyForceInitialSyncProp(rsc);
+
             List<DeviceLayerKind> unsupportedLayers = getUnsupportedLayers(peerAccCtx.get(), rsc);
             if (!unsupportedLayers.isEmpty())
             {
@@ -959,6 +962,33 @@ public class CtrlRscCrtApiHelper
             ), dataAlreadyExistsExc);
         }
         return rsc;
+    }
+
+    private void copyForceInitialSyncProp(Resource rsc) throws AccessDeniedException, DatabaseException
+    {
+        ResourceDefinition rscDfn = rsc.getResourceDefinition();
+        PriorityProps prioProps = new PriorityProps(
+            rscDfn.getProps(peerAccCtx.get()),
+            rscDfn.getResourceGroup().getProps(peerAccCtx.get()),
+            ctrlPropsHelper.getStltPropsForView()
+        );
+        String forceSync = prioProps.getProp(ApiConsts.KEY_FORCE_INITIAL_SYNC, ApiConsts.NAMESPC_DRBD_OPTIONS);
+        if (forceSync != null && !forceSync.isEmpty() && Boolean.parseBoolean(forceSync))
+        {
+            try
+            {
+                rscDfn.getProps(peerAccCtx.get())
+                    .setProp(
+                        InternalApiConsts.KEY_FORCE_INITIAL_SYNC_PERMA,
+                        ApiConsts.VAL_TRUE,
+                        ApiConsts.NAMESPC_DRBD_OPTIONS
+                    );
+            }
+            catch (InvalidKeyException | InvalidValueException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
     }
 
     Resource createResourceFromSnapshot(

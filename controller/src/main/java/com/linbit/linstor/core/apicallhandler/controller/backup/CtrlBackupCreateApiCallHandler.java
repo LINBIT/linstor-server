@@ -425,6 +425,16 @@ public class CtrlBackupCreateApiCallHandler
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
         }
+        /*
+         * This prop ensures that upon backup restore the resource does not skip the initial sync
+         * This is necessary because the metadata needs to be recreated during the restore, since uploads from different
+         * nodes might have corrupted the metadata.
+         * Recreating the metadata leads to the loss of the day0-uuid which is needed to skip the initial full sync
+         */
+        /*
+         * The prop needs to be on the rscDfn during/after the restore. Any change to the way props get restored needs
+         * to take this into consideration
+         */
         snapDfn.getProps(peerAccCtx.get())
             .setProp(
                 InternalApiConsts.KEY_FORCE_INITIAL_SYNC_PERMA,

@@ -619,7 +619,7 @@ public class DrbdLayer implements DeviceLayer
                     for (DrbdVlmData<Resource> drbdVlmData : checkMetaData)
                     {
                         if (
-                            !hasMetaData(drbdVlmData) || forceCreateNewMetaData(drbdVlmData)
+                            !hasMetaData(drbdVlmData) || needsNewMetaData(drbdVlmData)
                         )
                         {
                             createMetaData.add(drbdVlmData);
@@ -745,7 +745,7 @@ public class DrbdLayer implements DeviceLayer
                     if (
                         drbdRscData.getAbsResource().getStateFlags()
                             .isSet(workerCtx, Resource.Flags.RESTORE_FROM_SNAPSHOT) &&
-                            !DrbdLayerUtils.forceInitialSync(workerCtx, drbdRscData)
+                            !DrbdLayerUtils.isForceInitialSyncSet(workerCtx, drbdRscData)
                     )
                     {
                         /*
@@ -825,7 +825,7 @@ public class DrbdLayer implements DeviceLayer
         return contProcess;
     }
 
-    private boolean forceCreateNewMetaData(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException,
+    private boolean needsNewMetaData(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException,
         StorageException
     {
         boolean isRscUp;
@@ -839,7 +839,10 @@ public class DrbdLayer implements DeviceLayer
         {
             throw new StorageException("Checking drbd state failed", exc);
         }
-        return !drbdVlmData.getRscLayerObject().getFlags().isSet(workerCtx, DrbdRscFlags.INITIALIZED) && !isRscUp;
+        StateFlags<DrbdRscFlags> flags = drbdVlmData.getRscLayerObject().getFlags();
+        return flags.isUnset(workerCtx, DrbdRscFlags.INITIALIZED) &&
+            flags.isSet(workerCtx, DrbdRscFlags.FROM_BACKUP) &&
+            !isRscUp;
     }
 
     private boolean areBothResizeFlagsSet(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException
@@ -1159,7 +1162,7 @@ public class DrbdLayer implements DeviceLayer
             drbdVlmData.setMetaDataIsNew(true);
 
             boolean skipInitSync;
-            if (DrbdLayerUtils.forceInitialSync(workerCtx, drbdVlmData.getRscLayerObject()))
+            if (DrbdLayerUtils.isForceInitialSyncSet(workerCtx, drbdVlmData.getRscLayerObject()))
             {
                 skipInitSync = false;
             }
@@ -1665,7 +1668,7 @@ public class DrbdLayer implements DeviceLayer
                 {
                     if (
                         !VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false) ||
-                            DrbdLayerUtils.forceInitialSync(workerCtx, drbdRscData)
+                            DrbdLayerUtils.isForceInitialSyncSet(workerCtx, drbdRscData)
                     )
                     {
                         haveFatVlm = true;

@@ -529,9 +529,10 @@ public class CtrlSnapshotRestoreApiCallHandler
         for (AbsRscLayerObject<Resource> layer : drbdLayers)
         {
             DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) layer;
-            if (DrbdLayerUtils.forceInitialSync(peerAccCtx.get(), drbdRscData))
+            if (DrbdLayerUtils.isForceInitialSyncSet(peerAccCtx.get(), drbdRscData))
             {
                 drbdRscData.getFlags().disableFlags(peerAccCtx.get(), DrbdRscFlags.INITIALIZED);
+                drbdRscData.getFlags().enableFlags(peerAccCtx.get(), DrbdRscFlags.FROM_BACKUP);
             }
         }
 

@@ -11,10 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added SnapshotVolumeNode as part of SnapshotNode to include a snapshot state
 - Status of EBS volumes and snapshots are now queried periodically
+- Added property DrbdOptions/ForceInitialSync that forces thin resources to do an initial full sync
 
 ### Fixed
 - Snapshots and SnapshotVolumes now properly delete their properties + cleanup migration existing DB entries
 - Randomized Cluster/LocalId for CRD setups since all installations had the same ID
+- Backup restore now creates new DRBD metadata and forces the initial sync to be a full sync
 
 ## [1.20.0-rc.1] - 2022-09-20
 

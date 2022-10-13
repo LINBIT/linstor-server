@@ -92,7 +92,7 @@ public class DrbdLayerUtils
         );
     }
 
-    public static boolean forceInitialSync(AccessContext accCtx, DrbdRscData<Resource> drbdRscData)
+    public static boolean isForceInitialSyncSet(AccessContext accCtx, DrbdRscData<Resource> drbdRscData)
         throws InvalidKeyException,
         AccessDeniedException
     {
