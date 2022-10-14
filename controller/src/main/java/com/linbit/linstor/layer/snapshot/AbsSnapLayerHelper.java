@@ -95,8 +95,14 @@ public abstract class AbsSnapLayerHelper<
             SnapshotVolume snapVlm = iterateVolumes.next();
             VolumeNumber vlmNr = snapVlm.getVolumeNumber();
 
-            if (snapVlmMap.get(vlmNr) == null)
+            VlmProviderObject<Resource> vlmDataToCopy = rscDataRef.getVlmProviderObject(vlmNr);
+            if (snapVlmMap.get(vlmNr) == null && vlmDataToCopy != null)
             {
+                /*
+                 * in a mixed ext-/internal metadata setup (vlm0=external, vlm1=internal)
+                 * vlmDataToCopy might be null when copying the ".meta" path (required for vlm0)
+                 * but vlm1 simply has no source to copy from.
+                 */
                 ensureVolumeDefinitionExists(
                     snapVlm.getSnapshotVolumeDefinition(),
                     resourceNameSuffix
@@ -104,7 +110,7 @@ public abstract class AbsSnapLayerHelper<
                 SNAPVLM_LO snapVlmData = createSnapVlmLayerData(
                     snapVlm,
                     snapData,
-                    rscDataRef.getVlmProviderObject(vlmNr)
+                    vlmDataToCopy
                 );
                 snapVlmMap.put(vlmNr, snapVlmData);
             }
@@ -143,14 +149,14 @@ public abstract class AbsSnapLayerHelper<
         SNAP_LO snapData;
         if (parentRef == null)
         {
-            if (snapRef.getLayerData(apiCtx) == null)
+            AbsRscLayerObject<Snapshot> rootData = snapRef.getLayerData(apiCtx);
+            if (rootData == null)
             {
                 snapData = restoreSnapDataImpl(snapRef, rscLayerDataApiRef, parentRef, renameStorPoolMapRef);
             }
             else
             {
-                AbsRscLayerObject<Snapshot> rootData = snapRef.getLayerData(apiCtx);
-                if (rootData != null && !rootData.getLayerKind().equals(kind))
+                if (!rootData.getLayerKind().equals(kind))
                 {
                     throw new ImplementationError(
                         "Expected null or instance with " + kind + ", but got instance with " +
@@ -162,14 +168,14 @@ public abstract class AbsSnapLayerHelper<
         }
         else
         {
-            if (parentRef.getChildBySuffix(rscNameSuffix) == null)
+            AbsRscLayerObject<Snapshot> childData = parentRef.getChildBySuffix(rscNameSuffix);
+            if (childData == null)
             {
                 snapData = restoreSnapDataImpl(snapRef, rscLayerDataApiRef, parentRef, renameStorPoolMapRef);
             }
             else
             {
-                AbsRscLayerObject<Snapshot> childData = parentRef.getChildBySuffix(rscNameSuffix);
-                if (childData != null && !childData.getLayerKind().equals(kind))
+                if (!childData.getLayerKind().equals(kind))
                 {
                     throw new ImplementationError(
                         "Expected null or instance with " + kind + ", but got instance with " +
