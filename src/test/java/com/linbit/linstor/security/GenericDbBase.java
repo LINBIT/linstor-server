@@ -38,6 +38,10 @@ import com.linbit.linstor.core.objects.ResourceDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
 import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
+import com.linbit.linstor.core.objects.SnapshotControllerFactory;
+import com.linbit.linstor.core.objects.SnapshotDefinitionControllerFactory;
+import com.linbit.linstor.core.objects.SnapshotVolumeControllerFactory;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolControllerFactory;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionControllerFactory;
@@ -262,6 +266,14 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     protected ResourceGroupControllerFactory resourceGroupFactory;
     @Inject
     protected ResourceGroupTestFactory resourceGroupTestFactory;
+    @Inject
+    protected SnapshotDefinitionControllerFactory snapshotDefinitionFactory;
+    @Inject
+    protected SnapshotVolumeDefinitionControllerFactory snapshotVolumeDefinitionFactory;
+    @Inject
+    protected SnapshotControllerFactory snapshotFactory;
+    @Inject
+    protected SnapshotVolumeControllerFactory snapshotVolumeFactory;
     @Inject
     protected NetInterfaceFactory netInterfaceFactory;
     @Inject

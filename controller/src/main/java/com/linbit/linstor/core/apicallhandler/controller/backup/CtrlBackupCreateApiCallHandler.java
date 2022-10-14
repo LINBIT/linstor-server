@@ -28,6 +28,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -53,12 +54,15 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -74,11 +78,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 import reactor.core.publisher.Flux;
 
@@ -276,41 +282,18 @@ public class CtrlBackupCreateApiCallHandler
                 );
             }
 
-            Pair<Node, List<String>> chooseNodeResult = chooseNode(
+            Map<String, Node> usableNodesMap = findUsableNodes(
                 rscDfn,
                 prevSnapDfn,
-                requiredExtTools,
-                optionalExtTools
+                requiredExtTools
             );
-            NodeName chosenNodeName = chooseNodeResult.objA.getName();
-            List<String> nodes = chooseNodeResult.objB;
-
-            boolean nodeNameFound = false;
-            if (nodeName != null && !nodeName.isEmpty())
-            {
-                for (String possibleNodeName : nodes)
-                {
-                    if (nodeName.equalsIgnoreCase(possibleNodeName))
-                    {
-                        chosenNodeName = new NodeName(possibleNodeName);
-                        nodeNameFound = true;
-                        break;
-                    }
-                }
-            }
-            if (!nodeNameFound && nodeName != null)
-            {
-                responses.addEntry(
-                    "Preferred node '" + nodeName + "' could not be selected. Choosing '" + chosenNodeName +
-                        "' instead.",
-                    ApiConsts.MASK_WARN
-                );
-            }
+            Set<String> usableNodeNames = usableNodesMap.keySet();
 
             SnapshotDefinition snapDfn = snapCrtHelper
-                .createSnapshots(nodes, rscDfn.getName().displayValue, snapName, responses);
+                .createSnapshots(usableNodeNames, rscDfn.getName().displayValue, snapName, responses);
             setBackupSnapDfnFlagsAndProps(snapDfn, scheduleNameRef, nowRef);
 
+            Node chosenNode = chooseNode(usableNodesMap, nodeName, responses, optionalExtTools);
             List<Integer> nodeIds = new ArrayList<>();
             DrbdRscDfnData<Resource> rscDfnData = rscDfn.getLayerData(
                 peerAccCtx.get(),
@@ -329,7 +312,7 @@ public class CtrlBackupCreateApiCallHandler
                 }
             }
 
-            Snapshot createdSnapshot = snapDfn.getSnapshot(peerAccCtx.get(), chosenNodeName);
+            Snapshot createdSnapshot = snapDfn.getSnapshot(peerAccCtx.get(), chosenNode.getName());
             if (setShippingFlag)
             {
                 createdSnapshot.getFlags()
@@ -354,7 +337,7 @@ public class CtrlBackupCreateApiCallHandler
 
             Flux<ApiCallRc> flux = snapshotCrtHandler.postCreateSnapshot(snapDfn, runInBackgroundRef)
                 .concatWith(Flux.<ApiCallRc>just(responses));
-            return new Pair<>(flux, createdSnapshot);
+            return new Pair<>(flux, snapDfn.getSnapshot(peerAccCtx.get(), chosenNode.getName()));
         }
         catch (AccessDeniedException exc)
         {
@@ -584,25 +567,27 @@ public class CtrlBackupCreateApiCallHandler
      *
      * @param rscDfn
      * @param prevSnapDfnRef
-     * @param optionalExtToolsRef
      * @param requiredExtToolsRef
      *
-     * @return
+     * @return Map<NodeName as String, Node>
      *
      * @throws AccessDeniedException
      */
-    private Pair<Node, List<String>> chooseNode(
+    Map<String, Node> findUsableNodes(
         ResourceDefinition rscDfn,
         SnapshotDefinition prevSnapDfnRef,
-        Map<ExtTools, ExtToolsInfo.Version> requiredExtToolsMap,
-        Map<ExtTools, ExtToolsInfo.Version> optionalExtToolsMap
+        Map<ExtTools, ExtToolsInfo.Version> requiredExtToolsMap
     )
         throws AccessDeniedException
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        Node selectedNode = null;
-        Node preferredNode = null;
-        List<String> nodeNamesStr = new ArrayList<>();
+        /*
+         * Map<Map<VolNr, int/ext>, Map<NodeName, Node>>
+         * This abomination is needed to make sure only nodes with the exact same meta-layout across all volumes are
+         * grouped together while looking for sets of nodes that can do the shipping.
+         */
+        Map<Map<VolumeNumber, Boolean>, Map<String, Node>> usableGroups = new HashMap<>();
+        Map<String, Node> ret = new HashMap<>();
 
         Iterator<Resource> rscIt = rscDfn.iterateResource(peerAccCtx.get());
         while (rscIt.hasNext())
@@ -620,13 +605,13 @@ public class CtrlBackupCreateApiCallHandler
                 if (backupShippingSupported.isEmpty())
                 {
                     Node node = rsc.getNode();
-                    boolean takeSnapshot = true;
+                    boolean canTakeSnapshot = true;
                     if (prevSnapDfnRef != null)
                     {
-                        takeSnapshot = prevSnapDfnRef.getAllSnapshots(peerAccCtx.get()).stream()
+                        canTakeSnapshot = prevSnapDfnRef.getAllSnapshots(peerAccCtx.get()).stream()
                             .anyMatch(snap -> snap.getNode().equals(node));
                     }
-                    if (!takeSnapshot)
+                    if (!canTakeSnapshot)
                     {
                         apiCallRc.addEntries(
                             ApiCallRcImpl.singleApiCallRc(
@@ -638,7 +623,7 @@ public class CtrlBackupCreateApiCallHandler
                     }
                     else
                     {
-                        takeSnapshot = hasNodeAllExtTools(
+                        canTakeSnapshot = hasNodeAllExtTools(
                             node,
                             requiredExtToolsMap,
                             apiCallRc,
@@ -646,18 +631,44 @@ public class CtrlBackupCreateApiCallHandler
                         );
                     }
 
-                    if (takeSnapshot)
+                    if (canTakeSnapshot)
                     {
-                        if (selectedNode == null)
+                        Set<AbsRscLayerObject<Resource>> layers = LayerRscUtils.getRscDataByProvider(
+                            rsc.getLayerData(peerAccCtx.get()),
+                            DeviceLayerKind.DRBD
+                        );
+                        if (layers.size() > 1)
                         {
-                            selectedNode = node;
+                            // really rethink following for-loop if this gets changed
+                            throw new ImplementationError("Multiple DRBD layers are not supported.");
                         }
-                        if (preferredNode == null && hasNodeAllExtTools(node, optionalExtToolsMap, null, null))
+                        if (layers.isEmpty())
                         {
-                            preferredNode = node;
-                            selectedNode = node;
+                            if (rscDfn.getNotDeletedDiskfulCount(peerAccCtx.get()) > 1)
+                            {
+                                throw new ImplementationError(
+                                    "Shipping non-DRBD resources with more than one replica is not supported."
+                                );
+                            }
+                            else
+                            {
+                                ret.put(node.getName().displayValue, node);
+                            }
                         }
-                        nodeNamesStr.add(node.getName().displayValue);
+                        else
+                        {
+                            for (AbsRscLayerObject<Resource> layer : layers)
+                            {
+                                DrbdRscData<Resource> drbdLayer = (DrbdRscData<Resource>) layer;
+                                Map<VolumeNumber, Boolean> key = new HashMap<>();
+                                for (DrbdVlmData<Resource> drbdVlm : drbdLayer.getVlmLayerObjects().values())
+                                {
+                                    key.put(drbdVlm.getVlmNr(), drbdVlm.isUsingExternalMetaData());
+                                }
+                                Map<String, Node> values = usableGroups.computeIfAbsent(key, k -> new HashMap<>());
+                                values.put(node.getName().displayValue, node);
+                            }
+                        }
                     }
                 }
                 else
@@ -666,7 +677,7 @@ public class CtrlBackupCreateApiCallHandler
                 }
             }
         }
-        if (nodeNamesStr.isEmpty())
+        if (usableGroups.isEmpty() && ret.isEmpty())
         {
             apiCallRc.addEntry(
                 ApiCallRcImpl.simpleEntry(
@@ -677,13 +688,68 @@ public class CtrlBackupCreateApiCallHandler
             );
             throw new ApiRcException(apiCallRc);
         }
-        return new Pair<>(selectedNode, nodeNamesStr);
+        if (ret.isEmpty())
+        {
+            TreeMap<Integer, List<Map<String, Node>>> sizes = new TreeMap<>();
+            for (Map<String, Node> val : usableGroups.values())
+            {
+                sizes.computeIfAbsent(val.size(), k -> new ArrayList<>()).add(val);
+            }
+            List<Map<String, Node>> biggestGroup = sizes.get(sizes.lastKey());
+            int idx = (int) (Math.random() * biggestGroup.size());
+            ret = biggestGroup.get(idx);
+        }
+        return ret;
+    }
+    private Node chooseNode(
+        Map<String, Node> nodesMap,
+        String prefNode,
+        ApiCallRcImpl responses,
+        Map<ExtTools, ExtToolsInfo.Version> optionalExtToolsMap
+    )
+        throws AccessDeniedException
+    {
+        Map<String, Node> nodesCopy = new HashMap<>(nodesMap);
+        Node ret = null;
+        // remove so in case pref exists, it is not checked twice
+        Node pref = prefNode == null ? null : nodesCopy.remove(prefNode);
+        if (pref != null)
+        {
+            ret = pref;
+        }
+        else
+        {
+            List<Node> nodes = new ArrayList<>(nodesCopy.values());
+            // shuffle for a more even distribution
+            Collections.shuffle(nodes);
+            for (Node node : nodes)
+            {
+                ret = node;
+                if (hasNodeAllExtTools(node, optionalExtToolsMap, null, null))
+                {
+                    // try to find a node that supports optExtTools - stop search when one is found
+                    break;
+                }
+            }
+            if (ret != null)
+            {
+                if (prefNode != null)
+                {
+                    responses.addEntry(
+                        "Preferred node '" + prefNode + "' could not be selected. Choosing '" + ret.getName() +
+                            "' instead.",
+                        ApiConsts.MASK_WARN
+                    );
+                }
+            }
+        }
+        return ret;
     }
 
     /**
      * Makes sure the given node has all ext-tools given
      */
-    private boolean hasNodeAllExtTools(
+    boolean hasNodeAllExtTools(
         Node node,
         Map<ExtTools, ExtToolsInfo.Version> extTools,
         ApiCallRcImpl apiCallRcRef,
@@ -1014,7 +1080,7 @@ public class CtrlBackupCreateApiCallHandler
     /**
      * Checks if the given rsc has the correct device-provider and ext-tools to be shipped as a backup
      */
-    private ApiCallRcImpl backupShippingSupported(Resource rsc) throws AccessDeniedException
+    ApiCallRcImpl backupShippingSupported(Resource rsc) throws AccessDeniedException
     {
         Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, peerAccCtx.get());
         ApiCallRcImpl errors = new ApiCallRcImpl();

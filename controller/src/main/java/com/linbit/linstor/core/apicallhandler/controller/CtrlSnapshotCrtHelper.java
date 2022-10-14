@@ -102,7 +102,7 @@ public class CtrlSnapshotCrtHelper
     }
 
     public SnapshotDefinition createSnapshots(
-        List<String> nodeNameStrs,
+        Collection<String> nodeNameStrs,
         String rscNameStr,
         String snapshotNameStr, ApiCallRcImpl responses
     )
