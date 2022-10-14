@@ -5,13 +5,11 @@ import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import javax.annotation.Nullable;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.sentry.util.Objects;
 
 /**
  * Initial request sent from the source Linstor cluster to the target Linstor cluster.
@@ -34,13 +32,15 @@ public class BackupShippingRequest
     public final String srcClusterId;
     public final String srcL2LRemoteName;
     public final String srcStltRemoteName;
-    public final Set<String> srcSnapDfnUuids;
 
     public final @Nullable String dstNodeName;
     public final @Nullable String dstNodeNetIfName;
     public final @Nullable String dstStorPool;
     public final boolean useZstd;
     public final boolean downloadOnly;
+    public final boolean resetData;
+    public final @Nullable String dstBaseSnapName;
+    public final String dstActualNodeName;
 
     @JsonCreator
     public BackupShippingRequest(
@@ -50,14 +50,16 @@ public class BackupShippingRequest
         @JsonProperty("srcClusterId") String srcClusterIdRef,
         @JsonProperty("srcL2LRemoteName") String srcL2LRemoteNameRef, // linstorRemoteName, not StltRemoteName
         @JsonProperty("srcStltRemoteName") String srcStltRemoteNameRef,
-        @JsonProperty("srcSnapUuids") HashSet<String> srcSnapDfnUuidsRef,
         @JsonProperty("dstRscName") String dstRscNameRef,
         @JsonProperty("dstNodeName") @Nullable String dstNodeNameRef,
         @JsonProperty("dstNodeNetIfName") @Nullable String dstNodeNetIfNameRef,
         @JsonProperty("dstStorPool") @Nullable String dstStorPoolRef,
         @JsonProperty("storPoolRenameMap") @Nullable Map<String, String> storPoolRenameMapRef,
         @JsonProperty("useZstd") boolean useZstdRef,
-        @JsonProperty("downloadOnly") boolean downloadOnlyRef
+        @JsonProperty("downloadOnly") boolean downloadOnlyRef,
+        @JsonProperty("resetData") boolean resetDataRef,
+        @JsonProperty("dstBaseSnapName") @Nullable String dstBaseSnapNameRef,
+        @JsonProperty("dstActualNodeName") @Nullable String dstActualNodeNameRef
     )
     {
         srcL2LRemoteName = Objects.requireNonNull(srcL2LRemoteNameRef, "source linstor remote name must not be null!");
@@ -70,14 +72,14 @@ public class BackupShippingRequest
             Collections.emptyMap() :
             Collections.unmodifiableMap(storPoolRenameMapRef);
         metaData = Objects.requireNonNull(metaDataRef, "Metadata must not be null!");
-        srcSnapDfnUuids = srcSnapDfnUuidsRef == null ?
-            Collections.emptySet() :
-            Collections.unmodifiableSet(srcSnapDfnUuidsRef);
 
         dstNodeName = dstNodeNameRef;
         dstNodeNetIfName = dstNodeNetIfNameRef;
         dstStorPool = dstStorPoolRef;
         useZstd = useZstdRef;
         downloadOnly = downloadOnlyRef;
+        resetData = resetDataRef;
+        dstBaseSnapName = dstBaseSnapNameRef;
+        dstActualNodeName = dstActualNodeNameRef;
     }
 }

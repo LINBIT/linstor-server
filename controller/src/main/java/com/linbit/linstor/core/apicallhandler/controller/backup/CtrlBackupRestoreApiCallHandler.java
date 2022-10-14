@@ -47,8 +47,8 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
-import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -63,7 +63,6 @@ import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
-import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -93,13 +92,14 @@ import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.backupshipping.S3Consts.META_SUFFIX;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,7 +140,6 @@ public class CtrlBackupRestoreApiCallHandler
     private final CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelper;
     private final CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
     private final Autoplacer autoplacer;
-    private final ResourceDefinitionRepository rscDfnRepo;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final RemoteRepository remoteRepo;
     private final Provider<Peer> peerProvider;
@@ -168,7 +167,6 @@ public class CtrlBackupRestoreApiCallHandler
         CtrlSnapshotCrtHelper snapCrtHelperRef,
         CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandlerRef,
         CtrlVlmDfnCrtApiHelper ctrlVlmDfnCrtApiHelperRef,
-        ResourceDefinitionRepository rscDfnRepoRef,
         Autoplacer autoplacerRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         RemoteRepository remoteRepoRef,
@@ -196,7 +194,6 @@ public class CtrlBackupRestoreApiCallHandler
         snapshotCrtHelper = snapCrtHelperRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
         ctrlVlmDfnCrtApiHelper = ctrlVlmDfnCrtApiHelperRef;
-        rscDfnRepo = rscDfnRepoRef;
         autoplacer = autoplacerRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         remoteRepo = remoteRepoRef;
@@ -518,7 +515,7 @@ public class CtrlBackupRestoreApiCallHandler
         boolean resetData,
         boolean downloadOnly
     )
-        throws AccessDeniedException, ImplementationError, DatabaseException, InvalidValueException
+        throws AccessDeniedException, ImplementationError, DatabaseException
     {
         // 1. Ensure we have all the required files
         for (List<BackupMetaInfoPojo> backupList : metadata.getBackups().values())
@@ -939,45 +936,18 @@ public class CtrlBackupRestoreApiCallHandler
         {
             // 5. create layerPayload
             RscLayerDataApi layers = data.metaData.getLayerData();
-
-            // 6. do luks-stuff if needed (is converted by L2L-source)
-
-            // search for incremental base
-            Snapshot incrementalBaseSnap = null;
-            boolean resetData = false;
-            try
-            {
-                /*
-                 * DO NOT use getRscDfnForBackupRestore here. We need to know if we are choosing incremental or full
-                 * backup before calling
-                 */
-                ResourceDefinition targetRscDfn = rscDfnRepo.get(sysCtx, new ResourceName(data.dstRscName));
-                if (targetRscDfn != null)
-                {
-                    incrementalBaseSnap = getIncrementalBase(
-                        targetRscDfn,
-                        data.srcSnapDfnUuids
-                    );
-                }
-                resetData = targetRscDfn == null || targetRscDfn.getResourceCount() == 0;
-            }
-            catch (InvalidNameException exc)
-            {
-                throw new ImplementationError(exc);
-            }
             // 8. create rscDfn
             ResourceDefinition rscDfn = getRscDfnForBackupRestore(
                 data.dstRscName,
                 data.snapName,
                 data.metaData,
-                resetData
+                data.resetData
             );
             SnapshotDefinition snapDfn;
             Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
             Set<StorPool> storPools;
             Snapshot snap = null;
 
-            // 9. create snapDfn
             snapDfn = getSnapDfnForBackupRestore(data.metaData, data.snapName, rscDfn, responses, data.downloadOnly);
             // 10. create vlmDfn(s)
             // 11. create snapVlmDfn(s)
@@ -987,27 +957,33 @@ public class CtrlBackupRestoreApiCallHandler
                 rscDfn,
                 snapDfn,
                 snapVlmDfns,
-                resetData
+                data.resetData
             );
-
+            Snapshot incrementalBaseSnap = null;
+            if (data.dstBaseSnapName != null)
+            {
+                SnapshotDefinition baseSnapDfn = ctrlApiDataLoader.loadSnapshotDfn(
+                    data.dstRscName,
+                    data.dstBaseSnapName,
+                    false
+                );
+                if (baseSnapDfn != null)
+                {
+                    Node baseNode = ctrlApiDataLoader.loadNode(data.dstActualNodeName, true);
+                    incrementalBaseSnap = baseSnapDfn.getSnapshot(sysCtx, baseNode.getName());
+                }
+            }
             if (incrementalBaseSnap != null)
             {
-                for (SnapshotVolumeDefinition snapVlmDfn : snapDfn.getAllSnapshotVolumeDefinitions(sysCtx))
-                {
-                    snapVlmDfns.put(snapVlmDfn.getVolumeNumber().value, snapVlmDfn);
-                }
-
                 data.metaData.getRsc().getProps().put(
                     ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
                     incrementalBaseSnap.getSnapshotName().displayValue
                 );
-
                 storPools = LayerVlmUtils.getStorPools(incrementalBaseSnap, sysCtx, false);
                 if (storPools.size() != 1)
                 {
                     throw new ImplementationError("Received snapshot unexpectedly has more than one storage pool");
                 }
-
                 StorPool storPool = storPools.iterator().next();
 
                 // test if given storage pool is usable
@@ -1084,7 +1060,6 @@ public class CtrlBackupRestoreApiCallHandler
                 Node node = storPool.getNode();
 
                 // TODO add autoSelected storPool into renameMap
-
                 // 12. create snapshot
                 snap = createSnapshotAndVolumesForBackupRestore(
                     data.metaData,
@@ -1110,7 +1085,8 @@ public class CtrlBackupRestoreApiCallHandler
                         "Tried to overwrite existing backup-info-mgr entry for rscDfn " + data.dstRscName
                     );
                 }
-
+                // add to mgr so that when port is decided src-cluster can be contacted
+                backupInfoMgr.addL2LDstData(snap, data);
                 // LUKS
                 Set<AbsRscLayerObject<Snapshot>> luksLayerData = LayerRscUtils.getRscDataByProvider(
                     snap.getLayerData(sysCtx),
@@ -1157,30 +1133,10 @@ public class CtrlBackupRestoreApiCallHandler
                     }
                 }
 
-                // remoteMasterKey = getRemoteMasterKey(sourceClusterIdStr, luksInfo);
-
                 data.stltRemote.useZstd(sysCtx, data.useZstd);
 
                 // update stlts
                 ctrlTransactionHelper.commit();
-
-                String srcSnapDfnUuid = null; // if not null => incremental sync
-                Snapshot incrBaseSnap = incrementalBaseSnap;
-                try
-                {
-                    if (incrBaseSnap != null)
-                    {
-                        srcSnapDfnUuid = incrBaseSnap.getSnapshotDefinition().getProps(sysCtx).getProp(
-                            InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID
-                        );
-                    }
-                }
-                catch (AccessDeniedException exc)
-                {
-                    throw new ImplementationError(exc);
-                }
-                data.incrBaseSnapDfnUuid = srcSnapDfnUuid;
-                backupInfoMgr.addL2LDstData(snap, data);
 
                 // calling ...SupressingErrorClasses without classes => do not ignore DelayedApiRcException. we want to
                 // deal with that by our self
@@ -1227,13 +1183,28 @@ public class CtrlBackupRestoreApiCallHandler
     /**
      * Finds the correct base snapshot for l2l-shipping
      */
-    private Snapshot getIncrementalBase(
+    Snapshot getIncrementalBaseL2LPrivileged(
         ResourceDefinition rscDfnRef,
-        Set<String> srcSnapDfnUuidsForIncrementalRef
+        Set<String> srcSnapDfnUuidsForIncrementalRef,
+        @Nullable String dstNodeRef
     )
         throws AccessDeniedException
     {
         Snapshot ret = null;
+        NodeName dstNode = null;
+        if (dstNodeRef != null)
+        {
+            try
+            {
+                dstNode = new NodeName(dstNodeRef);
+            }
+            catch (InvalidNameException exc)
+            {
+                /*
+                 * ignored, treat invalid node name the same as no node name given
+                 */
+            }
+        }
 
         long latestTimestamp = -1;
         for (SnapshotDefinition snapDfn : rscDfnRef.getSnapshotDfns(sysCtx))
@@ -1243,26 +1214,50 @@ public class CtrlBackupRestoreApiCallHandler
             );
             if (srcSnapDfnUuidsForIncrementalRef.contains(fromSrcSnapDfnUuid))
             {
-                Iterator<Snapshot> snapshotIterator = snapDfn.getAllSnapshots(sysCtx).iterator();
-                if (!snapshotIterator.hasNext())
+                Snapshot snap;
+                /*
+                 * If the user chose a specific node, try to place the snap there even if it means we can't make an inc
+                 * or the inc has to be based on a snap a lot further back
+                 */
+                if (dstNode != null)
                 {
-                    throw new ImplementationError(
-                        "snapdfn: " + CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline(snapDfn) +
-                            " has no snapshots!"
-                    );
+                    snap = snapDfn.getSnapshot(sysCtx, dstNode);
+                }
+                else
+                {
+                    Iterator<Snapshot> snapshotIterator = snapDfn.getAllSnapshots(sysCtx).iterator();
+                    if (!snapshotIterator.hasNext())
+                    {
+                        throw new ImplementationError(
+                            "snapdfn: " + CtrlSnapshotApiCallHandler.getSnapshotDfnDescriptionInline(snapDfn) +
+                                " has no snapshots!"
+                        );
+                    }
+                    /*
+                     * snapshotDfn will have only one snapshot (we will certainly not have received a backup into
+                     * multiple nodes)
+                     * WARNING this might not stay this way
+                     */
+                    snap = snapshotIterator.next();
                 }
                 /*
-                 * snapshotDfn will have only one snapshot (we will certainly not have received a backup into multiple
-                 * nodes)
+                 * TODO: This should also test whether we have enough space left over to receive the snap, and since we
+                 * don't really have a good way to find out how big an incremental snap would be, we need to check for
+                 * enough space for a full backup.
+                 * If there isn't enough space, we need to make a full backup to a different storpool/node, or
+                 * completely abort the shipping
                  */
-                Snapshot snap = snapshotIterator.next();
                 long timestamp = Long.parseLong(
                     snapDfn.getProps(sysCtx).getProp(
                         InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
                         ApiConsts.NAMESPC_BACKUP_SHIPPING
                     )
                 );
-                if (timestamp > latestTimestamp)
+                /*
+                 * only update if snap is not null, we only want to return null if there is absolutely no way to put an
+                 * incremental snap on the node the user wants
+                 */
+                if (timestamp > latestTimestamp && snap != null)
                 {
                     latestTimestamp = timestamp;
                     ret = snap;
@@ -1402,7 +1397,7 @@ public class CtrlBackupRestoreApiCallHandler
                             luksInfo.getMasterCryptHash(),
                             luksInfo.getMasterPassword(),
                             luksInfo.getMasterCryptSalt(),
-                            new String(remotePassphrase, Charset.forName("UTF-8"))
+                            new String(remotePassphrase, StandardCharsets.UTF_8)
                         );
                     }
                     catch (LinStorException exc)
@@ -1473,10 +1468,6 @@ public class CtrlBackupRestoreApiCallHandler
                 Flux<ApiCallRc> l2lCleanupFlux = Flux.empty();
                 if (snap != null && !snap.isDeleted())
                 {
-                    snap.getProps(peerCtx).removeProp(
-                        InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
-                    );
                     snap.getProps(peerCtx).removeProp(
                         InternalApiConsts.KEY_BACKUP_TO_RESTORE,
                         ApiConsts.NAMESPC_BACKUP_SHIPPING
@@ -1588,18 +1579,25 @@ public class CtrlBackupRestoreApiCallHandler
 
                     if (!keepGoing)
                     {
-                        String remoteName = snap.getProps(peerAccCtx.get()).getProp(
-                            InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                            ApiConsts.NAMESPC_BACKUP_SHIPPING
-                        );
-                        AbsRemote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-                        if (remote != null && remote instanceof StltRemote)
-                        {
-                            snap.getProps(peerAccCtx.get()).removeProp(
-                                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                        String remoteName = snap.getProps(peerCtx)
+                            .removeProp(
+                                InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
                                 ApiConsts.NAMESPC_BACKUP_SHIPPING
                             );
-                            Flux<ApiCallRc> tmpFlux = ctrlSatelliteUpdateCaller.updateSatellites(
+                        AbsRemote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                        if (remote instanceof StltRemote)
+                        {
+                            // cleanupStltRemote will not be executed if flux has an error - this issue is currently
+                            // unavoidable.
+                            // This will be fixed with the linstor2 issue 19 (Combine Changed* proto messages for atomic
+                            // updates)
+                            l2lCleanupFlux = backupHelper.cleanupStltRemote((StltRemote) remote);
+                        }
+                        ctrlTransactionHelper.commit();
+                        /*
+                         * We need to update the stlts with the flag- & prop-changes before starting the restore
+                         */
+                        flux = ctrlSatelliteUpdateCaller.updateSatellites(
                                 snapDfn,
                                 CtrlSatelliteUpdateCaller.notConnectedWarn()
                             ).transform(
@@ -1608,13 +1606,7 @@ public class CtrlBackupRestoreApiCallHandler
                                     LinstorParsingUtils.asRscName(rscNameRef),
                                     "Removing remote property from snapshot '" + snapNameRef + "' of {1} on {0}"
                                 )
-                            );
-                            // cleanupStltRemote will not be executed if flux has an error - this issue is currently
-                            // unavoidable.
-                            // This will be fixed with the linstor2 issue 19 (Combine Changed* proto messages for atomic
-                            // updates)
-                            l2lCleanupFlux = tmpFlux.concatWith(backupHelper.cleanupStltRemote((StltRemote) remote));
-                        }
+                        ).concatWith(flux);
                     }
                 }
                 ctrlTransactionHelper.commit();

@@ -365,7 +365,7 @@ public class CtrlSnapshotCrtApiCallHandler
             throw new ImplementationError(exc);
         }
 
-        return String.format(snapPrefix + "%05d", id);
+        return String.format("%s%05d", snapPrefix, id);
     }
 
     @SuppressWarnings("unchecked")
@@ -773,7 +773,7 @@ public class CtrlSnapshotCrtApiCallHandler
             .concatWith(removeInProgressSnapshots(reqRef));
     }
 
-    private Flux<ApiCallRc> removeInProgressSnapshots(CreateMultiSnapRequest reqRef)
+    public Flux<ApiCallRc> removeInProgressSnapshots(CreateMultiSnapRequest reqRef)
     {
         return scopeRunner
             .fluxInTransactionalScope(

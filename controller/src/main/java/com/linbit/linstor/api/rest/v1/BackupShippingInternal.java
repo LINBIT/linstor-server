@@ -13,7 +13,9 @@ import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrc
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequest;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequestPrevSnap;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponsePrevSnap;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.logging.ErrorReporter;
 
@@ -67,6 +69,80 @@ public class BackupShippingInternal
     }
 
     @POST
+    @Path("requestPrevSnap")
+    public void internalRequestPrevSnap(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        Flux<BackupShippingResponsePrevSnap> response;
+        BackupShippingRequestPrevSnap data;
+        try
+        {
+            data = objectMapper.readValue(jsonData, BackupShippingRequestPrevSnap.class);
+            response = backupL2LDstApiCallHandler.getPrevSnap(
+                data.srcVersion,
+                data.srcClusterId,
+                data.dstRscName,
+                data.srcSnapDfnUuids,
+                data.dstNodeName
+            )
+                .subscriberContext(
+                    requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
+            );
+        }
+        catch (JsonProcessingException exc)
+        {
+            response = Flux.just(
+                new BackupShippingResponsePrevSnap(
+                    false,
+                    null,
+                    false,
+                    null,
+                    null,
+                    ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_INVLD_REQUEST,
+                        "Failed to deserialize JSON",
+                        exc.getMessage()
+                    )
+                )
+            );
+        }
+        response.single()
+            .map(shipResponse ->
+            {
+                Response.ResponseBuilder builder = Response
+                    .status(Response.Status.OK);
+                return builder.entity(prevSnapResponseToJson(shipResponse))
+                    .type(MediaType.APPLICATION_JSON)
+                    .build();
+            })
+            .onErrorResume(exc ->
+            {
+                String reportErrorId = errorReporter.reportError(exc);
+                Response.ResponseBuilder builder = Response
+                    .status(Response.Status.INTERNAL_SERVER_ERROR);
+                String jsonResponse = responseToJson(
+                    new BackupShippingResponse(
+                        false,
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            exc.getMessage(),
+                            "ErrorReport id on target cluster: " + reportErrorId
+                        )
+                    )
+                );
+                return Mono.just(
+                    builder.entity(jsonResponse)
+                        .type(MediaType.APPLICATION_JSON)
+                        .build()
+                );
+            })
+            .subscribe(asyncResponse::resume);
+    }
+
+    @POST
     @Path("requestShip")
     public void internalRequestShip(
         @Context Request request,
@@ -86,7 +162,6 @@ public class BackupShippingInternal
                 shipRequest.metaData,
                 shipRequest.srcBackupName,
                 shipRequest.srcClusterId,
-                shipRequest.srcSnapDfnUuids,
                 shipRequest.dstNodeName,
                 shipRequest.dstNodeNetIfName,
                 shipRequest.dstStorPool,
@@ -94,7 +169,10 @@ public class BackupShippingInternal
                 shipRequest.useZstd,
                 shipRequest.downloadOnly,
                 shipRequest.srcL2LRemoteName, // linstorRemoteName, not StltRemoteName
-                shipRequest.srcStltRemoteName
+                shipRequest.srcStltRemoteName,
+                shipRequest.resetData,
+                shipRequest.dstBaseSnapName,
+                shipRequest.dstActualNodeName
             ).subscriberContext(
                 requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
             );
@@ -193,6 +271,20 @@ public class BackupShippingInternal
     }
 
     private String responseToJson(BackupShippingResponse responseRef)
+    {
+        String json;
+        try
+        {
+            json = objectMapper.writeValueAsString(responseRef);
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return json;
+    }
+
+    private String prevSnapResponseToJson(BackupShippingResponsePrevSnap responseRef)
     {
         String json;
         try

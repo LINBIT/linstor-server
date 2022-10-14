@@ -21,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingAbo
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiHelper.S3ObjectInfo;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -39,6 +40,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
@@ -69,13 +71,13 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -164,7 +166,7 @@ public class CtrlBackupCreateApiCallHandler
     )
     {
         return scopeRunner.fluxInTransactionalScope(
-            "Backup snapshot",
+            "Prepare backup",
             lockGuardFactory.create()
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
@@ -181,7 +183,8 @@ public class CtrlBackupCreateApiCallHandler
                 null,
                 RemoteType.S3,
                 scheduleNameRef,
-                runInBackgroundRef
+                runInBackgroundRef,
+                null
             ).objA
         );
     }
@@ -215,7 +218,8 @@ public class CtrlBackupCreateApiCallHandler
         Map<ExtTools, ExtToolsInfo.Version> optionalExtTools,
         RemoteType remoteTypeRef,
         String scheduleNameRef,
-        boolean runInBackgroundRef
+        boolean runInBackgroundRef,
+        @Nullable String prevSnapDfnUuid
     )
     {
         String snapName = snapNameRef;
@@ -234,7 +238,6 @@ public class CtrlBackupCreateApiCallHandler
                     )
                 );
             }
-
             // test if master key is unlocked
             if (!ctrlSecObj.areAllSet())
             {
@@ -246,40 +249,24 @@ public class CtrlBackupCreateApiCallHandler
                     )
                 );
             }
-
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
             AbsRemote remote = null;
-            RemoteName linstorRemoteName = null;
             SnapshotDefinition prevSnapDfn = null;
             if (remoteTypeRef.equals(RemoteType.S3))
             {
                 // check if encryption is possible
                 backupHelper.getLocalMasterKey();
 
-                // check if remote exists (only needed for s3, other option here is stlt, which is created right before
-                // this method is called)
                 remote = backupHelper.getRemote(remoteName);
-                prevSnapDfn = getIncrementalBase(rscDfn, remoteName, remote, allowIncremental);
+                prevSnapDfn = getIncrementalBase(rscDfn, remote, allowIncremental);
             }
-            else if (remoteTypeRef.equals(RemoteType.SATELLITE))
+            else if (remoteTypeRef.equals(RemoteType.LINSTOR))
             {
                 remote = backupHelper.getRemote(remoteName);
-                if (remote instanceof StltRemote)
+                if (remote instanceof LinstorRemote)
                 {
-                    linstorRemoteName = ((StltRemote) remote).getLinstorRemoteName();
-                    prevSnapDfn = getIncrementalBase(rscDfn, linstorRemoteName.displayValue, remote, allowIncremental);
+                    prevSnapDfn = getIncrementalBaseL2L(rscDfn, prevSnapDfnUuid, allowIncremental);
                 }
-            }
-
-            Collection<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn, remote);
-            if (!snapDfns.isEmpty())
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_SNAPSHOT_SHIPPING,
-                        "Backup shipping of resource '" + rscNameRef + "' already in progress"
-                    )
-                );
             }
 
             Map<String, Node> usableNodesMap = findUsableNodes(
@@ -311,21 +298,13 @@ public class CtrlBackupCreateApiCallHandler
                     nodeIds.add(rscData.getNodeId().value);
                 }
             }
+            setStartBackupProps(snapDfn, remoteName, nodeIds);
 
-            Snapshot createdSnapshot = snapDfn.getSnapshot(peerAccCtx.get(), chosenNode.getName());
-            if (setShippingFlag)
+            if (remote instanceof S3Remote)
             {
-                createdSnapshot.getFlags()
-                    .enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
+                // only do this for s3, l2l does it on its own later on
+                setIncrementalDependentProps(snapDfn, prevSnapDfn, remoteName, scheduleNameRef);
             }
-            setStartBackupProps(createdSnapshot, snapDfn, remoteName, linstorRemoteName, nodeIds);
-
-            if (linstorRemoteName == null)
-            {
-                // we do not have a linstorRemoteName, so this is not a stltRemote
-                setIncrementalDependentProps(createdSnapshot, prevSnapDfn, remoteName, scheduleNameRef);
-            }
-
             ctrlTransactionHelper.commit();
 
             responses.addEntry(
@@ -334,14 +313,14 @@ public class CtrlBackupCreateApiCallHandler
                         " in progress."
                 ).putObjRef(ApiConsts.KEY_SNAPSHOT, snapName).build()
             );
-
             Flux<ApiCallRc> flux = snapshotCrtHandler.postCreateSnapshot(snapDfn, runInBackgroundRef)
-                .concatWith(Flux.<ApiCallRc>just(responses));
+                .concatWith(Flux.<ApiCallRc>just(responses))
+                .concatWith(startShipping(snapDfn, chosenNode, remote, prevSnapDfn, setShippingFlag));
             return new Pair<>(flux, snapDfn.getSnapshot(peerAccCtx.get(), chosenNode.getName()));
         }
         catch (AccessDeniedException exc)
         {
-            throw new ApiAccessDeniedException(exc, "start backup shpping", ApiConsts.FAIL_ACC_DENIED_RSC);
+            throw new ApiAccessDeniedException(exc, "prepare backup shpping", ApiConsts.FAIL_ACC_DENIED_RSC);
         }
         catch (DatabaseException dbExc)
         {
@@ -353,17 +332,88 @@ public class CtrlBackupCreateApiCallHandler
         }
     }
 
+    Flux<ApiCallRc> startShipping(
+        SnapshotDefinition snapDfn,
+        Node node,
+        AbsRemote remote,
+        SnapshotDefinition prevSnapDfn,
+        boolean setStartShippingFlag
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Start backup shipping",
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
+            () -> startShippingInTransaction(snapDfn, node, remote, prevSnapDfn, setStartShippingFlag)
+        );
+    }
+
+    Flux<ApiCallRc> startShippingInTransaction(
+        SnapshotDefinition snapDfn,
+        Node node,
+        AbsRemote remote,
+        SnapshotDefinition prevSnapDfn,
+        boolean setStartShippingFlag
+    )
+    {
+        try
+        {
+            snapDfn.getFlags()
+                .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
+
+            Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), node.getName());
+            if (setStartShippingFlag)
+            {
+                // l2l does not need this to be set...
+                snap.getFlags()
+                    .enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
+                snap.setTakeSnapshot(peerAccCtx.get(), true);
+                snap.getProps(peerAccCtx.get())
+                    .setProp(
+                        InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                        remote.getName().displayValue,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    );
+            }
+            if (prevSnapDfn != null)
+            {
+                snap.getProps(peerAccCtx.get())
+                    .setProp(
+                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                        prevSnapDfn.getName().displayValue,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    );
+            }
+
+            ctrlTransactionHelper.commit();
+            return ctrlSatelliteUpdateCaller.updateSatellites(snapDfn, null)
+                .transform(
+                    responses -> CtrlResponseUtils
+                        .combineResponses(responses, snapDfn.getResourceName(), "Started shipping of resource {1}")
+                )
+                .concatWith(
+                    snapshotCrtHandler.removeInProgressSnapshots(new CreateMultiSnapRequest(peerAccCtx.get(), snapDfn))
+                );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(exc, "start backup shpping", ApiConsts.FAIL_ACC_DENIED_RSC);
+        }
+        catch (DatabaseException dbExc)
+        {
+            throw new ApiDatabaseException(dbExc);
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
     private void setBackupSnapDfnFlagsAndProps(SnapshotDefinition snapDfn, String scheduleNameRef, Date nowRef)
         throws AccessDeniedException, DatabaseException, InvalidKeyException, InvalidValueException
     {
-        snapDfn.getFlags()
-            .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
-
-        snapDfn.getProps(peerAccCtx.get()).setProp(
-            InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
-            Long.toString(nowRef.getTime()),
-            ApiConsts.NAMESPC_BACKUP_SHIPPING
-        );
         if (scheduleNameRef != null)
         {
             snapDfn.getProps(peerAccCtx.get()).setProp(
@@ -388,6 +438,12 @@ public class CtrlBackupCreateApiCallHandler
                 ApiConsts.VAL_TRUE,
                 ApiConsts.NAMESPC_DRBD_OPTIONS
             );
+        snapDfn.getProps(peerAccCtx.get())
+            .setProp(
+                InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
+                Long.toString(nowRef.getTime()),
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
 
         // save the s3 suffix as prop so that when restoring the satellite can reconstruct the .meta name
         // (s3 suffix is NOT part of snapshot name)
@@ -406,41 +462,23 @@ public class CtrlBackupCreateApiCallHandler
     }
 
     private void setStartBackupProps(
-        Snapshot snap,
         SnapshotDefinition snapDfn,
         String remoteName,
-        RemoteName linstorRemoteName,
         List<Integer> nodeIds
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
-        Props snapProps = snap.getProps(peerAccCtx.get());
         snapDfn.getProps(peerAccCtx.get()).setProp(
             InternalApiConsts.KEY_BACKUP_NODE_IDS_TO_RESET,
             StringUtils.join(nodeIds, InternalApiConsts.KEY_BACKUP_NODE_ID_SEPERATOR),
             ApiConsts.NAMESPC_BACKUP_SHIPPING
         );
-        snapProps.setProp(
-            InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-            remoteName,
-            ApiConsts.NAMESPC_BACKUP_SHIPPING
-        );
         // also needed on snapDfn only for scheduled shippings
-        if (linstorRemoteName != null)
-        {
-            snapDfn.getProps(peerAccCtx.get()).setProp(
-                InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                linstorRemoteName.getDisplayName(),
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
-        }
-        else
-        {
-            snapDfn.getProps(peerAccCtx.get()).setProp(
+        snapDfn.getProps(peerAccCtx.get())
+            .setProp(
                 InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                 remoteName,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
-        }
     }
 
     /**
@@ -464,7 +502,6 @@ public class CtrlBackupCreateApiCallHandler
      */
     private SnapshotDefinition getIncrementalBase(
         ResourceDefinition rscDfn,
-        String remoteName,
         AbsRemote remote,
         boolean allowIncremental
     )
@@ -476,7 +513,7 @@ public class CtrlBackupCreateApiCallHandler
         {
             String prevSnapName = rscDfn.getProps(peerAccCtx.get()).getProp(
                 InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remoteName
+                ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remote.getName()
             );
 
             if (prevSnapName != null)
@@ -701,6 +738,39 @@ public class CtrlBackupCreateApiCallHandler
         }
         return ret;
     }
+
+    private SnapshotDefinition getIncrementalBaseL2L(
+        ResourceDefinition rscDfn,
+        String prevSnapDfnUuid,
+        boolean allowIncremental
+    ) throws AccessDeniedException
+    {
+        SnapshotDefinition prevSnapDfn = null;
+        if (allowIncremental)
+        {
+            if (prevSnapDfnUuid != null)
+            {
+                for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(sysCtx))
+                {
+                    if (snapDfn.getUuid().toString().equals(prevSnapDfnUuid))
+                    {
+                        prevSnapDfn = snapDfn;
+                        break;
+                    }
+                }
+            }
+            if (prevSnapDfn == null)
+            {
+                errorReporter.logWarning(
+                    "Could not create an incremental backup for resource %s as the remote cluster did not have any " +
+                        "matching snapshots. Creating a full backup instead.",
+                    rscDfn.getName()
+                );
+            }
+        }
+        return prevSnapDfn;
+    }
+
     private Node chooseNode(
         Map<String, Node> nodesMap,
         String prefNode,
@@ -793,21 +863,20 @@ public class CtrlBackupCreateApiCallHandler
      * Sets all the props that differ depending on whether the backup is full or incremental
      */
     void setIncrementalDependentProps(
-        Snapshot snap,
+        SnapshotDefinition curSnapDfn,
         SnapshotDefinition prevSnapDfn,
         String remoteName,
         String scheduleName
     )
         throws InvalidValueException, AccessDeniedException, DatabaseException
     {
-        SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
-        Props snapDfnProps = snapDfn.getProps(peerAccCtx.get());
-        Props rscDfnProps = snapDfn.getResourceDefinition().getProps(peerAccCtx.get());
+        Props snapDfnProps = curSnapDfn.getProps(peerAccCtx.get());
+        Props rscDfnProps = curSnapDfn.getResourceDefinition().getProps(peerAccCtx.get());
         if (prevSnapDfn == null)
         {
             snapDfnProps.setProp(
                 InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
-                snap.getSnapshotName().displayValue,
+                curSnapDfn.getName().displayValue,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
             if (scheduleName != null)
@@ -828,11 +897,6 @@ public class CtrlBackupCreateApiCallHandler
                     InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP,
                     ApiConsts.NAMESPC_BACKUP_SHIPPING
                 ),
-                ApiConsts.NAMESPC_BACKUP_SHIPPING
-            );
-            snap.getProps(peerAccCtx.get()).setProp(
-                InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                prevSnapDfn.getName().displayValue,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
             if (scheduleName != null)
