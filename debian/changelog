@@ -1,3 +1,33 @@
+linstor-server (1.20.0-1) experimental; urgency=medium
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * crd: make crd caching lazy
+  * docker: don't force binding REST-API on ipv4
+
+  [ Johanna Kucera ]
+  * BackupShipping: make sure filters are applied
+  * BackupShipping: prevent concurrent usage of DateFormat
+  * BackupShipping: force backups to do initial full sync
+  * BackupShipping: allow users to set forceInitialSync
+
+  [ Gabor Hernadi ]
+  * Snap,Props: Delete props of Snap and SnapVlm on delete
+  * EBS: Fix make-available support
+  * Ebs: Prohibit deletion of EBS Target SP
+  * Ebs: Add support for Tags
+  * Ebs: Add support for VolumeTypes
+  * Ebs: Added EbsStatusManager
+  * Ebs: Prevent snap rollback/restore while pending
+  * AllUpToDateCheck: Add null check
+  * EBS: Prevent EBS modifications during cooldown
+  * Crd: Randomized Cluster/LocalId
+  * Drbd: Fix mkfs without quorum
+
+  [ Michael Troutman ]
+  * DOCS: corrects sihpped misspelling
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 18 Oct 2022 07:17:30 +0000
+
 linstor-server (1.20.0~rc.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
