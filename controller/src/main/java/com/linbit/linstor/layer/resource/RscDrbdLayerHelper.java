@@ -368,7 +368,7 @@ public class RscDrbdLayerHelper extends
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         errorId,
-                        "Failed to find nvme-target "
+                        "Failed to find target resource "
                     )
                 );
             }

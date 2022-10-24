@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 public class NodePojo implements NodeApi, Comparable<NodePojo>
@@ -171,7 +172,7 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         return evictionTimestamp;
     }
 
-    public static class NodeConnPojo implements NodeConnectionApi
+    public static class NodeConnPojo implements NodeConnectionApi, Comparable<NodeConnPojo>
     {
         private final UUID uuid;
         private final String localNodeName;
@@ -214,6 +215,38 @@ public class NodePojo implements NodeApi, Comparable<NodePojo>
         public Map<String, String> getProps()
         {
             return props;
+        }
+
+        @Override
+        public int compareTo(NodeConnPojo otherRef)
+        {
+            int cmp = localNodeName.compareTo(otherRef.localNodeName);
+            if (cmp == 0)
+            {
+                cmp = otherNodePojo.nodeName.compareTo(otherRef.otherNodePojo.nodeName);
+            }
+            return cmp;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(uuid);
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+            {
+                return true;
+            }
+            if (!(obj instanceof NodeConnPojo))
+            {
+                return false;
+            }
+            NodeConnPojo other = (NodeConnPojo) obj;
+            return Objects.equals(uuid, other.uuid);
         }
     }
 }

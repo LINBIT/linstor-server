@@ -5,7 +5,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
-import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeConnectionApiCallHandler;
 import com.linbit.linstor.core.apis.NodeConnectionApi;
 
@@ -15,6 +14,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
@@ -22,6 +22,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,19 +36,16 @@ import reactor.core.publisher.Flux;
 public class NodeConnections
 {
     private final RequestHelper requestHelper;
-    private final CtrlApiCallHandler ctrlApiCallHandler;
     private final CtrlNodeConnectionApiCallHandler nodeConnHandler;
     private final ObjectMapper objectMapper;
 
     @Inject
     public NodeConnections(
         RequestHelper requestHelperRef,
-        CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlNodeConnectionApiCallHandler nodeconHandlerRef
     )
     {
         requestHelper = requestHelperRef;
-        ctrlApiCallHandler = ctrlApiCallHandlerRef;
         nodeConnHandler = nodeconHandlerRef;
 
         objectMapper = new ObjectMapper();
@@ -55,27 +53,17 @@ public class NodeConnections
 
     @GET
     public Response listNodeConnections(
-        @Context Request request
-    )
-    {
-        return listNodeConnections(request, null, null);
-    }
-
-    @GET
-    @Path("manage/{nodeA}/{nodeB}")
-    public Response listNodeConnections(
         @Context Request request,
-        @PathParam("nodeA") String nodeA,
-        @PathParam("nodeB") String nodeB
+        @QueryParam("node_a") String nodeA,
+        @QueryParam("node_b") String nodeB
     )
     {
-        return requestHelper.doInScope(ApiConsts.API_LST_RSC_CONN, request, () ->
+        return requestHelper.doInScope(ApiConsts.API_LST_NODE_CONN, request, () ->
         {
+            Collection<NodeConnectionApi> nodeConns = nodeConnHandler.listNodeConnections(nodeA, nodeB);
             Response resp;
 
-            List<NodeConnectionApi> nodeConns = nodeConnHandler.listNodeConnections(nodeA, nodeB);
-
-            if (nodeA != null && nodeConns.isEmpty())
+            if (nodeA != null && nodeB != null && nodeConns.isEmpty())
             {
                 resp = RequestHelper.notFoundResponse(
                     ApiConsts.FAIL_NOT_FOUND_NODE_CONN,
@@ -88,7 +76,7 @@ public class NodeConnections
                     .map(Json::apiToNodeConnection)
                     .collect(Collectors.toList());
                 resp = Response.status(Response.Status.OK)
-                    .entity(objectMapper.writeValueAsString(nodeA != null ? nodeConList.get(0) : nodeConList))
+                    .entity(objectMapper.writeValueAsString(nodeConList))
                     .build();
             }
             return resp;
@@ -96,7 +84,7 @@ public class NodeConnections
     }
 
     @PUT
-    @Path("manage/{nodeA}/{nodeB}")
+    @Path("{nodeA}/{nodeB}")
     public void modifyNodeConnection(
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,

@@ -206,7 +206,10 @@ class CtrlRscConnectionApiCallHandler
                         // now check that the interface name are correct/existing
                         String netIfName = overrideProps.get(key);
                         Node node = rscConn.getNode(new NodeName(nodeName));
-                        NetInterface netInterface = node.getNetInterface(apiCtx, new NetInterfaceName(netIfName));
+                        NetInterface netInterface = node.getNetInterface(
+                            peerAccCtx.get(),
+                            new NetInterfaceName(netIfName)
+                        );
                         if (netInterface == null)
                         {
                             throw new ApiRcException(ApiCallRcImpl

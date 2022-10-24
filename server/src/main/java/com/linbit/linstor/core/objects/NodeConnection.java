@@ -1,7 +1,11 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.DbgInstanceUuid;
+import com.linbit.linstor.api.pojo.NodePojo;
+import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.propscon.Props;
@@ -123,6 +127,60 @@ public class NodeConnection extends BaseTransactionObject
     {
         checkDeleted();
         return objId;
+    }
+
+    public NodeName getSourceNodeName()
+    {
+        return sourceNode.getName();
+    }
+
+    public NodeName getTargetNodeName()
+    {
+        return targetNode.getName();
+    }
+
+    public Node getNode(AccessContext accCtx, NodeName nodeNameRef) throws AccessDeniedException
+    {
+        checkDeleted();
+
+        Node node;
+        if (sourceNode.getName().equals(nodeNameRef))
+        {
+            node = sourceNode;
+        }
+        else if (targetNode.getName().equals(nodeNameRef))
+        {
+            node = targetNode;
+        }
+        else
+        {
+            throw new ImplementationError(
+                String.format("Given node name (%s) is neither source nor target node)", nodeNameRef.displayValue)
+            );
+        }
+        node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return node;
+    }
+
+    public Node getOtherNode(AccessContext accCtx, Node nodeRef) throws AccessDeniedException
+    {
+        checkDeleted();
+        Node otherNode;
+        if (sourceNode.equals(nodeRef))
+        {
+            otherNode = targetNode;
+        }
+        else if (targetNode.equals(nodeRef))
+        {
+            otherNode = sourceNode;
+        }
+        else
+        {
+            throw new ImplementationError("Node not part of nodeconnection: " + nodeRef);
+        }
+        otherNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+
+        return otherNode;
     }
 
     public Node getSourceNode(AccessContext accCtx) throws AccessDeniedException

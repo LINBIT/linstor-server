@@ -7,7 +7,10 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -16,48 +19,85 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.apis.NodeConnectionApi;
+import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.NodeConnectionFactory;
+import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.utils.Pair;
 
+import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
+import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
+
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import reactor.core.publisher.Flux;
 
 @Singleton
-class CtrlNodeConnectionApiCallHandler
+public class CtrlNodeConnectionApiCallHandler
 {
+    private static final String PATTERN_PATH_PATH_NAME = "pathname";
+    private static final String PATTERN_PATH_NODE_NAME = "nodename";
+    private static final Pattern PATTERN_PATH = Pattern.compile(
+        "^" + ApiConsts.NAMESPC_CONNECTION_PATHS + "/(?<" + PATTERN_PATH_PATH_NAME + ">[^/]+)/(?<" +
+            PATTERN_PATH_NODE_NAME + ">[^/]+)$"
+    );
+
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final NodeConnectionFactory nodeConnectionFactory;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final ScopeRunner scopeRunner;
+    private final LockGuardFactory lockGuardFactory;
+    private final CtrlNodeConnectionHelper nodeConnectionHelper;
+    private final NodeRepository nodeRepo;
 
     @Inject
-    CtrlNodeConnectionApiCallHandler(
+    public CtrlNodeConnectionApiCallHandler(
         @ApiContext AccessContext apiCtxRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         NodeConnectionFactory nodeConnectionFactoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        ScopeRunner scopeRunnerRef,
+        LockGuardFactory lockGuardFactoryRef,
+        CtrlNodeConnectionHelper nodeConnectionHelperRef,
+        NodeRepository nodeRepoRef
     )
     {
         apiCtx = apiCtxRef;
@@ -66,58 +106,155 @@ class CtrlNodeConnectionApiCallHandler
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         nodeConnectionFactory = nodeConnectionFactoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        scopeRunner = scopeRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
+        nodeConnectionHelper = nodeConnectionHelperRef;
+        nodeRepo = nodeRepoRef;
     }
 
-    public ApiCallRc createNodeConnection(
-        String nodeName1Str,
-        String nodeName2Str,
-        Map<String, String> nodeConnPropsMap
-    )
+    public Collection<NodeConnectionApi> listNodeConnections(@Nullable String nodeARef, @Nullable String nodeBRef)
     {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeNodeConnectionContext(
-            ApiOperation.makeCreateOperation(),
-            nodeName1Str,
-            nodeName2Str
-        );
+        TreeSet<NodeConnectionApi> ret;
 
-        try
+        if (nodeARef == null && nodeBRef == null)
         {
-            Node node1 = ctrlApiDataLoader.loadNode(nodeName1Str, true);
-            Node node2 = ctrlApiDataLoader.loadNode(nodeName2Str, true);
-
-            NodeConnection nodeConn = createNodeConn(node1, node2);
-
-            boolean notifyStlts = ctrlPropsHelper.fillProperties(
-                responses,
-                LinStorObject.NODE_CONN,
-                nodeConnPropsMap,
-                getProps(nodeConn),
-                ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
-
-            ctrlTransactionHelper.commit();
-
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultCreatedEntry(
-                nodeConn.getUuid(), getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str)));
-
-            if (notifyStlts)
+            AccessContext peerCtx = peerAccCtx.get();
+            ret = new TreeSet<>();
+            try
             {
-                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node1));
-                responseConverter.addWithDetail(responses, context, ctrlSatelliteUpdater.updateSatellites(node2));
+                for (Node node : nodeRepo.getMapForView(peerCtx).values())
+                {
+                    ret.addAll(getNodeConnPojos(node, false));
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                // noop, just do not include in list
             }
         }
-        catch (Exception | ImplementationError exc)
+        else if (nodeARef == null)
         {
-            responses = responseConverter.reportException(peer.get(), context, exc);
+            ret = getNodeConnPojos(ctrlApiDataLoader.loadNode(nodeBRef, true), false);
         }
-
-        return responses;
+        else if (nodeBRef == null)
+        {
+            ret = getNodeConnPojos(ctrlApiDataLoader.loadNode(nodeARef, true), false);
+        }
+        else
+        {
+            Node nodeA = ctrlApiDataLoader.loadNode(nodeARef, true);
+            Node nodeB = ctrlApiDataLoader.loadNode(nodeBRef, true);
+            AccessContext peerCtx = peerAccCtx.get();
+            ret = new TreeSet<>();
+            try
+            {
+                NodeConnection nodeConn = nodeA.getNodeConnection(
+                    peerCtx,
+                    nodeB
+                );
+                if (nodeConn == null)
+                {
+                    ret.add(
+                        new NodeConnPojo(
+                            null,
+                            nodeARef,
+                            nodeB.getApiData(peerCtx, null, null),
+                            Collections.emptyMap()
+                        )
+                    );
+                }
+                else
+                {
+                    ret.add(
+                        nodeConn.getApiData(nodeA, peerCtx, null, null)
+                    );
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                // noop, don't add to list
+            }
+        }
+        return ret;
     }
 
-    public ApiCallRc modifyNodeConnection(
+    private TreeSet<NodeConnectionApi> getNodeConnPojos(Node node, boolean includeIfEmpty)
+    {
+        TreeSet<NodeConnectionApi> ret = new TreeSet<>();
+        try
+        {
+            AccessContext peerCtx = peerAccCtx.get();
+            for (NodeConnection nodeConn : node.getNodeConnections(peerCtx))
+            {
+                if (includeIfEmpty || !nodeConn.getProps(peerCtx).isEmpty())
+                {
+                    ret.add(
+                        nodeConn.getApiData(
+                            nodeConn.getSourceNode(peerCtx),
+                            peerCtx,
+                            null,
+                            null
+                        )
+                    );
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            // noop, just do not include in list
+        }
+        return ret;
+    }
+    /**
+     * Modifies an existing nodeConnection
+     *
+     * @param nodeConnUuid
+     *     optional, if given checks against persisted uuid
+     * @param nodeName1
+     *     required
+     * @param nodeName2
+     *     required
+     * @param overridePropsRef
+     *     optional, can be empty
+     * @param deletePropKeysRef
+     *     optional, can be empty
+     */
+    public Flux<ApiCallRc> modifyNodeConn(
+        UUID nodeConnUuid,
+        String nodeName1,
+        String nodeName2,
+        Map<String, String> overridePropsRef,
+        Set<String> deletePropKeysRef,
+        Set<String> deletePropNamespaces
+    )
+    {
+        final Map<String, String> overrideProps = overridePropsRef == null ? Collections.emptyMap() : overridePropsRef;
+        final Set<String> deletePropKeys = deletePropKeysRef == null ? Collections.emptySet() : deletePropKeysRef;
+        ResponseContext context = makeNodeConnectionContext(
+            ApiOperation.makeModifyOperation(),
+            nodeName1,
+            nodeName2
+        );
+        return scopeRunner.fluxInTransactionalScope(
+            "Modify node-connection",
+            lockGuardFactory.buildDeferred(WRITE, NODES_MAP),
+            () -> modifyNodeConnectionInTrnasaction(
+                nodeConnUuid,
+                nodeName1,
+                nodeName2,
+                overrideProps,
+                deletePropKeys,
+                deletePropNamespaces
+            )
+        )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    public Flux<ApiCallRc> modifyNodeConnectionInTrnasaction(
         UUID nodeConnUuid,
         String nodeName1,
         String nodeName2,
@@ -126,6 +263,7 @@ class CtrlNodeConnectionApiCallHandler
         Set<String> deletePropNamespaces
     )
     {
+        Flux<ApiCallRc> flux;
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = makeNodeConnectionContext(
             ApiOperation.makeModifyOperation(),
@@ -135,78 +273,150 @@ class CtrlNodeConnectionApiCallHandler
 
         try
         {
-            NodeConnection nodeConn = loadNodeConn(nodeName1, nodeName2, true);
+            boolean createIfNotExists = !overrideProps.isEmpty();
+            NodeConnection nodeConn = nodeConnectionHelper.loadNodeConn(
+                nodeName1,
+                nodeName2,
+                false,
+                createIfNotExists
+            );
 
-            if (nodeConnUuid != null && !nodeConnUuid.equals(nodeConn.getUuid()))
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_UUID_NODE_CONN,
-                    "UUID-check failed"
-                ));
-            }
-
-            Props props = getProps(nodeConn);
-
-            ctrlPropsHelper.fillProperties(
-                responses, LinStorObject.NODE_CONN, overrideProps, props, ApiConsts.FAIL_ACC_DENIED_NODE_CONN);
-            ctrlPropsHelper.remove(responses, LinStorObject.NODE_CONN, props, deletePropKeys, deletePropNamespaces);
-
-            ctrlTransactionHelper.commit();
-
-            responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultModifiedEntry(
-                nodeConn.getUuid(), getNodeConnectionDescriptionInline(nodeName1, nodeName2)));
-            responseConverter.addWithDetail(responses, context, updateSatellites(nodeConn));
-        }
-        catch (Exception | ImplementationError exc)
-        {
-            responses = responseConverter.reportException(peer.get(), context, exc);
-        }
-
-        return responses;
-    }
-
-    public ApiCallRc deleteNodeConnection(
-        String nodeName1Str,
-        String nodeName2Str
-    )
-    {
-        ApiCallRcImpl responses = new ApiCallRcImpl();
-        ResponseContext context = makeNodeConnectionContext(
-            ApiOperation.makeDeleteOperation(),
-            nodeName1Str,
-            nodeName2Str
-        );
-
-        try
-        {
-            NodeConnection nodeConn = loadNodeConn(nodeName1Str, nodeName2Str, false);
             if (nodeConn == null)
             {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.WARN_NOT_FOUND,
-                    "Could not delete " + getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str) +
-                        "as it does not exist"
-                ));
+                responses.addEntry(
+                    CtrlNodeConnectionHelper.getNodeConnectionDescription(nodeName1, nodeName2) + " does not exist",
+                    ApiConsts.WARN_NOT_FOUND
+                );
+                flux = Flux.just(responses);
             }
             else
             {
-                UUID nodeConnUuid = nodeConn.getUuid();
-                nodeConn.delete(peerAccCtx.get()); // accDeniedExc4
+                if (nodeConnUuid != null && !nodeConnUuid.equals(nodeConn.getUuid()))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_UUID_NODE_CONN,
+                            "UUID-check failed"
+                        )
+                    );
+                }
+
+                Props props = getProps(nodeConn);
+
+                for (Entry<String, String> entry : overrideProps.entrySet())
+                {
+                    String key = entry.getKey();
+                    Matcher matcher = PATTERN_PATH.matcher(key);
+                    if (matcher.find())
+                    {
+                        String nodeName = matcher.group(PATTERN_PATH_NODE_NAME);
+                        if (!nodeName.equals(nodeName1) && !nodeName.equals(nodeName2))
+                        {
+                            throw new ApiRcException(
+                                ApiCallRcImpl
+                                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Connection path node unknown.")
+                                    .setCause("The node name '" + nodeName + "' is unknown.")
+                                    .build()
+                            );
+                        }
+                        // now check that the interface name are correct/existing
+                        Node node = nodeConn.getNode(peerAccCtx.get(), new NodeName(nodeName));
+                        NetInterface netInterface = node.getNetInterface(
+                            peerAccCtx.get(),
+                            new NetInterfaceName(entry.getValue())
+                        );
+                        if (netInterface == null)
+                        {
+                            throw new ApiRcException(
+                                ApiCallRcImpl
+                                    .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "NetInterface for node unknown.")
+                                    .setCause(
+                                        String.format(
+                                            "The Netinterface '%s' is not known for node '%s'",
+                                            entry.getValue(),
+                                            nodeName
+                                        )
+                                    )
+                                    .build()
+                            );
+                        }
+                    }
+                    else if (key.startsWith(ApiConsts.NAMESPC_CONNECTION_PATHS + "/"))
+                    {
+                        throw new ApiRcException(
+                            ApiCallRcImpl
+                                .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Connection path property invalid.")
+                                .setCause("The key '" + entry + "' is invalid.")
+                                .build()
+                        );
+                    }
+                }
+
+                ctrlPropsHelper.fillProperties(
+                    responses,
+                    LinStorObject.NODE_CONN,
+                    overrideProps,
+                    props,
+                    ApiConsts.FAIL_ACC_DENIED_NODE_CONN,
+                    Arrays.asList(ApiConsts.NAMESPC_CONNECTION_PATHS + "/")
+                );
+                ctrlPropsHelper.remove(responses, LinStorObject.NODE_CONN, props, deletePropKeys, deletePropNamespaces);
 
                 ctrlTransactionHelper.commit();
 
-                responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(
-                    nodeConnUuid, getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str)));
-
+                responseConverter.addWithOp(
+                    responses,
+                    context,
+                    ApiSuccessUtils.defaultModifiedEntry(
+                        nodeConn.getUuid(),
+                        CtrlNodeConnectionHelper.getNodeConnectionDescriptionInline(nodeName1, nodeName2)
+                    )
+                );
                 responseConverter.addWithDetail(responses, context, updateSatellites(nodeConn));
+
+                Pair<Node, Node> nodes = getNodes(nodeConn);
+
+                flux = Flux.<ApiCallRc>just(responses)
+                    .concatWith(
+                        ctrlSatelliteUpdateCaller.updateSatellites(
+                            nodes.objA.getUuid(),
+                            nodes.objA.getName(),
+                            Arrays.asList(nodes.objB)
+                        ).flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
+                    )
+                    .concatWith(
+                        ctrlSatelliteUpdateCaller.updateSatellites(
+                            nodes.objB.getUuid(),
+                            nodes.objB.getName(),
+                            Arrays.asList(nodes.objA)
+                        ).flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
+                );
             }
         }
         catch (Exception | ImplementationError exc)
         {
             responses = responseConverter.reportException(peer.get(), context, exc);
+            flux = Flux.just(responses);
         }
 
-        return responses;
+        return flux;
+    }
+
+    private Pair<Node, Node> getNodes(NodeConnection nodeConnRef)
+    {
+        AccessContext peerCtx = peerAccCtx.get();
+        try
+        {
+            return new Pair<>(nodeConnRef.getSourceNode(peerCtx), nodeConnRef.getTargetNode(peerCtx));
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "accessing " + CtrlNodeConnectionHelper.getNodeConnectionDescriptionInline(nodeConnRef),
+                ApiConsts.FAIL_ACC_DENIED_NODE_CONN
+            );
+        }
     }
 
     private NodeConnection createNodeConn(Node node1, Node node2)
@@ -228,7 +438,7 @@ class CtrlNodeConnectionApiCallHandler
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "create " + getNodeConnectionDescriptionInline(node1, node2),
+                "create " + CtrlNodeConnectionHelper.getNodeConnectionDescriptionInline(node1, node2),
                 ApiConsts.FAIL_ACC_DENIED_NODE_CONN
             );
         }
@@ -236,43 +446,10 @@ class CtrlNodeConnectionApiCallHandler
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                 ApiConsts.FAIL_EXISTS_NODE_CONN,
-                getNodeConnectionDescription(node1, node2) + " already exists."
+                CtrlNodeConnectionHelper.getNodeConnectionDescription(node1, node2) + " already exists."
             ), dataAlreadyExistsExc);
         }
         return nodeConnection;
-    }
-
-    private NodeConnection loadNodeConn(String nodeName1, String nodeName2, boolean failIfNull)
-    {
-        Node node1 = ctrlApiDataLoader.loadNode(nodeName1, true);
-        Node node2 = ctrlApiDataLoader.loadNode(nodeName2, true);
-
-        NodeConnection nodeConn;
-        try
-        {
-            nodeConn = NodeConnection.get(
-                peerAccCtx.get(),
-                node1,
-                node2
-            );
-            if (nodeConn == null && failIfNull)
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_NOT_FOUND_NODE_CONN,
-                    "Failed to load " + getNodeConnectionDescriptionInline(nodeName1, nodeName2) +
-                        " as it does not exist"
-                ));
-            }
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "load node connection between nodes '" + nodeName1 + "' and '" + nodeName2 + "'",
-                ApiConsts.FAIL_ACC_DENIED_NODE_CONN
-            );
-        }
-        return nodeConn;
     }
 
     private Props getProps(NodeConnection nodeConn)
@@ -310,26 +487,6 @@ class CtrlNodeConnectionApiCallHandler
         return responses;
     }
 
-    public static String getNodeConnectionDescription(Node node1, Node node2)
-    {
-        return getNodeConnectionDescription(node1.getName().displayValue, node2.getName().displayValue);
-    }
-
-    public static String getNodeConnectionDescription(String nodeName1Str, String nodeName2Str)
-    {
-        return "Node connection between " + nodeName1Str + " and " + nodeName2Str;
-    }
-
-    public static String getNodeConnectionDescriptionInline(Node node1, Node node2)
-    {
-        return getNodeConnectionDescriptionInline(node1.getName().displayValue, node2.getName().displayValue);
-    }
-
-    public static String getNodeConnectionDescriptionInline(String nodeName1Str, String nodeName2Str)
-    {
-        return "node connection between nodes '" + nodeName1Str + "' and '" + nodeName2Str + "'";
-    }
-
     private static ResponseContext makeNodeConnectionContext(
         ApiOperation operation,
         String nodeName1Str,
@@ -342,8 +499,8 @@ class CtrlNodeConnectionApiCallHandler
 
         return new ResponseContext(
             operation,
-            getNodeConnectionDescription(nodeName1Str, nodeName2Str),
-            getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str),
+            CtrlNodeConnectionHelper.getNodeConnectionDescription(nodeName1Str, nodeName2Str),
+            CtrlNodeConnectionHelper.getNodeConnectionDescriptionInline(nodeName1Str, nodeName2Str),
             ApiConsts.MASK_NODE_CONN,
             objRefs
         );

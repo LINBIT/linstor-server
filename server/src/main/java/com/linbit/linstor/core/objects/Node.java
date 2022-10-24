@@ -9,7 +9,6 @@ import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
-import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -268,6 +267,14 @@ public class Node extends BaseTransactionObject
         objProt.requireAccess(accCtx, AccessType.VIEW);
         otherNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return nodeConnections.get(otherNode.getName());
+    }
+
+    public Collection<NodeConnection> getNodeConnections(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return nodeConnections.values();
     }
 
 
@@ -763,13 +770,13 @@ public class Node extends BaseTransactionObject
         getFlags().disableFlags(accCtx, Flags.EVICTED);
     }
 
-    public NodeApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    public NodePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
         return getApiData(accCtx, true, fullSyncId, updateId);
     }
 
-    private NodePojo getApiData(AccessContext accCtx, boolean includeOtherNode, Long fullSyncId, Long updateId)
+    NodePojo getApiData(AccessContext accCtx, boolean includeOtherNode, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
         List<NetInterfaceApi> netInterfaces = new ArrayList<>();

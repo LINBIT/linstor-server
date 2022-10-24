@@ -12,6 +12,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -110,6 +111,12 @@ public class NodeInternalCallHandler
                             }
                         }
                     }
+
+                    for (NodeConnection nodeConn : node.getNodeConnections(apiCtx))
+                    {
+                        otherNodes.add(nodeConn.getOtherNode(apiCtx, node));
+                    }
+
                     long fullSyncTimestamp = currentPeer.getFullSyncId();
                     long serializerId = currentPeer.getNextSerializerId();
                     currentPeer.sendMessage(
