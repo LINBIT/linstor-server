@@ -222,6 +222,25 @@ public class CtrlRemoteApiCallHandler
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
+        List<String> missingParams = new ArrayList<>();
+        addIfStringNullOrEmpty(remoteNameStr, "remote_name", missingParams);
+        addIfStringNullOrEmpty(endpointRef, "endpoint", missingParams);
+        addIfStringNullOrEmpty(bucketRef, "bucket", missingParams);
+        addIfStringNullOrEmpty(regionRef, "region", missingParams);
+        addIfStringNullOrEmpty(accessKeyRef, "access_key", missingParams);
+        addIfStringNullOrEmpty(secretKeyRef, "secret_key", missingParams);
+        int missingCt = missingParams.size();
+        if (missingCt > 0)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
+                    "The remote could not be created because the following required " +
+                        (missingCt == 1 ? "parameter is" : "parameters are") +
+                        " missing: " + missingParams
+                )
+            );
+        }
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStr);
 
         checkRemoteNameAvailable(remoteName);
@@ -439,6 +458,21 @@ public class CtrlRemoteApiCallHandler
         String remoteClusterIdStr
     )
     {
+        List<String> missingParams = new ArrayList<>();
+        addIfStringNullOrEmpty(remoteNameRef, "remote_name", missingParams);
+        addIfStringNullOrEmpty(urlRef, "url", missingParams);
+        int missingCt = missingParams.size();
+        if (missingCt > 0)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
+                    "The remote could not be created because the following required " +
+                        (missingCt == 1 ? "parameter is" : "parameters are") +
+                        " missing: " + missingParams
+                )
+            );
+        }
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameRef);
         checkRemoteNameAvailable(remoteName);
         LinstorRemote remote = null;
@@ -697,6 +731,23 @@ public class CtrlRemoteApiCallHandler
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
+        List<String> missingParams = new ArrayList<>();
+        addIfStringNullOrEmpty(remoteNameStrRef, "remote_name", missingParams);
+        addIfStringNullOrEmpty(availabilityZoneRef, "availability_zone", missingParams);
+        addIfStringNullOrEmpty(accessKeyRef, "access_key", missingParams);
+        addIfStringNullOrEmpty(secretKeyRef, "secret_key", missingParams);
+        int missingCt = missingParams.size();
+        if (missingCt > 0)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_BACKUP_CONFIG | ApiConsts.MASK_BACKUP,
+                    "The remote could not be created because the following required " +
+                        (missingCt == 1 ? "parameter is" : "parameters are") +
+                        " missing: " + missingParams
+                )
+            );
+        }
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStrRef);
         checkRemoteNameAvailable(remoteName);
 
@@ -1171,6 +1222,14 @@ public class CtrlRemoteApiCallHandler
         catch (DatabaseException exc)
         {
             throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private void addIfStringNullOrEmpty(String str, String description, List<String> missingParams)
+    {
+        if (str == null || str.isEmpty())
+        {
+            missingParams.add(description);
         }
     }
 
