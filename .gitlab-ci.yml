@@ -15,6 +15,9 @@ variables:
   VMSHED_VARIANTS:
     value: --variant default
     description: "which variant to run: [standard, default, crd, etcd]; e.g. `--variant crd --variant etcd`"
+  LINSTOR_TEST_REPEATS:
+    value: "1"
+    description: How often to repeat each run
 
 cache:
   paths:
@@ -98,7 +101,7 @@ stages:
     - echo "LINSTOR-TEST BRANCH = $TEST_BRANCH"
     - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
-    - ./linstor-test-bundle/virter/run-test.py $VARIANTS --torun $VMSHED_TORUN
+    - ./linstor-test-bundle/virter/run-test.py $VARIANTS --torun $VMSHED_TORUN --repeats="$LINSTOR_TEST_REPEATS"
 
 check-openapi:
   stage: build
@@ -185,6 +188,7 @@ test-e2e-all:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: manual
+    - if: $CI_PIPELINE_SOURCE == 'schedule'
   tags:
     - libvirt
   before_script:
