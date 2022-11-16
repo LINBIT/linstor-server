@@ -413,16 +413,18 @@ public class CtrlSatelliteUpdateCaller
 
     public Flux<Boolean> attemptConnecting(AccessContext accCtx, Node nodeRef, long timeoutMillis)
     {
+        Object key = new Object();
         return Flux.<Boolean>create(fluxSink ->
             {
-                nodeRef.registerInitialConnectSink(fluxSink);
+                nodeRef.registerInitialConnectSink(key, fluxSink);
                 stltConnector.startConnecting(nodeRef, accCtx, false);
             }
         )
-        .timeout(
-            Duration.ofMillis(timeoutMillis),
-            Flux.just(false)
-        );
+            .timeout(
+                Duration.ofMillis(timeoutMillis),
+                Flux.just(false)
+            )
+            .doFinally(ignoredSignal -> nodeRef.removeInitialConnectSink(key));
     }
 
     public Flux<ApiCallRc> updateSatellite(ExternalFile extFileRef)

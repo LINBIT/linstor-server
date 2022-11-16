@@ -49,6 +49,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -123,7 +124,7 @@ public class Node extends BaseTransactionObject
 
     private final TransactionSimpleObject<Node, Boolean> deleted;
 
-    private FluxSink<Boolean> initialConnectSink;
+    private final Map<Object, FluxSink<Boolean>> initialConnectSinkMap;
 
     private final ArrayList<ProcCryptoEntry> supportedCryptos;
 
@@ -214,6 +215,8 @@ public class Node extends BaseTransactionObject
         );
 
         activeStltConn = transObjFactory.createTransactionSimpleObject(this, null, null);
+
+        initialConnectSinkMap = new HashMap<>();
 
         transObjs = Arrays.<TransactionObject>asList(
             flags,
@@ -856,29 +859,42 @@ public class Node extends BaseTransactionObject
         return dbgInstanceId;
     }
 
-    public void registerInitialConnectSink(FluxSink<Boolean> fluxSinkRef)
+    public void registerInitialConnectSink(Object key, FluxSink<Boolean> fluxSinkRef)
     {
-        if (initialConnectSink != null)
+        synchronized (initialConnectSinkMap)
         {
-            throw new ImplementationError("Only one initialConnectSink allowed");
+            initialConnectSinkMap.put(key, fluxSinkRef);
         }
-        initialConnectSink = fluxSinkRef;
+    }
+
+    public void connectionEstablished()
+    {
+        synchronized (initialConnectSinkMap)
+        {
+            for (FluxSink<Boolean> initialConnectSink : initialConnectSinkMap.values())
+            {
+                initialConnectSink.next(true);
+                initialConnectSink.complete();
+            }
+            initialConnectSinkMap.clear();
+        }
     }
 
     /**
-     * @return true iff this is the initial connection attempt
+     * cancels the initialConnectSink of the given key
      */
-    public boolean connectionEstablished()
+    public void removeInitialConnectSink(Object key)
     {
-        boolean ret = false;
-        if (initialConnectSink != null)
+        synchronized (initialConnectSinkMap)
         {
-            initialConnectSink.next(true);
-            initialConnectSink.complete();
-            initialConnectSink = null;
-            ret = true;
+            FluxSink<Boolean> initialConnectSink = initialConnectSinkMap.remove(key);
+            if (initialConnectSink != null)
+            {
+                // if not handled until now, we just pretend initial connect failed...
+                initialConnectSink.next(false);
+                initialConnectSink.complete();
+            }
         }
-        return ret;
     }
 
     public enum Flags implements com.linbit.linstor.stateflags.Flags

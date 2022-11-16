@@ -319,8 +319,7 @@ public class CtrlNodeCrtApiCallHandler
                 node,
                 FIRST_CONNECT_TIMEOUT_MILLIS
             )
-                .concatMap(connected -> processConnectingResponse(node, connected))
-                .concatWith(runAutoMagic(context));
+                .concatMap(connected -> processConnectingResponse(node, connected, context));
         }
         else
         {
@@ -330,12 +329,14 @@ public class CtrlNodeCrtApiCallHandler
         return flux;
     }
 
-    private Flux<ApiCallRc> processConnectingResponse(Node node, boolean connected)
+    private Flux<ApiCallRc> processConnectingResponse(Node node, boolean connected, ResponseContext context)
     {
         Flux<ApiCallRc> connectedFlux;
         if (connected)
         {
-            connectedFlux = ctrlAuthenticator.get().completeAuthentication(node);
+            connectedFlux = ctrlAuthenticator.get()
+                .completeAuthentication(node)
+                .concatWith(runAutoMagic(context));
         }
         else
         {
