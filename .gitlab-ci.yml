@@ -189,6 +189,9 @@ test-e2e-all:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: manual
     - if: $CI_PIPELINE_SOURCE == 'schedule'
+  environment:
+    name: testing/e2e-all-$CI_COMMIT_REF_SLUG
+    url: https://log-viewer.apps.oc.at.linbit.com/projects/linstor%2Flinstor-server/jobs/$CI_JOB_ID
   tags:
     - libvirt
   before_script:
@@ -214,6 +217,9 @@ test-e2e:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
     - if: $CI_COMMIT_BRANCH == 'master'
+  environment:
+    name: testing/e2e-$CI_COMMIT_REF_SLUG
+    url: https://log-viewer.apps.oc.at.linbit.com/projects/linstor%2Flinstor-server/jobs/$CI_JOB_ID
   tags:
     - libvirt
   before_script:
