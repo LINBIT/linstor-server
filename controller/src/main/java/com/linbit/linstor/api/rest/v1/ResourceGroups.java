@@ -141,9 +141,6 @@ public class ResourceGroups
                 jsonData,
                 JsonGenTypes.ResourceGroup.class
             );
-//            final List<VolumeGroupData> vlmGrps =
-//                rscGrpCreate.resource_definition.volume_definitions != null ?
-//                    rscGrpCreate.resource_definition.volume_definitions : new ArrayList<>();
 
             AutoSelectFilterApi autoSelectFilter = selectFilterToApi(rscGrp.select_filter);
             ApiCallRc apiCallRc = ctrlApiCallHandler.createResourceGroup(
@@ -160,34 +157,34 @@ public class ResourceGroups
         }, true);
     }
 
-    private AutoSelectFilterApi selectFilterToApi(AutoSelectFilter select_filter)
+    private AutoSelectFilterApi selectFilterToApi(AutoSelectFilter selectFilter)
     {
         AutoSelectFilterApi autoSelectFilter = null;
-        if (select_filter != null)
+        if (selectFilter != null)
         {
-            List<String> storPoolList = select_filter.storage_pool_list;
+            List<String> storPoolList = selectFilter.storage_pool_list;
             if (
                 (storPoolList == null || storPoolList.isEmpty()) &&
-                select_filter.storage_pool != null
+                selectFilter.storage_pool != null
             )
             {
-                storPoolList = Collections.singletonList(select_filter.storage_pool);
+                storPoolList = Collections.singletonList(selectFilter.storage_pool);
             }
             autoSelectFilter = new AutoSelectFilterBuilder()
-                .setPlaceCount(select_filter.place_count)
-                .setAdditionalPlaceCount(select_filter.additional_place_count)
-                .setNodeNameList(select_filter.node_name_list)
+                .setPlaceCount(selectFilter.place_count)
+                .setAdditionalPlaceCount(selectFilter.additional_place_count)
+                .setNodeNameList(selectFilter.node_name_list)
                 .setStorPoolNameList(storPoolList)
-                .setStorPoolDisklessNameList(select_filter.storage_pool_diskless_list)
-                .setDoNotPlaceWithRscList(select_filter.not_place_with_rsc)
-                .setDoNotPlaceWithRegex(select_filter.not_place_with_rsc_regex)
-                .setReplicasOnSameList(select_filter.replicas_on_same)
-                .setReplicasOnDifferentList(select_filter.replicas_on_different)
-                .setLayerStackList(select_filter.layer_stack == null ? null :
-                    LinstorParsingUtils.asDeviceLayerKind(select_filter.layer_stack))
-                .setDeviceProviderKinds(select_filter.provider_list == null ? null :
-                    LinstorParsingUtils.asProviderKind(select_filter.provider_list))
-                .setDisklessOnRemaining(select_filter.diskless_on_remaining)
+                .setStorPoolDisklessNameList(selectFilter.storage_pool_diskless_list)
+                .setDoNotPlaceWithRscList(selectFilter.not_place_with_rsc)
+                .setDoNotPlaceWithRegex(selectFilter.not_place_with_rsc_regex)
+                .setReplicasOnSameList(selectFilter.replicas_on_same)
+                .setReplicasOnDifferentList(selectFilter.replicas_on_different)
+                .setLayerStackList(selectFilter.layer_stack == null ? null :
+                    LinstorParsingUtils.asDeviceLayerKind(selectFilter.layer_stack))
+                .setDeviceProviderKinds(selectFilter.provider_list == null ? null :
+                    LinstorParsingUtils.asProviderKind(selectFilter.provider_list))
+                .setDisklessOnRemaining(selectFilter.diskless_on_remaining)
                 .build();
         }
 
@@ -306,7 +303,8 @@ public class ResourceGroups
                 {
                     List<MaxVlmSizeCandidatePojo> maxVlmSizeCandidates = apiCallRcWith.getValue();
                     JsonGenTypes.MaxVolumeSizes maxVolumeSizesData = Json.pojoToMaxVolumeSizes(maxVlmSizeCandidates);
-                    maxVolumeSizesData.default_max_oversubscription_ratio = FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
+                    maxVolumeSizesData.default_max_oversubscription_ratio =
+                        FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
 
                     try
                     {
