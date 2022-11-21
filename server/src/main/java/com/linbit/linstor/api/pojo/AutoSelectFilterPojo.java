@@ -7,6 +7,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.List;
@@ -89,7 +90,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         );
     }
 
-    public static AutoSelectFilterPojo merge(
+    public static @Nonnull AutoSelectFilterPojo merge(
         AutoSelectFilterApi... cfgArr
     )
     {

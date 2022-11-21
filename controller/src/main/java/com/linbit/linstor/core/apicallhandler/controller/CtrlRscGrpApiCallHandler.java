@@ -878,22 +878,14 @@ public class CtrlRscGrpApiCallHandler
             );
 
             AccessContext peerCtx = peerAccCtx.get();
-            if (autoPlaceConfig != null)
+            layerStackDevLayerKind = autoPlaceConfig.getLayerStackList();
+            layerStackStr = new ArrayList<>();
+            if (layerStackDevLayerKind != null)
             {
-                layerStackDevLayerKind = autoPlaceConfig.getLayerStackList();
-                layerStackStr = new ArrayList<>();
-                if (layerStackDevLayerKind != null)
+                for (DeviceLayerKind kind : layerStackDevLayerKind)
                 {
-                    for (DeviceLayerKind kind : layerStackDevLayerKind)
-                    {
-                        layerStackStr.add(kind.toString());
-                    }
+                    layerStackStr.add(kind.toString());
                 }
-            }
-            else
-            {
-                layerStackDevLayerKind = Collections.emptyList();
-                layerStackStr = Collections.emptyList();
             }
 
             List<VolumeDefinitionWtihCreationPayload> vlmDfnCrtList = new ArrayList<>();
@@ -951,7 +943,7 @@ public class CtrlRscGrpApiCallHandler
                 definitionsOnlyRef
             );
 
-            if (autoPlaceConfig != null && autoPlaceConfig.getReplicaCount() != null && !definitionsOnlyRef)
+            if (autoPlaceConfig.getReplicaCount() != null && !definitionsOnlyRef)
             {
                 AutoSelectFilterApi autoSelectFilterPojo = new AutoSelectFilterBuilder(autoPlaceConfig)
                     .setLayerStackList(layerStackDevLayerKind)
@@ -969,13 +961,13 @@ public class CtrlRscGrpApiCallHandler
             else
             {
                 String reason = "";
-                if (autoPlaceConfig == null || autoPlaceConfig.getReplicaCount() == null)
+                if (autoPlaceConfig.getReplicaCount() == null)
                 {
                     reason = "No autoplace configuration in the given resource group (at least place-count required)";
                 }
                 if (definitionsOnlyRef)
                 {
-                    if (autoPlaceConfig == null || autoPlaceConfig.getReplicaCount() == null)
+                    if (autoPlaceConfig.getReplicaCount() == null)
                     {
                         reason += " and ";
                     }
