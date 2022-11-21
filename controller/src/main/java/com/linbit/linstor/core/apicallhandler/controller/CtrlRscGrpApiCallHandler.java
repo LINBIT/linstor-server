@@ -891,9 +891,18 @@ public class CtrlRscGrpApiCallHandler
             List<VolumeDefinitionWtihCreationPayload> vlmDfnCrtList = new ArrayList<>();
 
             List<VolumeGroup> vlmGrps = rscGrp.getVolumeGroups(peerCtx);
+
+            // if resource-group doesn't have any volume groups automatically switch on partial mode
+            if (vlmGrps.isEmpty() && !partialRef)
+            {
+                apiCallRc.addEntries(ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.MASK_INFO | ApiConsts.MASK_RSC_GRP,
+                    "Resource-group doesn't have any volume-groups, automatically assume partial mode."));
+            }
+            final boolean isPartial = vlmGrps.isEmpty() || partialRef;
             final int vlmSizeLen = vlmSizesRef.size();
             final int vlmGrpLen = vlmGrps.size();
-            if (vlmSizeLen == vlmGrpLen || partialRef)
+            if (vlmSizeLen == vlmGrpLen || isPartial)
             {
                 for (int idx = 0; idx < vlmSizeLen; ++idx)
                 {
