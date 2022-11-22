@@ -294,6 +294,8 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
                 rscDfnLayerObject.delete();
             }
 
+            objProt.delete(accCtx);
+
             activateTransMgr();
             dbDriver.delete(this);
 
