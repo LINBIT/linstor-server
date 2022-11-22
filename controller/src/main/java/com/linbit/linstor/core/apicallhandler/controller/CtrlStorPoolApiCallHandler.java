@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -19,10 +20,13 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -67,6 +71,7 @@ public class CtrlStorPoolApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSecurityObjects securityObjects;
     private final EncryptionHelper encryptionHelper;
+    private final StorPoolDefinitionRepository storPoolDfnRepo;
 
     @Inject
     public CtrlStorPoolApiCallHandler(
@@ -80,7 +85,8 @@ public class CtrlStorPoolApiCallHandler
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlSecurityObjects ctrlSecurityObjects,
-        EncryptionHelper encryptionHelperRef
+        EncryptionHelper encryptionHelperRef,
+        StorPoolDefinitionRepository storPoolDfnRepoRef
     )
     {
         ctrlTransactionHelper = ctrlTransactionHelperRef;
@@ -94,6 +100,7 @@ public class CtrlStorPoolApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         securityObjects = ctrlSecurityObjects;
         encryptionHelper = encryptionHelperRef;
+        storPoolDfnRepo = storPoolDfnRepoRef;
     }
 
     public Flux<ApiCallRc> modify(
@@ -358,8 +365,16 @@ public class CtrlStorPoolApiCallHandler
             else
             {
                 UUID storPoolUuid = storPool.getUuid(); // cache storpool uuid to avoid access deleted storpool
+
                 final Node storPoolNode = storPool.getNode();
+                StorPoolDefinition spd = getStorPoolDefinition(storPool);
                 delete(storPool);
+                String spdDspName = spd.getName().displayValue;
+                if (!spdDspName.equalsIgnoreCase(LinStor.DISKLESS_STOR_POOL_NAME) &&
+                    !spdDspName.equalsIgnoreCase(InternalApiConsts.DEFAULT_STOR_POOL_NAME))
+                {
+                    delete(spd);
+                }
                 ctrlTransactionHelper.commit();
 
                 responseConverter.addWithOp(apiCallRcs, context, ApiSuccessUtils.defaultDeletedEntry(
@@ -410,6 +425,47 @@ public class CtrlStorPoolApiCallHandler
             );
         }
         return snapVlms;
+    }
+
+    private StorPoolDefinition getStorPoolDefinition(StorPool storPoolRef)
+    {
+        StorPoolDefinition spd;
+        try
+        {
+            spd = storPoolRef.getDefinition(peerAccCtx.get());
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "accessinng definition of " + StorPoolHelper.getStorPoolDescriptionInline(storPoolRef),
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
+            );
+
+        }
+        return spd;
+    }
+
+    private void delete(StorPoolDefinition storPoolDfn)
+    {
+        try
+        {
+            StorPoolName spName = storPoolDfn.getName();
+            storPoolDfn.delete(peerAccCtx.get());
+            storPoolDfnRepo.remove(peerAccCtx.get(), spName);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "delete " + CtrlStorPoolDfnApiCallHandler.getStorPoolDfnDescriptionInline(storPoolDfn),
+                ApiConsts.FAIL_ACC_DENIED_STOR_POOL_DFN
+            );
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
     }
 
     private void delete(StorPool storPool)
