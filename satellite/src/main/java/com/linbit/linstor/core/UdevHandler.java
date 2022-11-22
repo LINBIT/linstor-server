@@ -17,7 +17,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import java.util.List;
+import java.util.TreeSet;
 
 public class UdevHandler
 {
@@ -43,9 +43,9 @@ public class UdevHandler
         extTools = extToolsRef;
     }
 
-    public @Nullable List<String> getSymlinks(String devicePath) throws StorageException
+    public @Nullable TreeSet<String> getSymlinks(String devicePath) throws StorageException
     {
-        List<String> ret = null;
+        TreeSet<String> ret = null;
         ExtToolsInfo udevadmInfo = extTools.getExternalTools(false).get(ExtTools.UDEVADM);
 
         if (devicePath != null && udevadmInfo.isSupported())
@@ -62,7 +62,7 @@ public class UdevHandler
                 "Failed to query symlinks of device " + devicePath
             );
             String symLinksRaw = new String(outputData.stdoutData).trim();
-            ret = MkfsUtils.shellSplit(symLinksRaw);
+            ret = new TreeSet<>(MkfsUtils.shellSplit(symLinksRaw));
         }
 
         return ret;

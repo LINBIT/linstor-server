@@ -73,6 +73,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -1131,7 +1132,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 .getLayerData(wrkCtx)
                 .getVlmProviderObject(vlmRef.getVolumeNumber());
 
-            List<String> symlinks = null;
+            TreeSet<String> symlinks = null;
             if (!vlmRef.getFlags().isSet(wrkCtx, Volume.Flags.CLONING))
             {
                 symlinks = udevHandler.getSymlinks(vlmProviderObject.getDevicePath());
