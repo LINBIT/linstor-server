@@ -173,6 +173,12 @@ public class CtrlKvsApiCallHandler
                 deleteNamespaces
             );
 
+            if (kvs.getProps(accCtx).isEmpty())
+            {
+                kvsRepo.remove(accCtx, kvs.getName());
+                kvs.delete(accCtx);
+            }
+
             ctrlTransactionHelper.commit();
 
             apiCallRc.addEntry(
