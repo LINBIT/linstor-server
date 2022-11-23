@@ -13,9 +13,9 @@ import java.util.HashMap;
     description = "Rename netcom to NetCom namespace",
     version = 5
 )
-public class Migration_5_v1_17_0_RenameNetComNamespace extends BaseK8sCrdMigration
+public class Migration_05_v1_17_0_RenameNetComNamespace extends BaseK8sCrdMigration
 {
-    public Migration_5_v1_17_0_RenameNetComNamespace()
+    public Migration_05_v1_17_0_RenameNetComNamespace()
     {
         super(
             GenCrdV1_17_0.createTxMgrContext(),

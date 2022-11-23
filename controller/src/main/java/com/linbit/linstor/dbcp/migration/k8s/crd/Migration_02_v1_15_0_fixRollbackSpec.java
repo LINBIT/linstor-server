@@ -7,9 +7,9 @@ import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
     description = "fix rollback specifications",
     version = 2
 )
-public class Migration_2_v1_15_0_fixRollbackSpec extends BaseK8sCrdMigration
+public class Migration_02_v1_15_0_fixRollbackSpec extends BaseK8sCrdMigration
 {
-    public Migration_2_v1_15_0_fixRollbackSpec()
+    public Migration_02_v1_15_0_fixRollbackSpec()
     {
         super(
             GenCrdV1_15_0.createTxMgrContext(),

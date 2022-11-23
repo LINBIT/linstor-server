@@ -8,9 +8,9 @@ import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
     description = "initial data",
     version = 1
 )
-public class Migration_1_v1_15_0_init extends BaseK8sCrdMigration
+public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
 {
-    public Migration_1_v1_15_0_init()
+    public Migration_01_v1_15_0_init()
     {
         super(
             null, // only valid for migration 0 -> 1

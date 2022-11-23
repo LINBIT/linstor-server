@@ -8,9 +8,9 @@ import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_18_2;
     description = "Add schedule table",
     version = 6
 )
-public class Migration_6_v1_18_2_AddScheduleTable extends BaseK8sCrdMigration
+public class Migration_06_v1_18_2_AddScheduleTable extends BaseK8sCrdMigration
 {
-    public Migration_6_v1_18_2_AddScheduleTable()
+    public Migration_06_v1_18_2_AddScheduleTable()
     {
         super(
             GenCrdV1_17_0.createTxMgrContext(),

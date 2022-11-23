@@ -8,9 +8,9 @@ import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
     description = "Add ebs remotes table",
     version = 7
 )
-public class Migration_7_v1_19_1_AddEbsRemoteTable extends BaseK8sCrdMigration
+public class Migration_07_v1_19_1_AddEbsRemoteTable extends BaseK8sCrdMigration
 {
-    public Migration_7_v1_19_1_AddEbsRemoteTable()
+    public Migration_07_v1_19_1_AddEbsRemoteTable()
     {
         super(
             GenCrdV1_18_2.createTxMgrContext(),

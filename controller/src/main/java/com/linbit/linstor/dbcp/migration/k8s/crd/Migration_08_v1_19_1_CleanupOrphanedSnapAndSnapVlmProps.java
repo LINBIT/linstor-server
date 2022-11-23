@@ -25,9 +25,9 @@ import java.util.Set;
     description = "Cleanup orphaned Snapshot and SnapshotVolume Properties",
     version = 8
 )
-public class Migration_8_v1_19_1_CleanupOrphanedSnapAndSnapVlmProps extends BaseK8sCrdMigration
+public class Migration_08_v1_19_1_CleanupOrphanedSnapAndSnapVlmProps extends BaseK8sCrdMigration
 {
-    public Migration_8_v1_19_1_CleanupOrphanedSnapAndSnapVlmProps()
+    public Migration_08_v1_19_1_CleanupOrphanedSnapAndSnapVlmProps()
     {
         super(
             GenCrdV1_19_1.createTxMgrContext(),

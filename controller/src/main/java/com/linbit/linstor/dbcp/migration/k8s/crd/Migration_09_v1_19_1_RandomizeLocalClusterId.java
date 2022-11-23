@@ -13,9 +13,9 @@ import java.util.UUID;
     description = "Randomize local cluster ID",
     version = 9
 )
-public class Migration_9_v1_20_0_RandomizeLocalClusterId extends BaseK8sCrdMigration
+public class Migration_09_v1_19_1_RandomizeLocalClusterId extends BaseK8sCrdMigration
 {
-    public Migration_9_v1_20_0_RandomizeLocalClusterId()
+    public Migration_09_v1_19_1_RandomizeLocalClusterId()
     {
         super(
             GenCrdV1_19_1.createTxMgrContext(),

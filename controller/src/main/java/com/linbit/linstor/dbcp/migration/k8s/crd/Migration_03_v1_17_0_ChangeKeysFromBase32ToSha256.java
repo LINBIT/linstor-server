@@ -19,9 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
     description = "change keys from base32 to sha256",
     version = 3
 )
-public class Migration_3_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCrdMigration
+public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCrdMigration
 {
-    public Migration_3_v1_17_0_ChangeKeysFromBase32ToSha256()
+    public Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256()
     {
         super(
             GenCrdV1_15_0.createTxMgrContext(),

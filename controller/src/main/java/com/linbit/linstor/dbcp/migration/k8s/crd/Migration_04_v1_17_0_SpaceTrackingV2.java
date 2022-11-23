@@ -12,9 +12,9 @@ import java.util.HashMap;
     description = "Migrate to SpaceTrackingV2",
     version = 4
 )
-public class Migration_4_v1_17_0_SpaceTrackingV2 extends BaseK8sCrdMigration
+public class Migration_04_v1_17_0_SpaceTrackingV2 extends BaseK8sCrdMigration
 {
-    public Migration_4_v1_17_0_SpaceTrackingV2()
+    public Migration_04_v1_17_0_SpaceTrackingV2()
     {
         super(
             GenCrdV1_17_0.createTxMgrContext(),
