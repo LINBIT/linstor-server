@@ -184,6 +184,11 @@ public class CacheLayer implements DeviceLayer
 
         long cacheSize;
         long metaSize;
+        if (!fromUsable)
+        {
+            // this should be done before using calcSize since that method is based on our usable size
+            vlmData.setUsableSize(vlmData.getAllocatedSize());
+        }
         if (cacheChildVlmData != null && metaChildVlmData != null)
         {
             // null if we are above an NVMe target
@@ -206,10 +211,6 @@ public class CacheLayer implements DeviceLayer
             metaSize = 0;
         }
 
-        if (!fromUsable)
-        {
-            vlmData.setUsableSize(vlmData.getAllocatedSize());
-        }
         vlmData.setAllocatedSize(vlmData.getUsableSize() + cacheSize + metaSize);
     }
 

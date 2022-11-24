@@ -201,6 +201,11 @@ public class WritecacheLayer implements DeviceLayer
         }
 
         long cacheSize;
+        if (!fromUsable)
+        {
+            // this should be done before using calcSize since that method is based on our usable size
+            vlmData.setUsableSize(vlmData.getAllocatedSize());
+        }
         if (cacheChildVlmData != null)
         {
             // null if we are above an NVMe target
@@ -225,10 +230,6 @@ public class WritecacheLayer implements DeviceLayer
             cacheSize = 0;
         }
 
-        if (!fromUsable)
-        {
-            vlmData.setUsableSize(vlmData.getAllocatedSize());
-        }
         vlmData.setAllocatedSize(vlmData.getUsableSize() + cacheSize);
     }
 
