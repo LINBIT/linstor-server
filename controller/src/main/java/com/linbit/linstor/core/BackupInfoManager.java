@@ -56,6 +56,7 @@ public class BackupInfoManager
      */
     // uses uploadQueues as sync-object
     private final TreeSet<QueueItem> prevNodeUndecidedQueue;
+    private final Map<QueueItem, TreeSet<Node>> itemQueuedAtNodes;
     private final AccessContext sysCtx;
     private final ErrorReporter errorReporter;
 
@@ -76,6 +77,7 @@ public class BackupInfoManager
         l2lDstData = new HashMap<>();
         uploadQueues = new HashMap<>();
         prevNodeUndecidedQueue = new TreeSet<>();
+        itemQueuedAtNodes = new HashMap<>();
     }
 
     public boolean addAllRestoreEntries(
@@ -463,12 +465,14 @@ public class BackupInfoManager
             QueueItem item = new QueueItem(snapDfn, remote, prevSnapDfn, preferredNode);
             if (usableNodes != null && !usableNodes.isEmpty())
             {
+                TreeSet<Node> nodeQueue = itemQueuedAtNodes.computeIfAbsent(item, k -> new TreeSet<>());
                 for (Node node : usableNodes)
                 {
                     TreeSet<QueueItem> queue = uploadQueues.computeIfAbsent(
                         node,
                         k -> new TreeSet<>()
                     );
+                    nodeQueue.add(node);
                     queue.add(item);
                 }
             }
@@ -479,7 +483,7 @@ public class BackupInfoManager
         }
     }
 
-    public boolean isSnapshotQueued(AccessContext accCtx, SnapshotDefinition snapDfn) throws AccessDeniedException
+    public boolean isSnapshotQueued(SnapshotDefinition snapDfn)
     {
         synchronized (uploadQueues)
         {
@@ -494,22 +498,11 @@ public class BackupInfoManager
             }
             if (!ret)
             {
-                for (Snapshot snap : snapDfn.getAllSnapshots(accCtx))
+                for (QueueItem item : itemQueuedAtNodes.keySet())
                 {
-                    TreeSet<QueueItem> queue = uploadQueues.get(snap.getNode());
-                    if (queue != null)
+                    if (item.snapDfn.equals(snapDfn))
                     {
-                        for (QueueItem item : queue)
-                        {
-                            if (item.snapDfn.equals(snapDfn))
-                            {
-                                ret = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (ret)
-                    {
+                        ret = true;
                         break;
                     }
                 }
@@ -553,6 +546,7 @@ public class BackupInfoManager
                             otherQueue.remove(ret);
                         }
                     }
+                    itemQueuedAtNodes.remove(ret);
                 }
             }
         }
@@ -572,6 +566,7 @@ public class BackupInfoManager
                 queue.remove(toDelete);
             }
             prevNodeUndecidedQueue.remove(toDelete);
+            itemQueuedAtNodes.remove(toDelete);
         }
     }
 
@@ -595,6 +590,10 @@ public class BackupInfoManager
                     }
                 }
                 items.removeAll(itemsToDelete);
+                for (QueueItem toDelete : itemsToDelete)
+                {
+                    itemQueuedAtNodes.remove(toDelete);
+                }
                 if (items.isEmpty())
                 {
                     nodesToDelete.add(queue.getKey());
@@ -618,12 +617,41 @@ public class BackupInfoManager
 
     /**
      * Deletes the queue of this node
+     *
+     * @return A list of all backups that need to be queued somewhere else because this node was
+     * the last queue they were a part of
      */
-    public void deleteFromQueue(Node node)
+    public List<QueueItem> deleteFromQueue(Node node)
     {
         synchronized (uploadQueues)
         {
-            uploadQueues.remove(node);
+            TreeSet<QueueItem> itemsToCheck = uploadQueues.remove(node);
+            List<QueueItem> ret = new ArrayList<>();
+            for (QueueItem item : itemsToCheck)
+            {
+                TreeSet<Node> nodes = itemQueuedAtNodes.get(item);
+                nodes.remove(node);
+                // if nodes is empty, the backup is not queued anywhere anymore and new nodes need to be chosen for it
+                if (nodes.isEmpty())
+                {
+                    ret.add(item);
+                    itemQueuedAtNodes.remove(item);
+                }
+            }
+            return ret;
+        }
+    }
+
+    /**
+     * Deletes ALL queues
+     */
+    public void deleteAllQueues()
+    {
+        synchronized (uploadQueues)
+        {
+            uploadQueues.clear();
+            itemQueuedAtNodes.clear();
+            prevNodeUndecidedQueue.clear();
         }
     }
 
@@ -634,12 +662,8 @@ public class BackupInfoManager
             QueueItem ret = null;
             for (QueueItem item : prevNodeUndecidedQueue)
             {
-                // using compareTo because equals does not exist...
-                // also, this list CANNOT contain items where prevSnapDfn == null
-                if (
-                    !item.prevSnapDfn.isDeleted() && item.prevSnapDfn.compareTo(snapDfn) == 0 &&
-                        item.remote.compareTo(remote) == 0
-                )
+                // this list CANNOT contain items where prevSnapDfn == null
+                if (!item.prevSnapDfn.isDeleted() && item.prevSnapDfn.equals(snapDfn) && item.remote.equals(remote))
                 {
                     ret = item;
                     break;
@@ -650,27 +674,25 @@ public class BackupInfoManager
         }
     }
 
-    public Map<Node, ArrayList<QueueItem>> getFollowUpSnaps(SnapshotDefinition snapDfn, AbsRemote remote)
+    public Map<QueueItem, TreeSet<Node>> getFollowUpSnaps(SnapshotDefinition snapDfn, AbsRemote remote)
     {
         synchronized (uploadQueues)
         {
-            Map<Node, ArrayList<QueueItem>> ret = new HashMap<>();
-            for (Entry<Node, TreeSet<QueueItem>> queue : uploadQueues.entrySet())
+            /*
+             * Does not need to consider prevNodeUndecidedQueue since that queue can only contain snaps whose prevSnap
+             * has yet to start shipping, whereas the snaps we are looking for have the snap that just finished shipping
+             * as their prevSnap
+             */
+            Map<QueueItem, TreeSet<Node>> ret = new HashMap<>();
+            for (Entry<QueueItem, TreeSet<Node>> entry : itemQueuedAtNodes.entrySet())
             {
-                TreeSet<QueueItem> items = queue.getValue();
-                for (QueueItem item : items)
+                QueueItem item = entry.getKey();
+                if (
+                    item.remote.equals(remote) && item.prevSnapDfn != null &&
+                        !item.prevSnapDfn.isDeleted() && item.prevSnapDfn.equals(snapDfn)
+                )
                 {
-                    if (
-                        item.prevSnapDfn != null &&
-                        !item.prevSnapDfn.isDeleted() && item.prevSnapDfn.compareTo(snapDfn) == 0 && item.remote
-                            .compareTo(remote) == 0
-                    )
-                    {
-                        ret.computeIfAbsent(
-                            queue.getKey(),
-                            k -> new ArrayList<>()
-                        ).add(item);
-                    }
+                    ret.put(item, new TreeSet<>(entry.getValue()));
                 }
             }
             return ret;

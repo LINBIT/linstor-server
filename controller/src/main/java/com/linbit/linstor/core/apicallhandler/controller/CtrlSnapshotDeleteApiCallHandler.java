@@ -256,7 +256,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
     {
         try
         {
-            if (backupInfoMgr.isSnapshotQueued(peerAccCtx.get(), snapDfn))
+            if (backupInfoMgr.isSnapshotQueued(snapDfn))
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(

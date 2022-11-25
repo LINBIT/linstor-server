@@ -1,6 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.ControllerPeerCtx;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.NodeInternalCallHandler;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventProcessor;
@@ -25,6 +26,7 @@ class CtrlConnTracker implements ConnectionObserver
     private final TaskScheduleService taskScheduler;
     private final NodeInternalCallHandler nodeInternalCallHandler;
     private final SharedStorPoolManager sharedSpMgr;
+    private final CtrlBackupCreateApiCallHandler backupCrtApiCallHandler;
 
     @Inject
     CtrlConnTracker(
@@ -34,7 +36,8 @@ class CtrlConnTracker implements ConnectionObserver
         EventProcessor eventProcessorRef,
         TaskScheduleService taskSchedulerRef,
         NodeInternalCallHandler nodeInternalCallHandlerRef,
-        SharedStorPoolManager sharedSpMgrRef
+        SharedStorPoolManager sharedSpMgrRef,
+        CtrlBackupCreateApiCallHandler backupCrtApiCallHandlerRef
     )
     {
         peerMap = peerMapRef;
@@ -44,6 +47,7 @@ class CtrlConnTracker implements ConnectionObserver
         taskScheduler = taskSchedulerRef;
         nodeInternalCallHandler = nodeInternalCallHandlerRef;
         sharedSpMgr = sharedSpMgrRef;
+        backupCrtApiCallHandler = backupCrtApiCallHandlerRef;
     }
 
     @Override
@@ -100,6 +104,7 @@ class CtrlConnTracker implements ConnectionObserver
             if (!shuttingDown)
             {
                 eventProcessor.connectionClosed(connPeer);
+                backupCrtApiCallHandler.deleteNodeQueue(connPeer);
             }
 
             synchronized (peerMap)

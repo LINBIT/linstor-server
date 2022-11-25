@@ -1,5 +1,6 @@
 package com.linbit.linstor.backupshipping;
 
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
@@ -31,6 +32,8 @@ public class BackupConsts
     public static final Map<ExtTools, Version> L2L_OPT_EXT_TOOLS = Collections.unmodifiableMap(
         Collections.singletonMap(ExtTools.ZSTD, null)
     );
+    public static final String CONCURRENT_BACKUPS_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" +
+        ApiConsts.KEY_MAX_CONCURRENT_BACKUPS_PER_NODE;
     private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmmss");
 
     private BackupConsts()

@@ -16,10 +16,12 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.SatelliteConfig;
+import com.linbit.linstor.backupshipping.BackupConsts;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
@@ -125,6 +127,8 @@ public class CtrlConfApiCallHandler
 
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
 
+    private final CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandler;
+
     @FunctionalInterface
     private interface SpecialPropHandler
     {
@@ -169,7 +173,8 @@ public class CtrlConfApiCallHandler
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef,
         CtrlResyncAfterHelper ctrlResyncAfterHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
-        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
+        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -199,6 +204,7 @@ public class CtrlConfApiCallHandler
         ctrlResyncAfterHelper = ctrlResyncAfterHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
+        ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
     }
 
     public void updateSatelliteConf() throws AccessDeniedException
@@ -378,12 +384,16 @@ public class CtrlConfApiCallHandler
         }
 
         boolean hasKeyInDrbdOptions = false;
+        boolean maxConcurrentShippingsChanged = false;
         for (String key : overridePropsRef.keySet())
         {
             if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
             {
                 hasKeyInDrbdOptions = true;
-                break;
+            }
+            else if (key.equals(BackupConsts.CONCURRENT_BACKUPS_KEY))
+            {
+                maxConcurrentShippingsChanged = true;
             }
         }
         for (String key : deletePropKeysRef)
@@ -391,7 +401,10 @@ public class CtrlConfApiCallHandler
             if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
             {
                 hasKeyInDrbdOptions = true;
-                break;
+            }
+            else if (key.equals(BackupConsts.CONCURRENT_BACKUPS_KEY))
+            {
+                maxConcurrentShippingsChanged = true;
             }
         }
         hasKeyInDrbdOptions |= deletePropNamespacesRef.contains(ApiConsts.NAMESPC_DRBD_OPTIONS);
@@ -404,13 +417,19 @@ public class CtrlConfApiCallHandler
                 evictionFlux = evictionFlux.concatWith(pair.objA);
             }
         }
+        Flux<ApiCallRc> shippingFlux = Flux.empty();
+        if (maxConcurrentShippingsChanged)
+        {
+            shippingFlux = ctrlBackupCrtApiCallHandler.maxConcurrentShippingsChangedForCtrl();
+        }
 
         return Flux.<ApiCallRc>just(apiCallRc)
             .concatWith(updSatellites)
             .concatWith(evictionFlux)
             .concatWith(autoSnapFlux)
             .concatWith(fluxUpdRscDfns)
-            .concatWith(Flux.merge(specialPropFluxes));
+            .concatWith(Flux.merge(specialPropFluxes))
+            .concatWith(shippingFlux);
     }
 
     public Flux<ApiCallRc> setCtrlConfig(
@@ -442,7 +461,9 @@ public class CtrlConfApiCallHandler
                 ctrlCfg.setLogLevel(logLevel);
                 ctrlCfg.setLogLevelLinstor(logLevelLinstor);
                 errorReporter.setLogLevel(
-                    peerAccCtx.get(), Level.valueOf(logLevel.toUpperCase()), Level.valueOf(logLevelLinstor.toUpperCase())
+                    peerAccCtx.get(),
+                    Level.valueOf(logLevel.toUpperCase()),
+                    Level.valueOf(logLevelLinstor.toUpperCase())
                 );
             }
             else
@@ -454,7 +475,9 @@ public class CtrlConfApiCallHandler
                     ctrlCfg.setLogLevel(logLevel);
                     ctrlCfg.setLogLevelLinstor(logLevelLinstorGlobal);
                     errorReporter.setLogLevel(
-                        peerAccCtx.get(), Level.valueOf(logLevel.toUpperCase()), Level.valueOf(logLevelLinstorGlobal.toUpperCase())
+                        peerAccCtx.get(),
+                        Level.valueOf(logLevel.toUpperCase()),
+                        Level.valueOf(logLevelLinstorGlobal.toUpperCase())
                     );
                 }
                 else
@@ -477,7 +500,11 @@ public class CtrlConfApiCallHandler
                     ctrlCfg.setLogLevel(logLevelGlobal);
                     ctrlCfg.setLogLevelLinstor(logLevelLinstor);
                     errorReporter
-                        .setLogLevel(peerAccCtx.get(), Level.valueOf(logLevelGlobal.toUpperCase()), Level.valueOf(logLevelLinstor.toUpperCase()));
+                        .setLogLevel(
+                            peerAccCtx.get(),
+                            Level.valueOf(logLevelGlobal.toUpperCase()),
+                            Level.valueOf(logLevelLinstor.toUpperCase())
+                        );
                 }
                 else
                 {
@@ -488,7 +515,11 @@ public class CtrlConfApiCallHandler
                         ctrlCfg.setLogLevel(logLevelGlobal);
                         ctrlCfg.setLogLevelLinstor(logLevelLinstorGlobal);
                         errorReporter
-                            .setLogLevel(peerAccCtx.get(), Level.valueOf(logLevelGlobal.toUpperCase()), Level.valueOf(logLevelLinstorGlobal.toUpperCase()));
+                            .setLogLevel(
+                                peerAccCtx.get(),
+                                Level.valueOf(logLevelGlobal.toUpperCase()),
+                                Level.valueOf(logLevelLinstorGlobal.toUpperCase())
+                            );
                     }
                     else
                     {
@@ -831,7 +862,7 @@ public class CtrlConfApiCallHandler
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT:
                             // fall-through
-                        case ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + ApiConsts.KEY_MAX_CONCURRENT_BACKUPS_PER_NODE:
+                        case BackupConsts.CONCURRENT_BACKUPS_KEY:
                             // no need to update stlts
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             break;

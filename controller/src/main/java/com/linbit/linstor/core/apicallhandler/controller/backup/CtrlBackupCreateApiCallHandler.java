@@ -10,6 +10,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.BackupInfoManager.QueueItem;
@@ -43,6 +44,7 @@ import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
+import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -63,7 +65,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
-import com.linbit.utils.ExceptionThrowingSupplier;
+import com.linbit.utils.IteratorFromExceptionThrowingSupplier;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
@@ -74,6 +76,7 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -82,8 +85,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import reactor.core.publisher.Flux;
+import reactor.util.context.Context;
 
 @Singleton
 public class CtrlBackupCreateApiCallHandler
@@ -107,6 +112,7 @@ public class CtrlBackupCreateApiCallHandler
     private final CtrlBackupApiHelper backupHelper;
     private final CtrlScheduledBackupsApiCallHandler scheduledBackupsHandler;
     private final BackupNodeFinder backupNodeFinder;
+    private final NodeRepository nodeRepo;
 
     @Inject
     public CtrlBackupCreateApiCallHandler(
@@ -128,7 +134,8 @@ public class CtrlBackupCreateApiCallHandler
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlBackupApiHelper backupHelperRef,
         CtrlScheduledBackupsApiCallHandler scheduledBackupsHandlerRef,
-        BackupNodeFinder backupNodeFinderRef
+        BackupNodeFinder backupNodeFinderRef,
+        NodeRepository nodeRepoRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -150,6 +157,7 @@ public class CtrlBackupCreateApiCallHandler
         backupHelper = backupHelperRef;
         scheduledBackupsHandler = scheduledBackupsHandlerRef;
         backupNodeFinder = backupNodeFinderRef;
+        nodeRepo = nodeRepoRef;
 
     }
 
@@ -458,6 +466,227 @@ public class CtrlBackupCreateApiCallHandler
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    /**
+     * Deletes the queue of the given node and also re-queues any snapDfns that were only in its queue (or starts them
+     * if possible).
+     */
+    public void deleteNodeQueue(Peer peer)
+    {
+        Flux<ApiCallRc> flux = deleteNodeQueueAndReQueueSnapsIfNeeded(peer.getNode());
+        Thread thread = new Thread(() ->
+        {
+            flux.subscriberContext(
+                Context.of(
+                    AccessContext.class,
+                    peer.getAccessContext(),
+                    Peer.class,
+                    peer,
+                    ApiModule.API_CALL_NAME,
+                    "delete node queue"
+                )
+            ).subscribe(ignoredResults ->
+            {
+            }, errorReporter::reportError);
+        });
+        thread.start();
+    }
+
+    /*
+     * Deletes the queue of the given node and checks if any snapDfn is not being shipped anymore because of it.
+     * If so, finds new nodes to ship that snapDfn from and either queues it there or starts the shipping.
+     */
+    public Flux<ApiCallRc> deleteNodeQueueAndReQueueSnapsIfNeeded(Node node)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Delete node queue",
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
+            () -> deleteNodeQueueAndReQueueSnapsIfNeededInTransaction(node)
+        );
+    }
+
+    private Flux<ApiCallRc> deleteNodeQueueAndReQueueSnapsIfNeededInTransaction(Node node)
+    {
+        List<QueueItem> itemsToReQueue = backupInfoMgr.deleteFromQueue(node);
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        Flux<ApiCallRc> flux = Flux.empty();
+        for (QueueItem item : itemsToReQueue)
+        {
+            try
+            {
+                Node shipFromNode = getNodeForBackupOrQueue(
+                    item.snapDfn.getResourceDefinition(),
+                    item.prevSnapDfn,
+                    item.snapDfn,
+                    item.remote,
+                    item.remote.getType(),
+                    item.preferredNode,
+                    responses,
+                    false
+                );
+                if (shipFromNode != null)
+                {
+                    flux = flux.concatWith(
+                        startShippingInTransaction(
+                            item.snapDfn,
+                            shipFromNode,
+                            item.remote,
+                            item.prevSnapDfn,
+                            item.remote instanceof S3Remote,
+                            responses
+                        )
+                    );
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                responses.addEntry(exc.getMessage(), ApiConsts.MASK_ERROR);
+            }
+        }
+        return flux.concatWith(Flux.just(responses));
+    }
+
+    public Flux<ApiCallRc> maxConcurrentShippingsChangedForCtrl()
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "BackupsPerNode changed on ctrl",
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
+            this::maxConcurrentShippingsChangedForCtrlInTransaction
+        );
+    }
+
+    public Flux<ApiCallRc> maxConcurrentShippingsChangedForNode(Node node)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "BackupsPerNode changed on node",
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
+            () -> maxConcurrentShippingsChangedForNodeInTransaction(node)
+        );
+    }
+
+    /**
+     * Starts new shipments or deletes queues depending on the changes to the prop
+     * "BackupShipping/MaxConcurrentBackupsPerNode".
+     * This method needs to be called in a scope with all the locks needed for starting a shipping, since in case
+     * a shipping needs to be started startShippingInTransaction will be called directly.
+     */
+    private Flux<ApiCallRc> maxConcurrentShippingsChangedForNodeInTransaction(Node node)
+        throws AccessDeniedException, InvalidNameException
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        PriorityProps prioProps = new PriorityProps(
+            node.getProps(peerAccCtx.get()),
+            sysCfgRepo.getCtrlConfForView(peerAccCtx.get())
+        );
+        String maxBackups = prioProps.getProp(
+            ApiConsts.KEY_MAX_CONCURRENT_BACKUPS_PER_NODE,
+            ApiConsts.NAMESPC_BACKUP_SHIPPING
+        );
+        if (maxBackups != null && !maxBackups.isEmpty() && Integer.parseInt(maxBackups) == 0)
+        {
+            flux = deleteNodeQueueAndReQueueSnapsIfNeeded(node);
+        }
+        else
+        {
+            if (getFreeShippingSlots(node) > 0)
+            {
+                flux = startMultipleQueuedShippings(
+                    node,
+                    new IteratorFromExceptionThrowingSupplier<>(
+                        () -> backupInfoMgr.getNextFromQueue(peerAccCtx.get(), node)
+                    )
+                );
+            }
+        }
+        return flux;
+    }
+
+    /**
+     * Starts new shipments or deletes queues depending on the changes to the prop
+     * "BackupShipping/MaxConcurrentBackupsPerNode".
+     * This method needs to be called in a scope with all the locks needed for starting a shipping, since in case
+     * a shipping needs to be started startShippingInTransaction will be called directly.
+     */
+    private Flux<ApiCallRc> maxConcurrentShippingsChangedForCtrlInTransaction() throws AccessDeniedException,
+        InvalidNameException
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        Collection<Node> nodes = nodeRepo.getMapForView(peerAccCtx.get()).values();
+        List<Node> nodesToClear = new ArrayList<>();
+        List<Node> nodesToStart = new ArrayList<>();
+        int toClearCt = 0;
+        for (Node node : nodes)
+        {
+            Props nodeProps = node.getProps(peerAccCtx.get());
+            PriorityProps prioProps = new PriorityProps(
+                nodeProps,
+                sysCfgRepo.getCtrlConfForView(peerAccCtx.get())
+            );
+            String maxBackups = prioProps.getProp(
+                ApiConsts.KEY_MAX_CONCURRENT_BACKUPS_PER_NODE,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            String nodeMaxBackups = nodeProps.getProp(
+                ApiConsts.KEY_MAX_CONCURRENT_BACKUPS_PER_NODE,
+                ApiConsts.NAMESPC_BACKUP_SHIPPING
+            );
+            if (maxBackups != null && !maxBackups.isEmpty() && Integer.parseInt(maxBackups) == 0)
+            {
+                toClearCt++;
+                if (nodeMaxBackups == null)
+                {
+                    // since prop is not set on node level, the value changed and therefore the node-queue needs
+                    // to be deleted
+                    nodesToClear.add(node);
+                }
+            }
+            else
+            {
+                if (nodeMaxBackups == null)
+                {
+                    // since prop is not set on node level, the value changed and therefore checking whether new
+                    // shippings can be started is necessary
+                    nodesToStart.add(node);
+                }
+            }
+        }
+        if (toClearCt == nodes.size())
+        {
+            // clear everything, no need to try and add to other queue, since all shipping should be stopped
+            backupInfoMgr.deleteAllQueues();
+        }
+        else
+        {
+            for (Node node : nodesToClear)
+            {
+                flux = flux.concatWith(deleteNodeQueueAndReQueueSnapsIfNeeded(node));
+            }
+            for (Node node : nodesToStart)
+            {
+                if (getFreeShippingSlots(node) > 0)
+                {
+                    flux = flux.concatWith(
+                        startMultipleQueuedShippings(
+                            node,
+                            new IteratorFromExceptionThrowingSupplier<>(
+                                () -> backupInfoMgr.getNextFromQueue(peerAccCtx.get(), node)
+                            )
+                        )
+                    );
+                }
+            }
+        }
+        return flux;
     }
 
     private @Nullable Node getNodeForBackupOrQueue(
@@ -1086,40 +1315,56 @@ public class CtrlBackupCreateApiCallHandler
                         );
                     }
                 }
-                Map<Node, ArrayList<QueueItem>> followUpSnaps = backupInfoMgr.getFollowUpSnaps(
+                /*
+                 * Only after a node finishes a shipment will other backups queued on that node get a chance to get
+                 * started.
+                 * This does not necessarily have to happen in order, in case the oldest queued backup cannot be started
+                 * right now, the next entry in the queue will be chosen instead.
+                 * Since this is the only spot where new shipments can be started, a problem arises when it comes to
+                 * incremental backups. Unless the previous backup has already finished shipping, an incremental backup
+                 * always needs to be queued. This might lead to non-empty queues on nodes that are currently not
+                 * shipping anything. As elaborated before, those queued backups would never be able to start on those
+                 * nodes since there is no shipment that could trigger the queue.
+                 * Therefore, getFollowUpSnaps is used to figure out if the backup that just finished shipping has an
+                 * incremental backup queued on any node, and if so, to start it, giving those nodes a chance to start a
+                 * shipment as well. Additionally this leads to a chance at filling newly added shipping slots up
+                 * sooner with the incremental backups getFollowUpSnaps provides.
+                 */
+                Map<QueueItem, TreeSet<Node>> followUpSnaps = backupInfoMgr.getFollowUpSnaps(
                     snapDfn,
                     remoteForSchedule
                 );
-                for (Entry<Node, ArrayList<QueueItem>> entry : followUpSnaps.entrySet())
+                for (Entry<QueueItem, TreeSet<Node>> entry : followUpSnaps.entrySet())
                 {
-                    Node currentNode = entry.getKey();
-                    if (getFreeShippingSlots(currentNode) > 0)
+                    for (Node currentNode : entry.getValue())
                     {
-                        Iterator<QueueItem> itemsIterator = entry.getValue().iterator();
-                        cleanupFlux = cleanupFlux.concatWith(
-                            startQueuedShippings(
-                                currentNode,
-                                () ->
+                        if (getFreeShippingSlots(currentNode) > 0)
+                        {
+                            Iterator<QueueItem> itemsIterator = Collections.singletonList(entry.getKey()).iterator();
+                            startQueuedShippings(currentNode, new IteratorFromExceptionThrowingSupplier<>(() ->
+                            {
+                                QueueItem item = null;
+                                if (itemsIterator.hasNext())
                                 {
-                                    QueueItem item = null;
-                                    if (itemsIterator.hasNext())
-                                    {
-                                        item = itemsIterator.next();
-                                        backupInfoMgr.deleteFromQueue(peerAccCtx.get(), item.snapDfn, item.remote);
-                                    }
-                                    return item;
+                                    item = itemsIterator.next();
+                                    backupInfoMgr.deleteFromQueue(peerAccCtx.get(), item.snapDfn, item.remote);
                                 }
-                            )
-                        );
+                                return item;
+                            }));
+                            break;
+                        }
                     }
                 }
+                // If the previous loop didn't fill all shipping slots of this node, start more shipments here
                 Node node = peerProvider.get().getNode();
                 if (getFreeShippingSlots(node) > 0)
                 {
                     cleanupFlux = cleanupFlux.concatWith(
-                        startQueuedShippings(
+                        startMultipleQueuedShippings(
                             node,
-                            () -> backupInfoMgr.getNextFromQueue(peerAccCtx.get(), node)
+                            new IteratorFromExceptionThrowingSupplier<>(
+                                () -> backupInfoMgr.getNextFromQueue(peerAccCtx.get(), node)
+                            )
                         )
                     );
                 }
@@ -1138,15 +1383,36 @@ public class CtrlBackupCreateApiCallHandler
         return cleanupFlux;
     }
 
+    /**
+     * Calls startQueuedShippings until the given node either has no free shipping slots left, or the supplier stops
+     * returning items.
+     */
+    private Flux<ApiCallRc> startMultipleQueuedShippings(
+        Node node,
+        IteratorFromExceptionThrowingSupplier<QueueItem, AccessDeniedException> nextItem
+    ) throws AccessDeniedException, InvalidNameException
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        while (getFreeShippingSlots(node) > 0 && nextItem.hasNext())
+        {
+            flux = flux.concatWith(startQueuedShippings(node, nextItem));
+        }
+        return flux;
+    }
+
+    /**
+     * Starts a shipping for the next QueueItem from the supplier or queues it again if it can't be started at the
+     * moment, until one shipping was started on the given node or the supplier stops returning items.
+     */
     private Flux<ApiCallRc> startQueuedShippings(
         Node node,
-        ExceptionThrowingSupplier<QueueItem, AccessDeniedException> nextItem
+        IteratorFromExceptionThrowingSupplier<QueueItem, AccessDeniedException> nextItem
     )
         throws AccessDeniedException,
         InvalidNameException
     {
         Flux<ApiCallRc> flux = Flux.empty();
-        QueueItem next = nextItem.supply();
+        QueueItem next = nextItem.next();
         while (next != null)
         {
             SnapshotDefinition prevSnapDfn = next.prevSnapDfn;
@@ -1224,7 +1490,7 @@ public class CtrlBackupCreateApiCallHandler
             }
             if (!node.equals(nodeForShipping))
             {
-                next = nextItem.supply();
+                next = nextItem.next();
             }
             else
             {

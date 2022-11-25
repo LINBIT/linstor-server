@@ -22,7 +22,7 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.events.EventNodeHandlerBridge;
-import com.linbit.linstor.core.BackupInfoManager;
+import com.linbit.linstor.backupshipping.BackupConsts;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
@@ -30,6 +30,7 @@ import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
@@ -151,7 +152,7 @@ public class CtrlNodeApiCallHandler
     private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
     private final Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProvider;
-    private final BackupInfoManager backupInfoMgr;
+    private final CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandler;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -186,7 +187,7 @@ public class CtrlNodeApiCallHandler
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
         EventNodeHandlerBridge eventNodeHandlerBridgeRef,
         Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProviderRef,
-        BackupInfoManager backupInfoMgrRef
+        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -220,7 +221,7 @@ public class CtrlNodeApiCallHandler
         ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
         ctrlNodeCrtApiCallHandlerProvider = ctrlNodeCrtApiCallHandlerProviderRef;
-        backupInfoMgr = backupInfoMgrRef;
+        ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
     }
 
     Node createNodeImpl(
@@ -1049,11 +1050,16 @@ public class CtrlNodeApiCallHandler
         }
 
         boolean hasKeyInDrbdOptions = false;
+        boolean maxConcurrentShippingsChanged = false;
         for (String key : overrideProps.keySet())
         {
             if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
             {
                 hasKeyInDrbdOptions = true;
+            }
+            else if (key.equals(BackupConsts.CONCURRENT_BACKUPS_KEY))
+            {
+                maxConcurrentShippingsChanged = true;
             }
         }
         for (String key : deletePropKeys)
@@ -1061,6 +1067,10 @@ public class CtrlNodeApiCallHandler
             if (key.startsWith(ApiConsts.NAMESPC_DRBD_OPTIONS))
             {
                 hasKeyInDrbdOptions = true;
+            }
+            else if (key.equals(BackupConsts.CONCURRENT_BACKUPS_KEY))
+            {
+                maxConcurrentShippingsChanged = true;
             }
         }
         hasKeyInDrbdOptions |= deleteNamespaces.contains(ApiConsts.NAMESPC_DRBD_OPTIONS);
@@ -1070,6 +1080,10 @@ public class CtrlNodeApiCallHandler
             {
                 retFlux = retFlux.concatWith(pair.objA);
             }
+        }
+        if (maxConcurrentShippingsChanged)
+        {
+            retFlux = retFlux.concatWith(ctrlBackupCrtApiCallHandler.maxConcurrentShippingsChangedForNode(node));
         }
 
         return retFlux;
@@ -1112,7 +1126,7 @@ public class CtrlNodeApiCallHandler
         return ctrlApiDataLoader.loadNode(nodeName, true).getPeer(peerAccCtx.get()).getStltConfig();
     }
 
-    public Flux<ApiCallRc> setGlobalConfig(SatelliteConfigApi config) throws AccessDeniedException, IOException
+    public Flux<ApiCallRc> setGlobalConfig(SatelliteConfigApi config) throws AccessDeniedException
     {
         ArrayList<Flux<ApiCallRc>> answers = new ArrayList<>();
 
@@ -1491,7 +1505,7 @@ public class CtrlNodeApiCallHandler
                     }
                     ctrlTransactionHelper.commit();
                     eventNodeHandlerBridge.triggerNodeEvicted(node.getApiData(apiCtx, null, null));
-                    backupInfoMgr.deleteFromQueue(node);
+                    flux = flux.concatWith(ctrlBackupCrtApiCallHandler.deleteNodeQueueAndReQueueSnapsIfNeeded(node));
                     flux = ctrlSatelliteUpdateCaller.updateSatellites(
                         node.getUuid(),
                         node.getName(),
@@ -1670,7 +1684,7 @@ public class CtrlNodeApiCallHandler
 
             ctrlTransactionHelper.commit();
             eventNodeHandlerBridge.triggerNodeEvacuate(nodeToEvacuate.getApiData(peerCtx, null, null));
-            backupInfoMgr.deleteFromQueue(nodeToEvacuate);
+            fluxList.add(ctrlBackupCrtApiCallHandler.deleteNodeQueueAndReQueueSnapsIfNeeded(nodeToEvacuate));
             flux = Flux.<ApiCallRc>just(apiCallRc)
                 .concatWith(Flux.merge(fluxList));
         }

@@ -8,9 +8,9 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.events.EventNodeHandlerBridge;
-import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -83,7 +83,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
     private final SpecialSatelliteProcessManager specTargetProcMgr;
     private final DynamicNumberPool specStltPortPool;
-    private final BackupInfoManager backupInfoMgr;
+    private final CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandler;
 
     @Inject
     public CtrlNodeDeleteApiCallHandler(
@@ -102,7 +102,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         EventNodeHandlerBridge eventNodeHandlerBridgeRef,
         SpecialSatelliteProcessManager specTargetProcMgrRef,
         @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltPortPoolRef,
-        BackupInfoManager backupInfoMgrRef
+        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -120,7 +120,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
         specTargetProcMgr = specTargetProcMgrRef;
         specStltPortPool = specStltPortPoolRef;
-        backupInfoMgr = backupInfoMgrRef;
+        ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
     }
 
     @Override
@@ -257,7 +257,9 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             boolean nodeDeleted = deleteNodeIfEmpty(node);
 
             ctrlTransactionHelper.commit();
-            backupInfoMgr.deleteFromQueue(node);
+            Flux<ApiCallRc> backupShippingFlux = ctrlBackupCrtApiCallHandler.deleteNodeQueueAndReQueueSnapsIfNeeded(
+                node
+            );
             if (nodeDeleted)
             {
 
@@ -291,6 +293,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                     .concatWith(Flux.merge(deleteSnapshotsPrivileged(node)))
                     .concatWith(Flux.merge(resourceDeletionResponses));
             }
+            responseFlux = responseFlux.concatWith(backupShippingFlux);
         }
 
         return responseFlux;
