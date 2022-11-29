@@ -42,6 +42,7 @@ import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.FreeSpaceTracker;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
@@ -119,6 +120,7 @@ import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheVlm;
 import com.linbit.linstor.proto.eventdata.EventConnStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState.InUse;
+import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.PeerState;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntAuthResponseOuterClass.MsgIntAuthResponse;
 import com.linbit.linstor.proto.requests.MsgDelErrorReportsOuterClass.MsgDelErrorReports;
@@ -151,8 +153,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -502,9 +506,27 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         try
         {
             EventRscStateOuterClass.EventRscState.Builder builder = EventRscStateOuterClass.EventRscState.newBuilder();
-            if (resourceState.getResourceReady() != null)
+            if (resourceState.hasAccessToUpToDateData() != null)
             {
-                builder.setReady(resourceState.getResourceReady());
+                builder.setReady(resourceState.hasAccessToUpToDateData());
+            }
+            if (resourceState.getPeersConnected() != null)
+            {
+                Map<Integer, PeerState> peersConnected = new HashMap<>();
+                for (Entry<VolumeNumber, Map<Integer, Boolean>> entry : resourceState.getPeersConnected().entrySet())
+                {
+                    EventRscStateOuterClass.PeerState.Builder peerStateBuilder = EventRscStateOuterClass.PeerState
+                        .newBuilder();
+                    for (Entry<Integer, Boolean> peerVlmConnectedState : entry.getValue().entrySet())
+                    {
+                        peerStateBuilder.putPeerNodeId(
+                            peerVlmConnectedState.getKey(),
+                            peerVlmConnectedState.getValue()
+                        );
+                    }
+                    peersConnected.put(entry.getKey().value, peerStateBuilder.build());
+                }
+                builder.putAllPeersConnected(peersConnected);
             }
             builder.setInUse(asProtoInUse(resourceState.getInUse()));
             if (resourceState.getUpToDate() != null)

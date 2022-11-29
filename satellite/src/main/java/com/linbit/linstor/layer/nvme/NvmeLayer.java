@@ -37,6 +37,7 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -324,6 +325,8 @@ public class NvmeLayer implements DeviceLayer
                 nvmeRscData,
                 new ResourceState(
                     true,
+                    // no (drbd) connections to peers
+                    Collections.emptyMap(),
                     null, // will be mapped to unknown
                     true,
                     null,

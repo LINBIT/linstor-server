@@ -14,6 +14,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.compat.CompatibilityUtils;
 import com.linbit.linstor.core.BackupInfoManager;
@@ -45,7 +46,6 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
-import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
@@ -69,6 +69,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
@@ -89,6 +90,7 @@ import javax.inject.Singleton;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -724,6 +726,36 @@ public class CtrlRscCrtApiHelper
         }
         else
         {
+            Map<Resource, Integer> onlineNodeIds = new HashMap<>();
+            try
+            {
+                for (Resource rsc : deployedResources)
+                {
+                    if (rsc.getNode().getPeer(apiCtx).getConnectionStatus().equals(ConnectionStatus.ONLINE))
+                    {
+                        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
+                            rsc.getLayerData(apiCtx),
+                            DeviceLayerKind.DRBD
+                        );
+                        if (drbdRscDataSet.size() > 1)
+                        {
+                            throw new ImplementationError("Unexpected drbdRscDataSet size: " + drbdRscDataSet.size());
+                        }
+                        if (!drbdRscDataSet.isEmpty())
+                        {
+                            onlineNodeIds.put(
+                                rsc,
+                                ((DrbdRscData<Resource>) drbdRscDataSet.iterator().next()).getNodeId().value
+                            );
+                        }
+                    }
+                }
+            }
+            catch (AccessDeniedException accDeniedExc)
+            {
+                throw new ImplementationError(accDeniedExc);
+            }
+
             List<Mono<ApiCallRc>> resourceReadyResponses = new ArrayList<>();
             for (Resource rsc : deployedResources)
             {
@@ -736,19 +768,24 @@ public class CtrlRscCrtApiHelper
                     NodeName nodeName = rsc.getNode().getName();
                     if (containsDrbdLayerData(rsc))
                     {
+                        Map<Resource, Integer> onlinePeerdNodeIds = new HashMap<>(onlineNodeIds);
+                        onlinePeerdNodeIds.remove(rsc);
+
                         resourceReadyResponses.add(
                             eventWaiter
                                 .waitForStream(
                                     resourceStateEvent.get(),
                                     // TODO if anything is allowed above DRBD, this resource-name must be adjusted
                                     ObjectIdentifier.resource(nodeName, rscName))
-                                .skipUntil(ResourceState::getResourceReady)
+                                .skipUntil(rscState -> rscState.isReady(onlinePeerdNodeIds.values()))
                                 .timeout(Duration.ofMillis(ExtCmd.dfltWaitTimeout))
                                 .next()
                                 .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
                                 .onErrorResume(
                                     PeerNotConnectedException.class, ignored -> Mono.just(
-                                        ApiCallRcImpl.singletonApiCallRc(ResponseUtils.makeNotConnectedWarning(nodeName))
+                                        ApiCallRcImpl.singletonApiCallRc(
+                                            ResponseUtils.makeNotConnectedWarning(nodeName)
+                                        )
                                     ))
                                 .onErrorResume(TimeoutException.class, te -> makeRdyTimeoutApiRc(nodeName))
                         );

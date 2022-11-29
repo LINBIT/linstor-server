@@ -42,6 +42,7 @@ import javax.inject.Provider;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -623,6 +624,8 @@ public class BCacheLayer implements DeviceLayer
                     layerDataRef,
                     new ResourceState(
                         isActive,
+                        // no (drbd) connections to peers
+                        Collections.emptyMap(),
                         null, // will be mapped to unknown
                         isActive,
                         null,

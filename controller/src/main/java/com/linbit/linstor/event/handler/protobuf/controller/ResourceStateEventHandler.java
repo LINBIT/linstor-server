@@ -1,6 +1,7 @@
 package com.linbit.linstor.event.handler.protobuf.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.rest.v1.events.EventDrbdHandlerBridge;
@@ -9,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -20,6 +22,8 @@ import com.linbit.linstor.event.handler.SatelliteStateHelper;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass;
+import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.EventRscState;
+import com.linbit.linstor.proto.eventdata.EventRscStateOuterClass.PeerState;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -36,8 +40,12 @@ import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 
@@ -133,6 +141,7 @@ public class ResourceStateEventHandler implements EventHandler
 
             resourceState = new ResourceState(
                 eventRscState.getReady(),
+                extractConnectedPeerStates(eventRscState),
                 inUse,
                 eventRscState.getUpToDate(),
                 promotionScore,
@@ -157,6 +166,26 @@ public class ResourceStateEventHandler implements EventHandler
         }
 
         resourceStateEvent.get().forwardEvent(eventIdentifier.getObjectIdentifier(), eventAction, resourceState);
+    }
+
+    private Map<VolumeNumber, Map<Integer, Boolean>> extractConnectedPeerStates(EventRscState eventRscStateRef)
+    {
+        Map<VolumeNumber, Map<Integer, Boolean>> vlmNrToConnectedPeerStates = new HashMap<>();
+        try
+        {
+            for (Entry<Integer, PeerState> entry : eventRscStateRef.getPeersConnectedMap().entrySet())
+            {
+                vlmNrToConnectedPeerStates.put(
+                    new VolumeNumber(entry.getKey()),
+                    new HashMap<>(entry.getValue().getPeerNodeIdMap())
+                );
+            }
+        }
+        catch (ValueOutOfRangeException exc)
+            {
+            throw new ImplementationError(exc);
+        }
+        return vlmNrToConnectedPeerStates;
     }
 
     private void processEvent(EventIdentifier eventIdentifierRef, Boolean inUseRef)

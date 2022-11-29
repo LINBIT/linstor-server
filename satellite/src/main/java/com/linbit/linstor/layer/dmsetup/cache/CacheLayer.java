@@ -39,6 +39,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -412,6 +413,8 @@ public class CacheLayer implements DeviceLayer
                     layerDataRef,
                     new ResourceState(
                         isActive,
+                        // no (drbd) connections to peers
+                        Collections.emptyMap(),
                         null, // will be mapped to unknown
                         isActive,
                         null,

@@ -8,13 +8,15 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ConnectionStateEvent;
-import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.ResourceState;
+import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -247,7 +249,8 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         Map<VolumeNumber, DrbdVolume> volumesMap = drbdResource.getVolumesMap();
 
         return new ResourceState(
-            !volumesMap.isEmpty() && volumesMap.values().stream().allMatch(this::volumeReady),
+            !volumesMap.isEmpty() && volumesMap.values().stream().allMatch(this::allVolumesAccessToUpToDateData),
+            connectedToPeers(volumesMap),
             drbdResource.getRole() == DrbdResource.Role.PRIMARY,
             volumesMap.values().stream().map(DrbdVolume::getDiskState)
                 .allMatch(DrbdVolume.DiskState.UP_TO_DATE::equals),
@@ -256,7 +259,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         );
     }
 
-    private boolean volumeReady(DrbdVolume volume)
+    private boolean allVolumesAccessToUpToDateData(DrbdVolume volume)
     {
         boolean accessUpToDateData;
 
@@ -270,10 +273,29 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
                 .anyMatch(drbdConnection -> peerVolumeUpToDate(drbdConnection, volume.getVolNr()));
         }
 
-        boolean connectionsEstablished = volume.getResource().getConnectionsMap().values().stream()
-            .allMatch(drbdConnection -> drbdConnection.getState() == DrbdConnection.State.CONNECTED);
+        return accessUpToDateData;
+    }
 
-        return accessUpToDateData && connectionsEstablished;
+    private Map<VolumeNumber, Map<Integer /* peer-node-id */, Boolean /* peer connected */>> connectedToPeers(
+        Map<VolumeNumber, DrbdVolume> volumesMapRef
+    )
+    {
+        HashMap<VolumeNumber, Map<Integer, Boolean>> ret = new HashMap<>();
+        for (DrbdVolume drbdVlm : volumesMapRef.values())
+        {
+            Map<Integer, Boolean> peers = ret.get(drbdVlm.volId);
+            if (peers == null)
+            {
+                peers = new HashMap<>();
+                ret.put(drbdVlm.volId, peers);
+            }
+            for (DrbdConnection drbdCon : drbdVlm.getResource().getConnectionsMap().values())
+            {
+                peers.put(drbdCon.peerNodeId, drbdCon.getState() == DrbdConnection.State.CONNECTED);
+            }
+        }
+
+        return ret;
     }
 
     private boolean peerVolumeUpToDate(DrbdConnection connection, VolumeNumber volumeNumber)

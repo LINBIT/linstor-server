@@ -121,6 +121,8 @@ public class StorageLayer implements DeviceLayer
                 layerDataRef,
                 new ResourceState(
                     isActive,
+                    // no (drbd) connections to peers
+                    Collections.emptyMap(),
                     null, // will be mapped to unknown
                     isActive,
                     null,

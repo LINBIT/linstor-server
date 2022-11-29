@@ -20,4 +20,13 @@ message EventRscState
 
     optional int32 promotion_score = 4;
     optional bool may_promote = 5;
+
+    // key is the volume number
+    map<int32, PeerState> peers_connected = 6;
+}
+
+message PeerState
+{
+    // key is peer_node_id, value is connected or not
+    map<int32, bool> peer_node_id = 1;
 }

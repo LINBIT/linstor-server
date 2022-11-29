@@ -35,6 +35,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -122,6 +123,8 @@ public class LuksLayer implements DeviceLayer
                 layerDataRef,
                 new ResourceState(
                     isActive,
+                    // no (drbd) connections to peers
+                    Collections.emptyMap(),
                     // we could check here if one of your LuksVlms is open - but this method is only called
                     // right after the creation, where nothing can be in use now.
                     false,

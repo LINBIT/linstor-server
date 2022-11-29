@@ -38,6 +38,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -342,6 +343,8 @@ public class OpenflexLayer implements DeviceLayer
                 ofRscData,
                 new ResourceState(
                     true,
+                    // no (drbd) connections to peers
+                    Collections.emptyMap(),
                     null, // will be mapped to unknown
                     ofRscData.isInUse(),
                     null,

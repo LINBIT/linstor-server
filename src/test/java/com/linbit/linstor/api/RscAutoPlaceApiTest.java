@@ -2,6 +2,7 @@ package com.linbit.linstor.api;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.ApiTestBase;
@@ -1803,7 +1804,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    public void doNotMixStorPoolsTesT() throws Exception
+    public void doNotMixStorPoolsTest() throws Exception
     {
         /*
          * Scenario: We already have a diskful resource in an LVM pool, the
@@ -2424,6 +2425,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             Mockito.when(mockedPeer.apiCall(anyString(), any()))
                 .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
             Mockito.when(mockedPeer.isOnline()).thenReturn(true);
+            Mockito.when(mockedPeer.getConnectionStatus()).thenReturn(ConnectionStatus.ONLINE);
             Mockito.when(mockedPeer.getExtToolsManager()).thenReturn(mockedExtToolsMgr);
 
             try
