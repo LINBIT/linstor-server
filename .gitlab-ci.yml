@@ -101,6 +101,7 @@ stages:
     - echo "LINSTOR-TEST BRANCH = $TEST_BRANCH"
     - export LINSTOR_VERSION=1.99.0.$CI_COMMIT_SHORT_SHA
     - export LINSTOR_TESTS_VERSION=$TEST_BRANCH
+    - export LINBIT_CI_JOB_ID=$CI_JOB_ID
     - ./linstor-test-bundle/virter/run-test.py $VARIANTS --torun $VMSHED_TORUN --repeats="$LINSTOR_TEST_REPEATS"
 
 check-openapi:
@@ -189,9 +190,6 @@ test-e2e-all:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
       when: manual
     - if: $CI_PIPELINE_SOURCE == 'schedule'
-  environment:
-    name: testing/e2e-all-$CI_COMMIT_REF_SLUG
-    url: https://log-viewer.apps.oc.at.linbit.com/projects/linstor%2Flinstor-server/jobs/$CI_JOB_ID
   tags:
     - libvirt
   before_script:
@@ -217,9 +215,6 @@ test-e2e:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
     - if: $CI_COMMIT_BRANCH == 'master'
-  environment:
-    name: testing/e2e-$CI_COMMIT_REF_SLUG
-    url: https://log-viewer.apps.oc.at.linbit.com/projects/linstor%2Flinstor-server/jobs/$CI_JOB_ID
   tags:
     - libvirt
   before_script:
