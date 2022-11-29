@@ -3,27 +3,10 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 
-import java.util.Comparator;
+import java.util.Objects;
 
-public class ResourceConnectionKey
+public class ResourceConnectionKey implements Comparable<ResourceConnectionKey>
 {
-    public static final Comparator<ResourceConnectionKey> COMPARATOR =
-        (key1st, key2nd) ->
-        {
-            int result = key1st.srcNodeName.compareTo(key2nd.srcNodeName);
-            if (result == 0)
-            {
-                result = key1st.tgtNodeName.compareTo(key2nd.tgtNodeName);
-                if (result == 0)
-                {
-                    ResourceName rsc1SrcName = key1st.getSource().getResourceDefinition().getName();
-                    ResourceName rsc2SrcName = key2nd.getSource().getResourceDefinition().getName();
-                    result = rsc1SrcName.compareTo(rsc2SrcName);
-                }
-            }
-            return result;
-        };
-
     private final Resource source;
     private final Resource target;
 
@@ -70,4 +53,45 @@ public class ResourceConnectionKey
     {
         return tgtNodeName;
     }
+
+    @Override
+    public int compareTo(ResourceConnectionKey other)
+    {
+        int result = srcNodeName.compareTo(other.srcNodeName);
+        if (result == 0)
+        {
+            result = tgtNodeName.compareTo(other.tgtNodeName);
+            if (result == 0)
+            {
+                ResourceName rsc1SrcName = source.getResourceDefinition().getName();
+                ResourceName rsc2SrcName = other.getSource().getResourceDefinition().getName();
+                result = rsc1SrcName.compareTo(rsc2SrcName);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(source, srcNodeName, target, tgtNodeName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof ResourceConnectionKey)
+        {
+            ResourceConnectionKey other = (ResourceConnectionKey) obj;
+            ret = Objects.equals(source, other.source) && Objects.equals(srcNodeName, other.srcNodeName) &&
+                Objects.equals(target, other.target) && Objects.equals(tgtNodeName, other.tgtNodeName);
+        }
+        return ret;
+    }
+
 }

@@ -37,6 +37,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -302,6 +303,31 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
     {
         checkDeleted();
         return name.compareTo(other.getName());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(name);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof ResourceGroup)
+        {
+            ResourceGroup other = (ResourceGroup) obj;
+            other.checkDeleted();
+            ret = Objects.equals(name, other.name);
+        }
+        return ret;
     }
 
     public ResourceGroupApi getApiData(AccessContext accCtxRef) throws AccessDeniedException

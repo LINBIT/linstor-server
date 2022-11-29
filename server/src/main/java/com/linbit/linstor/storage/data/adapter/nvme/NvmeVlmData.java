@@ -4,11 +4,11 @@ import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.storage.data.AbsVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.nvme.NvmeVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -21,12 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class NvmeVlmData<RSC extends AbsResource<RSC>>
-    extends BaseTransactionObject implements NvmeVlmObject<RSC>
+    extends AbsVlmData<RSC, NvmeRscData<RSC>>
+    implements NvmeVlmObject<RSC>
 {
-    // unmodifiable data, once initialized
-    private final AbsVolume<RSC> vlm;
-    private final NvmeRscData<RSC> rscData;
-
     // not persisted, serialized, ctrl and stlt
     private long allocatedSize = UNINITIALIZED_SIZE;
     private String devicePath;
@@ -48,9 +45,7 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(transMgrProvider);
-        vlm = vlmRef;
-        rscData = rscDataRef;
+        super(vlmRef, rscDataRef, transMgrProvider);
         exists = false;
         failed = false;
         states = transObjFactoryRef.createTransactionList(this, new ArrayList<>(), null);
@@ -185,21 +180,9 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public AbsVolume<RSC> getVolume()
-    {
-        return vlm;
-    }
-
-    @Override
     public @Nullable VlmDfnLayerObject getVlmDfnLayerObject()
     {
         return null;
-    }
-
-    @Override
-    public NvmeRscData<RSC> getRscLayerObject()
-    {
-        return rscData;
     }
 
     @Override

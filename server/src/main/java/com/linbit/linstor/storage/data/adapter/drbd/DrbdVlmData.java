@@ -7,12 +7,12 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.storage.data.AbsVlmData;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
@@ -25,11 +25,10 @@ import java.util.Arrays;
 import java.util.List;
 
 public class DrbdVlmData<RSC extends AbsResource<RSC>>
-    extends BaseTransactionObject implements DrbdVlmObject<RSC>
+    extends AbsVlmData<RSC, DrbdRscData<RSC>>
+    implements DrbdVlmObject<RSC>
 {
     // unmodifiable data, once initialized
-    private final AbsVolume<RSC> vlm;
-    private final DrbdRscData<RSC> rscData;
     private final DrbdVlmDfnData<RSC> vlmDfnData;
 
     // persisted, serialized, ctrl and stlt
@@ -62,10 +61,8 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(transMgrProvider);
+        super(vlmRef, rscDataRef, transMgrProvider);
 
-        vlm = vlmRef;
-        rscData = rscDataRef;
         vlmDfnData = vlmDfnDataRef;
 
         exists = false;
@@ -286,21 +283,9 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public AbsVolume<RSC> getVolume()
-    {
-        return vlm;
-    }
-
-    @Override
     public DrbdVlmDfnData<RSC> getVlmDfnLayerObject()
     {
         return vlmDfnData;
-    }
-
-    @Override
-    public DrbdRscData<RSC> getRscLayerObject()
-    {
-        return rscData;
     }
 
     @Override

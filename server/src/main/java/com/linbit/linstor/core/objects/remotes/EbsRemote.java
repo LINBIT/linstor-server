@@ -22,6 +22,7 @@ import javax.inject.Provider;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 public class EbsRemote extends BaseTransactionObject
@@ -307,23 +308,28 @@ public class EbsRemote extends BaseTransactionObject
         return cmp;
     }
 
+
     @Override
     public int hashCode()
     {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((remoteName == null) ? 0 : remoteName.hashCode());
-        return result;
+        checkDeleted();
+        return Objects.hash(remoteName);
     }
 
     @Override
     public boolean equals(Object obj)
     {
+        checkDeleted();
         boolean ret = false;
-        if (obj instanceof EbsRemote)
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof EbsRemote)
         {
             EbsRemote other = (EbsRemote) obj;
-            ret = remoteName.equals(other.remoteName);
+            other.checkDeleted();
+            ret = Objects.equals(remoteName, other.remoteName);
         }
         return ret;
     }

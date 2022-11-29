@@ -6,11 +6,11 @@ import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.data.AbsVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.nvme.OpenflexVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -22,12 +22,10 @@ import java.util.Arrays;
 import java.util.List;
 
 public class OpenflexVlmData<RSC extends AbsResource<RSC>>
-    extends BaseTransactionObject
+    extends AbsVlmData<RSC, OpenflexRscData<RSC>>
     implements OpenflexVlmObject<RSC>
 {
     // unmodifiable data, once initialized
-    private final AbsVolume<RSC> vlm;
-    private final OpenflexRscData<RSC> rscData;
     private final StorPool storPool;
 
     // not persisted, serialized, ctrl and stlt
@@ -53,9 +51,7 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
-        super(transMgrProviderRef);
-        vlm = vlmRef;
-        rscData = rscDataRef;
+        super(vlmRef, rscDataRef, transMgrProviderRef);
         storPool = storPoolRef;
 
         states = transObjFactoryRef.createTransactionList(this, new ArrayList<>(), null);
@@ -115,21 +111,9 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public AbsVolume<RSC> getVolume()
-    {
-        return vlm;
-    }
-
-    @Override
     public VlmDfnLayerObject getVlmDfnLayerObject()
     {
         return null;
-    }
-
-    @Override
-    public OpenflexRscData<RSC> getRscLayerObject()
-    {
-        return rscData;
     }
 
     @Override

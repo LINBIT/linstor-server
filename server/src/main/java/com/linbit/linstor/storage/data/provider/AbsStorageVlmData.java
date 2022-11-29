@@ -1,23 +1,20 @@
 package com.linbit.linstor.storage.data.provider;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.data.AbsVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
@@ -28,15 +25,12 @@ import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
-    extends BaseTransactionObject
-    implements VlmProviderObject<RSC>, Comparable<AbsStorageVlmData<RSC>>
+    extends AbsVlmData<RSC, StorageRscData<RSC>>
+    implements VlmProviderObject<RSC>
 {
     // unmodifiable data, once initialized
-    protected final AbsVolume<RSC> vlm;
-    protected final StorageRscData<RSC> rscData;
     protected final DeviceProviderKind providerKind;
 
     // persisted, serialized
@@ -70,9 +64,7 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(transMgrProvider);
-        vlm = Objects.requireNonNull(vlmRef);
-        rscData = Objects.requireNonNull(rscDataRef);
+        super(vlmRef, rscDataRef, transMgrProvider);
         providerKind = providerKindRef;
 
         exists = transObjFactory.createTransactionSimpleObject(this, false, null);
@@ -206,12 +198,6 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public AbsVolume<RSC> getVolume()
-    {
-        return vlm;
-    }
-
-    @Override
     public StorPool getStorPool()
     {
         return storPool.get();
@@ -242,12 +228,6 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         {
             storPoolRef.putSnapshotVolume(accCtx, (VlmProviderObject<Snapshot>) this);
         }
-    }
-
-    @Override
-    public AbsRscLayerObject<RSC> getRscLayerObject()
-    {
-        return rscData;
     }
 
     @Override
@@ -283,29 +263,6 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         return active;
     }
 
-    @Override
-    public int compareTo(AbsStorageVlmData<RSC> other)
-    {
-        int compareTo = 0;
-        AbsVolume<RSC> otherVolume = other.vlm;
-        if (vlm instanceof Volume && otherVolume instanceof Volume)
-        {
-            compareTo = ((Volume) vlm).compareTo((Volume) otherVolume);
-        }
-        else
-        if (vlm instanceof SnapshotVolume && otherVolume instanceof SnapshotVolume)
-        {
-            compareTo = ((SnapshotVolume) vlm).compareTo((SnapshotVolume) otherVolume);
-        }
-        else
-        {
-            throw new ImplementationError(
-                "Unknown (other volume) AbsVolume class: " + otherVolume.getClass() +
-                    " (local volume: " + vlm.getClass() + ")"
-            );
-        }
-        return compareTo;
-    }
 
     @Override
     public String toString()

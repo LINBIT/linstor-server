@@ -47,6 +47,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -682,6 +683,31 @@ public class ResourceDefinition extends BaseTransactionObject
     public int compareTo(ResourceDefinition otherRscDfn)
     {
         return getName().compareTo(otherRscDfn.getName());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(resourceName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof ResourceDefinition)
+        {
+            ResourceDefinition other = (ResourceDefinition) obj;
+            other.checkDeleted();
+            ret = Objects.equals(resourceName, other.resourceName);
+        }
+        return ret;
     }
 
     public enum Flags implements com.linbit.linstor.stateflags.Flags

@@ -21,6 +21,7 @@ import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 public class S3Remote extends BaseTransactionObject
@@ -111,6 +112,32 @@ public class S3Remote extends BaseTransactionObject
             cmp = remoteName.compareTo(remote.getName());
         }
         return cmp;
+    }
+
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(remoteName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof S3Remote)
+        {
+            S3Remote other = (S3Remote) obj;
+            other.checkDeleted();
+            ret = Objects.equals(remoteName, other.remoteName);
+        }
+        return ret;
     }
 
     @Override

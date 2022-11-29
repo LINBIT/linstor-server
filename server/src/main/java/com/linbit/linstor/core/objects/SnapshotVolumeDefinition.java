@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -279,6 +280,31 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
             eq = getVolumeNumber().compareTo(otherSnapshotVlmDfn.getVolumeNumber());
         }
         return eq;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(snapshotDfn, vlmNr);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof SnapshotVolumeDefinition)
+        {
+            SnapshotVolumeDefinition other = (SnapshotVolumeDefinition) obj;
+            other.checkDeleted();
+            ret = Objects.equals(snapshotDfn, other.snapshotDfn) && Objects.equals(vlmNr, other.vlmNr);
+        }
+        return ret;
     }
 
     public void delete(AccessContext accCtx)

@@ -21,6 +21,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Provider;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -217,6 +218,31 @@ public class VolumeConnection extends BaseTransactionObject
                 other.sourceVolume.getResourceDefinition().getName().value +
                 other.sourceVolume.getVolumeDefinition().getVolumeNumber()
         );
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(sourceVolume, targetVolume);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof VolumeConnection)
+        {
+            VolumeConnection other = (VolumeConnection) obj;
+            other.checkDeleted();
+            ret = Objects.equals(sourceVolume, other.sourceVolume) && Objects.equals(targetVolume, other.targetVolume);
+        }
+        return ret;
     }
 
     @Override

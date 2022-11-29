@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -204,4 +205,30 @@ public class StorPoolDefinition extends BaseTransactionObject
     {
         return getName().compareTo(otherStorPool.getName());
     }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(name);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof StorPoolDefinition)
+        {
+            StorPoolDefinition other = (StorPoolDefinition) obj;
+            other.checkDeleted();
+            ret = Objects.equals(name, other.name);
+        }
+        return ret;
+    }
+
 }

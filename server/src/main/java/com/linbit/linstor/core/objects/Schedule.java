@@ -26,6 +26,7 @@ import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import com.cronutils.model.Cron;
@@ -116,6 +117,31 @@ public class Schedule extends BaseTransactionObject
     public int compareTo(@Nonnull Schedule schedule)
     {
         return scheduleName.compareTo(schedule.getName());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(scheduleName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof Schedule)
+        {
+            Schedule other = (Schedule) obj;
+            other.checkDeleted();
+            ret = Objects.equals(scheduleName, other.scheduleName);
+        }
+        return ret;
     }
 
     public UUID getUuid()

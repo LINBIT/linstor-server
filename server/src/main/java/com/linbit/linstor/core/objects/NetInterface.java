@@ -93,13 +93,11 @@ public class NetInterface extends BaseTransactionObject
         );
     }
 
-
     @Override
     public UUID debugGetVolatileUuid()
     {
         return dbgInstanceId;
     }
-
 
     public UUID getUuid()
     {
@@ -107,20 +105,17 @@ public class NetInterface extends BaseTransactionObject
         return niUuid;
     }
 
-
     public NetInterfaceName getName()
     {
         checkDeleted();
         return niName;
     }
 
-
     public Node getNode()
     {
         checkDeleted();
         return niNode;
     }
-
 
     public LsIpAddress getAddress(AccessContext accCtx)
         throws AccessDeniedException
@@ -130,7 +125,6 @@ public class NetInterface extends BaseTransactionObject
         return niAddress.get();
     }
 
-
     public LsIpAddress setAddress(AccessContext accCtx, LsIpAddress newAddress)
         throws AccessDeniedException, DatabaseException
     {
@@ -138,7 +132,6 @@ public class NetInterface extends BaseTransactionObject
         niNode.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         return niAddress.set(newAddress);
     }
-
 
     public boolean isUsableAsStltConn(AccessContext accCtx)
         throws AccessDeniedException
@@ -148,7 +141,6 @@ public class NetInterface extends BaseTransactionObject
 
         return niStltConnEncrType.get() != null && niStltConnPort.get() != null;
     }
-
 
     public boolean setStltConn(AccessContext accCtx, TcpPortNumber port, EncryptionType encrType)
         throws AccessDeniedException, DatabaseException
@@ -162,7 +154,6 @@ public class NetInterface extends BaseTransactionObject
         return !Objects.equals(oldPort, port) || !Objects.equals(oldEncrType, encrType);
     }
 
-
     public TcpPortNumber getStltConnPort(AccessContext accCtx)
         throws AccessDeniedException
     {
@@ -172,7 +163,6 @@ public class NetInterface extends BaseTransactionObject
         return niStltConnPort.get();
     }
 
-
     public EncryptionType getStltConnEncryptionType(AccessContext accCtx)
         throws AccessDeniedException
     {
@@ -181,7 +171,6 @@ public class NetInterface extends BaseTransactionObject
 
         return niStltConnEncrType.get();
     }
-
 
     public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
@@ -205,7 +194,6 @@ public class NetInterface extends BaseTransactionObject
         }
     }
 
-
     public NetInterfaceApi getApiData(AccessContext accCtx) throws AccessDeniedException
     {
         Integer port = null;
@@ -226,7 +214,6 @@ public class NetInterface extends BaseTransactionObject
         );
     }
 
-
     @Override
     public int compareTo(NetInterface oRef)
     {
@@ -238,6 +225,30 @@ public class NetInterface extends BaseTransactionObject
         return cmp;
     }
 
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(niName, niNode);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof NetInterface)
+        {
+            NetInterface other = (NetInterface) obj;
+            other.checkDeleted();
+            ret = Objects.equals(niName, other.niName) && Objects.equals(niNode, other.niNode);
+        }
+        return ret;
+    }
 
     @Override
     public String toString()

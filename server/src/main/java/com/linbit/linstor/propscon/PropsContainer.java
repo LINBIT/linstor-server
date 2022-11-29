@@ -2374,4 +2374,26 @@ public class PropsContainer extends AbsTransactionObject implements Props
         sb.append("\n}\n");
         return sb.toString();
     }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(instanceName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof PropsContainer)
+        {
+            PropsContainer other = (PropsContainer) obj;
+            ret = Objects.equals(instanceName, other.instanceName);
+        }
+        return ret;
+    }
 }

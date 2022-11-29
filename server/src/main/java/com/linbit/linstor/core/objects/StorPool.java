@@ -393,6 +393,31 @@ public class StorPool extends BaseTransactionObject
         return eq;
     }
 
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(node, storPoolDef);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof StorPool)
+        {
+            StorPool other = (StorPool) obj;
+            other.checkDeleted();
+            ret = Objects.equals(node, other.node) && Objects.equals(storPoolDef, other.storPoolDef);
+        }
+        return ret;
+    }
+
     public StorPoolApi getApiData(
         Long totalSpaceRef,
         Long freeSpaceRef,

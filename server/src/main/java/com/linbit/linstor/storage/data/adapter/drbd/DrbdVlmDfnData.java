@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     extends BaseTransactionObject
@@ -161,5 +162,29 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     public VolumeDefinition getVolumeDefinition()
     {
         return vlmDfn;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(resourceNameSuffix, rscName, snapName, vlmNr);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof DrbdVlmDfnData)
+        {
+            DrbdVlmDfnData<?> other = (DrbdVlmDfnData<?>) obj;
+            ret = Objects.equals(resourceNameSuffix, other.resourceNameSuffix) &&
+                Objects.equals(rscName, other.rscName) && Objects.equals(snapName, other.snapName) &&
+                Objects.equals(vlmNr, other.vlmNr);
+        }
+        return ret;
     }
 }

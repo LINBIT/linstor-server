@@ -33,6 +33,7 @@ import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -308,7 +309,32 @@ public class ResourceConnection extends BaseTransactionObject
     @Override
     public int compareTo(ResourceConnection other)
     {
-        return ResourceConnectionKey.COMPARATOR.compare(connectionKey, other.getConnectionKey());
+        return connectionKey.compareTo(other.getConnectionKey());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(connectionKey);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof ResourceConnection)
+        {
+            ResourceConnection other = (ResourceConnection) obj;
+            other.checkDeleted();
+            ret = Objects.equals(connectionKey, other.connectionKey);
+        }
+        return ret;
     }
 
     @Override

@@ -291,4 +291,27 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
             down.get()
         );
     }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(resourceNameSuffix, rscName, snapName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof DrbdRscDfnData)
+        {
+            DrbdRscDfnData<?> other = (DrbdRscDfnData<?>) obj;
+            ret = Objects.equals(resourceNameSuffix, other.resourceNameSuffix) &&
+                Objects.equals(rscName, other.rscName) && Objects.equals(snapName, other.snapName);
+        }
+        return ret;
+    }
 }

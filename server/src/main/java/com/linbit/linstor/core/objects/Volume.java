@@ -355,6 +355,31 @@ public class Volume extends AbsVolume<Resource>
     }
 
     @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(vlmKey);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof Volume)
+        {
+            Volume other = (Volume) obj;
+            other.checkDeleted();
+            ret = Objects.equals(vlmKey, other.vlmKey);
+        }
+        return ret;
+    }
+
+    @Override
     public VolumeNumber getVolumeNumber()
     {
         return volumeDfn.getVolumeNumber();

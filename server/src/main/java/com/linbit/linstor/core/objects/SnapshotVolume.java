@@ -133,6 +133,32 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
         return cmp;
     }
 
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(snapshotVolumeDefinition, absRsc);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof SnapshotVolume)
+        {
+            SnapshotVolume other = (SnapshotVolume) obj;
+            other.checkDeleted();
+            ret = Objects.equals(snapshotVolumeDefinition, other.snapshotVolumeDefinition) &&
+                Objects.equals(absRsc, other.absRsc);
+        }
+        return ret;
+    }
+
     public SnapshotVolumeApi getApiData(AccessContext accCtx)
         throws AccessDeniedException
     {

@@ -518,6 +518,31 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         return eq;
     }
 
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(resourceDfn, snapshotName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof SnapshotDefinition)
+        {
+            SnapshotDefinition other = (SnapshotDefinition) obj;
+            other.checkDeleted();
+            ret = Objects.equals(resourceDfn, other.resourceDfn) && Objects.equals(snapshotName, other.snapshotName);
+        }
+        return ret;
+    }
+
     /**
      * Identifies a snapshot within a node.
      */

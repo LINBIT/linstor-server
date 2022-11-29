@@ -34,6 +34,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -277,6 +278,31 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
             }
         }
         return eq;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(snapshotDfn, node);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof Snapshot)
+        {
+            Snapshot other = (Snapshot) obj;
+            other.checkDeleted();
+            ret = Objects.equals(snapshotDfn, other.snapshotDfn) && Objects.equals(node, other.node);
+        }
+        return ret;
     }
 
     private void requireAccess(AccessContext accCtx, AccessType accessType) throws AccessDeniedException

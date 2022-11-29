@@ -44,6 +44,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -319,9 +320,7 @@ public class CtrlRscApiCallHandler
 
             if (rscDfn  != null)
             {
-                final Map<ResourceConnectionKey, ResourceConnectionApi> rscConMap = new TreeMap<>(
-                    ResourceConnectionKey.COMPARATOR
-                );
+                final Map<ResourceConnectionKey, ResourceConnectionApi> rscConMap = new TreeMap<>();
 
                 // Build an array of all resources of the resource definition
                 Resource[] rscList = new Resource[rscDfn.getResourceCount()];

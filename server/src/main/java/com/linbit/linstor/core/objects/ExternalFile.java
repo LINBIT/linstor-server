@@ -25,6 +25,7 @@ import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public class ExternalFile extends BaseTransactionObject
@@ -103,6 +104,31 @@ public class ExternalFile extends BaseTransactionObject
     public int compareTo(ExternalFile otherFile)
     {
         return fileName.compareTo(otherFile.getName());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(fileName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof ExternalFile)
+        {
+            ExternalFile other = (ExternalFile) obj;
+            other.checkDeleted();
+            ret = Objects.equals(fileName, other.fileName);
+        }
+        return ret;
     }
 
     public UUID getUuid()

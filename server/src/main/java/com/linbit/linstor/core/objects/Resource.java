@@ -414,6 +414,29 @@ public class Resource extends AbsResource<Resource>
     }
 
     @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(rscKey);
+    }
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof Resource)
+        {
+            Resource other = (Resource) obj;
+            other.checkDeleted();
+            ret = Objects.equals(rscKey, other.rscKey);
+        }
+        return ret;
+    }
+    @Override
     public String toString()
     {
         return "Node: '" + node.getName() + "', " +

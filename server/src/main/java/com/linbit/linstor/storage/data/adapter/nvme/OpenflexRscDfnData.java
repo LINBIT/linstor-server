@@ -19,6 +19,7 @@ import javax.inject.Provider;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 public class OpenflexRscDfnData<RSC extends AbsResource<RSC>>
     extends BaseTransactionObject
@@ -124,4 +125,26 @@ public class OpenflexRscDfnData<RSC extends AbsResource<RSC>>
         nqn.set(nqnRef);
     }
 
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(resourceNameSuffix, rscName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof OpenflexRscDfnData)
+        {
+            OpenflexRscDfnData<?> other = (OpenflexRscDfnData<?>) obj;
+            ret = Objects.equals(resourceNameSuffix, other.resourceNameSuffix) &&
+                Objects.equals(rscName, other.rscName);
+        }
+        return ret;
+    }
 }

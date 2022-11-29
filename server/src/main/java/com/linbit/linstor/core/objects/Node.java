@@ -87,7 +87,7 @@ public class Node extends BaseTransactionObject
     private final transient UUID dbgInstanceId;
 
     // Node name
-    private final NodeName clNodeName;
+    private final NodeName nodeName;
 
     // State flags
     private final StateFlags<Flags> flags;
@@ -186,7 +186,7 @@ public class Node extends BaseTransactionObject
         objId = uuidRef;
         dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
-        clNodeName = nameRef;
+        nodeName = nameRef;
         dbDriver = dbDriverRef;
 
         resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
@@ -242,6 +242,31 @@ public class Node extends BaseTransactionObject
         return this.getName().compareTo(node.getName());
     }
 
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(nodeName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof Node)
+        {
+            Node other = (Node) obj;
+            other.checkDeleted();
+            ret = Objects.equals(nodeName, other.nodeName);
+        }
+        return ret;
+    }
+
     public UUID getUuid()
     {
         checkDeleted();
@@ -251,7 +276,7 @@ public class Node extends BaseTransactionObject
     public NodeName getName()
     {
         checkDeleted();
-        return clNodeName;
+        return nodeName;
     }
 
     public Resource getResource(AccessContext accCtx, ResourceName resName)
@@ -480,7 +505,7 @@ public class Node extends BaseTransactionObject
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
-        final String nodeName = clNodeName.displayValue;
+        final String nodeNameStr = nodeName.displayValue;
         if (Node.Type.CONTROLLER.equals(nodeType.get()))
         {
             boolean isLocal = false;
@@ -497,11 +522,11 @@ public class Node extends BaseTransactionObject
                     }
                 }
             }
-            peer = new PeerController(nodeName, this, isLocal);
+            peer = new PeerController(nodeNameStr, this, isLocal);
         }
         else
         {
-            peer = new PeerOffline(nodeName, this);
+            peer = new PeerOffline(nodeNameStr, this);
         }
     }
 
@@ -849,7 +874,7 @@ public class Node extends BaseTransactionObject
     @Override
     public String toString()
     {
-        return "Node: '" + clNodeName + "'";
+        return "Node: '" + nodeName + "'";
     }
 
 

@@ -23,6 +23,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import javax.inject.Provider;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -271,6 +272,31 @@ public class NodeConnection extends BaseTransactionObject
     {
         return (sourceNode.getName().value + targetNode.getName().value).compareTo(
             other.sourceNode.getName().value + targetNode.getName().value);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(sourceNode, targetNode);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof NodeConnection)
+        {
+            NodeConnection other = (NodeConnection) obj;
+            other.checkDeleted();
+            ret = Objects.equals(sourceNode, other.sourceNode) && Objects.equals(targetNode, other.targetNode);
+        }
+        return ret;
     }
 
     @Override

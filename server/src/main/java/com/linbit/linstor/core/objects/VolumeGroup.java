@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public class VolumeGroup extends BaseTransactionObject
@@ -165,6 +166,31 @@ public class VolumeGroup extends BaseTransactionObject
             result = vlmNr.compareTo(other.getVolumeNumber());
         }
         return result;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(rscGrp, vlmNr);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof VolumeGroup)
+        {
+            VolumeGroup other = (VolumeGroup) obj;
+            other.checkDeleted();
+            ret = Objects.equals(rscGrp, other.rscGrp) && Objects.equals(vlmNr, other.vlmNr);
+        }
+        return ret;
     }
 
     public VolumeGroupApi getApiData(AccessContext accCtxRef) throws AccessDeniedException

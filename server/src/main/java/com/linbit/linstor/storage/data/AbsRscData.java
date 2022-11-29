@@ -1,4 +1,4 @@
-package com.linbit.linstor.storage;
+package com.linbit.linstor.storage.data;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.identifier.VolumeNumber;

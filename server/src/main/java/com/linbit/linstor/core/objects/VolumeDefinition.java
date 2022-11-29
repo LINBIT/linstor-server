@@ -445,6 +445,31 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
         return eq;
     }
 
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(resourceDfn, volumeNr);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof VolumeDefinition)
+        {
+            VolumeDefinition other = (VolumeDefinition) obj;
+            other.checkDeleted();
+            ret = Objects.equals(resourceDfn, other.resourceDfn) && Objects.equals(volumeNr, other.volumeNr);
+        }
+        return ret;
+    }
+
     /**
      * Sortable key for sets of volumes. Sorts by resource name, then volume number.
      */

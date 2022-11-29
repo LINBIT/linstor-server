@@ -8,12 +8,11 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.data.AbsVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.bcache.BCacheVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -24,15 +23,13 @@ import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 public class BCacheVlmData<RSC extends AbsResource<RSC>>
-    extends BaseTransactionObject implements BCacheVlmObject<RSC>
+    extends AbsVlmData<RSC, BCacheRscData<RSC>>
+    implements BCacheVlmObject<RSC>
 {
     // unmodifiable data, once initialized
-    private final AbsVolume<RSC> vlm;
-    private final AbsRscLayerObject<RSC> rscData;
     private final StorPool cacheStorPool;
 
     // persisted, serialized, ctrl and stlt
@@ -64,9 +61,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(transMgrProvider);
-        vlm = Objects.requireNonNull(vlmRef);
-        rscData = Objects.requireNonNull(rscDataRef);
+        super(vlmRef, rscDataRef, transMgrProvider);
         cacheStorPool = cacheStorPoolRef; // might be null for peer nodes
 
         unmodStates = Collections.emptyList();
@@ -125,21 +120,9 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public AbsVolume<RSC> getVolume()
-    {
-        return vlm;
-    }
-
-    @Override
     public VlmDfnLayerObject getVlmDfnLayerObject()
     {
         return null;
-    }
-
-    @Override
-    public AbsRscLayerObject<RSC> getRscLayerObject()
-    {
-        return rscData;
     }
 
     @Override

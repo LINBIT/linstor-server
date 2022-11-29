@@ -24,6 +24,7 @@ import javax.annotation.Nonnull;
 import javax.inject.Provider;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.UUID;
 
 public class KeyValueStore extends BaseTransactionObject implements Comparable<KeyValueStore>, ProtectedObject
@@ -74,6 +75,31 @@ public class KeyValueStore extends BaseTransactionObject implements Comparable<K
     public int compareTo(@Nonnull KeyValueStore keyValueStore)
     {
         return this.getName().compareTo(keyValueStore.getName());
+    }
+
+    @Override
+    public int hashCode()
+    {
+        checkDeleted();
+        return Objects.hash(kvsName);
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        checkDeleted();
+        boolean ret = false;
+        if (this == obj)
+        {
+            ret = true;
+        }
+        else if (obj instanceof KeyValueStore)
+        {
+            KeyValueStore other = (KeyValueStore) obj;
+            other.checkDeleted();
+            ret = Objects.equals(kvsName, other.kvsName);
+        }
+        return ret;
     }
 
     public UUID getUuid()
