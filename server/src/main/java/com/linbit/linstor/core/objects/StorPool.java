@@ -326,7 +326,7 @@ public class StorPool extends BaseTransactionObject
         {
             ret = deviceProviderKind.isSnapshotSupported();
         }
-        return supportsSnapshots.get();
+        return ret;
     }
 
     public boolean isSnapshotSupportedInitialized(AccessContext accCtx) throws AccessDeniedException

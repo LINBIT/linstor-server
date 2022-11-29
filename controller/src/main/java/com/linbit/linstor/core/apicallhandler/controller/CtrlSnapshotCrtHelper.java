@@ -317,18 +317,7 @@ public class CtrlSnapshotCrtHelper
                     for (StorPool storPool : storPoolMap.values())
                     {
                         DeviceProviderKind providerKind = storPool.getDeviceProviderKind();
-                        boolean supportsSnapshot;
-                        if (
-                            providerKind.equals(DeviceProviderKind.FILE) ||
-                                providerKind.equals(DeviceProviderKind.FILE_THIN)
-                        )
-                        {
-                            supportsSnapshot = storPool.isSnapshotSupported(apiCtx);
-                        }
-                        else
-                        {
-                            supportsSnapshot = providerKind.isSnapshotSupported();
-                        }
+                        boolean supportsSnapshot = storPool.isSnapshotSupported(apiCtx);
 
                         if (!supportsSnapshot)
                         {

@@ -277,15 +277,7 @@ class StltStorPoolApiCallHandler
             boolean isFileKind = kind.equals(DeviceProviderKind.FILE) || kind.equals(DeviceProviderKind.FILE_THIN);
             if (spaceInfo != null && (!kind.usesThinProvisioning() || isFileKind))
             {
-                boolean supportsSnapshots;
-                if (isFileKind)
-                {
-                    supportsSnapshots = storPool.isSnapshotSupported(apiCtx);
-                }
-                else
-                {
-                    supportsSnapshots = kind.isSnapshotSupported();
-                }
+                boolean supportsSnapshots = storPool.isSnapshotSupported(apiCtx);
 
                 Map<StorPool, SpaceInfo> tmpMap = new HashMap<>();
                 tmpMap.put(storPool, spaceInfo);
