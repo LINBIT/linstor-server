@@ -3,7 +3,6 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
-import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -106,6 +105,8 @@ import reactor.core.publisher.Mono;
 @Singleton
 public class CtrlRscCrtApiHelper
 {
+    private static final long DFLT_RSC_READY_WAIT_TIME_IN_MS = 15_000;
+
     private final AccessContext apiCtx;
     private final ErrorReporter errorReporter;
     private final CtrlPropsHelper ctrlPropsHelper;
@@ -778,7 +779,7 @@ public class CtrlRscCrtApiHelper
                                     // TODO if anything is allowed above DRBD, this resource-name must be adjusted
                                     ObjectIdentifier.resource(nodeName, rscName))
                                 .skipUntil(rscState -> rscState.isReady(onlinePeerdNodeIds.values()))
-                                .timeout(Duration.ofMillis(ExtCmd.dfltWaitTimeout))
+                                .timeout(Duration.ofMillis(DFLT_RSC_READY_WAIT_TIME_IN_MS))
                                 .next()
                                 .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
                                 .onErrorResume(
@@ -916,7 +917,9 @@ public class CtrlRscCrtApiHelper
             "Resource did not become ready on node '%s' within" +
             " reasonable time, check Satellite for errors.", nodeName);
         ApiCallRcImpl.ApiCallRcEntry apiEntry = ApiCallRcImpl.entryBuilder(
-                ApiConsts.MASK_ERROR | ApiConsts.MASK_RSC, msg)
+            ApiConsts.MASK_WARN | ApiConsts.MASK_RSC,
+            msg
+        )
             .putObjRef(ApiConsts.KEY_NODE, nodeName.displayValue)
             .build();
         return Mono.just(ApiCallRcImpl.singletonApiCallRc(apiEntry));
