@@ -39,6 +39,7 @@ import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.DeleteObjectsResult;
 import com.amazonaws.services.s3.model.DeleteObjectsResult.DeletedObject;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
@@ -222,7 +223,19 @@ public class BackupToS3
         {
             try
             {
-                s3.deleteObjects(deleteObjectsRequest);
+                DeleteObjectsResult deletedObjs = s3.deleteObjects(deleteObjectsRequest);
+                HashMap<String, Pair<String, String>> remoteCache;
+                synchronized (cache)
+                {
+                    remoteCache = lazyGet(cache, remote);
+                }
+                synchronized (remoteCache)
+                {
+                    for (DeletedObject deleted : deletedObjs.getDeletedObjects())
+                    {
+                        remoteCache.remove(deleted.getKey());
+                    }
+                }
             }
             catch (Exception exc)
             {
@@ -235,7 +248,7 @@ public class BackupToS3
                     remote.getName().displayValue
                 );
                 remote.setMultiDeleteSupported(accCtx, false);
-                deleteSingleObjects(keys, bucket, reqPays, s3);
+                deleteSingleObjects(keys, bucket, reqPays, s3, remote);
             }
         }
         else
@@ -244,28 +257,37 @@ public class BackupToS3
                 "Multi-object-delete not supported due to prior exception on remote %s. Using multiple single-object-deletes instead",
                 remote.getName().displayValue
             );
-            deleteSingleObjects(keys, bucket, reqPays, s3);
+            deleteSingleObjects(keys, bucket, reqPays, s3, remote);
         }
     }
 
-    private void deleteSingleObjects(Set<String> keys, String bucket, boolean reqPays, AmazonS3 s3)
+    private void deleteSingleObjects(Set<String> keys, String bucket, boolean reqPays, AmazonS3 s3, S3Remote remote)
     {
         List<DeletedObject> deleted = new ArrayList<>();
-        // could use threads, but doesn't seem to be slower this way
-        for (String key : keys)
+        HashMap<String, Pair<String, String>> remoteCache;
+        synchronized (cache)
         {
-            try
+            remoteCache = lazyGet(cache, remote);
+        }
+        // could use threads, but doesn't seem to be slower this way
+        synchronized (remoteCache)
+        {
+            for (String key : keys)
             {
-                DeleteObjectRequest req = new DeleteObjectRequest(bucket, key);
-                req.withRequesterPays(reqPays);
-                s3.deleteObject(req);
-                DeletedObject obj = new DeletedObject();
-                obj.setKey(key);
-                deleted.add(obj);
-            }
-            catch (Exception ignored)
-            {
-                // ignored, see below
+                try
+                {
+                    DeleteObjectRequest req = new DeleteObjectRequest(bucket, key);
+                    req.withRequesterPays(reqPays);
+                    s3.deleteObject(req);
+                    remoteCache.remove(key);
+                    DeletedObject obj = new DeletedObject();
+                    obj.setKey(key);
+                    deleted.add(obj);
+                }
+                catch (Exception ignored)
+                {
+                    // ignored, see below
+                }
             }
         }
         if (deleted.size() != keys.size())
@@ -352,6 +374,14 @@ public class BackupToS3
             mapRef.put(remote, ret);
         }
         return ret;
+    }
+
+    public void deleteRemoteFromCache(S3Remote remote)
+    {
+        synchronized (cache)
+        {
+            cache.remove(remote);
+        }
     }
 
     public InputStream getObject(String key, S3Remote remote, AccessContext accCtx, byte[] masterKey)

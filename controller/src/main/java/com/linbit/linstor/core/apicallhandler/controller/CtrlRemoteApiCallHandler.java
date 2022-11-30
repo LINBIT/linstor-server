@@ -1078,6 +1078,10 @@ public class CtrlRemoteApiCallHandler
             checkIfRemoteCanBeDeletedPriviledged(remote);
 
             enableFlags(remote, Remote.Flags.DELETE);
+            if (remote instanceof S3Remote)
+            {
+                backupHandler.deleteRemoteFromCache((S3Remote) remote);
+            }
             try
             {
                 scheduleService.removeTasks(remote, peerAccCtx.get());
