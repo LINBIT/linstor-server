@@ -1685,7 +1685,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             {
                 for (NodeName curNodeName : localDelNodeSet)
                 {
-                    nodesMap.remove(curNodeName);
+                    Node nodeToDelete = nodesMap.remove(curNodeName);
+                    nodeToDelete.delete(wrkCtx);
                 }
             }
             finally
