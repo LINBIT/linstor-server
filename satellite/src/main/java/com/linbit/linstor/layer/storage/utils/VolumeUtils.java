@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.utils;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -42,6 +43,47 @@ public class VolumeUtils
             for (VlmProviderObject<?> tmpVlmObj : backingVlms)
             {
                 if (!tmpVlmObj.getProviderKind().usesThinProvisioning())
+                {
+                    ret = false;
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Check if the volume is provided on ZFS.
+     *
+     * @param vlmObj
+     * @param partial if true just any of the storage devices needs to be zfs, otherwise all.
+     * @return
+     */
+    public static boolean isVolumeZfs(VlmProviderObject<?> vlmObj, boolean partial)
+    {
+        Set<VlmProviderObject<?>> backingVlms = getStorageDevices(vlmObj);
+
+        boolean ret;
+        if (partial)
+        {
+            ret = false;
+            for (VlmProviderObject<?> tmpVlmObj : backingVlms)
+            {
+                if (tmpVlmObj.getProviderKind() == DeviceProviderKind.ZFS ||
+                    tmpVlmObj.getProviderKind() == DeviceProviderKind.ZFS_THIN)
+                {
+                    ret = true;
+                    break;
+                }
+            }
+        }
+        else
+        {
+            ret = true;
+            for (VlmProviderObject<?> tmpVlmObj : backingVlms)
+            {
+                if (!(tmpVlmObj.getProviderKind() == DeviceProviderKind.ZFS ||
+                    tmpVlmObj.getProviderKind() == DeviceProviderKind.ZFS_THIN))
                 {
                     ret = false;
                     break;
