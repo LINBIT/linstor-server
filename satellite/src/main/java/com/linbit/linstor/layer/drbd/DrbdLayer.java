@@ -657,7 +657,7 @@ public class DrbdLayer implements DeviceLayer
                         {
                             StateFlags<Flags> otherRscFlags = otherRsc.getAbsResource().getStateFlags();
                             if (!otherRsc.equals(drbdRscData) && // skip local rsc
-                                !otherRsc.getAbsResource().isDrbdDiskless(workerCtx) && // skip remote diskless resources
+                                /* also call forget-peer for diskless-peers */
                                 otherRscFlags.isSomeSet(workerCtx, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE)
                             )
                             {
@@ -695,39 +695,53 @@ public class DrbdLayer implements DeviceLayer
                                 }
                                 catch (ExtCmdFailedException forgetPeerExc)
                                 {
-                                    /*
-                                     * let us check our current version of the events2 stream.
-                                     * if the peer we just tried to delete does not exist, we should be fine
-                                     */
-                                    try
+                                    if (!otherRsc.getAbsResource().isDrbdDiskless(workerCtx))
                                     {
-                                        DrbdResource drbdRscState = drbdState.getDrbdResource(
-                                            drbdRscData.getSuffixedResourceName()
-                                        );
-                                        if (drbdRscState != null)
+                                        /*
+                                         * let us check our current version of the events2 stream.
+                                         * if the peer we just tried to delete does not exist, we should be fine
+                                         */
+                                        try
                                         {
-                                            // we might not even have started this resource -> no peer we could forget
-                                            // about
-                                            DrbdConnection peerConnection = drbdRscState.getConnection(
-                                                otherRsc.getAbsResource().getNode().getName().displayValue
+                                            DrbdResource drbdRscState = drbdState.getDrbdResource(
+                                                drbdRscData.getSuffixedResourceName()
                                             );
-                                            if (peerConnection != null)
+                                            if (drbdRscState != null)
                                             {
-                                                throw delPeerExc != null ? delPeerExc : forgetPeerExc;
-                                            }
-                                            else
-                                            {
-                                                // ignore the exceptions, the peer does not seem to exist any more
-                                                errorReporter.logDebug(
-                                                    "del-peer and forget-peer failed, but we also failed to find " +
-                                                        "the specific peer. noop"
+                                                // we might not even have started this resource -> no peer we could
+                                                // forget about
+                                                DrbdConnection peerConnection = drbdRscState.getConnection(
+                                                    otherRsc.getAbsResource().getNode().getName().displayValue
                                                 );
+                                                if (peerConnection != null)
+                                                {
+                                                    throw delPeerExc != null ? delPeerExc : forgetPeerExc;
+                                                }
+                                                else
+                                                {
+                                                    // ignore the exceptions, the peer does not seem to exist any more
+                                                    errorReporter.logDebug(
+                                                        "del-peer and forget-peer failed, but we also failed to find " +
+                                                            "the specific peer. noop"
+                                                    );
+                                                }
                                             }
                                         }
+                                        catch (NoInitialStateException exc)
+                                        {
+                                            throw new ImplementationError(exc);
+                                        }
                                     }
-                                    catch (NoInitialStateException exc)
+                                    else
                                     {
-                                        throw new ImplementationError(exc);
+                                        /*
+                                         * instead of throwing any exception when the peer resource is diskless (which
+                                         * might happen with older DRBD versions), we simply log a warning to leave some
+                                         * trace of this behavior
+                                         */
+                                        errorReporter.logDebug(
+                                            "Ignoring error caused by forget-peer for a diskless resource"
+                                        );
                                     }
                                 }
                             }
