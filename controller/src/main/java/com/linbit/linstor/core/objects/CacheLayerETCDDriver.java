@@ -148,7 +148,6 @@ public class CacheLayerETCDDriver extends BaseEtcdDriver implements CacheLayerCt
                         cacheRscData,
                         cacheStorPool,
                         metaStorPool,
-                        this,
                         transObjFactory,
                         transMgrProvider
                     )

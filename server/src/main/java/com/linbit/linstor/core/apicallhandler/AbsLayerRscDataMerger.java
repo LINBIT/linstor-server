@@ -1097,7 +1097,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     protected abstract void createNvmeVlm(AbsVolume<RSC> vlm, NvmeRscData<RSC> nvmeRscData, VolumeNumber vlmNr)
         throws DatabaseException;
 
-    protected abstract void mergeNvmeVlm(NvmeVlmPojo vlmPojo, NvmeVlmData<RSC> nvmeVlmData);
+    protected abstract void mergeNvmeVlm(NvmeVlmPojo vlmPojo, NvmeVlmData<RSC> nvmeVlmData) throws DatabaseException;
 
     /*
      * Openflex layer methods

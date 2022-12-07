@@ -170,7 +170,6 @@ public class CacheLayerSQLDbDriver implements CacheLayerCtrlDatabaseDriver
                             cacheRscData,
                             cachedStorPool,
                             metaStorPool,
-                            this,
                             transObjFactory,
                             transMgrProvider
                         )

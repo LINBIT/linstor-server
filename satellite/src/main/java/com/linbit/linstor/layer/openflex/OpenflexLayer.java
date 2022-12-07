@@ -292,8 +292,15 @@ public class OpenflexLayer implements DeviceLayer
         // openflex only allows multiples of GiB
         long sizeRoundedUp = ALIGN_TO_NEXT_GB.ceiling(expectedSize);
 
-        vlm.setAllocatedSize(sizeRoundedUp);
-        vlm.setUsableSize(sizeRoundedUp);
+        try
+        {
+            vlm.setAllocatedSize(sizeRoundedUp);
+            vlm.setUsableSize(sizeRoundedUp);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ImplementationError(exc);
+        }
 
         changedStorPools.add(vlm.getStorPool());
 

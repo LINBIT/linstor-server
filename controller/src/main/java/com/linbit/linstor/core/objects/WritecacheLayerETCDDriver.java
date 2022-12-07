@@ -138,7 +138,6 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
                         vlm,
                         writecacheRscData,
                         cacheStorPool,
-                        this,
                         transObjFactory,
                         transMgrProvider
                     )

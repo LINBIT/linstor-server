@@ -3,9 +3,11 @@ package com.linbit.linstor.storage.data.adapter.nvme;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.AbsVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.nvme.NvmeVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -22,21 +24,16 @@ import java.util.List;
 
 public class NvmeVlmData<RSC extends AbsResource<RSC>>
     extends AbsVlmData<RSC, NvmeRscData<RSC>>
-    implements NvmeVlmObject<RSC>
+    implements NvmeVlmObject<RSC>, VlmLayerObject<RSC>
 {
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize = UNINITIALIZED_SIZE;
     private String devicePath;
-    private long usableSize = UNINITIALIZED_SIZE;
 
     // not persisted, not serialized, stlt only
-    private boolean exists;
-    private boolean failed;
     private boolean hasDisk;
     private final TransactionList<NvmeVlmData<RSC>, State> states;
     private Size sizeState;
     private String diskState;
-    private long originalSize = UNINITIALIZED_SIZE;
 
     public NvmeVlmData(
         AbsVolume<RSC> vlmRef,
@@ -45,9 +42,7 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(vlmRef, rscDataRef, transMgrProvider);
-        exists = false;
-        failed = false;
+        super(vlmRef, rscDataRef, transObjFactoryRef, transMgrProvider);
         states = transObjFactoryRef.createTransactionList(this, new ArrayList<>(), null);
         transObjs = Arrays.asList(
             vlm,
@@ -59,23 +54,23 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     @Override
     public boolean exists()
     {
-        return exists;
+        return exists.get();
     }
 
-    public void setExists(boolean existsRef)
+    public void setExists(boolean existsRef) throws DatabaseException
     {
-        exists = existsRef;
+        exists.set(existsRef);
     }
 
     @Override
     public boolean hasFailed()
     {
-        return failed;
+        return failed.get();
     }
 
-    public void setFailed(boolean failedRef)
+    public void setFailed(boolean failedRef) throws DatabaseException
     {
-        failed = failedRef;
+        failed.set(failedRef);
     }
 
     @Override
@@ -93,27 +88,27 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     @Override
     public long getAllocatedSize()
     {
-        return allocatedSize;
+        return allocatedSize.get();
     }
 
     @Override
-    public void setAllocatedSize(long allocatedSizeRef)
+    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
     {
-        allocatedSize = allocatedSizeRef;
+        allocatedSize.set(allocatedSizeRef);
     }
 
     @Override
     public long getUsableSize()
     {
-        return usableSize;
+        return usableSize.get();
     }
 
     @Override
-    public void setUsableSize(long usableSizeRef)
+    public void setUsableSize(long usableSizeRef) throws DatabaseException
     {
-        if (usableSizeRef != usableSize)
+        if (usableSizeRef != usableSize.get())
         {
-            if (usableSize < usableSizeRef)
+            if (usableSize.get() < usableSizeRef)
             {
                 sizeState = Size.TOO_SMALL;
             }
@@ -126,7 +121,7 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
         {
             sizeState = Size.AS_EXPECTED;
         }
-        usableSize = usableSizeRef;
+        usableSize.set(usableSizeRef);
     }
 
     @Override
@@ -198,8 +193,8 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
             getVlmNr().getValue(),
             devicePath,
             getBackingDevice(),
-            allocatedSize,
-            usableSize,
+            allocatedSize.get(),
+            usableSize.get(),
             diskState
         );
     }

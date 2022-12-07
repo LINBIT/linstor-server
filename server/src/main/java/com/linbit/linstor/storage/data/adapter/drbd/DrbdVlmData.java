@@ -9,6 +9,7 @@ import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.AbsVlmData;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdVlmObject;
@@ -26,7 +27,7 @@ import java.util.List;
 
 public class DrbdVlmData<RSC extends AbsResource<RSC>>
     extends AbsVlmData<RSC, DrbdRscData<RSC>>
-    implements DrbdVlmObject<RSC>
+    implements DrbdVlmObject<RSC>, VlmLayerObject<RSC>
 {
     // unmodifiable data, once initialized
     private final DrbdVlmDfnData<RSC> vlmDfnData;
@@ -35,13 +36,9 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     private final TransactionSimpleObject<DrbdVlmData<?>, StorPool> externalMetaDataStorPool;
 
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize = UNINITIALIZED_SIZE;
     private String devicePath;
-    private long usableSize = UNINITIALIZED_SIZE;
 
     // not persisted, not serialized, stlt only
-    private boolean exists;
-    private boolean failed;
     private boolean hasMetaData;
     private boolean checkMetaData;
     private boolean isMetaDataNew;
@@ -49,7 +46,6 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     private final TransactionList<DrbdVlmData<RSC>, State> states;
     private Size sizeState;
     private String diskState;
-    private long originalSize = UNINITIALIZED_SIZE;
 
     public DrbdVlmData(
         AbsVolume<RSC> vlmRef,
@@ -61,12 +57,9 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(vlmRef, rscDataRef, transMgrProvider);
+        super(vlmRef, rscDataRef, transObjFactoryRef, transMgrProvider);
 
         vlmDfnData = vlmDfnDataRef;
-
-        exists = false;
-        failed = false;
 
         checkMetaData = true;
         isMetaDataNew = false;
@@ -90,23 +83,23 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     @Override
     public boolean exists()
     {
-        return exists;
+        return exists.get();
     }
 
-    public void setExists(boolean existsRef)
+    public void setExists(boolean existsRef) throws DatabaseException
     {
-        exists = existsRef;
+        exists.set(existsRef);
     }
 
     @Override
     public boolean hasFailed()
     {
-        return failed;
+        return failed.get();
     }
 
-    public void setFailed(boolean failedRef)
+    public void setFailed(boolean failedRef) throws DatabaseException
     {
-        failed = failedRef;
+        failed.set(failedRef);
     }
 
     @Override
@@ -124,25 +117,25 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     @Override
     public long getAllocatedSize()
     {
-        return allocatedSize;
+        return allocatedSize.get();
     }
 
     @Override
-    public void setAllocatedSize(long allocatedSizeRef)
+    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
     {
-        allocatedSize = allocatedSizeRef;
+        allocatedSize.set(allocatedSizeRef);
     }
 
     @Override
     public long getUsableSize()
     {
-        return usableSize;
+        return usableSize.get();
     }
 
     @Override
-    public void setUsableSize(long usableSizeRef)
+    public void setUsableSize(long usableSizeRef) throws DatabaseException
     {
-        usableSize = usableSizeRef;
+        usableSize.set(usableSizeRef);
     }
 
     @Override
@@ -308,8 +301,8 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
             getBackingDevice(),
             externalMetaDataStorPoolName,
             getMetaDiskPath(),
-            allocatedSize,
-            usableSize,
+            allocatedSize.get(),
+            usableSize.get(),
             diskState
         );
     }

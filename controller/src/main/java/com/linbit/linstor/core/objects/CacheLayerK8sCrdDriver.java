@@ -180,7 +180,6 @@ public class CacheLayerK8sCrdDriver implements CacheLayerCtrlDatabaseDriver
                         cacheRscData,
                         cacheStorPool,
                         metaStorPool,
-                        this,
                         transObjFactory,
                         transMgrProvider
                     )

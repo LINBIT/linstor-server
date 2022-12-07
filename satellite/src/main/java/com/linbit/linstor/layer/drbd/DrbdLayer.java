@@ -487,7 +487,8 @@ public class DrbdLayer implements DeviceLayer
      * @throws DatabaseException
      * @throws AccessDeniedException
      */
-    private void deleteDrbd(DrbdRscData<Resource> drbdRscData) throws StorageException, AccessDeniedException
+    private void deleteDrbd(DrbdRscData<Resource> drbdRscData) throws StorageException, AccessDeniedException,
+        DatabaseException
     {
         String suffixedRscName = drbdRscData.getSuffixedResourceName();
         try
@@ -919,7 +920,7 @@ public class DrbdLayer implements DeviceLayer
     }
 
     private List<DrbdVlmData<Resource>> detachVolumesIfNecessary(DrbdRscData<Resource> drbdRscData)
-        throws AccessDeniedException, StorageException
+        throws AccessDeniedException, StorageException, DatabaseException
     {
         List<DrbdVlmData<Resource>> checkMetaData = new ArrayList<>();
         Resource rsc = drbdRscData.getAbsResource();
@@ -1277,7 +1278,7 @@ public class DrbdLayer implements DeviceLayer
     }
 
     private void updateResourceToCurrentDrbdState(DrbdRscData<Resource> drbdRscData)
-        throws AccessDeniedException, StorageException
+        throws AccessDeniedException, StorageException, DatabaseException
     {
         try
         {

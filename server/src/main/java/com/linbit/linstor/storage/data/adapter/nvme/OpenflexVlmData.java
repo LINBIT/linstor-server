@@ -4,10 +4,12 @@ import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.nvme.OpenflexVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -23,25 +25,20 @@ import java.util.List;
 
 public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     extends AbsVlmData<RSC, OpenflexRscData<RSC>>
-    implements OpenflexVlmObject<RSC>
+    implements OpenflexVlmObject<RSC>, VlmLayerObject<RSC>
 {
     // unmodifiable data, once initialized
     private final StorPool storPool;
 
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize = UNINITIALIZED_SIZE;
     private String devicePath;
-    private long usableSize = UNINITIALIZED_SIZE;
 
     // not persisted, not serialized, stlt only
-    private boolean exists;
-    private boolean failed;
     private final TransactionList<OpenflexVlmData<RSC>, State> states;
     private Size sizeState;
     private String diskState;
     private String ofId;
     protected transient long expectedSize;
-    private long originalSize = UNINITIALIZED_SIZE;
 
     public OpenflexVlmData(
         AbsVolume<RSC> vlmRef,
@@ -51,7 +48,7 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
-        super(vlmRef, rscDataRef, transMgrProviderRef);
+        super(vlmRef, rscDataRef, transObjFactoryRef, transMgrProviderRef);
         storPool = storPoolRef;
 
         states = transObjFactoryRef.createTransactionList(this, new ArrayList<>(), null);
@@ -69,21 +66,21 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
         return storPool;
     }
 
-    public void setExists(boolean existsRef)
+    public void setExists(boolean existsRef) throws DatabaseException
     {
-        exists = existsRef;
+        exists.set(existsRef);
     }
 
     @Override
     public boolean exists()
     {
-        return exists;
+        return exists.get();
     }
 
     @Override
     public boolean hasFailed()
     {
-        return failed;
+        return failed.get();
     }
 
     @Override
@@ -101,13 +98,13 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     @Override
     public long getAllocatedSize()
     {
-        return allocatedSize;
+        return allocatedSize.get();
     }
 
     @Override
-    public void setAllocatedSize(long allocatedSizeRef)
+    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
     {
-        allocatedSize = allocatedSizeRef;
+        allocatedSize.set(allocatedSizeRef);
     }
 
     @Override
@@ -117,11 +114,11 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public void setUsableSize(long usableSizeRef)
+    public void setUsableSize(long usableSizeRef) throws DatabaseException
     {
-        if (usableSizeRef != usableSize)
+        if (usableSizeRef != usableSize.get())
         {
-            if (usableSize < usableSizeRef)
+            if (usableSize.get() < usableSizeRef)
             {
                 sizeState = Size.TOO_SMALL;
             }
@@ -134,13 +131,13 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
         {
             sizeState = Size.AS_EXPECTED;
         }
-        usableSize = usableSizeRef;
+        usableSize.set(usableSizeRef);
     }
 
     @Override
     public long getUsableSize()
     {
-        return usableSize;
+        return usableSize.get();
     }
 
     @Override
@@ -213,8 +210,8 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
             getVlmNr().value,
             devicePath,
             ofId,
-            allocatedSize,
-            usableSize,
+            allocatedSize.get(),
+            usableSize.get(),
             diskState,
             storPool.getApiData(null, null, accCtxRef, null, null)
         );

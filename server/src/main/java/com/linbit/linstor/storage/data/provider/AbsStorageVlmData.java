@@ -28,7 +28,6 @@ import java.util.List;
 
 public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     extends AbsVlmData<RSC, StorageRscData<RSC>>
-    implements VlmProviderObject<RSC>
 {
     // unmodifiable data, once initialized
     protected final DeviceProviderKind providerKind;
@@ -39,17 +38,12 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     // not persisted, serialized
     // TODO: introduce flags instead of exists, failed, sizeStates, states
     protected final TransactionList<AbsStorageVlmData<RSC>, ? extends State> states;
-    protected final TransactionSimpleObject<AbsStorageVlmData<RSC>, Boolean> exists;
-    protected final TransactionSimpleObject<AbsStorageVlmData<RSC>, Boolean> failed;
-    protected final TransactionSimpleObject<AbsStorageVlmData<RSC>, Long> allocatedSize;
-    protected final TransactionSimpleObject<AbsStorageVlmData<RSC>, Long> usableSize;
     protected final TransactionSimpleObject<AbsStorageVlmData<RSC>, String> devicePath;
     protected final TransactionSimpleObject<AbsStorageVlmData<RSC>, Size> sizeState;
 
     // not persisted, not serialized, stlt only
     protected transient String identifier;
     protected transient long expectedSize;
-    protected transient long originalSize;
     protected transient boolean active;
     protected transient Long snapshotAllocatedSize = null;
     protected transient Long snapshotUsableSize = null;
@@ -64,13 +58,9 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(vlmRef, rscDataRef, transMgrProvider);
+        super(vlmRef, rscDataRef, transObjFactory, transMgrProvider);
         providerKind = providerKindRef;
 
-        exists = transObjFactory.createTransactionSimpleObject(this, false, null);
-        failed = transObjFactory.createTransactionSimpleObject(this, false, null);
-        allocatedSize = transObjFactory.createTransactionSimpleObject(this, UNINITIALIZED_SIZE, null);
-        usableSize = transObjFactory.createTransactionSimpleObject(this, UNINITIALIZED_SIZE, null);
         devicePath = transObjFactory.createTransactionSimpleObject(this, null, null);
         sizeState = transObjFactory.createTransactionSimpleObject(this, null, null);
 

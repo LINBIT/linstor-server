@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.types.LsIpAddress;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.layer.storage.spdk.AbsSpdkProvider;
 import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
@@ -43,6 +44,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
+import com.linbit.utils.ExceptionThrowingBiConsumer;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_PREF_NIC;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
@@ -255,7 +257,7 @@ public class NvmeUtils
         {
             throw new StorageException("Failed to configure NVMe target!", exc);
         }
-        catch (InvalidNameException | AccessDeniedException | InvalidKeyException exc)
+        catch (InvalidNameException | AccessDeniedException | InvalidKeyException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -340,7 +342,7 @@ public class NvmeUtils
         {
             throw new StorageException("Failed to delete NVMe target!", exc);
         }
-        catch (InvalidNameException | AccessDeniedException | InvalidKeyException exc)
+        catch (InvalidNameException | AccessDeniedException | InvalidKeyException | DatabaseException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -517,7 +519,7 @@ public class NvmeUtils
         RSC_DATA rscData,
         String subsystemName,
         BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
-        BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
+            ExceptionThrowingBiConsumer<VLM_DATA, Boolean, DatabaseException> setExistsVlmFunc,
         Function<VLM_DATA, String> getDevPathVlmFunc
     )
         throws StorageException
@@ -541,7 +543,7 @@ public class NvmeUtils
 
             setDeepExists(rscData, setExistsRscFunc, setExistsVlmFunc, false);
         }
-        catch (IOException | ChildProcessTimeoutException exc)
+        catch (IOException | ChildProcessTimeoutException | DatabaseException exc)
         {
             throw new StorageException("Failed to disconnect from NVMe target!", exc);
         }
@@ -652,7 +654,7 @@ public class NvmeUtils
         RSC_DATA rscData,
         String subsystemName,
         BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
-        BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
+            ExceptionThrowingBiConsumer<VLM_DATA, Boolean, DatabaseException> setExistsVlmFunc,
         BiConsumer<VLM_DATA, String> setDevPathVlmFunc
     )
         throws StorageException
@@ -741,7 +743,7 @@ public class NvmeUtils
                 }
             }
         }
-        catch (IOException | ChildProcessTimeoutException | InterruptedException exc)
+        catch (IOException | ChildProcessTimeoutException | InterruptedException | DatabaseException exc)
         {
             throw new StorageException("Failed to set NVMe device path!", exc);
         }
@@ -753,9 +755,9 @@ public class NvmeUtils
     void setDeepExists(
         RSC_DATA rscData,
         BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
-        BiConsumer<VLM_DATA, Boolean> setExistsVlmFunc,
+            ExceptionThrowingBiConsumer<VLM_DATA, Boolean, DatabaseException> setExistsVlmFunc,
         boolean exists
-    )
+        ) throws DatabaseException
     {
         setExistsRscFunc.accept(rscData, exists);
         for (VLM_DATA vlmData : rscData.getVlmLayerObjects().values())
@@ -770,8 +772,10 @@ public class NvmeUtils
      *
      * @param nvmeRscDataRef
      * @param existsRef
+     *
+     * @throws DatabaseException
      */
-    private void setExistsDeep(NvmeRscData<Resource> nvmeRscDataRef, boolean existsRef)
+    private void setExistsDeep(NvmeRscData<Resource> nvmeRscDataRef, boolean existsRef) throws DatabaseException
     {
         nvmeRscDataRef.setExists(existsRef);
         for (NvmeVlmData<Resource> nvmeVlmData : nvmeRscDataRef.getVlmLayerObjects().values())
@@ -783,10 +787,13 @@ public class NvmeUtils
     /**
      * Creates a new directory for the given file path, sets the appropriate backing device and enables the namespace
      *
-     * @param nvmeVlmData nvmeVlm object containing information for path to the new namespace
+     * @param nvmeVlmData
+     *     nvmeVlm object containing information for path to the new namespace
+     *
+     * @throws DatabaseException
      */
     public void createNamespace(NvmeVlmData<Resource> nvmeVlmData, String subsystemDirectory)
-        throws IOException
+        throws IOException, DatabaseException
     {
         final Path namespacePath = Paths.get(
             subsystemDirectory + "/namespaces/" + (nvmeVlmData.getVlmNr().getValue() + 1)
@@ -806,11 +813,14 @@ public class NvmeUtils
     /**
      * Disables the namespace at the given file path and deletes the directory
      *
-     * @param nvmeVlmData nvmeVlm object containing information for path to the new namespace
+     * @param nvmeVlmData
+     *     nvmeVlm object containing information for path to the new namespace
      * @param subsystemDirectory
+     *
+     * @throws DatabaseException
      */
     public void deleteNamespace(NvmeVlmData<Resource> nvmeVlmData, String subsystemDirectory)
-        throws IOException, ChildProcessTimeoutException, StorageException
+        throws IOException, ChildProcessTimeoutException, StorageException, DatabaseException
     {
         final int namespaceNr = nvmeVlmData.getVlmNr().getValue() + 1;
         final Path namespacePath = Paths.get(subsystemDirectory + "/namespaces/" + namespaceNr);
@@ -832,13 +842,16 @@ public class NvmeUtils
     /**
      * Creates a new namespace in a SPCK NVMe subsystem
      *
-     * @param nvmeVlmData nvmeVlm object containing information for path to the new namespace
-     * @param subsystemName String containing NVMe subsystem name
+     * @param nvmeVlmData
+     *     nvmeVlm object containing information for path to the new namespace
+     * @param subsystemName
+     *     String containing NVMe subsystem name
      *
      * @throws AccessDeniedException
+     * @throws DatabaseException
      */
     public void createSpdkNamespace(NvmeVlmData<Resource> nvmeVlmData, String subsystemName)
-        throws IOException, StorageException, ChildProcessTimeoutException, AccessDeniedException
+        throws IOException, StorageException, ChildProcessTimeoutException, AccessDeniedException, DatabaseException
     {
         SpdkCommands<?> spdkCommands = getSpdkCommands(nvmeVlmData.getRscLayerObject());
         if (!SpdkUtils.checkNamespaceExists(
@@ -869,13 +882,15 @@ public class NvmeUtils
     /**
      * Disables the namespace in a SPDK NVMe subsystem
      *
-     * @param nvmeVlmData nvmeVlm object containing information for path to the new namespace
+     * @param nvmeVlmData
+     *     nvmeVlm object containing information for path to the new namespace
      * @param subsystemName
      *
      * @throws AccessDeniedException
+     * @throws DatabaseException
      */
     public void deleteSpdkNamespace(NvmeVlmData<Resource> nvmeVlmData, String subsystemName)
-        throws IOException, ChildProcessTimeoutException, StorageException, AccessDeniedException
+        throws IOException, ChildProcessTimeoutException, StorageException, AccessDeniedException, DatabaseException
     {
         final int namespaceNr = nvmeVlmData.getVlmNr().getValue() + 1;
 

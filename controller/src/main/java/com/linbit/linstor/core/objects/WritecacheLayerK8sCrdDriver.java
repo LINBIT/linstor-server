@@ -169,7 +169,6 @@ public class WritecacheLayerK8sCrdDriver implements WritecacheLayerCtrlDatabaseD
                         vlm,
                         writecacheRscData,
                         cacheStorPool,
-                        this,
                         transObjFactory,
                         transMgrProvider
                     )

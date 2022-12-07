@@ -465,7 +465,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
-    protected void mergeNvmeVlm(NvmeVlmPojo vlmPojoRef, NvmeVlmData<Resource> nvmeVlmDataRef)
+    protected void mergeNvmeVlm(NvmeVlmPojo vlmPojoRef, NvmeVlmData<Resource> nvmeVlmDataRef) throws DatabaseException
     {
         nvmeVlmDataRef.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         nvmeVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
@@ -515,6 +515,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
 
     @Override
     protected void mergeOpenflexVlm(OpenflexVlmPojo vlmPojoRef, OpenflexVlmData<Resource> ofVlmDataRef)
+        throws DatabaseException
     {
         ofVlmDataRef.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         ofVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());

@@ -159,7 +159,6 @@ public class WritecacheLayerSQLDbDriver implements WritecacheLayerCtrlDatabaseDr
                             vlm,
                             writecacheRscData,
                             cachedStorPool,
-                            this,
                             transObjFactory,
                             transMgrProvider
                         )

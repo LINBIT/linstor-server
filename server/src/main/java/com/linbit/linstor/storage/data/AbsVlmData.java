@@ -6,7 +6,10 @@ import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
@@ -15,27 +18,44 @@ import java.util.Objects;
 
 public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends AbsRscLayerObject<RSC>> extends
     BaseTransactionObject
-    implements Comparable<AbsVlmData<RSC, RSC_DATA>>
+    implements Comparable<AbsVlmData<RSC, RSC_DATA>>, VlmProviderObject<RSC>
 {
+    // unmodifiable data, once initialized
     protected final AbsVolume<RSC> vlm;
     protected final RSC_DATA rscData;
+
+    // not persisted, serialized, ctrl and stlt
+    protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Long> allocatedSize;
+    protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Long> usableSize;
+    protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Boolean> exists;
+    protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Boolean> failed;
+
+    // not persisted, not serialized, stlt only
+    protected transient long originalSize = UNINITIALIZED_SIZE;
 
     public AbsVlmData(
         AbsVolume<RSC> vlmRef,
         RSC_DATA rscDataRef,
+        TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
         super(transMgrProviderRef);
+        exists = transObjFactory.createTransactionSimpleObject(this, false, null);
+        failed = transObjFactory.createTransactionSimpleObject(this, false, null);
+        allocatedSize = transObjFactory.createTransactionSimpleObject(this, UNINITIALIZED_SIZE, null);
+        usableSize = transObjFactory.createTransactionSimpleObject(this, UNINITIALIZED_SIZE, null);
         vlm = Objects.requireNonNull(vlmRef);
         rscData = Objects.requireNonNull(rscDataRef);
     }
 
+    @Override
     public AbsVolume<RSC> getVolume()
     {
         return vlm;
     }
 
+    @Override
     public RSC_DATA getRscLayerObject()
     {
         return rscData;

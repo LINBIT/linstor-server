@@ -8,6 +8,7 @@ import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.AbsVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.State;
 import com.linbit.linstor.storage.interfaces.layers.luks.LuksVlmObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -24,27 +25,22 @@ import java.util.List;
 
 public class LuksVlmData<RSC extends AbsResource<RSC>>
     extends AbsVlmData<RSC, LuksRscData<RSC>>
-    implements LuksVlmObject<RSC>
+    implements LuksVlmObject<RSC>, VlmLayerObject<RSC>
 {
     // persisted, serialized, ctrl and stlt
     private final TransactionSimpleObject<LuksVlmData<?>, byte[]> encryptedPassword;
 
     // not persisted, serialized, ctrl and stlt
-    private long allocatedSize = UNINITIALIZED_SIZE;
-    private long usableSize = UNINITIALIZED_SIZE;
     private @Nullable String devicePath;
     private String backingDevice;
     private String diskState;
 
     // not persisted, not serialized, stlt only
-    private boolean exists;
-    private boolean failed;
     private boolean opened;
     private String identifier;
     private byte[] decryptedPassword = null;
     private List<? extends State> unmodStates;
     private Size sizeState;
-    private long originalSize = UNINITIALIZED_SIZE;
 
     // TODO maybe introduce States like "OPEN", "CLOSED", "UNINITIALIZED" or something...
 
@@ -57,7 +53,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(vlmRef, rscDataRef, transMgrProvider);
+        super(vlmRef, rscDataRef, transObjFactory, transMgrProvider);
 
         unmodStates = Collections.emptyList();
 
@@ -77,12 +73,12 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     @Override
     public boolean exists()
     {
-        return exists;
+        return exists.get();
     }
 
-    public void setExists(boolean existsRef)
+    public void setExists(boolean existsRef) throws DatabaseException
     {
-        exists = existsRef;
+        exists.set(existsRef);
     }
 
     public boolean isOpened()
@@ -98,30 +94,30 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     @Override
     public boolean hasFailed()
     {
-        return failed;
+        return failed.get();
     }
 
-    public void setFailed(boolean failedRef)
+    public void setFailed(boolean failedRef) throws DatabaseException
     {
-        failed = failedRef;
+        failed.set(failedRef);
     }
 
     @Override
     public long getAllocatedSize()
     {
-        return allocatedSize;
+        return allocatedSize.get();
     }
 
     @Override
-    public void setAllocatedSize(long allocatedSizeRef)
+    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
     {
-        allocatedSize = allocatedSizeRef;
+        allocatedSize.set(allocatedSizeRef);
     }
 
     @Override
     public long getUsableSize()
     {
-        return usableSize;
+        return usableSize.get();
     }
 
     @Override
@@ -137,11 +133,11 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public void setUsableSize(long usableSizeRef)
+    public void setUsableSize(long usableSizeRef) throws DatabaseException
     {
-        if (usableSizeRef != usableSize)
+        if (usableSizeRef != usableSize.get())
         {
-            if (usableSize < usableSizeRef)
+            if (usableSize.get() < usableSizeRef)
             {
                 sizeState = Size.TOO_SMALL;
             }
@@ -154,7 +150,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         {
             sizeState = Size.AS_EXPECTED;
         }
-        usableSize = usableSizeRef;
+        usableSize.set(usableSizeRef);
     }
 
     @Override
@@ -258,8 +254,8 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
             encryptedPassword.get(),
             devicePath,
             backingDevice,
-            allocatedSize,
-            usableSize,
+            allocatedSize.get(),
+            usableSize.get(),
             opened,
             diskState
         );

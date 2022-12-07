@@ -476,7 +476,6 @@ public class LayerDataFactory
             vlm,
             rscData,
             cacheStorPool,
-            writecacheDbDriver,
             transObjFactory,
             transMgrProvider
         );
@@ -521,7 +520,6 @@ public class LayerDataFactory
             rscData,
             cacheStorPool,
             metaStorPool,
-            cacheDbDriver,
             transObjFactory,
             transMgrProvider
         );
