@@ -9,16 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Added NodeConnection API. Currently only used for path settings (similar to rscCon, but on node level)
+
+### Changed
+
+- MKFS: always skip discard on ZFS backed volumes
+- Client resource DRBD ready state as soon as 2 nodes are connected (before it waited for all)
+- ResourceGroup-Span: Always assume partial mode if resource group doesn't have any volume groups
+- Upgraded okhttp 3rd party library, to fix a IPv6 TLS bug
+
+### Fixed
+
+- Orphan StorPooDfn, KeyValueStores and SnapDfn are now deleted with all their child objects
 
 ## [1.20.0] - 2022-10-18
 
 ### Added
+
 - Added SnapshotVolumeNode as part of SnapshotNode to include a snapshot state
 - Status of EBS volumes and snapshots are now queried periodically
 - Added property DrbdOptions/ForceInitialSync that forces thin resources to do an initial full sync
 
 ### Fixed
+
 - Snapshots and SnapshotVolumes now properly delete their properties + cleanup migration existing DB entries
 - Randomized Cluster/LocalId for CRD setups since all installations had the same ID
 - Backup restore now creates new DRBD metadata and forces the initial sync to be a full sync
