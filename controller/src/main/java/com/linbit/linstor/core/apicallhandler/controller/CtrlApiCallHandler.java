@@ -6,6 +6,8 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
@@ -37,6 +39,7 @@ import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
@@ -60,6 +63,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -1305,6 +1309,21 @@ public class CtrlApiCallHandler
                         {
                             if (rscs.getSatelliteStates().size() >= rscs.getResources().size())
                             {
+                                Map<String, Integer> allExpectedOnlineNodeIds = new HashMap<>();
+                                for (ResourceApi resourceApi : rscs.getResources())
+                                {
+                                    // if DRBD is involved, it has to be the topmost layer if it exists in the
+                                    // layer-tree
+                                    RscLayerDataApi rootLayerData = resourceApi.getLayerData();
+                                    if (rootLayerData.getLayerKind().equals(DeviceLayerKind.DRBD))
+                                    {
+                                        allExpectedOnlineNodeIds.put(
+                                            resourceApi.getNodeName().toLowerCase(),
+                                            ((DrbdRscPojo) rootLayerData).getNodeId()
+                                        );
+                                    }
+                                }
+
                                 final Set<String> nodeNames = rscs.getResources().stream()
                                     .map(r -> r.getNodeName().toLowerCase())
                                     .collect(Collectors.toSet());
@@ -1312,8 +1331,14 @@ public class CtrlApiCallHandler
                                 for (Map.Entry<NodeName, SatelliteState> entry : rscs.getSatelliteStates().entrySet())
                                 {
                                     // Ignore non resource nodes
-                                    if (nodeNames.contains(entry.getKey().displayValue.toLowerCase()))
+                                    String lowerCaseNodeName = entry.getKey().displayValue.toLowerCase();
+                                    if (nodeNames.contains(lowerCaseNodeName))
                                     {
+                                        Map<String, Integer> expectedOnlineNodeIds = new HashMap<>(
+                                            allExpectedOnlineNodeIds
+                                        );
+                                        expectedOnlineNodeIds.remove(lowerCaseNodeName);
+
                                         SatelliteState stltState = entry.getValue();
                                         SatelliteResourceState rscState =
                                             stltState.getResourceStates().get(rscCloneName);
@@ -1324,7 +1349,7 @@ public class CtrlApiCallHandler
                                             break;
 
                                         }
-                                        if (!rscState.isReady())
+                                        if (!rscState.isReady(expectedOnlineNodeIds.values()))
                                         {
                                             isReady = false;
 

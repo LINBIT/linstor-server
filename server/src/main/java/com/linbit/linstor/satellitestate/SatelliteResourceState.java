@@ -2,8 +2,11 @@ package com.linbit.linstor.satellitestate;
 
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
+import com.linbit.linstor.event.common.ResourceState;
 
 import javax.annotation.Nullable;
+
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -16,6 +19,7 @@ public class SatelliteResourceState
 
     private final Map<VolumeNumber, SatelliteVolumeState> volumeStates = new HashMap<>();
     private final Map<NodeName, Map<NodeName, String>> connectionStates = new HashMap<>();
+    private final Map<VolumeNumber, Map<Integer, Boolean>> peersConnected = new HashMap<>();
 
     public SatelliteResourceState()
     {
@@ -33,7 +37,20 @@ public class SatelliteResourceState
         {
             connectionStates.put(connEntry.getKey(), new HashMap<>(connEntry.getValue()));
         }
+        synchronized (other.peersConnected)
+        {
+            copyPeersConnected(other.peersConnected);
+        }
     }
+
+    private void copyPeersConnected(Map<VolumeNumber, Map<Integer, Boolean>> peersConnectedRef)
+    {
+        for (Map.Entry<VolumeNumber, Map<Integer, Boolean>> peersConEntry : peersConnectedRef.entrySet())
+        {
+            peersConnected.put(peersConEntry.getKey(), new HashMap<>(peersConEntry.getValue()));
+        }
+    }
+
 
     public @Nullable Boolean isInUse()
     {
@@ -45,14 +62,33 @@ public class SatelliteResourceState
         inUse = value;
     }
 
-    public boolean isReady()
+    public boolean isReady(Collection<Integer> expectedOnlineNodeIds)
     {
-        return isReady;
+        return isReady && ResourceState.allExpectedPeersOnline(expectedOnlineNodeIds, peersConnected);
     }
 
     public void setIsReady(Boolean value)
     {
         isReady = value;
+    }
+
+    public void setPeersConnected(
+        Map<VolumeNumber, Map<Integer/* nodeId */, Boolean/* connected */>> peersConnectedRef
+    )
+    {
+        synchronized (peersConnected)
+        {
+            peersConnected.clear();
+            copyPeersConnected(peersConnectedRef);
+        }
+    }
+
+    public Map<VolumeNumber, Map<Integer/* nodeId */, Boolean/* connected */>> getPeersConnected()
+    {
+        synchronized (peersConnected)
+        {
+            return peersConnected;
+        }
     }
 
     public Map<VolumeNumber, SatelliteVolumeState> getVolumeStates()

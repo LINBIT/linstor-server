@@ -35,19 +35,30 @@ public class ResourceState
 
     public boolean isReady(Collection<Integer> collectionRef)
     {
-        boolean connectedToAllOnlineLinstorNodes = true;
-        for (Map<Integer, Boolean> peerConnectedState : peersConnected.values())
+        return Boolean.TRUE.equals(accessToUpToDateData) && allExpectedPeersOnline(collectionRef, peersConnected);
+    }
+
+    public static boolean allExpectedPeersOnline(
+        Collection<Integer> expectedOnlineNodeIdsRef,
+        Map<VolumeNumber, Map<Integer, Boolean>> peersConnectedRef
+    )
+    {
+        boolean ret = peersConnectedRef != null;
+        if (ret)
         {
-            for (Integer linstorOnlineNodeId : collectionRef)
+            for (Map<Integer, Boolean> peerConnectedState : peersConnectedRef.values())
             {
-                if (!Boolean.TRUE.equals(peerConnectedState.get(linstorOnlineNodeId)))
+                for (Integer linstorOnlineNodeId : expectedOnlineNodeIdsRef)
                 {
-                    connectedToAllOnlineLinstorNodes = false;
-                    break;
+                    if (!Boolean.TRUE.equals(peerConnectedState.get(linstorOnlineNodeId)))
+                    {
+                        ret = false;
+                        break;
+                    }
                 }
             }
         }
-        return Boolean.TRUE.equals(accessToUpToDateData) && connectedToAllOnlineLinstorNodes;
+        return ret;
     }
 
     public Boolean hasAccessToUpToDateData()
