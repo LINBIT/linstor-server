@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Client resource DRBD ready state as soon as 2 nodes are connected (before it waited for all)
 - ResourceGroup-Span: Always assume partial mode if resource group doesn't have any volume groups
 - Upgraded okhttp 3rd party library, to fix a IPv6 TLS bug
+- Satellite now only deletes old .res files after controller established connection (instead of after startup)
 
 ### Fixed
 

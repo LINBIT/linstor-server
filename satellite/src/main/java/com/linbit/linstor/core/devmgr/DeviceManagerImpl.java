@@ -20,6 +20,7 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.StltExternalFileHandler;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.StltUpdateRequester;
@@ -30,6 +31,7 @@ import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateNotification;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
@@ -77,6 +79,10 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -92,7 +98,10 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.google.inject.Key;
 import com.google.inject.name.Names;
@@ -171,7 +180,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
     private final StltSecurityObjects stltSecObj;
 
-    private static boolean firstTimeDevMgrRun = true;
+    private boolean firstTimeDevMgrRun = true;
     private final ExtCmdFactory extCmdFactory;
 
     private static final ServiceName DEV_MGR_NAME;
@@ -219,6 +228,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private HashSet<ExtCmdFactoryStlt> sharedExtCmdFactories;
     private final StltExternalFileHandler extFileHandler;
 
+    private final StltConfig stltCfg;
+
     @Inject
     DeviceManagerImpl(
         @DeviceManagerContext AccessContext wrkCtxRef,
@@ -250,7 +261,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         ExtCmdFactory extCmdFactoryRef,
         SnapshotShippingService snapshipServiceRef,
         BackupShippingMgr backupServiceMgrRef,
-        StltExternalFileHandler extFileHandlerRef
+        StltExternalFileHandler extFileHandlerRef,
+        StltConfig stltCfgRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -281,6 +293,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         snapshipService = snapshipServiceRef;
         backupServiceMgr = backupServiceMgrRef;
         extFileHandler = extFileHandlerRef;
+        stltCfg = stltCfgRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
@@ -698,6 +711,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         pendingDispatchRscs.putAll(dispatchRscs);
                     }
                     devHandler.fullSyncApplied(controllerPeerConnector.getLocalNode());
+
+                    deleteOldResFiles(); // new res files should be generated in the now starting devMgrCycle
                 }
                 else
                 {
@@ -837,6 +852,60 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
                 ++cycleNr;
             }
+        }
+    }
+
+    private void deleteOldResFiles()
+    {
+        try
+        {
+            Path varDrbdPath = Paths.get(LinStor.CONFIG_PATH);
+
+            final Pattern keepResPattern = stltCfg.getDrbdKeepResPattern();
+            Function<Path, Boolean> keepFunc;
+            if (keepResPattern != null)
+            {
+                errLog.logInfo(
+                    "Removing res files from " + varDrbdPath + ", keeping files matching regex: " +
+                        keepResPattern.pattern()
+                );
+                keepFunc = (path) -> keepResPattern.matcher(path.getFileName().toString()).find();
+            }
+            else
+            {
+                errLog.logInfo("Removing all res files from " + varDrbdPath);
+                keepFunc = (path) -> false;
+            }
+            try (Stream<Path> files = Files.list(varDrbdPath))
+            {
+                files.filter(path -> path.toString().endsWith(".res"))
+                    .forEach(
+                        filteredPathName ->
+                        {
+                            try
+                            {
+                                if (!keepFunc.apply(filteredPathName))
+                                {
+                                    Files.delete(filteredPathName);
+                                }
+                            }
+                            catch (IOException ioExc)
+                            {
+                                throw new ImplementationError(
+                                    "Unable to delete drbd resource file: " + filteredPathName,
+                                    ioExc
+                                );
+                            }
+                        }
+                    );
+            }
+        }
+        catch (IOException ioExc)
+        {
+            throw new ImplementationError(
+                "Unable to list content of: " + LinStor.CONFIG_PATH,
+                ioExc
+            );
         }
     }
 
