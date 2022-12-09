@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -18,9 +16,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
@@ -32,13 +28,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-public class VolumeGroup extends BaseTransactionObject
-    implements ProtectedObject, DbgInstanceUuid, Comparable<VolumeGroup>
+public class VolumeGroup extends AbsCoreObj<VolumeGroup> implements ProtectedObject
 {
-    private final UUID objId;
-
-    private final transient UUID dbgInstanceId;
-
     private final ResourceGroup rscGrp;
 
     private final VolumeNumber vlmNr;
@@ -48,8 +39,6 @@ public class VolumeGroup extends BaseTransactionObject
     private final StateFlags<VolumeGroup.Flags> flags;
 
     private final VolumeGroupDatabaseDriver dbDriver;
-
-    private final TransactionSimpleObject<VolumeGroup, Boolean> deleted;
 
     public VolumeGroup(
         UUID uuidRef,
@@ -63,11 +52,9 @@ public class VolumeGroup extends BaseTransactionObject
     )
         throws DatabaseException
     {
-        super(transMgrProviderRef);
+        super(uuidRef, transObjFactoryRef, transMgrProviderRef);
 
-        objId = uuidRef;
         vlmNr = vlmNrRef;
-        dbgInstanceId = UUID.randomUUID();
         rscGrp = rscGrpRef;
 
         dbDriver = dbDriverRef;
@@ -83,7 +70,6 @@ public class VolumeGroup extends BaseTransactionObject
         vlmGrpProps = propsContainerFactoryRef.getInstance(
             PropsContainer.buildPath(rscGrp.getName(), vlmNr)
         );
-        deleted = transObjFactoryRef.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
             rscGrp,
@@ -93,23 +79,11 @@ public class VolumeGroup extends BaseTransactionObject
         );
     }
 
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
-    }
-
     @Override
     public ObjectProtection getObjProt()
     {
         checkDeleted();
         return rscGrp.getObjProt();
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
     }
 
     public ResourceGroup getResourceGroup()
@@ -134,6 +108,7 @@ public class VolumeGroup extends BaseTransactionObject
         return flags;
     }
 
+    @Override
     public void delete(AccessContext accCtxRef) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
@@ -145,14 +120,6 @@ public class VolumeGroup extends BaseTransactionObject
             dbDriver.delete(this);
 
             deleted.set(true);
-        }
-    }
-
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted volume group");
         }
     }
 
@@ -195,6 +162,7 @@ public class VolumeGroup extends BaseTransactionObject
 
     public VolumeGroupApi getApiData(AccessContext accCtxRef) throws AccessDeniedException
     {
+        checkDeleted();
         return new VlmGrpPojo(
             objId,
             vlmNr.value,
@@ -262,5 +230,11 @@ public class VolumeGroup extends BaseTransactionObject
         {
             return FlagsHelper.fromStringList(Flags.class, listFlags);
         }
+    }
+
+    @Override
+    protected String toStringImpl()
+    {
+        return "VolumeGroup '" + vlmNr + "' of ResourceGroup '" + rscGrp + "'";
     }
 }

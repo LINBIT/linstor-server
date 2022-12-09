@@ -1,29 +1,57 @@
 package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.core.identifier.RemoteName;
-import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.core.objects.AbsCoreObj;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+
+import javax.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public interface Remote extends Comparable<Remote>
+public abstract class AbsRemote extends AbsCoreObj<AbsRemote> implements Comparable<AbsRemote>, ProtectedObject
 {
-    RemoteName getName();
+    protected final ObjectProtection objProt;
+    protected final RemoteName remoteName;
 
-    void delete(AccessContext apiCtxRef) throws AccessDeniedException, DatabaseException;
+    public AbsRemote(
+        UUID uuidRef,
+        TransactionObjectFactory transObjFactory,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
+        ObjectProtection objProtRef,
+        RemoteName remoteNameRef
+    )
+    {
+        super(uuidRef, transObjFactory, transMgrProviderRef);
+        objProt = objProtRef;
+        remoteName = remoteNameRef;
+    }
 
-    UUID getUuid();
 
-    StateFlags<Flags> getFlags();
+    public RemoteName getName()
+    {
+        checkDeleted();
+        return remoteName;
+    }
 
-    RemoteType getType();
+    public abstract StateFlags<Flags> getFlags();
 
-    enum Flags implements com.linbit.linstor.stateflags.Flags
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        checkDeleted();
+        return objProt;
+    }
+
+    public abstract RemoteType getType();
+
+    public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L),
         S3_USE_PATH_STYLE(1L << 1);
@@ -85,7 +113,7 @@ public interface Remote extends Comparable<Remote>
         }
     }
 
-    enum RemoteType
+    public enum RemoteType
     {
         S3,
         SATELLITE,

@@ -47,7 +47,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
@@ -357,7 +357,7 @@ public class DatabaseLoader implements DatabaseDriver
                 mapByName(loadedStorPoolDfnsMap, StorPoolDefinition::getName);
             Map<ExternalFileName, ExternalFile> tmpExtFileMap =
                 mapByName(loadedExtFilesMap, ExternalFile::getName);
-            Map<RemoteName, Remote> tmpRemoteMap = mapByName(loadedS3RemotesMap, S3Remote::getName);
+            Map<RemoteName, AbsRemote> tmpRemoteMap = mapByName(loadedS3RemotesMap, S3Remote::getName);
             tmpRemoteMap.putAll(mapByName(loadedLinstorRemotesMap, LinstorRemote::getName));
             tmpRemoteMap.putAll(mapByName(loadedEbsRemotesMap, EbsRemote::getName));
             Map<ScheduleName, Schedule> tmpScheduleMap = mapByName(loadedSchedulesMap, Schedule::getName);

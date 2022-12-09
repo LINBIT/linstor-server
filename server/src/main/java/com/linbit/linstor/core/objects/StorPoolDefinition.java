@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.StorPoolDfnPojo;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -17,11 +15,9 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
@@ -35,25 +31,18 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class StorPoolDefinition extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<StorPoolDefinition>, ProtectedObject
+public class StorPoolDefinition extends AbsCoreObj<StorPoolDefinition> implements ProtectedObject
 {
     public interface InitMaps
     {
         Map<NodeName, StorPool> getStorPoolMap();
     }
 
-    private final UUID uuid;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
-
     private final StorPoolName name;
     private final ObjectProtection objProt;
     private final StorPoolDefinitionDatabaseDriver dbDriver;
     private final TransactionMap<NodeName, StorPool> storPools;
     private final Props props;
-    private final TransactionSimpleObject<StorPoolDefinition, Boolean> deleted;
 
     StorPoolDefinition(
         UUID id,
@@ -67,10 +56,8 @@ public class StorPoolDefinition extends BaseTransactionObject
     )
         throws DatabaseException
     {
-        super(transMgrProviderRef);
+        super(id, transObjFactory, transMgrProviderRef);
 
-        uuid = id;
-        dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         name = nameRef;
         dbDriver = dbDriverRef;
@@ -79,7 +66,6 @@ public class StorPoolDefinition extends BaseTransactionObject
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(nameRef)
         );
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.<TransactionObject>asList(
             objProt,
@@ -88,18 +74,6 @@ public class StorPoolDefinition extends BaseTransactionObject
             deleted
         );
         activateTransMgr();
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return uuid;
     }
 
     @Override
@@ -157,6 +131,7 @@ public class StorPoolDefinition extends BaseTransactionObject
         return PropsAccess.secureGetProps(accCtx, objProt, props);
     }
 
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
@@ -183,19 +158,12 @@ public class StorPoolDefinition extends BaseTransactionObject
 
     public StorPoolDefinitionApi getApiData(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         return new StorPoolDfnPojo(getUuid(), getName().getDisplayName(), getProps(accCtx).map());
     }
 
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted storage pool definition");
-        }
-    }
-
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "StorPool: '" + name + "'";
     }

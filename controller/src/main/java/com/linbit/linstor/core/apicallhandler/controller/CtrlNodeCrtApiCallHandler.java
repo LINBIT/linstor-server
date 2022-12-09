@@ -26,7 +26,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -250,7 +250,7 @@ public class CtrlNodeCrtApiCallHandler
     {
         Flux<ApiCallRc> flux;
         ApiCallRcImpl responses = new ApiCallRcImpl();
-        Remote remote = dataLoader.loadRemote(ebsRemoteNameStrRef, true);
+        AbsRemote remote = dataLoader.loadRemote(ebsRemoteNameStrRef, true);
         if (!(remote instanceof EbsRemote))
         {
             throw new ApiRcException(

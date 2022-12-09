@@ -5,7 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.RemoteName;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -16,9 +16,9 @@ public interface RemoteRepository extends ProtectedObject
 {
     void requireAccess(AccessContext accCtx, AccessType requested) throws AccessDeniedException;
 
-    Remote get(AccessContext accCtx, RemoteName remoteName) throws AccessDeniedException;
+    AbsRemote get(AccessContext accCtx, RemoteName remoteName) throws AccessDeniedException;
 
-    void put(AccessContext accCtx, Remote remote) throws AccessDeniedException;
+    void put(AccessContext accCtx, AbsRemote remote) throws AccessDeniedException;
 
     void remove(AccessContext accCtx, RemoteName remoteName) throws AccessDeniedException;
 
@@ -26,7 +26,7 @@ public interface RemoteRepository extends ProtectedObject
 
     default S3Remote getS3(AccessContext accCtx, RemoteName remoteName) throws AccessDeniedException
     {
-        Remote remote = get(accCtx, remoteName);
+        AbsRemote remote = get(accCtx, remoteName);
         if (remote != null && !(remote instanceof S3Remote))
         {
             throw new ApiRcException(

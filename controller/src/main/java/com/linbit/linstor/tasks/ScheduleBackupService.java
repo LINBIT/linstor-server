@@ -19,7 +19,7 @@ import com.linbit.linstor.core.identifier.ScheduleName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Schedule;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ScheduleRepository;
@@ -95,7 +95,7 @@ public class ScheduleBackupService implements SystemService
     private final Object syncObj = new Object();
     private final Map<Schedule, Set<ScheduledShippingConfig>> scheduleLookupMap = new TreeMap<>();
     private final Map<ResourceDefinition, Set<ScheduledShippingConfig>> rscDfnLookupMap = new TreeMap<>();
-    private final Map<Remote, Set<ScheduledShippingConfig>> remoteLookupMap = new TreeMap<>();
+    private final Map<AbsRemote, Set<ScheduledShippingConfig>> remoteLookupMap = new TreeMap<>();
     // so far this is only used to list all scheduled shippings, running or waiting
     // as well as to count retries
     // DO NOT try to do anything with the task in these config-objects, as it most likely does not exist anymore
@@ -261,7 +261,7 @@ public class ScheduleBackupService implements SystemService
                         prop.getValue().equals(ApiConsts.VAL_TRUE)
                 )
                 {
-                    Remote remote = remoteRepo.get(accCtx, new RemoteName(keyParts[0]));
+                    AbsRemote remote = remoteRepo.get(accCtx, new RemoteName(keyParts[0]));
                     Schedule schedule = scheduleRepo.get(accCtx, new ScheduleName(keyParts[1]));
                     addNewTask(rscDfn, schedule, remote, false, accCtx);
                     rc.addEntry(
@@ -309,7 +309,7 @@ public class ScheduleBackupService implements SystemService
     public void addNewTask(
         ResourceDefinition rscDfn,
         Schedule schedule,
-        Remote remote,
+        AbsRemote remote,
         boolean lastInc,
         AccessContext accCtx
     )
@@ -337,7 +337,7 @@ public class ScheduleBackupService implements SystemService
     public void addTaskAgain(
         ResourceDefinition rscDfn,
         Schedule schedule,
-        Remote remote,
+        AbsRemote remote,
         long lastStartTime,
         boolean lastBackupSucceeded,
         boolean forceSkip,
@@ -456,7 +456,7 @@ public class ScheduleBackupService implements SystemService
         // maybe add else if (running) ...
     }
 
-    public ScheduledShippingConfig getConfig(ResourceDefinition rscDfn, Remote remote, Schedule schedule)
+    public ScheduledShippingConfig getConfig(ResourceDefinition rscDfn, AbsRemote remote, Schedule schedule)
     {
         ScheduledShippingConfig ret = null;
         Set<ScheduledShippingConfig> confs = rscDfnLookupMap.get(rscDfn);
@@ -691,7 +691,7 @@ public class ScheduleBackupService implements SystemService
         }
     }
 
-    public void removeTasks(Remote remoteRef, AccessContext accCtx)
+    public void removeTasks(AbsRemote remoteRef, AccessContext accCtx)
         throws InvalidKeyException, AccessDeniedException, DatabaseException
     {
         synchronized (syncObj)
@@ -741,7 +741,7 @@ public class ScheduleBackupService implements SystemService
         }
     }
 
-    public void removeSingleTask(Schedule schedule, Remote remote, ResourceDefinition rscDfn)
+    public void removeSingleTask(Schedule schedule, AbsRemote remote, ResourceDefinition rscDfn)
     {
         removeSingleTask(new ScheduledShippingConfig(schedule, remote, rscDfn, false, new Pair<>(), null), false);
     }
@@ -859,7 +859,7 @@ public class ScheduleBackupService implements SystemService
     public static class ScheduledShippingConfig implements Comparable<ScheduledShippingConfig>
     {
         public final Schedule schedule;
-        public final Remote remote;
+        public final AbsRemote remote;
         public final ResourceDefinition rscDfn;
         public final boolean lastInc;
 
@@ -870,7 +870,7 @@ public class ScheduleBackupService implements SystemService
 
         ScheduledShippingConfig(
             Schedule scheduleRef,
-            Remote remoteRef,
+            AbsRemote remoteRef,
             ResourceDefinition rscDfnRef,
             boolean lastIncRef,
             Pair<Long, Boolean> timeoutAndTypeRef,

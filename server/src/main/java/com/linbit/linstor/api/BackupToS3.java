@@ -4,7 +4,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -501,7 +501,7 @@ public class BackupToS3
         return AmazonS3ClientBuilder.standard()
             .withEndpointConfiguration(endpointConfiguration)
             .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .withPathStyleAccessEnabled(remote.getFlags().isSet(accCtx, Remote.Flags.S3_USE_PATH_STYLE))
+            .withPathStyleAccessEnabled(remote.getFlags().isSet(accCtx, AbsRemote.Flags.S3_USE_PATH_STYLE))
             .build();
     }
 

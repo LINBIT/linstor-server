@@ -2,8 +2,6 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.api.pojo.NodePojo;
@@ -33,7 +31,6 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -68,8 +65,7 @@ import static java.util.stream.Collectors.toList;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class Node extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<Node>, ProtectedObject
+public class Node extends AbsCoreObj<Node> implements ProtectedObject
 {
     public interface InitMaps
     {
@@ -79,12 +75,6 @@ public class Node extends BaseTransactionObject
         Map<StorPoolName, StorPool> getStorPoolMap();
         Map<NodeName, NodeConnection> getNodeConnMap();
     }
-
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
 
     // Node name
     private final NodeName nodeName;
@@ -121,8 +111,6 @@ public class Node extends BaseTransactionObject
     private transient Peer peer;
 
     private transient TransactionSimpleObject<Node, NetInterface> activeStltConn;
-
-    private final TransactionSimpleObject<Node, Boolean> deleted;
 
     private final Map<Object, FluxSink<Boolean>> initialConnectSinkMap;
 
@@ -180,11 +168,9 @@ public class Node extends BaseTransactionObject
     )
         throws DatabaseException
     {
-        super(transMgrProvider);
+        super(uuidRef, transObjFactory, transMgrProvider);
         ErrorCheck.ctorNotNull(Node.class, NodeName.class, nameRef);
 
-        objId = uuidRef;
-        dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         nodeName = nameRef;
         dbDriver = dbDriverRef;
@@ -193,7 +179,6 @@ public class Node extends BaseTransactionObject
         snapshotMap = transObjFactory.createTransactionMap(snapshotMapRef, null);
         netInterfaceMap = transObjFactory.createTransactionMap(netIfMapRef, null);
         storPoolMap = transObjFactory.createTransactionMap(storPoolMapRef, null);
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         nodeProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(nameRef)
@@ -265,12 +250,6 @@ public class Node extends BaseTransactionObject
             ret = Objects.equals(nodeName, other.nodeName);
         }
         return ret;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
     }
 
     public NodeName getName()
@@ -384,6 +363,7 @@ public class Node extends BaseTransactionObject
 
     public int getResourceCount()
     {
+        checkDeleted();
         return resourceMap.size();
     }
 
@@ -580,6 +560,7 @@ public class Node extends BaseTransactionObject
 
     public int getStorPoolCount()
     {
+        checkDeleted();
         return storPoolMap.size();
     }
 
@@ -652,6 +633,7 @@ public class Node extends BaseTransactionObject
 
     public Peer getPeer(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return peer;
     }
@@ -659,6 +641,7 @@ public class Node extends BaseTransactionObject
 
     public void setPeer(AccessContext accCtx, Peer peerRef) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         peer = peerRef;
     }
@@ -666,6 +649,7 @@ public class Node extends BaseTransactionObject
 
     public NetInterface getActiveStltConn(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
         return activeStltConn.get();
     }
@@ -674,6 +658,7 @@ public class Node extends BaseTransactionObject
     public void setActiveStltConn(AccessContext accCtx, NetInterface satelliteConnectionRef)
         throws AccessDeniedException, DatabaseException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
 
         activeStltConn.set(satelliteConnectionRef);
@@ -693,6 +678,7 @@ public class Node extends BaseTransactionObject
     void removeActiveSatelliteconnection(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
+        checkDeleted();
         objProt.requireAccess(accCtx, AccessType.CHANGE);
         activeStltConn.set(null);
         try
@@ -707,11 +693,13 @@ public class Node extends BaseTransactionObject
 
     public void setEvictionTimestamp(@Nullable Long timestamp)
     {
+        checkDeleted();
         evictionTimstamp = timestamp;
     }
 
     public @Nullable Long getEvictionTimstamp()
     {
+        checkDeleted();
         return evictionTimstamp;
     }
 
@@ -723,6 +711,7 @@ public class Node extends BaseTransactionObject
     }
 
 
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
@@ -771,19 +760,6 @@ public class Node extends BaseTransactionObject
         }
     }
 
-    public boolean isDeleted()
-    {
-        return deleted.get();
-    }
-
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted node");
-        }
-    }
-
     public void markEvicted(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         checkDeleted();
@@ -801,12 +777,14 @@ public class Node extends BaseTransactionObject
     public NodePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
+        checkDeleted();
         return getApiData(accCtx, true, fullSyncId, updateId);
     }
 
     NodePojo getApiData(AccessContext accCtx, boolean includeOtherNode, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
+        checkDeleted();
         List<NetInterfaceApi> netInterfaces = new ArrayList<>();
         for (NetInterface ni : streamNetInterfaces(accCtx).collect(toList()))
         {
@@ -862,30 +840,26 @@ public class Node extends BaseTransactionObject
     }
 
     public void setCryptoEntries(Collection<ProcCryptoEntry> procCryptoEntries) {
+        checkDeleted();
         supportedCryptos.clear();
         supportedCryptos.addAll(procCryptoEntries);
     }
 
     public ArrayList<ProcCryptoEntry> getSupportedCryptos()
     {
+        checkDeleted();
         return supportedCryptos;
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Node: '" + nodeName + "'";
     }
 
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
     public void registerInitialConnectSink(Object key, FluxSink<Boolean> fluxSinkRef)
     {
+        checkDeleted();
         synchronized (initialConnectSinkMap)
         {
             initialConnectSinkMap.put(key, fluxSinkRef);
@@ -894,6 +868,7 @@ public class Node extends BaseTransactionObject
 
     public void connectionEstablished()
     {
+        checkDeleted();
         synchronized (initialConnectSinkMap)
         {
             for (FluxSink<Boolean> initialConnectSink : initialConnectSinkMap.values())
@@ -910,6 +885,7 @@ public class Node extends BaseTransactionObject
      */
     public void removeInitialConnectSink(Object key)
     {
+        checkDeleted();
         synchronized (initialConnectSinkMap)
         {
             FluxSink<Boolean> initialConnectSink = initialConnectSinkMap.remove(key);

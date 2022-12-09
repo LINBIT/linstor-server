@@ -32,7 +32,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.objects.remotes.StltRemoteControllerFactory;
 import com.linbit.linstor.core.repository.RemoteRepository;
@@ -254,7 +254,7 @@ public class CtrlBackupL2LDstApiCallHandler
         {
             LinstorRemote ret = null;
             UUID srcClusterId = UUID.fromString(srcClusterIdRef);
-            for (Remote remote : remoteRepo.getMapForView(apiCtx).values())
+            for (AbsRemote remote : remoteRepo.getMapForView(apiCtx).values())
             {
                 if (remote instanceof LinstorRemote)
                 {
@@ -314,7 +314,7 @@ public class CtrlBackupL2LDstApiCallHandler
     {
         try
         {
-            Remote remote = remoteRepo.get(apiCtx, new RemoteName(remoteName, true));
+            AbsRemote remote = remoteRepo.get(apiCtx, new RemoteName(remoteName, true));
             if (remote instanceof StltRemote)
             {
                 StltRemote stltRemote = (StltRemote) remote;
@@ -363,7 +363,7 @@ public class CtrlBackupL2LDstApiCallHandler
         }
     }
 
-    private Flux<BackupShippingStartInfo> startReceivingInTransaction(BackupShippingData data, Remote srcRemote)
+    private Flux<BackupShippingStartInfo> startReceivingInTransaction(BackupShippingData data, AbsRemote srcRemote)
     {
         String clusterHash = getSrcClusterShortId(data.srcClusterId);
 
@@ -503,7 +503,7 @@ public class CtrlBackupL2LDstApiCallHandler
         try
         {
             NetInterface netIf = null;
-            Remote remote = remoteRepo.get(apiCtx, new RemoteName(remoteName, true));
+            AbsRemote remote = remoteRepo.get(apiCtx, new RemoteName(remoteName, true));
             Map<String, Integer> ports;
             if (remote instanceof StltRemote)
             {

@@ -27,7 +27,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
@@ -489,7 +489,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         Set<Resource> resources,
         Set<Snapshot> snapshots,
         Set<ExternalFile> externalFiles,
-        Set<Remote> remotes,
+        Set<AbsRemote> remotes,
         long fullSyncTimestamp,
         long updateId
     )
@@ -536,7 +536,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             {
                 serializedExtFiles.add(externalFileSerializerHelper.buildExtFileMsg(extFile, false));
             }
-            for (Remote remote : remotes)
+            for (AbsRemote remote : remotes)
             {
                 if (remote instanceof S3Remote)
                 {
@@ -586,7 +586,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     @Override
     public CommonSerializerBuilder remote(
-        Remote remoteRef,
+        AbsRemote remoteRef,
         long fullSyncIdRef,
         long updateIdRef
     )

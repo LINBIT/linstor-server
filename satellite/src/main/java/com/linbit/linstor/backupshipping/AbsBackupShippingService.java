@@ -22,9 +22,9 @@ import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
-import com.linbit.linstor.core.objects.remotes.Remote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -265,7 +265,7 @@ public abstract class AbsBackupShippingService implements SystemService
                 InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
-            Remote remote = remoteMap.get(new RemoteName(remoteName, true));
+            AbsRemote remote = remoteMap.get(new RemoteName(remoteName, true));
 
             ensureRemoteType(remote);
             Integer port = null;
@@ -382,7 +382,7 @@ public abstract class AbsBackupShippingService implements SystemService
         String[] fullCommand,
         String shippingDescr,
         String backupNameRef,
-        Remote remote,
+        AbsRemote remote,
         boolean restore,
         Integer portRef,
         BiConsumer<Boolean, Integer> postAction,
@@ -482,7 +482,7 @@ public abstract class AbsBackupShippingService implements SystemService
      *
      * @throws ImplementationError
      */
-    private void ensureRemoteType(Remote remote) throws ImplementationError
+    private void ensureRemoteType(AbsRemote remote) throws ImplementationError
     {
         if (!remoteType.equals(remote.getType()))
         {
@@ -863,7 +863,7 @@ public abstract class AbsBackupShippingService implements SystemService
         String shippingDescrRef,
         String[] fullCommandRef,
         String backupNameRef,
-        Remote remoteRef,
+        AbsRemote remoteRef,
         boolean restoreRef,
         Integer portRef,
         BiConsumer<Boolean, Integer> postActionRef
@@ -874,13 +874,13 @@ public abstract class AbsBackupShippingService implements SystemService
 
     protected abstract String getCommandSending(
         String cmdRef,
-        Remote remoteRef,
+        AbsRemote remoteRef,
         AbsStorageVlmData<Snapshot> snapVlmDataRef
     ) throws AccessDeniedException;
 
     protected abstract String getCommandReceiving(
         String cmdRef,
-        Remote remoteRef,
+        AbsRemote remoteRef,
         AbsStorageVlmData<Snapshot> snapVlmDataRef
     ) throws AccessDeniedException;
 
@@ -897,7 +897,7 @@ public abstract class AbsBackupShippingService implements SystemService
     {
         private boolean isStarted = false;
         Map<AbsStorageVlmData<Snapshot>, SnapVlmDataInfo> snapVlmDataInfoMap = new HashMap<>();
-        Remote remote = null;
+        AbsRemote remote = null;
         Set<Integer> portsUsed = new TreeSet<>();
         Set<Integer> alreadyInUse = new TreeSet<>();
 

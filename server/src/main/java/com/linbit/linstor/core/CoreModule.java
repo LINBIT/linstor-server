@@ -17,7 +17,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Schedule;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -143,7 +143,7 @@ public class CoreModule extends AbstractModule
     {
     }
 
-    public interface RemoteMap extends Map<RemoteName, Remote>
+    public interface RemoteMap extends Map<RemoteName, AbsRemote>
     {
     }
 
@@ -285,7 +285,7 @@ public class CoreModule extends AbstractModule
 
     @Singleton
     public static class RemoteMapImpl
-        extends TransactionMap<RemoteName, Remote>
+        extends TransactionMap<RemoteName, AbsRemote>
         implements RemoteMap
     {
         @Inject

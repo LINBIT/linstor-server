@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -10,9 +9,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -24,8 +21,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 
-public class S3Remote extends BaseTransactionObject
-    implements Remote, DbgInstanceUuid, Comparable<Remote>, ProtectedObject
+public class S3Remote extends AbsRemote
 {
     public interface InitMaps
     {
@@ -33,10 +29,7 @@ public class S3Remote extends BaseTransactionObject
     }
 
     private final ObjectProtection objProt;
-    private final UUID objId;
-    private final transient UUID dbgInstanceId;
     private final S3RemoteDatabaseDriver driver;
-    private final RemoteName remoteName;
     private final TransactionSimpleObject<S3Remote, String> endpoint;
     private final TransactionSimpleObject<S3Remote, String> bucket;
     private final TransactionSimpleObject<S3Remote, String> region;
@@ -66,11 +59,8 @@ public class S3Remote extends BaseTransactionObject
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(transMgrProvider);
+        super(objIdRef, transObjFactory, transMgrProvider, objProtRef, remoteNameRef);
         objProt = objProtRef;
-        objId = objIdRef;
-        dbgInstanceId = UUID.randomUUID();
-        remoteName = remoteNameRef;
         driver = driverRef;
 
         endpoint = transObjFactory.createTransactionSimpleObject(this, endpointRef, driver.getEndpointDriver());
@@ -104,7 +94,7 @@ public class S3Remote extends BaseTransactionObject
     }
 
     @Override
-    public int compareTo(@Nonnull Remote remote)
+    public int compareTo(@Nonnull AbsRemote remote)
     {
         int cmp = remote.getClass().getSimpleName().compareTo(S3Remote.class.getSimpleName());
         if (cmp == 0)
@@ -298,6 +288,7 @@ public class S3Remote extends BaseTransactionObject
         flags.resetFlagsTo(accCtx, Flags.restoreFlags(apiData.getFlags()));
     }
 
+    @Override
     public boolean isDeleted()
     {
         return deleted.get();
@@ -320,7 +311,8 @@ public class S3Remote extends BaseTransactionObject
         }
     }
 
-    private void checkDeleted()
+    @Override
+    protected void checkDeleted()
     {
         if (deleted.get())
         {
@@ -329,8 +321,8 @@ public class S3Remote extends BaseTransactionObject
     }
 
     @Override
-    public UUID debugGetVolatileUuid()
+    protected String toStringImpl()
     {
-        return dbgInstanceId;
+        return "S3Remote '" + remoteName.displayValue + "'";
     }
 }

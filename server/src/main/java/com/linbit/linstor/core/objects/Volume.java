@@ -16,6 +16,7 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -330,7 +331,7 @@ public class Volume extends AbsVolume<Resource>
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Node: '" + absRsc.getNode().getName() + "', " +
             "Rsc: '" + absRsc.getDefinition().getName() + "', " +
@@ -382,12 +383,14 @@ public class Volume extends AbsVolume<Resource>
     @Override
     public VolumeNumber getVolumeNumber()
     {
+        checkDeleted();
         return volumeDfn.getVolumeNumber();
     }
 
     @Override
     public long getVolumeSize(AccessContext dbCtxRef) throws AccessDeniedException
     {
+        checkDeleted();
         return volumeDfn.getVolumeSize(dbCtxRef);
     }
 
@@ -401,6 +404,7 @@ public class Volume extends AbsVolume<Resource>
 
     public VolumeApi getApiData(Long allocated, AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         VolumeNumber vlmNr = volumeDfn.getVolumeNumber();
         List<Pair<String, VlmLayerDataApi>> layerDataList = new ArrayList<>();
 
@@ -622,5 +626,11 @@ public class Volume extends AbsVolume<Resource>
     public void clearReports()
     {
         reports = new ApiCallRcImpl();
+    }
+
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        return absRsc.getObjProt();
     }
 }

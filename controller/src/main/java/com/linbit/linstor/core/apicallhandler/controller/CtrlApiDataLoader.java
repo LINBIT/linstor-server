@@ -33,7 +33,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.core.repository.KeyValueStoreRepository;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -761,17 +761,17 @@ public class CtrlApiDataLoader
         return extFile;
     }
 
-    public final Remote loadRemote(String remoteNameStr, boolean failIfNull)
+    public final AbsRemote loadRemote(String remoteNameStr, boolean failIfNull)
     {
         return loadRemote(LinstorParsingUtils.asRemoteName(remoteNameStr), failIfNull);
     }
 
-    public final Remote loadRemote(
+    public final AbsRemote loadRemote(
         RemoteName remoteName,
         boolean failIfNull
     )
     {
-        Remote remote;
+        AbsRemote remote;
         try
         {
             remote = remoteRepository.get(

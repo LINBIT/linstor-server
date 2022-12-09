@@ -7,8 +7,6 @@ import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
@@ -24,11 +22,12 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.Identity;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
@@ -52,18 +51,12 @@ import java.util.stream.Stream;
 /**
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class VolumeDefinition extends BaseTransactionObject implements DbgInstanceUuid, Comparable<VolumeDefinition>
+public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements ProtectedObject
 {
     public interface InitMaps
     {
         Map<String, Volume> getVlmMap();
     }
-
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
 
     // Resource definition this VolumeDefinition belongs to
     private final ResourceDefinition resourceDfn;
@@ -84,8 +77,6 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
 
     private final VolumeDefinitionDatabaseDriver dbDriver;
 
-    private final TransactionSimpleObject<VolumeDefinition, Boolean> deleted;
-
     private transient TransactionSimpleObject<VolumeDefinition, String> cryptKey;
 
     private final TransactionMap<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
@@ -105,14 +96,12 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
     )
         throws MdException, DatabaseException
     {
-        super(transMgrProviderRef);
+        super(uuid, transObjFactory, transMgrProviderRef);
         ErrorCheck.ctorNotNull(VolumeDefinition.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(VolumeDefinition.class, VolumeNumber.class, volNr);
 
         checkVolumeSize(volSize);
 
-        objId = uuid;
-        dbgInstanceId = UUID.randomUUID();
         resourceDfn = resDfnRef;
 
         dbDriver = dbDriverRef;
@@ -140,7 +129,6 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
             initFlags
         );
 
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
         cryptKey = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         transObjs = Arrays.asList(
@@ -176,18 +164,6 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
             }
             throw new MaxSizeException(excMessage);
         }
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
     }
 
     public Props getProps(AccessContext accCtx)
@@ -233,24 +209,28 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
 
     public void putVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
     {
+        checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         volumes.put(Resource.getStringId(volume.getAbsResource()), volume);
     }
 
     public void removeVolume(AccessContext accCtx, Volume volume) throws AccessDeniedException
     {
+        checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
         volumes.remove(Resource.getStringId(volume.getAbsResource()));
     }
 
     public Iterator<Volume> iterateVolumes(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumes.values().iterator();
     }
 
     public Stream<Volume> streamVolumes(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return volumes.values().stream();
     }
@@ -342,6 +322,7 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
         getFlags().enableFlags(accCtx, VolumeDefinition.Flags.DELETE);
     }
 
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
@@ -372,21 +353,9 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
         }
     }
 
-    public boolean isDeleted()
-    {
-        return deleted.get();
-    }
-
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted volume definition");
-        }
-    }
-
     public VolumeDefinitionApi getApiData(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         List<Pair<String, VlmDfnLayerDataApi>> layerData = new ArrayList<>();
 
         /*
@@ -428,7 +397,7 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return resourceDfn.toString() +
                ", VlmNr: '" + volumeNr + "'";
@@ -617,5 +586,11 @@ public class VolumeDefinition extends BaseTransactionObject implements DbgInstan
         {
             return FlagsHelper.fromStringList(Flags.class, listFlags);
         }
+    }
+
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        return resourceDfn.getObjProt();
     }
 }

@@ -10,7 +10,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -85,7 +85,7 @@ public interface CtrlStltSerializer extends CommonSerializer
             Set<Resource> resources,
             Set<Snapshot> snapshots,
             Set<ExternalFile> externalFilesRef,
-            Set<Remote> remotes,
+            Set<AbsRemote> remotes,
             long timestamp,
             long updateId
         );
@@ -99,7 +99,7 @@ public interface CtrlStltSerializer extends CommonSerializer
         CommonSerializerBuilder deletedExternalFile(String extFileNameStrRef, long fullSyncIdRef, long updateIdRef);
 
         CommonSerializerBuilder remote(
-            Remote remoteRef,
+            AbsRemote remoteRef,
             long fullSyncIdRef,
             long updateIdRef
         );

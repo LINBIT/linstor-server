@@ -4,8 +4,6 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -23,7 +21,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -41,15 +38,8 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class ResourceConnection extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<ResourceConnection>
+public class ResourceConnection extends AbsCoreObj<ResourceConnection>
 {
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
-
     private final ResourceConnectionKey connectionKey;
 
     private final Props props;
@@ -63,8 +53,6 @@ public class ResourceConnection extends BaseTransactionObject
     private final DynamicNumberPool tcpPortPool;
 
     private final ResourceConnectionDatabaseDriver dbDriver;
-
-    private final TransactionSimpleObject<ResourceConnection, Boolean> deleted;
 
     private final TransactionSimpleObject<ResourceConnection, SnapshotName> snapshotNameInProgress;
 
@@ -82,7 +70,7 @@ public class ResourceConnection extends BaseTransactionObject
     )
         throws DatabaseException
     {
-        super(transMgrProviderRef);
+        super(uuid, transObjFactory, transMgrProviderRef);
         tcpPortPool = tcpPortPoolRef;
         dbDriver = dbDriverRef;
 
@@ -106,9 +94,6 @@ public class ResourceConnection extends BaseTransactionObject
             );
         }
 
-        objId = uuid;
-        dbgInstanceId = UUID.randomUUID();
-
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 connectionKey.getSource().getNode().getName(),
@@ -116,8 +101,6 @@ public class ResourceConnection extends BaseTransactionObject
                 sourceResourceRef.getDefinition().getName()
             )
         );
-
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             Arrays.asList(connectionKey.getSource().getObjProt(), connectionKey.getTarget().getObjProt()),
@@ -153,18 +136,6 @@ public class ResourceConnection extends BaseTransactionObject
         throws AccessDeniedException
     {
         return sourceResource.getAbsResourceConnection(accCtx, targetResource);
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
     }
 
     public Node getNode(NodeName nodeName)
@@ -242,6 +213,7 @@ public class ResourceConnection extends BaseTransactionObject
     public void autoAllocatePort(AccessContext accCtx)
         throws DatabaseException, ExhaustedPoolException, AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.USE);
         TcpPortNumber tcpPortNumber = port.get();
         if (tcpPortNumber != null)
@@ -264,11 +236,13 @@ public class ResourceConnection extends BaseTransactionObject
 
     public void setSnapshotShippingNameInProgress(SnapshotName snapshotNameInProgressRef) throws DatabaseException
     {
+        checkDeleted();
         snapshotNameInProgress.set(snapshotNameInProgressRef);
     }
 
     public SnapshotName getSnapshotShippingNameInProgress()
     {
+        checkDeleted();
         return snapshotNameInProgress.get();
     }
 
@@ -278,6 +252,7 @@ public class ResourceConnection extends BaseTransactionObject
         connectionKey.getTarget().getObjProt().requireAccess(accCtxRef, accType);
     }
 
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
@@ -303,6 +278,7 @@ public class ResourceConnection extends BaseTransactionObject
 
     private ResourceConnectionKey getConnectionKey()
     {
+        checkDeleted();
         return connectionKey;
     }
 
@@ -338,24 +314,17 @@ public class ResourceConnection extends BaseTransactionObject
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Node1: '" + connectionKey.getSource().getNode().getName() + "', " +
                "Node2: '" + connectionKey.getTarget().getNode().getName() + "', " +
                "Rsc: '" + connectionKey.getSource().getDefinition().getName() + "'";
     }
 
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted resource connection");
-        }
-    }
-
     public ResourceConnectionApi getApiData(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         return new RscConnPojo(
             getUuid(),
             connectionKey.getSource().getNode().getName().getDisplayName(),
@@ -366,6 +335,7 @@ public class ResourceConnection extends BaseTransactionObject
             TcpPortNumber.getValueNullable(getPort(accCtx))
         );
     }
+
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETED(1L << 0),

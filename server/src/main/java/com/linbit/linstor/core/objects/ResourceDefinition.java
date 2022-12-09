@@ -2,8 +2,6 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
@@ -29,7 +27,6 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -59,8 +56,7 @@ import java.util.stream.Stream;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class ResourceDefinition extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<ResourceDefinition>, ProtectedObject
+public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implements ProtectedObject
 {
     public interface InitMaps
     {
@@ -68,12 +64,6 @@ public class ResourceDefinition extends BaseTransactionObject
         Map<VolumeNumber, VolumeDefinition> getVlmDfnMap();
         Map<SnapshotName, SnapshotDefinition> getSnapshotDfnMap();
     }
-
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
 
     // Resource name
     private final ResourceName resourceName;
@@ -103,8 +93,6 @@ public class ResourceDefinition extends BaseTransactionObject
 
     private final TransactionMap<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
 
-    private final TransactionSimpleObject<ResourceDefinition, Boolean> deleted;
-
     private final TransactionList<ResourceDefinition, DeviceLayerKind> layerStack;
 
     private final TransactionSimpleObject<ResourceDefinition, ResourceGroup> rscGrp;
@@ -128,13 +116,11 @@ public class ResourceDefinition extends BaseTransactionObject
     )
         throws DatabaseException
     {
-        super(transMgrProviderRef);
+        super(objIdRef, transObjFactory, transMgrProviderRef);
 
         ErrorCheck.ctorNotNull(ResourceDefinition.class, ResourceName.class, resName);
         ErrorCheck.ctorNotNull(ResourceDefinition.class, ObjectProtection.class, objProtRef);
         ErrorCheck.ctorNotNull(ResourceDefinition.class, ResourceGroup.class, rscGrpRef);
-        objId = objIdRef;
-        dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         resourceName = resName;
         externalName = extName;
@@ -147,7 +133,6 @@ public class ResourceDefinition extends BaseTransactionObject
             layerStackRef,
             dbDriver.getLayerStackDriver()
         );
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
         rscGrp = transObjFactory.createTransactionSimpleObject(this, rscGrpRef, dbDriver.getRscGrpDriver());
 
         rscDfnProps = propsContainerFactory.getInstance(
@@ -174,12 +159,6 @@ public class ResourceDefinition extends BaseTransactionObject
             rscGrp,
             deleted
         );
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
     }
 
     public ResourceName getName()
@@ -250,11 +229,13 @@ public class ResourceDefinition extends BaseTransactionObject
 
     public int getResourceCount()
     {
+        checkDeleted();
         return resourceMap.size();
     }
 
     public int getNotDeletedDiskfulCount(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         int count = 0;
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
@@ -373,6 +354,7 @@ public class ResourceDefinition extends BaseTransactionObject
 
     public boolean hasDiskless(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         boolean hasDiskless = false;
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
@@ -393,6 +375,7 @@ public class ResourceDefinition extends BaseTransactionObject
 
     public boolean hasDisklessNotDeleting(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         boolean hasDisklessNotDeleting = false;
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
@@ -526,6 +509,7 @@ public class ResourceDefinition extends BaseTransactionObject
         return rscGrp.get();
     }
 
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
@@ -569,22 +553,10 @@ public class ResourceDefinition extends BaseTransactionObject
         }
     }
 
-    public boolean isDeleted()
-    {
-        return deleted.get();
-    }
-
-    private void checkDeleted()
-    {
-        if (isDeleted())
-        {
-            throw new AccessToDeletedDataException("Access to deleted resource definition");
-        }
-    }
-
     public ResourceDefinitionApi getApiData(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         ArrayList<VolumeDefinitionApi> vlmDfnList = new ArrayList<>();
         Iterator<VolumeDefinition> vlmDfnIter = iterateVolumeDfn(accCtx);
         while (vlmDfnIter.hasNext())
@@ -644,6 +616,7 @@ public class ResourceDefinition extends BaseTransactionObject
     public Optional<Resource> anyResourceInUse(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         Resource rscInUse = null;
         Iterator<Resource> rscInUseIterator = iterateResource(accCtx);
         while (rscInUseIterator.hasNext() && rscInUse == null)
@@ -668,15 +641,9 @@ public class ResourceDefinition extends BaseTransactionObject
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Rsc: '" + resourceName + "'";
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
     }
 
     @Override

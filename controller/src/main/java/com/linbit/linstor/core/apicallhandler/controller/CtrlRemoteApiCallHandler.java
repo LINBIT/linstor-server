@@ -27,12 +27,11 @@ import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemoteControllerFactory;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemoteControllerFactory;
-import com.linbit.linstor.core.objects.remotes.Remote;
-import com.linbit.linstor.core.objects.remotes.Remote.Flags;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.S3RemoteControllerFactory;
 import com.linbit.linstor.core.repository.NodeRepository;
@@ -162,7 +161,7 @@ public class CtrlRemoteApiCallHandler
     }
 
     @SuppressWarnings("unchecked")
-    private <RET_TYPE, REMOTE_CLASS extends Remote> List<RET_TYPE> listGeneric(
+    private <RET_TYPE, REMOTE_CLASS extends AbsRemote> List<RET_TYPE> listGeneric(
         Class<REMOTE_CLASS> clazz,
         ExceptionThrowingFunction<REMOTE_CLASS, RET_TYPE, AccessDeniedException> remoteToApiDataFunc
     )
@@ -171,9 +170,9 @@ public class CtrlRemoteApiCallHandler
         try
         {
             AccessContext pAccCtx = peerAccCtx.get();
-            for (Entry<RemoteName, Remote> entry : remoteRepository.getMapForView(pAccCtx).entrySet())
+            for (Entry<RemoteName, AbsRemote> entry : remoteRepository.getMapForView(pAccCtx).entrySet())
             {
-                Remote remote = entry.getValue();
+                AbsRemote remote = entry.getValue();
                 if (clazz.isInstance(remote))
                 {
                     ret.add(remoteToApiDataFunc.accept((REMOTE_CLASS) remote));
@@ -255,7 +254,7 @@ public class CtrlRemoteApiCallHandler
 
             if (usePathStyleRef)
             {
-                remote.getFlags().enableFlags(peerAccCtx.get(), Flags.S3_USE_PATH_STYLE);
+                remote.getFlags().enableFlags(peerAccCtx.get(), AbsRemote.Flags.S3_USE_PATH_STYLE);
             }
 
             // check if url and keys work together
@@ -1037,13 +1036,13 @@ public class CtrlRemoteApiCallHandler
     }
 
     @SuppressWarnings("unchecked")
-    private <REMOTE_TYPE extends Remote> REMOTE_TYPE loadRemote(
+    private <REMOTE_TYPE extends AbsRemote> REMOTE_TYPE loadRemote(
         RemoteName remoteNameRef,
         Class<REMOTE_TYPE> remoteTypeClassRef,
         String remoteTypeDescrRef
     )
     {
-        Remote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
+        AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
         if (!remoteTypeClassRef.isInstance(remote))
         {
             throw new ApiRcException(
@@ -1061,7 +1060,7 @@ public class CtrlRemoteApiCallHandler
     {
         Flux<ApiCallRc> flux;
         RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStrRef);
-        Remote remote = ctrlApiDataLoader.loadRemote(remoteName, false);
+        AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteName, false);
         String remoteDescription = getRemoteDescription(remoteNameStrRef);
 
         if (remote == null)
@@ -1077,7 +1076,7 @@ public class CtrlRemoteApiCallHandler
         {
             checkIfRemoteCanBeDeletedPriviledged(remote);
 
-            enableFlags(remote, Remote.Flags.DELETE);
+            enableFlags(remote, AbsRemote.Flags.DELETE);
             if (remote instanceof S3Remote)
             {
                 backupHandler.deleteRemoteFromCache((S3Remote) remote);
@@ -1123,7 +1122,7 @@ public class CtrlRemoteApiCallHandler
         return flux;
     }
 
-    private void checkIfRemoteCanBeDeletedPriviledged(Remote remoteRef)
+    private void checkIfRemoteCanBeDeletedPriviledged(AbsRemote remoteRef)
     {
         try
         {
@@ -1162,7 +1161,7 @@ public class CtrlRemoteApiCallHandler
         }
     }
 
-    private Flux<ApiCallRc> deleteImpl(Remote remoteRef)
+    private Flux<ApiCallRc> deleteImpl(AbsRemote remoteRef)
     {
         ResponseContext context = makeRemoteContext(
             ApiOperation.makeModifyOperation(),
@@ -1176,7 +1175,7 @@ public class CtrlRemoteApiCallHandler
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> deleteImplInTransaction(Remote remoteRef)
+    private Flux<ApiCallRc> deleteImplInTransaction(AbsRemote remoteRef)
     {
         RemoteName remoteName = remoteRef.getName();
         String remoteDescription = getRemoteDescription(remoteName.displayValue);
@@ -1209,7 +1208,7 @@ public class CtrlRemoteApiCallHandler
         return Flux.just(new ApiCallRcImpl(response));
     }
 
-    private void enableFlags(Remote remoteRef, Remote.Flags... flags)
+    private void enableFlags(AbsRemote remoteRef, AbsRemote.Flags... flags)
     {
         try
         {

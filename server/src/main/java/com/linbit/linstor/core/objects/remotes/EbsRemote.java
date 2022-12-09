@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.EbsRemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -10,9 +9,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -25,19 +22,14 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 
-public class EbsRemote extends BaseTransactionObject
-    implements Remote, DbgInstanceUuid, Comparable<Remote>, ProtectedObject
+public class EbsRemote extends AbsRemote
 {
     public interface InitMaps
     {
         // currently only a place holder for future maps
     }
 
-    private final ObjectProtection objProt;
-    private final UUID objId;
-    private final transient UUID dbgInstanceId;
     private final EbsRemoteDatabaseDriver dbDriver;
-    private final RemoteName remoteName;
     private final TransactionSimpleObject<EbsRemote, URL> url;
     private final TransactionSimpleObject<EbsRemote, String> region;
     private final TransactionSimpleObject<EbsRemote, String> availabilityZone;
@@ -46,7 +38,6 @@ public class EbsRemote extends BaseTransactionObject
     private final TransactionSimpleObject<EbsRemote, byte[]> encryptedAccessKey;
     private final TransactionSimpleObject<EbsRemote, String> decryptedAccessKey;
     private final StateFlags<Flags> flags;
-    private final TransactionSimpleObject<EbsRemote, Boolean> deleted;
 
     public EbsRemote(
         ObjectProtection objProtRef,
@@ -63,19 +54,8 @@ public class EbsRemote extends BaseTransactionObject
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(transMgrProvider);
-        objProt = objProtRef;
-        objId = objIdRef;
-        remoteName = remoteNameRef;
-        dbgInstanceId = UUID.randomUUID();
+        super(objIdRef, transObjFactory, transMgrProvider, objProtRef, remoteNameRef);
         dbDriver = dbDriverRef;
-        flags = transObjFactory.createStateFlagsImpl(
-            objProtRef,
-            this,
-            Flags.class,
-            dbDriverRef.getStateFlagsPersistence(),
-            initialFlags
-        );
         url = transObjFactory.createTransactionSimpleObject(this, urlRef, dbDriverRef.getUrlDriver());
         availabilityZone = transObjFactory.createTransactionSimpleObject(
             this,
@@ -100,8 +80,13 @@ public class EbsRemote extends BaseTransactionObject
             dbDriverRef.getEncryptedAccessKeyDriver()
         );
         decryptedAccessKey = transObjFactory.createTransactionSimpleObject(this, null, null);
-
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
+        flags = transObjFactory.createStateFlagsImpl(
+            objProtRef,
+            this,
+            Flags.class,
+            dbDriverRef.getStateFlagsPersistence(),
+            initialFlags
+        );
 
         transObjs = Arrays.asList(
             objProt,
@@ -117,12 +102,6 @@ public class EbsRemote extends BaseTransactionObject
         );
     }
 
-    @Override
-    public RemoteName getName()
-    {
-        checkDeleted();
-        return remoteName;
-    }
 
     @Override
     public UUID getUuid()
@@ -131,12 +110,6 @@ public class EbsRemote extends BaseTransactionObject
         return objId;
     }
 
-    @Override
-    public StateFlags<Flags> getFlags()
-    {
-        checkDeleted();
-        return flags;
-    }
 
     @Override
     public RemoteType getType()
@@ -297,8 +270,9 @@ public class EbsRemote extends BaseTransactionObject
             deleted.set(true);
         }
     }
+
     @Override
-    public int compareTo(Remote remote)
+    public int compareTo(AbsRemote remote)
     {
         int cmp = remote.getClass().getSimpleName().compareTo(EbsRemote.class.getSimpleName());
         if (cmp == 0)
@@ -335,23 +309,24 @@ public class EbsRemote extends BaseTransactionObject
     }
 
     @Override
-    public ObjectProtection getObjProt()
-    {
-        checkDeleted();
-        return objProt;
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
-    private void checkDeleted()
+    protected void checkDeleted()
     {
         if (deleted.get())
         {
-            throw new AccessToDeletedDataException("Access to deleted S3Remote");
+            throw new AccessToDeletedDataException("Access to deleted EbsRemote");
         }
+    }
+
+    @Override
+    protected String toStringImpl()
+    {
+        return "EbsRemote '" + remoteName.displayValue + "'";
+    }
+
+    @Override
+    public StateFlags<Flags> getFlags()
+    {
+        checkDeleted();
+        return flags;
     }
 }

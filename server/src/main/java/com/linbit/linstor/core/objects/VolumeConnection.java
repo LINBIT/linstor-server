@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
@@ -13,9 +11,7 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
@@ -29,14 +25,8 @@ import java.util.UUID;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public class VolumeConnection extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<VolumeConnection>
+public class VolumeConnection extends AbsCoreObj<VolumeConnection>
 {
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
 
     private final Volume sourceVolume;
     private final Volume targetVolume;
@@ -44,8 +34,6 @@ public class VolumeConnection extends BaseTransactionObject
     private final Props props;
 
     private final VolumeConnectionDatabaseDriver dbDriver;
-
-    private final TransactionSimpleObject<VolumeConnection, Boolean> deleted;
 
     VolumeConnection(
         UUID uuid,
@@ -58,7 +46,7 @@ public class VolumeConnection extends BaseTransactionObject
     )
         throws DatabaseException
     {
-        super(transMgrProviderRef);
+        super(uuid, transObjFactory, transMgrProviderRef);
 
         if (sourceVolumeRef.getVolumeDefinition() != targetVolumeRef.getVolumeDefinition() ||
             sourceVolumeRef.getResourceDefinition() != targetVolumeRef.getResourceDefinition())
@@ -79,9 +67,7 @@ public class VolumeConnection extends BaseTransactionObject
             );
         }
 
-        objId = uuid;
         dbDriver = dbDriverRef;
-        dbgInstanceId = UUID.randomUUID();
 
         NodeName sourceNodeName = sourceVolumeRef.getAbsResource().getNode().getName();
         NodeName targetNodeName = targetVolumeRef.getAbsResource().getNode().getName();
@@ -105,7 +91,6 @@ public class VolumeConnection extends BaseTransactionObject
                 sourceVolumeRef.getVolumeDefinition().getVolumeNumber()
             )
         );
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
             sourceVolume,
@@ -142,18 +127,6 @@ public class VolumeConnection extends BaseTransactionObject
         return source.getVolumeConnection(accCtx, target);
     }
 
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
-    }
-
     public Volume getSourceVolume(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
@@ -179,6 +152,7 @@ public class VolumeConnection extends BaseTransactionObject
         );
     }
 
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
@@ -195,14 +169,6 @@ public class VolumeConnection extends BaseTransactionObject
             dbDriver.delete(this);
 
             deleted.set(true);
-        }
-    }
-
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted volume connection");
         }
     }
 
@@ -246,7 +212,7 @@ public class VolumeConnection extends BaseTransactionObject
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Node1: '" + sourceVolume.getAbsResource().getNode().getName() + "', " +
                "Node2: '" + targetVolume.getAbsResource().getNode().getName() + "', " +

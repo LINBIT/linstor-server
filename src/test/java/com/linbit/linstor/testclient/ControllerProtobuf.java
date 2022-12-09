@@ -8,7 +8,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.logging.StderrErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 
@@ -250,7 +250,7 @@ public class ControllerProtobuf extends ProtobufIO
         final Set<Resource> resources,
         final Set<Snapshot> snapshots,
         final Set<ExternalFile> externalFiles,
-        final Set<Remote> remotes,
+        final Set<AbsRemote> remotes,
         final long timestamp,
         final long updateId
     )

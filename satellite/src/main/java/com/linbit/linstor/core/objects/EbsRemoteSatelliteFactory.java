@@ -6,7 +6,7 @@ import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.EbsRemoteDatabaseDriver;
@@ -59,7 +59,7 @@ public class EbsRemoteSatelliteFactory
     )
         throws ImplementationError
     {
-        Remote remote = remoteMap.get(remoteNameRef);
+        AbsRemote remote = remoteMap.get(remoteNameRef);
         EbsRemote ebsRemote = null;
         if (remote == null)
         {

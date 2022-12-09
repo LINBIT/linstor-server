@@ -9,8 +9,8 @@ import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
-import com.linbit.linstor.core.objects.remotes.Remote;
-import com.linbit.linstor.core.objects.remotes.Remote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -53,7 +53,7 @@ public class BackupShippingMgr
         return services.get(remoteType);
     }
 
-    public AbsBackupShippingService getService(Remote remote)
+    public AbsBackupShippingService getService(AbsRemote remote)
     {
         return getService(remote.getType());
     }
@@ -88,7 +88,7 @@ public class BackupShippingMgr
 
                 if (remoteNameStr != null)
                 {
-                    Remote remote = remoteMap.get(new RemoteName(remoteNameStr, true));
+                    AbsRemote remote = remoteMap.get(new RemoteName(remoteNameStr, true));
                     if (remote == null)
                     {
                         throw new ImplementationError(

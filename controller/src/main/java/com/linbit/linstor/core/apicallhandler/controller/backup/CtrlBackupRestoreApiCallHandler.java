@@ -57,7 +57,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
@@ -690,7 +690,7 @@ public class CtrlBackupRestoreApiCallHandler
         SnapshotDefinition snapDfn,
         Map<Integer, SnapshotVolumeDefinition> snapVlmDfns,
         Map<String, String> renameMap,
-        Remote remote
+        AbsRemote remote
     )
         throws AccessDeniedException, DatabaseException
     {
@@ -1367,7 +1367,7 @@ public class CtrlBackupRestoreApiCallHandler
     {
         byte[] remoteMasterKey = null;
         UUID srcClusterId = UUID.fromString(sourceClusterIdStr);
-        for (Remote sourceRemote : remoteRepo.getMapForView(sysCtx).values())
+        for (AbsRemote sourceRemote : remoteRepo.getMapForView(sysCtx).values())
         {
             if (sourceRemote instanceof LinstorRemote)
             {
@@ -1583,7 +1583,7 @@ public class CtrlBackupRestoreApiCallHandler
                             InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
-                        Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                        AbsRemote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
                         if (remote != null && remote instanceof StltRemote)
                         {
                             snap.getProps(peerAccCtx.get()).removeProp(

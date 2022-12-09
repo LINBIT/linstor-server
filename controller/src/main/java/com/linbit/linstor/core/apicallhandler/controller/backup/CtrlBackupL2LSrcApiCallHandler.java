@@ -29,10 +29,10 @@ import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.objects.remotes.StltRemoteControllerFactory;
-import com.linbit.linstor.core.objects.remotes.Remote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -181,7 +181,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     )
     {
 
-        Remote remote = ctrlApiDataLoader.loadRemote(linstorRemoteNameRef, true);
+        AbsRemote remote = ctrlApiDataLoader.loadRemote(linstorRemoteNameRef, true);
         if (!(remote instanceof LinstorRemote))
         {
             throw new ApiRcException(

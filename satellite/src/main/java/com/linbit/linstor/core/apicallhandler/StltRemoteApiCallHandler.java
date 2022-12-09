@@ -15,7 +15,7 @@ import com.linbit.linstor.core.objects.EbsRemoteSatelliteFactory;
 import com.linbit.linstor.core.objects.S3RemoteSatelliteFactory;
 import com.linbit.linstor.core.objects.StltRemoteSatelliteFactory;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -149,7 +149,7 @@ public class StltRemoteApiCallHandler
         try
         {
             RemoteName remoteName = new RemoteName(remoteNameStrRef, true);
-            Remote remote = remoteMap.get(remoteName);
+            AbsRemote remote = remoteMap.get(remoteName);
             if (remote != null)
             {
                 errorReporter.logTrace("Cleaning up deleted Remote: %s", remoteNameStrRef);
@@ -205,7 +205,7 @@ public class StltRemoteApiCallHandler
         try
         {
             RemoteName remoteName = new RemoteName(stltRemotePojoRef.getRemoteName());
-            Remote remote = remoteMap.get(remoteName);
+            AbsRemote remote = remoteMap.get(remoteName);
             if (remote != null)
             {
                 errorReporter.logTrace("Cleaning up deleted StltRemote: %s", stltRemotePojoRef);

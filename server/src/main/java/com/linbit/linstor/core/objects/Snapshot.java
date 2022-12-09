@@ -260,7 +260,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Node: '" + node.getName() + "', " + snapshotDfn;
     }
@@ -313,6 +313,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
     public SnapshotApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
+        checkDeleted();
         List<SnapshotVolumeApi> snapshotVlms = new ArrayList<>();
 
         for (SnapshotVolume snapshotVolume : snapVlmMap.values())
@@ -338,22 +339,26 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
 
     public NodeName getNodeName()
     {
+        checkDeleted();
         return node.getName();
     }
 
     public ResourceName getResourceName()
     {
+        checkDeleted();
         return snapshotDfn.getResourceName();
     }
 
     public SnapshotName getSnapshotName()
     {
+        checkDeleted();
         return snapshotDfn.getName();
     }
 
     @Override
     public ResourceDefinition getResourceDefinition()
     {
+        checkDeleted();
         return snapshotDfn.getResourceDefinition();
     }
 
@@ -409,6 +414,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
     @Override
     public ObjectProtection getObjProt()
     {
+        checkDeleted();
         return snapshotDfn.getResourceDefinition().getObjProt();
     }
 

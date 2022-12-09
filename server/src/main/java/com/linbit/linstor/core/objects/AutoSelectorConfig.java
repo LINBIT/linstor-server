@@ -24,9 +24,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
-public class AutoSelectorConfig extends BaseTransactionObject implements DbgInstanceUuid, ProtectedObject
+public class AutoSelectorConfig extends BaseTransactionObject
+    implements DbgInstanceUuid, ProtectedObject
 {
     private final UUID dbgInstanceId;
     private final ResourceGroup rscGrp;
@@ -175,26 +177,22 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
         return dbgInstanceId;
     }
 
-
     @Override
     public ObjectProtection getObjProt()
     {
         return rscGrp.getObjProt();
     }
 
-
     public ResourceGroup getResourceGroup()
     {
         return rscGrp;
     }
-
 
     public Integer getReplicaCount(AccessContext accCtx) throws AccessDeniedException
     {
         getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return replicaCount.get();
     }
-
 
     public List<String> getNodeNameList(AccessContext accCtx) throws AccessDeniedException
     {
@@ -243,12 +241,10 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
         return protectedList(accCtx, allowedProviderList);
     }
 
-
     public Boolean getDisklessOnRemaining(AccessContext accCtxRef) throws AccessDeniedException
     {
         return disklessOnRemaining.get();
     }
-
 
     public AutoSelectFilterApi getApiData()
     {
@@ -355,5 +351,116 @@ public class AutoSelectorConfig extends BaseTransactionObject implements DbgInst
             ret = Collections.unmodifiableList(list);
         }
         return ret;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(
+            allowedProviderList,
+            disklessOnRemaining,
+            doNotPlaceWithRscList,
+            doNotPlaceWithRscRegex,
+            layerStack,
+            nodeNameList,
+            replicaCount,
+            replicasOnDifferentList,
+            replicasOnSameList,
+            rscGrp,
+            storPoolDisklessNameList,
+            storPoolNameList
+        );
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+        if (!(obj instanceof AutoSelectorConfig))
+        {
+            return false;
+        }
+        AutoSelectorConfig other = (AutoSelectorConfig) obj;
+        return Objects.equals(allowedProviderList, other.allowedProviderList) && Objects.equals(
+            disklessOnRemaining,
+            other.disklessOnRemaining
+        ) && Objects.equals(doNotPlaceWithRscList, other.doNotPlaceWithRscList) && Objects.equals(
+            doNotPlaceWithRscRegex,
+            other.doNotPlaceWithRscRegex
+        ) && Objects.equals(layerStack, other.layerStack) && Objects.equals(nodeNameList, other.nodeNameList) && Objects
+            .equals(replicaCount, other.replicaCount) && Objects.equals(
+                replicasOnDifferentList,
+                other.replicasOnDifferentList
+            ) && Objects.equals(replicasOnSameList, other.replicasOnSameList) && Objects.equals(rscGrp, other.rscGrp) &&
+            Objects.equals(storPoolDisklessNameList, other.storPoolDisklessNameList) && Objects.equals(
+                storPoolNameList,
+                other.storPoolNameList
+            );
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("AutoSelectorConfig:\n");
+        sb.append(
+            replicaCount.get() != null
+                ? "\treplicaCount: " + replicaCount + "\n"
+                : ""
+        );
+        sb.append(
+            !nodeNameList.isEmpty()
+                ? "\tnodeNameList: " + nodeNameList + "\n"
+                : ""
+        );
+        sb.append(
+            !storPoolNameList.isEmpty()
+                ? "\tstorPoolNameList: " + storPoolNameList + "\n"
+                : ""
+        );
+        sb.append(
+            !storPoolDisklessNameList.isEmpty()
+                ? "\tstorPoolDisklessNameList: " + storPoolDisklessNameList + "\n"
+                : ""
+        );
+        sb.append(
+            !doNotPlaceWithRscList.isEmpty()
+                ? "\tdoNotPlaceWithRscList: " + doNotPlaceWithRscList + "\n"
+                : ""
+        );
+        sb.append(
+            doNotPlaceWithRscRegex.get() != null
+                ? "\tdoNotPlaceWithRscRegex: " + doNotPlaceWithRscRegex + "\n"
+                : ""
+        );
+        sb.append(
+            !replicasOnSameList.isEmpty()
+                ? "\treplicasOnSameList: " + replicasOnSameList + "\n"
+                : ""
+        );
+        sb.append(
+            !replicasOnDifferentList.isEmpty()
+                ? "\treplicasOnDifferentList: " + replicasOnDifferentList + "\n"
+                : ""
+        );
+        sb.append(
+            !layerStack.isEmpty()
+                ? "\tlayerStack: " + layerStack + "\n"
+                : ""
+        );
+        sb.append(
+            !allowedProviderList.isEmpty()
+                ? "\tallowedProviderList: " + allowedProviderList + "\n"
+                : ""
+        );
+        sb.append(
+            disklessOnRemaining.get() != null
+                ? "\tdisklessOnRemaining: " + disklessOnRemaining + "\n"
+                : ""
+        );
+        return sb.toString();
     }
 }

@@ -19,7 +19,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -439,7 +439,7 @@ public class CtrlSatelliteUpdateCaller
         );
     }
 
-    public Flux<ApiCallRc> updateSatellites(Remote remoteRef)
+    public Flux<ApiCallRc> updateSatellites(AbsRemote remoteRef)
     {
         return Flux.merge(
             updateAllSatellites(

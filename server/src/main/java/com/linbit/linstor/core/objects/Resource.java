@@ -129,6 +129,7 @@ public class Resource extends AbsResource<Resource>
             )
         );
     }
+
     @Override
     public ObjectProtection getObjProt()
     {
@@ -323,43 +324,50 @@ public class Resource extends AbsResource<Resource>
 
     public void setCreatePrimary()
     {
+        checkDeleted();
         createPrimary = true;
     }
 
     public void unsetCreatePrimary()
     {
+        checkDeleted();
         createPrimary = false;
     }
 
-
     public boolean isCreatePrimary()
     {
+        checkDeleted();
         return createPrimary;
     }
 
     public boolean isDrbdDiskless(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         return getStateFlags().isSet(accCtx, Flags.DRBD_DISKLESS);
     }
 
     public boolean isNvmeInitiator(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         return getStateFlags().isSet(accCtx, Flags.NVME_INITIATOR);
     }
 
     public boolean isEbsInitiator(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         return getStateFlags().isSet(accCtx, Flags.EBS_INITIATOR);
     }
 
     public boolean isDiskless(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         return isDrbdDiskless(accCtx) || isNvmeInitiator(accCtx);
     }
 
     public ResourceApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
+        checkDeleted();
         List<VolumeApi> volumes = new ArrayList<>();
         Iterator<Volume> itVolumes = iterateVolumes();
         while (itVolumes.hasNext())
@@ -437,7 +445,7 @@ public class Resource extends AbsResource<Resource>
         return ret;
     }
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Node: '" + node.getName() + "', " +
                "Rsc: '" + resourceDfn.getName() + "'";
@@ -643,6 +651,7 @@ public class Resource extends AbsResource<Resource>
     @Override
     public ResourceDefinition getResourceDefinition()
     {
+        checkDeleted();
         return resourceDfn;
     }
 }

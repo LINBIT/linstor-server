@@ -16,7 +16,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -136,7 +136,7 @@ public class CtrlFullSyncApiCallHandler
             Set<Resource> rscs = new LinkedHashSet<>();
             Set<Snapshot> snapshots = new LinkedHashSet<>();
             Set<ExternalFile> externalFiles = new LinkedHashSet<>();
-            Set<Remote> remotes = new LinkedHashSet<>();
+            Set<AbsRemote> remotes = new LinkedHashSet<>();
 
             nodes.add(satelliteNode); // always add the localNode
 

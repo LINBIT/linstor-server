@@ -13,9 +13,9 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltConnTracker;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
-import com.linbit.linstor.core.objects.remotes.Remote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -91,13 +91,13 @@ public class BackupShippingS3Service extends AbsBackupShippingService
     }
 
     @Override
-    protected String getCommandReceiving(String cmdRef, Remote ignoredRemote, AbsStorageVlmData<Snapshot> ignored)
+    protected String getCommandReceiving(String cmdRef, AbsRemote ignoredRemote, AbsStorageVlmData<Snapshot> ignored)
     {
         return String.format(CMD_FORMAT_RECEIVING, cmdRef);
     }
 
     @Override
-    protected String getCommandSending(String cmdRef, Remote ignoredRemote, AbsStorageVlmData<Snapshot> ignored)
+    protected String getCommandSending(String cmdRef, AbsRemote ignoredRemote, AbsStorageVlmData<Snapshot> ignored)
     {
         return String.format(CMD_FORMAT_SENDING, cmdRef);
     }
@@ -138,7 +138,7 @@ public class BackupShippingS3Service extends AbsBackupShippingService
         String shippingDescrRef,
         String[] fullCommand,
         String backupNameRef,
-        Remote remote,
+        AbsRemote remote,
         boolean restore,
         Integer ignored,
         BiConsumer<Boolean, Integer> postAction

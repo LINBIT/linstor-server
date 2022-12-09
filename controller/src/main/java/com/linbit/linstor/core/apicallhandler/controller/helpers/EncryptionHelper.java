@@ -28,7 +28,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
@@ -325,7 +325,7 @@ public class EncryptionHelper
 
                 // also decrypt EBS remote settings, since we will need them for periodic polling
                 boolean anyEbsRemoteDecrypted = false;
-                for (Remote remote : remoteMap.values())
+                for (AbsRemote remote : remoteMap.values())
                 {
                     if (remote instanceof EbsRemote)
                     {

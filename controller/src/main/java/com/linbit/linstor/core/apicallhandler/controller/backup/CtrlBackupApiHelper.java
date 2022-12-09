@@ -26,7 +26,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
@@ -131,7 +131,7 @@ public class CtrlBackupApiHelper
      */
     S3Remote getS3Remote(String remoteName) throws AccessDeniedException, InvalidNameException
     {
-        Remote remote = getRemote(remoteName);
+        AbsRemote remote = getRemote(remoteName);
         if (!(remote instanceof S3Remote))
         {
             throw new ApiRcException(
@@ -147,7 +147,7 @@ public class CtrlBackupApiHelper
     /**
      * Get the remote with the given name and make sure it exists.
      */
-    Remote getRemote(String remoteName) throws AccessDeniedException, InvalidNameException
+    AbsRemote getRemote(String remoteName) throws AccessDeniedException, InvalidNameException
     {
         if (remoteName == null || remoteName.isEmpty())
         {
@@ -158,7 +158,7 @@ public class CtrlBackupApiHelper
                 )
             );
         }
-        Remote remote = null;
+        AbsRemote remote = null;
         remote = remoteRepo.get(peerAccCtx.get(), new RemoteName(remoteName, true));
         if (remote == null)
         {
@@ -181,7 +181,7 @@ public class CtrlBackupApiHelper
         return getInProgressBackups(rscDfn, null);
     }
 
-    Set<SnapshotDefinition> getInProgressBackups(ResourceDefinition rscDfn, @Nullable Remote remote)
+    Set<SnapshotDefinition> getInProgressBackups(ResourceDefinition rscDfn, @Nullable AbsRemote remote)
         throws AccessDeniedException, InvalidNameException
     {
         Set<SnapshotDefinition> snapDfns = new HashSet<>();
@@ -230,7 +230,7 @@ public class CtrlBackupApiHelper
         boolean ret = expectedRemote != null;
         if (ret && !expectedRemote.equalsIgnoreCase(remoteToCheck))
         {
-            Remote remote = remoteRepo.get(sysCtx, new RemoteName(remoteToCheck, true));
+            AbsRemote remote = remoteRepo.get(sysCtx, new RemoteName(remoteToCheck, true));
             if (remote instanceof StltRemote)
             {
                 // we checked the stlt-remote instead of the correct remote, check again
@@ -447,7 +447,7 @@ public class CtrlBackupApiHelper
 
     private Flux<ApiCallRc> deleteStltRemoteInTransaction(String remoteNameRef)
     {
-        Remote remote;
+        AbsRemote remote;
         try
         {
             remote = remoteRepo.get(sysCtx, new RemoteName(remoteNameRef, true));

@@ -50,7 +50,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -1790,9 +1790,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             try
             {
                 List<RemoteName> remoteNamesToDelete = new ArrayList<>();
-                for (Remote remote : remoteMap.values())
+                for (AbsRemote remote : remoteMap.values())
                 {
-                    if (remote.getFlags().isSet(wrkCtx, Remote.Flags.DELETE))
+                    if (remote.getFlags().isSet(wrkCtx, AbsRemote.Flags.DELETE))
                     {
                         remoteNamesToDelete.add(remote.getName());
                         remote.delete(wrkCtx);

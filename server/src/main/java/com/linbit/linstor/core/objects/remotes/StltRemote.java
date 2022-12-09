@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -9,10 +8,8 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
@@ -31,8 +28,7 @@ import java.util.UUID;
  * This object will NOT be persisted.
  * This object is expected to be deleted after a backup shipping.
  */
-public class StltRemote extends BaseTransactionObject
-    implements Remote, DbgInstanceUuid, Comparable<Remote>, ProtectedObject
+public class StltRemote extends AbsRemote
 {
     public interface InitMaps
     {
@@ -40,9 +36,6 @@ public class StltRemote extends BaseTransactionObject
     }
 
     private final ObjectProtection objProt;
-    private final UUID objId;
-    private final transient UUID dbgInstanceId;
-    private final RemoteName remoteName;
     private final TransactionSimpleObject<StltRemote, String> ip;
     private final TransactionMap<String, Integer> ports;
     private final TransactionSimpleObject<StltRemote, Boolean> useZstd;
@@ -65,12 +58,9 @@ public class StltRemote extends BaseTransactionObject
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(transMgrProvider);
+        super(objIdRef, transObjFactory, transMgrProvider, objProtRef, remoteNameRef);
         objProt = objProtRef;
-        objId = objIdRef;
         linstorRemoteName = linstorRemoteNameRef;
-        dbgInstanceId = UUID.randomUUID();
-        remoteName = remoteNameRef;
 
         ip = transObjFactory.createTransactionSimpleObject(this, ipRef, null);
         ports = transObjFactory.createTransactionPrimitiveMap(portRef, null);
@@ -104,7 +94,7 @@ public class StltRemote extends BaseTransactionObject
     }
 
     @Override
-    public int compareTo(@Nonnull Remote remote)
+    public int compareTo(@Nonnull AbsRemote remote)
     {
         int cmp = remote.getClass().getSimpleName().compareTo(StltRemote.class.getSimpleName());
         if (cmp == 0)
@@ -268,6 +258,7 @@ public class StltRemote extends BaseTransactionObject
         flags.resetFlagsTo(accCtx, Flags.restoreFlags(apiData.getFlags()));
     }
 
+    @Override
     public boolean isDeleted()
     {
         return deleted.get();
@@ -288,7 +279,8 @@ public class StltRemote extends BaseTransactionObject
         }
     }
 
-    private void checkDeleted()
+    @Override
+    protected void checkDeleted()
     {
         if (deleted.get())
         {
@@ -297,8 +289,8 @@ public class StltRemote extends BaseTransactionObject
     }
 
     @Override
-    public UUID debugGetVolatileUuid()
+    protected String toStringImpl()
     {
-        return dbgInstanceId;
+        return "StltRemote '" + remoteName.displayValue + "'";
     }
 }

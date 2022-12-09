@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.drbd.md.MdException;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -18,11 +16,12 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
@@ -40,19 +39,12 @@ import java.util.Objects;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public class SnapshotVolumeDefinition extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<SnapshotVolumeDefinition>
+public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinition> implements ProtectedObject
 {
     public interface InitMaps
     {
         Map<NodeName, SnapshotVolume> getSnapshotVlmMap();
     }
-
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
 
     private final SnapshotDefinition snapshotDfn;
 
@@ -68,8 +60,6 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
     private final StateFlags<Flags> flags;
 
     private final TransactionMap<NodeName, SnapshotVolume> snapshotVlmMap;
-
-    private final TransactionSimpleObject<SnapshotVolumeDefinition, Boolean> deleted;
 
     private final VolumeDefinition vlmDfn;
     private final VolumeNumber vlmNr;
@@ -93,16 +83,13 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
     )
         throws MdException, DatabaseException
     {
-        super(transMgrProviderRef);
+        super(objIdRef, transObjFactory, transMgrProviderRef);
         VolumeDefinition.checkVolumeSize(volSize);
         vlmDfn = vlmDfnRef;
 
-        objId = objIdRef;
         snapshotDfn = snapshotDfnRef;
         vlmNr = vlmNrRef;
         dbDriver = dbDriverRef;
-
-        dbgInstanceId = UUID.randomUUID();
 
         snapshotVlmDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
@@ -130,19 +117,12 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
             dbDriver.getVolumeSizeDriver()
         );
 
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-
         transObjs = Arrays.asList(
             layerStorage,
             snapshotDfn,
             snapshotVlmMap,
             deleted
         );
-    }
-
-    public UUID getUuid()
-    {
-        return objId;
     }
 
     public SnapshotDefinition getSnapshotDefinition()
@@ -307,6 +287,7 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
         return ret;
     }
 
+    @Override
     public void delete(AccessContext accCtx)
         throws DatabaseException, AccessDeniedException
     {
@@ -330,24 +311,10 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
         }
     }
 
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted snapshot volume definition");
-        }
-    }
-
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return snapshotDfn + ", VlmNr: '" + vlmDfn.getVolumeNumber() + "'";
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
     }
 
     public SnapshotVolumeDefinitionApi getApiData(AccessContext accCtx)
@@ -417,5 +384,12 @@ public class SnapshotVolumeDefinition extends BaseTransactionObject
         {
             return FlagsHelper.fromStringList(Flags.class, listFlags);
         }
+    }
+
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        checkDeleted();
+        return getResourceDefinition().getObjProt();
     }
 }

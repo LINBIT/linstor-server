@@ -1,6 +1,5 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.api.pojo.KeyValueStorePojo;
 import com.linbit.linstor.core.apis.KvsApi;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
@@ -15,9 +14,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nonnull;
@@ -27,20 +24,17 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 
-public class KeyValueStore extends BaseTransactionObject implements Comparable<KeyValueStore>, ProtectedObject
+public class KeyValueStore extends AbsCoreObj<KeyValueStore> implements ProtectedObject
 {
     public interface InitMaps
     {
         // currently only a place holder for future maps
     }
 
-    private final UUID uuid;
     private final ObjectProtection objProt;
     private final KeyValueStoreName kvsName;
     private final Props props;
     private final KeyValueStoreDatabaseDriver driver;
-
-    private final TransactionSimpleObject<KeyValueStore, Boolean> deleted;
 
     public KeyValueStore(
         UUID uuidRef,
@@ -53,8 +47,7 @@ public class KeyValueStore extends BaseTransactionObject implements Comparable<K
     )
         throws DatabaseException
     {
-        super(transMgrProvider);
-        uuid = uuidRef;
+        super(uuidRef, transObjFactory, transMgrProvider);
         objProt = objProtRef;
         kvsName = kvsNameRef;
         driver = driverRef;
@@ -62,7 +55,6 @@ public class KeyValueStore extends BaseTransactionObject implements Comparable<K
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(kvsNameRef)
         );
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
             objProt,
@@ -102,12 +94,6 @@ public class KeyValueStore extends BaseTransactionObject implements Comparable<K
         return ret;
     }
 
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return uuid;
-    }
-
     @Override
     public ObjectProtection getObjProt()
     {
@@ -128,11 +114,7 @@ public class KeyValueStore extends BaseTransactionObject implements Comparable<K
         return PropsAccess.secureGetProps(accCtx, objProt, props);
     }
 
-    public boolean isDeleted()
-    {
-        return deleted.get();
-    }
-
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
@@ -150,14 +132,6 @@ public class KeyValueStore extends BaseTransactionObject implements Comparable<K
         }
     }
 
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted KeyValueStore");
-        }
-    }
-
     public KvsApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
@@ -165,5 +139,11 @@ public class KeyValueStore extends BaseTransactionObject implements Comparable<K
             getName().getDisplayName(),
             props.map()
         );
+    }
+
+    @Override
+    protected String toStringImpl()
+    {
+        return "KeyValueStore '" + kvsName + "'";
     }
 }

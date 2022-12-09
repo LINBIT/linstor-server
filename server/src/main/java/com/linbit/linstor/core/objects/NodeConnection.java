@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -15,9 +13,7 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
-import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Provider;
@@ -31,23 +27,14 @@ import java.util.UUID;
  *
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
-public class NodeConnection extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<NodeConnection>
+public class NodeConnection extends AbsCoreObj<NodeConnection>
 {
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
-
     private final Node sourceNode;
     private final Node targetNode;
 
     private final Props props;
 
     private final NodeConnectionDatabaseDriver dbDriver;
-
-    private final TransactionSimpleObject<NodeConnection, Boolean> deleted;
 
     NodeConnection(
         UUID uuid,
@@ -60,11 +47,9 @@ public class NodeConnection extends BaseTransactionObject
     )
         throws DatabaseException
     {
-        super(transMgrProviderRef);
+        super(uuid, transObjFactory, transMgrProviderRef);
 
-        objId = uuid;
         dbDriver = dbDriverRef;
-        dbgInstanceId = UUID.randomUUID();
 
         // if this is changed, please also update Json#apiToNodeConnection method
         if (node1.getName().compareTo(node2.getName()) < 0)
@@ -84,7 +69,6 @@ public class NodeConnection extends BaseTransactionObject
                 targetNode.getName()
             )
         );
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
             sourceNode,
@@ -115,19 +99,6 @@ public class NodeConnection extends BaseTransactionObject
         }
 
         return source.getNodeConnection(accCtx, target);
-    }
-
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
     }
 
     public NodeName getSourceNodeName()
@@ -188,6 +159,7 @@ public class NodeConnection extends BaseTransactionObject
     {
         checkDeleted();
         sourceNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        targetNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return sourceNode;
     }
 
@@ -195,6 +167,7 @@ public class NodeConnection extends BaseTransactionObject
     {
         checkDeleted();
         sourceNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        targetNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         return targetNode;
     }
 
@@ -203,7 +176,7 @@ public class NodeConnection extends BaseTransactionObject
     {
         checkDeleted();
         sourceNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
-        sourceNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        targetNode.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
         NodePojo otherNodePojo;
         if (sourceNode.equals(localNode))
@@ -240,6 +213,7 @@ public class NodeConnection extends BaseTransactionObject
         );
     }
 
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
@@ -256,14 +230,6 @@ public class NodeConnection extends BaseTransactionObject
             dbDriver.delete(this);
 
             deleted.set(true);
-        }
-    }
-
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted node connection");
         }
     }
 
@@ -300,7 +266,7 @@ public class NodeConnection extends BaseTransactionObject
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Node1: '" + sourceNode.getName() + "', " +
                "Node2: '" + targetNode.getName() + "'";

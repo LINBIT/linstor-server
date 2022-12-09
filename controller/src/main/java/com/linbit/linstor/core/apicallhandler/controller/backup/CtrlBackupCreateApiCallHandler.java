@@ -36,8 +36,8 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.remotes.Remote;
-import com.linbit.linstor.core.objects.remotes.Remote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
@@ -241,7 +241,7 @@ public class CtrlBackupCreateApiCallHandler
             }
 
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
-            Remote remote = null;
+            AbsRemote remote = null;
             RemoteName linstorRemoteName = null;
             SnapshotDefinition prevSnapDfn = null;
             if (remoteTypeRef.equals(RemoteType.S3))
@@ -518,7 +518,7 @@ public class CtrlBackupCreateApiCallHandler
     private SnapshotDefinition getIncrementalBase(
         ResourceDefinition rscDfn,
         String remoteName,
-        Remote remote,
+        AbsRemote remote,
         boolean allowIncremental
     )
         throws AccessDeniedException,
@@ -857,8 +857,8 @@ public class CtrlBackupCreateApiCallHandler
         SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameRef, snapNameRef, false);
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
         boolean forceSkip = false;
-        Remote remote = null;
-        Remote remoteForSchedule = null;
+        AbsRemote remote = null;
+        AbsRemote remoteForSchedule = null;
         Flux<ApiCallRc> cleanupFlux = Flux.empty();
         if (snapDfn != null)
         {
@@ -887,7 +887,7 @@ public class CtrlBackupCreateApiCallHandler
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
                         remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-                        Pair<Flux<ApiCallRc>, Remote> pair = getRemoteForScheduleAndCleanupFlux(
+                        Pair<Flux<ApiCallRc>, AbsRemote> pair = getRemoteForScheduleAndCleanupFlux(
                             remote,
                             rscDfn,
                             snapNameRef,
@@ -919,7 +919,7 @@ public class CtrlBackupCreateApiCallHandler
                         );
                         snap.getFlags().disableFlags(sysCtx, Snapshot.Flags.BACKUP_SOURCE);
                         remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
-                        Pair<Flux<ApiCallRc>, Remote> pair = getRemoteForScheduleAndCleanupFlux(
+                        Pair<Flux<ApiCallRc>, AbsRemote> pair = getRemoteForScheduleAndCleanupFlux(
                             remote,
                             rscDfn,
                             snapNameRef,
@@ -998,8 +998,8 @@ public class CtrlBackupCreateApiCallHandler
     /**
      * Returns the remote and necessary cleanup-flux dependent on which kind of remote it is.
      */
-    private Pair<Flux<ApiCallRc>, Remote> getRemoteForScheduleAndCleanupFlux(
-        Remote remote,
+    private Pair<Flux<ApiCallRc>, AbsRemote> getRemoteForScheduleAndCleanupFlux(
+        AbsRemote remote,
         ResourceDefinition rscDfn,
         String snapName,
         boolean success
@@ -1007,7 +1007,7 @@ public class CtrlBackupCreateApiCallHandler
         throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
         Flux<ApiCallRc> cleanupFlux;
-        Remote remoteForSchedule;
+        AbsRemote remoteForSchedule;
         if (remote != null)
         {
             if (remote instanceof StltRemote)

@@ -15,6 +15,7 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -113,7 +114,7 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return absRsc + ", VlmNr: '" + getVolumeNumber() + "'";
     }
@@ -162,6 +163,7 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
     public SnapshotVolumeApi getApiData(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         return new SnapshotVlmPojo(
             getSnapshotVolumeDefinition().getUuid(),
             getUuid(),
@@ -173,22 +175,26 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
 
     public Node getNode()
     {
+        checkDeleted();
         return absRsc.getNode();
     }
 
     public SnapshotDefinition getSnapshotDefinition()
     {
+        checkDeleted();
         return absRsc.getSnapshotDefinition();
     }
 
     public Snapshot getSnapshot()
     {
+        checkDeleted();
         return absRsc;
     }
 
     @Override
     public ResourceDefinition getResourceDefinition()
     {
+        checkDeleted();
         return getSnapshotDefinition().getResourceDefinition();
     }
 
@@ -216,12 +222,14 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
     @Override
     public long getVolumeSize(AccessContext dbCtxRef) throws AccessDeniedException
     {
+        checkDeleted();
         return getSnapshotVolumeDefinition().getVolumeSize(dbCtxRef);
     }
 
     @Override
     public VolumeDefinition getVolumeDefinition()
     {
+        checkDeleted();
         return getSnapshotVolumeDefinition().getVolumeDefinition();
     }
 
@@ -328,5 +336,12 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
         throws AccessDeniedException
     {
         throw new ImplementationError("Not implemented yet");
+    }
+
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        checkDeleted();
+        return getResourceDefinition().getObjProt();
     }
 }

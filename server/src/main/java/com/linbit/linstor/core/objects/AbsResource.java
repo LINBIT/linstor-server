@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.AbsResourceDatabaseDriver;
@@ -13,7 +11,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -28,18 +25,12 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 public abstract class AbsResource<RSC extends AbsResource<RSC>>
-    extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<AbsResource<RSC>>, ProtectedObject
+    extends AbsCoreObj<AbsResource<RSC>>
+    implements ProtectedObject
 {
     // use special epoch time to mark this as a new resource which will get set on resource apply
     // mysql/mariadb do not allow 0 here, so I choose 1000, as it doesn't mather
     public static final int CREATE_DATE_INIT_VALUE = 1000;
-
-    // Object identifier
-    protected final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
 
     // Reference to the node this resource is assigned to
     protected final Node node;
@@ -51,8 +42,6 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
 
     protected final TransactionSimpleObject<AbsResource<RSC>, AbsRscLayerObject<RSC>> rootLayerData;
 
-    protected final TransactionSimpleObject<AbsResource<RSC>, Boolean> deleted;
-
     public AbsResource(
         UUID objIdRef,
         Node nodeRef,
@@ -63,10 +52,8 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
         AbsResourceDatabaseDriver<RSC> dbDriverRef
     )
     {
-        super(transMgrProviderRef);
+        super(objIdRef, transObjFactory, transMgrProviderRef);
         ErrorCheck.ctorNotNull(this.getClass(), Node.class, nodeRef);
-        objId = objIdRef;
-        dbgInstanceId = UUID.randomUUID();
         node = nodeRef;
         props = propsRef;
         createTimestamp = transObjFactory.createTransactionSimpleObject(
@@ -74,7 +61,6 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
             createTimestampRef,
             dbDriverRef.getCreateTimeDriver());
         rootLayerData = transObjFactory.createTransactionSimpleObject(this, null, null);
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = new ArrayList<>();
         transObjs.add(node);
@@ -82,18 +68,6 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
         transObjs.add(rootLayerData);
         transObjs.add(deleted);
         transObjs.add(createTimestamp);
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
     }
 
     public Props getProps(AccessContext accCtx)
@@ -139,19 +113,6 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
         rootLayerData.set(layerData);
     }
 
-    public boolean isDeleted()
-    {
-        return deleted.get();
-    }
-
-    protected void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted resource");
-        }
-    }
-
     public abstract AbsVolume<RSC> getVolume(VolumeNumber vlmNr);
 
     public abstract Iterator<? extends AbsVolume<RSC>> iterateVolumes();
@@ -163,6 +124,7 @@ public abstract class AbsResource<RSC extends AbsResource<RSC>>
     public abstract void markDeleted(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException;
 
+    @Override
     public abstract void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException;
 

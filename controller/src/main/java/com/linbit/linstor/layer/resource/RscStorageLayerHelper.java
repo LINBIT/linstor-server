@@ -25,7 +25,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
@@ -481,7 +481,7 @@ public class RscStorageLayerHelper extends
     public static String getAvailabilityZone(AccessContext accCtx, RemoteMap remoteMap, StorPool ebsStorPool)
         throws AccessDeniedException, ImplementationError
     {
-        Remote remote;
+        AbsRemote remote;
         try
         {
             remote = remoteMap.get(

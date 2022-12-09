@@ -13,9 +13,9 @@ import com.linbit.linstor.core.StltConnTracker;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
-import com.linbit.linstor.core.objects.remotes.Remote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -68,7 +68,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
     }
 
     @Override
-    protected String getCommandReceiving(String cmdRef, Remote remoteRef, AbsStorageVlmData<Snapshot> snapVlmDataRef)
+    protected String getCommandReceiving(String cmdRef, AbsRemote remoteRef, AbsStorageVlmData<Snapshot> snapVlmDataRef)
         throws AccessDeniedException
     {
         StltRemote stltRemote = (StltRemote) remoteRef;
@@ -93,7 +93,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
     }
 
     @Override
-    protected String getCommandSending(String cmdRef, Remote remoteRef, AbsStorageVlmData<Snapshot> snapVlmDataRef)
+    protected String getCommandSending(String cmdRef, AbsRemote remoteRef, AbsStorageVlmData<Snapshot> snapVlmDataRef)
         throws AccessDeniedException
     {
         StltRemote stltRemote = (StltRemote) remoteRef;
@@ -127,7 +127,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
         String shippingDescrRef,
         String[] fullCommandRef,
         String backupNameRef,
-        Remote remoteRef,
+        AbsRemote remoteRef,
         boolean restoreRef,
         Integer portRef,
         BiConsumer<Boolean, Integer> postActionRef

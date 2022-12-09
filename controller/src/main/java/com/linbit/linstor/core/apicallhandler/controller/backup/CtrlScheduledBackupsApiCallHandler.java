@@ -20,7 +20,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Schedule;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.remotes.Remote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
@@ -118,7 +118,7 @@ public class CtrlScheduledBackupsApiCallHandler
         NodeName nodeName,
         ResourceDefinition rscDfn,
         Schedule schedule,
-        Remote remote,
+        AbsRemote remote,
         boolean success,
         boolean forceSkip
     ) throws InvalidKeyException, AccessDeniedException
@@ -151,7 +151,7 @@ public class CtrlScheduledBackupsApiCallHandler
     /**
      * Checks and if needed deletes snaps and backups as specified in the schedule
      */
-    Flux<ApiCallRc> checkScheduleKeep(ResourceDefinition rscDfn, Schedule schedule, Remote remote)
+    Flux<ApiCallRc> checkScheduleKeep(ResourceDefinition rscDfn, Schedule schedule, AbsRemote remote)
         throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
     {
         Flux<ApiCallRc> deleteFlux = Flux.empty();
@@ -545,7 +545,7 @@ public class CtrlScheduledBackupsApiCallHandler
         boolean add
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
-        Remote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
+        AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
         Schedule schedule = ctrlApiDataLoader.loadSchedule(scheduleNameRef, true);
         String msg = "";
         List<ResourceDefinition> rscDfnsToCheck = new ArrayList<>();
@@ -636,7 +636,7 @@ public class CtrlScheduledBackupsApiCallHandler
     /**
      * Starts or stops the scheduled tasks depending on the prio-props-result
      */
-    private void addOrRemoveTasks(Schedule schedule, Remote remote, List<ResourceDefinition> rscDfnsToCheck)
+    private void addOrRemoveTasks(Schedule schedule, AbsRemote remote, List<ResourceDefinition> rscDfnsToCheck)
         throws AccessDeniedException
     {
         Props ctrlProps = systemConfRepository.getCtrlConfForView(peerAccCtx.get());
@@ -703,7 +703,7 @@ public class CtrlScheduledBackupsApiCallHandler
         String scheduleNameRef
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
-        Remote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
+        AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
         Schedule schedule = ctrlApiDataLoader.loadSchedule(scheduleNameRef, true);
         String msg = "";
         List<ResourceDefinition> rscDfnsToCheck = new ArrayList<>();

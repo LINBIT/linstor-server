@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
@@ -12,7 +10,8 @@ import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
@@ -29,14 +28,8 @@ import java.util.UUID;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class NetInterface extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<NetInterface>
+public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedObject
 {
-    private final UUID niUuid;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
-
     private final Node niNode;
     private final NetInterfaceName niName;
 
@@ -45,8 +38,6 @@ public class NetInterface extends BaseTransactionObject
     private final TransactionSimpleObject<NetInterface, EncryptionType> niStltConnEncrType;
 
     private final NetInterfaceDatabaseDriver dbDriver;
-
-    private final TransactionSimpleObject<NetInterface, Boolean> deleted;
 
     NetInterface(
         UUID uuid,
@@ -60,14 +51,11 @@ public class NetInterface extends BaseTransactionObject
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
-        super(transMgrProviderRef);
+        super(uuid, transObjFactory, transMgrProviderRef);
 
-        niUuid = uuid;
         niNode = node;
         niName = netName;
         dbDriver = dbDriverRef;
-
-        dbgInstanceId = UUID.randomUUID();
 
         niAddress = transObjFactory.createTransactionSimpleObject(
             this,
@@ -85,24 +73,10 @@ public class NetInterface extends BaseTransactionObject
             dbDriver.getStltConnEncrTypeDriver()
         );
 
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-
         transObjs = Arrays.<TransactionObject>asList(
             niAddress,
             deleted
         );
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return niUuid;
     }
 
     public NetInterfaceName getName()
@@ -172,6 +146,7 @@ public class NetInterface extends BaseTransactionObject
         return niStltConnEncrType.get();
     }
 
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
@@ -186,16 +161,9 @@ public class NetInterface extends BaseTransactionObject
         }
     }
 
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted NetInterface");
-        }
-    }
-
     public NetInterfaceApi getApiData(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         Integer port = null;
         String encrType = null;
 
@@ -251,7 +219,7 @@ public class NetInterface extends BaseTransactionObject
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Node: '" + niNode.getName() + "', " +
                "NetInterfaceName: '" + niName + "'";
@@ -266,5 +234,12 @@ public class NetInterface extends BaseTransactionObject
         {
             return valueOf(string.toUpperCase());
         }
+    }
+
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        checkDeleted();
+        return niNode.getObjProt();
     }
 }

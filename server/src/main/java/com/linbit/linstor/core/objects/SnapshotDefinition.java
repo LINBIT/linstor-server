@@ -2,8 +2,6 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
@@ -25,11 +23,11 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -52,19 +50,13 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class SnapshotDefinition extends BaseTransactionObject implements DbgInstanceUuid, Comparable<SnapshotDefinition>
+public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implements ProtectedObject
 {
     public interface InitMaps
     {
         Map<NodeName, Snapshot> getSnapshotMap();
         Map<VolumeNumber, SnapshotVolumeDefinition> getSnapshotVolumeDefinitionMap();
     }
-
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
 
     private final ObjectProtection objProt;
 
@@ -84,8 +76,6 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     private final TransactionMap<VolumeNumber, SnapshotVolumeDefinition> snapshotVolumeDefinitionMap;
 
     private final TransactionMap<NodeName, Snapshot> snapshotMap;
-
-    private final TransactionSimpleObject<SnapshotDefinition, Boolean> deleted;
 
     // Not persisted because we do not resume snapshot creation after a restart
     private TransactionSimpleObject<SnapshotDefinition, Boolean> inCreation;
@@ -109,15 +99,12 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     )
         throws DatabaseException
     {
-        super(transMgrProviderRef);
+        super(objIdRef, transObjFactory, transMgrProviderRef);
         ErrorCheck.ctorNotNull(SnapshotDefinition.class, ObjectProtection.class, objProtRef);
-        objId = objIdRef;
         objProt = objProtRef;
         resourceDfn = resourceDfnRef;
         snapshotName = snapshotNameRef;
         dbDriver = dbDriverRef;
-
-        dbgInstanceId = UUID.randomUUID();
 
         snapshotDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(resourceDfn.getName(), snapshotName)
@@ -134,8 +121,6 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         snapshotVolumeDefinitionMap = transObjFactory.createTransactionMap(snapshotVlmDfnMapRef, null);
 
         snapshotMap = transObjFactory.createTransactionMap(snapshotMapRef, null);
-
-        deleted = transObjFactory.createTransactionSimpleObject(this, Boolean.FALSE, null);
 
         inCreation = transObjFactory.createTransactionSimpleObject(this, Boolean.FALSE, null);
         layerStorage = transObjFactory.createTransactionMap(layerDataMapRef, null);
@@ -158,13 +143,10 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         );
     }
 
-    public UUID getUuid()
-    {
-        return objId;
-    }
-
+    @Override
     public ObjectProtection getObjProt()
     {
+        checkDeleted();
         return objProt;
     }
 
@@ -186,6 +168,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     )
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.VIEW);
         return snapshotVolumeDefinitionMap.get(volumeNumber);
     }
@@ -196,6 +179,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     )
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.USE);
         snapshotVolumeDefinitionMap.put(snapshotVolumeDefinition.getVolumeNumber(), snapshotVolumeDefinition);
     }
@@ -206,6 +190,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     )
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.USE);
         snapshotVolumeDefinitionMap.remove(volumeNumber);
     }
@@ -213,6 +198,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public Collection<SnapshotVolumeDefinition> getAllSnapshotVolumeDefinitions(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.VIEW);
         return snapshotVolumeDefinitionMap.values();
     }
@@ -220,6 +206,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public Snapshot getSnapshot(AccessContext accCtx, NodeName clNodeName)
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.VIEW);
         return snapshotMap.get(clNodeName);
     }
@@ -227,6 +214,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public Collection<Snapshot> getAllSnapshots(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.VIEW);
         return snapshotMap.values();
     }
@@ -234,6 +222,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public void addSnapshot(AccessContext accCtx, Snapshot snapshotRef)
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.USE);
         snapshotMap.put(snapshotRef.getNodeName(), snapshotRef);
     }
@@ -241,6 +230,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public void removeSnapshot(AccessContext accCtx, Snapshot snapshotRef)
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.USE);
         snapshotMap.remove(snapshotRef.getNodeName());
     }
@@ -265,6 +255,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         getFlags().enableFlags(accCtx, Flags.DELETE);
     }
 
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
@@ -303,19 +294,6 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
         }
     }
 
-    public boolean isDeleted()
-    {
-        return deleted.get();
-    }
-
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted snapshot definition");
-        }
-    }
-
     /**
      * Is the snapshot being used for a linstor action such as creation, deletion or rollback?
      *
@@ -334,6 +312,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public void setInCreation(AccessContext accCtx, boolean inCreationRef)
         throws DatabaseException, AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.CONTROL);
         inCreation.set(inCreationRef);
     }
@@ -342,6 +321,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public <T extends RscDfnLayerObject> T setLayerData(AccessContext accCtx, T rscDfnLayerData)
         throws AccessDeniedException, DatabaseException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.USE);
         return (T) layerStorage.put(
             new Pair<>(
@@ -363,6 +343,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     )
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.USE);
         return (T) layerStorage.get(new Pair<>(kind, rscNameSuffixRef));
     }
@@ -380,6 +361,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     )
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.USE);
 
         Map<String, T> ret = new TreeMap<>();
@@ -401,6 +383,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     )
         throws AccessDeniedException, DatabaseException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.USE);
         layerStorage.remove(new Pair<>(kind, rscNameSuffixRef)).delete();
         for (SnapshotVolumeDefinition snapVlmDfn : snapshotVolumeDefinitionMap.values())
@@ -412,6 +395,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public void setLayerStack(AccessContext accCtx, List<DeviceLayerKind> list)
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.CHANGE);
         layerStack.clear();
         layerStack.addAll(list);
@@ -420,6 +404,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public List<DeviceLayerKind> getLayerStack(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.CHANGE);
         return layerStack;
     }
@@ -427,6 +412,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     private List<SnapshotApi> getSnapshotApis(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         List<SnapshotApi> snapshotApis = new ArrayList<>();
         for (Snapshot snap : snapshotMap.values())
         {
@@ -438,6 +424,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public SnapshotDefinitionApi getApiData(AccessContext accCtx, boolean withSnapshots)
         throws AccessDeniedException
     {
+        checkDeleted();
         requireAccess(accCtx, AccessType.VIEW);
         List<SnapshotVolumeDefinitionApi> snapshotVlmDfns = new ArrayList<>();
 
@@ -484,6 +471,7 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     public SnapshotDefinitionListItemApi getListItemApiData(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         return new SnapshotDfnListItemPojo(
             getApiData(accCtx, true),
             snapshotMap.values().stream()
@@ -495,16 +483,10 @@ public class SnapshotDefinition extends BaseTransactionObject implements DbgInst
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Rsc: '" + getResourceName() + "', " +
             "Snapshot: '" + snapshotName + "'";
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
     }
 
     @Override

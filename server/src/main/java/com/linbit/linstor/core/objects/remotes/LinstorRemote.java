@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.LinstorRemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -10,9 +9,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -27,19 +24,15 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.UUID;
 
-public class LinstorRemote extends BaseTransactionObject
-    implements Remote, DbgInstanceUuid, Comparable<Remote>, ProtectedObject
+public class LinstorRemote extends AbsRemote
 {
     public interface InitMaps
     {
         // currently only a place holder for future maps
     }
 
-    private final ObjectProtection objProt;
     private final UUID objId;
-    private final transient UUID dbgInstanceId;
     private final LinstorRemoteDatabaseDriver driver;
-    private final RemoteName remoteName;
     private final TransactionSimpleObject<LinstorRemote, URL> url;
     private final TransactionSimpleObject<LinstorRemote, byte[]> encryptedRemotePassphrase;
     private final TransactionSimpleObject<LinstorRemote, UUID> clusterId;
@@ -59,11 +52,8 @@ public class LinstorRemote extends BaseTransactionObject
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(transMgrProvider);
-        objProt = objProtRef;
+        super(objIdRef, transObjFactory, transMgrProvider, objProtRef, remoteNameRef);
         objId = objIdRef;
-        dbgInstanceId = UUID.randomUUID();
-        remoteName = remoteNameRef;
         driver = driverRef;
 
         url = transObjFactory.createTransactionSimpleObject(this, urlRef, driver.getUrlDriver());
@@ -101,7 +91,7 @@ public class LinstorRemote extends BaseTransactionObject
     }
 
     @Override
-    public int compareTo(@Nonnull Remote remote)
+    public int compareTo(@Nonnull AbsRemote remote)
     {
         int cmp = remote.getClass().getSimpleName().compareTo(LinstorRemote.class.getSimpleName());
         if (cmp == 0)
@@ -231,6 +221,7 @@ public class LinstorRemote extends BaseTransactionObject
         url.set(new URL(apiData.getUrl()));
     }
 
+    @Override
     public boolean isDeleted()
     {
         return deleted.get();
@@ -253,17 +244,18 @@ public class LinstorRemote extends BaseTransactionObject
         }
     }
 
-    private void checkDeleted()
+    @Override
+    protected void checkDeleted()
     {
         if (deleted.get())
         {
-            throw new AccessToDeletedDataException("Access to deleted S3Remote");
+            throw new AccessToDeletedDataException("Access to deleted LinstorRemote");
         }
     }
 
     @Override
-    public UUID debugGetVolatileUuid()
+    protected String toStringImpl()
     {
-        return dbgInstanceId;
+        return "LinstorRemote '" + remoteName.displayValue + "'";
     }
 }

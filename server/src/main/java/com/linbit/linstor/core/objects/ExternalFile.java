@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.ExternalFilePojo;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -14,7 +12,6 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -28,15 +25,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
-public class ExternalFile extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<ExternalFile>, ProtectedObject
+public class ExternalFile extends AbsCoreObj<ExternalFile> implements ProtectedObject
 {
-    // Object identifier
-    private final UUID objId;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
-
     // File name (not the path, more like a short descriptive name for linstor)
     private final ExternalFileName fileName;
 
@@ -46,8 +36,6 @@ public class ExternalFile extends BaseTransactionObject
     private final TransactionSimpleObject<ExternalFile, byte[]> content;
     private final TransactionSimpleObject<ExternalFile, byte[]> contentCheckSum;
     private final TransactionSimpleObject<ExternalFile, Boolean> alreadyWritten; // stlt only
-
-    private final TransactionSimpleObject<ExternalFile, Boolean> deleted;
 
     private final ObjectProtection objProt;
     private final ExternalFileDatabaseDriver dbDriver;
@@ -65,12 +53,10 @@ public class ExternalFile extends BaseTransactionObject
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
     {
-        super(transMgrProviderRef);
+        super(uuidRef, transObjFactory, transMgrProviderRef);
         ErrorCheck.ctorNotNull(ExternalFile.class, ExternalFileName.class, extFileNameRef);
         ErrorCheck.ctorNotNull(ExternalFile.class, byte[].class, contentRef);
 
-        objId = uuidRef;
-        dbgInstanceId = UUID.randomUUID();
         objProt = objProtRef;
         fileName = extFileNameRef;
         dbDriver = dbDriverRef;
@@ -86,8 +72,6 @@ public class ExternalFile extends BaseTransactionObject
             false,
             null
         );
-
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,
@@ -129,18 +113,6 @@ public class ExternalFile extends BaseTransactionObject
             ret = Objects.equals(fileName, other.fileName);
         }
         return ret;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
     }
 
     public ExternalFileName getName()
@@ -228,19 +200,7 @@ public class ExternalFile extends BaseTransactionObject
         );
     }
 
-    public boolean isDeleted()
-    {
-        return deleted.get();
-    }
-
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted object");
-        }
-    }
-
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
@@ -320,5 +280,11 @@ public class ExternalFile extends BaseTransactionObject
         {
             return FlagsHelper.fromStringList(Flags.class, listFlags);
         }
+    }
+
+    @Override
+    protected String toStringImpl()
+    {
+        return "External File '" + fileName + "'";
     }
 }

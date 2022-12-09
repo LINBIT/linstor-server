@@ -1,10 +1,8 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.SchedulePojo;
 import com.linbit.linstor.core.identifier.ScheduleName;
-import com.linbit.linstor.core.objects.remotes.Remote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ScheduleDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
@@ -14,7 +12,6 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -34,8 +31,7 @@ import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
 
-public class Schedule extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<Schedule>, ProtectedObject
+public class Schedule extends AbsCoreObj<Schedule> implements ProtectedObject
 {
     public interface InitMaps
     {
@@ -43,8 +39,6 @@ public class Schedule extends BaseTransactionObject
     }
 
     private final ObjectProtection objProt;
-    private final UUID objId;
-    private final transient UUID dbgInstanceId;
     private final ScheduleDatabaseDriver driver;
     private final ScheduleName scheduleName;
     private final TransactionSimpleObject<Schedule, Cron> fullCron;
@@ -53,7 +47,6 @@ public class Schedule extends BaseTransactionObject
     private final TransactionSimpleObject<Schedule, Integer> keepRemote;
     private final TransactionSimpleObject<Schedule, OnFailure> onFailure;
     private final TransactionSimpleObject<Schedule, Integer> maxRetries;
-    private final TransactionSimpleObject<Schedule, Boolean> deleted;
     private final StateFlags<Flags> flags;
     private final CronParser parser;
 
@@ -73,10 +66,8 @@ public class Schedule extends BaseTransactionObject
         Provider<? extends TransactionMgr> transMgrProvider
     )
     {
-        super(transMgrProvider);
+        super(objIdRef, transObjFactory, transMgrProvider);
         objProt = objProtRef;
-        objId = objIdRef;
-        dbgInstanceId = UUID.randomUUID();
         scheduleName = scheduleNameRef;
         driver = driverRef;
 
@@ -89,8 +80,6 @@ public class Schedule extends BaseTransactionObject
 
         flags = transObjFactory
             .createStateFlagsImpl(objProt, this, Flags.class, driver.getStateFlagsPersistence(), initialFlags);
-
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         transObjs = Arrays.asList(
             objProt,
@@ -142,12 +131,6 @@ public class Schedule extends BaseTransactionObject
             ret = Objects.equals(scheduleName, other.scheduleName);
         }
         return ret;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
     }
 
     public ScheduleName getName()
@@ -258,6 +241,7 @@ public class Schedule extends BaseTransactionObject
 
     public RemoteType getType()
     {
+        checkDeleted();
         return RemoteType.S3;
     }
 
@@ -302,11 +286,7 @@ public class Schedule extends BaseTransactionObject
         flags.resetFlagsTo(accCtx, Flags.restoreFlags(apiData.getFlags()));
     }
 
-    public boolean isDeleted()
-    {
-        return deleted.get();
-    }
-
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
@@ -321,20 +301,6 @@ public class Schedule extends BaseTransactionObject
 
             deleted.set(true);
         }
-    }
-
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted S3Remote");
-        }
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
     }
 
     public enum Flags implements com.linbit.linstor.stateflags.Flags
@@ -433,5 +399,11 @@ public class Schedule extends BaseTransactionObject
         {
             return value;
         }
+    }
+
+    @Override
+    protected String toStringImpl()
+    {
+        return "Schedule '" + scheduleName + "'";
     }
 }

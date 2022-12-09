@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
@@ -23,7 +21,6 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
@@ -41,18 +38,13 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-public class ResourceGroup extends BaseTransactionObject implements DbgInstanceUuid,
-    Comparable<ResourceGroup>, ProtectedObject
+public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements ProtectedObject
 {
     public interface InitMaps
     {
         Map<VolumeNumber, VolumeGroup> getVlmGrpMap();
         Map<ResourceName, ResourceDefinition> getRscDfnMap();
     }
-
-    private final UUID objId;
-
-    private final transient UUID dbgInstanceId;
 
     private final ObjectProtection objProt;
 
@@ -69,8 +61,6 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
     private final TransactionMap<ResourceName, ResourceDefinition> rscDfnMap;
 
     private final ResourceGroupDatabaseDriver dbDriver;
-
-    private final TransactionSimpleObject<ResourceGroup, Boolean> deleted;
 
     public ResourceGroup(
         UUID uuidRef,
@@ -97,9 +87,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
     )
         throws DatabaseException
     {
-        super(transMgrProvider);
-        objId = uuidRef;
-        dbgInstanceId = UUID.randomUUID();
+        super(uuidRef, transObjFactory, transMgrProvider);
         name = rscGrpNameRef;
         dbDriver = dbDriverRef;
         objProt = objProtRef;
@@ -135,8 +123,6 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
             transMgrProvider
         );
 
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
-
         transObjs = Arrays.asList(
             objProt,
             rscDfnGrpProps,
@@ -146,21 +132,10 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
         );
     }
 
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return objId;
-    }
-
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
     @Override
     public ObjectProtection getObjProt()
     {
+        checkDeleted();
         return objProt;
     }
 
@@ -332,6 +307,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
 
     public ResourceGroupApi getApiData(AccessContext accCtxRef) throws AccessDeniedException
     {
+        checkDeleted();
         List<VolumeGroupApi> vlmGrpApiList = new ArrayList<>(vlmMap.size());
         for (VolumeGroup vlmGrp : vlmMap.values())
         {
@@ -347,6 +323,7 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
         );
     }
 
+    @Override
     public void delete(AccessContext accCtx) throws AccessDeniedException, DatabaseException
     {
         if (!deleted.get())
@@ -375,11 +352,9 @@ public class ResourceGroup extends BaseTransactionObject implements DbgInstanceU
         }
     }
 
-    private void checkDeleted()
+    @Override
+    protected String toStringImpl()
     {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted resource group");
-        }
+        return "ResourceGroup '" + name + "'";
     }
 }

@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
-import com.linbit.linstor.AccessToDeletedDataException;
-import com.linbit.linstor.DbgInstanceUuid;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
@@ -19,9 +17,10 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
-import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -40,8 +39,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-public class StorPool extends BaseTransactionObject
-    implements DbgInstanceUuid, Comparable<StorPool>, LinstorDataObject
+public class StorPool extends AbsCoreObj<StorPool>
+    implements LinstorDataObject, ProtectedObject
 {
     public interface InitMaps
     {
@@ -49,11 +48,6 @@ public class StorPool extends BaseTransactionObject
 
         Map<String, VlmProviderObject<Snapshot>> getSnapshotVolumeMap();
     }
-
-    private final UUID uuid;
-
-    // Runtime instance identifier for debug purposes
-    private final transient UUID dbgInstanceId;
 
     private final StorPoolDefinition storPoolDef;
     private final DeviceProviderKind deviceProviderKind;
@@ -66,8 +60,6 @@ public class StorPool extends BaseTransactionObject
 
     private final TransactionMap<String, VlmProviderObject<Resource>> vlmProviderMap;
     private final TransactionMap<String, VlmProviderObject<Snapshot>> snapVlmProviderMap;
-
-    private final TransactionSimpleObject<StorPool, Boolean> deleted;
 
     /**
      * This boolean is only asked if the deviceProviderKind is FILE or FILE_THIN. Otherwise
@@ -97,11 +89,9 @@ public class StorPool extends BaseTransactionObject
     )
         throws DatabaseException
     {
-        super(transMgrProviderRef);
+        super(id, transObjFactory, transMgrProviderRef);
         ErrorCheck.ctorNotNull(StorPool.class, FreeSpaceTracker.class, freeSpaceTrackerRef);
 
-        uuid = id;
-        dbgInstanceId = UUID.randomUUID();
         storPoolDef = storPoolDefRef;
         deviceProviderKind = providerKindRef;
         freeSpaceTracker = freeSpaceTrackerRef;
@@ -114,7 +104,6 @@ public class StorPool extends BaseTransactionObject
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(storPoolDef.getName(), node.getName())
         );
-        deleted = transObjFactory.createTransactionSimpleObject(this, false, null);
 
         final boolean isFileProviderKind = providerKindRef == DeviceProviderKind.FILE ||
             providerKindRef == DeviceProviderKind.FILE_THIN;
@@ -139,18 +128,6 @@ public class StorPool extends BaseTransactionObject
         activateTransMgr();
     }
 
-    @Override
-    public UUID debugGetVolatileUuid()
-    {
-        return dbgInstanceId;
-    }
-
-    public UUID getUuid()
-    {
-        checkDeleted();
-        return uuid;
-    }
-
     public StorPoolName getName()
     {
         checkDeleted();
@@ -159,6 +136,7 @@ public class StorPool extends BaseTransactionObject
 
     public Node getNode()
     {
+        checkDeleted();
         return node;
     }
 
@@ -172,6 +150,7 @@ public class StorPool extends BaseTransactionObject
 
     public DeviceProviderKind getDeviceProviderKind()
     {
+        checkDeleted();
         return deviceProviderKind;
     }
 
@@ -184,6 +163,7 @@ public class StorPool extends BaseTransactionObject
     public void putVolume(AccessContext accCtx, VlmProviderObject<Resource> vlmProviderObj)
         throws AccessDeniedException
     {
+        checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
@@ -194,6 +174,7 @@ public class StorPool extends BaseTransactionObject
     public void removeVolume(AccessContext accCtx, VlmProviderObject<Resource> vlmProviderObj)
         throws AccessDeniedException
     {
+        checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
@@ -204,6 +185,7 @@ public class StorPool extends BaseTransactionObject
 
     public Collection<VlmProviderObject<Resource>> getVolumes(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
@@ -212,27 +194,32 @@ public class StorPool extends BaseTransactionObject
 
     public boolean isPmem()
     {
+        checkDeleted();
         return isPmem.get();
     }
 
     public void setPmem(boolean pmemRef) throws DatabaseException
     {
+        checkDeleted();
         isPmem.set(pmemRef);
     }
 
     public boolean isVDO()
     {
+        checkDeleted();
         return isVDO.get();
     }
 
     public void setVDO(boolean vdo) throws DatabaseException
     {
+        checkDeleted();
         isVDO.set(vdo);
     }
 
     public void putSnapshotVolume(AccessContext accCtx, VlmProviderObject<Snapshot> vlmProviderObj)
         throws AccessDeniedException
     {
+        checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
@@ -243,6 +230,7 @@ public class StorPool extends BaseTransactionObject
     public void removeSnapshotVolume(AccessContext accCtx, VlmProviderObject<Snapshot> vlmProviderObj)
         throws AccessDeniedException
     {
+        checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
@@ -254,6 +242,7 @@ public class StorPool extends BaseTransactionObject
     public Collection<VlmProviderObject<Snapshot>> getSnapVolumes(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
@@ -262,9 +251,11 @@ public class StorPool extends BaseTransactionObject
 
     public FreeSpaceTracker getFreeSpaceTracker()
     {
+        checkDeleted();
         return freeSpaceTracker;
     }
 
+    @Override
     public void delete(AccessContext accCtx)
         throws AccessDeniedException, DatabaseException
     {
@@ -306,6 +297,7 @@ public class StorPool extends BaseTransactionObject
     public void setSupportsSnapshot(AccessContext accCtx, boolean supportsSnapshotsRef)
         throws AccessDeniedException, DatabaseException
     {
+        checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.USE);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.USE);
 
@@ -314,6 +306,7 @@ public class StorPool extends BaseTransactionObject
 
     public boolean isSnapshotSupported(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         boolean ret;
@@ -331,6 +324,7 @@ public class StorPool extends BaseTransactionObject
 
     public boolean isSnapshotSupportedInitialized(AccessContext accCtx) throws AccessDeniedException
     {
+        checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
 
@@ -339,30 +333,26 @@ public class StorPool extends BaseTransactionObject
 
     public boolean isExternalLocking()
     {
+        checkDeleted();
         return externalLocking;
     }
 
     public boolean isShared()
     {
+        checkDeleted();
         return freeSpaceTracker.getName().isShared() && !externalLocking;
     }
 
     public SharedStorPoolName getSharedStorPoolName()
     {
+        checkDeleted();
         return freeSpaceTracker.getName();
-    }
-
-    private void checkDeleted()
-    {
-        if (deleted.get())
-        {
-            throw new AccessToDeletedDataException("Access to deleted storage pool");
-        }
     }
 
     private Map<String, String> getTraits(AccessContext accCtx)
         throws AccessDeniedException
     {
+        checkDeleted();
         node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
         Map<String, String> traits = new HashMap<>(deviceProviderKind.getStorageDriverKind().getStaticTraits());
@@ -376,7 +366,7 @@ public class StorPool extends BaseTransactionObject
     }
 
     @Override
-    public String toString()
+    public String toStringImpl()
     {
         return "Node: '" + node.getName() + "', " +
                "StorPool: '" + storPoolDef.getName() + "'";
@@ -427,6 +417,7 @@ public class StorPool extends BaseTransactionObject
     )
         throws AccessDeniedException
     {
+        checkDeleted();
         return new StorPoolPojo(
             getUuid(),
             getNode().getUuid(),
@@ -519,5 +510,11 @@ public class StorPool extends BaseTransactionObject
         {
             return "Node: '" + nodeName + "' StorPool: '" + storPoolName + "'";
         }
+    }
+
+    @Override
+    public ObjectProtection getObjProt()
+    {
+        return node.getObjProt();
     }
 }
