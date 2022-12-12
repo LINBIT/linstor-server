@@ -1,13 +1,16 @@
 [netcom]
   type = "plain"
   bind_address = "0.0.0.0"
-  port = 3367
-#  server_certificate="ssl/keystore.jks"
-#  trusted_certificates="ssl/certificates.jks"
-#  key_password="linstor"
-#  keystore_password="linstor"
-#  truststore_password="linstor"
-#  ssl_protocol="TLSv1.2"
+  port = 3366    # 3366 is usually used as default for PLAIN connections, 3367 for SSL
+
+  ## following entries in this section are required for SSL connection:
+
+  # server_certificate="ssl/keystore.jks"
+  # trusted_certificates="ssl/certificates.jks"
+  # key_password="linstor"
+  # keystore_password="linstor"
+  # truststore_password="linstor"
+  # ssl_protocol="TLSv1.2"
 
 [logging]
   level = "info" # minimal log level can be trace, debug, info, warning, error
