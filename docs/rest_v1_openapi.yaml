@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.16.0
       - Added GET /v1/node-connections/  with filter-options ?node_a and ?node_b
       - Added PUT /v1/node-connections/{nodeA}/{nodeB}
       - Added NodeConnection and NodeConnectionModify objects

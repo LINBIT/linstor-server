@@ -1,3 +1,49 @@
+linstor-server (1.20.1-1) experimental; urgency=medium
+
+  [ Johanna Kucera ]
+  * Remotes: add null-checks for required params
+  * StorPool: move isSnapshotSupported check into StorPool class
+  * Backups: clear cache if needed
+  * DevMgr: actually delete nodes
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * gradle: upgrade okhttp to fix IPv6 TLS certs
+
+  [ Gabor Hernadi ]
+  * NodeCon,Path: Added openapi entries
+  * NodeCon: Changed Proto serialization
+  * NodeCon: adding nodeConnection API
+  * NodeCon: Reworked / fixed node connections
+  * Node,reconnect: Avoid "only one initialConnectSink allowed" error
+  * Drbd: Change ready-condition
+  * Rsc ready: Changed from Error to Warning
+  * DRBD: also call forget-peer for diskless resources
+  * SnapDfn: Fix orphan DB entries
+  * StorPoolDfn: Delete with last StorPool
+  * KVS: Delete when empty
+  * Stlt,Symlinks: sort Symlinks
+  * Layers: Fixed gross -> net size calculation
+  * Migrations: Prefixed crd migrations with leading 0
+  * DB: Cleanup orphaned objects
+  * Drbd,clone: Fix changed ready-condition
+  * toml,example: fix dflt plain stlt port
+  * DRBD: only delete .res files after full-sync
+
+  [ Rene Peinthor ]
+  * rest/rg: cleanup
+  * rscGrpApiHndl: autoPlaceConfig is never null
+  * RscRgApiHndl: automatically assume partial mode if rg has no vgs
+  * gitlab-ci: update new rhel ci url and trigger build
+  * gitlab: allow to repeat tests
+  * gitlab-ci: add environment for log-viewer
+  * gitlab: remove environments again
+  * mkfs: always skip discard on ZFS
+  * CHANGELOG.md: update
+  * changelog: update
+  * error-report: delete didn't check for empty since parameter
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 13 Dec 2022 11:59:57 +0000
+
 linstor-server (1.20.0-1) experimental; urgency=medium
 
   [ Moritz "WanzenBug" Wanzenböck ]

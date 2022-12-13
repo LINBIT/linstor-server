@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.1] - 2022-12-13
+
 ### Added
 
 - Added NodeConnection API. Currently only used for path settings (similar to rscCon, but on node level)
