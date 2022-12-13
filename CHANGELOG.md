@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Orphan StorPooDfn, KeyValueStores and SnapDfn are now deleted with all their child objects
+- ErrorReports delete ignored since parameter if no other was specified
 
 ## [1.20.0] - 2022-10-18
 

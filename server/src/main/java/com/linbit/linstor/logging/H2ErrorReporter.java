@@ -238,7 +238,7 @@ public class H2ErrorReporter
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
         // prevent an "empty" where clause(delete all)
-        if (to == null && exception == null && version == null && (ids == null || ids.isEmpty()))
+        if (since == null && to == null && exception == null && version == null && (ids == null || ids.isEmpty()))
         {
             return apiCallRc;
         }
