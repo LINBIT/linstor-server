@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -526,14 +527,20 @@ public class CtrlSnapshotRestoreApiCallHandler
             rsc.getLayerData(peerAccCtx.get()),
             DeviceLayerKind.DRBD
         );
+        boolean forceInitSync = false;
         for (AbsRscLayerObject<Resource> layer : drbdLayers)
         {
             DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) layer;
             if (DrbdLayerUtils.isForceInitialSyncSet(peerAccCtx.get(), drbdRscData))
             {
+                forceInitSync = true;
                 drbdRscData.getFlags().disableFlags(peerAccCtx.get(), DrbdRscFlags.INITIALIZED);
                 drbdRscData.getFlags().enableFlags(peerAccCtx.get(), DrbdRscFlags.FROM_BACKUP);
             }
+        }
+        if (forceInitSync)
+        {
+            rsc.getResourceDefinition().getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
         }
 
         return rsc;
