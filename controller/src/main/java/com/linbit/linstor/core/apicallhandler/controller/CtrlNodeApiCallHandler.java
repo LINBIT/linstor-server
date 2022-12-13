@@ -1011,8 +1011,6 @@ public class CtrlNodeApiCallHandler
     )
         throws AccessDeniedException, InvalidNameException
     {
-        Flux<ApiCallRc> retFlux = Flux.empty();
-
         /*
          * Checks that throw exceptions
          */
@@ -1022,6 +1020,15 @@ public class CtrlNodeApiCallHandler
             apiCtx,
             node,
             overrideProps.get(ApiConsts.KEY_STOR_POOL_PREF_NIC),
+            ApiConsts.MASK_NODE
+        );
+        // check if specified "outside address" network interface exists
+        ctrlPropsHelper.checkPrefOutsideAddress(
+            apiCtx,
+            node,
+            overrideProps.get(
+                ApiConsts.NAMESPC_LINSTOR_DRBD + "/" + ApiConsts.KEY_DRBD_OUTSIDE_ADDRESS
+            ),
             ApiConsts.MASK_NODE
         );
 
@@ -1094,6 +1101,7 @@ public class CtrlNodeApiCallHandler
                 maxConcurrentShippingsChanged = true;
             }
         }
+        Flux<ApiCallRc> retFlux = Flux.empty();
         hasKeyInDrbdOptions |= deleteNamespaces.contains(ApiConsts.NAMESPC_DRBD_OPTIONS);
         if (hasKeyInDrbdOptions)
         {

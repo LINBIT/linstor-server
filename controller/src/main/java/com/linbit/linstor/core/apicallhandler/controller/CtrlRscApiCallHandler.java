@@ -200,6 +200,15 @@ public class CtrlRscApiCallHandler
                 overrideProps.get(ApiConsts.NAMESPC_NVME + "/" + ApiConsts.KEY_PREF_NIC),
                 ApiConsts.MASK_RSC
             );
+            // check if specified "outside address" network interface exists
+            ctrlPropsHelper.checkPrefOutsideAddress(
+                apiCtx,
+                rsc.getNode(),
+                overrideProps.get(
+                    ApiConsts.NAMESPC_LINSTOR_DRBD + "/" + ApiConsts.KEY_DRBD_OUTSIDE_ADDRESS
+                ),
+                ApiConsts.MASK_RSC
+            );
 
             notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,

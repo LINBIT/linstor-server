@@ -23,6 +23,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.LsIpAddress;
@@ -54,6 +55,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -529,27 +531,53 @@ public class ConfFileBuilder
                                 {
                                     int portA;
                                     int portB;
+                                    NetInterface netIfA;
+                                    NetInterface netIfB;
                                     if (path.objA.getNode().equals(localNode))
                                     {
                                         portA = localPort;
                                         portB = peerPort;
+                                        netIfA = getOutsideNetIf(localRscData);
+                                        netIfB = getOutsideNetIf(peerRscData);
                                     }
                                     else
                                     {
                                         portA = peerPort;
                                         portB = localPort;
+                                        netIfA = getOutsideNetIf(peerRscData);
+                                        netIfB = getOutsideNetIf(localRscData);
                                     }
 
-                                    appendConnectionHost(portA, rscConn, path.objA);
-                                    appendConnectionHost(portB, rscConn, path.objB);
+                                    appendConnectionHost(
+                                        portA,
+                                        rscConn,
+                                        path.objA,
+                                        netIfA
+                                    );
+                                    appendConnectionHost(
+                                        portB,
+                                        rscConn,
+                                        path.objB,
+                                        netIfB
+                                    );
                                 }
                             }
                         }
                         else
                         {
                             // ...or fall back to previous implementation
-                            appendConnectionHost(localPort, rscConn, getPreferredNetIf(localRscData));
-                            appendConnectionHost(peerPort, rscConn, getPreferredNetIf(peerRscData));
+                            appendConnectionHost(
+                                localPort,
+                                rscConn,
+                                getPreferredNetIf(localRscData),
+                                getOutsideNetIf(localRscData)
+                            );
+                            appendConnectionHost(
+                                peerPort,
+                                rscConn,
+                                getPreferredNetIf(peerRscData),
+                                getOutsideNetIf(peerRscData)
+                            );
                         }
                     }
                 }
@@ -586,24 +614,18 @@ public class ConfFileBuilder
         return stringBuilder.toString();
     }
 
-    private void appendConnectionHost(int rscDfnPort, @Nullable ResourceConnection rscConn, NetInterface netIf)
+    private void appendConnectionHost(
+        int portRef,
+        @Nullable ResourceConnection rscConn,
+        NetInterface netIf,
+        @Nullable NetInterface outsideNetIf
+    )
         throws AccessDeniedException
     {
         TcpPortNumber rscConnPort = rscConn == null ? null : rscConn.getDrbdProxyPortSource(accCtx);
-        int port = rscConnPort == null ? rscDfnPort : rscConnPort.value;
+        int port = rscConnPort == null ? portRef : rscConnPort.value;
 
-        LsIpAddress addr = netIf.getAddress(accCtx);
-        String addrText = addr.getAddress();
-
-        String outsideAddress;
-        if (addr.getAddressType() == LsIpAddress.AddrType.IPv6)
-        {
-            outsideAddress = String.format("ipv6 [%s]:%d", addrText, port);
-        }
-        else
-        {
-            outsideAddress = String.format("ipv4 %s:%d", addrText, port);
-        }
+        String localAddress = formatAddress(netIf, port);
 
         String hostName = netIf.getNode().getProps(accCtx).getPropWithDefault(
             InternalApiConsts.NODE_UNAME,
@@ -616,13 +638,40 @@ public class ConfFileBuilder
             try (Section ignore = new Section())
             {
                 appendLine("inside 127.0.0.2:%d;", port);
-                appendLine("outside %s;", outsideAddress);
+                appendLine("outside %s;", localAddress);
             }
+        }
+        else if (outsideNetIf != null)
+        {
+            appendLine(
+                "host \"%s\" address %s via outside-address %s;",
+                hostName,
+                localAddress,
+                formatAddress(outsideNetIf, port)
+            );
         }
         else
         {
-            appendLine("host \"%s\" address %s;", hostName, outsideAddress);
+            appendLine("host \"%s\" address %s;", hostName, localAddress);
         }
+    }
+
+    private String formatAddress(NetInterface netIfRef, int port) throws AccessDeniedException
+    {
+        String ret;
+        LsIpAddress addr = netIfRef.getAddress(accCtx);
+        String addrText = addr.getAddress();
+
+        if (addr.getAddressType() == LsIpAddress.AddrType.IPv6)
+        {
+            ret = String.format("ipv6 [%s]:%d", addrText, port);
+        }
+        else
+        {
+            ret = String.format("ipv4 %s:%d", addrText, port);
+        }
+
+        return ret;
     }
 
     private void appendCompressionPlugin(ResourceDefinition rscDfn, String compressionType)
@@ -791,33 +840,17 @@ public class ConfFileBuilder
         @Nullable NetInterface preferredNetIf = null;
         try
         {
-            TreeMap<VolumeNumber, DrbdVlmData<Resource>> sortedVlmData = new TreeMap<>(
-                peerRscDataRef.getVlmLayerObjects()
-            );
-            Entry<VolumeNumber, DrbdVlmData<Resource>> firstVolumeEntry = sortedVlmData.firstEntry();
+            PriorityProps prioProps = new PriorityProps();
+
             Resource rsc = peerRscDataRef.getAbsResource();
             Node node = rsc.getNode();
 
-            PriorityProps prioProps = new PriorityProps();
-
-            if (firstVolumeEntry != null)
+            Collection<StorPool> storPools = getStorPools(peerRscDataRef);
+            for (StorPool sp : storPools)
             {
-                VolumeNumber firstVlmNr = firstVolumeEntry.getKey();
-                List<AbsRscLayerObject<Resource>> storageRscList = LayerUtils.getChildLayerDataByKind(
-                    firstVolumeEntry.getValue().getRscLayerObject(),
-                    DeviceLayerKind.STORAGE
-                );
-                for (AbsRscLayerObject<Resource> rscObj : storageRscList)
-                {
-                    VlmProviderObject<Resource> vlmProviderObject = rscObj.getVlmProviderObject(firstVlmNr);
-                    if (vlmProviderObject != null)
-                    {
-                        prioProps.addProps(
-                            vlmProviderObject.getStorPool().getProps(accCtx)
-                        );
-                    }
-                }
+                prioProps.addProps(sp.getProps(accCtx));
             }
+
             prioProps.addProps(rsc.getProps(accCtx));
             prioProps.addProps(rsc.getResourceDefinition().getProps(accCtx));
             prioProps.addProps(rsc.getResourceDefinition().getResourceGroup().getProps(accCtx));
@@ -860,6 +893,84 @@ public class ConfFileBuilder
         }
 
         return preferredNetIf;
+    }
+
+    /**
+     * Checks the priority props of rsc, rd, rg, all related SPs, node and ctrl if
+     * {@value ApiConsts#KEY_STOR_POOL_OUTSIDE_ADDRESS} is set. If it is, returns the corresponding
+     * {@link NetInterface} (if it exists) of the current node.
+     * <br/>
+     *  Returns <code>null</code> if either the <code>NetInterface</code> does not exist or the property is not set.
+     */
+    private @Nullable NetInterface getOutsideNetIf(DrbdRscData<Resource> peerRscDataRef)
+    {
+        NetInterface ret = null;
+        try
+        {
+            PriorityProps prioProps = new PriorityProps();
+
+            Resource rsc = peerRscDataRef.getAbsResource();
+            Node node = rsc.getNode();
+
+            prioProps.addProps(rsc.getProps(accCtx));
+            prioProps.addProps(rsc.getResourceDefinition().getProps(accCtx));
+            prioProps.addProps(rsc.getResourceDefinition().getResourceGroup().getProps(accCtx));
+
+            Collection<StorPool> storPools = getStorPools(peerRscDataRef);
+            for (StorPool sp : storPools)
+            {
+                prioProps.addProps(sp.getProps(accCtx));
+            }
+
+            prioProps.addProps(node.getProps(accCtx));
+            prioProps.addProps(stltProps);
+
+            String outsideAddress = prioProps.getProp(
+                ApiConsts.KEY_DRBD_OUTSIDE_ADDRESS,
+                ApiConsts.NAMESPC_LINSTOR_DRBD
+            );
+            if (outsideAddress != null)
+            {
+                ret = node.getNetInterface(
+                    accCtx,
+                    new NetInterfaceName(outsideAddress)
+                );
+            }
+        }
+        catch (AccessDeniedException | InvalidKeyException | InvalidNameException implError)
+        {
+            throw new ImplementationError(implError);
+        }
+        return ret;
+    }
+
+    private LinkedHashSet<StorPool> getStorPools(DrbdRscData<Resource> peerRscDataRef)
+        throws AccessDeniedException
+    {
+        LinkedHashSet<StorPool> ret = new LinkedHashSet<>();
+
+        TreeMap<VolumeNumber, DrbdVlmData<Resource>> sortedVlmData = new TreeMap<>(
+            peerRscDataRef.getVlmLayerObjects()
+        );
+        Entry<VolumeNumber, DrbdVlmData<Resource>> firstVolumeEntry = sortedVlmData.firstEntry();
+        if (firstVolumeEntry != null)
+        {
+            VolumeNumber firstVlmNr = firstVolumeEntry.getKey();
+            List<AbsRscLayerObject<Resource>> storageRscList = LayerUtils.getChildLayerDataByKind(
+                firstVolumeEntry.getValue().getRscLayerObject(),
+                DeviceLayerKind.STORAGE
+            );
+            for (AbsRscLayerObject<Resource> rscObj : storageRscList)
+            {
+                VlmProviderObject<Resource> vlmProviderObject = rscObj.getVlmProviderObject(firstVlmNr);
+                if (vlmProviderObject != null)
+                {
+                    // TODO: why not include all storage pools (in a set to remove duplicates)?
+                    ret.add(vlmProviderObject.getStorPool());
+                }
+            }
+        }
+        return ret;
     }
 
     private void appendVlmIfPresent(DrbdVlmData<Resource> vlmData, AccessContext localAccCtx, boolean isPeerRsc)

@@ -198,6 +198,15 @@ public class CtrlStorPoolApiCallHandler
                 overrideProps.get(ApiConsts.NAMESPC_NVME + "/" + ApiConsts.KEY_PREF_NIC),
                 ApiConsts.MASK_STOR_POOL
             );
+            // check if specified "outside address" network interface exists
+            ctrlPropsHelper.checkPrefOutsideAddress(
+                peerAccCtx.get(),
+                storPool.getNode(),
+                overrideProps.get(
+                    ApiConsts.NAMESPC_LINSTOR_DRBD + "/" + ApiConsts.KEY_DRBD_OUTSIDE_ADDRESS
+                ),
+                ApiConsts.MASK_STOR_POOL
+            );
 
             for (Map.Entry<String, String> entry : overrideProps.entrySet())
             {

@@ -70,14 +70,35 @@ public class CtrlPropsHelper
     public void checkPrefNic(AccessContext accessContext, Node node, String prefNic, long maskObj)
         throws AccessDeniedException, InvalidNameException
     {
-        if (prefNic != null)
+        checkSpecialNic(accessContext, node, prefNic, maskObj, false);
+    }
+
+    public void checkPrefOutsideAddress(AccessContext accessContext, Node node, String outsideAddress, long maskObj)
+        throws AccessDeniedException, InvalidNameException
+    {
+        checkSpecialNic(accessContext, node, outsideAddress, maskObj, true);
+    }
+
+    private void checkSpecialNic(
+        AccessContext accessContext,
+        Node node,
+        String specialNic,
+        long maskObj,
+        boolean allowEmptyString
+    )
+        throws AccessDeniedException, InvalidNameException
+    {
+        if (specialNic != null && !(specialNic.isEmpty() && allowEmptyString))
         {
-            if (node.getNetInterface(accessContext, new NetInterfaceName(prefNic)) == null)
+            if (node.getNetInterface(accessContext, new NetInterfaceName(specialNic)) == null)
             {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
                         ApiConsts.MASK_ERROR | maskObj | ApiConsts.FAIL_INVLD_PROP,
-                        "The network interface '" + prefNic + "' of node '" + node.getName() + "' does not exist!"
-                ));
+                        "The network interface '" + specialNic + "' of node '" + node.getName() +
+                            "' does not exist!"
+                    )
+                );
             }
         }
     }
