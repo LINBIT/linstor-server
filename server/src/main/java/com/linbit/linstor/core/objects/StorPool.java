@@ -57,6 +57,7 @@ public class StorPool extends AbsCoreObj<StorPool>
     private final StorPoolDatabaseDriver dbDriver;
     private final FreeSpaceTracker freeSpaceTracker;
     private final boolean externalLocking;
+    private final Key storPoolKey;
 
     private final TransactionMap<String, VlmProviderObject<Resource>> vlmProviderMap;
     private final TransactionMap<String, VlmProviderObject<Snapshot>> snapVlmProviderMap;
@@ -126,6 +127,7 @@ public class StorPool extends AbsCoreObj<StorPool>
             freeSpaceTracker
         );
         activateTransMgr();
+        storPoolKey = new Key(this);
     }
 
     public StorPoolName getName()
@@ -365,11 +367,17 @@ public class StorPool extends AbsCoreObj<StorPool>
         return traits;
     }
 
+    public Key getKey()
+    {
+        // no check-deleted
+        return storPoolKey;
+    }
+
     @Override
     public String toStringImpl()
     {
-        return "Node: '" + node.getName() + "', " +
-               "StorPool: '" + storPoolDef.getName() + "'";
+        return "Node: '" + storPoolKey.nodeName + "', " +
+            "StorPool: '" + storPoolKey.storPoolName + "'";
     }
 
     @Override
@@ -493,7 +501,6 @@ public class StorPool extends AbsCoreObj<StorPool>
             return Objects.hash(nodeName, storPoolName);
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public int compareTo(Key other)
         {

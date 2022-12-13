@@ -81,6 +81,8 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
 
     private final TransactionMap<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
 
+    private final Key vlmDfnKey;
+
     VolumeDefinition(
         UUID uuid,
         ResourceDefinition resDfnRef,
@@ -140,6 +142,8 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
             deleted,
             cryptKey
         );
+
+        vlmDfnKey = new Key(this);
     }
 
     static void checkVolumeSize(long volSize)
@@ -183,6 +187,12 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
     {
         checkDeleted();
         return volumeNr;
+    }
+
+    public Key getKey()
+    {
+        // no check deleted
+        return vlmDfnKey;
     }
 
     public long getVolumeSize(AccessContext accCtx)
@@ -399,7 +409,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
     @Override
     public String toStringImpl()
     {
-        return resourceDfn.toString() +
+        return "RscName: " + vlmDfnKey.rscName +
                ", VlmNr: '" + volumeNr + "'";
     }
 

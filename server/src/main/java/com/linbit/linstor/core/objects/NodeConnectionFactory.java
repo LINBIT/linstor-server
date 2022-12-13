@@ -7,12 +7,12 @@ import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
+
 import java.util.UUID;
 
 public class NodeConnectionFactory
@@ -43,24 +43,16 @@ public class NodeConnectionFactory
     )
         throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException
     {
-        node1.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        node2.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
 
-        NodeConnection nodeConData = NodeConnection.get(accCtx, node1, node2);
-
-        if (nodeConData != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The NodeConnection already exists");
-        }
-
-        nodeConData = new NodeConnection(
+        NodeConnection nodeConData = NodeConnection.createWithSorting(
             UUID.randomUUID(),
             node1,
             node2,
             dbDriver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            accCtx
         );
         dbDriver.create(nodeConData);
 
@@ -80,36 +72,24 @@ public class NodeConnectionFactory
     {
         NodeConnection nodeConData = null;
 
-        Node source;
-        Node target;
-        if (node1.getName().compareTo(node2.getName()) < 0)
-        {
-            source = node1;
-            target = node2;
-        }
-        else
-        {
-            source = node2;
-            target = node1;
-        }
-
         try
         {
-            nodeConData = (NodeConnection) source.getNodeConnection(accCtx, target);
+            nodeConData = node1.getNodeConnection(accCtx, node2);
             if (nodeConData == null)
             {
-                nodeConData = new NodeConnection(
+                nodeConData = NodeConnection.createWithSorting(
                     uuid,
-                    source,
-                    target,
+                    node1,
+                    node2,
                     dbDriver,
                     propsContainerFactory,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    accCtx
                 );
 
-                source.setNodeConnection(accCtx, nodeConData);
-                target.setNodeConnection(accCtx, nodeConData);
+                node1.setNodeConnection(accCtx, nodeConData);
+                node2.setNodeConnection(accCtx, nodeConData);
             }
         }
         catch (Exception exc)

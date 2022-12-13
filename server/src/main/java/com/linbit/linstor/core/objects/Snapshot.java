@@ -60,6 +60,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
 
     private final TransactionMap<VolumeNumber, SnapshotVolume> snapVlmMap;
 
+    private final Key snapKey;
+
     public Snapshot(
         UUID objIdRef,
         SnapshotDefinition snapshotDfnRef,
@@ -116,12 +118,19 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
                 takeSnapshot
             )
         );
+        snapKey = new Key(this);
     }
 
     public SnapshotDefinition getSnapshotDefinition()
     {
         checkDeleted();
         return snapshotDfn;
+    }
+
+    public Key getSnapshotKey()
+    {
+        // no check deleted
+        return snapKey;
     }
 
     @Override
@@ -262,7 +271,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
     @Override
     public String toStringImpl()
     {
-        return "Node: '" + node.getName() + "', " + snapshotDfn;
+        return "Node: '" + snapKey.nodeName + "', Rsc: '" + snapKey.resourceName + "', Snapshot: '" +
+            snapKey.snapshotName + "'";
     }
 
     @Override
@@ -432,5 +442,81 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
         throws AccessDeniedException
     {
         throw new ImplementationError("Not implemented yet");
+    }
+
+    /**
+     * Identifies a snapshot.
+     */
+    public static class Key implements Comparable<Key>
+    {
+        private final ResourceName resourceName;
+
+        private final SnapshotName snapshotName;
+
+        private final NodeName nodeName;
+
+        public Key(Snapshot snap)
+        {
+            this(snap.getResourceName(), snap.getSnapshotName(), snap.getNodeName());
+        }
+
+        public Key(ResourceName resourceNameRef, SnapshotName snapshotNameRef, NodeName nodeNameRef)
+        {
+            resourceName = resourceNameRef;
+            snapshotName = snapshotNameRef;
+            nodeName = nodeNameRef;
+        }
+
+        public ResourceName getResourceName()
+        {
+            return resourceName;
+        }
+
+        public SnapshotName getSnapshotName()
+        {
+            return snapshotName;
+        }
+
+        public NodeName getNodeName()
+        {
+            return nodeName;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(nodeName, resourceName, snapshotName);
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+            {
+                return true;
+            }
+            if (!(obj instanceof Key))
+            {
+                return false;
+            }
+            Key other = (Key) obj;
+            return Objects.equals(nodeName, other.nodeName) && Objects.equals(resourceName, other.resourceName) &&
+                Objects.equals(snapshotName, other.snapshotName);
+        }
+
+        @Override
+        public int compareTo(Key other)
+        {
+            int eq = nodeName.compareTo(other.nodeName);
+            if (eq == 0)
+            {
+                eq = resourceName.compareTo(other.resourceName);
+                if (eq == 0)
+                {
+                    eq = snapshotName.compareTo(other.snapshotName);
+                }
+            }
+            return eq;
+        }
     }
 }

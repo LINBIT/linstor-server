@@ -4,6 +4,7 @@ import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -40,6 +41,8 @@ import java.util.UUID;
  */
 public class ResourceConnection extends AbsCoreObj<ResourceConnection>
 {
+    private final Resource source;
+    private final Resource target;
     private final ResourceConnectionKey connectionKey;
 
     private final Props props;
@@ -56,7 +59,10 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
 
     private final TransactionSimpleObject<ResourceConnection, SnapshotName> snapshotNameInProgress;
 
-    ResourceConnection(
+    /**
+     * Use ResourceConnection.createWithSorting instead
+     */
+    private ResourceConnection(
         UUID uuid,
         Resource sourceResourceRef,
         Resource targetResourceRef,
@@ -74,11 +80,14 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         tcpPortPool = tcpPortPoolRef;
         dbDriver = dbDriverRef;
 
+        source = sourceResourceRef;
+        target = targetResourceRef;
+
         connectionKey = new ResourceConnectionKey(sourceResourceRef, targetResourceRef);
 
-        NodeName sourceNodeName = connectionKey.getSource().getNode().getName();
-        NodeName targetNodeName = connectionKey.getTarget().getNode().getName();
-        if (sourceResourceRef.getDefinition() != targetResourceRef.getDefinition())
+        NodeName sourceNodeName = connectionKey.getSourceNodeName();
+        NodeName targetNodeName = connectionKey.getTargetNodeName();
+        if (!sourceResourceRef.getDefinition().equals(targetResourceRef.getDefinition()))
         {
             throw new ImplementationError(
                 String.format(
@@ -96,14 +105,14 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
 
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
-                connectionKey.getSource().getNode().getName(),
-                connectionKey.getTarget().getNode().getName(),
+                connectionKey.getSourceNodeName(),
+                connectionKey.getTargetNodeName(),
                 sourceResourceRef.getDefinition().getName()
             )
         );
 
         flags = transObjFactory.createStateFlagsImpl(
-            Arrays.asList(connectionKey.getSource().getObjProt(), connectionKey.getTarget().getObjProt()),
+            Arrays.asList(source.getObjProt(), target.getObjProt()),
             this,
             Flags.class,
             dbDriver.getStateFlagPersistence(),
@@ -118,8 +127,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         snapshotNameInProgress = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         transObjs = Arrays.asList(
-            connectionKey.getSource(),
-            connectionKey.getTarget(),
+            source,
+            target,
             flags,
             props,
             port,
@@ -128,28 +137,113 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         );
     }
 
-    public static ResourceConnection get(
-        AccessContext accCtx,
-        Resource sourceResource,
-        Resource targetResource
-    )
-        throws AccessDeniedException
+    public static ResourceConnection createWithSorting(
+        UUID uuidRef,
+        Resource rsc1,
+        Resource rsc2,
+        TcpPortNumber portRef,
+        DynamicNumberPool tcpPortPoolRef,
+        ResourceConnectionDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
+        long initFlags,
+        AccessContext accCtx
+    ) throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {
-        return sourceResource.getAbsResourceConnection(accCtx, targetResource);
+        rsc1.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        rsc2.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+
+        ResourceConnection rsc1ConData = rsc1.getAbsResourceConnection(accCtx, rsc2);
+        ResourceConnection rsc2ConData = rsc2.getAbsResourceConnection(accCtx, rsc1);
+
+        if (rsc1ConData != null || rsc2ConData != null)
+        {
+            if (rsc1ConData != null && rsc2ConData != null)
+            {
+                throw new LinStorDataAlreadyExistsException("The ResourceConnection already exists");
+            }
+            throw new LinStorDataAlreadyExistsException(
+                "The ResourceConnection already exists for one of the resources"
+            );
+        }
+
+        Resource src;
+        Resource dst;
+        int comp = rsc1.compareTo(rsc2);
+        if (comp > 0)
+        {
+            src = rsc2;
+            dst = rsc1;
+        }
+        else if (comp < 0)
+        {
+            src = rsc1;
+            dst = rsc2;
+        }
+        else
+        {
+            throw new ImplementationError("Cannot create a resource connection to the same resource");
+        }
+
+        return createForDb(
+            uuidRef,
+            src,
+            dst,
+            portRef,
+            tcpPortPoolRef,
+            dbDriverRef,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProviderRef,
+            initFlags
+        );
+    }
+
+    /**
+     * WARNING: do not use this method unless you are absolutely sure the resourceConnection you are trying to create
+     * does not exist yet and the resources are already sorted correctly.
+     * If you are not sure they are, use ResourceConnection.createWithSorting instead.
+     */
+    public static ResourceConnection createForDb(
+        UUID uuidRef,
+        Resource rsc1,
+        Resource rsc2,
+        TcpPortNumber portRef,
+        DynamicNumberPool tcpPortPoolRef,
+        ResourceConnectionDatabaseDriver dbDriverRef,
+        PropsContainerFactory propsContainerFactory,
+        TransactionObjectFactory transObjFactory,
+        Provider<? extends TransactionMgr> transMgrProviderRef,
+        long initFlags
+    ) throws DatabaseException
+    {
+        return new ResourceConnection(
+            uuidRef,
+            rsc1,
+            rsc2,
+            portRef,
+            tcpPortPoolRef,
+            dbDriverRef,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProviderRef,
+            initFlags
+        );
     }
 
     public Node getNode(NodeName nodeName)
     {
         checkDeleted();
         Node node = null;
-        if (connectionKey.getSource().getNode().getName().equals(nodeName))
+        if (connectionKey.getSourceNodeName().equals(nodeName))
         {
-            node = connectionKey.getSource().getNode();
+            node = source.getNode();
         }
         else
-        if (connectionKey.getTarget().getNode().getName().equals(nodeName))
+        if (connectionKey.getTargetNodeName().equals(nodeName))
         {
-            node = connectionKey.getTarget().getNode();
+            node = target.getNode();
         }
         return node;
     }
@@ -158,14 +252,14 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
     {
         checkDeleted();
         requireAccess(accCtx, AccessType.VIEW);
-        return connectionKey.getSource();
+        return source;
     }
 
     public Resource getTargetResource(AccessContext accCtx) throws AccessDeniedException
     {
         checkDeleted();
         requireAccess(accCtx, AccessType.VIEW);
-        return connectionKey.getTarget();
+        return target;
     }
 
     public Props getProps(AccessContext accCtx) throws AccessDeniedException
@@ -173,8 +267,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         checkDeleted();
         return PropsAccess.secureGetProps(
             accCtx,
-            connectionKey.getSource().getObjProt(),
-            connectionKey.getTarget().getObjProt(),
+            source.getObjProt(),
+            target.getObjProt(),
             props
         );
     }
@@ -248,8 +342,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
 
     private void requireAccess(AccessContext accCtxRef, AccessType accType) throws AccessDeniedException
     {
-        connectionKey.getSource().getObjProt().requireAccess(accCtxRef, accType);
-        connectionKey.getTarget().getObjProt().requireAccess(accCtxRef, accType);
+        source.getObjProt().requireAccess(accCtxRef, accType);
+        target.getObjProt().requireAccess(accCtxRef, accType);
     }
 
     @Override
@@ -259,8 +353,8 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         {
             requireAccess(accCtx, AccessType.CHANGE);
 
-            connectionKey.getSource().removeResourceConnection(accCtx, this);
-            connectionKey.getTarget().removeResourceConnection(accCtx, this);
+            source.removeResourceConnection(accCtx, this);
+            target.removeResourceConnection(accCtx, this);
 
             props.delete();
 
@@ -316,9 +410,9 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
     @Override
     public String toStringImpl()
     {
-        return "Node1: '" + connectionKey.getSource().getNode().getName() + "', " +
-               "Node2: '" + connectionKey.getTarget().getNode().getName() + "', " +
-               "Rsc: '" + connectionKey.getSource().getDefinition().getName() + "'";
+        return "Node1: '" + connectionKey.getSourceNodeName() + "', " +
+            "Node2: '" + connectionKey.getTargetNodeName() + "', " +
+            "Rsc: '" + connectionKey.getResourceName() + "'";
     }
 
     public ResourceConnectionApi getApiData(AccessContext accCtx)
@@ -327,9 +421,9 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
         checkDeleted();
         return new RscConnPojo(
             getUuid(),
-            connectionKey.getSource().getNode().getName().getDisplayName(),
-            connectionKey.getTarget().getNode().getName().getDisplayName(),
-            connectionKey.getSource().getDefinition().getName().getDisplayName(),
+            connectionKey.getSourceNodeName().getDisplayName(),
+            connectionKey.getTargetNodeName().getDisplayName(),
+            connectionKey.getResourceName().getDisplayName(),
             getProps(accCtx).map(),
             getStateFlags().getFlagsBits(accCtx),
             TcpPortNumber.getValueNullable(getPort(accCtx))

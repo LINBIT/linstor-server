@@ -66,6 +66,7 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
 
     private final TransactionMap<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
 
+    private final Key snapVlmDfnKey;
 
     public SnapshotVolumeDefinition(
         UUID objIdRef,
@@ -123,6 +124,7 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
             snapshotVlmMap,
             deleted
         );
+        snapVlmDfnKey = new Key(this);
     }
 
     public SnapshotDefinition getSnapshotDefinition()
@@ -141,6 +143,11 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
     {
         checkDeleted();
         return vlmNr;
+    }
+
+    public Key getKey()
+    {
+        return snapVlmDfnKey;
     }
 
     public void addSnapshotVolume(AccessContext accCtx, SnapshotVolume snapshotVolume)
@@ -314,7 +321,8 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
     @Override
     public String toStringImpl()
     {
-        return snapshotDfn + ", VlmNr: '" + vlmDfn.getVolumeNumber() + "'";
+        return "RscName: " + snapVlmDfnKey.rscName + ", SnapName: " + snapVlmDfnKey.snapName +
+            ", VlmNr: '" + vlmNr + "'";
     }
 
     public SnapshotVolumeDefinitionApi getApiData(AccessContext accCtx)
@@ -391,5 +399,81 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
     {
         checkDeleted();
         return getResourceDefinition().getObjProt();
+    }
+
+    /**
+     * Identifies a nodeConnection.
+     */
+    public static class Key implements Comparable<Key>
+    {
+        private final ResourceName rscName;
+        private final SnapshotName snapName;
+        private final VolumeNumber vlmNr;
+
+        public Key(SnapshotVolumeDefinition snapVlmDfn)
+        {
+            this(snapVlmDfn.getResourceName(), snapVlmDfn.getSnapshotName(), snapVlmDfn.getVolumeNumber());
+        }
+
+        public Key(ResourceName rscNameRef, SnapshotName snapNameRef, VolumeNumber vlmNrRef)
+        {
+            rscName = rscNameRef;
+            snapName = snapNameRef;
+            vlmNr = vlmNrRef;
+        }
+
+        public ResourceName getRscName()
+        {
+            return rscName;
+        }
+
+        public SnapshotName getSnapName()
+        {
+            return snapName;
+        }
+
+        public VolumeNumber getVlmNr()
+        {
+            return vlmNr;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(rscName, snapName, vlmNr);
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+            {
+                return true;
+            }
+            if (!(obj instanceof Key))
+            {
+                return false;
+            }
+            Key other = (Key) obj;
+            return Objects.equals(rscName, other.rscName) && Objects.equals(snapName, other.snapName) && Objects.equals(
+                vlmNr,
+                other.vlmNr
+            );
+        }
+
+        @Override
+        public int compareTo(Key other)
+        {
+            int eq = rscName.compareTo(other.rscName);
+            if (eq == 0)
+            {
+                eq = snapName.compareTo(other.snapName);
+                if (eq == 0)
+                {
+                    eq = vlmNr.compareTo(other.vlmNr);
+                }
+            }
+            return eq;
+        }
     }
 }

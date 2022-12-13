@@ -118,7 +118,7 @@ public class VolumeConnectionDbDriver extends
             }
 
             ret = new Pair<>(
-                new VolumeConnection(
+                VolumeConnection.createForDb(
                     raw.build(UUID, java.util.UUID::fromString),
                     vlmsMap.get(new Triple<>(nodeNameSrc, rscName, vlmNr)),
                     vlmsMap.get(new Triple<>(nodeNameDst, rscName, vlmNr)),

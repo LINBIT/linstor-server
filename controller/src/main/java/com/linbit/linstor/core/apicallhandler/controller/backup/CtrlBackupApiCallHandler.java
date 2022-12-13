@@ -544,7 +544,7 @@ public class CtrlBackupApiCallHandler
             SnapshotDefinition snapDfn = s3ObjectInfo.getSnapDfn();
             if (snapDfn != null)
             {
-                toDelete.snapKeys.add(new SnapshotDefinition.Key(snapDfn));
+                toDelete.snapKeys.add(snapDfn.getSnapDfnKey());
             }
         }
     }

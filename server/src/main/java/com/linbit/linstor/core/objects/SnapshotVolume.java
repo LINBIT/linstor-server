@@ -36,6 +36,8 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
     // deliberately not a TransactionObject to behave the same as SatelliteResourceStates
     private volatile String state;
 
+    private final Key snapVlmKey;
+
     public SnapshotVolume(
         UUID objIdRef,
         Snapshot snapshotRef,
@@ -64,6 +66,8 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
 
         snapshotVolumeDefinition = snapshotVolumeDefinitionRef;
         dbDriver = dbDriverRef;
+
+        snapVlmKey = new Key(this);
 
         transObjs.addAll(
             Arrays.asList(
@@ -116,7 +120,8 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
     @Override
     public String toStringImpl()
     {
-        return absRsc + ", VlmNr: '" + getVolumeNumber() + "'";
+        return "Resource: '" + snapVlmKey.rscName + "', Node: '" + snapVlmKey.nodeName + "', Snapshot: '" +
+            snapVlmKey.snapName + "', VlmNr: '" + snapVlmKey.vlmNr + "'";
     }
 
     @Override
@@ -236,29 +241,32 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
     public Key getKey()
     {
         // no access or deleted check
-        return new Key(getResourceName(), getVolumeNumber(), getSnapshotName());
+        return snapVlmKey;
     }
 
     public class Key
     {
-        private final String rscName;
-        private final int vlmNr;
-        private final String snapName;
+        private final ResourceName rscName;
+        private final VolumeNumber vlmNr;
+        private final SnapshotName snapName;
+        private final NodeName nodeName;
 
-        public Key(ResourceName rscNameRef, VolumeNumber vlmNrRef, SnapshotName snapNameRef)
+        public Key(SnapshotVolume snapVlm)
         {
-            rscName = rscNameRef.displayValue;
-            vlmNr = vlmNrRef.value;
-            snapName = snapNameRef.displayValue;
+            this(
+                snapVlm.absRsc.getResourceName(),
+                snapVlm.getVolumeNumber(),
+                snapVlm.absRsc.getSnapshotName(),
+                snapVlm.absRsc.getNodeName()
+            );
         }
 
-        public Key(String rscNameRef, int vlmNrRef, String snapNameRef)
+        public Key(ResourceName rscNameRef, VolumeNumber vlmNrRef, SnapshotName snapNameRef, NodeName nodeNameRef)
         {
-            Objects.requireNonNull(rscNameRef);
-            Objects.requireNonNull(snapNameRef);
             rscName = rscNameRef;
             vlmNr = vlmNrRef;
             snapName = snapNameRef;
+            nodeName = nodeNameRef;
         }
 
         @Override
@@ -266,30 +274,43 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
         {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((rscName == null) ? 0 : rscName.toUpperCase().hashCode());
-            result = prime * result + ((snapName == null) ? 0 : snapName.toUpperCase().hashCode());
-            result = prime * result + vlmNr;
+            result = prime * result + getEnclosingInstance().hashCode();
+            result = prime * result + Objects.hash(nodeName, rscName, snapName, vlmNr);
             return result;
         }
 
         @Override
         public boolean equals(Object obj)
         {
-            boolean eq = obj != null && obj instanceof Key;
-            if (eq)
+            if (this == obj)
             {
-                Key other = (Key) obj;
-                eq &= rscName.equalsIgnoreCase(other.rscName) &&
-                    snapName.equalsIgnoreCase(other.snapName) &&
-                    vlmNr == other.vlmNr;
+                return true;
             }
-            return eq;
+            if (!(obj instanceof Key))
+            {
+                return false;
+            }
+            Key other = (Key) obj;
+            if (!getEnclosingInstance().equals(other.getEnclosingInstance()))
+            {
+                return false;
+            }
+            return Objects.equals(nodeName, other.nodeName) && Objects.equals(rscName, other.rscName) && Objects.equals(
+                snapName,
+                other.snapName
+            ) && Objects.equals(vlmNr, other.vlmNr);
         }
 
         @Override
         public String toString()
         {
-            return "SnapshotVolume.Key [rscName=" + rscName + ", vlmNr=" + vlmNr + ", snapName=" + snapName + "]";
+            return "SnapshotVolume.Key [nodeName=" + nodeName + ", rscName=" + rscName + ", vlmNr=" + vlmNr +
+                ", snapName=" + snapName + "]";
+        }
+
+        private SnapshotVolume getEnclosingInstance()
+        {
+            return SnapshotVolume.this;
         }
     }
 

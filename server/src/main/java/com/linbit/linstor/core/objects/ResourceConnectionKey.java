@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 
@@ -7,8 +8,7 @@ import java.util.Objects;
 
 public class ResourceConnectionKey implements Comparable<ResourceConnectionKey>
 {
-    private final Resource source;
-    private final Resource target;
+    private final ResourceName rscName;
 
     private final NodeName srcNodeName;
     private final NodeName tgtNodeName;
@@ -17,31 +17,39 @@ public class ResourceConnectionKey implements Comparable<ResourceConnectionKey>
     {
         final NodeName rscNameA = resourceA.getNode().getName();
         final NodeName rscNameB = resourceB.getNode().getName();
+        if (!resourceA.getDefinition().equals(resourceB.getDefinition()))
+        {
+            throw new ImplementationError(
+                String.format(
+                    "Creating connection between unrelated Resources %n" +
+                        "Volume1: NodeName=%s, ResName=%s %n" +
+                        "Volume2: NodeName=%s, ResName=%s.",
+                    rscNameA.value,
+                    resourceA.getDefinition().getName().value,
+                    rscNameB.value,
+                    resourceB.getDefinition().getName().value
+                ),
+                null
+            );
+        }
+
+        rscName = resourceA.getResourceDefinition().getName();
 
         if (rscNameA.compareTo(rscNameB) < 0)
         {
-            source = resourceA;
-            target = resourceB;
             srcNodeName = rscNameA;
             tgtNodeName = rscNameB;
         }
         else
         {
-            source = resourceB;
-            target = resourceA;
             srcNodeName = rscNameB;
             tgtNodeName = rscNameA;
         }
     }
 
-    public Resource getSource()
+    public ResourceName getResourceName()
     {
-        return source;
-    }
-
-    public Resource getTarget()
-    {
-        return target;
+        return rscName;
     }
 
     public NodeName getSourceNodeName()
@@ -63,9 +71,7 @@ public class ResourceConnectionKey implements Comparable<ResourceConnectionKey>
             result = tgtNodeName.compareTo(other.tgtNodeName);
             if (result == 0)
             {
-                ResourceName rsc1SrcName = source.getResourceDefinition().getName();
-                ResourceName rsc2SrcName = other.getSource().getResourceDefinition().getName();
-                result = rsc1SrcName.compareTo(rsc2SrcName);
+                result = rscName.compareTo(other.rscName);
             }
         }
         return result;
@@ -74,7 +80,7 @@ public class ResourceConnectionKey implements Comparable<ResourceConnectionKey>
     @Override
     public int hashCode()
     {
-        return Objects.hash(source, srcNodeName, target, tgtNodeName);
+        return Objects.hash(rscName, srcNodeName, tgtNodeName);
     }
 
     @Override
@@ -88,8 +94,8 @@ public class ResourceConnectionKey implements Comparable<ResourceConnectionKey>
         else if (obj instanceof ResourceConnectionKey)
         {
             ResourceConnectionKey other = (ResourceConnectionKey) obj;
-            ret = Objects.equals(source, other.source) && Objects.equals(srcNodeName, other.srcNodeName) &&
-                Objects.equals(target, other.target) && Objects.equals(tgtNodeName, other.tgtNodeName);
+            ret = Objects.equals(rscName, other.rscName) && Objects.equals(srcNodeName, other.srcNodeName) &&
+                Objects.equals(tgtNodeName, other.tgtNodeName);
         }
         return ret;
     }

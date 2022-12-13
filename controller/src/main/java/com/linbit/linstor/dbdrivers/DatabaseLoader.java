@@ -45,9 +45,9 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
-import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
@@ -546,7 +546,7 @@ public class DatabaseLoader implements DatabaseDriver
             {
                 Snapshot snapshot = (Snapshot) absEntry.getKey();
                 loadedNodesMap.get(snapshot.getNode()).getSnapshotMap()
-                    .put(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()), snapshot);
+                    .put(snapshot.getSnapshotDefinition().getSnapDfnKey(), snapshot);
                 loadedSnapshotDfns.get(snapshot.getSnapshotDefinition()).getSnapshotMap()
                     .put(snapshot.getNodeName(), snapshot);
 

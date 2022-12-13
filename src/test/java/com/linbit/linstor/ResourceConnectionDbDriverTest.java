@@ -126,7 +126,8 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            0
+            0,
+            SYS_CTX
         );
     }
 
@@ -175,13 +176,12 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
         resSrc.setAbsResourceConnection(SYS_CTX, resCon);
         resDst.setAbsResourceConnection(SYS_CTX, resCon);
 
-        ResourceConnection loadedConDfn = ResourceConnection.get(
-            SYS_CTX,
-            resSrc,
-            resDst
-        );
+        ResourceConnection loadedSrcConDfn = resSrc.getAbsResourceConnection(SYS_CTX, resDst);
+        ResourceConnection loadedDstConDfn = resDst.getAbsResourceConnection(SYS_CTX, resSrc);
 
-        checkLoadedConDfn(loadedConDfn, true);
+        checkLoadedConDfn(loadedSrcConDfn, true);
+        checkLoadedConDfn(loadedDstConDfn, true);
+        assertEquals(loadedSrcConDfn, loadedDstConDfn);
     }
 
     @Test
@@ -196,11 +196,8 @@ public class ResourceConnectionDbDriverTest extends GenericDbBase
 
         // no clear-cache
 
-        assertEquals(storedInstance, ResourceConnection.get(
-            SYS_CTX,
-            resSrc,
-            resDst
-        ));
+        assertEquals(storedInstance, resSrc.getAbsResourceConnection(SYS_CTX, resDst));
+        assertEquals(storedInstance, resDst.getAbsResourceConnection(SYS_CTX, resSrc));
     }
 
     @Test

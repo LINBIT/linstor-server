@@ -22,10 +22,10 @@ import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
-import com.linbit.linstor.core.objects.remotes.AbsRemote;
-import com.linbit.linstor.core.objects.remotes.StltRemote;
-import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
+import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
@@ -552,7 +552,7 @@ public abstract class AbsBackupShippingService implements SystemService
                         {
                             success = shippingInfo.snapVlmDataFinishedSuccessfully == shippingInfo.snapVlmDataFinishedShipping;
 
-                            snapKey = new SnapshotDefinition.Key(snap.getSnapshotDefinition());
+                            snapKey = snap.getSnapshotDefinition().getSnapDfnKey();
                             portsUsed = shippingInfo.portsUsed;
                         }
                     }

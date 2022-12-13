@@ -3,6 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -38,6 +39,7 @@ public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedO
     private final TransactionSimpleObject<NetInterface, EncryptionType> niStltConnEncrType;
 
     private final NetInterfaceDatabaseDriver dbDriver;
+    private final Key niKey;
 
     NetInterface(
         UUID uuid,
@@ -77,6 +79,7 @@ public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedO
             niAddress,
             deleted
         );
+        niKey = new Key(this);
     }
 
     public NetInterfaceName getName()
@@ -89,6 +92,12 @@ public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedO
     {
         checkDeleted();
         return niNode;
+    }
+
+    public Key getKey()
+    {
+        // no check deleted
+        return niKey;
     }
 
     public LsIpAddress getAddress(AccessContext accCtx)
@@ -221,7 +230,7 @@ public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedO
     @Override
     public String toStringImpl()
     {
-        return "Node: '" + niNode.getName() + "', " +
+        return "Node: '" + niKey.nodeName + "', " +
                "NetInterfaceName: '" + niName + "'";
     }
 
@@ -241,5 +250,68 @@ public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedO
     {
         checkDeleted();
         return niNode.getObjProt();
+    }
+
+    /**
+     * Identifies a NetInterface.
+     */
+    public static class Key implements Comparable<Key>
+    {
+        private final NetInterfaceName netIfName;
+
+        private final NodeName nodeName;
+
+        public Key(NetInterface netIf)
+        {
+            this(netIf.niName, netIf.niNode.getName());
+        }
+
+        public Key(NetInterfaceName netIfNameRef, NodeName nodeNameRef)
+        {
+            netIfName = netIfNameRef;
+            nodeName = nodeNameRef;
+        }
+
+        public NetInterfaceName getNetInterfaceName()
+        {
+            return netIfName;
+        }
+
+        public NodeName getNodeName()
+        {
+            return nodeName;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(netIfName, nodeName);
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+            {
+                return true;
+            }
+            if (!(obj instanceof Key))
+            {
+                return false;
+            }
+            Key other = (Key) obj;
+            return Objects.equals(netIfName, other.netIfName) && Objects.equals(nodeName, other.nodeName);
+        }
+
+        @Override
+        public int compareTo(Key other)
+        {
+            int eq = nodeName.compareTo(other.nodeName);
+            if (eq == 0)
+            {
+                eq = netIfName.compareTo(other.netIfName);
+            }
+            return eq;
+        }
     }
 }

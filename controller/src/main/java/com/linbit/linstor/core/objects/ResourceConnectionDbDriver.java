@@ -144,7 +144,7 @@ public class ResourceConnectionDbDriver
             }
 
             ret = new Pair<>(
-                new ResourceConnection(
+                ResourceConnection.createForDb(
                     raw.build(UUID, java.util.UUID::fromString),
                     rscMap.get(new Pair<>(nodeNameSrc, rscName)),
                     rscMap.get(new Pair<>(nodeNameDst, rscName)),

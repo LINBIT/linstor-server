@@ -248,6 +248,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                 // this cannot be the last diskful rsc of any rscDfn, so no need to notify scheduled shipping
                 markDeleted(rsc);
             }
+            Peer nodePeer = getPeerPrivileged(node);
 
             boolean nodeDeleted = deleteNodeIfEmpty(node);
 
@@ -255,7 +256,6 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
             if (nodeDeleted)
             {
-                Peer nodePeer = getPeerPrivileged(node);
 
                 responses.addEntry(disconnectNode(nodeUuid, nodeDescription, nodePeer));
 
@@ -376,12 +376,12 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
             deletePrivileged(rsc);
 
+            Peer nodePeer = getPeerPrivileged(node);
             boolean nodeDeleted = deleteNodeIfEmpty(node);
             ctrlTransactionHelper.commit();
 
             if (nodeDeleted)
             {
-                Peer nodePeer = getPeerPrivileged(node);
 
                 ApiCallRcImpl.ApiCallRcEntry response = disconnectNode(nodeUuid, nodeDescription, nodePeer);
 

@@ -48,7 +48,6 @@ public class ResourceConnectionSatelliteFactory
         throws ImplementationError
     {
         ResourceConnection rscConData;
-        ResourceConnectionKey connectionKey = new ResourceConnectionKey(sourceResource, targetResource);
 
         try
         {
@@ -56,17 +55,18 @@ public class ResourceConnectionSatelliteFactory
 
             if (rscConData == null)
             {
-                rscConData = new ResourceConnection(
+                rscConData = ResourceConnection.createWithSorting(
                     uuid,
-                    connectionKey.getSource(),
-                    connectionKey.getTarget(),
+                    sourceResource,
+                    targetResource,
                     portRef,
                     null,
                     dbDriver,
                     propsContainerFactory,
                     transObjFactory,
                     transMgrProvider,
-                    StateFlagsBits.getMask(initFlags)
+                    StateFlagsBits.getMask(initFlags),
+                    accCtx
                 );
                 sourceResource.setAbsResourceConnection(accCtx, rscConData);
                 targetResource.setAbsResourceConnection(accCtx, rscConData);

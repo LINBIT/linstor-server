@@ -1,10 +1,5 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
@@ -23,6 +18,11 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class NodeConnectionDbDriverTest extends GenericDbBase
 {
@@ -66,7 +66,14 @@ public class NodeConnectionDbDriverTest extends GenericDbBase
         nodesMap.put(nodeDst.getName(), nodeDst);
 
         nodeCon = TestFactory.createNodeConnection(
-            uuid, nodeSrc, nodeDst, driver, propsContainerFactory, transObjFactory, transMgrProvider
+            uuid,
+            nodeSrc,
+            nodeDst,
+            driver,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            SYS_CTX
         );
     }
 

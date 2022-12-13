@@ -394,14 +394,14 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.USE);
 
-        snapshotMap.put(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()), snapshot);
+        snapshotMap.put(snapshot.getSnapshotDefinition().getSnapDfnKey(), snapshot);
     }
 
 
     public void removeSnapshot(Snapshot snapshot)
     {
         checkDeleted();
-        snapshotMap.remove(new SnapshotDefinition.Key(snapshot.getSnapshotDefinition()));
+        snapshotMap.remove(snapshot.getSnapshotDefinition().getSnapDfnKey());
     }
 
 

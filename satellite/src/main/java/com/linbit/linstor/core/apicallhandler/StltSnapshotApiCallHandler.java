@@ -124,7 +124,8 @@ class StltSnapshotApiCallHandler
             rscDfnMap.put(rscDfn.getName(), rscDfn);
 
             deviceManager.snapshotUpdateApplied(Collections.singleton(
-                new SnapshotDefinition.Key(rscDfn.getName(), snapshotDfn.getName())));
+                snapshotDfn.getSnapDfnKey()
+            ));
         }
         catch (Exception | ImplementationError exc)
         {

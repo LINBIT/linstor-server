@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
@@ -40,6 +41,8 @@ public class VolumeGroup extends AbsCoreObj<VolumeGroup> implements ProtectedObj
 
     private final VolumeGroupDatabaseDriver dbDriver;
 
+    private final Key vlmGrpKey;
+
     public VolumeGroup(
         UUID uuidRef,
         ResourceGroup rscGrpRef,
@@ -77,6 +80,8 @@ public class VolumeGroup extends AbsCoreObj<VolumeGroup> implements ProtectedObj
             vlmGrpProps,
             deleted
         );
+
+        vlmGrpKey = new Key(this);
     }
 
     @Override
@@ -94,6 +99,12 @@ public class VolumeGroup extends AbsCoreObj<VolumeGroup> implements ProtectedObj
     public VolumeNumber getVolumeNumber()
     {
         return vlmNr;
+    }
+
+    public Key getKey()
+    {
+        // no check deleted
+        return vlmGrpKey;
     }
 
     public Props getProps(AccessContext accCtxRef) throws AccessDeniedException
@@ -235,6 +246,68 @@ public class VolumeGroup extends AbsCoreObj<VolumeGroup> implements ProtectedObj
     @Override
     protected String toStringImpl()
     {
-        return "VolumeGroup '" + vlmNr + "' of ResourceGroup '" + rscGrp + "'";
+        return "VolumeGroup '" + vlmNr + "' of ResourceGroup '" + vlmGrpKey.rscGrpName + "'";
+    }
+
+    /**
+     * Identifies a nodeConnection.
+     */
+    public static class Key implements Comparable<Key>
+    {
+        private final ResourceGroupName rscGrpName;
+        private final VolumeNumber vlmNr;
+
+        public Key(VolumeGroup vlmGrp)
+        {
+            this(vlmGrp.getResourceGroup().getName(), vlmGrp.getVolumeNumber());
+        }
+
+        public Key(ResourceGroupName rscGrpNameRef, VolumeNumber vlmNrRef)
+        {
+            rscGrpName = rscGrpNameRef;
+            vlmNr = vlmNrRef;
+        }
+
+        public ResourceGroupName getRscGrpName()
+        {
+            return rscGrpName;
+        }
+
+        public VolumeNumber getVlmNr()
+        {
+            return vlmNr;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return Objects.hash(rscGrpName, vlmNr);
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (this == obj)
+            {
+                return true;
+            }
+            if (!(obj instanceof Key))
+            {
+                return false;
+            }
+            Key other = (Key) obj;
+            return Objects.equals(rscGrpName, other.rscGrpName) && Objects.equals(vlmNr, other.vlmNr);
+        }
+
+        @Override
+        public int compareTo(Key other)
+        {
+            int eq = rscGrpName.compareTo(other.rscGrpName);
+            if (eq == 0)
+            {
+                eq = vlmNr.compareTo(other.vlmNr);
+            }
+            return eq;
+        }
     }
 }

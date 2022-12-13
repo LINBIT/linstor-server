@@ -150,11 +150,7 @@ class CtrlRscConnectionHelper
         ResourceConnection rscConn;
         try
         {
-            rscConn = ResourceConnection.get(
-                peerAccCtx.get(),
-                rsc1,
-                rsc2
-            );
+            rscConn = rsc1.getAbsResourceConnection(peerAccCtx.get(), rsc2);
 
             if (failIfNull && rscConn == null)
             {

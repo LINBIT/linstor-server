@@ -195,7 +195,8 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            SYS_CTX
         );
         driver.create(volCon);
         commit();
@@ -222,7 +223,8 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            SYS_CTX
         );
         driver.create(volCon);
 
@@ -265,7 +267,8 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            SYS_CTX
         );
         driver.create(volCon);
         volSrc.setVolumeConnection(SYS_CTX, volCon);
@@ -308,7 +311,8 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
             driver,
             propsContainerFactory,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            SYS_CTX
         );
         driver.create(volCon);
         commit();

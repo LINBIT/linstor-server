@@ -8,7 +8,6 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -53,17 +52,7 @@ public class ResourceConnectionControllerFactory
     )
         throws AccessDeniedException, DatabaseException, LinStorDataAlreadyExistsException
     {
-        sourceResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-        targetResource.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
-
-        ResourceConnection rscConData = ResourceConnection.get(accCtx, sourceResource, targetResource);
-
-        if (rscConData != null)
-        {
-            throw new LinStorDataAlreadyExistsException("The ResourceConnection already exists");
-        }
-
-        rscConData = new ResourceConnection(
+        ResourceConnection rscConData = ResourceConnection.createWithSorting(
             UUID.randomUUID(),
             sourceResource,
             targetResource,
@@ -73,7 +62,8 @@ public class ResourceConnectionControllerFactory
             propsContainerFactory,
             transObjFactory,
             transMgrProvider,
-            StateFlagsBits.getMask(initFlags)
+            StateFlagsBits.getMask(initFlags),
+            accCtx
         );
         dbDriver.create(rscConData);
 

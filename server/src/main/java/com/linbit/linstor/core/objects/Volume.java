@@ -333,9 +333,9 @@ public class Volume extends AbsVolume<Resource>
     @Override
     public String toStringImpl()
     {
-        return "Node: '" + absRsc.getNode().getName() + "', " +
-            "Rsc: '" + absRsc.getDefinition().getName() + "', " +
-            "VlmNr: '" + volumeDfn.getVolumeNumber() + "'";
+        return "Node: '" + vlmKey.nodeName + "', " +
+            "Rsc: '" + vlmKey.resourceName + "', " +
+            "VlmNr: '" + vlmKey.volumeNumber + "'";
     }
 
     @Override

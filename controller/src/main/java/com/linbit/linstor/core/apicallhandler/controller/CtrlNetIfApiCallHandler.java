@@ -312,7 +312,6 @@ class CtrlNetIfApiCallHandler
                 boolean closeConnection = activeStltConn != null && netIf.getUuid().equals(activeStltConn.getUuid());
 
                 UUID uuid = netIf.getUuid();
-                deleteNetIf(netIf);
 
                 if (closeConnection)
                 {
@@ -328,7 +327,11 @@ class CtrlNetIfApiCallHandler
                     while (netIfIterator.hasNext())
                     {
                         NetInterface netInterface = netIfIterator.next();
-                        if (netInterface.isUsableAsStltConn(peerAccCtx.get()))
+                        if (
+                            !netInterface.equals(netIf) &&
+                                // netIf is going to be deleted soon, do not consider it as a replacement for itself
+                                netInterface.isUsableAsStltConn(peerAccCtx.get())
+                        )
                         {
                             node.setActiveStltConn(peerAccCtx.get(), netInterface);
                             satelliteConnector.startConnecting(node, apiCtx);
@@ -336,6 +339,8 @@ class CtrlNetIfApiCallHandler
                         }
                     }
                 }
+                // needs to be deleted after finding a replacement to prevent AccessToDeletedDataException
+                deleteNetIf(netIf);
 
                 ctrlTransactionHelper.commit();
                 responseConverter.addWithOp(responses, context, ApiSuccessUtils.defaultDeletedEntry(

@@ -70,7 +70,7 @@ public class NodeConnectionDbDriver
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
         return new Pair<>(
-            new NodeConnection(
+            NodeConnection.createForDb(
                 raw.build(UUID, java.util.UUID::fromString),
                 nodesMap.get(raw.build(NODE_NAME_SRC, NodeName::new)),
                 nodesMap.get(raw.build(NODE_NAME_DST, NodeName::new)),

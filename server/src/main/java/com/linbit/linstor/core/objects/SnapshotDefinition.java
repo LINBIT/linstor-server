@@ -83,6 +83,8 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
     private final TransactionMap<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
     private final TransactionList<SnapshotDefinition, DeviceLayerKind> layerStack;
 
+    private final Key snapDfnKey;
+
     public SnapshotDefinition(
         UUID objIdRef,
         ObjectProtection objProtRef,
@@ -141,6 +143,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
             deleted,
             inCreation
         );
+        snapDfnKey = new Key(this);
     }
 
     @Override
@@ -160,6 +163,12 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
     {
         checkDeleted();
         return snapshotName;
+    }
+
+    public Key getSnapDfnKey()
+    {
+        // no call to checkDeleted()
+        return snapDfnKey;
     }
 
     public SnapshotVolumeDefinition getSnapshotVolumeDefinition(
@@ -485,8 +494,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
     @Override
     public String toStringImpl()
     {
-        return "Rsc: '" + getResourceName() + "', " +
-            "Snapshot: '" + snapshotName + "'";
+        return "Rsc: '" + snapDfnKey.resourceName + "', Snapshot: '" + snapshotName + "'";
     }
 
     @Override
@@ -526,7 +534,7 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
     }
 
     /**
-     * Identifies a snapshot within a node.
+     * Identifies a snapshot definition.
      */
     public static class Key implements Comparable<Key>
     {

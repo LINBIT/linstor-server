@@ -447,8 +447,8 @@ public class Resource extends AbsResource<Resource>
     @Override
     public String toStringImpl()
     {
-        return "Node: '" + node.getName() + "', " +
-               "Rsc: '" + resourceDfn.getName() + "'";
+        return "Node: '" + rscKey.nodeName + "', " +
+            "Rsc: '" + rscKey.resourceName + "'";
     }
 
     public static String getStringId(Resource rsc)
