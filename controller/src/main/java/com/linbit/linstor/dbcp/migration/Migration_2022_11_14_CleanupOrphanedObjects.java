@@ -108,7 +108,7 @@ public class Migration_2022_11_14_CleanupOrphanedObjects extends LinstorMigratio
             {
                 knownSnapDfns.add(
                     new SnapDfnKey(
-                        rsAllSnapDfnAcls.getString(RD_RSC_NAME),
+                        rsAllSnapDfns.getString(RD_RSC_NAME),
                         rsAllSnapDfns.getString(RD_SNAP_NAME)
                     )
                 );
@@ -192,12 +192,12 @@ public class Migration_2022_11_14_CleanupOrphanedObjects extends LinstorMigratio
         }
     }
 
-    private HashSet<String> asSet(ResultSet rsAllSnapDfnSecObjProts, String resultSetColumn) throws SQLException
+    private HashSet<String> asSet(ResultSet resultSet, String resultSetColumn) throws SQLException
     {
         HashSet<String> ret = new HashSet<>();
-        while (rsAllSnapDfnSecObjProts.next())
+        while (resultSet.next())
         {
-            ret.add(rsAllSnapDfnSecObjProts.getString(resultSetColumn));
+            ret.add(resultSet.getString(resultSetColumn));
         }
         return ret;
     }
