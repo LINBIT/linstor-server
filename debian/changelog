@@ -1,3 +1,13 @@
+linstor-server (1.20.2-1) experimental; urgency=medium
+
+  [ Johanna Kucera ]
+  * Backups: fix normal snap restore
+
+  [ Gabor Hernadi ]
+  * Db,migration: Fix orphan cleanup
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 14 Dec 2022 14:20:05 +0000
+
 linstor-server (1.20.1-1) experimental; urgency=medium
 
   [ Johanna Kucera ]

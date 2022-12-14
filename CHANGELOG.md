@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.2] - 2022-12-14
+
 ### Fixed
 
 - Can now use snapshot restore on a snapshot created by a backup create
