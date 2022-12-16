@@ -16,6 +16,7 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
     private ELEMENT object;
     private ELEMENT cachedObject;
     private SingleColumnDatabaseDriver<PARENT, ELEMENT> dbDriver;
+    private boolean dirty = false;
 
     public TransactionSimpleObject(
         PARENT parentRef,
@@ -46,6 +47,7 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
             activateTransMgr();
             object = obj;
             dbDriver.update(parent, obj);
+            dirty = true;
         }
         else
         {
@@ -74,6 +76,7 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
     {
         assert (TransactionMgr.isCalledFromTransactionMgr("commit"));
         cachedObject = object;
+        dirty = false;
     }
 
     @Override
@@ -81,12 +84,13 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
     {
         assert (TransactionMgr.isCalledFromTransactionMgr("rollback"));
         object = cachedObject;
+        dirty = false;
     }
 
     @Override
     public boolean isDirty()
     {
-        return !Objects.equals(object, cachedObject);
+        return dirty;
     }
 
     @Override
