@@ -64,7 +64,7 @@ public class DevicePoolHandler
             if (slabSizeKib > 0)
             {
                 cmd.add("--config");
-                cmd.add("allocation/vdo_slap_size_mb=" + (slabSizeKib / 1024));
+                cmd.add("allocation/vdo_slab_size_mb=" + (slabSizeKib / 1024));
             }
             cmd.add(vgName);
 
