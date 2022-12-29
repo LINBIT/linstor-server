@@ -1161,7 +1161,8 @@ public class CtrlRscCrtApiHelper
         while (rscIter.hasNext())
         {
             Resource rsc = rscIter.next();
-            if (LayerUtils.hasLayer(rsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD))
+            if (LayerUtils.hasLayer(rsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD) &&
+                !rsc.isDrbdDiskless(peerAccCtx.get()))
             {
                 resourceCount++;
             }
