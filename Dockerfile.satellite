@@ -98,6 +98,13 @@ ENV INTERNAL_REPO=/etc/yum.repos.d/linbit-internal.repo
 # lsscsi: exos layer
 # =lbbuild RUN curl -fsSL https://nexus.at.linbit.com/repository/lbbuild/from_rhel_repos.sh | bash -s -- cryptsetup nvme-cli zstd xfsprogs e2fsprogs device-mapper-multipath lsscsi
 
+# custom tools
+# losetup-container: fixes an edge case when reporting the backing file for a loop device
+ARG LOSETUP_CONTAINER_VERSION=v1.0.1
+RUN curl -fsSL "https://github.com/LINBIT/losetup-container/releases/download/${LOSETUP_CONTAINER_VERSION}/losetup-container-$(uname -m)-unknown-linux-gnu.tar.gz" | tar -xvz -C /usr/local/sbin && \
+  printf '#!/bin/sh\nLOSETUP_CONTAINER_ORIGINAL_LOSETUP=%s exec /usr/local/sbin/losetup-container "$@"\n' $(command -v losetup) > /usr/local/sbin/losetup && \
+  chmod +x /usr/local/sbin/losetup
+
 # package post inst config
 RUN lvmconfig --type current --mergedconfig --config 'activation { udev_rules = 0 } devices { global_filter = [ "r|^/dev/drbd|" ] }' > /etc/lvm/lvm.conf.new && mv /etc/lvm/lvm.conf.new /etc/lvm/lvm.conf
 # Ensure we log to files in containers, otherwise SOS reports won't show any logs at all

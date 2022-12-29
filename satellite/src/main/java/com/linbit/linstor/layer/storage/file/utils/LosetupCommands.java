@@ -34,6 +34,8 @@ public class LosetupCommands
         return genericExecutor(
             extCmd,
             new String[] {
+                // DO NOT CHANGE without updating losetup-container in /Dockerfile.satellite
+                // See https://github.com/LINBIT/losetup-container on why this is important.
                 "losetup",
                 "-l",
                 "-O", "NAME,BACK-FILE"
