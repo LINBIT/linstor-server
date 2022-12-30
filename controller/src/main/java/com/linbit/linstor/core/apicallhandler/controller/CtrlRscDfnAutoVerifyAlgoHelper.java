@@ -33,14 +33,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Singleton
-public class CtrlRscDfnAutoVerfiyAlgoHelper implements CtrlRscAutoHelper.AutoHelper
+public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHelper
 {
     private final ErrorReporter errorReporter;
     private final Provider<AccessContext> peerCtxProvider;
     private final SystemConfRepository sysCfgRepo;
 
     @Inject
-    public CtrlRscDfnAutoVerfiyAlgoHelper(
+    public CtrlRscDfnAutoVerifyAlgoHelper(
         ErrorReporter errorReporterRef,
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
         SystemConfRepository systemConfRepositoryRef)

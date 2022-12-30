@@ -78,7 +78,7 @@ public class CtrlRscAutoHelper
         CtrlRscAutoTieBreakerHelper autoTieBreakerRef,
         CtrlRscAutoDrbdProxyHelper autoDrbdProxyHelperRef,
         CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef,
-        CtrlRscDfnAutoVerfiyAlgoHelper autoVerfiyAlgoHelperRef,
+        CtrlRscDfnAutoVerifyAlgoHelper autoVerifyAlgoHelperRef,
         CtrlApiDataLoader dataLoaderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscCrtApiHelper rscCrtHelperRef,
@@ -94,7 +94,7 @@ public class CtrlRscAutoHelper
             .asList(
                 autoDrbdProxyHelperRef,
                 autoRePlaceRscHelperRef,
-                autoVerfiyAlgoHelperRef,
+                autoVerifyAlgoHelperRef,
                 // run autotiebreaker + autoquorum as last
                 autoTieBreakerRef,
                 autoQuorumHelperRef

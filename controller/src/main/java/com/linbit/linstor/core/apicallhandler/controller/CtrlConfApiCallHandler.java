@@ -111,7 +111,7 @@ public class CtrlConfApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final AutoDiskfulTask autoDiskfulTask;
     private final ReconnectorTask reconnectorTask;
-    private final CtrlRscDfnAutoVerfiyAlgoHelper ctrlRscDfnAutoVerfiyAlgoHelper;
+    private final CtrlRscDfnAutoVerifyAlgoHelper ctrlRscDfnAutoVerifyAlgoHelper;
 
     private final AutoSnapshotTask autoSnapshotTask;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
@@ -154,7 +154,7 @@ public class CtrlConfApiCallHandler
         AutoDiskfulTask autoDiskfulTaskRef,
         ReconnectorTask reconnectorTaskRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        CtrlRscDfnAutoVerfiyAlgoHelper ctrlRscDfnAutoVerfiyAlgoHelperRef,
+        CtrlRscDfnAutoVerifyAlgoHelper ctrlRscDfnAutoVerifyAlgoHelperRef,
         AutoSnapshotTask autoSnapshotTaskRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef
     )
@@ -180,7 +180,7 @@ public class CtrlConfApiCallHandler
         ctrlNodeApiCallHandler = ctrlNodeApiCallHandlerRef;
         autoDiskfulTask = autoDiskfulTaskRef;
         reconnectorTask = reconnectorTaskRef;
-        ctrlRscDfnAutoVerfiyAlgoHelper = ctrlRscDfnAutoVerfiyAlgoHelperRef;
+        ctrlRscDfnAutoVerifyAlgoHelper = ctrlRscDfnAutoVerifyAlgoHelperRef;
         autoSnapshotTask = autoSnapshotTaskRef;
         ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
     }
@@ -632,7 +632,7 @@ public class CtrlConfApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         for (ResourceDefinition rscDfn : rscDfnMap.values())
         {
-            apiCallRc.addEntries(ctrlRscDfnAutoVerfiyAlgoHelper.updateVerifyAlgorithm(rscDfn));
+            apiCallRc.addEntries(ctrlRscDfnAutoVerifyAlgoHelper.updateVerifyAlgorithm(rscDfn));
         }
         return apiCallRc;
     }
