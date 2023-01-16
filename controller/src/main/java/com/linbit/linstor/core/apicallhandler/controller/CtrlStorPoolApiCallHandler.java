@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -50,6 +51,7 @@ import javax.inject.Singleton;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -67,6 +69,7 @@ public class CtrlStorPoolApiCallHandler
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final AccessContext sysCtx;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSecurityObjects securityObjects;
@@ -82,6 +85,7 @@ public class CtrlStorPoolApiCallHandler
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
+        @SystemContext AccessContext sysCtxRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         CtrlSecurityObjects ctrlSecurityObjects,
@@ -96,6 +100,7 @@ public class CtrlStorPoolApiCallHandler
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
+        sysCtx = sysCtxRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         securityObjects = ctrlSecurityObjects;
@@ -369,8 +374,11 @@ public class CtrlStorPoolApiCallHandler
                 final Node storPoolNode = storPool.getNode();
                 StorPoolDefinition spd = getStorPoolDefinition(storPool);
                 delete(storPool);
+                Iterator<StorPool> spIt = spd.iterateStorPools(sysCtx);
                 String spdDspName = spd.getName().displayValue;
-                if (!spdDspName.equalsIgnoreCase(LinStor.DISKLESS_STOR_POOL_NAME) &&
+                if (!spIt.hasNext() && // only delete SPD if we just its deleted last SP
+                    // and if the name is not default*
+                    !spdDspName.equalsIgnoreCase(LinStor.DISKLESS_STOR_POOL_NAME) &&
                     !spdDspName.equalsIgnoreCase(InternalApiConsts.DEFAULT_STOR_POOL_NAME))
                 {
                     delete(spd);
