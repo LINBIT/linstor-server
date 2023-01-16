@@ -21,25 +21,27 @@ public class StltConnTracker implements ConnectionObserver
 {
     private final CoreModule.PeerMap peerMap;
     private final EventBroker eventBroker;
-    private final ControllerPeerConnector controllerPeerConnector;
+    private final Provider<ControllerPeerConnector> controllerPeerConnectorProvider;
     private final Provider<DeviceManager> devMgrProvider;
-    private final ArrayList<ExceptionThrowingBiConsumer<Peer, Boolean, StorageException>> closingListeners = new ArrayList<>();
+    private final ArrayList<ExceptionThrowingBiConsumer<Peer, Boolean, StorageException>> closingListeners;
     private final ErrorReporter errorReporter;
 
     @Inject
     StltConnTracker(
         CoreModule.PeerMap peerMapRef,
         EventBroker eventBrokerRef,
-        ControllerPeerConnector controllerPeerConnectorRef,
+        Provider<ControllerPeerConnector> controllerPeerConnectorProviderRef,
         Provider<DeviceManager> devMgrProviderRef,
         ErrorReporter errorReporterRef
     )
     {
         peerMap = peerMapRef;
         eventBroker = eventBrokerRef;
-        controllerPeerConnector = controllerPeerConnectorRef;
+        controllerPeerConnectorProvider = controllerPeerConnectorProviderRef;
         devMgrProvider = devMgrProviderRef;
         errorReporter = errorReporterRef;
+
+        closingListeners = new ArrayList<>();
     }
 
     @Override
@@ -92,7 +94,7 @@ public class StltConnTracker implements ConnectionObserver
     {
         if (connPeer != null)
         {
-            boolean isCtrl = Objects.equals(connPeer, controllerPeerConnector.getControllerPeer());
+            boolean isCtrl = Objects.equals(connPeer, controllerPeerConnectorProvider.get().getControllerPeer());
             if (isCtrl)
             {
                 devMgrProvider.get().controllerConnectionLost();

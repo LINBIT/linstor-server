@@ -66,7 +66,8 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         StorPoolDefinitionSatelliteFactory storPoolDefinitionFactoryRef,
         NodeSatelliteFactory nodeFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
-        CommonSerializer commonSerializerRef
+        CommonSerializer commonSerializerRef,
+        StltConnTracker stltConnTracker
     )
     {
         nodesMap = nodesMapRef;
@@ -81,6 +82,17 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         nodeFactory = nodeFactoryRef;
         transMgrProvider = transMgrProviderRef;
         commonSerializer = commonSerializerRef;
+
+        // if we lose the connection to the current controller, we should set our ctrlPeer to null
+        // otherwise, once the controller reconnects, we send our "old" controller an "OtherController"
+        // message.
+        stltConnTracker.addClosingListener((peer, isCtrl) ->
+        {
+            if (isCtrl)
+            {
+                controllerPeer = null;
+            }
+        });
     }
 
     @Override
