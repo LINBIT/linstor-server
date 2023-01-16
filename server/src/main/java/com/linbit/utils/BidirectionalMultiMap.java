@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Supplier;
 
-public class BidirectionalMulitMap<K, V>
+public class BidirectionalMultiMap<K, V>
 {
     /*
      * Should these maps ever need a Collection instead of a Set, the remove* methods (and maybe others) need some
@@ -20,13 +20,13 @@ public class BidirectionalMulitMap<K, V>
     private final Supplier<Set<K>> supplierK;
     private final Supplier<Set<V>> supplierV;
 
-    public BidirectionalMulitMap()
+    public BidirectionalMultiMap()
     {
         this(new HashMap<>(), new HashMap<>(), () -> new TreeSet<>(), () -> new TreeSet<>());
     }
 
     @SuppressWarnings("unchecked")
-    public <CK extends Set<K>, CV extends Set<V>> BidirectionalMulitMap(
+    public <CK extends Set<K>, CV extends Set<V>> BidirectionalMultiMap(
         Map<K, CV> mainRef,
         Map<V, CK> invertedRef,
         Supplier<CK> supplierKRef,
@@ -104,12 +104,10 @@ public class BidirectionalMulitMap<K, V>
         return ret;
     }
 
-    public boolean put(K key, V value)
+    public void add(K key, V value)
     {
-        boolean ret = true;
-        ret &= main.computeIfAbsent(key, k -> supplierV.get()).add(value);
-        ret &= inverted.computeIfAbsent(value, v -> supplierK.get()).add(key);
-        return ret;
+        main.computeIfAbsent(key, k -> supplierV.get()).add(value);
+        inverted.computeIfAbsent(value, v -> supplierK.get()).add(key);
     }
 
     public Set<V> removeKey(K key)
@@ -219,11 +217,11 @@ public class BidirectionalMulitMap<K, V>
         {
             return true;
         }
-        if (!(obj instanceof BidirectionalMulitMap))
+        if (!(obj instanceof BidirectionalMultiMap))
         {
             return false;
         }
-        BidirectionalMulitMap<?, ?> other = (BidirectionalMulitMap<?, ?>) obj;
+        BidirectionalMultiMap<?, ?> other = (BidirectionalMultiMap<?, ?>) obj;
         return Objects.equals(inverted, other.inverted) && Objects.equals(main, other.main);
     }
 }

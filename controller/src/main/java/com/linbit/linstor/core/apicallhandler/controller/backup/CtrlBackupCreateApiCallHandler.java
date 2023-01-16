@@ -1347,7 +1347,7 @@ public class CtrlBackupCreateApiCallHandler
                                 if (itemsIterator.hasNext())
                                 {
                                     item = itemsIterator.next();
-                                    backupInfoMgr.deleteFromQueue(peerAccCtx.get(), item.snapDfn, item.remote);
+                                    backupInfoMgr.deleteFromQueue(item.snapDfn, item.remote);
                                 }
                                 return item;
                             }));

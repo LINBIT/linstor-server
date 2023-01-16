@@ -21,14 +21,14 @@ public class BidirectionalMultiMapTest
 {
     private Map<String, TreeSet<Integer>> backingMain;
     private Map<Integer, TreeSet<String>> backingInverted;
-    private BidirectionalMulitMap<String, Integer> map;
+    private BidirectionalMultiMap<String, Integer> map;
 
     @Before
     public void setup()
     {
         backingMain = new HashMap<>();
         backingInverted = new HashMap<>();
-        map = new BidirectionalMulitMap<>(
+        map = new BidirectionalMultiMap<>(
             backingMain,
             backingInverted,
             () -> new TreeSet<>(),
@@ -42,7 +42,7 @@ public class BidirectionalMultiMapTest
     @Test
     public void testPut()
     {
-        map.put("A", 1);
+        map.add("A", 1);
         assertTrue(backingMain.containsKey("A"));
         assertTrue(backingMain.get("A").contains(1));
         assertTrue(backingInverted.containsKey(1));
@@ -52,7 +52,7 @@ public class BidirectionalMultiMapTest
     @Test
     public void testContains()
     {
-        map.put("A", 1);
+        map.add("A", 1);
         assertTrue(backingMain.containsKey("A"));
         assertTrue(map.containsKey("A"));
         assertTrue(backingInverted.containsKey(1));
@@ -62,13 +62,13 @@ public class BidirectionalMultiMapTest
     @Test
     public void testCount()
     {
-        map.put("A", 1);
-        map.put("A", 2);
-        map.put("B", 2);
-        map.put("B", 1);
-        map.put("C", 3);
-        map.put("D", 4);
-        map.put("D", 5);
+        map.add("A", 1);
+        map.add("A", 2);
+        map.add("B", 2);
+        map.add("B", 1);
+        map.add("C", 3);
+        map.add("D", 4);
+        map.add("D", 5);
         assertEquals(4, backingMain.size());
         assertEquals(backingMain.size(), map.keyCount());
         assertEquals(5, backingInverted.size());
@@ -78,7 +78,7 @@ public class BidirectionalMultiMapTest
     @Test
     public void testIsEmpty()
     {
-        map.put("A", 1);
+        map.add("A", 1);
         assertFalse(backingMain.isEmpty());
         assertFalse(backingInverted.isEmpty());
         assertFalse(map.isEmpty());
@@ -91,8 +91,8 @@ public class BidirectionalMultiMapTest
     @Test
     public void testRemoveKey()
     {
-        map.put("A", 1);
-        map.put("B", 2);
+        map.add("A", 1);
+        map.add("B", 2);
         map.removeKey("B");
         assertTrue(map.containsKey("A"));
         assertTrue(map.containsValue(1));
@@ -103,8 +103,8 @@ public class BidirectionalMultiMapTest
     @Test
     public void testRemoveValue()
     {
-        map.put("A", 1);
-        map.put("B", 2);
+        map.add("A", 1);
+        map.add("B", 2);
         map.removeValue(2);
         assertTrue(map.containsKey("A"));
         assertTrue(map.containsValue(1));
@@ -115,12 +115,12 @@ public class BidirectionalMultiMapTest
     @Test
     public void testRemove()
     {
-        map.put("A", 1);
-        map.put("A", 2);
-        map.put("A", 3);
-        map.put("A", 4);
-        map.put("A", 5);
-        map.put("B", 1);
+        map.add("A", 1);
+        map.add("A", 2);
+        map.add("A", 3);
+        map.add("A", 4);
+        map.add("A", 5);
+        map.add("B", 1);
         assertTrue(map.containsKey("A"));
         assertTrue(map.containsValue(1));
         assertTrue(map.getByKey("A").contains(1));
@@ -135,13 +135,13 @@ public class BidirectionalMultiMapTest
     @Test
     public void testClear()
     {
-        map.put("A", 1);
-        map.put("A", 2);
-        map.put("B", 2);
-        map.put("B", 1);
-        map.put("C", 3);
-        map.put("D", 4);
-        map.put("D", 5);
+        map.add("A", 1);
+        map.add("A", 2);
+        map.add("B", 2);
+        map.add("B", 1);
+        map.add("C", 3);
+        map.add("D", 4);
+        map.add("D", 5);
         assertFalse(map.isEmpty());
         map.clear();
         assertTrue(map.isEmpty());
@@ -169,11 +169,11 @@ public class BidirectionalMultiMapTest
         invertedForComp.get(2).add("B");
         invertedForComp.put(3, new TreeSet<>());
         invertedForComp.get(3).add("D");
-        map.put("A", 1);
-        map.put("A", 2);
-        map.put("B", 2);
-        map.put("C", 1);
-        map.put("D", 3);
+        map.add("A", 1);
+        map.add("A", 2);
+        map.add("B", 2);
+        map.add("C", 1);
+        map.add("D", 3);
         Set<String> keySet = map.keySet();
         assertEquals(4, keySet.size());
         assertTrue(keySet.contains("A"));
@@ -195,10 +195,10 @@ public class BidirectionalMultiMapTest
 
     @Test
     public void testGets() {
-        map.put("A", 1);
-        map.put("A", 2);
-        map.put("B", 1);
-        map.put("C", 1);
+        map.add("A", 1);
+        map.add("A", 2);
+        map.add("B", 1);
+        map.add("C", 1);
         Set<Integer> byKey = map.getByKey("A");
         Set<Integer> byKeyComp = new TreeSet<>(Arrays.asList(1, 2));
         assertEquals(byKeyComp, byKey);
@@ -234,15 +234,15 @@ public class BidirectionalMultiMapTest
     @Test
     public void testEqualsAndHashCode()
     {
-        BidirectionalMulitMap<String, Integer> otherMap = new BidirectionalMulitMap<>();
+        BidirectionalMultiMap<String, Integer> otherMap = new BidirectionalMultiMap<>();
         assertEquals(map.hashCode(), otherMap.hashCode());
         assertEquals(map, otherMap);
-        map.put("A", 1);
-        map.put("B", 2);
+        map.add("A", 1);
+        map.add("B", 2);
         assertNotEquals(map.hashCode(), otherMap.hashCode());
         assertNotEquals(map, otherMap);
-        otherMap.put("A", 1);
-        otherMap.put("B", 2);
+        otherMap.add("A", 1);
+        otherMap.add("B", 2);
         assertEquals(map.hashCode(), otherMap.hashCode());
         assertEquals(map, otherMap);
     }

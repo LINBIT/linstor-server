@@ -1063,7 +1063,7 @@ public class CtrlBackupApiCallHandler
         // immediately remove any queued snapshots
         for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
         {
-            backupInfoMgr.deleteFromQueue(peerAccCtx.get(), snapDfn, remote);
+            backupInfoMgr.deleteFromQueue(snapDfn, remote);
         }
         Set<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn);
         if (snapDfns.isEmpty())
