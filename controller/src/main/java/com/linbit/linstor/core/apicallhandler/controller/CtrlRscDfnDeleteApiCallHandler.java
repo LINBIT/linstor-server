@@ -111,7 +111,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         throws AccessDeniedException
     {
         return rscDfn.getFlags().isSet(apiCtx, ResourceDefinition.Flags.DELETE) ?
-            Collections.singletonList(deleteDiskless(rscDfn.getName())) :
+            Collections.singletonList(deleteDisklessAndThenRemaining(rscDfn.getName())) :
             Collections.emptyList();
     }
 
@@ -196,7 +196,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                 .just(responses)
                 // first delete diskless resources, because DRBD raises an error if all peers with disks are
                 // removed from a diskless resource
-                .concatWith(deleteDiskless(rscName));
+                .concatWith(deleteDisklessAndThenRemaining(rscName));
         }
         else
         {
@@ -208,17 +208,17 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     }
 
     // Restart from here when connection established and DELETE flag set
-    private Flux<ApiCallRc> deleteDiskless(ResourceName rscName)
+    private Flux<ApiCallRc> deleteDisklessAndThenRemaining(ResourceName rscName)
     {
         return scopeRunner
             .fluxInTransactionalScope(
                 "Delete starting with diskless resources",
                 lockGuardFactory.create().write(LockObj.RSC_DFN_MAP).buildDeferred(),
-                () -> deleteDisklessInTransaction(rscName)
+                () -> deleteDisklessAndThenRemainingInTransaction(rscName)
             );
     }
 
-    private Flux<ApiCallRc> deleteDisklessInTransaction(ResourceName rscName)
+    private Flux<ApiCallRc> deleteDisklessAndThenRemainingInTransaction(ResourceName rscName)
     {
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, false);
 
