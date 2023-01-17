@@ -20,6 +20,8 @@ import java.util.Set;
 
 public class LvmCommands
 {
+    private static final String LVM_CONF_IGNORE_DRBD_DEVICES = "devices { filter=['r|/dev/drbd.*|','a|.*|'] }";
+
     public static final int LVS_COL_IDENTIFIER = 0;
     public static final int LVS_COL_PATH = 1;
     public static final int LVS_COL_SIZE = 2;
@@ -620,7 +622,7 @@ public class LvmCommands
             extCmdRef.setSaveWithoutSharedLocks(true),
             buildCmd(
                 "pvdisplay",
-                null,
+                LVM_CONF_IGNORE_DRBD_DEVICES, // always ignore DRBD devices
                 (Collection<String>) null,
                 "--columns",
                 "-o", "pv_name",
