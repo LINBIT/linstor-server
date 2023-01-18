@@ -8,6 +8,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.events.EventNodeHandlerBridge;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -82,6 +83,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
     private final SpecialSatelliteProcessManager specTargetProcMgr;
     private final DynamicNumberPool specStltPortPool;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     public CtrlNodeDeleteApiCallHandler(
@@ -99,7 +101,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
         EventNodeHandlerBridge eventNodeHandlerBridgeRef,
         SpecialSatelliteProcessManager specTargetProcMgrRef,
-        @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltPortPoolRef
+        @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltPortPoolRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -117,6 +120,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
         specTargetProcMgr = specTargetProcMgrRef;
         specStltPortPool = specStltPortPoolRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     @Override
@@ -253,7 +257,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             boolean nodeDeleted = deleteNodeIfEmpty(node);
 
             ctrlTransactionHelper.commit();
-
+            backupInfoMgr.deleteFromQueue(node);
             if (nodeDeleted)
             {
 

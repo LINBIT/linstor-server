@@ -22,6 +22,7 @@ import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.rest.v1.events.EventNodeHandlerBridge;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.PortAlreadyInUseException;
 import com.linbit.linstor.core.SatelliteConnector;
@@ -150,6 +151,7 @@ public class CtrlNodeApiCallHandler
     private final CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandler;
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
     private final Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProvider;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -183,7 +185,8 @@ public class CtrlNodeApiCallHandler
         CtrlRscToggleDiskApiCallHandler rscToggleDiskApiCallHandlerRef,
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
         EventNodeHandlerBridge eventNodeHandlerBridgeRef,
-        Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProviderRef
+        Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProviderRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -217,6 +220,7 @@ public class CtrlNodeApiCallHandler
         ctrlRscCrtApiCallHandler = ctrlRscCrtApiCallHandlerRef;
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
         ctrlNodeCrtApiCallHandlerProvider = ctrlNodeCrtApiCallHandlerProviderRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     Node createNodeImpl(
@@ -586,14 +590,13 @@ public class CtrlNodeApiCallHandler
                 "Reconnect node(s)",
                 lockGuardFactory.buildDeferred(WRITE, NODES_MAP),
                 () -> reconnectNodesInTransaction(
-                    nodes,
-                    context
+                    nodes
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    public Flux<ApiCallRc> reconnectNodesInTransaction(Collection<String> nodes, ResponseContext contextRef)
+    public Flux<ApiCallRc> reconnectNodesInTransaction(Collection<String> nodes)
     {
         Flux<ApiCallRc> waitForConnectFlux = Flux.empty();
         ApiCallRcImpl responses = new ApiCallRcImpl();
@@ -1126,7 +1129,6 @@ public class CtrlNodeApiCallHandler
     }
 
     public Flux<ApiCallRc> setConfig(String nodeName, SatelliteConfigApi config)
-        throws AccessDeniedException, IOException
     {
         return scopeRunner.fluxInTransactionlessScope(
             "set satellite config",
@@ -1138,71 +1140,76 @@ public class CtrlNodeApiCallHandler
     private Flux<ApiCallRc> setStltConfig(String nodeName, SatelliteConfigApi config)
         throws IOException, AccessDeniedException
     {
+        Flux<ApiCallRc> flux;
         Peer curPeer = ctrlApiDataLoader.loadNode(nodeName, true).getPeer(peerAccCtx.get());
         if (!curPeer.isOnline())
         {
-            return Flux.empty();
-        }
-
-        StltConfig stltConf = curPeer.getStltConfig();
-        String logLevel = config.getLogLevel();
-        String logLevelLinstor = config.getLogLevelLinstor();
-        if (logLevel == null || logLevel.isEmpty())
-        {
-            if (((logLevelLinstor != null) && !logLevelLinstor.isEmpty()))
-            {
-                LinstorParsingUtils.asLogLevel(logLevelLinstor);
-                stltConf.setLogLevelLinstor(logLevelLinstor);
-            }
+            flux = Flux.empty();
         }
         else
         {
-            LinstorParsingUtils.asLogLevel(logLevel);
-            stltConf.setLogLevel(logLevel);
-            if (((logLevelLinstor != null) && !logLevelLinstor.isEmpty()))
+            StltConfig stltConf = curPeer.getStltConfig();
+            String logLevel = config.getLogLevel();
+            String logLevelLinstor = config.getLogLevelLinstor();
+            if (logLevel == null || logLevel.isEmpty())
             {
-                LinstorParsingUtils.asLogLevel(logLevelLinstor);
-                stltConf.setLogLevelLinstor(logLevelLinstor);
-            }
-        }
-        ResponseContext context = makeNodeContext(ApiOperation.makeModifyOperation(), nodeName);
-        byte[] msg = stltComSerializer.headerlessBuilder().changedConfig(stltConf).build();
-        return curPeer
-            .apiCall(InternalApiConsts.API_MOD_STLT_CONFIG, msg)
-            .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
-            .map(
-                responseMsg ->
+                if (((logLevelLinstor != null) && !logLevelLinstor.isEmpty()))
                 {
-                    MsgIntApplyConfigResponse resp;
-                    ApiCallRc rc;
-                    try
+                    LinstorParsingUtils.asLogLevel(logLevelLinstor);
+                    stltConf.setLogLevelLinstor(logLevelLinstor);
+                }
+            }
+            else
+            {
+                LinstorParsingUtils.asLogLevel(logLevel);
+                stltConf.setLogLevel(logLevel);
+                if (((logLevelLinstor != null) && !logLevelLinstor.isEmpty()))
+                {
+                    LinstorParsingUtils.asLogLevel(logLevelLinstor);
+                    stltConf.setLogLevelLinstor(logLevelLinstor);
+                }
+            }
+            ResponseContext context = makeNodeContext(ApiOperation.makeModifyOperation(), nodeName);
+            byte[] msg = stltComSerializer.headerlessBuilder().changedConfig(stltConf).build();
+            flux = curPeer
+                .apiCall(InternalApiConsts.API_MOD_STLT_CONFIG, msg)
+                .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
+                .map(
+                    responseMsg ->
                     {
-                        resp = MsgIntApplyConfigResponse.parseDelimitedFrom(responseMsg);
-                        if (resp.getSuccess())
+                        MsgIntApplyConfigResponse resp;
+                        ApiCallRc rc;
+                        try
                         {
-                            rc = ApiCallRcImpl.singleApiCallRc(
-                                ApiConsts.MODIFIED | ApiConsts.MASK_NODE,
-                                "Successfully updated satellite config"
-                            );
+                            resp = MsgIntApplyConfigResponse.parseDelimitedFrom(responseMsg);
+                            if (resp.getSuccess())
+                            {
+                                rc = ApiCallRcImpl.singleApiCallRc(
+                                    ApiConsts.MODIFIED | ApiConsts.MASK_NODE,
+                                    "Successfully updated satellite config"
+                                );
+                            }
+                            else
+                            {
+                                rc = ApiCallRcImpl.singleApiCallRc(
+                                    ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_NODE,
+                                    "Failure while updating satellite config"
+                                );
+                            }
                         }
-                        else
+                        catch (IOException exc)
                         {
                             rc = ApiCallRcImpl.singleApiCallRc(
                                 ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_NODE,
                                 "Failure while updating satellite config"
                             );
                         }
+                        return rc;
                     }
-                    catch (IOException exc)
-                    {
-                        rc = ApiCallRcImpl.singleApiCallRc(
-                            ApiConsts.FAIL_UNKNOWN_ERROR | ApiConsts.MASK_NODE,
-                            "Failure while updating satellite config"
-                        );
-                    }
-                    return rc;
-                }
-            ).transform(response -> responseConverter.reportingExceptions(context, response));
+                )
+                .transform(response -> responseConverter.reportingExceptions(context, response));
+        }
+        return flux;
     }
 
     public Flux<ApiCallRc> restoreNode(String nodeName, boolean deleteResources, boolean deleteSnapshots)
@@ -1278,11 +1285,13 @@ public class CtrlNodeApiCallHandler
                                     ApiCallRcImpl.singleApiCallRc(
                                         ApiConsts.WARN_STLT_NOT_UPDATED,
                                         "Not deleting resource " + rsc.getResourceDefinition().getName().displayValue +
-                                            " since it is the last non-deleting diskful resource of this resource-definition"
+                                            " since it is the last non-deleting diskful resource of" +
+                                            " this resource-definition"
                                     )
                                 );
                                 errorReporter.logDebug(
-                                    "Auto-evict: ignoring resource %s since it is the last non-deleting diskful resource",
+                                    "Auto-evict: ignoring resource %s since it is the last non-deleting " +
+                                        "diskful resource",
                                     rsc.getResourceDefinition().getName()
                                 );
                             }
@@ -1430,14 +1439,7 @@ public class CtrlNodeApiCallHandler
                 () ->
                 {
                     node.markEvicted(apiCtx);
-                    ctrlTransactionHelper.commit();
-                    eventNodeHandlerBridge.triggerNodeEvicted(node.getApiData(apiCtx, null, null));
-                    Flux<ApiCallRc> flux = ctrlSatelliteUpdateCaller.updateSatellites(
-                        node.getUuid(),
-                        node.getName(),
-                        CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
-                    )
-                        .transform(tuple -> Flux.empty());
+                    Flux<ApiCallRc> flux = Flux.empty();
                     for (Resource res : node.streamResources(apiCtx).collect(Collectors.toList()))
                     {
                         if (LayerRscUtils.getLayerStack(res, apiCtx).contains(DeviceLayerKind.DRBD))
@@ -1488,6 +1490,15 @@ public class CtrlNodeApiCallHandler
                         }
                     }
                     ctrlTransactionHelper.commit();
+                    eventNodeHandlerBridge.triggerNodeEvicted(node.getApiData(apiCtx, null, null));
+                    backupInfoMgr.deleteFromQueue(node);
+                    flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                        node.getUuid(),
+                        node.getName(),
+                        CtrlSatelliteUpdater.findNodesToContact(apiCtx, node)
+                    )
+                        .transform(tuple -> Flux.<ApiCallRc>empty())
+                        .concatWith(flux);
                     return flux;
                 }
             )
@@ -1534,9 +1545,7 @@ public class CtrlNodeApiCallHandler
                 rsc.getProps(peerAccCtx.get()).map().put(ApiConsts.KEY_RSC_MIGRATE_FROM, nodeNameEvacuateSource.value);
                 affectedRscDfnList.add(rsc.getResourceDefinition());
             }
-            ctrlTransactionHelper.commit();
 
-            eventNodeHandlerBridge.triggerNodeEvacuate(nodeToEvacuate.getApiData(peerCtx, null, null));
             List<Flux<ApiCallRc>> fluxList = new ArrayList<>();
             for (ResourceDefinition rscDfn : affectedRscDfnList)
             {
@@ -1660,6 +1669,8 @@ public class CtrlNodeApiCallHandler
             }
 
             ctrlTransactionHelper.commit();
+            eventNodeHandlerBridge.triggerNodeEvacuate(nodeToEvacuate.getApiData(peerCtx, null, null));
+            backupInfoMgr.deleteFromQueue(nodeToEvacuate);
             flux = Flux.<ApiCallRc>just(apiCallRc)
                 .concatWith(Flux.merge(fluxList));
         }
@@ -1681,7 +1692,6 @@ public class CtrlNodeApiCallHandler
     private int getUpToDatePeerCount(AccessContext accCtx, ResourceDefinition rscDfnRef) throws AccessDeniedException
     {
         int ret = 0;
-        ResourceName rscName = rscDfnRef.getName();
         Iterator<Resource> rscIt = rscDfnRef.iterateResource(accCtx);
         while (rscIt.hasNext())
         {

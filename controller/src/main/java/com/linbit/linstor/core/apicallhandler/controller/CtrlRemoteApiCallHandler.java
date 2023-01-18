@@ -13,6 +13,7 @@ import com.linbit.linstor.api.BackupToS3;
 import com.linbit.linstor.api.pojo.EbsRemotePojo;
 import com.linbit.linstor.api.pojo.LinstorRemotePojo;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
+import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
@@ -92,6 +93,7 @@ public class CtrlRemoteApiCallHandler
     private final NodeRepository nodeRepo;
 
     private final ScheduleBackupService scheduleService;
+    private final BackupInfoManager backupInfoMgr;
 
     @Inject
     public CtrlRemoteApiCallHandler(
@@ -111,7 +113,8 @@ public class CtrlRemoteApiCallHandler
         BackupToS3 backupHandlerRef,
         CtrlSecurityObjects ctrlSecObjRef,
         ScheduleBackupService scheduleServiceRef,
-        NodeRepository nodeRepoRef
+        NodeRepository nodeRepoRef,
+        BackupInfoManager backupInfoMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -131,6 +134,7 @@ public class CtrlRemoteApiCallHandler
         ctrlSecObj = ctrlSecObjRef;
         scheduleService = scheduleServiceRef;
         nodeRepo = nodeRepoRef;
+        backupInfoMgr = backupInfoMgrRef;
     }
 
     public List<S3RemotePojo> listS3()
@@ -1102,6 +1106,7 @@ public class CtrlRemoteApiCallHandler
                 throw new ApiDatabaseException(exc);
             }
             ctrlTransactionHelper.commit();
+            backupInfoMgr.deleteFromQueue(remote);
             ApiCallRcImpl responses = new ApiCallRcImpl();
             responses.addEntry(
                 ApiCallRcImpl

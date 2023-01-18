@@ -606,11 +606,6 @@ public class Nodes
         {
             ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
-        catch (AccessDeniedException exc)
-        {
-            requestHelper
-                .doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.UNAUTHORIZED));
-        }
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
