@@ -21,7 +21,7 @@ import com.linbit.linstor.api.pojo.backups.BackupPojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupS3Pojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVlmS3Pojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVolumePojo;
-import com.linbit.linstor.backupshipping.S3Consts;
+import com.linbit.linstor.backupshipping.BackupConsts;
 import com.linbit.linstor.backupshipping.S3MetafileNameInfo;
 import com.linbit.linstor.backupshipping.S3VolumeNameInfo;
 import com.linbit.linstor.core.BackupInfoManager;
@@ -44,7 +44,6 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
-import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -59,7 +58,7 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 
-import static com.linbit.linstor.backupshipping.S3Consts.META_SUFFIX;
+import static com.linbit.linstor.backupshipping.BackupConsts.META_SUFFIX;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -108,7 +107,6 @@ public class CtrlBackupApiCallHandler
     private final SystemConfProtectionRepository sysCfgRepo;
     private final ResourceDefinitionRepository rscDfnRepo;
     private final CtrlBackupApiHelper backupHelper;
-    private final RemoteRepository remoteRepo;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -126,8 +124,7 @@ public class CtrlBackupApiCallHandler
         BackupInfoManager backupInfoMgrRef,
         SystemConfProtectionRepository sysCfgRepoRef,
         ResourceDefinitionRepository rscDfnRepoRef,
-        CtrlBackupApiHelper backupHelperRef,
-        RemoteRepository remoteRepoRef
+        CtrlBackupApiHelper backupHelperRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -145,7 +142,6 @@ public class CtrlBackupApiCallHandler
         sysCfgRepo = sysCfgRepoRef;
         rscDfnRepo = rscDfnRepoRef;
         backupHelper = backupHelperRef;
-        remoteRepo = remoteRepoRef;
     }
 
     public Flux<ApiCallRc> deleteBackup(
@@ -312,6 +308,7 @@ public class CtrlBackupApiCallHandler
             toDelete.snapKeys.clear();
         }
 
+        Flux<ApiCallRc> flux = null;
         if (dryRun)
         {
             boolean nothingToDelete = true;
@@ -367,7 +364,7 @@ public class CtrlBackupApiCallHandler
                         "Could not find any backups to delete.",
                         ApiConsts.FAIL_INVLD_REQUEST | ApiConsts.MASK_BACKUP
                     );
-                    return Flux.just(apiCallRc);
+                    flux = Flux.just(apiCallRc);
                 }
             }
             catch (MultiObjectDeleteException exc)
@@ -400,7 +397,11 @@ public class CtrlBackupApiCallHandler
         }
 
         apiCallRc.addEntries(toDelete.apiCallRcs);
-        return Flux.<ApiCallRc> just(apiCallRc).concatWith(deleteSnapFlux);
+        if (flux == null)
+        {
+            flux = Flux.<ApiCallRc>just(apiCallRc).concatWith(deleteSnapFlux);
+        }
+        return flux;
     }
 
     /**
@@ -415,7 +416,6 @@ public class CtrlBackupApiCallHandler
         S3Remote s3RemoteRef,
         ToDeleteCollections toDeleteRef
     )
-        throws AccessDeniedException
     {
         TreeSet<String> matchingS3Keys = new TreeSet<>();
         for (String s3Key : s3LinstorObjects.keySet())
@@ -467,7 +467,6 @@ public class CtrlBackupApiCallHandler
         boolean cascadingRef,
         ToDeleteCollections toDeleteRef
     )
-        throws AccessDeniedException
     {
         for (String s3Key : s3KeysToDeleteRef)
         {
@@ -561,7 +560,6 @@ public class CtrlBackupApiCallHandler
         boolean cascadingRef,
         ToDeleteCollections toDeleteRef
     )
-        throws AccessDeniedException
     {
         Predicate<String> nodeNameCheck = nodeNameRef == null ||
             nodeNameRef.isEmpty() ? ignore -> true : nodeNameRef::equalsIgnoreCase;
@@ -576,7 +574,7 @@ public class CtrlBackupApiCallHandler
         {
             try
             {
-                Date date = S3Consts.parse(timestampRef);
+                Date date = BackupConsts.parse(timestampRef);
                 timestampCheck = timestamp -> date.after(new Date(timestamp));
             }
             catch (ParseException exc)
@@ -862,7 +860,7 @@ public class CtrlBackupApiCallHandler
                             long vlmFinishedTime = s3BackVlmInfo.getFinishedTimestamp();
                             BackupVolumePojo retVlmPojo = new BackupVolumePojo(
                                 s3MetaVlmNr,
-                                S3Consts.format(new Date(vlmFinishedTime)),
+                                BackupConsts.format(new Date(vlmFinishedTime)),
                                 vlmFinishedTime,
                                 new BackupVlmS3Pojo(s3BackVlmInfo.getName())
                             );
@@ -894,9 +892,9 @@ public class CtrlBackupApiCallHandler
                 id,
                 info.rscName,
                 info.snapName,
-                S3Consts.format(new Date(s3MetaFile.getStartTimestamp())),
+                BackupConsts.format(new Date(s3MetaFile.getStartTimestamp())),
                 s3MetaFile.getStartTimestamp(),
-                S3Consts.format(new Date(s3MetaFile.getFinishTimestamp())),
+                BackupConsts.format(new Date(s3MetaFile.getFinishTimestamp())),
                 s3MetaFile.getFinishTimestamp(),
                 s3MetaFile.getNodeName(),
                 false,
@@ -991,7 +989,7 @@ public class CtrlBackupApiCallHandler
                         shipping = true;
                         success = null;
                     }
-                    else // if (isShipped)
+                    else // if isShipped
                     {
                         shipping = false;
                         success = true;
@@ -1023,7 +1021,7 @@ public class CtrlBackupApiCallHandler
             id,
             info.rscName,
             info.snapName,
-            S3Consts.format(info.backupTime),
+            BackupConsts.format(info.backupTime),
             info.backupTime.getTime(),
             null,
             null,
@@ -1058,11 +1056,12 @@ public class CtrlBackupApiCallHandler
     )
         throws AccessDeniedException, DatabaseException, InvalidNameException
     {
+        Flux<ApiCallRc> flux = null;
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
         Set<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn);
         if (snapDfns.isEmpty())
         {
-            return Flux.empty();
+            flux = Flux.empty();
         }
 
         boolean restore = restorePrm;
@@ -1125,13 +1124,17 @@ public class CtrlBackupApiCallHandler
                 " of resource " + rscNameRef,
             ApiConsts.MASK_SUCCESS
         );
-        return updateStlts.transform(
-            responses -> CtrlResponseUtils.combineResponses(
-                responses,
-                LinstorParsingUtils.asRscName(rscNameRef),
-                "Abort backups of {1} on {0} started"
-            )
-        ).concatWith(Flux.just(success));
+        if (flux == null)
+        {
+            flux = updateStlts.transform(
+                responses -> CtrlResponseUtils.combineResponses(
+                    responses,
+                    LinstorParsingUtils.asRscName(rscNameRef),
+                    "Abort backups of {1} on {0} started"
+                )
+            ).concatWith(Flux.just(success));
+        }
+        return flux;
     }
 
     public Flux<BackupInfoPojo> backupInfo(

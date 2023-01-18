@@ -42,6 +42,11 @@ public class BackupShippingUtils
 {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
+    private BackupShippingUtils()
+    {
+        // utils-class, do not allow instance
+    }
+
     public static String fillPojo(
         AccessContext accCtx,
         Snapshot snap,
@@ -171,11 +176,11 @@ public class BackupShippingUtils
 
     public static String generateBackupName(Date now)
     {
-        return S3Consts.BACKUP_PREFIX + S3Consts.format(now);
+        return BackupConsts.BACKUP_PREFIX + BackupConsts.format(now);
     }
 
-    public static String defaultEmpty(String s)
+    public static String defaultEmpty(String str)
     {
-        return (s == null) ? "" : s;
+        return (str == null) ? "" : str;
     }
 }

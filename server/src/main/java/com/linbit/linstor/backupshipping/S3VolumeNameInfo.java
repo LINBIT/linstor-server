@@ -8,7 +8,8 @@ import java.util.regex.Pattern;
 public class S3VolumeNameInfo
 {
     private static final Pattern BACKUP_VOLUME_PATTERN = Pattern.compile(
-        "^(?<rscName>[a-zA-Z0-9_-]{2,48})(?<rscSuffix>\\..+)?_(?<vlmNr>[0-9]{5})_(?<backupId>back_[0-9]{8}_[0-9]{6})(?<s3Suffix>:?.*?)?(?<snapName>\\^.*)?$"
+        "^(?<rscName>[a-zA-Z0-9_-]{2,48})(?<rscSuffix>\\..+)?_(?<vlmNr>[0-9]{5})_(?<backupId>back_[0-9]{8}_[0-9]{6})" +
+            "(?<s3Suffix>:?.+?)?(?<snapName>\\^.*)?$"
     );
 
     public final String rscName;
@@ -31,7 +32,7 @@ public class S3VolumeNameInfo
         rscName = rscNameRef;
         layerSuffix = BackupShippingUtils.defaultEmpty(layerSuffixRef);
         vlmNr = vlmNrRef;
-        backupId = S3Consts.BACKUP_PREFIX + S3Consts.format(backupTimeRef);
+        backupId = BackupConsts.BACKUP_PREFIX + BackupConsts.format(backupTimeRef);
         backupTime = backupTimeRef;
         s3Suffix = BackupShippingUtils.defaultEmpty(s3SuffixRef);
         if (snapNameRef == null || snapNameRef.isEmpty())
@@ -46,24 +47,24 @@ public class S3VolumeNameInfo
 
     public S3VolumeNameInfo(String raw) throws ParseException
     {
-        Matcher m = BACKUP_VOLUME_PATTERN.matcher(raw);
-        if (!m.matches())
+        Matcher matcher = BACKUP_VOLUME_PATTERN.matcher(raw);
+        if (!matcher.matches())
         {
             throw new ParseException("Failed to parse " + raw + " as S3 backup meta file", 0);
         }
 
-        rscName = m.group("rscName");
-        backupId = m.group("backupId");
-        layerSuffix = BackupShippingUtils.defaultEmpty(m.group("rscSuffix"));
-        vlmNr = Integer.parseInt(m.group("vlmNr"));
-        backupTime = S3Consts.parse(backupId.substring(S3Consts.BACKUP_PREFIX_LEN));
-        s3Suffix = BackupShippingUtils.defaultEmpty(m.group("s3Suffix"));
+        rscName = matcher.group("rscName");
+        backupId = matcher.group("backupId");
+        layerSuffix = BackupShippingUtils.defaultEmpty(matcher.group("rscSuffix"));
+        vlmNr = Integer.parseInt(matcher.group("vlmNr"));
+        backupTime = BackupConsts.parse(backupId.substring(BackupConsts.BACKUP_PREFIX_LEN));
+        s3Suffix = BackupShippingUtils.defaultEmpty(matcher.group("s3Suffix"));
 
-        String snapNameRef = BackupShippingUtils.defaultEmpty(m.group("snapName"));
+        String snapNameRef = BackupShippingUtils.defaultEmpty(matcher.group("snapName"));
 
-        if (snapNameRef.startsWith(S3Consts.SNAP_NAME_SEPARATOR))
+        if (snapNameRef.startsWith(BackupConsts.SNAP_NAME_SEPARATOR))
         {
-            snapNameRef = snapNameRef.substring(S3Consts.SNAP_NAME_SEPARATOR_LEN);
+            snapNameRef = snapNameRef.substring(BackupConsts.SNAP_NAME_SEPARATOR_LEN);
         }
 
         if (snapNameRef.isEmpty())
@@ -80,7 +81,7 @@ public class S3VolumeNameInfo
         String result = String.format("%s%s_%05d_%s%s", rscName, layerSuffix, vlmNr, backupId, s3Suffix);
         if (!snapName.isEmpty() && !backupId.equals(snapName))
         {
-            result += S3Consts.SNAP_NAME_SEPARATOR + snapName;
+            result += BackupConsts.SNAP_NAME_SEPARATOR + snapName;
         }
         return result;
     }

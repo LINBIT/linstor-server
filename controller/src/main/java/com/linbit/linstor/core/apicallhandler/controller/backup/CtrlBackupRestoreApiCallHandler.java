@@ -90,7 +90,7 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
-import static com.linbit.linstor.backupshipping.S3Consts.META_SUFFIX;
+import static com.linbit.linstor.backupshipping.BackupConsts.META_SUFFIX;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
