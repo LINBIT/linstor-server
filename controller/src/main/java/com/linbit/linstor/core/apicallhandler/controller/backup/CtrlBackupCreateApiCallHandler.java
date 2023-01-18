@@ -4,14 +4,15 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackupInfoManager;
+import com.linbit.linstor.core.BackupInfoManager.QueueItem;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
@@ -37,7 +38,6 @@ import com.linbit.linstor.core.objects.Schedule;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
@@ -57,14 +57,13 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
-import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
@@ -77,11 +76,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeMap;
 
 import reactor.core.publisher.Flux;
 
@@ -177,8 +177,6 @@ public class CtrlBackupCreateApiCallHandler
                 new Date(),
                 true,
                 incremental,
-                Collections.singletonMap(ExtTools.ZSTD, null),
-                null,
                 RemoteType.S3,
                 scheduleNameRef,
                 runInBackgroundRef,
@@ -212,8 +210,6 @@ public class CtrlBackupCreateApiCallHandler
         Date nowRef,
         boolean setShippingFlag,
         boolean allowIncremental,
-        Map<ExtTools, ExtToolsInfo.Version> requiredExtTools,
-        Map<ExtTools, ExtToolsInfo.Version> optionalExtTools,
         RemoteType remoteTypeRef,
         String scheduleNameRef,
         boolean runInBackgroundRef,
@@ -267,24 +263,26 @@ public class CtrlBackupCreateApiCallHandler
                 }
             }
 
-            Set<Node> nodesList = backupNodeFinder.findUsableNodes(
+            SnapshotDefinition snapDfn = snapCrtHelper
+                .createSnapshots(Collections.emptyList(), rscDfn.getName().displayValue, snapName, responses);
+            setBackupSnapDfnFlagsAndProps(snapDfn, scheduleNameRef, nowRef);
+            /*
+             * See if the previous snap has already finished shipping. If it hasn't, the current snap must be queued to
+             * prevent two consecutive shippings from happening at the same time
+             */
+            boolean queueAnyways = prevSnapDfn != null &&
+                prevSnapDfn.getFlags().isUnset(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+            Node chosenNode = getNodeForBackupOrQueue(
                 rscDfn,
                 prevSnapDfn,
-                remote.getName().displayValue,
-                remoteTypeRef
+                snapDfn,
+                remote,
+                remoteTypeRef,
+                nodeName,
+                responses,
+                queueAnyways
             );
-            Map<String, Node> usableNodesMap = new HashMap<>();
-            for (Node node : nodesList)
-            {
-                usableNodesMap.put(node.getName().displayValue, node);
-            }
-            Set<String> usableNodeNames = usableNodesMap.keySet();
 
-            SnapshotDefinition snapDfn = snapCrtHelper
-                .createSnapshots(usableNodeNames, rscDfn.getName().displayValue, snapName, responses);
-            setBackupSnapDfnFlagsAndProps(snapDfn, scheduleNameRef, nowRef);
-
-            Node chosenNode = chooseNode(usableNodesMap, nodeName, responses, optionalExtTools);
             List<Integer> nodeIds = new ArrayList<>();
             DrbdRscDfnData<Resource> rscDfnData = rscDfn.getLayerData(
                 peerAccCtx.get(),
@@ -318,9 +316,17 @@ public class CtrlBackupCreateApiCallHandler
                 ).putObjRef(ApiConsts.KEY_SNAPSHOT, snapName).build()
             );
             Flux<ApiCallRc> flux = snapshotCrtHandler.postCreateSnapshot(snapDfn, runInBackgroundRef)
-                .concatWith(Flux.<ApiCallRc>just(responses))
-                .concatWith(startShipping(snapDfn, chosenNode, remote, prevSnapDfn, setShippingFlag));
-            return new Pair<>(flux, snapDfn.getSnapshot(peerAccCtx.get(), chosenNode.getName()));
+                .concatWith(Flux.<ApiCallRc>just(responses));
+            if (chosenNode != null)
+            {
+                flux = flux.concatWith(
+                    startShipping(snapDfn, chosenNode, remote, prevSnapDfn, setShippingFlag, responses)
+                );
+            }
+            return new Pair<>(
+                flux,
+                chosenNode != null ? snapDfn.getSnapshot(peerAccCtx.get(), chosenNode.getName()) : null
+            );
         }
         catch (AccessDeniedException exc)
         {
@@ -341,7 +347,8 @@ public class CtrlBackupCreateApiCallHandler
         Node node,
         AbsRemote remote,
         SnapshotDefinition prevSnapDfn,
-        boolean setStartShippingFlag
+        boolean setStartShippingFlag,
+        ApiCallRcImpl responses
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -350,7 +357,7 @@ public class CtrlBackupCreateApiCallHandler
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
                 .buildDeferred(),
-            () -> startShippingInTransaction(snapDfn, node, remote, prevSnapDfn, setStartShippingFlag)
+            () -> startShippingInTransaction(snapDfn, node, remote, prevSnapDfn, setStartShippingFlag, responses)
         );
     }
 
@@ -359,13 +366,51 @@ public class CtrlBackupCreateApiCallHandler
         Node node,
         AbsRemote remote,
         SnapshotDefinition prevSnapDfn,
-        boolean setStartShippingFlag
+        boolean setStartShippingFlag,
+        ApiCallRcImpl responsesRef
     )
     {
         try
         {
             snapDfn.getFlags()
                 .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
+            if (remote instanceof S3Remote)
+            {
+                snapDfn.getProps(peerAccCtx.get())
+                    .setProp(
+                        InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remote.getName(),
+                        node.getName().displayValue,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    );
+            }
+            else if (remote instanceof LinstorRemote)
+            {
+                snapDfn.getProps(peerAccCtx.get())
+                    .setProp(
+                        InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remote.getName() +
+                            "/" + snapDfn.getResourceName().displayValue,
+                        node.getName().displayValue,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                    );
+            }
+            // now that it is decided that this node will do the shipping, see if any snapDfn can be moved to the normal
+            // queues
+            QueueItem item = backupInfoMgr.getItemFromPrevNodeUndecidedQueue(snapDfn, remote);
+            if (item != null)
+            {
+                RemoteType type = item.remote.getType();
+                // return value is ignored since queueAnyways is set
+                getNodeForBackupOrQueue(
+                    snapDfn.getResourceDefinition(),
+                    snapDfn,
+                    item.snapDfn,
+                    item.remote,
+                    type,
+                    item.preferredNode,
+                    responsesRef,
+                    true // always queue to avoid simultaneous shippings of consecutive backups
+                );
+            }
 
             Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), node.getName());
             if (setStartShippingFlag)
@@ -413,6 +458,38 @@ public class CtrlBackupCreateApiCallHandler
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    private @Nullable Node getNodeForBackupOrQueue(
+        ResourceDefinition rscDfn,
+        SnapshotDefinition prevSnapDfn,
+        SnapshotDefinition snapDfn,
+        AbsRemote remote,
+        RemoteType remoteTypeRef,
+        String prefNodeName,
+        ApiCallRcImpl responses,
+        boolean queueAnyways
+    ) throws AccessDeniedException
+    {
+        Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
+            rscDfn,
+            prevSnapDfn,
+            remote.getName().displayValue,
+            remoteTypeRef
+        );
+        Node chosenNode = null;
+        if (!queueAnyways)
+        {
+            chosenNode = chooseNode(usableNodes, prefNodeName, responses, remoteTypeRef.getOptionalExtTools());
+        }
+        if (chosenNode == null)
+        {
+            // the remote needs to be the LinstorRemote in L2L-cases, since the target node is not yet decided
+            // on.
+            // usableNodes might be empty, in that case the snapDfn is added to the prevNodeUndecidedQueue
+            backupInfoMgr.addToQueues(snapDfn, remote, prevSnapDfn, prefNodeName, usableNodes);
+        }
+        return chosenNode;
     }
 
     private void setBackupSnapDfnFlagsAndProps(SnapshotDefinition snapDfn, String scheduleNameRef, Date nowRef)
@@ -483,6 +560,45 @@ public class CtrlBackupCreateApiCallHandler
                 remoteName,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
+    }
+
+    /**
+     * Returns the number of free shipping slots - that is, the active shippings subtracted from the maximum specified
+     * in KEY_MAX_CONCURRENT_BACKUPS_PER_NODE.
+     * This method assumes that any new shipping that should be added based on the return value of this method does not
+     * yet count as active.
+     */
+    private int getFreeShippingSlots(Node node) throws AccessDeniedException
+    {
+        int activeShippings = 0;
+        for (Snapshot snap : node.getSnapshots(peerAccCtx.get()))
+        {
+            boolean isShipping = snap.getSnapshotDefinition().getFlags().isSet(
+                peerAccCtx.get(),
+                SnapshotDefinition.Flags.SHIPPING,
+                SnapshotDefinition.Flags.BACKUP
+            );
+            boolean isSource = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
+            if (isShipping && isSource)
+            {
+                activeShippings++;
+            }
+        }
+        PriorityProps prioProps = new PriorityProps(
+            node.getProps(peerAccCtx.get()),
+            sysCfgRepo.getCtrlConfForView(peerAccCtx.get())
+        );
+        String maxBackups = prioProps.getProp(
+            ApiConsts.KEY_MAX_CONCURRENT_BACKUPS_PER_NODE,
+            ApiConsts.NAMESPC_BACKUP_SHIPPING
+        );
+        int freeShippingSlots = Integer.MAX_VALUE;
+        if (maxBackups != null)
+        {
+            int maxBackupsParsed = Integer.parseInt(maxBackups);
+            freeShippingSlots = maxBackupsParsed < 0 ? Integer.MAX_VALUE : maxBackupsParsed;
+        }
+        return freeShippingSlots - activeShippings;
     }
 
     /**
@@ -632,34 +748,52 @@ public class CtrlBackupCreateApiCallHandler
     }
 
     private Node chooseNode(
-        Map<String, Node> nodesMap,
+        Set<Node> nodesList,
         String prefNode,
         ApiCallRcImpl responses,
         Map<ExtTools, ExtToolsInfo.Version> optionalExtToolsMap
     )
         throws AccessDeniedException
     {
-        Map<String, Node> nodesCopy = new HashMap<>(nodesMap);
+        List<Node> nodes = new ArrayList<>(nodesList);
         Node ret = null;
-        // remove so in case pref exists, it is not checked twice
-        Node pref = prefNode == null ? null : nodesCopy.remove(prefNode);
-        if (pref != null)
+        // check prefNode first so in case pref exists, it is not checked twice
+        Node pref = prefNode == null ? null : ctrlApiDataLoader.loadNode(prefNode, false);
+        if (pref != null && nodes.contains(pref) && getFreeShippingSlots(pref) > 0)
         {
             ret = pref;
         }
         else
         {
-            List<Node> nodes = new ArrayList<>(nodesCopy.values());
-            // shuffle for a more even distribution
-            Collections.shuffle(nodes);
+            TreeMap<Integer, List<Node>> sortedWithExtTools = new TreeMap<>();
+            TreeMap<Integer, List<Node>> sortedNoExtTools = new TreeMap<>();
+
             for (Node node : nodes)
             {
-                ret = node;
-                if (hasNodeAllExtTools(node, optionalExtToolsMap, null, null, sysCtx))
+                int freeShippingSlots = getFreeShippingSlots(node);
+                Map<Integer, List<Node>> targetMap;
+                if (hasNodeAllExtTools(node, optionalExtToolsMap, null, null, peerAccCtx.get()))
                 {
-                    // try to find a node that supports optExtTools - stop search when one is found
-                    break;
+                    targetMap = sortedWithExtTools;
                 }
+                else
+                {
+                    targetMap = sortedNoExtTools;
+                }
+
+                targetMap.computeIfAbsent(
+                    freeShippingSlots,
+                    k -> new ArrayList<>()
+                ).add(node);
+            }
+            // take the one with the most free shipping slots, preferably from the list with all ext tools
+            if (!sortedWithExtTools.isEmpty())
+            {
+                ret = sortedWithExtTools.lastEntry().getValue().get(0);
+            }
+            else if (!sortedNoExtTools.isEmpty())
+            {
+                ret = sortedNoExtTools.lastEntry().getValue().get(0);
             }
             if (ret != null)
             {
@@ -671,6 +805,13 @@ public class CtrlBackupCreateApiCallHandler
                         ApiConsts.MASK_WARN
                     );
                 }
+            }
+            else
+            {
+                responses.addEntry(
+                    "Maximum amount of shippings met on all nodes, adding to queue instead",
+                    ApiConsts.MASK_WARN
+                );
             }
         }
         return ret;
@@ -825,6 +966,7 @@ public class CtrlBackupCreateApiCallHandler
             {
                 NodeName nodeName = peerProvider.get().getNode().getName();
                 backupInfoMgr.abortCreateDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
+                boolean doStltCleanup = false;
                 if (!successRef && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
                 {
                     // re-enable shipping-flag to make sure the abort-logic gets triggered later on
@@ -846,13 +988,13 @@ public class CtrlBackupCreateApiCallHandler
                             ApiConsts.NAMESPC_BACKUP_SHIPPING
                         );
                         remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                        // no need to update rscDfn since this only sets a prop the stlt does not care about
                         Pair<Flux<ApiCallRc>, AbsRemote> pair = getRemoteForScheduleAndCleanupFlux(
                             remote,
                             rscDfn,
                             snapNameRef,
                             successRef
                         );
-
                         remoteForSchedule = pair.objB;
                         cleanupFlux = cleanupFlux.concatWith(pair.objA);
                     }
@@ -860,6 +1002,7 @@ public class CtrlBackupCreateApiCallHandler
                 }
                 else
                 {
+                    doStltCleanup = true;
                     snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                     if (successRef)
                     {
@@ -874,37 +1017,45 @@ public class CtrlBackupCreateApiCallHandler
                         );
                         snap.getFlags().disableFlags(sysCtx, Snapshot.Flags.BACKUP_SOURCE);
                         remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
+                        // no need to update rscDfn since this only sets a prop the stlt does not care about
                         Pair<Flux<ApiCallRc>, AbsRemote> pair = getRemoteForScheduleAndCleanupFlux(
                             remote,
                             rscDfn,
                             snapNameRef,
                             successRef
                         );
-
                         remoteForSchedule = pair.objB;
                         cleanupFlux = cleanupFlux.concatWith(pair.objA);
                     }
-                    ctrlTransactionHelper.commit();
-                    Flux<ApiCallRc> flux = ctrlSatelliteUpdateCaller.updateSatellites(
+                }
+                ctrlTransactionHelper.commit();
+                Flux<ApiCallRc> flux = Flux.empty();
+                boolean doStltCleanupCopyForEffectivelyFinal = doStltCleanup;
+                flux = flux.concatWith(
+                    ctrlSatelliteUpdateCaller.updateSatellites(
                         snapDfn,
                         CtrlSatelliteUpdateCaller.notConnectedWarn()
-                    ).transform(
-                        responses -> CtrlResponseUtils.combineResponses(
-                            responses,
-                            LinstorParsingUtils.asRscName(rscNameRef),
-                            "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
-                        )
-                            .concatWith(
-                                backupHelper.startStltCleanup(
-                                    peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
-                                )
+                    )
+                        .transform(
+                            responses -> CtrlResponseUtils.combineResponses(
+                                responses,
+                                LinstorParsingUtils.asRscName(rscNameRef),
+                                "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
                             )
-                    );
-                    // cleanupFlux will not be executed if flux has an error - this issue is currently unavoidable.
-                    // This will be fixed with the linstor2 issue 19 (Combine Changed* proto messages for atomic
-                    // updates)
-                    cleanupFlux = flux.concatWith(cleanupFlux);
-                }
+                                .concatWith(
+                                    doStltCleanupCopyForEffectivelyFinal ? backupHelper.startStltCleanup(
+                                        peerProvider.get(),
+                                        rscNameRef,
+                                        snapNameRef,
+                                        peerProvider.get().getNode().getName()
+                                    ) : Flux.empty()
+                                )
+                        )
+                );
+                // cleanupFlux will not be executed if flux has an error - this issue is currently unavoidable.
+                // This will be fixed with the linstor2 issue 19 (Combine Changed* proto messages for atomic
+                // updates)
+                cleanupFlux = flux.concatWith(cleanupFlux);
 
                 String scheduleName = snapDfn.getProps(peerAccCtx.get())
                     .getProp(InternalApiConsts.KEY_BACKUP_SHIPPED_BY_SCHEDULE, InternalApiConsts.NAMESPC_SCHEDULE);
@@ -935,6 +1086,43 @@ public class CtrlBackupCreateApiCallHandler
                         );
                     }
                 }
+                Map<Node, ArrayList<QueueItem>> followUpSnaps = backupInfoMgr.getFollowUpSnaps(
+                    snapDfn,
+                    remoteForSchedule
+                );
+                for (Entry<Node, ArrayList<QueueItem>> entry : followUpSnaps.entrySet())
+                {
+                    Node currentNode = entry.getKey();
+                    if (getFreeShippingSlots(currentNode) > 0)
+                    {
+                        Iterator<QueueItem> itemsIterator = entry.getValue().iterator();
+                        cleanupFlux = cleanupFlux.concatWith(
+                            startQueuedShippings(
+                                currentNode,
+                                () ->
+                                {
+                                    QueueItem item = null;
+                                    if (itemsIterator.hasNext())
+                                    {
+                                        item = itemsIterator.next();
+                                        backupInfoMgr.deleteFromQueue(peerAccCtx.get(), item.snapDfn, item.remote);
+                                    }
+                                    return item;
+                                }
+                            )
+                        );
+                    }
+                }
+                Node node = peerProvider.get().getNode();
+                if (getFreeShippingSlots(node) > 0)
+                {
+                    cleanupFlux = cleanupFlux.concatWith(
+                        startQueuedShippings(
+                            node,
+                            () -> backupInfoMgr.getNextFromQueue(peerAccCtx.get(), node)
+                        )
+                    );
+                }
             }
             catch (
                 AccessDeniedException | InvalidNameException | InvalidValueException | InvalidKeyException exc
@@ -948,6 +1136,102 @@ public class CtrlBackupCreateApiCallHandler
             }
         }
         return cleanupFlux;
+    }
+
+    private Flux<ApiCallRc> startQueuedShippings(
+        Node node,
+        ExceptionThrowingSupplier<QueueItem, AccessDeniedException> nextItem
+    )
+        throws AccessDeniedException,
+        InvalidNameException
+    {
+        Flux<ApiCallRc> flux = Flux.empty();
+        QueueItem next = nextItem.supply();
+        while (next != null)
+        {
+            SnapshotDefinition prevSnapDfn = next.prevSnapDfn;
+            /*
+             * while prevSnapDfn may be null here (indicating a full backup should be made), a new base snapshot
+             * needs to be decided upon if it was deleted while in the queue
+             */
+            Node nodeForShipping = node;
+            boolean needsNewPrefSnapDfn = false;
+            if (prevSnapDfn != null)
+            {
+                if (prevSnapDfn.isDeleted() ||
+                    prevSnapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.DELETE))
+                {
+                    needsNewPrefSnapDfn = true;
+                }
+                else
+                {
+                    Snapshot snap = prevSnapDfn.getSnapshot(peerAccCtx.get(), node.getName());
+                    needsNewPrefSnapDfn = snap == null ||
+                        snap.isDeleted() ||
+                        snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.DELETE);
+                }
+            }
+            if (needsNewPrefSnapDfn)
+            {
+                if (next.remote instanceof S3Remote)
+                {
+                    prevSnapDfn = getIncrementalBase(next.snapDfn.getResourceDefinition(), next.remote, true);
+                    if (
+                        prevSnapDfn != null && prevSnapDfn.getSnapshot(peerAccCtx.get(), node.getName()) == null
+                    )
+                    {
+                        boolean queueAnyways = prevSnapDfn.getFlags()
+                            .isUnset(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED);
+                        // will be null if snap gets queued in the method
+                        nodeForShipping = getNodeForBackupOrQueue(
+                            next.snapDfn.getResourceDefinition(),
+                            prevSnapDfn,
+                            next.snapDfn,
+                            next.remote,
+                            RemoteType.S3,
+                            next.preferredNode,
+                            new ApiCallRcImpl(),
+                            queueAnyways
+                        );
+                    }
+                }
+                // l2l needs to ask target cluster for new base snap
+            }
+            if (nodeForShipping != null)
+            {
+                Flux<ApiCallRc> nextShipping = Flux.empty();
+                try
+                {
+                    // call the "...InTransaction" directly to make sure flags are set immediately
+                    nextShipping = startShippingInTransaction(
+                        next.snapDfn,
+                        nodeForShipping,
+                        next.remote,
+                        prevSnapDfn,
+                        // needs to be false if shipping goes to l2l, and true if to s3
+                        next.remote instanceof S3Remote,
+                        new ApiCallRcImpl()
+                    );
+                }
+                catch (ApiAccessDeniedException exc)
+                {
+                    // peerAccessContext comes from stlt which should be privileged
+                    throw new ImplementationError(exc);
+                }
+                flux = flux.concatWith(
+                    nextShipping
+                );
+            }
+            if (!node.equals(nodeForShipping))
+            {
+                next = nextItem.supply();
+            }
+            else
+            {
+                next = null;
+            }
+        }
+        return flux;
     }
 
     /**
@@ -1000,101 +1284,5 @@ public class CtrlBackupCreateApiCallHandler
             throw new ImplementationError("Unknown remote. successRef: " + success);
         }
         return new Pair<>(cleanupFlux, remoteForSchedule);
-    }
-
-    /**
-     * Checks if the given rsc has the correct device-provider and ext-tools to be shipped as a backup
-     */
-    ApiCallRcImpl backupShippingSupported(Resource rsc) throws AccessDeniedException
-    {
-        Set<StorPool> storPools = LayerVlmUtils.getStorPools(rsc, peerAccCtx.get());
-        ApiCallRcImpl errors = new ApiCallRcImpl();
-        for (StorPool sp : storPools)
-        {
-            DeviceProviderKind deviceProviderKind = sp.getDeviceProviderKind();
-            if (deviceProviderKind.isSnapshotShippingSupported())
-            {
-                ExtToolsManager extToolsManager = rsc.getNode().getPeer(peerAccCtx.get()).getExtToolsManager();
-                errors.addEntry(
-                    getErrorRcIfNotSupported(
-                        deviceProviderKind,
-                        extToolsManager,
-                        ExtTools.UTIL_LINUX,
-                        "setsid from util_linux",
-                        new ExtToolsInfo.Version(2, 24)
-                    )
-                );
-                if (deviceProviderKind.equals(DeviceProviderKind.LVM_THIN))
-                {
-                    errors.addEntry(
-                        getErrorRcIfNotSupported(
-                            deviceProviderKind,
-                            extToolsManager,
-                            ExtTools.THIN_SEND_RECV,
-                            "thin_send_recv",
-                            new ExtToolsInfo.Version(0, 24)
-                        )
-                    );
-                }
-            }
-            else
-            {
-                errors.addEntry(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
-                        String.format(
-                            "The storage pool kind %s does not support snapshot shipping",
-                            deviceProviderKind.name()
-                        )
-                    )
-                );
-            }
-        }
-        return errors;
-    }
-
-    /**
-     * Checks if the given ext-tool is supported and returns an error-rc instead of throwing an exception if not.
-     */
-    private ApiCallRcEntry getErrorRcIfNotSupported(
-        DeviceProviderKind deviceProviderKind,
-        ExtToolsManager extToolsManagerRef,
-        ExtTools extTool,
-        String toolDescr,
-        ExtToolsInfo.Version version
-    )
-    {
-        ApiCallRcEntry errorRc;
-        ExtToolsInfo info = extToolsManagerRef.getExtToolInfo(extTool);
-        if (info == null || !info.isSupported())
-        {
-            errorRc = ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
-                String.format(
-                    "%s based backup shipping requires support for %s",
-                    deviceProviderKind.name(),
-                    toolDescr
-                ),
-                true
-            );
-        }
-        else if (version != null && !info.hasVersionOrHigher(version))
-        {
-            errorRc = ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_SNAPSHOT_SHIPPING_NOT_SUPPORTED,
-                String.format(
-                    "%s based backup shipping requires at least version %s for %s",
-                    deviceProviderKind.name(),
-                    version.toString(),
-                    toolDescr
-                ),
-                true
-            );
-        }
-        else
-        {
-            errorRc = null;
-        }
-        return errorRc;
     }
 }

@@ -305,8 +305,6 @@ public class CtrlBackupL2LSrcApiCallHandler
                 data.now,
                 false,
                 data.allowIncremental && response.prevSnapUuid != null,
-                requiredExtTools,
-                optionalExtTools,
                 RemoteType.LINSTOR,
                 data.scheduleName,
                 runInBackgroundRef,

@@ -830,6 +830,8 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES:
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT:
+                            // fall-through
+                        case ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + ApiConsts.KEY_MAX_CONCURRENT_BACKUPS_PER_NODE:
                             // no need to update stlts
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             break;

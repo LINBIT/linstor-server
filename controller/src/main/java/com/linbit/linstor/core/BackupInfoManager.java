@@ -2,6 +2,9 @@ package com.linbit.linstor.core;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LDstApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
@@ -9,22 +12,30 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
-import com.linbit.linstor.core.objects.SnapshotDefinition.Key;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
+import java.util.TreeSet;
 
 @Singleton
 public class BackupInfoManager
@@ -37,16 +48,34 @@ public class BackupInfoManager
     // Map<LinstorRemoteName, Map<StltRemoteName, Data>>
     private final Map<RemoteName, Map<RemoteName, CtrlBackupL2LSrcApiCallHandler.BackupShippingData>> l2lSrcData;
     private final Map<Snapshot, CtrlBackupL2LDstApiCallHandler.BackupShippingData> l2lDstData;
+    private final Map<Node, TreeSet<QueueItem>> uploadQueues;
+    /*
+     * set of queueItems whose prevSnap is missing the info which node it was shipped by
+     * since QueueItems are comparedTo using an internal (creation-) timestamp, this set can be viewed as a queue of
+     * uploadQueues with no node associated
+     */
+    // uses uploadQueues as sync-object
+    private final TreeSet<QueueItem> prevNodeUndecidedQueue;
+    private final AccessContext sysCtx;
+    private final ErrorReporter errorReporter;
 
     @Inject
-    public BackupInfoManager(TransactionObjectFactory transObjFactoryRef)
+    public BackupInfoManager(
+        TransactionObjectFactory transObjFactoryRef,
+        @SystemContext AccessContext sysCtxRef,
+        ErrorReporter errorReporterRef
+    )
     {
+        sysCtx = sysCtxRef;
+        errorReporter = errorReporterRef;
         restoreMap = transObjFactoryRef.createTransactionPrimitiveMap(new HashMap<>(), null);
         abortCreateMap = new HashMap<>();
         abortRestoreMap = new HashMap<>();
         backupsToDownload = new HashMap<>();
         l2lSrcData = new HashMap<>();
         l2lDstData = new HashMap<>();
+        uploadQueues = new HashMap<>();
+        prevNodeUndecidedQueue = new TreeSet<>();
     }
 
     public boolean addAllRestoreEntries(
@@ -307,7 +336,7 @@ public class BackupInfoManager
     {
         synchronized (abortCreateMap)
         {
-            Map<Key, AbortInfo> ret = abortCreateMap.get(nodeName);
+            Map<SnapshotDefinition.Key, AbortInfo> ret = abortCreateMap.get(nodeName);
             return ret != null ? new HashMap<>(ret) : null;
         }
     }
@@ -389,6 +418,10 @@ public class BackupInfoManager
             if (innerMap != null)
             {
                 ret = innerMap.remove(stltRemoteName);
+                if (innerMap.isEmpty())
+                {
+                    l2lSrcData.remove(linstorRemoteName);
+                }
             }
             else
             {
@@ -411,6 +444,352 @@ public class BackupInfoManager
     public void removeL2LDstData(Snapshot snap)
     {
         l2lDstData.remove(snap);
+    }
+
+    /**
+     * Add the snapDfn to the queues of all nodes in usableNodes
+     * If usableNodes is empty or null, it will be added to the prevNodeUndecidedQueue
+     */
+    public void addToQueues(
+        SnapshotDefinition snapDfn,
+        AbsRemote remote,
+        @Nullable SnapshotDefinition prevSnapDfn,
+        @Nullable String preferredNode,
+        @Nullable Set<Node> usableNodes
+    )
+    {
+        synchronized (uploadQueues)
+        {
+            QueueItem item = new QueueItem(snapDfn, remote, prevSnapDfn, preferredNode);
+            if (usableNodes != null && !usableNodes.isEmpty())
+            {
+                for (Node node : usableNodes)
+                {
+                    TreeSet<QueueItem> queue = uploadQueues.computeIfAbsent(
+                        node,
+                        k -> new TreeSet<>()
+                    );
+                    queue.add(item);
+                }
+            }
+            else
+            {
+                prevNodeUndecidedQueue.add(item);
+            }
+        }
+    }
+
+    public boolean isSnapshotQueued(AccessContext accCtx, SnapshotDefinition snapDfn) throws AccessDeniedException
+    {
+        synchronized (uploadQueues)
+        {
+            boolean ret = false;
+            for (QueueItem item : prevNodeUndecidedQueue)
+            {
+                if (item.snapDfn.equals(snapDfn))
+                {
+                    ret = true;
+                    break;
+                }
+            }
+            if (!ret)
+            {
+                for (Snapshot snap : snapDfn.getAllSnapshots(accCtx))
+                {
+                    TreeSet<QueueItem> queue = uploadQueues.get(snap.getNode());
+                    if (queue != null)
+                    {
+                        for (QueueItem item : queue)
+                        {
+                            if (item.snapDfn.equals(snapDfn))
+                            {
+                                ret = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (ret)
+                    {
+                        break;
+                    }
+                }
+            }
+            return ret;
+        }
+    }
+
+    /**
+     * Return the next snapDfn from the queue of the given node and remove it from all queues it was in (including the
+     * given node's)
+     */
+    public QueueItem getNextFromQueue(AccessContext accCtx, Node node) throws AccessDeniedException
+    {
+        QueueItem ret = null;
+        synchronized (uploadQueues)
+        {
+            TreeSet<QueueItem> queue = uploadQueues.get(node);
+            if (queue != null && !queue.isEmpty())
+            {
+                Iterator<QueueItem> iterator = queue.iterator();
+                while (iterator.hasNext() && ret == null)
+                {
+                    QueueItem next = iterator.next();
+                    boolean isValid = next.prevSnapDfn == null;
+                    isValid |= next.prevSnapDfn.isDeleted();
+                    isValid |= next.prevSnapDfn.getFlags().isSet(accCtx, SnapshotDefinition.Flags.SHIPPED);
+                    if (isValid)
+                    {
+                        ret = next;
+                    }
+                }
+                if (ret != null)
+                {
+                    // make sure this snapDfn gets removed from all queues so that the shipping is only started once
+                    for (Snapshot snap : ret.snapDfn.getAllSnapshots(accCtx))
+                    {
+                        if (!snap.getNode().equals(node))
+                        {
+                            TreeSet<QueueItem> otherQueue = uploadQueues.get(snap.getNode());
+                            otherQueue.remove(ret);
+                        }
+                    }
+                }
+            }
+        }
+        return ret;
+    }
+
+    public void deleteFromQueue(AccessContext accCtx, SnapshotDefinition snapDfn, AbsRemote remote)
+        throws AccessDeniedException
+    {
+        synchronized (uploadQueues)
+        {
+            // this works because hashCode & equals only use snapDfn & remote and ignore the prevSnapDfn
+            QueueItem toDelete = new QueueItem(snapDfn, remote, null, null);
+            for (Snapshot snap : snapDfn.getAllSnapshots(accCtx))
+            {
+                TreeSet<QueueItem> queue = uploadQueues.get(snap.getNode());
+                queue.remove(toDelete);
+            }
+            prevNodeUndecidedQueue.remove(toDelete);
+        }
+    }
+
+    /**
+     * Deletes all entries that require the given remote
+     */
+    public void deleteFromQueue(AbsRemote remote)
+    {
+        synchronized (uploadQueues)
+        {
+            List<Node> nodesToDelete = new ArrayList<>();
+            for (Entry<Node, TreeSet<QueueItem>> queue : uploadQueues.entrySet())
+            {
+                List<QueueItem> itemsToDelete = new ArrayList<>();
+                TreeSet<QueueItem> items = queue.getValue();
+                for (QueueItem item : items)
+                {
+                    if (item.remote.equals(remote))
+                    {
+                        itemsToDelete.add(item);
+                    }
+                }
+                items.removeAll(itemsToDelete);
+                if (items.isEmpty())
+                {
+                    nodesToDelete.add(queue.getKey());
+                }
+            }
+            for (Node toDelete : nodesToDelete)
+            {
+                uploadQueues.remove(toDelete);
+            }
+            List<QueueItem> itemsToDelete = new ArrayList<>();
+            for (QueueItem item : prevNodeUndecidedQueue)
+            {
+                if (item.remote.equals(remote))
+                {
+                    itemsToDelete.add(item);
+                }
+            }
+            prevNodeUndecidedQueue.removeAll(itemsToDelete);
+        }
+    }
+
+    /**
+     * Deletes the queue of this node
+     */
+    public void deleteFromQueue(Node node)
+    {
+        synchronized (uploadQueues)
+        {
+            uploadQueues.remove(node);
+        }
+    }
+
+    public QueueItem getItemFromPrevNodeUndecidedQueue(SnapshotDefinition snapDfn, AbsRemote remote)
+    {
+        synchronized (uploadQueues)
+        {
+            QueueItem ret = null;
+            for (QueueItem item : prevNodeUndecidedQueue)
+            {
+                // using compareTo because equals does not exist...
+                // also, this list CANNOT contain items where prevSnapDfn == null
+                if (
+                    !item.prevSnapDfn.isDeleted() && item.prevSnapDfn.compareTo(snapDfn) == 0 &&
+                        item.remote.compareTo(remote) == 0
+                )
+                {
+                    ret = item;
+                    break;
+                }
+            }
+            prevNodeUndecidedQueue.remove(ret);
+            return ret;
+        }
+    }
+
+    public Map<Node, ArrayList<QueueItem>> getFollowUpSnaps(SnapshotDefinition snapDfn, AbsRemote remote)
+    {
+        synchronized (uploadQueues)
+        {
+            Map<Node, ArrayList<QueueItem>> ret = new HashMap<>();
+            for (Entry<Node, TreeSet<QueueItem>> queue : uploadQueues.entrySet())
+            {
+                TreeSet<QueueItem> items = queue.getValue();
+                for (QueueItem item : items)
+                {
+                    if (
+                        item.prevSnapDfn != null &&
+                        !item.prevSnapDfn.isDeleted() && item.prevSnapDfn.compareTo(snapDfn) == 0 && item.remote
+                            .compareTo(remote) == 0
+                    )
+                    {
+                        ret.computeIfAbsent(
+                            queue.getKey(),
+                            k -> new ArrayList<>()
+                        ).add(item);
+                    }
+                }
+            }
+            return ret;
+        }
+    }
+
+    public class QueueItem implements Comparable<QueueItem>
+    {
+        public final SnapshotDefinition snapDfn;
+        public final AbsRemote remote;
+        /** if prevSnapDfn is null, it means a full backup should be made */
+        public final @Nullable SnapshotDefinition prevSnapDfn;
+        public final @Nullable String preferredNode;
+
+        private QueueItem(
+            SnapshotDefinition snapDfnRef,
+            AbsRemote remoteRef,
+            SnapshotDefinition prevSnapDfnRef,
+            String preferredNodeRef
+        )
+        {
+            snapDfn = snapDfnRef;
+            remote = remoteRef;
+            prevSnapDfn = prevSnapDfnRef;
+            preferredNode = preferredNodeRef;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + ((remote == null) ? 0 : remote.hashCode());
+            result = prime * result + ((snapDfn == null) ? 0 : snapDfn.hashCode());
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            boolean equals = false;
+            if (obj instanceof QueueItem)
+            {
+                if (this == obj)
+                {
+                    equals = true;
+                }
+                else
+                {
+                    QueueItem other = (QueueItem) obj;
+                    equals = Objects.equals(remote, other.remote) &&
+                        Objects.equals(snapDfn, other.snapDfn);
+                }
+            }
+            return equals;
+        }
+
+        @Override
+        public int compareTo(QueueItem other)
+        {
+            int ret = 0;
+            try
+            {
+                String myDateStr = snapDfn.getProps(sysCtx)
+                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                String otherDateStr = other.snapDfn.getProps(sysCtx)
+                    .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                /*
+                 * To prevent an ImplementationError from possibly completely stopping whatever thread is currently
+                 * trying to sort these QueueItems, it is not thrown but instead creates an ErrorReport
+                 */
+                if (myDateStr == null || myDateStr.isEmpty())
+                {
+                    if (otherDateStr == null || otherDateStr.isEmpty())
+                    {
+                        ret = 0;
+                        errorReporter.reportError(
+                            new ImplementationError(
+                                "The snapDfns '" + snapDfn + "' and '" + other.snapDfn +
+                                    "' do not have the property BackupShipping/BackupStartTimestamp set."
+                            )
+                        );
+                    }
+                    else
+                    {
+                        ret = -1;
+                        errorReporter.reportError(
+                            new ImplementationError(
+                                "The snapDfns '" + snapDfn +
+                                    "' does not have the property BackupShipping/BackupStartTimestamp set."
+                            )
+                        );
+                    }
+                }
+                else
+                {
+                    if (otherDateStr == null || otherDateStr.isEmpty())
+                    {
+                        ret = 1;
+                        errorReporter.reportError(
+                            new ImplementationError(
+                                "The snapDfns '" + other.snapDfn +
+                                    "' does not have the property BackupShipping/BackupStartTimestamp set."
+                            )
+                        );
+                    }
+                    else
+                    {
+                        ret = Long.compare(Long.parseLong(myDateStr), Long.parseLong(otherDateStr));
+                    }
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            return ret;
+        }
+
     }
 
     public static class AbortInfo

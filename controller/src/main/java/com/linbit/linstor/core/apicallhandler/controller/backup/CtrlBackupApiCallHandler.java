@@ -43,6 +43,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
@@ -1058,6 +1059,12 @@ public class CtrlBackupApiCallHandler
     {
         Flux<ApiCallRc> flux = null;
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
+        AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
+        // immediately remove any queued snapshots
+        for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
+        {
+            backupInfoMgr.deleteFromQueue(peerAccCtx.get(), snapDfn, remote);
+        }
         Set<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn);
         if (snapDfns.isEmpty())
         {

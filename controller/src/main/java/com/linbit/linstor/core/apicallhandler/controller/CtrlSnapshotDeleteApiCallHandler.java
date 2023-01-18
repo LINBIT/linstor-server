@@ -180,6 +180,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                 )
             );
         }
+        ensureSnapshotNotQueued(snapshotDfn);
         if (isSnapshotShippingInProgress(snapshotDfn))
         {
             snapShipAbortHandler.markSnapshotShippingAborted(snapshotDfn);
@@ -210,7 +211,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                 String foundNodeNameStr = null;
                 for (String nodeNameStr : nodeNamesStrCopy)
                 {
-                    if (nodeNameStr.toLowerCase().equals(snapshot.getNodeName().displayValue.toLowerCase()))
+                    if (nodeNameStr.equalsIgnoreCase(snapshot.getNodeName().displayValue))
                     {
                         foundNodeNameStr = nodeNameStr;
                         nodeNamesToDelete.add(snapshot.getNodeName().displayValue);
@@ -249,6 +250,35 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
         return Flux.<ApiCallRc>just(responses)
             .concatWith(deleteSnapshotsOnNodes(rscName, snapshotName));
+    }
+
+    private void ensureSnapshotNotQueued(SnapshotDefinition snapDfn)
+    {
+        try
+        {
+            if (backupInfoMgr.isSnapshotQueued(peerAccCtx.get(), snapDfn))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_IN_USE,
+                        getSnapshotDfnDescription(
+                            snapDfn.getResourceName().displayValue,
+                            snapDfn.getName().displayValue
+                        ) +
+                            " is currently being queued for backup shipping. " +
+                            "Please wait until the shipping is finished or use backup abort --create"
+                    )
+                );
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "checking if SnapshotDefinition is in queue",
+                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            );
+        }
     }
 
     private boolean isSnapshotShippingInProgress(SnapshotDefinition snapshotDfnRef)
