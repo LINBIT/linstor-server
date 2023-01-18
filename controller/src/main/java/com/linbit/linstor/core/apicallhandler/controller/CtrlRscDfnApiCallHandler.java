@@ -5,7 +5,6 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbd.md.GidGenerator;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.InternalApiConsts;
@@ -767,7 +766,7 @@ public class CtrlRscDfnApiCallHandler
     }
 
     private ApiCallRc copyVlmDfn(final ResourceDefinition srcRscDfn, final ResourceDefinition destRscDfn)
-        throws AccessDeniedException, DatabaseException, GidGenerator.GidGeneratorException
+        throws AccessDeniedException
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         for (VolumeDefinition srcVlmDfn :
@@ -984,7 +983,9 @@ public class CtrlRscDfnApiCallHandler
                     clonedRscDfn,
                     rsc.getNode(),
                     rsc.getLayerData(peerAccCtx.get()),
-                    Resource.Flags.restoreFlags(rsc.getStateFlags().getFlagsBits(peerAccCtx.get())));
+                    Resource.Flags.restoreFlags(rsc.getStateFlags().getFlagsBits(peerAccCtx.get())),
+                    false
+                );
 
                 ctrlPropsHelper.copy(
                     ctrlPropsHelper.getProps(rsc),
@@ -1065,7 +1066,8 @@ public class CtrlRscDfnApiCallHandler
                 responses.addEntries(CtrlRscCrtApiCallHandler.makeVolumeRegisteredEntries(rsc));
             }
 
-            Flux<ApiCallRc> deploymentResponses = ctrlRscCrtApiHelper.deployResources(context, deployedResources, false);
+            Flux<ApiCallRc> deploymentResponses = ctrlRscCrtApiHelper
+                .deployResources(context, deployedResources, false);
 
             flux = ctrlSatelliteUpdateCaller.updateSatellites(srcRscDfn, Flux.empty())
                 .transform(
@@ -1082,16 +1084,13 @@ public class CtrlRscDfnApiCallHandler
                 .concatWith(removeStartCloning(clonedRscDfn))
                 .onErrorResume(exception -> resumeIO(srcRscDfn));
         }
+        catch (ApiRcException exc)
+        {
+            throw exc;
+        }
         catch (Exception | ImplementationError exc)
         {
-            if (exc instanceof ApiRcException)
-            {
-                throw (ApiRcException) exc;
-            }
-            else
-            {
-                throw new ApiException(exc);
-            }
+            throw new ApiException(exc);
         }
 
         return flux;
@@ -1391,14 +1390,13 @@ public class CtrlRscDfnApiCallHandler
                 "Update DRBD Props",
                 lockGuardFactory.buildDeferred(WRITE, RSC_DFN_MAP),
                 () -> updatePropsInTransaction(
-                    context,
                     rscDfn
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    private Flux<ApiCallRc> updatePropsInTransaction(ResponseContext contextRef, ResourceDefinition rscDfnRef)
+    private Flux<ApiCallRc> updatePropsInTransaction(ResourceDefinition rscDfnRef)
     {
         Flux<ApiCallRc> ret = Flux.empty();
         if (!rscDfnRef.isDeleted())
@@ -1649,14 +1647,16 @@ public class CtrlRscDfnApiCallHandler
         {
             return SatelliteResourceStateDrbdUtils.allResourcesUpToDate(
                 rscDfn.streamResource(peerAccCtx.get()).filter(resource -> {
+                    boolean diskfull;
                     try
                     {
-                        return !resource.isDiskless(peerAccCtx.get());
+                        diskfull = !resource.isDiskless(peerAccCtx.get());
                     }
                     catch (AccessDeniedException ignored)
                     {
-                        return true;
+                        diskfull = true;
                     }
+                    return diskfull;
                 })
                     .map(AbsResource::getNode).collect(Collectors.toSet()),
                 rscDfn.getName(),

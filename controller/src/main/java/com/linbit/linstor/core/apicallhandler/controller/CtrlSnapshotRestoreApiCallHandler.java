@@ -244,7 +244,7 @@ public class CtrlSnapshotRestoreApiCallHandler
             {
                 for (Snapshot snapshot : fromSnapshotDfn.getAllSnapshots(peerAccCtx.get()))
                 {
-                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode()));
+                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode(), fromBackup));
                 }
             }
             else
@@ -252,7 +252,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 for (String nodeNameStr : nodeNameStrs)
                 {
                     Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, node));
+                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, node, fromBackup));
                 }
             }
 
@@ -346,26 +346,6 @@ public class CtrlSnapshotRestoreApiCallHandler
         return flagsSet;
     }
 
-    private void setFlags(ResourceDefinition rscDfn, ResourceDefinition.Flags... flags)
-    {
-        try
-        {
-            rscDfn.getFlags().enableFlags(peerAccCtx.get(), flags);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "setting resource-definition flags",
-                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
-            );
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
-    }
-
     private void unsetFlags(ResourceDefinition rscDfn, ResourceDefinition.Flags... flags)
     {
         try
@@ -434,7 +414,8 @@ public class CtrlSnapshotRestoreApiCallHandler
     private Resource restoreOnNode(
         SnapshotDefinition fromSnapshotDfn,
         ResourceDefinition toRscDfn,
-        Node node
+        Node node,
+        boolean fromBackup
     )
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, DatabaseException
     {
@@ -445,7 +426,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         Resource rsc = ctrlRscCrtApiHelper.createResourceFromSnapshot(
             toRscDfn,
             node,
-            snapshot
+            snapshot,
+            fromBackup
         );
 
         ctrlPropsHelper.copy(
@@ -542,6 +524,7 @@ public class CtrlSnapshotRestoreApiCallHandler
         {
             rsc.getResourceDefinition().getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
         }
+        unsetFlags(toRscDfn, ResourceDefinition.Flags.RESTORE_TARGET);
 
         return rsc;
     }

@@ -2,6 +2,9 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
@@ -68,7 +71,7 @@ public class ResourceControllerFactory
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
-        Resource rscData = createEmptyResource(accCtx, rscDfn, node, initFlags, layerStackRef);
+        Resource rscData = createEmptyResource(accCtx, rscDfn, node, initFlags, layerStackRef, false);
 
         List<DeviceLayerKind> layerStack = layerStackRef;
         List<DeviceLayerKind> rscDfnLayerStack = rscDfn.getLayerStack(accCtx);
@@ -109,7 +112,8 @@ public class ResourceControllerFactory
         ResourceDefinition rscDfn,
         Node node,
         AbsRscLayerObject<RSC> absLayerData,
-        Resource.Flags[] flags
+        Resource.Flags[] flags,
+        boolean fromBackup
     )
         throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {
@@ -118,7 +122,8 @@ public class ResourceControllerFactory
             rscDfn,
             node,
             flags,
-            LayerRscUtils.getLayerStack(absLayerData, accCtx)
+            LayerRscUtils.getLayerStack(absLayerData, accCtx),
+            fromBackup
         );
         layerStackHelper.copyLayerData(absLayerData, rscData);
 
@@ -130,12 +135,17 @@ public class ResourceControllerFactory
         ResourceDefinition rscDfn,
         Node node,
         Resource.Flags[] initFlags,
-        List<DeviceLayerKind> expectedLayerStack
+        List<DeviceLayerKind> expectedLayerStack,
+        boolean fromBackup
     )
         throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {
         rscDfn.getObjProt().requireAccess(accCtx, AccessType.USE);
         Resource rsc = node.getResource(accCtx, rscDfn.getName());
+        if (!fromBackup)
+        {
+            ensureResourceNotRestoring(rscDfn, accCtx);
+        }
 
         if (rsc == null)
         {
@@ -193,5 +203,20 @@ public class ResourceControllerFactory
         }
 
         return rsc;
+    }
+
+    private void ensureResourceNotRestoring(ResourceDefinition rscDfn, AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        if (rscDfn.getFlags().isSet(accCtx, ResourceDefinition.Flags.RESTORE_TARGET))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE,
+                    "Cannot create a resource in a resource definition that is currently " +
+                        "restoring a snapshot or backup."
+                )
+            );
+        }
     }
 }

@@ -408,9 +408,10 @@ public class CtrlRscCrtApiHelper
                             )
                                 .setDetails(
                                     "The general DISKLESS flag is deprecated. If both layers, DRBD and NVME, should " +
-                                        "be used LINSTOR has to figure out if the resource should be diskful for DRBD " +
-                                        "(required NVME_INITIATOR) or diskless for DRBD (requires DRBD_DISKLESS). " +
-                                        "Using the deprecated DISKLESS flag is not supported for this case."
+                                        "be used LINSTOR has to figure out if the resource should be diskful for " +
+                                        "DRBD (required NVME_INITIATOR) or diskless for DRBD " +
+                                        "(requires DRBD_DISKLESS). Using the deprecated DISKLESS flag is not " +
+                                        "supported for this case."
                                 )
                                 .setCorrection("Use either a non-deprecated flag or do not use both layers")
                         );
@@ -423,7 +424,8 @@ public class CtrlRscCrtApiHelper
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_INVLD_LAYER_STACK,
-                        "Selecting a storage pool with the openflex driver requires OPENFLEX to be included in the layer-list"
+                        "Selecting a storage pool with the openflex driver requires OPENFLEX to be included " +
+                            "in the layer-list"
                     )
                 );
             }
@@ -617,7 +619,8 @@ public class CtrlRscCrtApiHelper
                                     {
                                         granularity = "64";
                                         errorReporter.logWarning(
-                                            "StorPool %s of node %s unexpectedly does not have property %s. Using %sk as fallback.",
+                                            "StorPool %s of node %s unexpectedly does not have property %s. " +
+                                                "Using %sk as fallback.",
                                             storPool.getName().displayValue,
                                             storPool.getNode().getName().displayValue,
                                             StorageConstants.KEY_INT_THIN_POOL_GRANULARITY,
@@ -875,6 +878,7 @@ public class CtrlRscCrtApiHelper
     private Flux<ApiCallRc> setInitializedInTransaction(Set<Resource> deployedResourcesRef)
     {
         ResourceDefinition rscDfn = null;
+        Flux<ApiCallRc> flux;
         try
         {
             AccessContext peerCtx = peerAccCtx.get();
@@ -903,7 +907,7 @@ public class CtrlRscCrtApiHelper
         }
         if (rscDfn != null)
         {
-            return ctrlSatelliteUpdateCaller.updateSatellites(
+            flux = ctrlSatelliteUpdateCaller.updateSatellites(
                 rscDfn,
                 null
             ).thenMany(Flux.empty());
@@ -911,8 +915,9 @@ public class CtrlRscCrtApiHelper
         }
         else
         {
-            return Flux.empty();
+            flux = Flux.empty();
         }
+        return flux;
     }
 
     private Mono<ApiCallRc> makeRdyTimeoutApiRc(NodeName nodeName)
@@ -1038,7 +1043,8 @@ public class CtrlRscCrtApiHelper
     Resource createResourceFromSnapshot(
         ResourceDefinition toRscDfn,
         Node toNode,
-        Snapshot fromSnapshotRef
+        Snapshot fromSnapshotRef,
+        boolean fromBackup
     )
     {
         Resource rsc;
@@ -1051,7 +1057,8 @@ public class CtrlRscCrtApiHelper
                 toRscDfn,
                 toNode,
                 fromSnapshotRef.getLayerData(peerAccCtx.get()),
-                new Resource.Flags[0]
+                new Resource.Flags[0],
+                fromBackup
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -1390,26 +1397,6 @@ public class CtrlRscCrtApiHelper
             );
         }
         return ret;
-    }
-
-    private void setResourceFlags(Resource rsc, Resource.Flags... flags)
-    {
-        try
-        {
-            rsc.getStateFlags().enableFlags(peerAccCtx.get(), flags);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "Setting flag for resource",
-                ApiConsts.FAIL_ACC_DENIED_RSC
-            );
-        }
-        catch (DatabaseException exc)
-        {
-            throw new ApiDatabaseException(exc);
-        }
     }
 
     private ApiCallRcImpl.ApiCallRcEntry makeFlaggedNvmeInitiatorWarning(StorPool storPool)

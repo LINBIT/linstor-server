@@ -904,6 +904,7 @@ public class CtrlBackupRestoreApiCallHandler
                 // the metadata
                 rscDfn.getProps(peerAccCtx.get()).removeProp(InternalApiConsts.PROP_PRIMARY_SET);
             }
+            rscDfn.getFlags().enableFlags(peerAccCtx.get(), ResourceDefinition.Flags.RESTORE_TARGET);
         }
         catch (AccessDeniedException exc)
         {

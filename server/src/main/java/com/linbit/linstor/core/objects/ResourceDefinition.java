@@ -679,8 +679,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L),
-        @Deprecated
-        RESTORE_TARGET(1L << 1), // could be deleted, but requires migration
+        RESTORE_TARGET(1L << 1),
         CLONING(1L << 2),
         FAILED(1L << 3);
 
