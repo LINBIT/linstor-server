@@ -149,9 +149,16 @@ public class CtrlSnapshotCrtHelper
 
                 if (!isDisklessPrivileged(rsc))
                 {
-                    Snapshot snap = createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
-                    setNodeIds(rsc, snap);
-                    resourceFound = true;
+                    if (isEvacuatingPrivileged(rsc))
+                    {
+                        warnNodeEvacuating(rscNameStr, responses, rsc.getNode().getName().displayValue);
+                    }
+                    else
+                    {
+                        Snapshot snap = createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
+                        setNodeIds(rsc, snap);
+                        resourceFound = true;
+                    }
                 }
             }
         }
@@ -170,9 +177,16 @@ public class CtrlSnapshotCrtHelper
                         )
                     );
                 }
-                Snapshot snap = createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
-                setNodeIds(rsc, snap);
-                resourceFound = true;
+                if (isEvacuatingPrivileged(rsc))
+                {
+                    warnNodeEvacuating(rscNameStr, responses, nodeNameStr);
+                }
+                else
+                {
+                    Snapshot snap = createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
+                    setNodeIds(rsc, snap);
+                    resourceFound = true;
+                }
             }
         }
 
@@ -194,6 +208,17 @@ public class CtrlSnapshotCrtHelper
         }
 
         return snapshotDfn;
+    }
+
+    private void warnNodeEvacuating(String rscNameStr, ApiCallRcImpl responses, String nodeNameStr)
+    {
+        responses.addEntry(
+            ApiCallRcImpl.simpleEntry(
+                ApiConsts.MASK_WARN,
+                "Snapshot for resource '" + rscNameStr + "' will not be created on node '" + nodeNameStr +
+                    "' because that node is currently evacuating."
+            )
+        );
     }
 
     private void setNodeIds(Resource rsc, Snapshot snap)
@@ -355,6 +380,20 @@ public class CtrlSnapshotCrtHelper
             throw new ImplementationError(implError);
         }
         return isDiskless;
+    }
+
+    private boolean isEvacuatingPrivileged(Resource rsc)
+    {
+        boolean isEvacuating;
+        try
+        {
+            isEvacuating = rsc.getNode().getFlags().isSet(apiCtx, Node.Flags.EVACUATE);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return isEvacuating;
     }
 
     public SnapshotDefinition createSnapshotDfnData(
