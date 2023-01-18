@@ -20,6 +20,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingAbortHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiHelper.S3ObjectInfo;
+import com.linbit.linstor.core.apicallhandler.controller.backup.nodefinder.BackupNodeFinder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -29,7 +30,6 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
-import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -56,15 +56,12 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
-import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -81,12 +78,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
 
 import reactor.core.publisher.Flux;
 
@@ -111,6 +106,7 @@ public class CtrlBackupCreateApiCallHandler
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final CtrlBackupApiHelper backupHelper;
     private final CtrlScheduledBackupsApiCallHandler scheduledBackupsHandler;
+    private final BackupNodeFinder backupNodeFinder;
 
     @Inject
     public CtrlBackupCreateApiCallHandler(
@@ -131,7 +127,8 @@ public class CtrlBackupCreateApiCallHandler
         RemoteRepository remoteRepoRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlBackupApiHelper backupHelperRef,
-        CtrlScheduledBackupsApiCallHandler scheduledBackupsHandlerRef
+        CtrlScheduledBackupsApiCallHandler scheduledBackupsHandlerRef,
+        BackupNodeFinder backupNodeFinderRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -152,6 +149,7 @@ public class CtrlBackupCreateApiCallHandler
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         backupHelper = backupHelperRef;
         scheduledBackupsHandler = scheduledBackupsHandlerRef;
+        backupNodeFinder = backupNodeFinderRef;
 
     }
 
@@ -269,11 +267,17 @@ public class CtrlBackupCreateApiCallHandler
                 }
             }
 
-            Map<String, Node> usableNodesMap = findUsableNodes(
+            Set<Node> nodesList = backupNodeFinder.findUsableNodes(
                 rscDfn,
                 prevSnapDfn,
-                requiredExtTools
+                remote.getName().displayValue,
+                remoteTypeRef
             );
+            Map<String, Node> usableNodesMap = new HashMap<>();
+            for (Node node : nodesList)
+            {
+                usableNodesMap.put(node.getName().displayValue, node);
+            }
             Set<String> usableNodeNames = usableNodesMap.keySet();
 
             SnapshotDefinition snapDfn = snapCrtHelper
@@ -595,150 +599,6 @@ public class CtrlBackupCreateApiCallHandler
         return prevSnapDfn;
     }
 
-    /**
-     * In case we already shipped a backup (full or incremental), we need to make sure that the chosen node
-     * also has that snapshot created, otherwise we are not able to send incremental backup.
-     * This method could also be used to verify if the backed up DeviceProviderKind match with the node's snapshot
-     * DeviceProviderKind, but as we are currently not supporting mixed DeviceProviderKinds we also neglect
-     * this check here.
-     *
-     * @param rscDfn
-     * @param prevSnapDfnRef
-     * @param requiredExtToolsRef
-     *
-     * @return Map<NodeName as String, Node>
-     *
-     * @throws AccessDeniedException
-     */
-    Map<String, Node> findUsableNodes(
-        ResourceDefinition rscDfn,
-        SnapshotDefinition prevSnapDfnRef,
-        Map<ExtTools, ExtToolsInfo.Version> requiredExtToolsMap
-    )
-        throws AccessDeniedException
-    {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        /*
-         * Map<Map<VolNr, int/ext>, Map<NodeName, Node>>
-         * This abomination is needed to make sure only nodes with the exact same meta-layout across all volumes are
-         * grouped together while looking for sets of nodes that can do the shipping.
-         */
-        Map<Map<VolumeNumber, Boolean>, Map<String, Node>> usableGroups = new HashMap<>();
-        Map<String, Node> ret = new HashMap<>();
-
-        Iterator<Resource> rscIt = rscDfn.iterateResource(peerAccCtx.get());
-        while (rscIt.hasNext())
-        {
-            Resource rsc = rscIt.next();
-            boolean isSomeSortOfDiskless = rsc.getStateFlags().isSomeSet(
-                peerAccCtx.get(),
-                Resource.Flags.DRBD_DISKLESS,
-                Resource.Flags.NVME_INITIATOR,
-                Resource.Flags.EBS_INITIATOR
-            );
-            if (!isSomeSortOfDiskless)
-            {
-                ApiCallRcImpl backupShippingSupported = backupShippingSupported(rsc);
-                if (backupShippingSupported.isEmpty())
-                {
-                    Node node = rsc.getNode();
-                    boolean canTakeSnapshot = true;
-                    if (prevSnapDfnRef != null)
-                    {
-                        canTakeSnapshot = prevSnapDfnRef.getAllSnapshots(peerAccCtx.get()).stream()
-                            .anyMatch(snap -> snap.getNode().equals(node));
-                    }
-                    if (!canTakeSnapshot)
-                    {
-                        apiCallRc.addEntries(
-                            ApiCallRcImpl.singleApiCallRc(
-                                ApiConsts.MASK_INFO,
-                                "Cannot create snapshot on node '" + node.getName().displayValue +
-                                    "', as the node does not have the required base snapshot for incremental backup"
-                            )
-                        );
-                    }
-                    else
-                    {
-                        canTakeSnapshot = hasNodeAllExtTools(
-                            node,
-                            requiredExtToolsMap,
-                            apiCallRc,
-                            "Cannot use node '" + node.getName().displayValue + "' as it does not support the tool(s): "
-                        );
-                    }
-
-                    if (canTakeSnapshot)
-                    {
-                        Set<AbsRscLayerObject<Resource>> layers = LayerRscUtils.getRscDataByProvider(
-                            rsc.getLayerData(peerAccCtx.get()),
-                            DeviceLayerKind.DRBD
-                        );
-                        if (layers.size() > 1)
-                        {
-                            // really rethink following for-loop if this gets changed
-                            throw new ImplementationError("Multiple DRBD layers are not supported.");
-                        }
-                        if (layers.isEmpty())
-                        {
-                            if (rscDfn.getNotDeletedDiskfulCount(peerAccCtx.get()) > 1)
-                            {
-                                throw new ImplementationError(
-                                    "Shipping non-DRBD resources with more than one replica is not supported."
-                                );
-                            }
-                            else
-                            {
-                                ret.put(node.getName().displayValue, node);
-                            }
-                        }
-                        else
-                        {
-                            for (AbsRscLayerObject<Resource> layer : layers)
-                            {
-                                DrbdRscData<Resource> drbdLayer = (DrbdRscData<Resource>) layer;
-                                Map<VolumeNumber, Boolean> key = new HashMap<>();
-                                for (DrbdVlmData<Resource> drbdVlm : drbdLayer.getVlmLayerObjects().values())
-                                {
-                                    key.put(drbdVlm.getVlmNr(), drbdVlm.isUsingExternalMetaData());
-                                }
-                                Map<String, Node> values = usableGroups.computeIfAbsent(key, k -> new HashMap<>());
-                                values.put(node.getName().displayValue, node);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    apiCallRc.addEntries(backupShippingSupported);
-                }
-            }
-        }
-        if (usableGroups.isEmpty() && ret.isEmpty())
-        {
-            apiCallRc.addEntry(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_NOT_ENOUGH_NODES,
-                    "Backup shipping of resource '" + rscDfn.getName().displayValue +
-                        "' cannot be started since there is no node available that supports backup shipping."
-                )
-            );
-            throw new ApiRcException(apiCallRc);
-        }
-        if (ret.isEmpty())
-        {
-            TreeMap<Integer, List<Map<String, Node>>> sizes = new TreeMap<>();
-            for (Map<String, Node> val : usableGroups.values())
-            {
-                sizes.computeIfAbsent(val.size(), k -> new ArrayList<>()).add(val);
-            }
-            List<Map<String, Node>> biggestGroup = sizes.get(sizes.lastKey());
-            int idx = (int) (Math.random() * biggestGroup.size());
-            ret = biggestGroup.get(idx);
-        }
-        return ret;
-    }
-
     private SnapshotDefinition getIncrementalBaseL2L(
         ResourceDefinition rscDfn,
         String prevSnapDfnUuid,
@@ -795,7 +655,7 @@ public class CtrlBackupCreateApiCallHandler
             for (Node node : nodes)
             {
                 ret = node;
-                if (hasNodeAllExtTools(node, optionalExtToolsMap, null, null))
+                if (hasNodeAllExtTools(node, optionalExtToolsMap, null, null, sysCtx))
                 {
                     // try to find a node that supports optExtTools - stop search when one is found
                     break;
@@ -819,18 +679,19 @@ public class CtrlBackupCreateApiCallHandler
     /**
      * Makes sure the given node has all ext-tools given
      */
-    boolean hasNodeAllExtTools(
+    public static boolean hasNodeAllExtTools(
         Node node,
         Map<ExtTools, ExtToolsInfo.Version> extTools,
         ApiCallRcImpl apiCallRcRef,
-        String errorMsgPrefix
+        String errorMsgPrefix,
+        AccessContext accCtx
     )
         throws AccessDeniedException
     {
         boolean ret = true;
         if (extTools != null)
         {
-            ExtToolsManager extToolsMgr = node.getPeer(sysCtx).getExtToolsManager();
+            ExtToolsManager extToolsMgr = node.getPeer(accCtx).getExtToolsManager();
             StringBuilder sb = new StringBuilder();
             for (Entry<ExtTools, Version> extTool : extTools.entrySet())
             {
