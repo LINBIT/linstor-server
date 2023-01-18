@@ -1334,23 +1334,14 @@ public class CtrlBackupCreateApiCallHandler
                     snapDfn,
                     remoteForSchedule
                 );
+
                 for (Entry<QueueItem, TreeSet<Node>> entry : followUpSnaps.entrySet())
                 {
                     for (Node currentNode : entry.getValue())
                     {
                         if (getFreeShippingSlots(currentNode) > 0)
                         {
-                            Iterator<QueueItem> itemsIterator = Collections.singletonList(entry.getKey()).iterator();
-                            startQueuedShippings(currentNode, new IteratorFromExceptionThrowingSupplier<>(() ->
-                            {
-                                QueueItem item = null;
-                                if (itemsIterator.hasNext())
-                                {
-                                    item = itemsIterator.next();
-                                    backupInfoMgr.deleteFromQueue(item.snapDfn, item.remote);
-                                }
-                                return item;
-                            }));
+                            startFollowUpShippings(entry, currentNode);
                             break;
                         }
                     }
@@ -1381,6 +1372,28 @@ public class CtrlBackupCreateApiCallHandler
             }
         }
         return cleanupFlux;
+    }
+
+    private void startFollowUpShippings(Entry<QueueItem, TreeSet<Node>> entry, Node currentNode)
+        throws AccessDeniedException,
+        InvalidNameException
+    {
+        // needs extra method because checkstyle is too stupid to realize the return is in a lambda and does not affect
+        // the for-loop
+        Iterator<QueueItem> itemsIterator = Collections.singletonList(entry.getKey()).iterator();
+        IteratorFromExceptionThrowingSupplier<QueueItem, AccessDeniedException> nextItem = new IteratorFromExceptionThrowingSupplier<>(
+            () ->
+            {
+                QueueItem item = null;
+                if (itemsIterator.hasNext())
+                {
+                    item = itemsIterator.next();
+                    backupInfoMgr.deleteFromQueue(item.snapDfn, item.remote);
+                }
+                return item;
+            }
+        );
+        startQueuedShippings(currentNode, nextItem);
     }
 
     /**
