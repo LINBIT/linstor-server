@@ -254,19 +254,23 @@ public class CtrlApiCallHandler
                 true
             );
 
-            // we can ignore the flux for now, since we are not creating resources that would need the flux executed
-            ResourceDefinitionUtils.handleAutoSnapProps(
-                autoSnapshotTask,
-                ctrlSnapDeleteHandler,
-                Collections.emptyMap(),
-                Collections.emptySet(),
-                Collections.emptySet(),
-                Collections.singletonList(rscDfn),
-                peerAccCtx.get(),
-                systemConfRepository.getStltConfForView(peerAccCtx.get()),
-                true
-            );
-
+            // if the previous call errored out (i.e. with an InvalidNameException, which gets wrapped into an
+            // ApiRcException which will not be thrown due to "throwOnError = false") rscDfn might be null
+            if (rscDfn != null)
+            {
+                // we can ignore the flux for now, since we are not creating resources that would need the flux executed
+                ResourceDefinitionUtils.handleAutoSnapProps(
+                    autoSnapshotTask,
+                    ctrlSnapDeleteHandler,
+                    Collections.emptyMap(),
+                    Collections.emptySet(),
+                    Collections.emptySet(),
+                    Collections.singletonList(rscDfn),
+                    peerAccCtx.get(),
+                    systemConfRepository.getStltConfForView(peerAccCtx.get()),
+                    true
+                );
+            }
         }
         catch (AccessDeniedException exc)
         {
