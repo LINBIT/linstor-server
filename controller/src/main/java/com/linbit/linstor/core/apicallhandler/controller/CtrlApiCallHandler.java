@@ -910,14 +910,14 @@ public class CtrlApiCallHandler
         return data;
     }
 
-    public ApiCallRc deleteCtrlCfgProp(String key, String namespace)
+    public Flux<ApiCallRc> deleteCtrlCfgProp(String key, String namespace)
     {
-        ApiCallRc apiCallRc;
+        Flux<ApiCallRc> flux;
         try (LockGuard lg = lockGuardFactory.build(WRITE, CTRL_CONFIG))
         {
-            apiCallRc = ctrlConfApiCallHandler.deletePropWithCommit(key, namespace);
+            flux = ctrlConfApiCallHandler.deletePropWithCommit(key, namespace);
         }
-        return apiCallRc;
+        return flux;
     }
 
     public Flux<ApiCallRc> setConfig(

@@ -136,22 +136,16 @@ public class Controller
 
     @DELETE
     @Path("properties/{key : .*}")
-    public Response deleteProperty(
+    public void deleteProperty(
         @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
         @PathParam("key") String key
     )
     {
-        return requestHelper.doInScope(ApiConsts.API_DEL_CTRL_PROP, request, () ->
-        {
-            Pair<String, String> keyPair = splitFullKey(key);
-
-            ApiCallRc apiCallRc = ctrlApiCallHandler.deleteCtrlCfgProp(
-                keyPair.objA,
-                keyPair.objB
-            );
-
-            return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
-        }, true);
+        Pair<String, String> keyPair = splitFullKey(key);
+        Flux<ApiCallRc> flux = ctrlApiCallHandler.deleteCtrlCfgProp(keyPair.objA, keyPair.objB
+        ).subscriberContext(requestHelper.createContext(ApiConsts.API_SET_CTRL_PROP, request));
+        requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
     @GET

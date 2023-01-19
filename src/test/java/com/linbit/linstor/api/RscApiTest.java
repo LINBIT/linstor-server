@@ -168,7 +168,8 @@ public class RscApiTest extends ApiTestBase
                 // Deployed
                 ApiConsts.MODIFIED,
                 // No volumes => WARN_NOT_FOUND response
-                ApiConsts.WARN_NOT_FOUND
+                ApiConsts.WARN_NOT_FOUND,
+                ApiConsts.MASK_INFO // updated resync-after entries
             )
         );
     }

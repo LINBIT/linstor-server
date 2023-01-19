@@ -44,6 +44,7 @@ public class CtrlRscAutoHelper
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlRscCrtApiHelper rscCrtHelper;
     private final CtrlRscDeleteApiHelper rscDelHelper;
+    private final CtrlResyncAfterHelper resyncAfterHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
 
     private final List<AutoHelper> autohelperList;
@@ -79,6 +80,7 @@ public class CtrlRscAutoHelper
         CtrlRscAutoDrbdProxyHelper autoDrbdProxyHelperRef,
         CtrlRscAutoRePlaceRscHelper autoRePlaceRscHelperRef,
         CtrlRscDfnAutoVerifyAlgoHelper autoVerifyAlgoHelperRef,
+        CtrlResyncAfterHelper resyncAfterHelperRef,
         CtrlApiDataLoader dataLoaderRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscCrtApiHelper rscCrtHelperRef,
@@ -109,6 +111,7 @@ public class CtrlRscAutoHelper
         lockGuardFactory = lockGuardFactoryRef;
         sysCtx = sysCtxRef;
         rscDfnRepo = rscDfnRepoRef;
+        resyncAfterHelper = resyncAfterHelperRef;
     }
 
     public AutoHelperResult manage(ApiCallRcImpl apiCallRcImplRef, ResponseContext context, String rscNameStrRef)
@@ -167,6 +170,8 @@ public class CtrlRscAutoHelper
         {
             autohelper.manage(ctx);
         }
+
+        ctx.additionalFluxList.add(resyncAfterHelper.fluxManage());
 
         if (!ctx.resourcesToCreate.isEmpty())
         {

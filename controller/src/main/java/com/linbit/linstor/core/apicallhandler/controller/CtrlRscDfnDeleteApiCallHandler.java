@@ -71,6 +71,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final ScheduleBackupService scheduleService;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
+    private final CtrlResyncAfterHelper ctrlResyncAfterHelper;
 
     @Inject
     public CtrlRscDfnDeleteApiCallHandler(
@@ -87,7 +88,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         AutoSnapshotTask autoSnapshotTaskRef,
         ScheduleBackupService scheduleServiceRef,
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
-        CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef
+        CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
+        CtrlResyncAfterHelper ctrlResyncAfterHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -104,6 +106,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         scheduleService = scheduleServiceRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
+        ctrlResyncAfterHelper = ctrlResyncAfterHelperRef;
     }
 
     @Override
@@ -333,19 +336,20 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             ctrlTransactionHelper.commit();
 
             Flux<ApiCallRc> nextStep = deleteData(rscName);
-            flux = flux.concatWith(
-                ctrlSatelliteUpdateCaller.updateSatellites(
-                    rscDfn,
-                    nodeName -> Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))),
-                    nextStep
-                )
-                    .transform(
-                        updateResponses -> CtrlResponseUtils.combineResponses(
-                            updateResponses,
-                            rscName,
-                            "Resource {1} on {0} deleted"
-                        )
+            flux = flux.concatWith(ctrlResyncAfterHelper.fluxManage())
+                .concatWith(
+                    ctrlSatelliteUpdateCaller.updateSatellites(
+                        rscDfn,
+                        nodeName -> Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))),
+                        nextStep
                     )
+                        .transform(
+                            updateResponses -> CtrlResponseUtils.combineResponses(
+                                updateResponses,
+                                rscName,
+                                "Resource {1} on {0} deleted"
+                            )
+                        )
                 )
                 .concatWith(nextStep)
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());

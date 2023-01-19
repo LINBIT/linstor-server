@@ -22,6 +22,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -33,6 +34,7 @@ import com.linbit.linstor.core.apis.ControllerConfigApi;
 import com.linbit.linstor.core.apis.SatelliteConfigApi;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.core.types.MinorNumber;
@@ -56,6 +58,7 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
+import com.linbit.utils.Triple;
 import com.linbit.utils.UuidUtils;
 
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
@@ -115,6 +118,8 @@ public class CtrlConfApiCallHandler
 
     private final AutoSnapshotTask autoSnapshotTask;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
+    private final CtrlResyncAfterHelper ctrlResyncAfterHelper;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
 
     @FunctionalInterface
     private interface SpecialPropHandler
@@ -156,7 +161,9 @@ public class CtrlConfApiCallHandler
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CtrlRscDfnAutoVerifyAlgoHelper ctrlRscDfnAutoVerifyAlgoHelperRef,
         AutoSnapshotTask autoSnapshotTaskRef,
-        CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef
+        CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef,
+        CtrlResyncAfterHelper ctrlResyncAfterHelperRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -183,6 +190,8 @@ public class CtrlConfApiCallHandler
         ctrlRscDfnAutoVerifyAlgoHelper = ctrlRscDfnAutoVerifyAlgoHelperRef;
         autoSnapshotTask = autoSnapshotTaskRef;
         ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
+        ctrlResyncAfterHelper = ctrlResyncAfterHelperRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
     }
 
     public void updateSatelliteConf() throws AccessDeniedException
@@ -214,7 +223,7 @@ public class CtrlConfApiCallHandler
 
         return scopeRunner
             .fluxInTransactionalScope(
-                "Modify node",
+                "modifyCtrl",
                 lockGuardFactory.buildDeferred(WRITE, LockObj.CTRL_CONFIG),
                 () -> modifyCtrlInTransaction(
                     overridePropsRef,
@@ -260,23 +269,28 @@ public class CtrlConfApiCallHandler
         }
 
         boolean notifyStlts = false;
+        Flux<ApiCallRc> fluxUpdRscDfns = Flux.empty();
+        Set<Resource> updateRscs = new HashSet<>();
         for (Entry<String, String> overrideProp : filteredOverrideProps.entrySet())
         {
-            Pair<ApiCallRc, Boolean> result = setProp(overrideProp.getKey(), null, overrideProp.getValue());
+            Triple<ApiCallRc, Boolean, Set<Resource>> result = setProp(
+                overrideProp.getKey(), null, overrideProp.getValue());
             if (result.objA.hasErrors())
             {
                 throw new ApiRcException(result.objA);
             }
+            updateRscs.addAll(result.objC);
             apiCallRc.addEntries(result.objA);
             notifyStlts |= result.objB;
         }
         for (String deletePropKey : filteredDeletePropKeys)
         {
-            Pair<ApiCallRc, Boolean> result = deleteProp(deletePropKey, null);
+            Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(deletePropKey, null);
             if (result.objA.hasErrors())
             {
                 throw new ApiRcException(result.objA);
             }
+            updateRscs.addAll(result.objC);
             apiCallRc.addEntries(result.objA);
             notifyStlts |= result.objB;
         }
@@ -291,6 +305,13 @@ public class CtrlConfApiCallHandler
             }
             apiCallRc.addEntries(result.objA);
             notifyStlts |= result.objB;
+        }
+
+        for (Resource rsc : updateRscs)
+        {
+            fluxUpdRscDfns = fluxUpdRscDfns.concatWith(
+                ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty())
+                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2()));
         }
 
         Flux<ApiCallRc> autoSnapFlux;
@@ -374,7 +395,8 @@ public class CtrlConfApiCallHandler
 
         return Flux.<ApiCallRc>just(apiCallRc)
             .concatWith(evictionFlux)
-            .concatWith(autoSnapFlux);
+            .concatWith(autoSnapFlux)
+            .concatWith(fluxUpdRscDfns);
     }
 
     public Flux<ApiCallRc> setCtrlConfig(
@@ -559,7 +581,8 @@ public class CtrlConfApiCallHandler
                 Iterator<String> keysIterator = optNamespace.get().keysIterator();
                 while (keysIterator.hasNext())
                 {
-                    Pair<ApiCallRc, Boolean> result = deleteProp(keysIterator.next(), deleteNamespaceRef);
+                    Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
+                        keysIterator.next(), deleteNamespaceRef);
                     apiCallRc.addEntries(result.objA);
                     notifyStlts |= result.objB;
                 }
@@ -637,9 +660,10 @@ public class CtrlConfApiCallHandler
         return apiCallRc;
     }
 
-    public Pair<ApiCallRc, Boolean> setProp(String key, String namespace, String value)
+    public Triple<ApiCallRc, Boolean, Set<Resource>> setProp(String key, String namespace, String value)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+        Set<Resource> changedRscs = new HashSet<>();
         boolean notifyStlts = false;
         try
         {
@@ -701,6 +725,21 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_USER:
                             notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
                             updateRscDfns();
+                            break;
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER:
+                            setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                            Pair<ApiCallRc, Set<Resource>> result;
+                            if (normalized != null && normalized.equalsIgnoreCase("true"))
+                            {
+                                result = ctrlResyncAfterHelper.clearAllResyncAfterProps();
+                            }
+                            else
+                            {
+                                result = ctrlResyncAfterHelper.manage();
+                            }
+                            apiCallRc.addEntries(result.objA);
+                            changedRscs.addAll(result.objB);
+                            notifyStlts = true;
                             break;
                         case ApiConsts.KEY_UPDATE_CACHE_INTERVAL:
                             // fall-through
@@ -826,7 +865,7 @@ public class CtrlConfApiCallHandler
                 );
             }
         }
-        return new Pair<>(apiCallRc, notifyStlts);
+        return new Triple<>(apiCallRc, notifyStlts, changedRscs);
     }
 
     private void handleClusterRemoteNamespace(ApiCallRcImpl apiCallRc, String fullKey, String value)
@@ -1107,9 +1146,24 @@ public class CtrlConfApiCallHandler
         return mergedMap;
     }
 
-    public ApiCallRc deletePropWithCommit(String key, String namespace)
+    public Flux<ApiCallRc> deletePropWithCommit(String key, String namespace)
     {
-        Pair<ApiCallRc, Boolean> result = deleteProp(key, namespace);
+        ResponseContext context = makeCtrlConfContext(
+            ApiOperation.makeDeleteOperation()
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "deletePropWithCommit",
+                lockGuardFactory.buildDeferred(WRITE, LockObj.CTRL_CONFIG),
+                () -> deletePropWithCommitInTransaction(key, namespace)
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    public Flux<ApiCallRc> deletePropWithCommitInTransaction(String key, String namespace)
+    {
+        Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(key, namespace);
         transMgrProvider.get().commit();
         if (result.objB)
         {
@@ -1117,7 +1171,7 @@ public class CtrlConfApiCallHandler
             {
                 updateSatelliteConf();
             }
-            catch (AccessDeniedException e)
+            catch (AccessDeniedException exc)
             {
                 throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
                     ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
@@ -1127,13 +1181,21 @@ public class CtrlConfApiCallHandler
                     )));
             }
         }
-        return result.objA;
+        Flux<ApiCallRc> fluxUpdRscDfns = Flux.empty();
+        for (Resource rsc : result.objC)
+        {
+            fluxUpdRscDfns = fluxUpdRscDfns.concatWith(
+                ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty())
+                    .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2()));
+        }
+        return fluxUpdRscDfns.concatWith(Flux.just(result.objA));
     }
 
-    private Pair<ApiCallRc, Boolean> deleteProp(String key, String namespace)
+    private Triple<ApiCallRc, Boolean, Set<Resource>> deleteProp(String key, String namespace)
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         boolean notifyStlts = false;
+        Set<Resource> changedRscs = new HashSet<>();
         try
         {
             String fullKey;
@@ -1180,6 +1242,11 @@ public class CtrlConfApiCallHandler
                             break;
                         case ApiConsts.KEY_TCP_PORT_RANGE:
                             snapShipPortPool.reloadRange();
+                            break;
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER:
+                            Pair<ApiCallRc, Set<Resource>> result = ctrlResyncAfterHelper.manage();
+                            apiCallRc.addEntries(result.objA);
+                            changedRscs.addAll(result.objB);
                             break;
                         // TODO: check for other properties
                         default:
@@ -1233,7 +1300,7 @@ public class CtrlConfApiCallHandler
                 errorMsg
             );
         }
-        return new Pair<>(apiCallRc, notifyStlts);
+        return new Triple<>(apiCallRc, notifyStlts, changedRscs);
     }
 
     public Flux<ApiCallRc> enterPassphrase(String passphrase)
