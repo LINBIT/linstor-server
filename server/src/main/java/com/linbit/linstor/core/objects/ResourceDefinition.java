@@ -520,11 +520,10 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
             {
                 throw new ImplementationError("Cannot delete resource definition which contains snapshot definitions");
             }
-            // Shallow copy the resource collection because calling delete results in elements being removed from it
-            Collection<Resource> resources = new ArrayList<>(resourceMap.values());
-            for (Resource rsc : resources)
+
+            if (!resourceMap.isEmpty())
             {
-                rsc.delete(accCtx);
+                throw new ImplementationError("Cannot delete resource definition which contains resources");
             }
 
             // Shallow copy the volume definition collection because calling delete results in elements being removed

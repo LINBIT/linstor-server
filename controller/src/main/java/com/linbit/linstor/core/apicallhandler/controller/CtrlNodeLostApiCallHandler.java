@@ -75,6 +75,7 @@ public class CtrlNodeLostApiCallHandler
     private final ResponseConverter responseConverter;
     private final ReadWriteLock nodesMapLock;
     private final Provider<AccessContext> peerAccCtx;
+    private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
 
     @Inject
     public CtrlNodeLostApiCallHandler(
@@ -90,7 +91,8 @@ public class CtrlNodeLostApiCallHandler
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -106,6 +108,7 @@ public class CtrlNodeLostApiCallHandler
         responseConverter = responseConverterRef;
         nodesMapLock = nodesMapLockRef;
         peerAccCtx = peerAccCtxRef;
+        ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
     }
 
     /**
@@ -177,7 +180,7 @@ public class CtrlNodeLostApiCallHandler
                     nodesToContact.put(peerRsc.getNode().getName(), peerRsc.getNode());
                 }
             }
-            deletePrivileged(rsc);
+            ctrlRscDeleteApiHelper.cleanupAndDelete(rsc);
         }
         // make sure that the just "lost" node is not contacted
         nodesToContact.remove(nodeName);
@@ -436,22 +439,6 @@ public class CtrlNodeLostApiCallHandler
         try
         {
             storPool.delete(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        catch (DatabaseException sqlExc)
-        {
-            throw new ApiDatabaseException(sqlExc);
-        }
-    }
-
-    private void deletePrivileged(Resource rsc)
-    {
-        try
-        {
-            rsc.delete(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

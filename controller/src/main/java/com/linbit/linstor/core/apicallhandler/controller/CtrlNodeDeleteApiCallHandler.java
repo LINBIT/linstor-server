@@ -374,7 +374,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             String nodeDescription = firstLetterCaps(getNodeDescriptionInline(node));
             ResourceDefinition rscDfn = rsc.getDefinition();
 
-            deletePrivileged(rsc);
+            ctrlRscDeleteApiHelper.cleanupAndDelete(rsc);
 
             Peer nodePeer = getPeerPrivileged(node);
             boolean nodeDeleted = deleteNodeIfEmpty(node);
@@ -671,22 +671,6 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         try
         {
             storPool.delete(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
-        }
-        catch (DatabaseException sqlExc)
-        {
-            throw new ApiDatabaseException(sqlExc);
-        }
-    }
-
-    private void deletePrivileged(Resource rsc)
-    {
-        try
-        {
-            rsc.delete(apiCtx);
         }
         catch (AccessDeniedException accDeniedExc)
         {

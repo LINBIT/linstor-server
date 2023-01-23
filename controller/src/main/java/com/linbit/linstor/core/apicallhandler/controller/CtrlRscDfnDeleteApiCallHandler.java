@@ -44,7 +44,9 @@ import javax.inject.Singleton;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -68,6 +70,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final AutoSnapshotTask autoSnapshotTask;
     private final ScheduleBackupService scheduleService;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
+    private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
 
     @Inject
     public CtrlRscDfnDeleteApiCallHandler(
@@ -83,7 +86,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         SharedResourceManager sharedRscMgrRef,
         AutoSnapshotTask autoSnapshotTaskRef,
         ScheduleBackupService scheduleServiceRef,
-        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
+        CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -99,6 +103,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         autoSnapshotTask = autoSnapshotTaskRef;
         scheduleService = scheduleServiceRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
+        ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
     }
 
     @Override
@@ -318,7 +323,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
                 if (isDisklessPrivileged(rsc))
                 {
-                    deletePrivileged(rsc);
+                    ctrlRscDeleteApiHelper.cleanupAndDelete(rsc);
                 }
                 else
                 {
@@ -531,6 +536,12 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     {
         try
         {
+            Map<NodeName, Resource> rscs = new HashMap<>();
+            rscDfn.copyResourceMap(peerAccCtx.get(), rscs);
+            for (Resource rsc : rscs.values())
+            {
+                ctrlRscDeleteApiHelper.cleanupAndDelete(rsc);
+            }
             rscDfn.delete(peerAccCtx.get());
         }
         catch (AccessDeniedException accDeniedExc)
@@ -540,22 +551,6 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                 "delete " + getRscDfnDescriptionInline(rscDfn),
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
-        }
-        catch (DatabaseException sqlExc)
-        {
-            throw new ApiDatabaseException(sqlExc);
-        }
-    }
-
-    private void deletePrivileged(Resource rsc)
-    {
-        try
-        {
-            rsc.delete(apiCtx);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ImplementationError(accDeniedExc);
         }
         catch (DatabaseException sqlExc)
         {

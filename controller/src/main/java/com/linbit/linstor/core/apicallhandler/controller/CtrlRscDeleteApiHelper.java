@@ -26,6 +26,7 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.tasks.RetryResourcesTask;
 import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
@@ -60,6 +61,7 @@ public class CtrlRscDeleteApiHelper
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
     private final ScheduleBackupService scheduleService;
+    private final RetryResourcesTask retryRscTask;
 
     @Inject
     public CtrlRscDeleteApiHelper(
@@ -71,7 +73,8 @@ public class CtrlRscDeleteApiHelper
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        ScheduleBackupService scheduleServiceRef
+        ScheduleBackupService scheduleServiceRef,
+        RetryResourcesTask retryRscTaskRef
     )
     {
         errorReporter = errorReporterRef;
@@ -83,6 +86,7 @@ public class CtrlRscDeleteApiHelper
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         scheduleService = scheduleServiceRef;
+        retryRscTask = retryRscTaskRef;
     }
 
     public void markDeletedWithVolumes(Resource rsc)
@@ -227,7 +231,7 @@ public class CtrlRscDeleteApiHelper
                 String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
                 ResourceDefinition rscDfn = rsc.getDefinition();
 
-                deletePrivileged(rsc);
+                cleanupAndDelete(rsc);
 
                 if (rscDfn.getResourceCount() == 0)
                 {
@@ -353,6 +357,12 @@ public class CtrlRscDeleteApiHelper
             throw new ImplementationError(exc);
         }
         return nodePeer;
+    }
+
+    public void cleanupAndDelete(Resource rsc)
+    {
+        retryRscTask.remove(rsc);
+        deletePrivileged(rsc);
     }
 
     private void deletePrivileged(Resource rsc)

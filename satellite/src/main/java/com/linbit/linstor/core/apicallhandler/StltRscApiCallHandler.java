@@ -173,6 +173,12 @@ class StltRscApiCallHandler
             ResourceDefinition rscDfn = rscDfnMap.get(rscName);
             if (rscDfn != null)
             {
+                Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+                while (rscIt.hasNext())
+                {
+                    Resource rsc = rscIt.next();
+                    rsc.delete(apiCtx);
+                }
                 if (rscDfn.getSnapshotDfns(apiCtx).isEmpty())
                 {
                     rscDfnMap.remove(rscName); // just to be sure
@@ -188,12 +194,6 @@ class StltRscApiCallHandler
                 }
                 else
                 {
-                    Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
-                    while (rscIt.hasNext())
-                    {
-                        Resource rsc = rscIt.next();
-                        rsc.delete(apiCtx);
-                    }
                     errorReporter.logInfo("Resources of resource definition '" + rscNameStr +
                         "' removed by Controller.");
                 }
