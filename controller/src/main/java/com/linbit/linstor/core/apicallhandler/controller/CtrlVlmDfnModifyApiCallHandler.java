@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.drbd.md.MaxSizeException;
+import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
@@ -1113,6 +1115,16 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         catch (DatabaseException sqlExc)
         {
             throw new ApiDatabaseException(sqlExc);
+        }
+        catch (MinSizeException | MaxSizeException exc)
+        {
+            final String smallLarge = exc instanceof MinSizeException ? "small" : "large";
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_VLM_SIZE,
+                    "The given size [" + size + "KiB] is too " + smallLarge
+                )
+            );
         }
 
     }

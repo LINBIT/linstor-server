@@ -26,6 +26,7 @@ import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ProtectedObject;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionMap;
@@ -102,7 +103,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         ErrorCheck.ctorNotNull(VolumeDefinition.class, ResourceDefinition.class, resDfnRef);
         ErrorCheck.ctorNotNull(VolumeDefinition.class, VolumeNumber.class, volNr);
 
-        checkVolumeSize(volSize);
+        checkVolumeSize(volSize, layerDataMapRef);
 
         resourceDfn = resDfnRef;
 
@@ -146,15 +147,40 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         vlmDfnKey = new Key(this);
     }
 
-    static void checkVolumeSize(long volSize)
+    public void recheckVolumeSize(AccessContext accCtxRef)
+        throws AccessDeniedException, MinSizeException, MaxSizeException
+    {
+        checkDeleted();
+        resourceDfn.getObjProt().requireAccess(accCtxRef, AccessType.VIEW);
+        checkVolumeSize(volumeSize.get(), layerStorage);
+    }
+
+    static void checkVolumeSize(
+        long volSize,
+        Map<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorageRef
+    )
         throws MinSizeException, MaxSizeException
     {
         try
         {
-            Checks.genericRangeCheck(
-                volSize, MetaData.DRBD_MIN_NET_kiB, MetaData.DRBD_MAX_kiB,
-                "Volume size value %d is out of range [%d - %d]"
-            );
+            // only check if we already have at least one DRBD resource deployed
+            boolean hasDrbd = false;
+            for (VlmDfnLayerObject vlmDfnLO : layerStorageRef.values())
+            {
+                if (vlmDfnLO instanceof DrbdVlmDfnData)
+                {
+                    hasDrbd = true;
+                    break;
+                }
+            }
+
+            if (hasDrbd)
+            {
+                Checks.genericRangeCheck(
+                    volSize, MetaData.DRBD_MIN_NET_kiB, MetaData.DRBD_MAX_kiB,
+                    "Volume size value %d is out of range [%d - %d]"
+                );
+            }
         }
         catch (ValueOutOfRangeException valueExc)
         {
@@ -204,10 +230,11 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
     }
 
     public Long setVolumeSize(AccessContext accCtx, long newVolumeSize)
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, MinSizeException, MaxSizeException
     {
         checkDeleted();
         resourceDfn.getObjProt().requireAccess(accCtx, AccessType.CHANGE);
+        checkVolumeSize(newVolumeSize, layerStorage);
         return volumeSize.set(newVolumeSize);
     }
 
@@ -533,6 +560,7 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         }
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L),

@@ -6,6 +6,8 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.GidGenerator;
+import com.linbit.drbd.md.MaxSizeException;
+import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -1108,7 +1110,14 @@ public class CtrlRscDfnApiCallHandler
             smallestSize = Math.max(smallestSize, currentVlmSize);
             if (currentVlmSize != smallestSize)
             {
-                vlmDfn.setVolumeSize(peerAccCtx.get(), smallestSize);
+                try
+                {
+                    vlmDfn.setVolumeSize(peerAccCtx.get(), smallestSize);
+                }
+                catch (MinSizeException | MaxSizeException exc)
+                {
+                    throw new ImplementationError("smallestSize is invalid", exc);
+                }
                 apiCallRc.addEntry(String.format("Volume number %d definition size adjusted to %dKib",
                     vlmDfn.getVolumeNumber().value, smallestSize), ApiConsts.MASK_VLM_DFN | ApiConsts.MODIFIED);
             }

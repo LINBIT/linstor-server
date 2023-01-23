@@ -85,7 +85,7 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
         throws MdException, DatabaseException
     {
         super(objIdRef, transObjFactory, transMgrProviderRef);
-        VolumeDefinition.checkVolumeSize(volSize);
+        VolumeDefinition.checkVolumeSize(volSize, layerDataMapRef);
         vlmDfn = vlmDfnRef;
 
         snapshotDfn = snapshotDfnRef;

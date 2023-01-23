@@ -1,5 +1,7 @@
 package com.linbit.linstor.core.objects;
 
+import com.linbit.drbd.md.MaxSizeException;
+import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
@@ -53,7 +55,8 @@ public class VolumeControllerFactory
         LayerPayload payload,
         @Nullable AbsRscLayerObject<RSC> absLayerData
     )
-        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
+        throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException, MinSizeException,
+        MaxSizeException
     {
         rsc.getObjProt().requireAccess(accCtx, AccessType.USE);
         Volume volData = null;
@@ -90,6 +93,8 @@ public class VolumeControllerFactory
             // ignore payload if we have snapLayerData
             layerStackHelper.copyLayerData(absLayerData, rsc);
         }
+
+        vlmDfn.recheckVolumeSize(accCtx);
 
         return volData;
     }

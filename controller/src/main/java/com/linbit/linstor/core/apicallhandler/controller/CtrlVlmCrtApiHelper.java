@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.drbd.md.MaxSizeException;
+import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.annotation.ApiContext;
@@ -124,8 +126,10 @@ public class CtrlVlmCrtApiHelper
         checkIfStorPoolsAreUsable(rsc, vlmDfn, storPoolSet, thinFreeCapacities);
 
         Volume vlm;
+        long vlmDfnSize = -1;
         try
         {
+            vlmDfnSize = vlmDfn.getVolumeSize(peerAccCtx.get());
             if (snapVlmRef == null)
             {
                 vlm = volumeFactory.create(
@@ -168,6 +172,16 @@ public class CtrlVlmCrtApiHelper
         catch (DatabaseException sqlExc)
         {
             throw new ApiDatabaseException(sqlExc);
+        }
+        catch (MinSizeException | MaxSizeException exc)
+        {
+            final String smallLarge = exc instanceof MinSizeException ? "small" : "large";
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_VLM_SIZE,
+                    "The size of the volume-definition [" + vlmDfnSize + "KiB] is too " + smallLarge
+                )
+            );
         }
 
         return vlm;

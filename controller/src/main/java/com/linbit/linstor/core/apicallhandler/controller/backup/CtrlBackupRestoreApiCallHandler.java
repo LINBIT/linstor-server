@@ -2,6 +2,8 @@ package com.linbit.linstor.core.apicallhandler.controller.backup;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.drbd.md.MaxSizeException;
+import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -775,7 +777,14 @@ public class CtrlBackupRestoreApiCallHandler
                     peerAccCtx.get(),
                     VolumeDefinition.Flags.restoreFlags(vlmDfnMetaEntry.getValue().getFlags())
                 );
-                vlmDfn.setVolumeSize(peerAccCtx.get(), vlmDfnMetaEntry.getValue().getSize());
+                try
+                {
+                    vlmDfn.setVolumeSize(peerAccCtx.get(), vlmDfnMetaEntry.getValue().getSize());
+                }
+                catch (MinSizeException | MaxSizeException exc)
+                {
+                    throw new ImplementationError("Invalid size during backup restore", exc);
+                }
             }
             vlmDfn.getProps(peerAccCtx.get()).map().putAll(vlmDfnMetaEntry.getValue().getProps());
             totalSize += vlmDfnMetaEntry.getValue().getSize();
