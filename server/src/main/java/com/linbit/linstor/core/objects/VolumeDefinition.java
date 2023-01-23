@@ -59,6 +59,10 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
         Map<String, Volume> getVlmMap();
     }
 
+    private static final long DFLT_MIN_VLM_SIZE = 1;
+
+    private static final long DFLT_MAX_VLM_SIZE = Long.MAX_VALUE;
+
     // Resource definition this VolumeDefinition belongs to
     private final ResourceDefinition resourceDfn;
 
@@ -161,6 +165,9 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
     )
         throws MinSizeException, MaxSizeException
     {
+        long minValue = DFLT_MIN_VLM_SIZE;
+        long maxValue = DFLT_MAX_VLM_SIZE;
+        String errMsgAppendix = "for non-DRBD";
         try
         {
             // only check if we already have at least one DRBD resource deployed
@@ -176,17 +183,25 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
 
             if (hasDrbd)
             {
-                Checks.genericRangeCheck(
-                    volSize, MetaData.DRBD_MIN_NET_kiB, MetaData.DRBD_MAX_kiB,
-                    "Volume size value %d is out of range [%d - %d]"
-                );
+                minValue = MetaData.DRBD_MIN_NET_kiB;
+                maxValue = MetaData.DRBD_MAX_kiB;
+                errMsgAppendix = "for DRBD";
             }
+            Checks.genericRangeCheck(
+                volSize,
+                minValue,
+                maxValue,
+                "Volume size value %d is out of range [%d - %d]"
+            );
         }
         catch (ValueOutOfRangeException valueExc)
         {
             String excMessage = String.format(
-                "Volume size value %d is out of range [%d - %d]",
-                volSize, MetaData.DRBD_MIN_NET_kiB, MetaData.DRBD_MAX_kiB
+                "Volume size value %d is out of range [%d - %d] %s",
+                volSize,
+                minValue,
+                maxValue,
+                errMsgAppendix
             );
             if (valueExc.getViolationType() == ValueOutOfRangeException.ViolationType.TOO_LOW)
             {
