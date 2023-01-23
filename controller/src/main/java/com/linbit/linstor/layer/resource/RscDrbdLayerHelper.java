@@ -53,6 +53,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
+import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
@@ -259,6 +260,14 @@ public class RscDrbdLayerHelper extends
 
         NodeId nodeId = getNodeId(rscRef, payloadRef, rscNameSuffixRef, layerListRef, drbdRscDfnData, null);
 
+        long initFlags = 0;
+        // some flags that might already be set on resource level should be copied to DrbdRscData level
+        if (isResourceDiskless(rscRef))
+        {
+            initFlags |= DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue;
+        }
+
+
         DrbdRscData<Resource> drbdRscData = layerDataFactory.createDrbdRscData(
             layerRscIdPool.autoAllocate(),
             rscRef,
@@ -269,10 +278,20 @@ public class RscDrbdLayerHelper extends
             null,
             null,
             null,
-            rscRef.getStateFlags().getFlagsBits(apiCtx)
+            initFlags
         );
         drbdRscDfnData.getDrbdRscDataList().add(drbdRscData);
         return drbdRscData;
+    }
+
+    private boolean isResourceDiskless(Resource rscRef) throws AccessDeniedException
+    {
+        return rscRef.getStateFlags().isSomeSet(
+            apiCtx,
+            Resource.Flags.DISKLESS,
+            Resource.Flags.DRBD_DISKLESS,
+            Resource.Flags.TIE_BREAKER
+        );
     }
 
     private NodeId getNodeId(
@@ -404,13 +423,15 @@ public class RscDrbdLayerHelper extends
         ExhaustedPoolException, ValueOutOfRangeException
     {
         Resource rsc = drbdRscData.getAbsResource();
-        StateFlags<Flags> rscFlags = rsc.getStateFlags();
-        drbdRscData.getFlags().resetFlagsTo(
-            apiCtx,
-            DrbdRscFlags.restoreFlags(
-                rscFlags.getFlagsBits(apiCtx)
-            )
-        );
+
+        if (isResourceDiskless(rsc))
+        {
+            drbdRscData.getFlags().enableFlags(apiCtx, DrbdRscFlags.DISKLESS);
+        }
+        else
+        {
+            drbdRscData.getFlags().disableFlags(apiCtx, DrbdRscFlags.DISKLESS);
+        }
 
         NodeId oldNodeId = drbdRscData.getNodeId();
         NodeId newNodeId = getNodeId(
