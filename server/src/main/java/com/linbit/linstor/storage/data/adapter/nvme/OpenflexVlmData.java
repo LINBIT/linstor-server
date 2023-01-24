@@ -30,9 +30,6 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     // unmodifiable data, once initialized
     private final StorPool storPool;
 
-    // not persisted, serialized, ctrl and stlt
-    private String devicePath;
-
     // not persisted, not serialized, stlt only
     private final TransactionList<OpenflexVlmData<RSC>, State> states;
     private Size sizeState;
@@ -66,23 +63,6 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
         return storPool;
     }
 
-    public void setExists(boolean existsRef) throws DatabaseException
-    {
-        exists.set(existsRef);
-    }
-
-    @Override
-    public boolean exists()
-    {
-        return exists.get();
-    }
-
-    @Override
-    public boolean hasFailed()
-    {
-        return failed.get();
-    }
-
     @Override
     public long getOriginalSize()
     {
@@ -93,18 +73,6 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     public void setOriginalSize(long originalSizeRef)
     {
         originalSize = originalSizeRef;
-    }
-
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize.get();
-    }
-
-    @Override
-    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
-    {
-        allocatedSize.set(allocatedSizeRef);
     }
 
     @Override
@@ -138,17 +106,6 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     public long getUsableSize()
     {
         return usableSize.get();
-    }
-
-    @Override
-    public String getDevicePath()
-    {
-        return devicePath;
-    }
-
-    public void setDevicePath(String devicePathRef)
-    {
-        devicePath = devicePathRef;
     }
 
     @Override
@@ -208,7 +165,7 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
     {
         return new OpenflexVlmPojo(
             getVlmNr().value,
-            devicePath,
+            devicePath.get(),
             ofId,
             allocatedSize.get(),
             usableSize.get(),

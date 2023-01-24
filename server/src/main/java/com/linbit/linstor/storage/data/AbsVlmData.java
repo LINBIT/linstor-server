@@ -5,6 +5,7 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.transaction.BaseTransactionObject;
@@ -12,6 +13,7 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Objects;
@@ -25,6 +27,7 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
     protected final RSC_DATA rscData;
 
     // not persisted, serialized, ctrl and stlt
+    protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, String> devicePath;
     protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Long> allocatedSize;
     protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Long> usableSize;
     protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Boolean> exists;
@@ -41,6 +44,7 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
     )
     {
         super(transMgrProviderRef);
+        devicePath = transObjFactory.createTransactionSimpleObject(this, null, null);
         exists = transObjFactory.createTransactionSimpleObject(this, false, null);
         failed = transObjFactory.createTransactionSimpleObject(this, false, null);
         allocatedSize = transObjFactory.createTransactionSimpleObject(this, UNINITIALIZED_SIZE, null);
@@ -55,10 +59,69 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
         return vlm;
     }
 
+    // can be null if the layer cannot provide that device even in non-error states
+    // e.g: VG / LV inactivate, DRBD secondary, missing crypt password, ...
+    @Override
+    public @Nullable String getDevicePath()
+    {
+        return devicePath.get();
+    }
+
+    public void setDevicePath(String devicePathRef) throws DatabaseException
+    {
+        devicePath.set(devicePathRef);
+    }
+
     @Override
     public RSC_DATA getRscLayerObject()
     {
         return rscData;
+    }
+
+    @Override
+    public boolean exists()
+    {
+        return exists.get();
+    }
+
+    public void setExists(boolean existsRef) throws DatabaseException
+    {
+        exists.set(existsRef);
+    }
+
+    @Override
+    public boolean hasFailed()
+    {
+        return failed.get();
+    }
+
+    public void setFailed(boolean failedRef) throws DatabaseException
+    {
+        failed.set(failedRef);
+    }
+
+    @Override
+    public long getAllocatedSize()
+    {
+        return allocatedSize.get();
+    }
+
+    @Override
+    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
+    {
+        allocatedSize.set(allocatedSizeRef);
+    }
+
+    @Override
+    public long getUsableSize()
+    {
+        return usableSize.get();
+    }
+
+    @Override
+    public void setUsableSize(long usableSizeRef) throws DatabaseException
+    {
+        usableSize.set(usableSizeRef);
     }
 
     @Override

@@ -37,8 +37,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     private final TransactionSimpleObject<BCacheVlmData<?>, UUID> deviceUuid;
 
     // not persisted, serialized, ctrl and stlt
-    private @Nullable String devicePathData;
-    private @Nullable String devicePathCache;
+    private @Nullable String cacheDevice;
     private String backingDevice;
     private String diskState;
 
@@ -74,23 +73,6 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public boolean exists()
-    {
-        return exists.get();
-    }
-
-    public void setExists(boolean existsRef) throws DatabaseException
-    {
-        exists.set(existsRef);
-    }
-
-    @Override
-    public boolean hasFailed()
-    {
-        return failed.get();
-    }
-
-    @Override
     public long getOriginalSize()
     {
         return originalSize;
@@ -100,18 +82,6 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     public void setOriginalSize(long originalSizeRef)
     {
         originalSize = originalSizeRef;
-    }
-
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize.get();
-    }
-
-    @Override
-    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
-    {
-        allocatedSize.set(allocatedSizeRef);
     }
 
     @Override
@@ -148,17 +118,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getDevicePath()
-    {
-        return devicePathData;
-    }
-
-    public void setDevicePath(String devicePathRef)
-    {
-        devicePathData = devicePathRef;
-    }
-
-    public String getBackingDevicePath()
+    public String getBackingDevice()
     {
         return backingDevice;
     }
@@ -168,14 +128,14 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
         backingDevice = backingDeviceRef;
     }
 
-    public String getCacheDevicePath()
+    public String getCacheDevice()
     {
-        return devicePathCache;
+        return cacheDevice;
     }
 
-    public void setCacheDevice(String devicePathCacheRef)
+    public void setCacheDevice(String cacheDeviceRef)
     {
-        devicePathCache = devicePathCacheRef;
+        cacheDevice = cacheDeviceRef;
     }
 
     @Override
@@ -231,8 +191,8 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     {
         return new BCacheVlmPojo(
             getVlmNr().value,
-            devicePathData,
-            devicePathCache,
+            devicePath.get(),
+            cacheDevice,
             cacheStorPool == null ? null : cacheStorPool.getName().displayValue,
             allocatedSize.get(),
             usableSize.get(),

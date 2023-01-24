@@ -255,8 +255,8 @@ public class BCacheLayer implements DeviceLayer
 
                     if (deleteFlagSet)
                     {
-                        wipeHandler.quickWipe(vlmData.getBackingDevicePath());
-                        wipeHandler.quickWipe(vlmData.getCacheDevicePath());
+                        wipeHandler.quickWipe(vlmData.getBackingDevice());
+                        wipeHandler.quickWipe(vlmData.getCacheDevice());
                         vlmData.setIdentifier(null);
                     }
                     vlmData.setExists(false);

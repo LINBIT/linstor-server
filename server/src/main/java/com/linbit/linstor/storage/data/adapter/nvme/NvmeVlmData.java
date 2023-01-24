@@ -26,9 +26,6 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     extends AbsVlmData<RSC, NvmeRscData<RSC>>
     implements NvmeVlmObject<RSC>, VlmLayerObject<RSC>
 {
-    // not persisted, serialized, ctrl and stlt
-    private String devicePath;
-
     // not persisted, not serialized, stlt only
     private boolean hasDisk;
     private final TransactionList<NvmeVlmData<RSC>, State> states;
@@ -52,28 +49,6 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public boolean exists()
-    {
-        return exists.get();
-    }
-
-    public void setExists(boolean existsRef) throws DatabaseException
-    {
-        exists.set(existsRef);
-    }
-
-    @Override
-    public boolean hasFailed()
-    {
-        return failed.get();
-    }
-
-    public void setFailed(boolean failedRef) throws DatabaseException
-    {
-        failed.set(failedRef);
-    }
-
-    @Override
     public long getOriginalSize()
     {
         return originalSize;
@@ -83,18 +58,6 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     public void setOriginalSize(long originalSizeRef)
     {
         originalSize = originalSizeRef;
-    }
-
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize.get();
-    }
-
-    @Override
-    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
-    {
-        allocatedSize.set(allocatedSizeRef);
     }
 
     @Override
@@ -122,17 +85,6 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
             sizeState = Size.AS_EXPECTED;
         }
         usableSize.set(usableSizeRef);
-    }
-
-    @Override
-    public String getDevicePath()
-    {
-        return devicePath;
-    }
-
-    public void setDevicePath(String devicePathRef)
-    {
-        devicePath = devicePathRef;
     }
 
     @Override
@@ -191,7 +143,7 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
     {
         return new NvmeVlmPojo(
             getVlmNr().getValue(),
-            devicePath,
+            devicePath.get(),
             getBackingDevice(),
             allocatedSize.get(),
             usableSize.get(),

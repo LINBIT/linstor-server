@@ -30,8 +30,6 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     // persisted, serialized, ctrl and stlt
     private final TransactionSimpleObject<LuksVlmData<?>, byte[]> encryptedPassword;
 
-    // not persisted, serialized, ctrl and stlt
-    private @Nullable String devicePath;
     private String backingDevice;
     private String diskState;
 
@@ -70,17 +68,6 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         );
     }
 
-    @Override
-    public boolean exists()
-    {
-        return exists.get();
-    }
-
-    public void setExists(boolean existsRef) throws DatabaseException
-    {
-        exists.set(existsRef);
-    }
-
     public boolean isOpened()
     {
         return opened;
@@ -89,29 +76,6 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     public void setOpened(boolean openedRef)
     {
         opened = openedRef;
-    }
-
-    @Override
-    public boolean hasFailed()
-    {
-        return failed.get();
-    }
-
-    public void setFailed(boolean failedRef) throws DatabaseException
-    {
-        failed.set(failedRef);
-    }
-
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize.get();
-    }
-
-    @Override
-    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
-    {
-        allocatedSize.set(allocatedSizeRef);
     }
 
     @Override
@@ -151,17 +115,6 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
             sizeState = Size.AS_EXPECTED;
         }
         usableSize.set(usableSizeRef);
-    }
-
-    @Override
-    public @Nullable String getDevicePath()
-    {
-        return devicePath;
-    }
-
-    public void setDevicePath(String devicePathRef)
-    {
-        devicePath = devicePathRef;
     }
 
     @Override
@@ -252,7 +205,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         return new LuksVlmPojo(
             getVlmNr().value,
             encryptedPassword.get(),
-            devicePath,
+            devicePath.get(),
             backingDevice,
             allocatedSize.get(),
             usableSize.get(),

@@ -68,23 +68,6 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public boolean exists()
-    {
-        return exists.get();
-    }
-
-    public void setExists(boolean existsRef) throws DatabaseException
-    {
-        exists.set(existsRef);
-    }
-
-    @Override
-    public boolean hasFailed()
-    {
-        return failed.get();
-    }
-
-    @Override
     public long getOriginalSize()
     {
         return originalSize;
@@ -94,18 +77,6 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
     public void setOriginalSize(long originalSizeRef)
     {
         originalSize = originalSizeRef;
-    }
-
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize.get();
-    }
-
-    @Override
-    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
-    {
-        allocatedSize.set(allocatedSizeRef);
     }
 
     @Override
@@ -139,17 +110,6 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
     public long getUsableSize()
     {
         return usableSize.get();
-    }
-
-    @Override
-    public String getDevicePath()
-    {
-        return devicePathData;
-    }
-
-    public void setDevicePath(String devicePathRef)
-    {
-        devicePathData = devicePathRef;
     }
 
     public String getBackingDevicePath()

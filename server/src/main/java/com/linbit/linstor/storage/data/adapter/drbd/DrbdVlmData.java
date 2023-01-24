@@ -35,9 +35,6 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     // persisted, serialized, ctrl and stlt
     private final TransactionSimpleObject<DrbdVlmData<?>, StorPool> externalMetaDataStorPool;
 
-    // not persisted, serialized, ctrl and stlt
-    private String devicePath;
-
     // not persisted, not serialized, stlt only
     private boolean hasMetaData;
     private boolean checkMetaData;
@@ -81,28 +78,6 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public boolean exists()
-    {
-        return exists.get();
-    }
-
-    public void setExists(boolean existsRef) throws DatabaseException
-    {
-        exists.set(existsRef);
-    }
-
-    @Override
-    public boolean hasFailed()
-    {
-        return failed.get();
-    }
-
-    public void setFailed(boolean failedRef) throws DatabaseException
-    {
-        failed.set(failedRef);
-    }
-
-    @Override
     public long getOriginalSize()
     {
         return originalSize;
@@ -112,41 +87,6 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     public void setOriginalSize(long originalSizeRef)
     {
         originalSize = originalSizeRef;
-    }
-
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize.get();
-    }
-
-    @Override
-    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
-    {
-        allocatedSize.set(allocatedSizeRef);
-    }
-
-    @Override
-    public long getUsableSize()
-    {
-        return usableSize.get();
-    }
-
-    @Override
-    public void setUsableSize(long usableSizeRef) throws DatabaseException
-    {
-        usableSize.set(usableSizeRef);
-    }
-
-    @Override
-    public String getDevicePath()
-    {
-        return devicePath;
-    }
-
-    public void setDevicePath(String devicePathRef)
-    {
-        devicePath = devicePathRef;
     }
 
     @Override
@@ -297,7 +237,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
         }
         return new DrbdVlmPojo(
             vlmDfnData.getApiData(accCtxRef),
-            devicePath,
+            devicePath.get(),
             getBackingDevice(),
             externalMetaDataStorPoolName,
             getMetaDiskPath(),

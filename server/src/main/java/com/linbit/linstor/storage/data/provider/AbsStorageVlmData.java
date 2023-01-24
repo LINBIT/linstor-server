@@ -38,7 +38,6 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     // not persisted, serialized
     // TODO: introduce flags instead of exists, failed, sizeStates, states
     protected final TransactionList<AbsStorageVlmData<RSC>, ? extends State> states;
-    protected final TransactionSimpleObject<AbsStorageVlmData<RSC>, String> devicePath;
     protected final TransactionSimpleObject<AbsStorageVlmData<RSC>, Size> sizeState;
 
     // not persisted, not serialized, stlt only
@@ -61,7 +60,6 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         super(vlmRef, rscDataRef, transObjFactory, transMgrProvider);
         providerKind = providerKindRef;
 
-        devicePath = transObjFactory.createTransactionSimpleObject(this, null, null);
         sizeState = transObjFactory.createTransactionSimpleObject(this, null, null);
 
         states = transObjFactory.createTransactionList(this, new ArrayList<>(), null);
@@ -113,28 +111,6 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public boolean exists()
-    {
-        return exists.get();
-    }
-
-    public void setExists(boolean existsRef) throws DatabaseException
-    {
-        exists.set(existsRef);
-    }
-
-    @Override
-    public boolean hasFailed()
-    {
-        return failed.get();
-    }
-
-    public void setFailed(boolean failedRef) throws DatabaseException
-    {
-        failed.set(failedRef);
-    }
-
-    @Override
     public long getOriginalSize()
     {
         return originalSize;
@@ -144,41 +120,6 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
     public void setOriginalSize(long originalSizeRef)
     {
         originalSize = originalSizeRef;
-    }
-
-    @Override
-    public long getAllocatedSize()
-    {
-        return allocatedSize.get();
-    }
-
-    @Override
-    public void setAllocatedSize(long allocatedSizeRef) throws DatabaseException
-    {
-        allocatedSize.set(allocatedSizeRef);
-    }
-
-    @Override
-    public long getUsableSize()
-    {
-        return usableSize.get();
-    }
-
-    @Override
-    public void setUsableSize(long usableSizeRef) throws DatabaseException
-    {
-        usableSize.set(usableSizeRef);
-    }
-
-    @Override
-    public String getDevicePath()
-    {
-        return devicePath.get();
-    }
-
-    public void setDevicePath(String devicePathRef) throws DatabaseException
-    {
-        devicePath.set(devicePathRef);
     }
 
     @Override
@@ -193,6 +134,7 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         return storPool.get();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public void setStorPool(AccessContext accCtx, StorPool storPoolRef) throws DatabaseException, AccessDeniedException
     {

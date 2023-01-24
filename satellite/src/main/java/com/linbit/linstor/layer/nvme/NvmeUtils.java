@@ -654,8 +654,8 @@ public class NvmeUtils
         RSC_DATA rscData,
         String subsystemName,
         BiConsumer<RSC_DATA, Boolean> setExistsRscFunc,
-            ExceptionThrowingBiConsumer<VLM_DATA, Boolean, DatabaseException> setExistsVlmFunc,
-        BiConsumer<VLM_DATA, String> setDevPathVlmFunc
+        ExceptionThrowingBiConsumer<VLM_DATA, Boolean, DatabaseException> setExistsVlmFunc,
+        ExceptionThrowingBiConsumer<VLM_DATA, String, DatabaseException> setDevPathVlmFunc
     )
         throws StorageException
     {
