@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- pvdisplay now ignores drbd devices(lvm filter)
+- Volume definition setSize checks now for out of bounds sizes
+
+### Fixed
+
+- Fixed typo in VDO slab size commandline argument
+- Fixed peerslot check also counting diskless resources
+- Fixed storage pool definition delete not checking if there are still other storage pools
+- Fixed resource definition create showing real exception because of a followup exception
+- Fixed resetting resource flags to now incompatible drbd resource flags
+
 ## [1.20.2] - 2022-12-14
 
 ### Fixed
