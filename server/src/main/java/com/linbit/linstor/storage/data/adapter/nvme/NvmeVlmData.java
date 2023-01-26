@@ -147,7 +147,8 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
             getDataDevice(),
             allocatedSize.get(),
             usableSize.get(),
-            diskState
+            diskState,
+            discGran.get()
         );
     }
 }

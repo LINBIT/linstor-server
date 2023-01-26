@@ -19,6 +19,7 @@ public class LsBlkEntry
     private String wwn;
     private String state;
     private String type;
+    private long discGran;
 
     public enum LsBlkFields {
         NAME("NAME"),
@@ -32,7 +33,8 @@ public class LsBlkEntry
         MODEL("MODEL"),
         SERIAL("SERIAL"),
         WWN("WWN"),
-        STATE("STATE");
+        STATE("STATE"),
+        DISC_GRAN("DISC-GRAN");
 
         private final String value;
 
@@ -47,6 +49,10 @@ public class LsBlkEntry
             if (strVal.equals(MAJ_MIN.value))
             {
                 ret = MAJ_MIN;
+            }
+            else if (strVal.equals(DISC_GRAN.value))
+            {
+                ret = DISC_GRAN;
             }
             else
             {
@@ -85,7 +91,8 @@ public class LsBlkEntry
         int minorRef,
         String modelRef,
         String serialRef,
-        String wwnRef
+        String wwnRef,
+        long discGranRef
     )
     {
         this.name = nameRef;
@@ -99,6 +106,7 @@ public class LsBlkEntry
         this.model = modelRef;
         this.serial = serialRef;
         this.wwn = wwnRef;
+        discGran = discGranRef;
     }
 
     private void setField(LsBlkFields fieldName, String value)
@@ -145,6 +153,9 @@ public class LsBlkEntry
                 break;
             case TYPE:
                 type = value;
+                break;
+            case DISC_GRAN:
+                discGran = Long.parseLong(value);
                 break;
             default:
                 throw new RuntimeException(String.format("Field name '%s' unknown.", fieldName));
@@ -214,6 +225,11 @@ public class LsBlkEntry
     public String getType()
     {
         return type;
+    }
+
+    public long getDiscGran()
+    {
+        return discGran;
     }
 
     public Map<String, String> asMap()

@@ -122,6 +122,8 @@ public class BCacheRscPojo implements RscLayerDataApi
         @JsonIgnore
         private final String diskState;
         @JsonIgnore
+        private final long discGran;
+        @JsonIgnore
         private final @Nullable UUID deviceUuid;
 
         public BCacheVlmPojo(
@@ -133,6 +135,7 @@ public class BCacheRscPojo implements RscLayerDataApi
             long allocatedSizeRef,
             long usableSizeRef,
             String diskStateRef,
+            long discGranRef,
             @Nullable UUID deviceUuidRef
         )
         {
@@ -145,6 +148,7 @@ public class BCacheRscPojo implements RscLayerDataApi
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
             diskState = diskStateRef;
+            discGran = discGranRef;
             deviceUuid = deviceUuidRef;
         }
 
@@ -163,6 +167,7 @@ public class BCacheRscPojo implements RscLayerDataApi
             allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
             usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
             diskState = null;
+            discGran = VlmProviderObject.UNINITIALIZED_SIZE;
             deviceUuid = null;
         }
 
@@ -221,6 +226,12 @@ public class BCacheRscPojo implements RscLayerDataApi
         public String getDiskState()
         {
             return diskState;
+        }
+
+        @Override
+        public long getDiscGran()
+        {
+            return discGran;
         }
 
         public UUID getDeviceUuid()

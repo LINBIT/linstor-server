@@ -17,5 +17,6 @@ message NvmeVlm
     optional int64          allocated_size = 4;
     optional int64          usable_size = 5;
     optional string         disk_state = 6;
+    optional int64          disc_gran = 7;
 }
 

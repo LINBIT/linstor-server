@@ -34,6 +34,7 @@ import com.linbit.utils.Base64;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -162,7 +163,8 @@ public class CtrlPhysicalStorageApiCallHandler
                         lsBlkEntry.getMinor(),
                         lsBlkEntry.getModel(),
                         lsBlkEntry.getSerial(),
-                        lsBlkEntry.getWwn()
+                        lsBlkEntry.getWwn(),
+                        lsBlkEntry.getDiscGran()
                     )
                 ).collect(Collectors.toList());
         }

@@ -40,6 +40,7 @@ message DrbdVlm
     optional int64              usable_size = 6;
     optional string             disk_state = 7;
     optional string             external_meta_data_stor_pool = 8;
+    optional uint64             disc_gran = 9;
 }
 
 // multiple DrbdVlms might refer to the same DrbdVlmDfn. The combination of the corresponding resource definition's name, the rsc_name_suffix and vlm_nr is the primary key.

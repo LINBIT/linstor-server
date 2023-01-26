@@ -18,4 +18,5 @@ message LsBlkEntry {
     string model = 9;
     string serial = 10;
     string wwn = 11;
+    uint64 disc_gran = 12;
 }

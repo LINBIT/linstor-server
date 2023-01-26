@@ -72,6 +72,9 @@ public interface VlmLayerDataApi
 
     long getUsableSize();
 
+    @JsonIgnore
+    long getDiscGran();
+
     default Long getSnapshotAllocatedSize()
     {
         return null;

@@ -3,8 +3,11 @@ package com.linbit.linstor.layer.storage.utils;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,20 +74,30 @@ public class LsBlkUtils
         return lsBlkEntries;
     }
 
-    public static List<LsBlkEntry> lsblk(ExtCmd extCmd)
+    public static List<LsBlkEntry> lsblk(ExtCmd extCmd) throws StorageException
+    {
+        return lsblk(extCmd, null);
+    }
+
+    public static List<LsBlkEntry> lsblk(ExtCmd extCmd, @Nullable String devicePathRef)
         throws StorageException
     {
+        String[] command = new String[]{
+            "lsblk",
+            "-P",
+            "-b",
+            "--paths",
+            "-o", Arrays.stream(LsBlkEntry.LsBlkFields.values())
+                .map(LsBlkEntry.LsBlkFields::toString)
+                .collect(Collectors.joining(","))
+        };
+        if (devicePathRef != null)
+        {
+            command = StringUtils.concat(command, devicePathRef);
+        }
         ExtCmd.OutputData outputData = Commands.genericExecutor(
             extCmd.setSaveWithoutSharedLocks(true),
-            new String[]{
-                "lsblk",
-                "-P",
-                "-b",
-                "--paths",
-                "-o", Arrays.stream(LsBlkEntry.LsBlkFields.values())
-                    .map(LsBlkEntry.LsBlkFields::toString)
-                    .collect(Collectors.joining(","))
-            },
+            command,
             "Failed execute lsblk",
             "Failed to execute lsblk"
         );

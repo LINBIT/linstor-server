@@ -15,6 +15,8 @@ import org.junit.Test;
 
 public class CtrlPhysicalStorageApiCallHandlerTest
 {
+    private static final int DFLT_DISC_GRAN = 64 * 1024;
+
     @Test
     public void testGroupLsBlkEntriesByNode() throws InvalidNameException
     {
@@ -36,7 +38,8 @@ public class CtrlPhysicalStorageApiCallHandlerTest
                 9,
                 "",
                 "",
-                ""
+                "",
+                DFLT_DISC_GRAN
             )
         );
 
@@ -57,7 +60,8 @@ public class CtrlPhysicalStorageApiCallHandlerTest
                 9,
                 "",
                 "",
-                ""
+                "",
+                DFLT_DISC_GRAN
             )
         );
         dataCharlie.add(
@@ -72,7 +76,8 @@ public class CtrlPhysicalStorageApiCallHandlerTest
                 0,
                 "",
                 "",
-                ""
+                "",
+                DFLT_DISC_GRAN
             )
         );
         dataCharlie.add(
@@ -87,7 +92,8 @@ public class CtrlPhysicalStorageApiCallHandlerTest
                 10,
                 "",
                 "",
-                ""
+                "",
+                DFLT_DISC_GRAN
             )
         );
 

@@ -131,6 +131,7 @@ public class OpenflexRscPojo implements RscLayerDataApi
         private final long usableSize;
         private final String diskState;
         private final StorPoolApi storPoolApi;
+        private final long discGran;
 
         public OpenflexVlmPojo(
             int vlmNrRef,
@@ -139,7 +140,8 @@ public class OpenflexRscPojo implements RscLayerDataApi
             long allocatedSizeRef,
             long usableSizeRef,
             String diskStateRef,
-            StorPoolApi storPoolApiRef
+            StorPoolApi storPoolApiRef,
+            long discGranRef
         )
         {
             vlmNr = vlmNrRef;
@@ -149,6 +151,7 @@ public class OpenflexRscPojo implements RscLayerDataApi
             usableSize = usableSizeRef;
             diskState = diskStateRef;
             storPoolApi = storPoolApiRef;
+            discGran = discGranRef;
         }
 
         @Override
@@ -202,6 +205,12 @@ public class OpenflexRscPojo implements RscLayerDataApi
         public StorPoolApi getStorPoolApi()
         {
             return storPoolApi;
+        }
+
+        @Override
+        public long getDiscGran()
+        {
+            return discGran;
         }
     }
 

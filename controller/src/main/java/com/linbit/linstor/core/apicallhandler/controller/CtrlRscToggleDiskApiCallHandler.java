@@ -125,6 +125,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final Provider<CtrlRscAutoHelper> rscAutoHelper;
     private final ErrorReporter errorReporter;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
+    private final Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandler;
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
@@ -146,7 +147,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         Provider<CtrlRscAutoHelper> rscAutoHelperRef,
         ErrorReporter errorReporterRef,
-        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
+        Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -169,6 +171,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         rscAutoHelper = rscAutoHelperRef;
         errorReporter = errorReporterRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
+        ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
     }
 
     @Override
@@ -486,7 +489,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(deactivateFlux)
-            .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, context));
+            .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, context))
+            .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rsc.getResourceDefinition()));
     }
 
     /**

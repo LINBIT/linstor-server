@@ -2,8 +2,10 @@ package com.linbit.linstor.core.devmgr;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.EntryBuilder;
@@ -39,6 +41,7 @@ import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.LayerFactory;
 import com.linbit.linstor.layer.openflex.OpenflexLayer;
 import com.linbit.linstor.layer.storage.StorageLayer;
+import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -49,6 +52,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -60,6 +64,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -80,6 +85,11 @@ import java.util.stream.Collectors;
 @Singleton
 public class DeviceHandlerImpl implements DeviceHandler
 {
+    private static final long DFLT_WAIT_FOR_DEVICE_IN_MS = 5_000;
+
+    private static final int LSBLK_DISC_GRAN_RETRY_COUNT = 500;
+    private static final long LSBLK_DISC_GRAN_RETRY_TIMEOUT_IN_MS = 100;
+
     private final AccessContext wrkCtx;
     private final ErrorReporter errorReporter;
     private final Provider<NotificationListener> notificationListener;
@@ -101,6 +111,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private Props localNodeProps;
     private BackupShippingMgr backupShippingManager;
+    private FileSystemWatch fsWatch;
 
     @Inject
     public DeviceHandlerImpl(
@@ -139,6 +150,15 @@ public class DeviceHandlerImpl implements DeviceHandler
         backupShippingManager = backupShippingManagerRef;
 
         fullSyncApplied = new AtomicBoolean(false);
+
+        try
+        {
+            fsWatch = new FileSystemWatch(errorReporter);
+        }
+        catch (IOException exc)
+        {
+            throw new LinStorRuntimeException("Unable to create FileSystemWatch", exc);
+        }
     }
 
     @Override
@@ -363,13 +383,14 @@ public class DeviceHandlerImpl implements DeviceHandler
                 );
 
                 StateFlags<Flags> rscFlags = rsc.getStateFlags();
-                if (
-                    rscLayerObject.getLayerKind().isLocalOnly() &&
-                        rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE) &&
-                        rscFlags.isUnset(wrkCtx, Resource.Flags.INACTIVE)
-                )
+                if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE) &&
+                    rscFlags.isUnset(wrkCtx, Resource.Flags.INACTIVE))
                 {
-                    MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, wrkCtx, rsc);
+                    if (rscLayerObject.getLayerKind().isLocalOnly())
+                    {
+                        MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, wrkCtx, rsc);
+                    }
+                    updateDiscGran(rscLayerObject);
                 }
                 for (Snapshot snapshot : snapshots)
                 {
@@ -1165,6 +1186,68 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             String symlink = prefixedList.get(idx);
             vlmProps.setProp(Integer.toString(idx), symlink, ApiConsts.NAMESPC_STLT_DEV_SYMLINKS);
+        }
+    }
+
+    private void updateDiscGran(AbsRscLayerObject<Resource> rscLayerObjectRef)
+        throws DatabaseException, StorageException, AccessDeniedException
+    {
+        if (rscLayerObjectRef != null)
+        {
+            DeviceLayer layer = layerFactory.getDeviceLayer(rscLayerObjectRef.getLayerKind());
+            if (!rscLayerObjectRef.hasIgnoreReason() && layer.isDiscGranFeasible(rscLayerObjectRef))
+            {
+                for (VlmProviderObject<Resource> vlmData : rscLayerObjectRef.getVlmLayerObjects().values())
+                {
+                    updateDiscGran(vlmData);
+                }
+            }
+            for (AbsRscLayerObject<Resource> childRscData : rscLayerObjectRef.getChildren())
+            {
+                updateDiscGran(childRscData);
+            }
+        }
+    }
+
+    private void updateDiscGran(VlmProviderObject<Resource> vlmData) throws DatabaseException, StorageException
+    {
+        String devicePath = vlmData.getDevicePath();
+        if (devicePath != null && vlmData.exists())
+        {
+            if (vlmData.getDiscGran() == VlmProviderObject.UNINITIALIZED_SIZE)
+            {
+                int retryCount = LSBLK_DISC_GRAN_RETRY_COUNT;
+                boolean discGranUpdated = false;
+                while (!discGranUpdated)
+                {
+                    try
+                    {
+                        List<LsBlkEntry> lsblkEntry = LsBlkUtils.lsblk(extCmdFactory.create(), devicePath);
+                        vlmData.setDiscGran(lsblkEntry.get(0).getDiscGran());
+                        discGranUpdated = true;
+                    }
+                    catch (StorageException exc)
+                    {
+                        retryCount--;
+                        if (retryCount == 0)
+                        {
+                            throw exc;
+                        }
+                        try
+                        {
+                            Thread.sleep(LSBLK_DISC_GRAN_RETRY_TIMEOUT_IN_MS);
+                        }
+                        catch (InterruptedException exc1)
+                        {
+                            exc1.printStackTrace();
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            vlmData.setDiscGran(VlmProviderObject.UNINITIALIZED_SIZE);
         }
     }
 }

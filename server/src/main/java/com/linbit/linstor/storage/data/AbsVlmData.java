@@ -32,6 +32,7 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
     protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Long> usableSize;
     protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Boolean> exists;
     protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Boolean> failed;
+    protected final TransactionSimpleObject<AbsVlmData<RSC, RSC_DATA>, Long> discGran;
 
     // not persisted, not serialized, stlt only
     protected transient long originalSize = UNINITIALIZED_SIZE;
@@ -49,6 +50,7 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
         failed = transObjFactory.createTransactionSimpleObject(this, false, null);
         allocatedSize = transObjFactory.createTransactionSimpleObject(this, UNINITIALIZED_SIZE, null);
         usableSize = transObjFactory.createTransactionSimpleObject(this, UNINITIALIZED_SIZE, null);
+        discGran = transObjFactory.createTransactionSimpleObject(this, UNINITIALIZED_SIZE, null);
         vlm = Objects.requireNonNull(vlmRef);
         rscData = Objects.requireNonNull(rscDataRef);
     }
@@ -122,6 +124,17 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
     public void setUsableSize(long usableSizeRef) throws DatabaseException
     {
         usableSize.set(usableSizeRef);
+    }
+
+    @Override
+    public long getDiscGran()
+    {
+        return discGran.get();
+    }
+
+    public void setDiscGran(long discGranRef) throws DatabaseException
+    {
+        discGran.set(discGranRef);
     }
 
     @Override

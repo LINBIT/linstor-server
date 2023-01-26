@@ -25,6 +25,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
+import com.linbit.linstor.layer.drbd.utils.ConfFileBuilderAutoRules.AutoRule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -139,7 +140,7 @@ public class ConfFileBuilder
         appendLine("resource \"%s\"", localRscData.getSuffixedResourceName());
         try (Section resourceSection = new Section())
         {
-            PriorityProps prioProps = new PriorityProps()
+            PriorityProps localRscPrioProps = new PriorityProps()
                 .addProps(localRscProps, "R (" + rscDfn.getName() + ")")
                 .addProps(rscDfnProps, "RD (" + rscDfn.getName() + ")")
                 .addProps(rscGrpProps, "RG (" + rscGrp.getName() + ")")
@@ -147,19 +148,20 @@ public class ConfFileBuilder
                 .addProps(stltProps, "C");
 
             // set auto verify algorithm if none is set yet by the user
-            final String verifyAlgo = prioProps.getProp(
+            final String verifyAlgo = localRscPrioProps.getProp(
                 InternalApiConsts.DRBD_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
-            final String autoVerifyAlgo = prioProps.getProp(
+            final String autoVerifyAlgo = localRscPrioProps.getProp(
                 InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS);
             if (verifyAlgo == null && autoVerifyAlgo != null)
             {
-                prioProps.setFallbackProp(
+                localRscPrioProps.setFallbackProp(
                     InternalApiConsts.DRBD_VERIFY_ALGO,
                     autoVerifyAlgo,
                     ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
             }
 
-            if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS))
+            final ConfFileBuilderAutoRules localRscAutoRules = new ConfFileBuilderAutoRules(accCtx, localRscData);
+            if (localRscPrioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS))
             {
                 appendLine("");
                 appendLine("handlers");
@@ -168,12 +170,13 @@ public class ConfFileBuilder
                     appendConflictingDrbdOptions(
                         LinStorObject.CONTROLLER,
                         ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS,
-                        prioProps
+                        localRscPrioProps,
+                        localRscAutoRules
                     );
                 }
             }
 
-            if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS))
+            if (localRscPrioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS))
             {
                 appendLine("");
                 appendLine("options");
@@ -182,7 +185,8 @@ public class ConfFileBuilder
                     appendConflictingDrbdOptions(
                         LinStorObject.CONTROLLER,
                         ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS,
-                        prioProps
+                        localRscPrioProps,
+                        localRscAutoRules
                     );
                 }
             }
@@ -199,11 +203,12 @@ public class ConfFileBuilder
                 appendConflictingDrbdOptions(
                     LinStorObject.CONTROLLER,
                     ApiConsts.NAMESPC_DRBD_NET_OPTIONS,
-                    prioProps
+                    localRscPrioProps,
+                    localRscAutoRules
                 );
             }
 
-            if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS))
+            if (localRscPrioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_DISK_OPTIONS))
             {
                 appendLine("");
                 appendLine("disk");
@@ -212,7 +217,8 @@ public class ConfFileBuilder
                     appendConflictingDrbdOptions(
                         LinStorObject.CONTROLLER,
                         ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
-                        prioProps
+                        localRscPrioProps,
+                        localRscAutoRules
                     );
                 }
             }
@@ -267,6 +273,8 @@ public class ConfFileBuilder
             // first generate all with local first
             for (final DrbdRscData<Resource> peerRscData : peerRscSet)
             {
+                final ConfFileBuilderAutoRules peerRscAutoRules = new ConfFileBuilderAutoRules(accCtx, peerRscData);
+
                 Resource peerRsc = peerRscData.getAbsResource();
                 // don't create a connection entry if the resource has the deleted flag
                 // or if it is a connection between two diskless nodes
@@ -336,14 +344,17 @@ public class ConfFileBuilder
                                                     "Resource group (%s)",
                                                     rscGrp.getName()
                                                 )
-                                            )
+                                            ),
+                                        peerRscAutoRules
                                     );
                                 }
                             }
                         }
                         else
                         {
-                            if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS))
+                            // TODO recheck: we are iterating over peerRscData but are still accessing
+                            // localRscPrioProps?
+                            if (localRscPrioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS))
                             {
                                 appendLine("");
                                 appendLine("disk");
@@ -352,7 +363,8 @@ public class ConfFileBuilder
                                     appendConflictingDrbdOptions(
                                         LinStorObject.CONTROLLER,
                                         ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
-                                        prioProps
+                                        localRscPrioProps,
+                                        peerRscAutoRules
                                     );
                                 }
                             }
@@ -473,12 +485,12 @@ public class ConfFileBuilder
                 }
             }
 
-            String compressionTypeProp = prioProps.getProp(
+            String compressionTypeProp = localRscPrioProps.getProp(
                 ApiConsts.KEY_DRBD_PROXY_COMPRESSION_TYPE,
                 ApiConsts.NAMESPC_DRBD_PROXY
             );
 
-            if (prioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS) ||
+            if (localRscPrioProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS) ||
                 compressionTypeProp != null)
             {
                 appendLine("");
@@ -488,7 +500,8 @@ public class ConfFileBuilder
                     appendConflictingDrbdOptions(
                         LinStorObject.DRBD_PROXY,
                         ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS,
-                        prioProps
+                        localRscPrioProps,
+                        localRscAutoRules
                     );
 
                     if (compressionTypeProp != null)
@@ -602,7 +615,8 @@ public class ConfFileBuilder
     private void appendConflictingDrbdOptions(
         final LinStorObject lsObj,
         final String namespace,
-        final PriorityProps prioProps
+        final PriorityProps prioProps,
+        final ConfFileBuilderAutoRules autoRules
     )
     {
         Map<String, MultiResult> map = prioProps.renderConflictingMap(namespace, true);
@@ -616,23 +630,57 @@ public class ConfFileBuilder
             appendIndent(confLine);
 
             String keyWithNamespace = entry.getKey();
+            String keyWithoutNamespace = keyWithNamespace.substring(substrFrom);
 
             MultiResult multiResult = entry.getValue();
-            String value = multiResult.first.value;
+            String value = null;
 
-            if (checkValidDrbdOption(lsObj, keyWithNamespace, value))
+            boolean isAutoEnabled = false;
+            AutoRule autoRule = autoRules.get(keyWithNamespace);
+
+            if (autoRule != null)
+            {
+                /*
+                 * We need to check whether or not the automation is enabled.
+                 * If it is enabled, it means that the controller is managing this property only on the Props of the
+                 * Pair, not on any other level.
+                 * We therefore must ignore the entries in the priorityProps and only check for the entry in the given
+                 * Props. That also means that we deliberately need to allow null values, even if other entries of the
+                 * PrioProps would say otherwise.
+                 *
+                 * If the automation is disabled, we continue with the MultiResult.
+                 */
+                String keyEnabledAuto = autoRule.key;
+                String valEnabledAuto = prioProps.getProp(keyEnabledAuto);
+                if (valEnabledAuto == null || valEnabledAuto.equalsIgnoreCase(ApiConsts.VAL_TRUE))
+                {
+                    value = autoRule.props.getProp(keyWithNamespace);
+                    isAutoEnabled = true;
+                }
+            }
+
+            if (!isAutoEnabled)
+            {
+                value = multiResult.first.value;
+            }
+
+            /*
+             * We do not want "null" values to be in the config file, but since the autoRule
+             * is active instead of falling back to the prioProp-value, we simply ignore this entry
+             */
+            if ((value != null || !isAutoEnabled) && checkValidDrbdOption(lsObj, keyWithNamespace, value))
             {
                 final boolean quoteValue = whitelistProps.needsQuoting(lsObj, keyWithNamespace);
                 confLine.append(
                     String.format(
                         quoteValue ? "%s \"%s\";" : "%s %s;",
-                        keyWithNamespace.substring(substrFrom),
+                        keyWithoutNamespace,
                         value
                     )
                 );
                 append(confLine.toString());
 
-                if (!multiResult.conflictingList.isEmpty())
+                if (!isAutoEnabled && !multiResult.conflictingList.isEmpty())
                 {
                     int commentPos = confLine.length() + 1;
                     confLine.setLength(0);
@@ -643,7 +691,8 @@ public class ConfFileBuilder
 
                     for (ValueWithDescription valueWithDescription : multiResult.conflictingList)
                     {
-                        append("%s# overrides value '%s' from %s%n",
+                        append(
+                            "%s# overrides value '%s' from %s%n",
                             spaces,
                             valueWithDescription.value,
                             valueWithDescription.propsDescription
@@ -859,7 +908,8 @@ public class ConfFileBuilder
                         appendConflictingDrbdOptions(
                             LinStorObject.CONTROLLER,
                             ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
-                            vlmPrioProps
+                            vlmPrioProps,
+                            new ConfFileBuilderAutoRules(accCtx, vlmData)
                         );
                     }
                 }

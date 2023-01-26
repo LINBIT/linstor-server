@@ -20,5 +20,6 @@ message BCacheVlm
     optional string         disk_state = 7;
     optional string         cache_stor_pool_name = 8;
     optional string         device_uuid = 9;
+    optional uint64         disc_gran = 10;
 }
 

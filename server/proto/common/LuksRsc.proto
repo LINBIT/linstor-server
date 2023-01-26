@@ -18,5 +18,6 @@ message LuksVlm
     optional int64          usable_size = 6;
     optional bool           opened = 7;
     optional string         diskState = 8;
+    optional int64          disc_gran = 9;
 }
 

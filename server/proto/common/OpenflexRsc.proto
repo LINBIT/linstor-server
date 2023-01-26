@@ -31,4 +31,5 @@ message OpenflexVlm
     optional int64          usable_size = 6;
     optional string         disk_state = 7;
     optional string         nqn = 8;
+    optional int64          disc_gran = 9;
 }

@@ -104,6 +104,9 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
 
     void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws DatabaseException, AccessDeniedException;
 
+    long getDiscGran();
+
+    void setDiscGran(long discGranRef) throws DatabaseException;
 
     default void setActive(boolean activeRef)
     {
@@ -130,4 +133,5 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
         VolumeNumber volNr = getVlmNr();
         return "vlm: " + nodeName.value + "/" + rscName.value + rscNameSuffix + "/" + volNr.value;
     }
+
 }

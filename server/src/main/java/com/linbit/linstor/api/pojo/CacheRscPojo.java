@@ -121,6 +121,8 @@ public class CacheRscPojo implements RscLayerDataApi
         private final long usableSize;
         @JsonIgnore
         private final String diskState;
+        @JsonIgnore
+        private final long discGran;
 
         public CacheVlmPojo(
             int vlmNrRef,
@@ -132,7 +134,8 @@ public class CacheRscPojo implements RscLayerDataApi
             String metaStorPoolNameRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef
+            String diskStateRef,
+            long discGranRef
         )
         {
             super();
@@ -146,6 +149,7 @@ public class CacheRscPojo implements RscLayerDataApi
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
             diskState = diskStateRef;
+            discGran = discGranRef;
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -166,6 +170,7 @@ public class CacheRscPojo implements RscLayerDataApi
             allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
             usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
             diskState = null;
+            discGran = VlmProviderObject.UNINITIALIZED_SIZE;
         }
 
         @Override
@@ -233,6 +238,12 @@ public class CacheRscPojo implements RscLayerDataApi
         public String getDiskState()
         {
             return diskState;
+        }
+
+        @Override
+        public long getDiscGran()
+        {
+            return discGran;
         }
     }
 

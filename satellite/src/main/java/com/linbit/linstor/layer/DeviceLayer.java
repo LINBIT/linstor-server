@@ -103,6 +103,17 @@ public interface DeviceLayer
     boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
 
     /**
+     * Returns whether or not checking for 'lsblk ... -o DISC-GRAN' makes sense for this RscData.
+     * For example it does not make sense for DRBD diskless
+     *
+     * @throws AccessDeniedException
+     */
+    default boolean isDiscGranFeasible(AbsRscLayerObject<Resource> rscLayerObjectRef) throws AccessDeniedException
+    {
+        return true;
+    }
+
+    /**
      * Most layers will no-op. Current exceptions are {@link StorageLayer} and {@link OpenflexLayer}
      *
      * @param storPoolRef

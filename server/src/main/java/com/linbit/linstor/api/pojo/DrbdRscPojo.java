@@ -302,6 +302,8 @@ public class DrbdRscPojo implements RscLayerDataApi
         private final long usableSize;
         @JsonIgnore
         private final String diskState;
+        @JsonIgnore
+        private final long discGran;
 
         public DrbdVlmPojo(
             DrbdVlmDfnPojo drbdVlmDfnRef,
@@ -311,7 +313,8 @@ public class DrbdRscPojo implements RscLayerDataApi
             String metaDeviceRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef
+            String diskStateRef,
+            long discGranRef
         )
         {
             drbdVlmDfn = drbdVlmDfnRef;
@@ -322,6 +325,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
             diskState = diskStateRef;
+            discGran = discGranRef;
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -339,6 +343,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
             usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
             diskState = null;
+            discGran = VlmProviderObject.UNINITIALIZED_SIZE;
         }
 
         public DrbdVlmDfnPojo getDrbdVlmDfn()
@@ -391,6 +396,10 @@ public class DrbdRscPojo implements RscLayerDataApi
             return diskState;
         }
 
+        public long getDiscGran()
+        {
+            return discGran;
+        }
         @Override
         public DeviceProviderKind getProviderKind()
         {

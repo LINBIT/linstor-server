@@ -169,6 +169,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         drbdVlmData.setDevicePath(vlmPojoRef.getDevicePath());
         drbdVlmData.setDiskState(vlmPojoRef.getDiskState());
         drbdVlmData.setUsableSize(vlmPojoRef.getUsableSize());
+        drbdVlmData.setDiscGran(vlmPojoRef.getDiscGran());
         // ignore externalMetaDataStorPool
     }
 
@@ -218,6 +219,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         luksVlmData.setOpened(vlmPojoRef.isOpen());
         luksVlmData.setDiskState(vlmPojoRef.getDiskState());
         luksVlmData.setUsableSize(vlmPojoRef.getUsableSize());
+        luksVlmData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -275,7 +277,9 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     protected void mergeDisklessVlm(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
         throws DatabaseException
     {
-        ((DisklessData<Resource>) vlmDataRef).setUsableSize(vlmPojoRef.getUsableSize());
+        DisklessData<Resource> disklessData = (DisklessData<Resource>) vlmDataRef;
+        disklessData.setUsableSize(vlmPojoRef.getUsableSize());
+        disklessData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -297,6 +301,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         lvmData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         lvmData.setDevicePath(vlmPojoRef.getDevicePath());
         lvmData.setUsableSize(vlmPojoRef.getUsableSize());
+        lvmData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -321,6 +326,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         spdkData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         spdkData.setDevicePath(vlmPojoRef.getDevicePath());
         spdkData.setUsableSize(vlmPojoRef.getUsableSize());
+        spdkData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -342,6 +348,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         lvmThinData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         lvmThinData.setDevicePath(vlmPojoRef.getDevicePath());
         lvmThinData.setUsableSize(vlmPojoRef.getUsableSize());
+        lvmThinData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -364,6 +371,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         zfsData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         zfsData.setDevicePath(vlmPojoRef.getDevicePath());
         zfsData.setUsableSize(vlmPojoRef.getUsableSize());
+        zfsData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -386,6 +394,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         fileData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         fileData.setDevicePath(vlmPojoRef.getDevicePath());
         fileData.setUsableSize(vlmPojoRef.getUsableSize());
+        fileData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -408,6 +417,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         exosData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         exosData.setDevicePath(vlmPojoRef.getDevicePath());
         exosData.setUsableSize(vlmPojoRef.getUsableSize());
+        exosData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -471,6 +481,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         nvmeVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
         nvmeVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         nvmeVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
+        nvmeVlmDataRef.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -521,6 +532,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         ofVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
         ofVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         ofVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
+        ofVlmDataRef.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -572,6 +584,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         writecacheVlmDataRef.setCacheDevice(vlmPojoRef.getCacheDevice());
         writecacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         writecacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
+        writecacheVlmDataRef.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -625,6 +638,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         cacheVlmDataRef.setMetaDevice(vlmPojoRef.getMetaDevice());
         cacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         cacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
+        cacheVlmDataRef.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -677,6 +691,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         bcacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         bcacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
         bcacheVlmDataRef.setDeviceUuid(vlmPojoRef.getDeviceUuid());
+        bcacheVlmDataRef.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
     @Override
@@ -715,5 +730,6 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         ebsData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         ebsData.setDevicePath(vlmPojoRef.getDevicePath());
         ebsData.setUsableSize(vlmPojoRef.getUsableSize());
+        ebsData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 }

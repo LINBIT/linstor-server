@@ -153,6 +153,7 @@ public class CtrlRscDfnApiCallHandler
     private final ResourceControllerFactory resourceControllerFactory;
     private final BackupInfoManager backupInfoMgr;
     private final SystemConfRepository systemConfRepository;
+    private final CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelper;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -187,7 +188,8 @@ public class CtrlRscDfnApiCallHandler
         ResourceControllerFactory resourceControllerFactoryRef,
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         BackupInfoManager backupInfoMgrRef,
-        SystemConfRepository systemConfRepositoryRef
+        SystemConfRepository systemConfRepositoryRef,
+        CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -222,6 +224,7 @@ public class CtrlRscDfnApiCallHandler
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         backupInfoMgr = backupInfoMgrRef;
         systemConfRepository = systemConfRepositoryRef;
+        ctrlRscDfnApiCallHelper = ctrlRscDfnApiCallHelperRef;
 
     }
 
@@ -1357,6 +1360,54 @@ public class CtrlRscDfnApiCallHandler
             );
         }
         return rscDfn;
+    }
+
+    public Flux<ApiCallRc> updateProps(ResourceDefinition rscDfn)
+    {
+        Map<String, String> objRefs = new TreeMap<>();
+        objRefs.put(ApiConsts.KEY_RSC_DFN, rscDfn.getName().displayValue);
+
+        ResponseContext context = new ResponseContext(
+            ApiOperation.makeModifyOperation(),
+            "Resource definitions for " + getRscDfnDescription(rscDfn),
+            "resource definitions for " + getRscDfnDescriptionInline(rscDfn),
+            ApiConsts.MASK_RSC_DFN,
+            objRefs
+        );
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Update DRBD Props",
+                lockGuardFactory.buildDeferred(WRITE, RSC_DFN_MAP),
+                () -> updatePropsInTransaction(
+                    context,
+                    rscDfn
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> updatePropsInTransaction(ResponseContext contextRef, ResourceDefinition rscDfnRef)
+    {
+        Flux<ApiCallRc> ret = Flux.empty();
+        if (!rscDfnRef.isDeleted())
+        {
+            boolean changed = ctrlRscDfnApiCallHelper.updateDrbdProps(rscDfnRef);
+            ctrlTransactionHelper.commit();
+            if (changed)
+            {
+                ret = ctrlSatelliteUpdateCaller.updateSatellites(rscDfnRef, Flux.empty())
+                    .transform(
+                        updateResponses -> CtrlResponseUtils.combineResponses(
+                            updateResponses,
+                            rscDfnRef.getName(),
+                            Collections.emptyList(),
+                            "Updated " + getRscDfnDescription(rscDfnRef),
+                            null
+                        )
+                    );
+            }
+        }
+        return ret;
     }
 
     static VolumeNumber getVlmNr(VolumeDefinitionApi vlmDfnApi, ResourceDefinition rscDfn, AccessContext accCtx)

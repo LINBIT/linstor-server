@@ -177,7 +177,8 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
             cacheStorPool == null ? null : cacheStorPool.getName().displayValue,
             allocatedSize.get(),
             usableSize.get(),
-            diskState
+            diskState,
+            discGran.get()
         );
     }
 

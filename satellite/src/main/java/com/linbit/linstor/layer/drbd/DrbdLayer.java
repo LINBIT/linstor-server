@@ -364,6 +364,12 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
+    public boolean isDiscGranFeasible(AbsRscLayerObject<Resource> rscLayerObjectRef) throws AccessDeniedException
+    {
+        return !rscLayerObjectRef.getAbsResource().isDrbdDiskless(workerCtx);
+    }
+
+    @Override
     public void process(
         AbsRscLayerObject<Resource> rscLayerData,
         List<Snapshot> snapshotList,
@@ -773,7 +779,6 @@ public class DrbdLayer implements DeviceLayer
                         false,
                         false
                     );
-
 
                     if (
                         drbdRscData.getAbsResource().getStateFlags()

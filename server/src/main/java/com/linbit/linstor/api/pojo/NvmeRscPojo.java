@@ -113,6 +113,8 @@ public class NvmeRscPojo implements RscLayerDataApi
         private final long usableSize;
         @JsonIgnore
         private final String diskState;
+        @JsonIgnore
+        private final long discGran;
 
         public NvmeVlmPojo(
             int vlmNrRef,
@@ -120,7 +122,8 @@ public class NvmeRscPojo implements RscLayerDataApi
             String backingDiskRef,
             long allocatedSizeRef,
             long usableSizeRef,
-            String diskStateRef
+            String diskStateRef,
+            long discGranRef
         )
         {
             vlmNr = vlmNrRef;
@@ -129,6 +132,7 @@ public class NvmeRscPojo implements RscLayerDataApi
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
             diskState = diskStateRef;
+            discGran = discGranRef;
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -142,6 +146,7 @@ public class NvmeRscPojo implements RscLayerDataApi
             allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
             usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
             diskState = null;
+            discGran = VlmProviderObject.UNINITIALIZED_SIZE;
         }
 
         @Override
@@ -189,6 +194,12 @@ public class NvmeRscPojo implements RscLayerDataApi
         public String getDiskState()
         {
             return diskState;
+        }
+
+        @Override
+        public long getDiscGran()
+        {
+            return discGran;
         }
     }
 }

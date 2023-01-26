@@ -198,7 +198,8 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
             metaStorPool == null ? null : metaStorPool.getName().displayValue,
             allocatedSize.get(),
             usableSize.get(),
-            diskState
+            diskState,
+            discGran.get()
         );
     }
 

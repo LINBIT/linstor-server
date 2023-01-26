@@ -3,6 +3,7 @@ package com.linbit.linstor.api.pojo;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -128,6 +129,8 @@ public class StorageRscPojo implements RscLayerDataApi
         @JsonIgnore
         private final DeviceProviderKind kind;
         private final StorPoolApi storPoolApi;
+        @JsonIgnore
+        private final long discGran;
 
         AbsVlmProviderPojo(
             int vlmNrRef,
@@ -137,6 +140,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef,
             DeviceProviderKind kindRef
         )
@@ -148,6 +152,7 @@ public class StorageRscPojo implements RscLayerDataApi
             snapAllocatedSize = snapAllocatedSizeRef;
             snapUsableSize = snapUsableSizeRef;
             diskState = diskStateRef;
+            discGran = discGranRef;
             storPoolApi = storPoolApiRef;
             kind = kindRef;
         }
@@ -196,6 +201,12 @@ public class StorageRscPojo implements RscLayerDataApi
         }
 
         @Override
+        public long getDiscGran()
+        {
+            return discGran;
+        }
+
+        @Override
         public DeviceProviderKind getProviderKind()
         {
             return kind;
@@ -224,6 +235,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -235,6 +247,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 DISKLESS
             );
@@ -259,6 +272,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
+                VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 DISKLESS
             );
@@ -275,6 +289,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -286,6 +301,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 LVM
             );
@@ -309,6 +325,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
+                VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 LVM
             );
@@ -325,6 +342,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -336,6 +354,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 SPDK
             );
@@ -359,6 +378,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
+                VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 SPDK
             );
@@ -375,6 +395,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -386,6 +407,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 REMOTE_SPDK
             );
@@ -402,6 +424,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -413,6 +436,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 LVM_THIN
             );
@@ -436,6 +460,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
+                VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 LVM_THIN
             );
@@ -452,6 +477,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -463,6 +489,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 ZFS
             );
@@ -486,6 +513,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
+                VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 ZFS
             );
@@ -502,6 +530,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -513,6 +542,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 ZFS_THIN
             );
@@ -536,6 +566,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
+                VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 ZFS_THIN
             );
@@ -552,6 +583,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -563,6 +595,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 FILE
             );
@@ -586,6 +619,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
+                VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 FILE
             );
@@ -602,6 +636,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -613,6 +648,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 FILE_THIN
             );
@@ -636,6 +672,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
+                VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 FILE_THIN
             );
@@ -652,6 +689,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -663,6 +701,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 EXOS
             );
@@ -679,6 +718,7 @@ public class StorageRscPojo implements RscLayerDataApi
             Long snapAllocatedSizeRef,
             Long snapUsableSizeRef,
             String diskStateRef,
+            long discGranRef,
             StorPoolApi storPoolApiRef
         )
         {
@@ -690,6 +730,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 diskStateRef,
+                discGranRef,
                 storPoolApiRef,
                 EBS_INIT
             );
@@ -713,6 +754,7 @@ public class StorageRscPojo implements RscLayerDataApi
                 snapAllocatedSizeRef,
                 snapUsableSizeRef,
                 null,
+                VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 EBS_INIT
             );

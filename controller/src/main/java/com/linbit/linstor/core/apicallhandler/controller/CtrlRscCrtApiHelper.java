@@ -129,6 +129,7 @@ public class CtrlRscCrtApiHelper
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
+    private final Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandler;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -153,7 +154,8 @@ public class CtrlRscCrtApiHelper
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -178,6 +180,7 @@ public class CtrlRscCrtApiHelper
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
+        ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
     }
 
     /**
@@ -834,7 +837,8 @@ public class CtrlRscCrtApiHelper
 
         Flux<ApiCallRc> nextSteps = setInitialized(deployedResources).concatWith(
             scheduleBackupService.fluxAllNewTasks(rscDfn, peerAccCtx.get())
-        );
+        ).concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rscDfn));
+
         return ctrlSatelliteUpdateCaller.updateSatellites(
             rscDfn,
             nextSteps

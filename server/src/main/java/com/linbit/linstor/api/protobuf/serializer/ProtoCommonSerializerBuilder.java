@@ -1702,7 +1702,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             DrbdVlm.Builder builder = DrbdVlm.newBuilder()
                 .setDrbdVlmDfn(buildDrbdVlmDfnData(drbdVlmDfnPojo))
                 .setAllocatedSize(drbdVlmPojo.getAllocatedSize())
-                .setUsableSize(drbdVlmPojo.getUsableSize());
+                .setUsableSize(drbdVlmPojo.getUsableSize())
+                .setDiscGran(drbdVlmPojo.getDiscGran());
             if (drbdVlmPojo.getDevicePath() != null)
             {
                 builder.setDevicePath(drbdVlmPojo.getDevicePath());
@@ -1783,6 +1784,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setEncryptedPassword(ByteString.copyFrom(luksVlmPojo.getEncryptedPassword()))
                 .setAllocatedSize(luksVlmPojo.getAllocatedSize())
                 .setUsableSize(luksVlmPojo.getUsableSize())
+                .setDiscGran(luksVlmPojo.getDiscGran())
                 .setOpened(luksVlmPojo.isOpen());
             if (luksVlmPojo.getDevicePath() != null)
             {
@@ -1901,6 +1903,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setVlmNr(vlmPojo.getVlmNr())
                 .setAllocatedSize(vlmPojo.getAllocatedSize())
                 .setUsableSize(vlmPojo.getUsableSize())
+                .setDiscGran(vlmPojo.getDiscGran())
                 .setStoragePool(serializeStorPool(vlmPojo.getStorPoolApi()));
             if (vlmPojo.getDevicePath() != null)
             {
@@ -1964,7 +1967,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             NvmeVlm.Builder nvmeVlmBuilder = NvmeVlm.newBuilder()
                 .setVlmNr(nvmeVlmPojo.getVlmNr())
                 .setAllocatedSize(nvmeVlmPojo.getAllocatedSize())
-                .setUsableSize(nvmeVlmPojo.getUsableSize());
+                .setUsableSize(nvmeVlmPojo.getUsableSize())
+                .setDiscGran(nvmeVlmPojo.getDiscGran());
             if (nvmeVlmPojo.getDevicePath() != null)
             {
                 nvmeVlmBuilder.setDevicePath(nvmeVlmPojo.getDevicePath());
@@ -1987,7 +1991,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setVlmNr(ofVlmPojo.getVlmNr())
                 .setStorPool(serializeStorPool(ofVlmPojo.getStorPoolApi()))
                 .setAllocatedSize(ofVlmPojo.getAllocatedSize())
-                .setUsableSize(ofVlmPojo.getUsableSize());
+                .setUsableSize(ofVlmPojo.getUsableSize())
+                .setDiscGran(ofVlmPojo.getDiscGran());
             if (ofVlmPojo.getDevicePath() != null)
             {
                 nvmeVlmBuilder.setDevicePath(ofVlmPojo.getDevicePath());
@@ -2009,7 +2014,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             WritecacheVlm.Builder protoVlmBuilder = WritecacheVlm.newBuilder()
                 .setVlmNr(vlmPojo.getVlmNr())
                 .setAllocatedSize(vlmPojo.getAllocatedSize())
-                .setUsableSize(vlmPojo.getUsableSize());
+                .setUsableSize(vlmPojo.getUsableSize())
+                .setDiscGran(vlmPojo.getDiscGran());
             if (vlmPojo.getDevicePath() != null)
             {
                 protoVlmBuilder.setDevicePath(vlmPojo.getDevicePath());
@@ -2039,7 +2045,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             CacheVlm.Builder protoVlmBuilder = CacheVlm.newBuilder()
                 .setVlmNr(vlmPojo.getVlmNr())
                 .setAllocatedSize(vlmPojo.getAllocatedSize())
-                .setUsableSize(vlmPojo.getUsableSize());
+                .setUsableSize(vlmPojo.getUsableSize())
+                .setDiscGran(vlmPojo.getDiscGran());
             if (vlmPojo.getDevicePath() != null)
             {
                 protoVlmBuilder.setDevicePath(vlmPojo.getDevicePath());
@@ -2077,7 +2084,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             BCacheVlm.Builder protoVlmBuilder = BCacheVlm.newBuilder()
                 .setVlmNr(vlmPojo.getVlmNr())
                 .setAllocatedSize(vlmPojo.getAllocatedSize())
-                .setUsableSize(vlmPojo.getUsableSize());
+                .setUsableSize(vlmPojo.getUsableSize())
+                .setDiscGran(vlmPojo.getDiscGran());
             if (vlmPojo.getDevicePath() != null)
             {
                 protoVlmBuilder.setDevicePath(vlmPojo.getDevicePath());

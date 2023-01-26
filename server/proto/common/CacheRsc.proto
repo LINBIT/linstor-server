@@ -21,5 +21,6 @@ message CacheVlm
     optional string         disk_state = 8;
     optional string         cache_stor_pool_name = 9;
     optional string         meta_stor_pool_name = 10;
+    optional uint64         disc_gran = 11; 
 }
 

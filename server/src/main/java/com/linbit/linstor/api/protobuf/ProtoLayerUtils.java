@@ -499,7 +499,8 @@ public class ProtoLayerUtils
             protoDrbdVlm.getMetaDisk(),
             protoDrbdVlm.getAllocatedSize(),
             protoDrbdVlm.getUsableSize(),
-            protoDrbdVlm.getDiskState()
+            protoDrbdVlm.getDiskState(),
+            protoDrbdVlm.getDiscGran()
         );
     }
 
@@ -522,7 +523,8 @@ public class ProtoLayerUtils
             protoLuksVlm.getAllocatedSize(),
             protoLuksVlm.getUsableSize(),
             protoLuksVlm.getOpened(),
-            protoLuksVlm.getDiskState()
+            protoLuksVlm.getDiskState(),
+            protoLuksVlm.getDiscGran()
         );
     }
 
@@ -549,6 +551,7 @@ public class ProtoLayerUtils
         long allocatedSize = protoVlm.getAllocatedSize();
         long usableSize = protoVlm.getUsableSize();
         String diskState = protoVlm.getDiskState();
+        long discGran = protoVlm.getDiscGran();
         StorPoolApi storPoolApi = ProtoDeserializationUtils.parseStorPool(
             protoVlm.getStoragePool(),
             fullSyncId,
@@ -565,6 +568,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     null,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -577,6 +581,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -589,6 +594,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -601,6 +607,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -613,6 +620,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -625,6 +633,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -637,6 +646,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -649,6 +659,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -661,6 +672,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -673,6 +685,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -686,6 +699,7 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
+                    discGran,
                     storPoolApi
                 );
                 break;
@@ -742,7 +756,8 @@ public class ProtoLayerUtils
             protoNvmeVlm.getBackingDevice(),
             protoNvmeVlm.getAllocatedSize(),
             protoNvmeVlm.getUsableSize(),
-            protoNvmeVlm.getDiskState()
+            protoNvmeVlm.getDiskState(),
+            protoNvmeVlm.getDiscGran()
         );
     }
 
@@ -759,7 +774,8 @@ public class ProtoLayerUtils
                 protoOfVlm.getStorPool(),
                 fullSyncId,
                 updateId
-            )
+            ),
+            protoOfVlm.getDiscGran()
         );
     }
 
@@ -773,7 +789,8 @@ public class ProtoLayerUtils
             protoVlm.getCacheStorPoolName(),
             protoVlm.getAllocatedSize(),
             protoVlm.getUsableSize(),
-            protoVlm.getDiskState()
+            protoVlm.getDiskState(),
+            protoVlm.getDiscGran()
         );
     }
 
@@ -789,7 +806,8 @@ public class ProtoLayerUtils
             protoVlm.getMetaStorPoolName(),
             protoVlm.getAllocatedSize(),
             protoVlm.getUsableSize(),
-            protoVlm.getDiskState()
+            protoVlm.getDiskState(),
+            protoVlm.getDiscGran()
         );
     }
 
@@ -809,6 +827,7 @@ public class ProtoLayerUtils
             protoVlm.getAllocatedSize(),
             protoVlm.getUsableSize(),
             protoVlm.getDiskState(),
+            protoVlm.getDiscGran(),
             uuid
         );
     }

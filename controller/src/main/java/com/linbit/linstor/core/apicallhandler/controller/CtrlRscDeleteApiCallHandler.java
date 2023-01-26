@@ -71,6 +71,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     private final SharedResourceManager sharedRscMgr;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
+    private final Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandler;
 
     @Inject
     public CtrlRscDeleteApiCallHandler(
@@ -87,7 +88,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         CtrlSnapshotShippingAbortHandler snapShipAbortHandlerRef,
         SharedResourceManager sharedRscMgrRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
-        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef
+        CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
+        Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -104,6 +106,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         sharedRscMgr = sharedRscMgrRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
+        ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
     }
 
     @Override
@@ -359,7 +362,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         }
         flux = flux
             .concatWith(abortSnapShipFlux)
-            .concatWith(autoResult.getFlux());
+            .concatWith(autoResult.getFlux())
+            .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rsc.getResourceDefinition()));
 
         return flux;
     }

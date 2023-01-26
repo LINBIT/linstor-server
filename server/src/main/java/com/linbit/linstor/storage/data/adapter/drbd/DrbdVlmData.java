@@ -243,7 +243,8 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
             getMetaDiskPath(),
             allocatedSize.get(),
             usableSize.get(),
-            diskState
+            diskState,
+            discGran.get()
         );
     }
 }

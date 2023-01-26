@@ -170,7 +170,8 @@ public class OpenflexVlmData<RSC extends AbsResource<RSC>>
             allocatedSize.get(),
             usableSize.get(),
             diskState,
-            storPool.getApiData(null, null, accCtxRef, null, null)
+            storPool.getApiData(null, null, accCtxRef, null, null),
+            discGran.get()
         );
     }
 }
