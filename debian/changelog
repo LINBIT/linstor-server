@@ -1,3 +1,33 @@
+linstor-server (1.20.3-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * devcepoolhandler: Fix typo in vdo slab size argument
+  * checkPeerSlotsForNewPeer: don't count diskless resources
+  * gitlab/virter: use latest virter/vmshed versions
+  * changelog: update
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * docker: use losetup-container shim
+
+  [ Gabor Hernadi ]
+  * Lvm,pvdisplay: Ignore DRBD devices
+  * Sp,d: Do not delete SPD unconditionally
+  * RscDfn,c: Prevent NPE shadowing other Exception
+  * StltConnTracker: Fix unnecessary "OtherController" messages
+  * VlmDfn,setSize: Add sizeCheck
+  * DrbdRscFlags: Fix resetting to rsc flags
+  * VlmDfn,setSize: Add sizeCheck for non-DRBD
+
+  [ Johanna Kucera ]
+  * CoreObjects: add hashCode and equals to all core objects
+  * Layers: refactoring *VlmData classes
+  * CoreObjects: introduced AbsCoreObject
+  * CoreObjects: make sure toStringImpl doesn't trigger checkDeleted
+  * TransactionMgr: add isDirty flag
+  * Rsc,delete: add delete hook
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 26 Jan 2023 08:39:17 +0000
+
 linstor-server (1.20.2-1) experimental; urgency=medium
 
   [ Johanna Kucera ]
