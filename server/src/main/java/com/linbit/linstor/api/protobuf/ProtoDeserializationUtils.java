@@ -8,6 +8,14 @@ import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
+import com.linbit.linstor.api.prop.BooleanProperty;
+import com.linbit.linstor.api.prop.BooleanTrueFalseProperty;
+import com.linbit.linstor.api.prop.LongProperty;
+import com.linbit.linstor.api.prop.NumericOrSymbolProperty;
+import com.linbit.linstor.api.prop.Property;
+import com.linbit.linstor.api.prop.RangeProperty;
+import com.linbit.linstor.api.prop.RegexProperty;
+import com.linbit.linstor.api.prop.StringProperty;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.objects.VolumeGroup;
@@ -15,6 +23,7 @@ import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo;
 import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo.ExternalTools;
 import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
+import com.linbit.linstor.proto.common.PropertyOuterClass;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
 import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
@@ -451,6 +460,72 @@ public class ProtoDeserializationUtils
         for (ReqFile proto : filesListRef)
         {
             ret.add(new RequestFilePojo(proto.getName(), proto.getOffset(), proto.getLength()));
+        }
+        return ret;
+    }
+
+    public static List<Property> parseProperties(
+        List<PropertyOuterClass.Property> propertiesListRef
+    )
+    {
+        List<Property> ret = new ArrayList<>();
+        for (PropertyOuterClass.Property protoProp : propertiesListRef)
+        {
+            final String name = protoProp.getName();
+            final String key = protoProp.getKey();
+            final boolean internal = protoProp.getInternal();
+            final String info = protoProp.getInfo();
+            final String unit = protoProp.getUnit();
+            final String dflt = protoProp.getDfltValue();
+            Property prop;
+            switch (protoProp.getPropType())
+            {
+                case BOOLEAN:
+                    prop = new BooleanProperty(name, key, internal, info, unit, dflt);
+                    break;
+                case BOOLEAN_TRUE_FALSE:
+                    prop = new BooleanTrueFalseProperty(name, key, internal, info, unit, dflt);
+                    break;
+                case LONG:
+                    prop = new LongProperty(name, key, internal, info, unit, dflt);
+                    break;
+                case NUMERIC:
+                    prop = new RangeProperty(
+                        name,
+                        key,
+                        protoProp.getMin(),
+                        protoProp.getMax(),
+                        internal,
+                        info,
+                        unit,
+                        dflt
+                    );
+                    break;
+                case NUMERIC_OR_SYMBOL:
+                    prop = new NumericOrSymbolProperty(
+                        name,
+                        key,
+                        protoProp.getMin(),
+                        protoProp.getMax(),
+                        protoProp.getRegex(),
+                        internal,
+                        info,
+                        unit,
+                        dflt
+                    );
+                    break;
+                case SYMBOL: // fall-through
+                case REGEX:
+                    prop = new RegexProperty(name, key, protoProp.getRegex(), internal, info, unit, dflt);
+                    break;
+                case STRING:
+                    prop = new StringProperty(name, key, internal, info, unit, dflt);
+                    break;
+                case UNRECOGNIZED: // fall-through
+                default:
+                    throw new ImplementationError("Unknown property type: " + protoProp.getPropType().name());
+            }
+            ret.add(prop);
         }
         return ret;
     }

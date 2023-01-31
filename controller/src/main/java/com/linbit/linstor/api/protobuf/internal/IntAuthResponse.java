@@ -4,6 +4,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallReactive;
+import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlAuthResponseApiCallHandler;
@@ -19,6 +20,7 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.List;
 
 import reactor.core.publisher.Flux;
@@ -79,6 +81,7 @@ public class IntAuthResponse implements ApiCallReactive
         final List<ExtToolsInfo> externalToolsInfoList;
         final String nodeUname;
         final StltConfig stltConfig;
+        final List<Property> dynamicPropList;
         if (success)
         {
             expectedFullSyncId = msgAuthResponse.getExpectedFullSyncId();
@@ -91,6 +94,7 @@ public class IntAuthResponse implements ApiCallReactive
                 false
             );
             stltConfig = msgAuthResponse.getStltConfig();
+            dynamicPropList = ProtoDeserializationUtils.parseProperties(msgAuthResponse.getPropertiesList());
         }
         else
         {
@@ -101,6 +105,7 @@ public class IntAuthResponse implements ApiCallReactive
             linstorVersionPatch = null;
             externalToolsInfoList = null;
             stltConfig = null;
+            dynamicPropList = Collections.emptyList();
         }
         return ctrlAuthResponseApiCallHandler.authResponse(
             peer,
@@ -113,6 +118,7 @@ public class IntAuthResponse implements ApiCallReactive
             linstorVersionPatch,
             externalToolsInfoList,
             stltConfig,
+            dynamicPropList,
             waitForFullSyncAnswer
         );
     }

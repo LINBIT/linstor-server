@@ -6,6 +6,7 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
@@ -39,6 +40,7 @@ public class CtrlAuth implements ApiCall
     private final Provider<Peer> controllerPeerProvider;
     private final ExtCmdFactory extCmdFactory;
     private final StltConfig stltConfig;
+    private final WhitelistProps whitelistProps;
 
     @Inject
     public CtrlAuth(
@@ -49,7 +51,8 @@ public class CtrlAuth implements ApiCall
         UpdateMonitor updateMonitorRef,
         Provider<Peer> controllerPeerProviderRef,
         ExtCmdFactory extCmdFactoryRef,
-        StltConfig stltConfigRef
+        StltConfig stltConfigRef,
+        WhitelistProps whitelistPropsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -60,6 +63,7 @@ public class CtrlAuth implements ApiCall
         controllerPeerProvider = controllerPeerProviderRef;
         extCmdFactory = extCmdFactoryRef;
         stltConfig = stltConfigRef;
+        whitelistProps = whitelistPropsRef;
     }
 
     @Override
@@ -113,7 +117,8 @@ public class CtrlAuth implements ApiCall
                     stltConfig.getDrbdKeepResPattern(),
                     stltConfig.getNetBindAddress(),
                     stltConfig.getNetPort(),
-                    stltConfig.getNetType()
+                    stltConfig.getNetType(),
+                    whitelistProps
                 )
                 .build();
         }

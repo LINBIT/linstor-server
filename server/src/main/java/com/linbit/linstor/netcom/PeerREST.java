@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.satellitestate.SatelliteState;
@@ -16,10 +17,10 @@ import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import org.reactivestreams.Publisher;
-
 import reactor.core.publisher.Flux;
 
 public class PeerREST implements Peer
@@ -368,6 +369,18 @@ public class PeerREST implements Peer
     @Override
     public void setStltConfig(StltConfig stltConfig)
     {
+    }
+
+    @Override
+    public void setDynamicProperties(List<Property> dynamicPropListRef)
+    {
+        // no-op
+    }
+
+    @Override
+    public Property getDynamicProperty(String keyRef)
+    {
+        return null;
     }
 
     @Override

@@ -197,12 +197,26 @@ public class CtrlRscDfnApiCallHelper
         return selected;
     }
 
-    private long getMaxDiscGran(List<Resource> rscsRef)
+    private long getMaxDiscGran(AccessContext accCtxRef, List<Resource> rscsRef) throws AccessDeniedException
     {
-        /*
-         * TODO instead of this constant we should query satellites of their individual max values and use
-         * the lowest max.
-         */
-        return DRBD_DISC_GRAN_MAX;
+        TreeSet<Long> maxDiscGrans = new TreeSet<>();
+        for (Resource rsc : rscsRef)
+        {
+            Property dynProp = rsc.getNode().getPeer(accCtxRef).getDynamicProperty(FULL_KEY_DISC_GRAN);
+            if (dynProp instanceof RangeProperty)
+            {
+                maxDiscGrans.add(((RangeProperty) dynProp).getMax());
+            }
+        }
+        long ret;
+        if (maxDiscGrans.isEmpty())
+        {
+            ret = DRBD_DISC_GRAN_MAX;
+        }
+        else
+        {
+            ret = maxDiscGrans.first();
+        }
+        return ret;
     }
 }

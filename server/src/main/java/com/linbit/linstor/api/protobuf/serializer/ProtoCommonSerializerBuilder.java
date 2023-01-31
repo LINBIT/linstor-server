@@ -31,6 +31,11 @@ import com.linbit.linstor.api.pojo.RequestFilePojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
+import com.linbit.linstor.api.prop.NumericOrSymbolProperty;
+import com.linbit.linstor.api.prop.Property;
+import com.linbit.linstor.api.prop.RangeProperty;
+import com.linbit.linstor.api.prop.RegexProperty;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
@@ -83,6 +88,8 @@ import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
 import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexRsc;
 import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexRscDfn;
 import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexVlm;
+import com.linbit.linstor.proto.common.PropertyOuterClass;
+import com.linbit.linstor.proto.common.PropertyOuterClass.Property.PropertyType;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.RscConnOuterClass;
 import com.linbit.linstor.proto.common.RscConnOuterClass.RscConn;
@@ -318,7 +325,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         Pattern drbdKeepResPatternPrm,
         String netBindAddress,
         Integer netPort,
-        String netType
+        String netType,
+        WhitelistProps whitelistProps
     )
     {
         try
@@ -357,6 +365,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     )
                 )
                 .setNodeUname(uname)
+                .addAllProperties(serializeDynamicProperties(whitelistProps))
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -400,6 +409,71 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return ret;
     }
 
+    private ArrayList<PropertyOuterClass.Property> serializeDynamicProperties(WhitelistProps whitelistPropsRef)
+    {
+        Map<String, Property> dynamicProps = whitelistPropsRef.getDynamicProps();
+        ArrayList<PropertyOuterClass.Property> protoProps = new ArrayList<>();
+        for (Property prop : dynamicProps.values())
+        {
+            PropertyOuterClass.Property.Builder builder = PropertyOuterClass.Property.newBuilder();
+            builder.setKey(prop.getKey());
+            builder.setName(prop.getName());
+            if (prop.getInfo() != null)
+            {
+                builder.setInfo(prop.getInfo());
+            }
+            builder.setInternal(prop.isInternal());
+            if (prop.getUnit() != null)
+            {
+                builder.setUnit(prop.getUnit());
+            }
+            if (prop.getDflt() != null)
+            {
+                builder.setDfltValue(prop.getDflt());
+            }
+            switch (prop.getType())
+            {
+                case BOOLEAN:
+                    builder.setPropType(PropertyType.BOOLEAN);
+                    break;
+                case BOOLEAN_TRUE_FALSE:
+                    builder.setPropType(PropertyType.BOOLEAN_TRUE_FALSE);
+                    break;
+                case STRING:
+                    builder.setPropType(PropertyType.STRING);
+                    break;
+                case LONG:
+                    builder.setPropType(PropertyType.LONG);
+                    break;
+                case NUMERIC_OR_SYMBOL:
+                    builder.setPropType(PropertyType.NUMERIC_OR_SYMBOL);
+                    NumericOrSymbolProperty numericSymbolProperty = (NumericOrSymbolProperty) prop;
+                    builder.setMax(numericSymbolProperty.getMax());
+                    builder.setMin(numericSymbolProperty.getMin());
+                    builder.setRegex(numericSymbolProperty.getValue());
+                    break;
+                case RANGE: // numeric
+                    builder.setPropType(PropertyType.NUMERIC);
+                    RangeProperty rangeProperty = (RangeProperty) prop;
+                    builder.setMax(rangeProperty.getMax());
+                    builder.setMin(rangeProperty.getMin());
+                    break;
+                case REGEX:
+                    builder.setPropType(PropertyType.REGEX);
+                    RegexProperty regexProperty = (RegexProperty) prop;
+                    builder.setRegex(regexProperty.getValue());
+                    break;
+                case SYMBOL:
+                    builder.setPropType(PropertyType.SYMBOL);
+                    RegexProperty symbolProperty = (RegexProperty) prop;
+                    builder.setRegex(symbolProperty.getValue());
+                    break;
+                default:
+                    throw new ImplementationError("Unknown property type: " + prop.getType());
+            }
+        }
+        return protoProps;
+    }
     @Override
     public CommonSerializer.CommonSerializerBuilder apiCallRcSeries(ApiCallRc apiCallRc)
     {

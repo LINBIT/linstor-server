@@ -3,6 +3,7 @@ package com.linbit.linstor.netcom;
 import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.api.protobuf.common.Ping;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.objects.Node;
@@ -15,6 +16,7 @@ import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
 import java.net.InetSocketAddress;
+import java.util.List;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import org.reactivestreams.Publisher;
@@ -393,4 +395,13 @@ public interface Peer
     StltConfig getStltConfig();
 
     void setStltConfig(StltConfig stltConfig);
+
+    void setDynamicProperties(List<Property> dynamicPropListRef);
+
+    /**
+     * Returns null if the given key has no registered dynamic property on the satellite.
+     * That might be the case for non Satellite-peer but also for Satellites that do not have
+     * DRBD installed
+     */
+    Property getDynamicProperty(String keyRef);
 }

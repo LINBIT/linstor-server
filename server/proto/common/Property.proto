@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.common;
+
+message Property
+{
+    enum PropertyType{
+        LONG = 0;                  // not used in DRBD xml help
+        NUMERIC = 1;               // also called RANGE prop
+        NUMERIC_OR_SYMBOL = 2;
+        BOOLEAN = 3;
+        BOOLEAN_TRUE_FALSE = 4;
+        STRING = 5;
+        REGEX = 6;                 // not used in DRBD xml help
+        SYMBOL = 7;                // not used in DRBD xml help, special kind of REGEX_PROP
+    }
+
+    string key = 1;
+    PropertyType prop_type = 2;
+
+    string name = 3;
+    string info = 4;
+    bool internal = 5;
+    string unit = 6;
+    string dflt_value = 7;
+
+    uint64 min = 8;     // used by NUMERIC and NUMERIC_OR_SYMBOL
+    uint64 max = 9;     // used by NUMERIC and NUMERIC_OR_SYMBOL
+    string regex = 10;  // used by REGEX, SYMBOL and NUMERIC_OR_SYMBOL
+}

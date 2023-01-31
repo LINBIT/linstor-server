@@ -245,6 +245,7 @@ public class WhitelistTest
                 true,
                 new ByteArrayInputStream(xmlBuilder.toString().getBytes()),
                 null,
+                false,
                 lsObj
             );
             return whitelistProps;

@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
@@ -85,6 +86,7 @@ public class CtrlAuthResponseApiCallHandler
         Integer linstorVersionPatch,
         List<ExtToolsInfo> externalToolsInfoList,
         StltConfig stltConfig,
+        List<Property> dynamicPropListRef,
         boolean waitForFullSyncAnswerRef
     )
     {
@@ -102,6 +104,7 @@ public class CtrlAuthResponseApiCallHandler
                 linstorVersionPatch,
                 externalToolsInfoList,
                 stltConfig,
+                dynamicPropListRef,
                 waitForFullSyncAnswerRef
             )
         );
@@ -118,6 +121,7 @@ public class CtrlAuthResponseApiCallHandler
         Integer linstorVersionPatch,
         List<ExtToolsInfo> externalToolsInfoList,
         StltConfig stltConfig,
+        List<Property> dynamicPropListRef,
         boolean waitForFullSyncAnswerRef
     )
     {
@@ -136,6 +140,7 @@ public class CtrlAuthResponseApiCallHandler
                 peer.setAuthenticated(true);
                 peer.setConnectionStatus(ApiConsts.ConnectionStatus.CONNECTED);
                 peer.getExtToolsManager().updateExternalToolsInfo(externalToolsInfoList);
+                peer.setDynamicProperties(dynamicPropListRef);
 
                 com.linbit.linstor.core.cfg.StltConfig stltCfg = new com.linbit.linstor.core.cfg.StltConfig();
                 stltCfg.setConfigDir(stltConfig.getConfigDir());

@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.pojo.FileInfoPojo;
 import com.linbit.linstor.api.pojo.FilePojo;
 import com.linbit.linstor.api.pojo.RequestFilePojo;
+import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -58,7 +59,8 @@ public interface CommonSerializer
             Pattern drbdKeepResPattern,
             String netBindAddress,
             Integer netPort,
-            String netType
+            String netType,
+            WhitelistProps whitelistProps
         );
 
         CommonSerializerBuilder bytes(byte[] bytes);

@@ -5,6 +5,7 @@ package com.linbit.linstor.proto.javainternal.s2c;
 import "common/ApiCallResponse.proto";
 import "common/LayerType.proto";
 import "common/ProviderType.proto";
+import "common/Property.proto";
 import "common/ExternalTools.proto";
 import "common/StltConfig.proto";
 
@@ -33,4 +34,6 @@ message MsgIntAuthResponse
 
     repeated common.ExternalToolsInfo ext_tools_info = 10;
     common.StltConfig stltConfig = 11;
+
+    repeated common.Property properties = 12;
 }

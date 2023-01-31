@@ -33,8 +33,9 @@ import org.xml.sax.SAXException;
 @Singleton
 public class WhitelistProps
 {
-    private ErrorReporter errorReporter;
-    private Map<LinStorObject, Map<String, Property>> rules;
+    private final ErrorReporter errorReporter;
+    private final Map<LinStorObject, Map<String, Property>> rules;
+    private final Map<String, Property> dynamicProps = new HashMap<>();
 
     @Inject
     public WhitelistProps(ErrorReporter errorReporterRef)
@@ -130,10 +131,23 @@ public class WhitelistProps
         }
     }
 
+    /**
+     * Merges the property rules found in the XML stream into the rules class member.
+     *
+     * @param overrideProp If false, property collisions will throw a LinStorRuntimeException.
+     *     Otherwise the property rule from the XML stream will silently override the existing rule in the class member
+     * @param xmlStream The XML stream to read the new rules from
+     * @param keyPrefix The namespace of the property.
+     * @param isDynamic if true all found properties from the given XML stream will be added in the dynamicProp class
+     *     member
+     * @param lsObjs The categories the new rule should be merged into.
+     *
+     */
     public void appendRules(
         boolean overrideProp,
         InputStream xmlStream,
         String keyPrefix,
+        boolean isDynamic,
         LinStorObject... lsObjs
     )
     {
@@ -213,6 +227,10 @@ public class WhitelistProps
                             }
                         }
                         propMap.put(prop.getKey(), prop);
+                        if (isDynamic)
+                        {
+                            dynamicProps.put(prop.getKey(), prop);
+                        }
                     }
                 }
             }
@@ -357,5 +375,15 @@ public class WhitelistProps
     private String getText(Element elem, String string)
     {
         return elem.getElementsByTagName(string).item(0).getTextContent();
+    }
+
+    public void clearDynamicProps()
+    {
+        dynamicProps.clear();
+    }
+
+    public Map<String, Property> getDynamicProps()
+    {
+        return new HashMap<>(dynamicProps);
     }
 }

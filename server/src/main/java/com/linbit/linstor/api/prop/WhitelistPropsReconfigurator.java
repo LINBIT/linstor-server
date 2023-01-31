@@ -9,21 +9,21 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.timer.CoreTimer;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.concurrent.locks.ReadWriteLock;
 
-import javax.inject.Inject;
-import javax.inject.Named;
-
 public class WhitelistPropsReconfigurator
 {
-    private ErrorReporter errLog;
-    private CoreTimer timer;
-    private ReadWriteLock reconfigurationLock;
+    private final ErrorReporter errLog;
+    private final CoreTimer timer;
+    private final ReadWriteLock reconfigurationLock;
 
-    private WhitelistProps whitelistProps;
-    private DrbdVersion drbdVersion;
+    private final WhitelistProps whitelistProps;
+    private final DrbdVersion drbdVersion;
 
     @Inject
     public WhitelistPropsReconfigurator(
@@ -78,30 +78,34 @@ public class WhitelistPropsReconfigurator
         OutputData netOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "new-peer");
         OutputData diskOptsData = resourceOptsExcCmd.exec("drbdsetup", "xml-help", "disk-options");
 
+        whitelistProps.clearDynamicProps();
         whitelistProps.appendRules(
             false, // override existing property
             new ByteArrayInputStream(rscOptsData.stdoutData),
             ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS,
+            true,
             LinStorObject.CONTROLLER
         );
         whitelistProps.appendRules(
             false, // override existing property
             new ByteArrayInputStream(peerDevOptsData.stdoutData),
             ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
+            true,
             LinStorObject.CONTROLLER
         );
         whitelistProps.appendRules(
             false, // override existing property
             new ByteArrayInputStream(netOptsData.stdoutData),
             ApiConsts.NAMESPC_DRBD_NET_OPTIONS,
+            true,
             LinStorObject.CONTROLLER
         );
         whitelistProps.appendRules(
             false, // override existing property
             new ByteArrayInputStream(diskOptsData.stdoutData),
             ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
+            true,
             LinStorObject.CONTROLLER
         );
     }
-
 }

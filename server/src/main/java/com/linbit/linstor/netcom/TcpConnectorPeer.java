@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.ServiceName;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -26,8 +27,10 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.Collections;
 import java.util.Deque;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
@@ -147,6 +150,8 @@ public class TcpConnectorPeer implements Peer
 
     private ExtToolsManager externalToolsManager = new ExtToolsManager();
     private StltConfig stltConfig = new StltConfig();
+
+    private final Map<String, Property> dynamicProperties = new HashMap<>();
 
     protected TcpConnectorPeer(
         ErrorReporter errorReporterRef,
@@ -1049,5 +1054,27 @@ public class TcpConnectorPeer implements Peer
     public void setStltConfig(StltConfig stltConfigRef)
     {
         stltConfig = stltConfigRef;
+    }
+
+    @Override
+    public void setDynamicProperties(List<Property> dynamicPropListRef)
+    {
+        synchronized (dynamicProperties)
+        {
+            dynamicProperties.clear();
+            for (Property prop : dynamicPropListRef)
+            {
+                dynamicProperties.put(prop.getKey(), prop);
+            }
+        }
+    }
+
+    @Override
+    public Property getDynamicProperty(String keyRef)
+    {
+        synchronized (dynamicProperties)
+        {
+            return dynamicProperties.get(keyRef);
+        }
     }
 }

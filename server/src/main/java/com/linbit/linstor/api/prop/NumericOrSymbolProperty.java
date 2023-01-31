@@ -69,4 +69,13 @@ public class NumericOrSymbolProperty extends GenericProperty implements Property
         return errorMsg;
     }
 
+    public long getMax()
+    {
+        return max;
+    }
+
+    public long getMin()
+    {
+        return min;
+    }
 }

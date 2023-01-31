@@ -21,6 +21,16 @@ public class RangeProperty extends GenericProperty implements Property
         max = maxRef;
     }
 
+    public long getMin()
+    {
+        return min;
+    }
+
+    public long getMax()
+    {
+        return max;
+    }
+
     @Override
     public String getValue()
     {
