@@ -6,19 +6,20 @@ package com.linbit.linstor.proto.common;
 message CacheRsc
 {
     required uint64         flags = 1;
-    repeated CacheVlm   vlms = 2;
+    repeated CacheVlm       vlms = 2;
 }
 
 message CacheVlm
 {
     required uint32         vlm_nr = 1;
-    optional string         device_path_data = 2;
-    optional string         device_path_cache = 3;
-    optional string         device_path_meta = 4;
-    optional int64          allocated_size = 5;
-    optional int64          usable_size = 6;
-    optional string         disk_state = 7;
-    optional string         cache_stor_pool_name = 8;
-    optional string         meta_stor_pool_name = 9;
+    optional string         device_path = 2;
+    optional string         data_device = 3;
+    optional string         cache_device = 4;
+    optional string         meta_device = 5;
+    optional int64          allocated_size = 6;
+    optional int64          usable_size = 7;
+    optional string         disk_state = 8;
+    optional string         cache_stor_pool_name = 9;
+    optional string         meta_stor_pool_name = 10;
 }
 

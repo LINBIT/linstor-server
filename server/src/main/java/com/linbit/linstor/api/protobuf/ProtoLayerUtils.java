@@ -518,7 +518,7 @@ public class ProtoLayerUtils
             protoLuksVlm.getVlmNr(),
             ProtoDeserializationUtils.extractByteArray(protoLuksVlm.getEncryptedPassword()),
             protoLuksVlm.getDevicePath(),
-            protoLuksVlm.getBackingDevice(),
+            protoLuksVlm.getDataDevice(),
             protoLuksVlm.getAllocatedSize(),
             protoLuksVlm.getUsableSize(),
             protoLuksVlm.getOpened(),
@@ -767,8 +767,9 @@ public class ProtoLayerUtils
     {
         return new WritecacheVlmPojo(
             protoVlm.getVlmNr(),
-            protoVlm.getDevicePathData(),
-            protoVlm.getDevicePathCache(),
+            protoVlm.getDevicePath(),
+            protoVlm.getDataDevice(),
+            protoVlm.getCacheDevice(),
             protoVlm.getCacheStorPoolName(),
             protoVlm.getAllocatedSize(),
             protoVlm.getUsableSize(),
@@ -780,9 +781,10 @@ public class ProtoLayerUtils
     {
         return new CacheVlmPojo(
             protoVlm.getVlmNr(),
-            protoVlm.getDevicePathData(),
-            protoVlm.getDevicePathCache(),
-            protoVlm.getDevicePathMeta(),
+            protoVlm.getDevicePath(),
+            protoVlm.getDataDevice(),
+            protoVlm.getCacheDevice(),
+            protoVlm.getMetaDevice(),
             protoVlm.getCacheStorPoolName(),
             protoVlm.getMetaStorPoolName(),
             protoVlm.getAllocatedSize(),
@@ -800,8 +802,9 @@ public class ProtoLayerUtils
         }
         return new BCacheVlmPojo(
             protoVlm.getVlmNr(),
-            protoVlm.getDevicePathData(),
-            protoVlm.getDevicePathCache(),
+            protoVlm.getDevicePath(),
+            protoVlm.getDataDevice(),
+            protoVlm.getCacheDevice(),
             protoVlm.getCacheStorPoolName(),
             protoVlm.getAllocatedSize(),
             protoVlm.getUsableSize(),

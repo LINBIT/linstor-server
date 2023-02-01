@@ -109,9 +109,11 @@ public class BCacheRscPojo implements RscLayerDataApi
     {
         private final int vlmNr;
         @JsonIgnore
-        private final String devicePathData;
+        private final String devicePath;
         @JsonIgnore
-        private final String devicePathCache;
+        private final String dataDevice;
+        @JsonIgnore
+        private final String cacheDevice;
         private final String cacheStorPoolName;
         @JsonIgnore
         private final long allocatedSize;
@@ -124,8 +126,9 @@ public class BCacheRscPojo implements RscLayerDataApi
 
         public BCacheVlmPojo(
             int vlmNrRef,
-            String devicePathDataRef,
-            String devicePathCacheRef,
+            String devicePathRef,
+            String dataDeviceRef,
+            String cacheDeviceRef,
             String cacheStorPoolNameRef,
             long allocatedSizeRef,
             long usableSizeRef,
@@ -135,8 +138,9 @@ public class BCacheRscPojo implements RscLayerDataApi
         {
             super();
             vlmNr = vlmNrRef;
-            devicePathData = devicePathDataRef;
-            devicePathCache = devicePathCacheRef;
+            devicePath = devicePathRef;
+            dataDevice = dataDeviceRef;
+            cacheDevice = cacheDeviceRef;
             cacheStorPoolName = cacheStorPoolNameRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
@@ -152,8 +156,9 @@ public class BCacheRscPojo implements RscLayerDataApi
         {
             super();
             vlmNr = vlmNrRef;
-            devicePathData = null;
-            devicePathCache = null;
+            devicePath = null;
+            dataDevice = null;
+            cacheDevice = null;
             cacheStorPoolName = cacheStorPoolNameRef;
             allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
             usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
@@ -182,12 +187,17 @@ public class BCacheRscPojo implements RscLayerDataApi
         @Override
         public String getDevicePath()
         {
-            return devicePathData;
+            return devicePath;
         }
 
-        public String getDevicePathCache()
+        public String getDataDevice()
         {
-            return devicePathCache;
+            return dataDevice;
+        }
+
+        public String getCacheDevice()
+        {
+            return cacheDevice;
         }
 
         public String getCacheStorPoolName()

@@ -255,7 +255,7 @@ public class BCacheLayer implements DeviceLayer
 
                     if (deleteFlagSet)
                     {
-                        wipeHandler.quickWipe(vlmData.getBackingDevice());
+                        wipeHandler.quickWipe(vlmData.getDataDevice());
                         wipeHandler.quickWipe(vlmData.getCacheDevice());
                         vlmData.setIdentifier(null);
                     }
@@ -339,7 +339,7 @@ public class BCacheLayer implements DeviceLayer
                         String backingDev = dataChild.getDevicePath();
                         String cacheDev = cacheChild.getDevicePath();
 
-                        vlmData.setBackingDevice(backingDev);
+                        vlmData.setDataDevice(backingDev);
                         vlmData.setCacheDevice(cacheDev);
 
                         ArrayList<String> options = getMakeBCacheOptions(prioProps);

@@ -235,7 +235,7 @@ public class LuksLayer implements DeviceLayer
 
                         if (deleteVlm)
                         {
-                            cryptSetup.deleteHeaders(vlmData.getBackingDevice());
+                            cryptSetup.deleteHeaders(vlmData.getDataDevice());
                         }
                         else
                         {
@@ -255,7 +255,7 @@ public class LuksLayer implements DeviceLayer
 
                         boolean isOpen = cryptSetup.isOpen(identifier);
 
-                        vlmData.setBackingDevice(vlmData.getSingleChild().getDevicePath());
+                        vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
 
                         boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
 
@@ -286,14 +286,14 @@ public class LuksLayer implements DeviceLayer
 
                     boolean isOpen = cryptSetup.isOpen(identifier);
 
-                    vlmData.setBackingDevice(vlmData.getSingleChild().getDevicePath());
+                    vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
 
                     boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
 
                     if (!alreadyLuks)
                     {
                         String providedDev = cryptSetup.createLuksDevice(
-                            vlmData.getBackingDevice(),
+                            vlmData.getDataDevice(),
                             vlmData.getDecryptedPassword(),
                             identifier
                         );
@@ -316,7 +316,7 @@ public class LuksLayer implements DeviceLayer
                     if (!isOpen)
                     {
                         cryptSetup.openLuksDevice(
-                            vlmData.getBackingDevice(),
+                            vlmData.getDataDevice(),
                             identifier,
                             vlmData.getDecryptedPassword()
                         );
@@ -331,7 +331,7 @@ public class LuksLayer implements DeviceLayer
                     vlmData.setAllocatedSize(
                         Commands.getBlockSizeInKib(
                             extCmdFactory.create(),
-                            vlmData.getBackingDevice()
+                            vlmData.getDataDevice()
                         )
                     );
                     vlmData.setUsableSize(

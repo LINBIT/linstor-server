@@ -106,11 +106,13 @@ public class CacheRscPojo implements RscLayerDataApi
     {
         private final int vlmNr;
         @JsonIgnore
-        private final String devicePathData;
+        private final String devicePath;
         @JsonIgnore
-        private final String devicePathCache;
+        private final String dataDevice;
         @JsonIgnore
-        private final String devicePathMeta;
+        private final String cacheDevice;
+        @JsonIgnore
+        private final String metaDevice;
         private final String cacheStorPoolName;
         private final String metaStorPoolName;
         @JsonIgnore
@@ -122,9 +124,10 @@ public class CacheRscPojo implements RscLayerDataApi
 
         public CacheVlmPojo(
             int vlmNrRef,
-            String devicePathDataRef,
-            String devicePathCacheRef,
-            String devicePathMetaRef,
+            String devicePathRef,
+            String dataDeviceRef,
+            String cacheDeviceRef,
+            String metaDeviceRef,
             String cacheStorPoolNameRef,
             String metaStorPoolNameRef,
             long allocatedSizeRef,
@@ -134,9 +137,10 @@ public class CacheRscPojo implements RscLayerDataApi
         {
             super();
             vlmNr = vlmNrRef;
-            devicePathData = devicePathDataRef;
-            devicePathCache = devicePathCacheRef;
-            devicePathMeta = devicePathMetaRef;
+            devicePath = devicePathRef;
+            dataDevice = dataDeviceRef;
+            cacheDevice = cacheDeviceRef;
+            metaDevice = metaDeviceRef;
             cacheStorPoolName = cacheStorPoolNameRef;
             metaStorPoolName = metaStorPoolNameRef;
             allocatedSize = allocatedSizeRef;
@@ -153,9 +157,10 @@ public class CacheRscPojo implements RscLayerDataApi
         {
             super();
             vlmNr = vlmNrRef;
-            devicePathData = null;
-            devicePathCache = null;
-            devicePathMeta = null;
+            devicePath = null;
+            dataDevice = null;
+            cacheDevice = null;
+            metaDevice = null;
             cacheStorPoolName = cacheStorPoolNameRef;
             metaStorPoolName = metaStorPoolNameRef;
             allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
@@ -184,17 +189,22 @@ public class CacheRscPojo implements RscLayerDataApi
         @Override
         public String getDevicePath()
         {
-            return devicePathData;
+            return devicePath;
         }
 
-        public String getDevicePathCache()
+        public String getDataDevice()
         {
-            return devicePathCache;
+            return dataDevice;
         }
 
-        public String getDevicePathMeta()
+        public String getCacheDevice()
         {
-            return devicePathMeta;
+            return cacheDevice;
+        }
+
+        public String getMetaDevice()
+        {
+            return metaDevice;
         }
 
         public String getCacheStorPoolName()

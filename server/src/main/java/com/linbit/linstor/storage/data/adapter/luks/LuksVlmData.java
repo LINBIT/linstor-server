@@ -30,7 +30,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     // persisted, serialized, ctrl and stlt
     private final TransactionSimpleObject<LuksVlmData<?>, byte[]> encryptedPassword;
 
-    private String backingDevice;
+    private String dataDevice;
     private String diskState;
 
     // not persisted, not serialized, stlt only
@@ -118,14 +118,14 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getBackingDevice()
+    public String getDataDevice()
     {
-        return backingDevice;
+        return dataDevice;
     }
 
-    public void setBackingDevice(String backingDeviceRef)
+    public void setDataDevice(String dataDeviceRef)
     {
-        backingDevice = backingDeviceRef;
+        dataDevice = dataDeviceRef;
     }
 
     @Override
@@ -206,7 +206,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
             getVlmNr().value,
             encryptedPassword.get(),
             devicePath.get(),
-            backingDevice,
+            dataDevice,
             allocatedSize.get(),
             usableSize.get(),
             opened,

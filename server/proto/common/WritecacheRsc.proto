@@ -12,11 +12,12 @@ message WritecacheRsc
 message WritecacheVlm
 {
     required uint32         vlm_nr = 1;
-    optional string         device_path_data = 2;
-    optional string         device_path_cache = 3;
-    optional int64          allocated_size = 4;
-    optional int64          usable_size = 5;
-    optional string         disk_state = 6;
-    optional string         cache_stor_pool_name = 7;
+    optional string         device_path = 2;
+    optional string         data_device = 3;
+    optional string         cache_device = 4;
+    optional int64          allocated_size = 5;
+    optional int64          usable_size = 6;
+    optional string         disk_state = 7;
+    optional string         cache_stor_pool_name = 8;
 }
 

@@ -38,13 +38,13 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
 
     // not persisted, serialized, ctrl and stlt
     private @Nullable String cacheDevice;
-    private String backingDevice;
-    private String diskState;
+    private @Nullable String dataDevice;
+    private @Nullable String diskState;
 
     // not persisted, not serialized, stlt only
-    private String identifier;
+    private @Nullable String identifier;
     private List<? extends State> unmodStates;
-    private Size sizeState;
+    private @Nullable Size sizeState;
 
     public BCacheVlmData(
         AbsVolume<RSC> vlmRef,
@@ -118,14 +118,14 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getBackingDevice()
+    public String getDataDevice()
     {
-        return backingDevice;
+        return dataDevice;
     }
 
-    public void setBackingDevice(String backingDeviceRef)
+    public void setDataDevice(String dataDeviceRef)
     {
-        backingDevice = backingDeviceRef;
+        dataDevice = dataDeviceRef;
     }
 
     public String getCacheDevice()
@@ -192,6 +192,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
         return new BCacheVlmPojo(
             getVlmNr().value,
             devicePath.get(),
+            dataDevice,
             cacheDevice,
             cacheStorPool == null ? null : cacheStorPool.getName().displayValue,
             allocatedSize.get(),

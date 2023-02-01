@@ -1707,13 +1707,13 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 builder.setDevicePath(drbdVlmPojo.getDevicePath());
             }
-            if (drbdVlmPojo.getBackingDisk() != null)
+            if (drbdVlmPojo.getDataDevice() != null)
             {
-                builder.setBackingDevice(drbdVlmPojo.getBackingDisk());
+                builder.setBackingDevice(drbdVlmPojo.getDataDevice());
             }
-            if (drbdVlmPojo.getMetaDisk() != null)
+            if (drbdVlmPojo.getMetaDevice() != null)
             {
-                builder.setMetaDisk(drbdVlmPojo.getMetaDisk());
+                builder.setMetaDisk(drbdVlmPojo.getMetaDevice());
             }
             if (drbdVlmPojo.getDiskState() != null)
             {
@@ -1788,9 +1788,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 builder.setDevicePath(luksVlmPojo.getDevicePath());
             }
-            if (luksVlmPojo.getBackingDevice() != null)
+            if (luksVlmPojo.getDataDevice() != null)
             {
-                builder.setBackingDevice(luksVlmPojo.getBackingDevice());
+                builder.setDataDevice(luksVlmPojo.getDataDevice());
             }
             if (luksVlmPojo.getDiskState() != null)
             {
@@ -2012,11 +2012,15 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setUsableSize(vlmPojo.getUsableSize());
             if (vlmPojo.getDevicePath() != null)
             {
-                protoVlmBuilder.setDevicePathData(vlmPojo.getDevicePath());
+                protoVlmBuilder.setDevicePath(vlmPojo.getDevicePath());
             }
-            if (vlmPojo.getDevicePathCache() != null)
+            if (vlmPojo.getDataDevice() != null)
             {
-                protoVlmBuilder.setDevicePathCache(vlmPojo.getDevicePathCache());
+                protoVlmBuilder.setDataDevice(vlmPojo.getDataDevice());
+            }
+            if (vlmPojo.getCacheDevice() != null)
+            {
+                protoVlmBuilder.setCacheDevice(vlmPojo.getCacheDevice());
             }
             if (vlmPojo.getDiskState() != null)
             {
@@ -2038,15 +2042,19 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setUsableSize(vlmPojo.getUsableSize());
             if (vlmPojo.getDevicePath() != null)
             {
-                protoVlmBuilder.setDevicePathData(vlmPojo.getDevicePath());
+                protoVlmBuilder.setDevicePath(vlmPojo.getDevicePath());
             }
-            if (vlmPojo.getDevicePathCache() != null)
+            if (vlmPojo.getDataDevice() != null)
             {
-                protoVlmBuilder.setDevicePathCache(vlmPojo.getDevicePathCache());
+                protoVlmBuilder.setDataDevice(vlmPojo.getDataDevice());
             }
-            if (vlmPojo.getDevicePathMeta() != null)
+            if (vlmPojo.getCacheDevice() != null)
             {
-                protoVlmBuilder.setDevicePathMeta(vlmPojo.getDevicePathMeta());
+                protoVlmBuilder.setCacheDevice(vlmPojo.getCacheDevice());
+            }
+            if (vlmPojo.getMetaDevice() != null)
+            {
+                protoVlmBuilder.setMetaDevice(vlmPojo.getMetaDevice());
             }
             if (vlmPojo.getDiskState() != null)
             {
@@ -2072,11 +2080,15 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setUsableSize(vlmPojo.getUsableSize());
             if (vlmPojo.getDevicePath() != null)
             {
-                protoVlmBuilder.setDevicePathData(vlmPojo.getDevicePath());
+                protoVlmBuilder.setDevicePath(vlmPojo.getDevicePath());
             }
-            if (vlmPojo.getDevicePathCache() != null)
+            if (vlmPojo.getDataDevice() != null)
             {
-                protoVlmBuilder.setDevicePathCache(vlmPojo.getDevicePathCache());
+                protoVlmBuilder.setDataDevice(vlmPojo.getDataDevice());
+            }
+            if (vlmPojo.getCacheDevice() != null)
+            {
+                protoVlmBuilder.setCacheDevice(vlmPojo.getCacheDevice());
             }
             if (vlmPojo.getDiskState() != null)
             {

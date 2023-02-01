@@ -142,7 +142,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public String getBackingDevice()
+    public String getDataDevice()
     {
         VlmProviderObject<RSC> childBySuffix = getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
         String bdDevPath = null;
@@ -238,7 +238,7 @@ public class DrbdVlmData<RSC extends AbsResource<RSC>>
         return new DrbdVlmPojo(
             vlmDfnData.getApiData(accCtxRef),
             devicePath.get(),
-            getBackingDevice(),
+            getDataDevice(),
             externalMetaDataStorPoolName,
             getMetaDiskPath(),
             allocatedSize.get(),

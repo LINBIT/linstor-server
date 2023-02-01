@@ -800,7 +800,7 @@ public class NvmeUtils
         );
         if (!Files.exists(namespacePath))
         {
-            byte[] backingDevice = nvmeVlmData.getBackingDevice().getBytes();
+            byte[] backingDevice = nvmeVlmData.getDataDevice().getBytes();
             errorReporter.logDebug("NVMe: creating namespace: " + namespacePath.getFileName());
             Files.createDirectories(namespacePath);
             errorReporter.logDebug("NVMe: exposing device: " + new String(backingDevice));

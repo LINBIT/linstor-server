@@ -767,7 +767,7 @@ public class ConfFileBuilder
         if (((Volume) vlmData.getVolume()).getFlags().isUnset(localAccCtx, Volume.Flags.DELETE))
         {
             final String disk;
-            if ((!isPeerRsc && vlmData.getBackingDevice() == null) ||
+            if ((!isPeerRsc && vlmData.getDataDevice() == null) ||
                 (isPeerRsc &&
                 // FIXME: vlmData.getRscLayerObject().getFlags should be used here
                      vlmData.getVolume().getAbsResource().disklessForDrbdPeers(accCtx)
@@ -784,7 +784,7 @@ public class ConfFileBuilder
             {
                 if (!isPeerRsc)
                 {
-                    String backingDiskPath = vlmData.getBackingDevice();
+                    String backingDiskPath = vlmData.getDataDevice();
                     if (backingDiskPath.trim().isEmpty())
                     {
                         throw new LinStorRuntimeException(

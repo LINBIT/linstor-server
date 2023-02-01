@@ -144,7 +144,7 @@ public class NvmeVlmData<RSC extends AbsResource<RSC>>
         return new NvmeVlmPojo(
             getVlmNr().getValue(),
             devicePath.get(),
-            getBackingDevice(),
+            getDataDevice(),
             allocatedSize.get(),
             usableSize.get(),
             diskState

@@ -31,15 +31,14 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
     private final StorPool cacheStorPool;
 
     // not persisted, serialized, ctrl and stlt
-    private @Nullable String devicePathData;
-    private @Nullable String devicePathCache;
-    private String backingDevice;
-    private String diskState;
+    private @Nullable String diskState;
+    private @Nullable String cacheDevice;
+    private @Nullable String dataDevice;
 
     // not persisted, not serialized, stlt only
-    private String identifier;
+    private @Nullable String identifier;
     private List<? extends State> unmodStates;
-    private Size sizeState;
+    private @Nullable Size sizeState;
 
     public WritecacheVlmData(
         AbsVolume<RSC> vlmRef,
@@ -108,24 +107,25 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
         return usableSize.get();
     }
 
-    public String getBackingDevicePath()
+    @Override
+    public String getDataDevice()
     {
-        return backingDevice;
+        return dataDevice;
     }
 
-    public void setBackingDevice(String backingDeviceRef)
+    public void setDataDevice(String dataDeviceRef)
     {
-        backingDevice = backingDeviceRef;
+        dataDevice = dataDeviceRef;
     }
 
-    public String getCacheDevicePath()
+    public String getCacheDevice()
     {
-        return devicePathCache;
+        return cacheDevice;
     }
 
-    public void setCacheDevice(String devicePathCacheRef)
+    public void setCacheDevice(String cacheDeviceRef)
     {
-        devicePathCache = devicePathCacheRef;
+        cacheDevice = cacheDeviceRef;
     }
 
     @Override
@@ -171,8 +171,9 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
     {
         return new WritecacheVlmPojo(
             getVlmNr().value,
-            devicePathData,
-            devicePathCache,
+            devicePath.get(),
+            dataDevice,
+            cacheDevice,
             cacheStorPool == null ? null : cacheStorPool.getName().displayValue,
             allocatedSize.get(),
             usableSize.get(),

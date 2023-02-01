@@ -24,7 +24,7 @@ import java.util.List;
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  *
  * Main difference between this interface and {@link VlmLayerObject} is that
- * this interface does not have {@link VlmLayerObject#getBackingDevice()} and
+ * this interface does not have {@link VlmLayerObject#getDataDevice()} and
  * {@link LayerObject#getChildren()} methods
  */
 public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerObject

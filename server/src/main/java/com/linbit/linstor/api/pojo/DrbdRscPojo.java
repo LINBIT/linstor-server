@@ -292,10 +292,10 @@ public class DrbdRscPojo implements RscLayerDataApi
         @JsonIgnore
         private final String devicePath;
         @JsonIgnore
-        private final String backingDisk;
+        private final String dataDevice;
         private final String externalMetaDataStorPool;
         @JsonIgnore
-        private final String metaDisk;
+        private final String metaDevice;
         @JsonIgnore
         private final long allocatedSize;
         @JsonIgnore
@@ -306,9 +306,9 @@ public class DrbdRscPojo implements RscLayerDataApi
         public DrbdVlmPojo(
             DrbdVlmDfnPojo drbdVlmDfnRef,
             String devicePathRef,
-            String backingDiskRef,
+            String dataDiskRef,
             String externalMetaDataStorPoolRef,
-            String metaDiskRef,
+            String metaDeviceRef,
             long allocatedSizeRef,
             long usableSizeRef,
             String diskStateRef
@@ -316,9 +316,9 @@ public class DrbdRscPojo implements RscLayerDataApi
         {
             drbdVlmDfn = drbdVlmDfnRef;
             devicePath = devicePathRef;
-            backingDisk = backingDiskRef;
+            dataDevice = dataDiskRef;
             externalMetaDataStorPool = externalMetaDataStorPoolRef;
-            metaDisk = metaDiskRef;
+            metaDevice = metaDeviceRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
             diskState = diskStateRef;
@@ -333,9 +333,9 @@ public class DrbdRscPojo implements RscLayerDataApi
         {
             drbdVlmDfn = drbdVlmDfnRef;
             devicePath = null;
-            backingDisk = null;
+            dataDevice = null;
             externalMetaDataStorPool = externalMetaDataStorPoolRef;
-            metaDisk = null;
+            metaDevice = null;
             allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
             usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
             diskState = null;
@@ -352,9 +352,9 @@ public class DrbdRscPojo implements RscLayerDataApi
             return devicePath;
         }
 
-        public String getBackingDisk()
+        public String getDataDevice()
         {
-            return backingDisk;
+            return dataDevice;
         }
 
         public String getExternalMetaDataStorPool()
@@ -362,9 +362,9 @@ public class DrbdRscPojo implements RscLayerDataApi
             return externalMetaDataStorPool;
         }
 
-        public String getMetaDisk()
+        public String getMetaDevice()
         {
-            return metaDisk;
+            return metaDevice;
         }
 
         @Override

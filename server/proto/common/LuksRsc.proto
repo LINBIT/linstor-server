@@ -13,7 +13,7 @@ message LuksVlm
     required uint32         vlm_nr = 1;
     required bytes          encrypted_password = 2;
     optional string         device_path = 3;
-    optional string         backing_device = 4;
+    optional string         data_device = 4;
     optional int64          allocated_size = 5;
     optional int64          usable_size = 6;
     optional bool           opened = 7;

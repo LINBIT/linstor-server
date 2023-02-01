@@ -32,16 +32,15 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
     private final StorPool cacheStorPool;
 
     // not persisted, serialized, ctrl and stlt
-    private @Nullable String devicePathData;
-    private @Nullable String devicePathCache;
-    private @Nullable String devicePathMeta;
-    private String backingDevice;
-    private String diskState;
+    private @Nullable String diskState;
+    private @Nullable String dataDevice;
+    private @Nullable String cacheDevice;
+    private @Nullable String metaDevice;
 
     // not persisted, not serialized, stlt only
-    private String identifier;
+    private @Nullable String identifier;
     private List<? extends State> unmodStates;
-    private Size sizeState;
+    private @Nullable Size sizeState;
 
     public CacheVlmData(
         AbsVolume<RSC> vlmRef,
@@ -112,34 +111,35 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
         return usableSize.get();
     }
 
-    public String getBackingDevicePath()
+    @Override
+    public String getDataDevice()
     {
-        return backingDevice;
+        return dataDevice;
     }
 
-    public void setBackingDevice(String backingDeviceRef)
+    public void setDataDevice(String dataDeviceRef)
     {
-        backingDevice = backingDeviceRef;
+        dataDevice = dataDeviceRef;
     }
 
-    public String getCacheDevicePath()
+    public String getCacheDevice()
     {
-        return devicePathCache;
+        return cacheDevice;
     }
 
-    public void setCacheDevice(String devicePathMetaRef)
+    public void setCacheDevice(String cacheDeviceRef)
     {
-        devicePathCache = devicePathMetaRef;
+        cacheDevice = cacheDeviceRef;
     }
 
-    public String getMetaDevicePath()
+    public String getMetaDevice()
     {
-        return devicePathMeta;
+        return metaDevice;
     }
 
-    public void setMetaDevice(String devicePathMetaRef)
+    public void setMetaDevice(String metaDeviceRef)
     {
-        devicePathMeta = devicePathMetaRef;
+        metaDevice = metaDeviceRef;
     }
 
     @Override
@@ -190,9 +190,10 @@ public class CacheVlmData<RSC extends AbsResource<RSC>>
     {
         return new CacheVlmPojo(
             getVlmNr().value,
-            devicePathData,
-            devicePathCache,
-            devicePathMeta,
+            devicePath.get(),
+            dataDevice,
+            cacheDevice,
+            metaDevice,
             cacheStorPool == null ? null : cacheStorPool.getName().displayValue,
             metaStorPool == null ? null : metaStorPool.getName().displayValue,
             allocatedSize.get(),

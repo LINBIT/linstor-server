@@ -671,8 +671,8 @@ public class Json
         JsonGenTypes.DrbdVolume drbdVolume = new JsonGenTypes.DrbdVolume();
         drbdVolume.drbd_volume_definition = pojoToDrbdVolumeDefinition(drbdVlmPojo.getDrbdVlmDfn());
         drbdVolume.device_path = drbdVlmPojo.getDevicePath();
-        drbdVolume.backing_device = drbdVlmPojo.getBackingDisk();
-        drbdVolume.meta_disk = drbdVlmPojo.getMetaDisk();
+        drbdVolume.backing_device = drbdVlmPojo.getDataDevice();
+        drbdVolume.meta_disk = drbdVlmPojo.getMetaDevice();
         drbdVolume.allocated_size_kib = drbdVlmPojo.getAllocatedSize();
         drbdVolume.usable_size_kib = drbdVlmPojo.getUsableSize();
         drbdVolume.disk_state = drbdVlmPojo.getDiskState();
@@ -687,7 +687,7 @@ public class Json
         JsonGenTypes.LUKSVolume luksVolume = new JsonGenTypes.LUKSVolume();
         luksVolume.volume_number = luksVlmPojo.getVlmNr();
         luksVolume.device_path = luksVlmPojo.getDevicePath();
-        luksVolume.backing_device = luksVlmPojo.getBackingDevice();
+        luksVolume.backing_device = luksVlmPojo.getDataDevice();
         luksVolume.allocated_size_kib = luksVlmPojo.getAllocatedSize();
         luksVolume.usable_size_kib = luksVlmPojo.getUsableSize();
         luksVolume.opened = luksVlmPojo.isOpen();
@@ -729,7 +729,7 @@ public class Json
         JsonGenTypes.WritecacheVolume writecacheVolume = new JsonGenTypes.WritecacheVolume();
         writecacheVolume.volume_number = writecacheVlmPojo.getVlmNr();
         writecacheVolume.device_path = writecacheVlmPojo.getDevicePath();
-        writecacheVolume.device_path_cache = writecacheVlmPojo.getDevicePathCache();
+        writecacheVolume.device_path_cache = writecacheVlmPojo.getCacheDevice();
         writecacheVolume.allocated_size_kib = writecacheVlmPojo.getAllocatedSize();
         writecacheVolume.usable_size_kib = writecacheVlmPojo.getUsableSize();
         writecacheVolume.disk_state = writecacheVlmPojo.getDiskState();
@@ -743,7 +743,7 @@ public class Json
         JsonGenTypes.CacheVolume cacheVolume = new JsonGenTypes.CacheVolume();
         cacheVolume.volume_number = cacheVlmPojo.getVlmNr();
         cacheVolume.device_path = cacheVlmPojo.getDevicePath();
-        cacheVolume.device_path_cache = cacheVlmPojo.getDevicePathCache();
+        cacheVolume.device_path_cache = cacheVlmPojo.getCacheDevice();
         cacheVolume.allocated_size_kib = cacheVlmPojo.getAllocatedSize();
         cacheVolume.usable_size_kib = cacheVlmPojo.getUsableSize();
         cacheVolume.disk_state = cacheVlmPojo.getDiskState();
@@ -757,7 +757,7 @@ public class Json
         JsonGenTypes.BCacheVolume cacheVolume = new JsonGenTypes.BCacheVolume();
         cacheVolume.volume_number = bcacheVlmPojo.getVlmNr();
         cacheVolume.device_path = bcacheVlmPojo.getDevicePath();
-        cacheVolume.device_path_cache = bcacheVlmPojo.getDevicePathCache();
+        cacheVolume.device_path_cache = bcacheVlmPojo.getCacheDevice();
         cacheVolume.allocated_size_kib = bcacheVlmPojo.getAllocatedSize();
         cacheVolume.usable_size_kib = bcacheVlmPojo.getUsableSize();
         cacheVolume.disk_state = bcacheVlmPojo.getDiskState();

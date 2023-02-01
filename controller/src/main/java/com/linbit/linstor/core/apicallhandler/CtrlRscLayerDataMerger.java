@@ -213,7 +213,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
             vlmRef.getVolumeDefinition().getVolumeNumber()
         );
         luksVlmData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
-        luksVlmData.setBackingDevice(vlmPojoRef.getBackingDevice());
+        luksVlmData.setDataDevice(vlmPojoRef.getDataDevice());
         luksVlmData.setDevicePath(vlmPojoRef.getDevicePath());
         luksVlmData.setOpened(vlmPojoRef.isOpen());
         luksVlmData.setDiskState(vlmPojoRef.getDiskState());
@@ -568,7 +568,8 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     {
         writecacheVlmDataRef.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         writecacheVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
-        writecacheVlmDataRef.setCacheDevice(vlmPojoRef.getDevicePathCache());
+        writecacheVlmDataRef.setDataDevice(vlmPojoRef.getDataDevice());
+        writecacheVlmDataRef.setCacheDevice(vlmPojoRef.getCacheDevice());
         writecacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         writecacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
     }
@@ -619,8 +620,9 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     {
         cacheVlmDataRef.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         cacheVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
-        cacheVlmDataRef.setCacheDevice(vlmPojoRef.getDevicePathCache());
-        cacheVlmDataRef.setMetaDevice(vlmPojoRef.getDevicePathMeta());
+        cacheVlmDataRef.setDataDevice(vlmPojoRef.getDataDevice());
+        cacheVlmDataRef.setCacheDevice(vlmPojoRef.getCacheDevice());
+        cacheVlmDataRef.setMetaDevice(vlmPojoRef.getMetaDevice());
         cacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         cacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
     }
@@ -670,7 +672,8 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     {
         bcacheVlmDataRef.setAllocatedSize(vlmPojoRef.getAllocatedSize());
         bcacheVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
-        bcacheVlmDataRef.setCacheDevice(vlmPojoRef.getDevicePathCache());
+        bcacheVlmDataRef.setDataDevice(vlmPojoRef.getDataDevice());
+        bcacheVlmDataRef.setCacheDevice(vlmPojoRef.getCacheDevice());
         bcacheVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
         bcacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
         bcacheVlmDataRef.setDeviceUuid(vlmPojoRef.getDeviceUuid());

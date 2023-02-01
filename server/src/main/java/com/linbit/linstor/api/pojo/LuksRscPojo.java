@@ -108,7 +108,7 @@ public class LuksRscPojo implements RscLayerDataApi
         @JsonIgnore
         private final String devicePath;
         @JsonIgnore
-        private final String backingDevice;
+        private final String dataDevice;
         @JsonIgnore
         private final long allocatedSize;
         @JsonIgnore
@@ -122,7 +122,7 @@ public class LuksRscPojo implements RscLayerDataApi
             int vlmNrRef,
             byte[] encryptedPasswordRef,
             String devicePathRef,
-            String backingDeviceRef,
+            String dataDeviceRef,
             long allocatedSizeRef,
             long usableSizeRef,
             boolean isOpenRef,
@@ -132,7 +132,7 @@ public class LuksRscPojo implements RscLayerDataApi
             vlmNr = vlmNrRef;
             encryptedPassword = encryptedPasswordRef;
             devicePath = devicePathRef;
-            backingDevice = backingDeviceRef;
+            dataDevice = dataDeviceRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
             open = isOpenRef;
@@ -148,7 +148,7 @@ public class LuksRscPojo implements RscLayerDataApi
             vlmNr = vlmNrRef;
             encryptedPassword = encryptedPasswordRef;
             devicePath = null;
-            backingDevice = null;
+            dataDevice = null;
             allocatedSize = VlmProviderObject.UNINITIALIZED_SIZE;
             usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
             open = false;
@@ -172,9 +172,9 @@ public class LuksRscPojo implements RscLayerDataApi
             return devicePath;
         }
 
-        public String getBackingDevice()
+        public String getDataDevice()
         {
-            return backingDevice;
+            return dataDevice;
         }
 
         @Override

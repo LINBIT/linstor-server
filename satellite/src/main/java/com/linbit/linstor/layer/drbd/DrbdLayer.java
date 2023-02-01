@@ -1106,7 +1106,7 @@ public class DrbdLayer implements DeviceLayer
         if (!externalMd)
         {
             // internal meta data
-            metaDiskPath = drbdVlmData.getBackingDevice();
+            metaDiskPath = drbdVlmData.getDataDevice();
         }
 
         MdSuperblockBuffer mdUtils = new MdSuperblockBuffer();
@@ -1232,7 +1232,7 @@ public class DrbdLayer implements DeviceLayer
                 if (metaDiskPath == null)
                 {
                     // internal metadata
-                    metaDiskPath = drbdVlmData.getBackingDevice();
+                    metaDiskPath = drbdVlmData.getDataDevice();
                     internal = true;
                 }
                 drbdUtils.setGi(
@@ -1766,7 +1766,7 @@ public class DrbdLayer implements DeviceLayer
                     if (!externalMd)
                     {
                         // internal meta data
-                        metaDiskPath = drbdVlmData.getBackingDevice();
+                        metaDiskPath = drbdVlmData.getDataDevice();
                     }
                     allGisFromMetaData = drbdUtils.getCurrentGID(
                         metaDiskPath,

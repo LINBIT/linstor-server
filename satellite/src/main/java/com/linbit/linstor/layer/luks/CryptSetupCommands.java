@@ -233,7 +233,7 @@ public class CryptSetupCommands implements Luks
         ExtCmd extCmd = extCmdFactory.create();
         try
         {
-            OutputData outputData = extCmd.exec(CRYPTSETUP, "isLuks", vlmData.getBackingDevice());
+            OutputData outputData = extCmd.exec(CRYPTSETUP, "isLuks", vlmData.getDataDevice());
 
             hasLuks = outputData.exitCode == 0;
         }

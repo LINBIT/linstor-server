@@ -15,7 +15,7 @@ public interface VlmLayerObject<RSC extends AbsResource<RSC>>
         return getRscLayerObject().getRscLayerId();
     }
 
-    default String getBackingDevice()
+    default String getDataDevice()
     {
         return getSingleChild().getDevicePath();
     }
