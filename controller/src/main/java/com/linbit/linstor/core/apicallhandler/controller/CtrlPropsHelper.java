@@ -38,6 +38,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -438,19 +439,17 @@ public class CtrlPropsHelper
         long failAccDeniedRc
     )
     {
-        return fillProperties(apiCallRc, linstorObj, sourceProps, targetProps, failAccDeniedRc, new ArrayList<>());
+        return fillProperties(
+            apiCallRc,
+            linstorObj,
+            sourceProps,
+            targetProps,
+            failAccDeniedRc,
+            new ArrayList<>(),
+            new HashMap<>()
+        );
     }
 
-    /**
-     *
-     * @param apiCallRc For success/error messages
-     * @param linstorObj What type of linstor obj the props should be checked(whitelist)
-     * @param sourceProps Props to set
-     * @param targetProps Current property container
-     * @param failAccDeniedRc mask code of denied rc
-     * @param ignoredKeys keys to ignore for whitelistcheck
-     * @return true if properties were changed, otherwise false (e.g. setting the same value)
-     */
     public boolean fillProperties(
         ApiCallRcImpl apiCallRc,
         LinStorObject linstorObj,
@@ -460,14 +459,48 @@ public class CtrlPropsHelper
         List<String> ignoredKeysRef
     )
     {
+        return fillProperties(
+            apiCallRc,
+            linstorObj,
+            sourceProps,
+            targetProps,
+            failAccDeniedRc,
+            ignoredKeysRef,
+            new HashMap<>()
+        );
+    }
+
+    /**
+     *
+     * @param apiCallRc For success/error messages
+     * @param linstorObj What type of linstor obj the props should be checked(whitelist)
+     * @param sourceProps Props to set
+     * @param targetProps Current property container
+     * @param failAccDeniedRc mask code of denied rc
+     * @param propsChangedListenersRef
+     * @param ignoredKeys keys to ignore for whitelistcheck
+     *
+     * @return true if properties were changed, otherwise false (e.g. setting the same value)
+     */
+    public boolean fillProperties(
+        ApiCallRcImpl apiCallRc,
+        LinStorObject linstorObj,
+        Map<String, String> sourceProps,
+        Props targetProps,
+        long failAccDeniedRc,
+        List<String> ignoredKeysRef,
+        Map<String, PropertyChangedListener> propsChangedListenersRef
+    )
+    {
         boolean propsModified = false;
+        ArrayList<String> ignoredKeys = new ArrayList<>(ignoredKeysRef);
+        ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
+
         for (Map.Entry<String, String> entry : sourceProps.entrySet())
         {
             String key = entry.getKey();
             String value = entry.getValue();
 
-            ArrayList<String> ignoredKeys = new ArrayList<>(ignoredKeysRef);
-            ignoredKeys.add(ApiConsts.NAMESPC_AUXILIARY + "/");
             boolean isPropAllowed = propsWhiteList.isAllowed(linstorObj, ignoredKeys, key, value, true);
             if (isPropAllowed)
             {
@@ -478,6 +511,11 @@ public class CtrlPropsHelper
                     if (!normalized.equals(oldVal))
                     {
                         propsModified = true;
+                    }
+                    PropertyChangedListener listener = propsChangedListenersRef.get(key);
+                    if (listener != null)
+                    {
+                        listener.changed(key, normalized, oldVal);
                     }
                 }
                 catch (AccessDeniedException exc)
@@ -581,17 +619,50 @@ public class CtrlPropsHelper
     )
         throws InvalidKeyException, AccessDeniedException, DatabaseException
     {
-        return remove(apiCallRc, linstorObj, props, deletePropKeys, deleteNamespaces, new ArrayList<>());
+        return remove(
+            apiCallRc,
+            linstorObj,
+            props,
+            deletePropKeys,
+            deleteNamespaces,
+            new ArrayList<>(),
+            new HashMap<>()
+        );
+    }
+
+    public boolean remove(
+        ApiCallRcImpl apiCallRc,
+        LinStorObject linstorObj,
+        Props props,
+        Collection<String> deletePropKeys,
+        Collection<String> deleteNamespaces,
+        List<String> ignoredKeysRef
+    )
+        throws InvalidKeyException, AccessDeniedException, DatabaseException
+    {
+        return remove(
+            apiCallRc,
+            linstorObj,
+            props,
+            deletePropKeys,
+            deleteNamespaces,
+            ignoredKeysRef,
+            new HashMap<>()
+        );
     }
 
     /**
      * Remove a key from the property container
+     *
      * @param apiCallRc
      * @param linstorObj
      * @param props
      * @param deletePropKeys
      * @param deleteNamespaces
+     * @param propsChangedListenersRef
+     *
      * @return true if a key was removed, otherwise false (e.g. key didn't exists at all)
+     *
      * @throws AccessDeniedException
      * @throws InvalidKeyException
      * @throws DatabaseException
@@ -602,7 +673,8 @@ public class CtrlPropsHelper
         Props props,
         Collection<String> deletePropKeys,
         Collection<String> deleteNamespaces,
-        List<String> ignoredKeys
+        List<String> ignoredKeys,
+        Map<String, PropertyChangedListener> propsChangedListenersRef
     )
         throws AccessDeniedException, InvalidKeyException, DatabaseException
     {
@@ -618,6 +690,12 @@ public class CtrlPropsHelper
                 if (deletedValue != null)
                 {
                     propsModified = true;
+                }
+
+                PropertyChangedListener listener = propsChangedListenersRef.get(key);
+                if (listener != null)
+                {
+                    listener.changed(key, null, deletedValue);
                 }
             }
             else
@@ -724,5 +802,14 @@ public class CtrlPropsHelper
             keysToDelete.remove(key);
         }
         dstMap.keySet().removeAll(keysToDelete);
+    }
+
+    @FunctionalInterface
+    public interface PropertyChangedListener
+    {
+        /**
+         * The newValue after normalization, or null if property was deleted
+         */
+        void changed(String key, String newValue, String oldValue) throws AccessDeniedException;
     }
 }
