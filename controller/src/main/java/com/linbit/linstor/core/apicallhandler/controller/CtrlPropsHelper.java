@@ -810,6 +810,6 @@ public class CtrlPropsHelper
         /**
          * The newValue after normalization, or null if property was deleted
          */
-        void changed(String key, String newValue, String oldValue) throws AccessDeniedException;
+        void changed(String key, String newValue, String oldValue) throws AccessDeniedException, DatabaseException;
     }
 }

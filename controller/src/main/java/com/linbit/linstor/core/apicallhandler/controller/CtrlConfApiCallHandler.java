@@ -19,9 +19,11 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.SatelliteConfig;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -65,6 +67,7 @@ import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.IOException;
@@ -83,7 +86,6 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 
-import com.google.inject.Provider;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 
@@ -121,6 +123,8 @@ public class CtrlConfApiCallHandler
     private final CtrlResyncAfterHelper ctrlResyncAfterHelper;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
 
+    private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
+
     @FunctionalInterface
     private interface SpecialPropHandler
     {
@@ -131,7 +135,8 @@ public class CtrlConfApiCallHandler
         ApiCallRc handle(
             HashMap<String, String> filteredOverrideProps,
             HashSet<String> filteredDeletePropKeys,
-            HashSet<String> filteredDeleteNamespaces
+            HashSet<String> filteredDeleteNamespaces,
+            Map<String, PropertyChangedListener> propertyChangedListeners
         );
     }
 
@@ -163,7 +168,8 @@ public class CtrlConfApiCallHandler
         AutoSnapshotTask autoSnapshotTaskRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef,
         CtrlResyncAfterHelper ctrlResyncAfterHelperRef,
-        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -192,6 +198,7 @@ public class CtrlConfApiCallHandler
         ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
         ctrlResyncAfterHelper = ctrlResyncAfterHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
+        propsChangeListenerBuilder = propsChangeListenerBuilderRef;
     }
 
     public void updateSatelliteConf() throws AccessDeniedException
@@ -242,6 +249,10 @@ public class CtrlConfApiCallHandler
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
+        List<Flux<ApiCallRc>> specialPropFluxes = new ArrayList<>();
+        Map<String, PropertyChangedListener> propsChangedListeners = propsChangeListenerBuilder.get()
+            .buildPropsChangedListeners(peerAccCtx.get(), specialPropFluxes);
+
         /*
          * Some properties need to be considered in combination with other properties.
          * Those other properties might already exist, but might also be part of the current modification.
@@ -260,7 +271,8 @@ public class CtrlConfApiCallHandler
             ApiCallRc handlersApiCallRc = specialHandler.handle(
                 filteredOverrideProps,
                 filteredDeletePropKeys,
-                filteredDeleteNamespaces
+                filteredDeleteNamespaces,
+                propsChangedListeners
             );
             if (handlersApiCallRc != null)
             {
@@ -268,13 +280,19 @@ public class CtrlConfApiCallHandler
             }
         }
 
+
+
         boolean notifyStlts = false;
         Flux<ApiCallRc> fluxUpdRscDfns = Flux.empty();
         Set<Resource> updateRscs = new HashSet<>();
         for (Entry<String, String> overrideProp : filteredOverrideProps.entrySet())
         {
             Triple<ApiCallRc, Boolean, Set<Resource>> result = setProp(
-                overrideProp.getKey(), null, overrideProp.getValue());
+                overrideProp.getKey(),
+                null,
+                overrideProp.getValue(),
+                propsChangedListeners
+            );
             if (result.objA.hasErrors())
             {
                 throw new ApiRcException(result.objA);
@@ -285,7 +303,11 @@ public class CtrlConfApiCallHandler
         }
         for (String deletePropKey : filteredDeletePropKeys)
         {
-            Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(deletePropKey, null);
+            Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
+                deletePropKey,
+                null,
+                propsChangedListeners
+            );
             if (result.objA.hasErrors())
             {
                 throw new ApiRcException(result.objA);
@@ -298,7 +320,7 @@ public class CtrlConfApiCallHandler
         {
             // we should not simply "drop" the namespace here, as we might have special cleanup logic
             // for some of the deleted keys.
-            Pair<ApiCallRc, Boolean> result = deleteNamespace(deleteNamespace);
+            Pair<ApiCallRc, Boolean> result = deleteNamespace(deleteNamespace, propsChangedListeners);
             if (result.objA.hasErrors())
             {
                 throw new ApiRcException(result.objA);
@@ -396,7 +418,8 @@ public class CtrlConfApiCallHandler
         return Flux.<ApiCallRc>just(apiCallRc)
             .concatWith(evictionFlux)
             .concatWith(autoSnapFlux)
-            .concatWith(fluxUpdRscDfns);
+            .concatWith(fluxUpdRscDfns)
+            .concatWith(Flux.merge(specialPropFluxes));
     }
 
     public Flux<ApiCallRc> setCtrlConfig(
@@ -567,7 +590,10 @@ public class CtrlConfApiCallHandler
         );
     }
 
-    private Pair<ApiCallRc, Boolean> deleteNamespace(String deleteNamespaceRef)
+    private Pair<ApiCallRc, Boolean> deleteNamespace(
+        String deleteNamespaceRef,
+        Map<String, PropertyChangedListener> propsChangedListenersRef
+    )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         boolean notifyStlts = false;
@@ -582,7 +608,10 @@ public class CtrlConfApiCallHandler
                 while (keysIterator.hasNext())
                 {
                     Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
-                        keysIterator.next(), deleteNamespaceRef);
+                        keysIterator.next(),
+                        deleteNamespaceRef,
+                        propsChangedListenersRef
+                    );
                     apiCallRc.addEntries(result.objA);
                     notifyStlts |= result.objB;
                 }
@@ -591,7 +620,8 @@ public class CtrlConfApiCallHandler
                 while (iterateNamespaces.hasNext())
                 {
                     Pair<ApiCallRc, Boolean> result = deleteNamespace(
-                        deleteNamespaceRef + "/" + iterateNamespaces.next()
+                        deleteNamespaceRef + "/" + iterateNamespaces.next(),
+                        propsChangedListenersRef
                     );
                     apiCallRc.addEntries(result.objA);
                     notifyStlts |= result.objB;
@@ -618,10 +648,20 @@ public class CtrlConfApiCallHandler
         return new Pair<>(apiCallRc, notifyStlts);
     }
 
-    private boolean setCtrlProp(AccessContext accCtx, String key, String value, String namespace)
-            throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException
+    private boolean setCtrlProp(
+        AccessContext accCtx,
+        String key,
+        String value,
+        String namespace,
+        PropertyChangedListener propChangedListenerRef
+    )
+        throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException
     {
         String oldVal = systemConfRepository.setCtrlProp(accCtx, key, value, namespace);
+        if (propChangedListenerRef != null)
+        {
+            propChangedListenerRef.changed(key, value, oldVal);
+        }
         boolean changed;
         if (oldVal != null)
         {
@@ -634,10 +674,19 @@ public class CtrlConfApiCallHandler
         return changed;
     }
 
-    private boolean setStltProp(AccessContext accCtx, String key, String value)
+    private boolean setStltProp(
+        AccessContext accCtx,
+        String key,
+        String value,
+        PropertyChangedListener propChangedListenerRef
+    )
         throws InvalidValueException, AccessDeniedException, DatabaseException, InvalidKeyException
     {
         String oldVal = systemConfRepository.setStltProp(accCtx, key, value);
+        if (propChangedListenerRef != null)
+        {
+            propChangedListenerRef.changed(key, value, oldVal);
+        }
         boolean changed;
         if (oldVal != null)
         {
@@ -660,7 +709,12 @@ public class CtrlConfApiCallHandler
         return apiCallRc;
     }
 
-    public Triple<ApiCallRc, Boolean, Set<Resource>> setProp(String key, String namespace, String value)
+    public Triple<ApiCallRc, Boolean, Set<Resource>> setProp(
+        String key,
+        String namespace,
+        String value,
+        Map<String, PropertyChangedListener> propsChangedListenersRef
+    )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         Set<Resource> changedRscs = new HashSet<>();
@@ -697,37 +751,51 @@ public class CtrlConfApiCallHandler
             if (whitelistProps.isAllowed(LinStorObject.CONTROLLER, ignoredKeys, fullKey, value, false))
             {
                 String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, fullKey, value);
+
+                PropertyChangedListener propChangedListener = propsChangedListenersRef.get(fullKey);
                 if (fullKey.startsWith(ApiConsts.NAMESPC_REST + '/') ||
                     fullKey.startsWith(ApiConsts.NAMESPC_AUTOPLACER + "/"))
                 {
-                    notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                    notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                 }
                 else
                 {
                     switch (fullKey)
                     {
                         case ApiConsts.KEY_TCP_PORT_AUTO_RANGE:
-                            setTcpPort(key, namespace, normalized, tcpPortPool, apiCallRc);
+                            setTcpPort(key, namespace, normalized, tcpPortPool, apiCallRc, propChangedListener);
                             break;
                         case ApiConsts.KEY_MINOR_NR_AUTO_RANGE:
-                            setMinorNr(key, namespace, normalized, apiCallRc);
+                            setMinorNr(key, namespace, normalized, apiCallRc, propChangedListener);
                             break;
                         case ApiConsts.NAMESPC_SNAPSHOT_SHIPPING + "/" + ApiConsts.KEY_TCP_PORT_RANGE:
-                            setTcpPort(key, namespace, normalized, snapShipPortPool, apiCallRc);
+                            setTcpPort(key, namespace, normalized, snapShipPortPool, apiCallRc, propChangedListener);
                             break;
                         case ApiConsts.KEY_SEARCH_DOMAIN:
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER:
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM:
-                            notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                            notifyStlts = setCtrlProp(
+                                peerAccCtx.get(),
+                                key,
+                                normalized,
+                                namespace,
+                                propChangedListener
+                            );
                             break;
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_USER:
-                            notifyStlts = setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                            notifyStlts = setCtrlProp(
+                                peerAccCtx.get(),
+                                key,
+                                normalized,
+                                namespace,
+                                propChangedListener
+                            );
                             updateRscDfns();
                             break;
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER:
-                            setCtrlProp(peerAccCtx.get(), key, normalized, namespace);
+                            setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             Pair<ApiCallRc, Set<Resource>> result;
                             if (normalized != null && normalized.equalsIgnoreCase("true"))
                             {
@@ -752,7 +820,8 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MAX_DISCONNECTED_NODES:
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT:
-                            setCtrlProp(peerAccCtx.get(), key, normalized, namespace); // no need to update stlts
+                            // no need to update stlts
+                            setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             break;
                         case ApiConsts.KEY_EXT_CMD_WAIT_TO:
                             try
@@ -781,7 +850,7 @@ public class CtrlConfApiCallHandler
                             }
                             // fall-through
                         default:
-                            notifyStlts = setStltProp(peerAccCtx.get(), fullKey, normalized);
+                            notifyStlts = setStltProp(peerAccCtx.get(), fullKey, normalized, propChangedListener);
                             break;
                     }
                 }
@@ -919,7 +988,8 @@ public class CtrlConfApiCallHandler
     private ApiCallRc handleNetComModifications(
         HashMap<String, String> filteredOverrideProps,
         HashSet<String> filteredDeletePropKeys,
-        HashSet<String> filteredDeleteNamespaces
+        HashSet<String> filteredDeleteNamespaces,
+        Map<String, PropertyChangedListener> propsChangedListenersRef
     )
     {
         // just apply all netcom props and perform sanity checks later
@@ -939,7 +1009,13 @@ public class CtrlConfApiCallHandler
                 if (currentKey.startsWith(ApiConsts.NAMESPC_NETCOM) && splitByNamespaces.length == 3)
                 {
                     String normalized = whitelistProps.normalize(LinStorObject.CONTROLLER, currentKey, currentValue);
-                    setCtrlProp(peerAccCtx.get(), currentKey, normalized, null);
+                    setCtrlProp(
+                        peerAccCtx.get(),
+                        currentKey,
+                        normalized,
+                        null,
+                        propsChangedListenersRef.get(currentKey)
+                    );
                     connectorsToCheck.add(splitByNamespaces[1]);
                     overrideIterator.remove(); // remove the prop to not being forwarded to the default handler
                 }
@@ -1163,7 +1239,11 @@ public class CtrlConfApiCallHandler
 
     public Flux<ApiCallRc> deletePropWithCommitInTransaction(String key, String namespace)
     {
-        Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(key, namespace);
+        Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
+            key,
+            namespace,
+            new HashMap<>() // XXX is this method even called?
+        );
         transMgrProvider.get().commit();
         if (result.objB)
         {
@@ -1191,7 +1271,11 @@ public class CtrlConfApiCallHandler
         return fluxUpdRscDfns.concatWith(Flux.just(result.objA));
     }
 
-    private Triple<ApiCallRc, Boolean, Set<Resource>> deleteProp(String key, String namespace)
+    private Triple<ApiCallRc, Boolean, Set<Resource>> deleteProp(
+        String key,
+        String namespace,
+        Map<String, PropertyChangedListener> propsChangedListenersRef
+    )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         boolean notifyStlts = false;
@@ -1251,6 +1335,12 @@ public class CtrlConfApiCallHandler
                         // TODO: check for other properties
                         default:
                             // ignore - for now
+                    }
+
+                    PropertyChangedListener listener = propsChangedListenersRef.get(fullKey);
+                    if (listener != null)
+                    {
+                        listener.changed(fullKey, null, oldValue);
                     }
                 }
 
@@ -1645,7 +1735,8 @@ public class CtrlConfApiCallHandler
         String namespace,
         String value,
         DynamicNumberPool portPool,
-        ApiCallRcImpl apiCallRc
+        ApiCallRcImpl apiCallRc,
+        PropertyChangedListener propChangedListenerRef
     )
         throws InvalidKeyException, InvalidValueException, AccessDeniedException, DatabaseException
     {
@@ -1657,8 +1748,13 @@ public class CtrlConfApiCallHandler
                 isValidTcpPort(matcher.group("max"), apiCallRc)
             )
             {
-                systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
+                String oldValue = systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
                 portPool.reloadRange();
+
+                if (propChangedListenerRef != null)
+                {
+                    propChangedListenerRef.changed(key, value, oldValue);
+                }
 
                 apiCallRc.addEntry(
                     "The TCP port range was successfully updated to: " + value,
@@ -1718,7 +1814,8 @@ public class CtrlConfApiCallHandler
         String key,
         String namespace,
         String value,
-        ApiCallRcImpl apiCallRc
+        ApiCallRcImpl apiCallRc,
+        PropertyChangedListener propChangedListenerRef
     )
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, DatabaseException
     {
@@ -1730,8 +1827,13 @@ public class CtrlConfApiCallHandler
                 isValidMinorNr(matcher.group("max"), apiCallRc)
             )
             {
-                systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
+                String oldValue = systemConfRepository.setCtrlProp(peerAccCtx.get(), key, value, namespace);
                 minorNrPool.reloadRange();
+
+                if (propChangedListenerRef != null)
+                {
+                    propChangedListenerRef.changed(key, value, oldValue);
+                }
 
                 apiCallRc.addEntry(
                     "The Minor range was successfully updated to: " + value,

@@ -39,8 +39,8 @@ import java.util.TreeSet;
 @Singleton
 public class CtrlRscDfnApiCallHelper
 {
-    private static final String KEY_PROP_DRBD_OPT_DISK_RS_DISC_GRAN = "rs-discard-granularity";
-    private static final String FULL_KEY_DISC_GRAN = ApiConsts.NAMESPC_DRBD_DISK_OPTIONS + "/" +
+    public static final String KEY_PROP_DRBD_OPT_DISK_RS_DISC_GRAN = "rs-discard-granularity";
+    public static final String FULL_KEY_DISC_GRAN = ApiConsts.NAMESPC_DRBD_DISK_OPTIONS + "/" +
         KEY_PROP_DRBD_OPT_DISK_RS_DISC_GRAN;
 
     private static final int DRBD_DISC_GRAN_MIN = 4 * 1024; // min 4k
@@ -73,11 +73,27 @@ public class CtrlRscDfnApiCallHelper
                 if (isAutoManagingEnabled(
                     vlmDfn,
                     ApiConsts.KEY_DRBD_AUTO_RS_DISCARD_GRANULARITY,
-                    ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
+                    ApiConsts.NAMESPC_DRBD_OPTIONS,
                     peerCtx
                 ))
                 {
                     ret |= updateRsDiscardGranProp(rscDfnRef, peerCtx, vlmDfn);
+                }
+                else
+                {
+                    // unset rs-discard-granularity unless explicitly set
+                    // we consider the prop to be explicitly set if the auto-* is disabled on vlmDfn level
+                    Props vlmDfnProps = vlmDfn.getProps(peerCtx);
+                    String autoProp = vlmDfnProps
+                        .getProp(
+                            ApiConsts.KEY_DRBD_AUTO_RS_DISCARD_GRANULARITY,
+                            ApiConsts.NAMESPC_DRBD_OPTIONS
+                        );
+                    if (!ApiConsts.VAL_FALSE.equalsIgnoreCase(autoProp))
+                    {
+                        String removedProp = vlmDfnProps.removeProp(FULL_KEY_DISC_GRAN);
+                        ret |= removedProp != null;
+                    }
                 }
             }
 
@@ -134,6 +150,7 @@ public class CtrlRscDfnApiCallHelper
         }
 
         Long chooseDrbdDiscGran = chooseDrbdDiscGran(peerCtx, discGrans, rscs);
+
         if (chooseDrbdDiscGran != null)
         {
             String newProp = Long.toString(chooseDrbdDiscGran);

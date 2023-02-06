@@ -25,8 +25,10 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMapExtName;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
@@ -154,6 +156,7 @@ public class CtrlRscDfnApiCallHandler
     private final BackupInfoManager backupInfoMgr;
     private final SystemConfRepository systemConfRepository;
     private final CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelper;
+    private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
 
     @Inject
     public CtrlRscDfnApiCallHandler(
@@ -189,7 +192,8 @@ public class CtrlRscDfnApiCallHandler
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         BackupInfoManager backupInfoMgrRef,
         SystemConfRepository systemConfRepositoryRef,
-        CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelperRef
+        CtrlRscDfnApiCallHelper ctrlRscDfnApiCallHelperRef,
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -225,6 +229,7 @@ public class CtrlRscDfnApiCallHandler
         backupInfoMgr = backupInfoMgrRef;
         systemConfRepository = systemConfRepositoryRef;
         ctrlRscDfnApiCallHelper = ctrlRscDfnApiCallHelperRef;
+        propsChangeListenerBuilder = propsChangeListenerBuilderRef;
 
     }
 
@@ -503,13 +508,18 @@ public class CtrlRscDfnApiCallHandler
                 List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
                 prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
 
+                List<Flux<ApiCallRc>> specialPropFluxes = new ArrayList<>();
+                Map<String, PropertyChangedListener> propsChangedListeners = propsChangeListenerBuilder.get()
+                    .buildPropsChangedListeners(peerAccCtx.get(), rscDfn, specialPropFluxes);
+
                 notifyStlts = ctrlPropsHelper.fillProperties(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     overrideProps,
                     rscDfnProps,
                     ApiConsts.FAIL_ACC_DENIED_RSC_DFN,
-                    prefixesIgnoringWhitelistCheck
+                    prefixesIgnoringWhitelistCheck,
+                    propsChangedListeners
                 ) || notifyStlts;
                 notifyStlts = ctrlPropsHelper.remove(
                     apiCallRcs,
@@ -517,10 +527,12 @@ public class CtrlRscDfnApiCallHandler
                     rscDfnProps,
                     deletePropKeys,
                     deletePropNamespaces,
-                    prefixesIgnoringWhitelistCheck
+                    prefixesIgnoringWhitelistCheck,
+                    propsChangedListeners
                 ) || notifyStlts;
 
                 autoFlux = autoFlux.concatWith(
+                    // TODO convert these handlers to propChangedListeners
                     handleChangedProperties(
                         rscDfn,
                         origProps,
@@ -530,7 +542,7 @@ public class CtrlRscDfnApiCallHandler
                         apiCallRcs,
                         context
                     )
-                );
+                ).concatWith(Flux.merge(specialPropFluxes));
 
             }
 

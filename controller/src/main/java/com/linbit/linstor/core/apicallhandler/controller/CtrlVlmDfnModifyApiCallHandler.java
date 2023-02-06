@@ -15,6 +15,8 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -70,6 +72,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -79,7 +82,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import com.google.common.base.Objects;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -100,6 +102,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     private final Provider<AccessContext> peerAccCtx;
     private final BackupInfoManager backupInfoMgr;
     private final EbsStatusManagerService ebsStatusMgr;
+    private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
 
     @Inject
     CtrlVlmDfnModifyApiCallHandler(
@@ -113,7 +116,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         BackupInfoManager backupInfoMgrRef,
-        EbsStatusManagerService ebsStatusMgrRef
+        EbsStatusManagerService ebsStatusMgrRef,
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef
     )
     {
         apiCtx = apiCtxRef;
@@ -127,6 +131,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         peerAccCtx = peerAccCtxRef;
         backupInfoMgr = backupInfoMgrRef;
         ebsStatusMgr = ebsStatusMgrRef;
+        propsChangeListenerBuilder = propsChangeListenerBuilderRef;
     }
 
     @Override
@@ -225,13 +230,18 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         boolean changedEbsPropsWithAction = propChangeCausingEbsAction(vlmDfnProps, overrideProps, deletePropKeys);
 
+        List<Flux<ApiCallRc>> specialPropFluxes = new ArrayList<>();
+        Map<String, PropertyChangedListener> propsChangedListeners = propsChangeListenerBuilder.get()
+            .buildPropsChangedListeners(peerAccCtx.get(), vlmDfn, specialPropFluxes);
+
         notifyStlts = ctrlPropsHelper.fillProperties(
             responses,
             LinStorObject.VOLUME_DEFINITION,
             overrideProps,
             vlmDfnProps,
             ApiConsts.FAIL_ACC_DENIED_VLM_DFN,
-            prefixesIgnoringWhitelistCheck
+            prefixesIgnoringWhitelistCheck,
+            propsChangedListeners
         ) || notifyStlts;
 
         try
@@ -242,7 +252,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 vlmDfnProps,
                 deletePropKeys,
                 Collections.emptyList(),
-                prefixesIgnoringWhitelistCheck
+                prefixesIgnoringWhitelistCheck,
+                propsChangedListeners
             ) || notifyStlts;
         }
         catch (AccessDeniedException exc)
@@ -378,7 +389,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         responses.addEntry(ApiSuccessUtils.defaultModifiedEntry(vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn)));
 
         return Flux.just((ApiCallRc) responses)
-            .concatWith(updateResponses);
+            .concatWith(updateResponses)
+            .concatWith(Flux.merge(specialPropFluxes));
     }
 
     private boolean propChangeCausingEbsAction(
@@ -513,7 +525,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
                 if (key.startsWith(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS))
                 {
                     String value = entry.getValue();
-                    changed |= !Objects.equal(vlmDfnPropsRef.setProp(key, value), value);
+                    changed |= !Objects.equals(vlmDfnPropsRef.setProp(key, value), value);
                     // remove entry from map so that the normal fillProperties method does not complain
                     entryIt.remove();
                 }

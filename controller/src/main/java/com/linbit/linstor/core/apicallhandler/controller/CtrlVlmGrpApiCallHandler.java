@@ -14,6 +14,8 @@ import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -79,6 +81,7 @@ public class CtrlVlmGrpApiCallHandler
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
+    private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
 
     @Inject
     public CtrlVlmGrpApiCallHandler(
@@ -93,7 +96,8 @@ public class CtrlVlmGrpApiCallHandler
         ResponseConverter responseConverterRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
-        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef
     )
     {
         apiCtx = apiCtxRef;
@@ -108,6 +112,7 @@ public class CtrlVlmGrpApiCallHandler
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
+        propsChangeListenerBuilder = propsChangeListenerBuilderRef;
     }
 
     public <T extends VolumeGroupApi> List<VolumeGroup> createVlmGrps(
@@ -268,6 +273,7 @@ public class CtrlVlmGrpApiCallHandler
     )
     {
         List<Flux<Flux<ApiCallRc>>> fluxes = new ArrayList<>();
+        List<Flux<ApiCallRc>> specialPropFluxes = new ArrayList<>();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         boolean notifyStlts;
 
@@ -287,6 +293,10 @@ public class CtrlVlmGrpApiCallHandler
             prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
 
             VolumeGroup vlmGrp = ctrlApiDataLoader.loadVlmGrp(rscGrpNameStr, vlmNrInt, true);
+
+            Map<String, PropertyChangedListener> propsChangedListeners = propsChangeListenerBuilder.get()
+                .buildPropsChangedListeners(peerAccCtx.get(), vlmGrp, specialPropFluxes);
+
             Props props = vlmGrp.getProps(peerAccCtx.get());
             notifyStlts = ctrlPropsHelper.fillProperties(
                 apiCallRcs,
@@ -294,7 +304,8 @@ public class CtrlVlmGrpApiCallHandler
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_VLM_GRP,
-                prefixesIgnoringWhitelistCheck
+                prefixesIgnoringWhitelistCheck,
+                propsChangedListeners
             );
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs,
@@ -302,7 +313,8 @@ public class CtrlVlmGrpApiCallHandler
                 props,
                 deletePropKeys,
                 deleteNamespaces,
-                prefixesIgnoringWhitelistCheck
+                prefixesIgnoringWhitelistCheck,
+                propsChangedListeners
             ) || notifyStlts;
 
             Pair<Set<VolumeGroup.Flags>, Set<VolumeGroup.Flags>> pair = FlagsHelper.extractFlagsToEnableOrDisable(
@@ -361,7 +373,8 @@ public class CtrlVlmGrpApiCallHandler
         }
 
         return Flux.just((ApiCallRc) apiCallRcs)
-            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(Flux.merge(fluxes)));
+            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(Flux.merge(fluxes)))
+            .concatWith(Flux.merge(specialPropFluxes));
     }
 
     public ApiCallRc delete(String rscGrpNameRef, int vlmNrRef)

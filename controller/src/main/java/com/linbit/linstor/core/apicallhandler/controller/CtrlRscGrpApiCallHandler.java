@@ -26,6 +26,8 @@ import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -77,6 +79,7 @@ import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
@@ -90,7 +93,6 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.google.inject.Provider;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -121,6 +123,7 @@ public class CtrlRscGrpApiCallHandler
     private final AutoSnapshotTask autoSnapshotTask;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
     private final SystemConfRepository systemConfRepository;
+    private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
 
     @Inject
     public CtrlRscGrpApiCallHandler(
@@ -147,7 +150,8 @@ public class CtrlRscGrpApiCallHandler
         StorPoolDefinitionRepository spdRepoRef,
         AutoSnapshotTask autoSnapshotTaskRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef,
-        SystemConfRepository systemConfRepositoryRef
+        SystemConfRepository systemConfRepositoryRef,
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -174,6 +178,7 @@ public class CtrlRscGrpApiCallHandler
         autoSnapshotTask = autoSnapshotTaskRef;
         ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
         systemConfRepository = systemConfRepositoryRef;
+        propsChangeListenerBuilder = propsChangeListenerBuilderRef;
     }
 
     List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames, List<String> propFilters)
@@ -444,7 +449,7 @@ public class CtrlRscGrpApiCallHandler
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
-    public Flux<ApiCallRc> modifyInTransaction(
+    private Flux<ApiCallRc> modifyInTransaction(
         String rscGrpNameStrRef,
         String descriptionRef,
         Map<String, String> overrideProps,
@@ -487,27 +492,34 @@ public class CtrlRscGrpApiCallHandler
                 List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
                 prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
 
-                Props rscDfnGrpProps = rscGrpData.getProps(peerCtx);
+                List<Flux<ApiCallRc>> specialPropFluxes = new ArrayList<>();
+                Map<String, PropertyChangedListener> propsChangedListeners = propsChangeListenerBuilder.get()
+                    .buildPropsChangedListeners(peerCtx, rscGrpData, specialPropFluxes);
+
+                Props rscGrpProps = rscGrpData.getProps(peerCtx);
                 notifyStlts = ctrlPropsHelper.fillProperties(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
                     overrideProps,
-                    rscDfnGrpProps,
+                    rscGrpProps,
                     ApiConsts.FAIL_ACC_DENIED_RSC_GRP,
-                    prefixesIgnoringWhitelistCheck
+                    prefixesIgnoringWhitelistCheck,
+                    propsChangedListeners
                 ) || notifyStlts;
                 notifyStlts = ctrlPropsHelper.remove(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,
-                    rscDfnGrpProps,
+                    rscGrpProps,
                     deletePropKeysRef,
                     deleteNamespacesRef,
-                    prefixesIgnoringWhitelistCheck
+                    prefixesIgnoringWhitelistCheck,
+                    propsChangedListeners
                 ) || notifyStlts;
 
                 reRunAutoPlace = reRunAutoPlace.concatWith(
+                    // TODO convert these handlers to propChangedListeners
                     handleChangedProperties(rscGrpData, overrideProps, deletePropKeysRef, deleteNamespacesRef)
-                );
+                ).concatWith(Flux.merge(specialPropFluxes));
             }
 
             if (autoApiRef != null)
