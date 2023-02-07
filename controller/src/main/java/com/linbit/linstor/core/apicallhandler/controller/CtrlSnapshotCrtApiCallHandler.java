@@ -423,6 +423,11 @@ public class CtrlSnapshotCrtApiCallHandler
             disableFlagsPrivileged(snapshotDfn, SnapshotDefinition.Flags.SHIPPING);
             unsetInCreationPrivileged(snapshotDfn);
             ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
+
+            for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
+            {
+                setTakeSnapshotPrivileged(snapshot, false);
+            }
             resumeIoPrivileged(rscDfn);
 
             ctrlTransactionHelper.commit();
