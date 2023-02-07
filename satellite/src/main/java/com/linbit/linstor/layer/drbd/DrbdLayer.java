@@ -196,12 +196,8 @@ public class DrbdLayer implements DeviceLayer
         throws AccessDeniedException, DatabaseException, StorageException
     {
         DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmData;
-        String peerSlotsProp = vlmData.getVolume().getAbsResource()
-            .getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
-        // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
-        // as an unexpected exception in dispatchResource()
-        short peerSlots = peerSlotsProp == null ?
-            InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
+        DrbdRscData<Resource> drbdRscData = drbdVlmData.getRscLayerObject();
+        short peerSlots = drbdRscData.getPeerSlots();
 
         try
         {
@@ -266,12 +262,8 @@ public class DrbdLayer implements DeviceLayer
         throws AccessDeniedException, DatabaseException, StorageException
     {
         DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmData;
-        String peerSlotsProp = vlmData.getVolume().getAbsResource()
-            .getProps(workerCtx).getProp(ApiConsts.KEY_PEER_SLOTS);
-        // Property is checked when the API sets it; if it still throws for whatever reason, it is logged
-        // as an unexpected exception in dispatchResource()
-        short peerSlots = peerSlotsProp == null ?
-            InternalApiConsts.DEFAULT_PEER_SLOTS : Short.parseShort(peerSlotsProp);
+        DrbdRscData<Resource> drbdRscData = drbdVlmData.getRscLayerObject();
+        short peerSlots = drbdRscData.getPeerSlots();
 
         try
         {
