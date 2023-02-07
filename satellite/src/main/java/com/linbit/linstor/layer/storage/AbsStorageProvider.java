@@ -106,6 +106,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private final FileSystemWatch fsWatch;
     protected final DeviceProviderKind kind;
 
+    private final Map<StorPool, Long> extentSizeCache = new HashMap<>();
+
     private final Set<StorPool> changedStorPools = new HashSet<>();
     private boolean prepared;
     protected boolean isDevPathExpectedToBeNull = false;
@@ -1486,7 +1488,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         }
         if (vlmData == null)
         {
-            throw new ImplementationError("Couldn't find VlmData for resource: " + rsc.getResourceDefinition().getName());
+            throw new ImplementationError(
+                "Couldn't find VlmData for resource: " + rsc.getResourceDefinition().getName()
+            );
         }
         return vlmData;
     }
@@ -1496,9 +1500,39 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     public void updateGrossSize(VlmProviderObject<Resource> vlmData)
         throws AccessDeniedException, DatabaseException, StorageException
     {
+        /*
+         * First we need to round up to the next extent-size. For this we use a cache, which will be flushed when the
+         * satellite restarts or gets reconnected
+         */
+        StorPool sp = vlmData.getStorPool();
+        Long extentSize = extentSizeCache.get(sp);
+        if (extentSize == null)
+        {
+            extentSize = getExtentSize((LAYER_DATA) vlmData);
+            extentSizeCache.put(sp, extentSize);
+        }
+
+        long volumeSize = vlmData.getUsableSize();
+
+        if (volumeSize % extentSize != 0)
+        {
+            // round up to the next extent
+            long origSize = volumeSize;
+            volumeSize = ((volumeSize / extentSize) + 1) * extentSize;
+            errorReporter.logInfo(
+                String.format(
+                    "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
+                    origSize,
+                    volumeSize,
+                    extentSize
+                )
+            );
+        }
+
         // usable size was just updated (set) by the layer above us. copy that, so we can
         // update it again with the actual usable size when we are finished
-        setExpectedUsableSize((LAYER_DATA) vlmData, vlmData.getUsableSize());
+        setExpectedUsableSize((LAYER_DATA) vlmData, volumeSize);
+        setUsableSize((LAYER_DATA) vlmData, volumeSize);
     }
 
     @SuppressWarnings("unchecked")
@@ -1693,6 +1727,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     protected abstract void setExpectedUsableSize(LAYER_DATA vlmData, long size)
         throws DatabaseException, StorageException;
+
+    protected abstract long getExtentSize(LAYER_DATA vlmDataRef) throws StorageException, AccessDeniedException;
 
     public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
     {

@@ -148,6 +148,14 @@ public class LuksLayer implements DeviceLayer
         VlmProviderObject<Resource> childVlmData = luksData.getSingleChild();
         childVlmData.setUsableSize(grossSize);
         resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(childVlmData);
+
+        /*
+         * Layers below us will update our dataChild's usable size.
+         * We need to take that updated size for further calculations.
+         */
+        long usableSizeChild = childVlmData.getUsableSize();
+        luksData.setAllocatedSize(usableSizeChild);
+        luksData.setUsableSize(usableSizeChild - luksHeaderSize);
     }
 
     @Override
@@ -163,6 +171,14 @@ public class LuksLayer implements DeviceLayer
         VlmProviderObject<Resource> childVlmData = luksData.getSingleChild();
         childVlmData.setAllocatedSize(grossSize);
         resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(childVlmData);
+
+        /*
+         * Layers below us will update our dataChild's usable size.
+         * We need to take that updated size for further calculations.
+         */
+        long usableSizeChild = childVlmData.getUsableSize();
+        luksData.setAllocatedSize(usableSizeChild);
+        luksData.setUsableSize(usableSizeChild - luksHeaderSize);
     }
 
     @Override

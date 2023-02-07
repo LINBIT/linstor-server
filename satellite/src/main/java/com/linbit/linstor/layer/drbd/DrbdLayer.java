@@ -211,6 +211,19 @@ public class DrbdLayer implements DeviceLayer
                 VlmProviderObject<Resource> dataChild = drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
                 if (drbdVlmData.isUsingExternalMetaData())
                 {
+                    dataChild.setUsableSize(netSize);
+                    resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChild);
+
+                    /*
+                     * Layers below us will update our dataChild's usable size.
+                     * We need to take that updated size for further calculations.
+                     *
+                     * The reason for this is that if the external-md size would exactly match the extent size
+                     * of the storage, but our data size would not, our data size would need to be rounded
+                     * up. But that also needs to be considered for the external-md size as well.
+                     */
+                    netSize = dataChild.getUsableSize();
+
                     long extMdSize = new MetaData().getExternalMdSize(
                         netSize,
                         peerSlots,
@@ -218,8 +231,6 @@ public class DrbdLayer implements DeviceLayer
                         DrbdLayer.FIXME_AL_STRIPE_SIZE
                     );
 
-                    dataChild.setUsableSize(netSize);
-                    resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChild);
 
                     VlmProviderObject<Resource> metaChild = drbdVlmData
                         .getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META);
@@ -243,13 +254,28 @@ public class DrbdLayer implements DeviceLayer
                     dataChild.setUsableSize(grossSize);
                     resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChild);
 
+                    /*
+                     * Layers below us will update our dataChild's usable size.
+                     * We need to take that updated size for further calculations.
+                     */
+                    netSize = new MetaData().getNetSize(
+                        dataChild.getUsableSize(),
+                        peerSlots,
+                        DrbdLayer.FIXME_AL_STRIPES,
+                        DrbdLayer.FIXME_AL_STRIPE_SIZE
+                    );
+
                     drbdVlmData.setAllocatedSize(grossSize);
                 }
+
+                // we need to update the usable size once again since the layers below us
+                // might have given us more data than we asked for.
+                drbdVlmData.setUsableSize(netSize);
             }
         }
         catch (
             InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException |
-            MinAlSizeException| MaxAlSizeException | AlStripesException | PeerCountException exc
+            MinAlSizeException | MaxAlSizeException | AlStripesException | PeerCountException exc
         )
         {
             throw new ImplementationError(exc);

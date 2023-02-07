@@ -754,6 +754,15 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
+    protected long getExtentSize(FileData<Resource> vlmDataRef) throws StorageException, AccessDeniedException
+    {
+        /*
+         * losetup wants to round to 512 bytes (1 sector), but linstor calculates in KiB
+         */
+        return 1;
+    }
+
+    @Override
     protected void setAllocatedSize(FileData<Resource> vlmData, long size) throws DatabaseException
     {
         vlmData.setAllocatedSize(size);

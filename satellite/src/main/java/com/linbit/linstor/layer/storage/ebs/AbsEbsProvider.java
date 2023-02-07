@@ -1,6 +1,8 @@
 package com.linbit.linstor.layer.storage.ebs;
 
 import com.linbit.ImplementationError;
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
@@ -486,4 +488,9 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
         }
     }
 
+    @Override
+    protected long getExtentSize(EbsData<Resource> vlmDataRef) throws StorageException, AccessDeniedException
+    {
+        return SizeConv.convert(1, SizeUnit.UNIT_GiB, SizeUnit.UNIT_KiB);
+    }
 }

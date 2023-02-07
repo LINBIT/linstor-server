@@ -301,7 +301,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         return volumeSize;
     }
 
-    private long getExtentSize(ZfsData<Resource> vlmDataRef) throws StorageException
+    @Override
+    protected long getExtentSize(ZfsData<Resource> vlmDataRef) throws StorageException
     {
         long extentSize = DEFAULT_ZFS_EXTENT_SIZE;
         String[] zfscreateOptions = getZfscreateOptions(vlmDataRef);

@@ -760,6 +760,17 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
+    protected long getExtentSize(LvmData<Resource> vlmDataRef) throws StorageException
+    {
+        String vlmGrp = getVolumeGroup(vlmDataRef.getStorPool());
+        Map<String, Long> extentSizes = LvmUtils.getExtentSize(
+            extCmdFactory,
+            Collections.singleton(vlmGrp)
+        );
+        return extentSizes.get(vlmGrp);
+    }
+
+    @Override
     public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
     {
         LvmData<Resource> srcData = (LvmData<Resource>) cloneInfo.getSrcVlmData();

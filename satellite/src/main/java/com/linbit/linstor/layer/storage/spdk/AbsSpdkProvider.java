@@ -563,6 +563,26 @@ public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Res
     }
 
     @Override
+    protected long getExtentSize(SpdkData<Resource> vlmDataRef) throws StorageException, AccessDeniedException
+    {
+        Set<String> affectedVolumeGroups = getAffectedVolumeGroups(
+            Collections.singleton(vlmDataRef),
+            Collections.emptyList()
+        );
+        if (affectedVolumeGroups.size() != 1)
+        {
+            throw new StorageException("Could not find volume group for volume data: " + vlmDataRef);
+        }
+        String vlmGrp = affectedVolumeGroups.iterator().next();
+        final Map<String, Long> extentSizes = SpdkUtils.getExtentSize(
+            spdkCommands,
+            affectedVolumeGroups
+        );
+
+        return extentSizes.get(vlmGrp);
+    }
+
+    @Override
     protected void setDevicePath(SpdkData<Resource> vlmData, String devPath) throws DatabaseException
     {
         vlmData.setSpdkPath(devPath);

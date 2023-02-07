@@ -86,13 +86,15 @@ import com.google.common.base.Objects;
 @Singleton
 public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Resource>, ExosData<Snapshot>>
 {
+    // linstor calculates everything in KiB.. 1<<12 is therefore 4MiB outside of linstor
+    private static final long EXTENT_SIZE_IN_KIB = 1L << 12;
+
     private static final int MAX_LSSCSI_RETRY_COUNT = 10;
 
     private static final String ALL_OTHER_INITIATORS = "all other initiators";
 
     private static final int KiB = 1024;
-    // linstor calculates everything in KiB.. 1<<12 is therefore 4MiB outside of linstor
-    private static final Align ALIGN_TO_NEXT_4MB = new Align(1L << 12);
+    private static final Align ALIGN_TO_NEXT_4MB = new Align(EXTENT_SIZE_IN_KIB);
     private static final long SECTORS_PER_KIB = KiB / 512;
 
     private static final int TOLERANCE_FACTOR = 3;
@@ -1211,5 +1213,11 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
             ret.add(exosSnapVlmData.getStorPool());
         }
         return ret;
+    }
+
+    @Override
+    protected long getExtentSize(ExosData<Resource> vlmDataRef) throws StorageException, AccessDeniedException
+    {
+        return EXTENT_SIZE_IN_KIB;
     }
 }
