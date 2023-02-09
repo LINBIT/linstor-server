@@ -17,6 +17,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
+import com.linbit.linstor.api.pojo.QuerySizeInfoRequestPojo;
+import com.linbit.linstor.api.pojo.QuerySizeInfoResponsePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
 import com.linbit.linstor.api.pojo.VlmDfnWithCreationPayloadPojo;
@@ -110,6 +112,7 @@ public class CtrlRscGrpApiCallHandler
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final CtrlQueryMaxVlmSizeHelper qmvsHelper;
+    private final CtrlQuerySizeInfoHelper qsiHelper;
 
     private final CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandler;
     private final CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandler;
@@ -137,6 +140,7 @@ public class CtrlRscGrpApiCallHandler
         CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandlerRef,
         CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef,
         CtrlQueryMaxVlmSizeHelper qmvsHelperRef,
+        CtrlQuerySizeInfoHelper qsiHelperRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         LockGuardFactory lockGuardFactoryRef,
         AutoDiskfulTask autoDiskfulTaskRef,
@@ -162,6 +166,7 @@ public class CtrlRscGrpApiCallHandler
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
         ctrlRscAutoPlaceApiCallHandler = ctrlRscAutoPlaceApiCallHandlerRef;
         qmvsHelper = qmvsHelperRef;
+        qsiHelper = qsiHelperRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         lockGuardFactory = lockGuardFactoryRef;
         autoDiskfulTask = autoDiskfulTaskRef;
@@ -1099,6 +1104,69 @@ public class CtrlRscGrpApiCallHandler
             throw new ApiAccessDeniedException(
                 accDeniedExc,
                 "no auto-place configured in " + getRscGrpDescriptionInline(rscGrpNameRef),
+                ApiConsts.FAIL_ACC_DENIED_RSC_GRP
+            );
+        }
+        return flux;
+    }
+
+    public Flux<ApiCallRcWith<QuerySizeInfoResponsePojo>> querySizeInfo(QuerySizeInfoRequestPojo querySizeInfoReqRef)
+    {
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
+            .flatMapMany(
+                thinFreeCapacities -> scopeRunner
+                    .fluxInTransactionlessScope(
+                        "Query size info",
+                        lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
+                        () -> querySizeInfoInTransaction(querySizeInfoReqRef, thinFreeCapacities)
+                    )
+            );
+    }
+
+    public Flux<ApiCallRcWith<QuerySizeInfoResponsePojo>> querySizeInfoInTransaction(
+        QuerySizeInfoRequestPojo querySizeInfoReqRef,
+        Map<StorPool.Key, Long> thinFreeCapacities
+    )
+    {
+        Flux<ApiCallRcWith<QuerySizeInfoResponsePojo>> flux;
+        try
+        {
+            ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(querySizeInfoReqRef.getRscGrpName(), true);
+            AutoSelectorConfig selectFilter = rscGrp.getAutoPlaceConfig();
+            AutoSelectFilterPojo selectCfg = AutoSelectFilterPojo.merge(
+                selectFilter.getApiData(),
+                querySizeInfoReqRef.getAutoSelectFilterData()
+            );
+
+            AccessContext accCtx = peerAccCtx.get();
+
+            if (selectFilter.getReplicaCount(accCtx) == null)
+            {
+                flux = Flux.error(
+                    new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_PLACE_COUNT,
+                            "Replica count is required for this operation",
+                            true
+                        )
+                    )
+                );
+            }
+            else
+            {
+                flux = Flux.just(
+                    new ApiCallRcWith<>(
+                        new ApiCallRcImpl(),
+                        qsiHelper.queryMaxVlmSize(selectCfg, thinFreeCapacities)
+                    )
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "querying size info for " + getRscGrpDescriptionInline(querySizeInfoReqRef.getRscGrpName()),
                 ApiConsts.FAIL_ACC_DENIED_RSC_GRP
             );
         }

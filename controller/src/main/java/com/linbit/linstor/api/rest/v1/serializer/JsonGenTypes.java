@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.16.0";
+    public static final String REST_API_VERSION = "1.17.0";
 
     /**
      * Common api reply structure
@@ -822,6 +822,45 @@ public class JsonGenTypes
     {
         public List<Candidate> candidates = Collections.emptyList();
         public Double default_max_oversubscription_ratio;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class QuerySizeInfoRequest
+    {
+        public AutoSelectFilter select_filter;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class QuerySizeInfoResponse
+    {
+        public QuerySizeInfoResponseSpaceInfo space_info;
+        public List<ApiCallRc> reports = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class QuerySizeInfoResponseSpaceInfo
+    {
+        /**
+         * maximum size in KiB
+         */
+        public Long max_vlm_size_in_kib;
+        /**
+         * available size of the storage pools in KiB
+         */
+        public Long available_size_in_kib;
+        /**
+         * capacity of the storage pools in KiB
+         */
+        public Long capacity_in_kib;
+        public Double default_max_oversubscription_ratio;
+        public List<QuerySizeInfoSpawnResult> next_spawn_result = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class QuerySizeInfoSpawnResult
+    {
+        public String node_name;
+        public String stor_pool_name;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

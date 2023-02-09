@@ -29,6 +29,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
@@ -417,8 +418,8 @@ public class StorPool extends AbsCoreObj<StorPool>
     }
 
     public StorPoolApi getApiData(
-        Long totalSpaceRef,
-        Long freeSpaceRef,
+        @Nullable Long totalSpaceRef,
+        @Nullable Long freeSpaceRef,
         AccessContext accCtx,
         Long fullSyncId,
         Long updateId

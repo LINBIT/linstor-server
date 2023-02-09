@@ -28,6 +28,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -47,7 +48,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 @Singleton
-class StorPoolFilter
+public class StorPoolFilter
 {
     private final AccessContext apiAccCtx;
     private final Provider<AccessContext> peerAccCtx;
@@ -143,12 +144,12 @@ class StorPoolFilter
      *
      * @throws AccessDeniedException
      */
-    ArrayList<StorPool> filter(
+    public ArrayList<StorPool> filter(
         AutoSelectFilterApi selectFilter,
         List<StorPool> availableStorPoolsRef,
-        ResourceDefinition rscDfnRef,
+        @Nullable ResourceDefinition rscDfnRef,
         long sizeInKib,
-        Resource.Flags disklessTypeRef
+        @Nullable Resource.Flags disklessTypeRef
     )
         throws AccessDeniedException
     {

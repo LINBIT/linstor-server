@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
+import com.linbit.linstor.api.pojo.QuerySizeInfoResponsePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -322,6 +323,62 @@ public class ResourceGroups
 
                 return Mono.just(resp);
             }).next();
+
+        requestHelper.doFlux(asyncResponse, flux);
+    }
+
+    @POST
+    @Path("{rscGrpName}/query-size-info")
+    public void querySizeInfo(
+        @Context Request request,
+        @Suspended AsyncResponse asyncResponse,
+        @PathParam("rscGrpName") String rscGrpName,
+        String jsonData
+    )
+        throws JsonProcessingException
+    {
+        String nonEmptyJsonData = jsonData == null || jsonData.isEmpty() ? "{}" : jsonData;
+        JsonGenTypes.QuerySizeInfoRequest qsiReq = objectMapper.readValue(
+            nonEmptyJsonData,
+            JsonGenTypes.QuerySizeInfoRequest.class
+        );
+
+        Mono<Response> flux = ctrlRscGrpApiCallHandler.querySizeInfo(
+            Json.querySizeInfoReqToPojo(rscGrpName, qsiReq)
+        )
+            .subscriberContext(requestHelper.createContext(ApiConsts.API_QRY_SIZE_INFO, request))
+            .flatMap(apiCallRcWith ->
+            {
+                Response resp;
+                if (apiCallRcWith.hasApiCallRc())
+                {
+                    resp = ApiCallRcRestUtils.toResponse(
+                        apiCallRcWith.getApiCallRc(),
+                        Response.Status.INTERNAL_SERVER_ERROR
+                    );
+                }
+                else
+                {
+                    QuerySizeInfoResponsePojo respPojo = apiCallRcWith.getValue();
+                    JsonGenTypes.QuerySizeInfoResponse qsiResp = Json.pojoToQuersSizeInfoResp(respPojo);
+
+                    try
+                    {
+                        resp = Response
+                            .status(Response.Status.OK)
+                            .entity(objectMapper.writeValueAsString(qsiResp))
+                            .build();
+                    }
+                    catch (JsonProcessingException exc)
+                    {
+                        exc.printStackTrace();
+                        resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
+                    }
+                }
+
+                return Mono.just(resp);
+            })
+            .next();
 
         requestHelper.doFlux(asyncResponse, flux);
     }

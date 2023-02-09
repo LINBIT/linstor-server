@@ -10,6 +10,7 @@ import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
+import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.BCacheRscPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
@@ -25,6 +26,8 @@ import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
+import com.linbit.linstor.api.pojo.QuerySizeInfoRequestPojo;
+import com.linbit.linstor.api.pojo.QuerySizeInfoResponsePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.pojo.SchedulePojo;
@@ -39,6 +42,10 @@ import com.linbit.linstor.api.pojo.backups.ScheduledRscsPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ExosDefaults;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.NodeConnection;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoResponse;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoResponseSpaceInfo;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoSpawnResult;
+import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.apis.BackupApi.BackupS3Api;
 import com.linbit.linstor.core.apis.BackupApi.BackupVlmApi;
@@ -840,13 +847,20 @@ public class Json
 
         public AutoSelectFilterData(JsonGenTypes.AutoSelectFilter autoSelectFilterRef)
         {
-            autoSelectFilter = autoSelectFilterRef;
+            if (autoSelectFilterRef == null)
+            {
+                autoSelectFilter = new JsonGenTypes.AutoSelectFilter();
+            }
+            else
+            {
+                autoSelectFilter = autoSelectFilterRef;
+            }
             if (
-                (autoSelectFilterRef.storage_pool_list == null || autoSelectFilterRef.storage_pool_list.isEmpty()) &&
-                    autoSelectFilterRef.storage_pool != null
+            (autoSelectFilter.storage_pool_list == null || autoSelectFilter.storage_pool_list.isEmpty()) &&
+                autoSelectFilter.storage_pool != null
             )
             {
-                autoSelectFilterRef.storage_pool_list = Collections.singletonList(autoSelectFilterRef.storage_pool);
+                autoSelectFilter.storage_pool_list = Collections.singletonList(autoSelectFilter.storage_pool);
             }
         }
 
@@ -1354,6 +1368,40 @@ public class Json
         json.rsc_grp = pojo.getRscGrp();
         json.ctrl = pojo.getCtrl();
         return json;
+    }
+
+    public static QuerySizeInfoRequestPojo querySizeInfoReqToPojo(
+        String rscGrpName,
+        JsonGenTypes.QuerySizeInfoRequest req
+    )
+    {
+        return new QuerySizeInfoRequestPojo(
+            rscGrpName,
+            AutoSelectFilterPojo.copy(new AutoSelectFilterData(req.select_filter))
+        );
+    }
+
+    public static QuerySizeInfoResponse pojoToQuersSizeInfoResp(
+        QuerySizeInfoResponsePojo pojo
+    )
+    {
+        JsonGenTypes.QuerySizeInfoResponse resp = new JsonGenTypes.QuerySizeInfoResponse();
+        resp.space_info = new JsonGenTypes.QuerySizeInfoResponseSpaceInfo();
+        QuerySizeInfoResponseSpaceInfo spaceInfo = resp.space_info;
+        spaceInfo.max_vlm_size_in_kib = pojo.getMaxVlmSize();
+        spaceInfo.available_size_in_kib = pojo.getAvailableSize();
+        spaceInfo.capacity_in_kib = pojo.getCapacity();
+        spaceInfo.next_spawn_result = new ArrayList<>();
+        spaceInfo.default_max_oversubscription_ratio = FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
+        List<QuerySizeInfoSpawnResult> nextSpawnList = spaceInfo.next_spawn_result;
+        for (StorPoolApi spApi : pojo.nextSpawnSpList())
+        {
+            QuerySizeInfoSpawnResult spawnResult = new QuerySizeInfoSpawnResult();
+            spawnResult.node_name = spApi.getNodeName();
+            spawnResult.stor_pool_name = spApi.getStorPoolName();
+            nextSpawnList.add(spawnResult);
+        }
+        return resp;
     }
 
     private Json()

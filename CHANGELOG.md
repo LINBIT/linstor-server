@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- query-size-info API as a better version of query-max-value-size API
+
 ### Changed
 
 - Added `zfs list` check for ZFS support to ensure that the zfs-utils are also installed, not just the kmod

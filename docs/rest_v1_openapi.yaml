@@ -21,6 +21,9 @@ info:
 
     Changelog:
 
+    * unreleased
+      - Added POST /v1/resource-groups/{resource_group}/query-size-info
+      - Added QuerySizeInfoRequest and QuerySizeInfoResponse objects
     * 1.16.0
       - Added GET /v1/node-connections/  with filter-options ?node_a and ?node_b
       - Added PUT /v1/node-connections/{nodeA}/{nodeB}
@@ -194,7 +197,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.16.0
+  version: 1.17.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -3610,6 +3613,7 @@ paths:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
     get:
+      deprecated: true
       tags:
         - developers
       operationId: queryMaxVolumeSizeFromRscGrp
@@ -3624,6 +3628,31 @@ paths:
                 $ref: '#/components/schemas/MaxVolumeSizes'
         '500':
           $ref: '#/components/responses/OperationFailed'
+  /v1/resource-groups/{resource_group}/query-size-info:
+    parameters:
+      - $ref: '#/components/parameters/ResourceGroupName'
+    get:
+      tags:
+        - developers
+      operationId: querySizeInfo
+      summary: query size information of the current resource group
+      description: |
+        Query size information like maximum volume size for the next
+        spawn command. The result will include the selected storage pools.
+      responses:
+        '200':
+          description: collection of size info and list of usable storage pools
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuerySizeInfoResponse'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuerySizeInfoRequest'
   /v1/resource-groups/{resource_group}/adjust:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
@@ -7359,6 +7388,52 @@ components:
         default_max_oversubscription_ratio:
           type: number
           format: double
+    QuerySizeInfoRequest:
+      type: object
+      properties:
+        select_filter:
+          $ref: '#/components/schemas/AutoSelectFilter'
+    QuerySizeInfoResponse:
+      type: object
+      properties:
+        space_info:
+          $ref: '#/components/schemas/QuerySizeInfoResponseSpaceInfo'
+        reports:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiCallRc'
+    QuerySizeInfoResponseSpaceInfo:
+      type: object
+      properties:
+        max_vlm_size_in_kib:
+          type: integer
+          format: int64
+          description: maximum size in KiB
+          example: 3194880
+        available_size_in_kib:
+          type: integer
+          format: int64
+          description: available size of the storage pools in KiB
+          example: 319488000
+        capacity_in_kib:
+          type: integer
+          format: int64
+          description: capacity of the storage pools in KiB
+          example: 319488000
+        default_max_oversubscription_ratio:
+          type: number
+          format: double
+        next_spawn_result:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuerySizeInfoSpawnResult'
+    QuerySizeInfoSpawnResult:
+      type: object
+      properties:
+        node_name:
+          type: string
+        stor_pool_name:
+          type: string
     ControllerPropsModify:
       type: object
       properties:
