@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed AutoSnapshot scheduling bug
+
 ## [1.20.3] - 2023-01-26
 
 ### Changed

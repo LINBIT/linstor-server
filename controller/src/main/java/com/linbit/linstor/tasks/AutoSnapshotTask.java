@@ -21,6 +21,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.Collections;
+import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -262,7 +263,14 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         {
             cfgRef.shippingInProgress = true;
         }
-        cfgRef.nextRerunAt += cfgRef.runEveryInMs;
+        synchronized (configSet)
+        {
+            // since we will change the ordering of the configSet, we must remove this entry from the
+            // TreeSet and re-add it.
+            configSet.remove(cfgRef);
+            cfgRef.nextRerunAt += cfgRef.runEveryInMs;
+            configSet.add(cfgRef);
+        }
     }
 
     private Flux<ApiCallRc> getFlux(AutoSnapshotConfig cfgRef)
@@ -314,6 +322,28 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                 }
             }
             return cmp;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            final int prime = 31;
+            int result = 1;
+            result = prime * result + Objects.hash(nextRerunAt, rscName, shipping, shippingInProgress);
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            boolean eq = obj instanceof AutoSnapshotConfig;
+            if (eq)
+            {
+                AutoSnapshotConfig other = (AutoSnapshotConfig) obj;
+                eq = nextRerunAt == other.nextRerunAt && Objects.equals(rscName, other.rscName) &&
+                    shipping == other.shipping && shippingInProgress == other.shippingInProgress;
+            }
+            return eq;
         }
     }
 }
