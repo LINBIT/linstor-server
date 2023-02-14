@@ -5,7 +5,7 @@ public enum ExtTools
     DRBD9_KERNEL, DRBD9_UTILS, DRBD_PROXY,
     CRYPT_SETUP,
     LVM, LVM_THIN, THIN_SEND_RECV,
-    ZFS,
+    ZFS_KMOD, ZFS_UTILS,
     NVME,
     SPDK,
     DM_WRITECACHE,

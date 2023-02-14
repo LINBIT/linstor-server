@@ -15,7 +15,8 @@ message ExternalToolsInfo
         LVM = 4;
         LVM_THIN = 9;
         THIN_SEND_RECV = 12;
-        ZFS = 5;
+        ZFS_KMOD = 5;
+        ZFS_UTILS = 24;
         NVME = 6;
         SPDK = 7;
         DM_WRITECACHE = 8;
@@ -31,7 +32,8 @@ message ExternalToolsInfo
         BCACHE_TOOLS = 20;
         EBS_INIT = 22;
         EBS_TARGET = 23;
-        // next id: 24
+
+        // next id: 25
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

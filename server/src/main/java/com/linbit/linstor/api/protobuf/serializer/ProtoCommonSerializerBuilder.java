@@ -1474,8 +1474,11 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case NVME:
                 ret = ExternalTools.NVME;
                 break;
-            case ZFS:
-                ret = ExternalTools.ZFS;
+            case ZFS_KMOD:
+                ret = ExternalTools.ZFS_KMOD;
+                break;
+            case ZFS_UTILS:
+                ret = ExternalTools.ZFS_UTILS;
                 break;
             case SPDK:
                 ret = ExternalTools.SPDK;

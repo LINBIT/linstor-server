@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Added `zfs list` check for ZFS support to ensure that the zfs-utils are also installed, not just the kmod
+
 ### Fixed
 
 - Fixed DRBD size calculations with non-default peer slots

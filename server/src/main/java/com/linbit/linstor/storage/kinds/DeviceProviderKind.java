@@ -68,7 +68,7 @@ public enum DeviceProviderKind
         false,
         true,
         new ZfsDriverKind(),
-        ExtTools.ZFS
+        ExtTools.ZFS_KMOD, ExtTools.ZFS_UTILS
     ),
     ZFS_THIN(
         true,
@@ -81,7 +81,7 @@ public enum DeviceProviderKind
         false,
         true,
         new ZfsThinDriverKind(),
-        ExtTools.ZFS
+        ExtTools.ZFS_KMOD, ExtTools.ZFS_UTILS
     ),
     FILE(
         true,

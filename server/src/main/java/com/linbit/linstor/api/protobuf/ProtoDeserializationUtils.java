@@ -385,8 +385,11 @@ public class ProtoDeserializationUtils
             case NVME:
                 tool = ExtTools.NVME;
                 break;
-            case ZFS:
-                tool = ExtTools.ZFS;
+            case ZFS_KMOD:
+                tool = ExtTools.ZFS_KMOD;
+                break;
+            case ZFS_UTILS:
+                tool = ExtTools.ZFS_UTILS;
                 break;
             case SPDK:
                 tool = ExtTools.SPDK;

@@ -55,8 +55,10 @@ public class StltExtToolsChecker
     private static final Pattern LVM_THIN_VERSION_PATTERN = Pattern
         .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern THIN_SEND_RECV_VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)");
-    private static final Pattern ZFS_VERSION_PATTERN = Pattern
+    private static final Pattern ZFS_KMOD_VERSION_PATTERN = Pattern
         .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
+    private static final Pattern ZFS_UTILS_VERSION_PATTERN = Pattern
+        .compile("^zfs-(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern NVME_VERSION_PATTERN = Pattern
         .compile("(?:nvme version\\s*)(\\d+)\\.(\\d+)");
     private static final Pattern SPDK_VERSION_PATTERN = Pattern
@@ -99,8 +101,7 @@ public class StltExtToolsChecker
             // needed by getDrbd9Info() and getDrbdUtilsInfo(). however, calling checkVersions() once is enough
             drbdVersionCheck.checkVersions();
 
-            ExtToolsInfo[] infoArray =
-            {
+            ExtToolsInfo[] infoArray = {
                 getDrbd9Info(),
                 getDrbdUtilsInfo(),
                 getDrbdProxyInfo(),
@@ -108,7 +109,8 @@ public class StltExtToolsChecker
                 getLvmInfo(),
                 getLvmThinInfo(),
                 getThinSendRecvInfo(),
-                getZfsInfo(),
+                getZfsKmodInfo(),
+                getZfsUtilsInfo(),
                 getNvmeInfo(loadedModules),
                 getSpdkInfo(),
                 getEbsTargetInfo(),
@@ -239,9 +241,37 @@ public class StltExtToolsChecker
         );
     }
 
-    private ExtToolsInfo getZfsInfo()
+    private ExtToolsInfo getZfsKmodInfo()
     {
-        return infoBy3MatchGroupPattern(ZFS_VERSION_PATTERN, ExtTools.ZFS, "cat", "/sys/module/zfs/version");
+        return infoBy3MatchGroupPattern(ZFS_KMOD_VERSION_PATTERN, ExtTools.ZFS_KMOD, "cat", "/sys/module/zfs/version");
+    }
+
+    private ExtToolsInfo getZfsUtilsInfo()
+    {
+        // older zfs versions have neither '--version' nor 'version' subcommand. we therefore only check if a simple
+        // 'zfs list' exists with 0 or not. A "command not found" would yield in a different error
+
+        return getStdoutOrErrorReason(
+            ec -> ec == 0 || ec == 1,
+            "zfs", "list"
+        ).map(
+            pair -> new ExtToolsInfo(
+                ExtTools.ZFS_UTILS,
+                true,
+                null,
+                null,
+                null,
+                Collections.emptyList()
+            ),
+            notSupportedReasonList -> new ExtToolsInfo(
+                ExtTools.ZFS_UTILS,
+                false,
+                null,
+                null,
+                null,
+                notSupportedReasonList
+            )
+        );
     }
 
     private ExtToolsInfo getNvmeInfo(List<String> loadedModulesRef)
