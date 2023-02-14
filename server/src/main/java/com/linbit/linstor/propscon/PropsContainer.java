@@ -391,9 +391,12 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *
      * @param selection Set of properties to be deleted
      * @param namespace Acts as a prefix for all keys of the map
+     *
      * @return True if any property has been modified by this method, false otherwise
-     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
-     *                      a database operation
+     *
+     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs
+     *     during
+     *     a database operation
      */
     public boolean retainAllProps(Set<String> selection, String namespace) throws DatabaseException
     {
@@ -459,9 +462,32 @@ public class PropsContainer extends AbsTransactionObject implements Props
     @Override
     public void clear() throws DatabaseException
     {
+        // first cache all entries in case we need to rollback
+        // then clear the internal maps
+        // then clear the database
+
+        rootContainer.activateTransMgr();
+        Set<Entry<String, String>> entrySet = rootContainer.entrySet();
+        for (Entry<String, String> entry : entrySet)
+        {
+            cache(entry.getKey(), entry.getValue());
+        }
+
         containerMap.clear();
         propMap.clear();
-        dbRemoveAll();
+        if (dbDriver != null)
+        {
+            try
+            {
+                dbDriver.removeAll(rootContainer.instanceName);
+            }
+            catch (DatabaseException dbExc)
+            {
+                rollback();
+                throw dbExc;
+            }
+        }
+
         if (parentContainer != null)
         {
             parentContainer.modifySize(itemCount * -1);
@@ -980,28 +1006,6 @@ public class PropsContainer extends AbsTransactionObject implements Props
         }
     }
 
-    private void dbRemoveAll() throws DatabaseException
-    {
-        rootContainer.activateTransMgr();
-        Set<Entry<String, String>> entrySet = rootContainer.entrySet();
-        for (Entry<String, String> entry : entrySet)
-        {
-            cache(entry.getKey(), entry.getValue());
-        }
-
-        if (dbDriver != null)
-        {
-            try
-            {
-                dbDriver.removeAll(rootContainer.instanceName);
-            }
-            catch (DatabaseException dbExc)
-            {
-                rollback();
-                throw dbExc;
-            }
-        }
-    }
 
     class PropsConMap implements Map<String, String>
     {
