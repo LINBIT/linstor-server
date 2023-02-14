@@ -85,6 +85,8 @@ public class CreateDevicePool implements ApiCall
                         apiCallRc,
                         devicePath,
                         msgCreateDevicePool.getSedPassword());
+                    SEDUtils.unlockSED(
+                        extCmdFactory.create(), errorReporter, devicePath, msgCreateDevicePool.getSedPassword());
                 }
             }
 

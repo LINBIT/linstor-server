@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.utils.Triple;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -25,23 +26,75 @@ public class SEDUtils
         final String password
     )
     {
+        extCmd.logExecution(LOG_SED_COMMANDS);
         try
         {
-            List<String> cmd = new ArrayList<>();
-            cmd.add("sedutil-cli");
-            cmd.add("--initialsetup");
-            cmd.add(password);
-            cmd.add(deviceName);
+            List<Triple<String, String, String[]>> cmds = new ArrayList<>();
+            cmds.add(new Triple<>(
+                "Initialize SED " + deviceName,
+                "Failed to initialized SED encryption on drive: " + deviceName,
+                new String[] {
+                    "sedutil-cli",
+                    "--initialsetup",
+                    password,
+                    deviceName
+                }));
 
-            final String failMsg = "Failed to initialized SED encryption on drive: " + deviceName;
-            extCmd.logExecution(LOG_SED_COMMANDS);
-            errorReporter.logInfo("Initialize SED %s", deviceName);
-            Commands.genericExecutor(
-                extCmd,
-                cmd.toArray(new String[0]),
-                failMsg,
-                failMsg
-            );
+            cmds.add(new Triple<>(
+                "SED enablelockingrange " + deviceName,
+                "Failed to enable SED lockingrange on drive: " + deviceName,
+                new String[] {
+                    "sedutil-cli",
+                    "--enablelockingrange",
+                    "0",
+                    password,
+                    deviceName
+                }));
+
+            cmds.add(new Triple<>(
+                "SED setLockingRange " + deviceName,
+                "Failed to set SED lockingrange on drive: " + deviceName,
+                new String[] {
+                    "sedutil-cli",
+                    "--setLockingRange",
+                    "0",
+                    "LK",
+                    password,
+                    deviceName
+                }));
+
+            cmds.add(new Triple<>(
+                "SED setMBRDone " + deviceName,
+                "Failed to set SED MBRDone off on drive: " + deviceName,
+                new String[]{
+                    "sedutil-cli",
+                    "--setMBRDone",
+                    "off",
+                    password,
+                    deviceName
+                }));
+
+            cmds.add(new Triple<>(
+                "SED setMBREnable " + deviceName,
+                "Failed to set SED setMBREnable off on drive: " + deviceName,
+                new String[]{
+                    "sedutil-cli",
+                    "--setMBREnable",
+                    "off",
+                    password,
+                    deviceName
+                }));
+
+            for (Triple<String, String, String[]> cmd : cmds)
+            {
+                errorReporter.logInfo(cmd.objA);
+                Commands.genericExecutor(
+                    extCmd,
+                    cmd.objC,
+                    cmd.objB,
+                    cmd.objB
+                );
+            }
 
             apiCallRc.addEntry(ApiCallRcImpl.simpleEntry(
                 ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
@@ -67,34 +120,31 @@ public class SEDUtils
             errorReporter.logInfo("Unlock SED %s", deviceName);
             extCmd.logExecution(LOG_SED_COMMANDS);
             // set locking range to rw
-            List<String> cmd = new ArrayList<>();
-            cmd.add("sedutil-cli");
-            cmd.add("--setlockingrange");
-            cmd.add("0");
-            cmd.add("rw");
-            cmd.add(password);
-            cmd.add(deviceName);
-
             final String failMsg = "Failed to setlockingrange to RW on SED: " + deviceName;
             Commands.genericExecutor(
                 extCmd,
-                cmd.toArray(new String[0]),
+                new String[]{
+                    "sedutil-cli",
+                    "--setlockingrange",
+                    "0",
+                    "rw",
+                    password,
+                    deviceName
+                },
                 failMsg,
                 failMsg
             );
 
-
-            List<String> cmdMbrDone = new ArrayList<>();
-            cmdMbrDone.add("sedutil-cli");
-            cmdMbrDone.add("--setmbrdone");
-            cmdMbrDone.add("on");
-            cmdMbrDone.add(password);
-            cmdMbrDone.add(deviceName);
-
             final String failMsgMbrDone = "Failed to setmbrdone on SED: " + deviceName;
             Commands.genericExecutor(
                 extCmd,
-                cmdMbrDone.toArray(new String[0]),
+                new String[]{
+                    "sedutil-cli",
+                    "--setmbrdone",
+                    "on",
+                    password,
+                    deviceName
+                },
                 failMsgMbrDone,
                 failMsgMbrDone
             );
