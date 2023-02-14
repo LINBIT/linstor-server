@@ -122,6 +122,17 @@ public class CreateDevicePool implements ApiCall
             }
         }
 
+        if (apiCallRc.hasErrors() && msgCreateDevicePool.getSed())
+        {
+            final List<String> devicePaths = msgCreateDevicePool.getDevicePathsList();
+            for (String devicePath : devicePaths)
+            {
+                // try revert sed locking
+                SEDUtils.revertSEDLocking(
+                    extCmdFactory.create(), errorReporter, devicePath, msgCreateDevicePool.getSedPassword());
+            }
+        }
+
         peerProvider.get().sendMessage(
             ctrlStltSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId.get()).apiCallRcSeries(apiCallRc).build(),
             ApiConsts.API_REPLY

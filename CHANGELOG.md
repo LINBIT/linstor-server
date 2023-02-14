@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Added `zfs list` check for ZFS support to ensure that the zfs-utils are also installed, not just the kmod
+- Use recommended command sequence for SED initialization and improve error recover
 
 ### Fixed
 

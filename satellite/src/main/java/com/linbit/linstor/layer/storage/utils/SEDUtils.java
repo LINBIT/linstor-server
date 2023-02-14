@@ -157,6 +157,53 @@ public class SEDUtils
         }
     }
 
+    public static void revertSEDLocking(
+        final ExtCmd extCmd,
+        final ErrorReporter errorReporter,
+        final String deviceName,
+        final String password)
+    {
+        try
+        {
+            errorReporter.logInfo("Revert with no erase SED %s", deviceName);
+            extCmd.logExecution(LOG_SED_COMMANDS);
+            // first revertnoerase
+            final String failMsg = "Failed to revertnoerase on SED: " + deviceName + " password is " + password;
+            Commands.genericExecutor(
+                extCmd,
+                new String[]{
+                    "sedutil-cli",
+                    "--revertnoerase",
+                    password,
+                    deviceName
+                },
+                failMsg,
+                failMsg
+            );
+
+
+            // now the second sequence with reverttper
+            final String failMsgMbrDone = "Failed to reverttper on SED: " + deviceName + " password is " + password;
+            Commands.genericExecutor(
+                extCmd,
+                new String[]{
+                    "sedutil-cli",
+                    "--reverttper",
+                    password,
+                    deviceName
+                },
+                failMsgMbrDone,
+                failMsgMbrDone
+            );
+
+            errorReporter.logInfo("Reverted SED: %s", deviceName);
+        }
+        catch (StorageException storExc)
+        {
+            errorReporter.reportError(storExc);
+        }
+    }
+
     public static void changeSEDPassword(
         final ExtCmd extCmd,
         final ErrorReporter errorReporter,
