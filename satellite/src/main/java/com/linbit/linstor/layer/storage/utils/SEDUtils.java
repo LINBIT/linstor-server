@@ -215,34 +215,31 @@ public class SEDUtils
         {
             errorReporter.logInfo("Changing SED passwords for %s", deviceName);
             extCmd.logExecution(LOG_SED_COMMANDS);
-            // set locking range to rw
-            List<String> cmd = new ArrayList<>();
-            cmd.add("sedutil-cli");
-            cmd.add("--setSIDPassword");
-            cmd.add(password);
-            cmd.add(newPassword);
-            cmd.add(deviceName);
 
             final String failMsg = "Failed to change SID password on SED: " + deviceName;
             Commands.genericExecutor(
                 extCmd,
-                cmd.toArray(new String[0]),
+                new String[]{
+                    "sedutil-cli",
+                    "--setSIDPassword",
+                    password,
+                    newPassword,
+                    deviceName
+                },
                 failMsg,
                 failMsg
             );
 
-
-            List<String> cmdMbrDone = new ArrayList<>();
-            cmdMbrDone.add("sedutil-cli");
-            cmdMbrDone.add("--setAdmin1Pwd");
-            cmdMbrDone.add(password);
-            cmdMbrDone.add(newPassword);
-            cmdMbrDone.add(deviceName);
-
             final String failMsgAdminPass = "Failed to change Admin1 password on SED: " + deviceName;
             Commands.genericExecutor(
                 extCmd,
-                cmdMbrDone.toArray(new String[0]),
+                new String[]{
+                    "sedutil-cli",
+                    "--setAdmin1Pwd",
+                    password,
+                    newPassword,
+                    deviceName
+                },
                 failMsgAdminPass,
                 failMsgAdminPass
             );
