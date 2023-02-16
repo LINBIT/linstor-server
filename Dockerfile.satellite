@@ -98,7 +98,7 @@ ENV INTERNAL_REPO=/etc/yum.repos.d/linbit-internal.repo
 # lsscsi: exos layer
 # =lbbuild RUN curl -fsSL https://nexus.at.linbit.com/repository/lbbuild/from_rhel_repos.sh | bash -s -- cryptsetup nvme-cli zstd xfsprogs e2fsprogs device-mapper-multipath lsscsi
 # zfs ("tools"): zfs layer
-# =lbbuild RUN test "$(uname -m)" = "x86_64" && (dnf install -y https://zfsonlinux.org/epel/zfs-release-2-2$(rpm --eval "%{dist}").noarch.rpm && dnf config-manager --disable zfs && dnf config-manager --enable zfs-kmod && dnf repoquery --requires --resolve -q --archlist $(uname -m),noarch zfs | grep -v ^kmod-zfs | xargs dnf install -y && mkdir /tmp/zfs && cd /tmp/zfs && dnf download zfs && rpm -Uvh --nodeps ./zfs*.rpm && cd / && rm -rf /tmp/zfs) || true
+# =lbbuild RUN if [ "$(uname -m)" = "x86_64" ]; then dnf install -y https://zfsonlinux.org/epel/zfs-release-2-2$(rpm --eval "%{dist}").noarch.rpm && dnf config-manager --disable zfs && dnf config-manager --enable zfs-kmod && dnf repoquery --requires --resolve -q --archlist $(uname -m),noarch zfs | grep -v ^kmod-zfs | xargs dnf install -y && mkdir /tmp/zfs && cd /tmp/zfs && dnf download zfs && rpm -Uvh --nodeps ./zfs*.rpm && cd / && rm -rf /tmp/zfs; fi
 
 # custom tools
 # losetup-container: fixes an edge case when reporting the backing file for a loop device
