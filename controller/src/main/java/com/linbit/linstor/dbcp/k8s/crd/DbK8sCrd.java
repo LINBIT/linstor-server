@@ -38,6 +38,7 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
@@ -108,31 +109,78 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     public void migrate(String dbTypeRef) throws InitializationException
     {
         ControllerK8sCrdTransactionMgr currentTx = k8sTxGenerator.startTransaction();
-
         currentTx.rollbackIfNeeded();
 
-        Integer dbVersion = currentTx.getDbVersion();
+        TreeMap<Integer, BaseK8sCrdMigration> migrations = buildMigrations();
 
         ControllerK8sCrdDatabase k8sDb = controllerDatabaseProvider.get();
 
+        int dbVersion = dbVersion(currentTx);
+        if (dbVersion == 0)
+        {
+            errorReporter.logTrace("No database found. Creating migration resources.");
+            try (ApiextensionsAPIGroupDSL apiextensions = k8sDb.getClient().apiextensions())
+            {
+                NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, Resource<CustomResourceDefinition>> crdApi = apiextensions
+                    .v1().customResourceDefinitions();
+
+                crdApi.createOrReplace(
+                    crdApi.load(DbK8sCrd.class.getResourceAsStream("/" + LinstorVersionCrd.getYamlLocation())).get()
+                );
+
+                crdApi.createOrReplace(
+                    crdApi.load(
+                        DbK8sCrd.class.getResourceAsStream("/" + RollbackCrd.getYamlLocation())
+                    ).get()
+                );
+            }
+        }
+
+        try
+        {
+            int highestKey = migrations.lastKey();
+            while (dbVersion <= highestKey)
+            {
+                BaseK8sCrdMigration migration = migrations.get(dbVersion);
+                errorReporter.logDebug(
+                    "Migration DB: %d -> %d: %s",
+                    migration.getVersion() - 1,
+                    migration.getNextVersion() - 1,
+                    migration.getDescription()
+                );
+                migration.migrate(k8sDb);
+
+                dbVersion = migration.getNextVersion();
+
+                currentTx.getTransaction().updateLinstorVersion(dbVersion);
+
+                currentTx.commit();
+                currentTx = k8sTxGenerator.startTransaction();
+            }
+        }
+        catch (Exception exc)
+        {
+            throw new LinStorDBRuntimeException("Exception occurred during migration", exc);
+        }
+    }
+
+    @Override
+    public boolean needsMigration(String dbType)
+    {
+        ControllerK8sCrdTransactionMgr currentTx = k8sTxGenerator.startTransaction();
+        TreeMap<Integer, BaseK8sCrdMigration> migrations = buildMigrations();
+        int dbVersion = dbVersion(currentTx);
+
+        return dbVersion <= migrations.lastKey();
+    }
+
+
+    private int dbVersion(ControllerK8sCrdTransactionMgr tx)
+    {
+        Integer dbVersion = tx.getDbVersion();
+
         if (dbVersion == null)
         {
-            errorReporter.logTrace("No database found. Creating...");
-            // ControllerK8sCrdDatabase k8sDb = controllerDatabaseProvider.get();
-            NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, Resource<CustomResourceDefinition>> crdApi = k8sDb
-                .getClient().apiextensions().v1()
-                .customResourceDefinitions();
-
-            crdApi.createOrReplace(
-                crdApi.load(DbK8sCrd.class.getResourceAsStream("/" + LinstorVersionCrd.getYamlLocation())).get()
-            );
-
-            crdApi.createOrReplace(
-                crdApi.load(
-                    DbK8sCrd.class.getResourceAsStream("/" + RollbackCrd.getYamlLocation())
-                ).get()
-            );
-
             dbVersion = 0;
         }
         else
@@ -140,6 +188,10 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
             errorReporter.logTrace("Found database version %d", dbVersion - 1);
         }
 
+        return dbVersion;
+    }
+    private TreeMap<Integer, BaseK8sCrdMigration> buildMigrations()
+    {
         ClassPathLoader classPathLoader = new ClassPathLoader(errorReporter);
         List<Class<? extends BaseK8sCrdMigration>> k8sMigrationClasses = classPathLoader.loadClasses(
             BaseK8sCrdMigration.class.getPackage().getName(),
@@ -172,35 +224,10 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
         }
         catch (InstantiationException | IllegalAccessException exc)
         {
-            throw new InitializationException("Failed to migrate", exc);
+            throw new ImplementationError("Failed to migrate", exc);
         }
 
-        try
-        {
-            int highestKey = migrations.lastKey();
-            while (dbVersion <= highestKey)
-            {
-                BaseK8sCrdMigration migration = migrations.get(dbVersion);
-                errorReporter.logDebug(
-                    "Migration DB: %d -> %d: %s",
-                    migration.getVersion() - 1,
-                    migration.getNextVersion() - 1,
-                    migration.getDescription()
-                );
-                migration.migrate(k8sDb);
-
-                dbVersion = migration.getNextVersion();
-
-                currentTx.getTransaction().updateLinstorVersion(dbVersion);
-
-                currentTx.commit();
-                currentTx = k8sTxGenerator.startTransaction();
-            }
-        }
-        catch (Exception exc)
-        {
-            throw new LinStorDBRuntimeException("Exception occured during migration", exc);
-        }
+        return migrations;
     }
 
     private void checkIfAllMigrationsLinked(TreeMap<Integer, BaseK8sCrdMigration> migrationsRef)

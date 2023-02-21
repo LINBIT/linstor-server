@@ -212,7 +212,22 @@ public class DbConnectionPool implements ControllerSQLDatabase
             checkMinVersion();
         }
 
-        Flyway.configure()
+        buildMigrations(dbType).migrate();
+    }
+
+    @Override
+    public boolean needsMigration(String dbType)
+    {
+        int pending = buildMigrations(dbType)
+            .info()
+            .pending()
+            .length;
+        return pending > 0;
+    }
+
+    private Flyway buildMigrations(String dbType)
+    {
+        return Flyway.configure()
             .schemas(DATABASE_SCHEMA_NAME)
             .dataSource(dataSource)
             .table(SCHEMA_HISTORY_TABLE_NAME)
@@ -222,8 +237,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
             .placeholders(ImmutableMap.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, dbType))
             .locations(LinstorMigration.class.getPackage().getName())
             .ignoreFutureMigrations(false)
-            .load()
-            .migrate();
+            .load();
     }
 
     private void checkMinVersion() throws InitializationException

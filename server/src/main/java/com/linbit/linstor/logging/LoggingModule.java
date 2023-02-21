@@ -4,9 +4,9 @@ import com.google.inject.AbstractModule;
 
 public class LoggingModule extends AbstractModule
 {
-    private final StdErrorReporter errorReporter;
+    private final ErrorReporter errorReporter;
 
-    public LoggingModule(StdErrorReporter errorReporterRef)
+    public LoggingModule(ErrorReporter errorReporterRef)
     {
         errorReporter = errorReporterRef;
     }

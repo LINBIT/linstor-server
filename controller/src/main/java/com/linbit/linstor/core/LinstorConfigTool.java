@@ -1,10 +1,30 @@
 package com.linbit.linstor.core;
 
+import com.linbit.GuiceConfigModule;
+import com.linbit.ImplementationError;
+import com.linbit.linstor.ControllerETCDDatabase;
+import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.CtrlTomlConfig;
+import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
+import com.linbit.linstor.dbcp.DbInitializer;
+import com.linbit.linstor.dbcp.etcd.DbEtcd;
+import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
+import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
+import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrdInitializer;
+import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.SQLUtils;
+import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.LoggingModule;
+import com.linbit.linstor.logging.StderrErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+import com.linbit.linstor.transaction.ControllerETCDTransactionMgrGenerator;
+import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgrGenerator;
 
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CMDLINE_ERROR;
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR;
@@ -22,11 +42,16 @@ import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.Callable;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+import com.google.inject.Provider;
 import com.moandjiezana.toml.Toml;
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
@@ -56,7 +81,9 @@ public class LinstorConfigTool
         CmdSetPlainListen.class,
         CmdCreateDBTomlConfig.class,
         CmdSqlScript.class,
-        CmdMigrateDatabaseConfig.class
+        CmdMigrateDatabaseConfig.class,
+        CmdRunMigration.class,
+        CmdAllMigrationsApplied.class
     })
     private static class LinstorConfigCmd implements Callable<Object>
     {
@@ -292,6 +319,49 @@ public class LinstorConfigTool
         }
     }
 
+    @CommandLine.Command(name = "run-migration", description = "migrate configured database to the latest version")
+    private static class CmdRunMigration implements Callable<Object>
+    {
+        @CommandLine.Unmatched()
+        private String[] args = new String[0];
+        @Override
+        public Object call() throws Exception
+        {
+            CtrlConfig cfg = new CtrlConfig(args);
+            ErrorReporter reporter = new StderrErrorReporter("linstor-config");
+            DbInitializer initializer = dbInitializerFromConfig(reporter, cfg);
+
+            initializer.initialize();
+            return null;
+        }
+    }
+
+    @CommandLine.Command(name = "all-migrations-applied", description = "checks whether the database needs migrating")
+    private static class CmdAllMigrationsApplied implements Callable<Object>
+    {
+        @CommandLine.Unmatched()
+        private String[] args = new String[0];
+
+        @Override
+        public Object call() throws Exception
+        {
+            CtrlConfig cfg = new CtrlConfig(args);
+            ErrorReporter reporter = new StderrErrorReporter("linstor-config");
+            DbInitializer initializer = dbInitializerFromConfig(reporter, cfg);
+
+            if (initializer.needsMigration())
+            {
+                System.out.println("needs migration");
+                System.exit(1);
+            }
+            else
+            {
+                System.out.println("no migration needed");
+            }
+            return null;
+        }
+    }
+
     public static void main(String[] args)
     {
         commandLine = new CommandLine(new LinstorConfigCmd());
@@ -351,5 +421,82 @@ public class LinstorConfigTool
             System.exit(EXIT_CODE_CONFIG_PARSE_ERROR);
         }
         return dataSource;
+    }
+
+
+    private static DbInitializer dbInitializerFromConfig(ErrorReporter reporter, CtrlConfig cfg) throws Exception
+    {
+        DatabaseDriverInfo.DatabaseType dbType = Controller.checkDatabaseConfig(reporter, cfg);
+        List<Module> injModList = new ArrayList<>(Arrays.asList(
+            new GuiceConfigModule(),
+            new LoggingModule(reporter)
+        ));
+
+        final boolean haveFipsInit = LinStor.initializeFips(reporter);
+        LinStor.loadModularCrypto(injModList, reporter, haveFipsInit);
+        final Injector injector = Guice.createInjector(injModList);
+        ModularCryptoProvider cryptoProvider = injector.getInstance(ModularCryptoProvider.class);
+        AbsMigration.setModularCryptoProvider(cryptoProvider);
+        reporter.logInfo("Cryptography provider: Using %s", cryptoProvider.getModuleIdentifier());
+
+
+        // We load our DBInitializer manually here, as using dependency injection is complicated :/
+        DbInitializer initializer = null;
+        switch (dbType)
+        {
+            case SQL:
+                initializer = new DbConnectionPoolInitializer(
+                    reporter,
+                    new DbConnectionPool(cfg, reporter),
+                    cfg
+                );
+                break;
+            case ETCD:
+                EtcdUtils.linstorPrefix = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
+                Provider<ControllerETCDDatabase> etcdInitializerProvider = new Provider<ControllerETCDDatabase>()
+                {
+                    private final DbEtcd dbEtcd = new DbEtcd(
+                        reporter,
+                        cfg,
+                        new ControllerETCDTransactionMgrGenerator(
+                            this,
+                            cfg
+                        )
+                    );
+                    @Override
+                    public ControllerETCDDatabase get()
+                    {
+                        return dbEtcd;
+                    }
+                };
+
+                initializer = new DbEtcdInitializer(
+                    reporter,
+                    etcdInitializerProvider.get(),
+                    cfg
+                );
+                break;
+            case K8S_CRD:
+                Provider<ControllerK8sCrdDatabase> k8sCrdProvider = new Provider<ControllerK8sCrdDatabase>()
+                {
+                    private final DbK8sCrd dbK8sCrd = new DbK8sCrd(
+                        reporter,
+                        cfg,
+                        new ControllerK8sCrdTransactionMgrGenerator(this, cfg),
+                        this
+                    );
+                    @Override
+                    public ControllerK8sCrdDatabase get()
+                    {
+                        return dbK8sCrd;
+                    }
+                };
+
+                initializer = new DbK8sCrdInitializer(reporter, k8sCrdProvider.get(), cfg);
+                break;
+            default:
+                throw new ImplementationError(String.format("Unrecognized database type '%s'", dbType));
+        }
+        return initializer;
     }
 }

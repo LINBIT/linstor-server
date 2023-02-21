@@ -5,6 +5,7 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATION;
@@ -55,6 +56,16 @@ public class DbConnectionPoolInitializer implements DbInitializer
         {
             throw new SystemServiceStartException("Database initialization error", exc, true);
         }
+    }
+
+    @Override
+    public boolean needsMigration() throws DatabaseException, InitializationException
+    {
+        String connectionUrl = getConnectionUrl();
+        String dbType = getDbType(connectionUrl);
+
+        dbConnPool.initializeDataSource(connectionUrl);
+        return dbConnPool.needsMigration(dbType);
     }
 
     private String getConnectionUrl()

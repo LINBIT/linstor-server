@@ -443,7 +443,7 @@ public final class Controller
         }
     }
 
-    private static DatabaseDriverInfo.DatabaseType checkDatabaseConfig(
+    public static DatabaseDriverInfo.DatabaseType checkDatabaseConfig(
         ErrorReporter errorReporter,
         CtrlConfig linstorConfig
     )

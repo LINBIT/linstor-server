@@ -47,4 +47,13 @@ public class DbEtcdInitializer implements DbInitializer
             throw new SystemServiceStartException("Database initialization error", exc, true);
         }
     }
+
+    @Override
+    public boolean needsMigration() throws InitializationException
+    {
+        final String etcdConnectionUrl = ctrlCfg.getDbConnectionUrl();
+        errorLog.logInfo("etcd connection URL is \"%s\"", etcdConnectionUrl);
+        dbEtcd.initializeDataSource(etcdConnectionUrl);
+        return dbEtcd.needsMigration("etcd");
+    }
 }

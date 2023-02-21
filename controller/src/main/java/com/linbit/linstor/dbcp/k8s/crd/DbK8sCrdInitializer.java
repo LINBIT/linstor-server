@@ -5,6 +5,7 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.DbInitializer;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 
 import javax.inject.Inject;
@@ -46,5 +47,14 @@ public class DbK8sCrdInitializer implements DbInitializer
         {
             throw new SystemServiceStartException("Database initialization error", exc, true);
         }
+    }
+
+    @Override
+    public boolean needsMigration() throws DatabaseException
+    {
+        final String crdConnectionUrl = ctrlCfg.getDbConnectionUrl();
+        errorLog.logInfo("Kubernetes-CRD connection URL is \"%s\"", crdConnectionUrl);
+        dbK8sCrd.initializeDataSource(crdConnectionUrl);
+        return dbK8sCrd.needsMigration("k8s");
     }
 }
