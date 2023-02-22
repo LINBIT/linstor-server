@@ -1,32 +1,41 @@
 package com.linbit.linstor.tasks;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.core.BackgroundRunner;
+import com.linbit.linstor.core.BackgroundRunner.RunConfig;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingApiCallHandler;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
-import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.netcom.PeerController;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import reactor.core.publisher.Flux;
-import reactor.util.context.Context;
 
 @Singleton
 public class AutoSnapshotTask implements TaskScheduleService.Task
@@ -38,6 +47,8 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
 
     private final CtrlSnapshotCrtApiCallHandler ctrlSnapshotCrtApiCallHandler;
     private final CtrlSnapshotShippingApiCallHandler ctrlSnapshotShippingApiCallHandler;
+    private final BackgroundRunner backgroundRunner;
+    private final LockGuardFactory lockGuardFactory;
 
     /*
      * Only used to populate configSet when initializing
@@ -54,7 +65,9 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         CtrlSnapshotShippingApiCallHandler ctrlSnapshotShippingApiCallHandlerRef,
         ResourceDefinitionRepository rscDfnRepoRef,
         SystemConfRepository sysConfRepoRef,
-        @SystemContext AccessContext sysCtxRef
+        @SystemContext AccessContext sysCtxRef,
+        BackgroundRunner backgroundRunnerRef,
+        LockGuardFactory lockGuardFactoryRef
     )
     {
         ctrlSnapshotCrtApiCallHandler = ctrlSnapshotCrtApiCallHandlerRef;
@@ -62,6 +75,8 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         rscDfnRepo = rscDfnRepoRef;
         sysConfRepo = sysConfRepoRef;
         sysCtx = sysCtxRef;
+        backgroundRunner = backgroundRunnerRef;
+        lockGuardFactory = lockGuardFactoryRef;
 
     }
 
@@ -249,16 +264,14 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
 
     private void run(AutoSnapshotConfig cfgRef)
     {
-        getFlux(cfgRef)
-            .subscriberContext(
-                Context.of(
-                    ApiModule.API_CALL_NAME,
-                    cfgRef.shipping ? AUTO_SHIPPING_API_NAME : AUTO_SNAPSHOT_API_NAME,
-                    AccessContext.class, sysCtx,
-                    Peer.class, new PeerController("autoSnapshot", null, true)
-                )
+        backgroundRunner.runInBackground(
+            new RunConfig<>(
+                (cfgRef.shipping ? AUTO_SHIPPING_API_NAME : AUTO_SNAPSHOT_API_NAME) + " of resource " + cfgRef.rscName,
+                getFlux(cfgRef),
+                sysCtx,
+                getNodeNamessByRscName(cfgRef.rscName)
             )
-            .subscribe();
+        );
         if (cfgRef.shipping)
         {
             cfgRef.shippingInProgress = true;
@@ -271,6 +284,31 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
             cfgRef.nextRerunAt += cfgRef.runEveryInMs;
             configSet.add(cfgRef);
         }
+    }
+
+    private List<NodeName> getNodeNamessByRscName(String rscNameRef)
+    {
+        // TODO: this method is very similar to BackupShippingTask#getNodesToLock, so we should probably combine
+        // those sometime...
+        List<NodeName> ret = new ArrayList<>();
+        try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP))
+        {
+            ResourceDefinition rscDfn = rscDfnRepo.get(sysCtx, new ResourceName(rscNameRef));
+            Iterator<Resource> rscIt = rscDfn.iterateResource(sysCtx);
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                if (!rsc.isDeleted() && !rsc.getNode().isDeleted())
+                {
+                    ret.add(rsc.getNode().getName());
+                }
+            }
+        }
+        catch (AccessDeniedException | InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ret;
     }
 
     private Flux<ApiCallRc> getFlux(AutoSnapshotConfig cfgRef)

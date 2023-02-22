@@ -11,6 +11,7 @@ import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
@@ -91,6 +92,7 @@ public class ScheduleBackupService implements SystemService
     private final Provider<CtrlBackupCreateApiCallHandler> backupCrtApiCallHandler;
     private final Provider<CtrlBackupL2LSrcApiCallHandler> backupL2LSrcApiCallHandler;
     private final ScopeRunner scopeRunner;
+    private final BackgroundRunner backgroundRunner;
 
     private final Object syncObj = new Object();
     private final Map<Schedule, Set<ScheduledShippingConfig>> scheduleLookupMap = new TreeMap<>();
@@ -116,7 +118,8 @@ public class ScheduleBackupService implements SystemService
         ErrorReporter errorReporterRef,
         Provider<CtrlBackupCreateApiCallHandler> backupCrtApiCallHandlerRef,
         Provider<CtrlBackupL2LSrcApiCallHandler> backupL2LSrcApiCallHandlerRef,
-        ScopeRunner scopeRunnerRef
+        ScopeRunner scopeRunnerRef,
+        BackgroundRunner backgroundRunnerRef
     )
     {
         taskScheduleService = taskScheduleServiceRef;
@@ -130,6 +133,7 @@ public class ScheduleBackupService implements SystemService
         backupCrtApiCallHandler = backupCrtApiCallHandlerRef;
         backupL2LSrcApiCallHandler = backupL2LSrcApiCallHandlerRef;
         scopeRunner = scopeRunnerRef;
+        backgroundRunner = backgroundRunnerRef;
         serviceInstanceName = SERVICE_NAME;
     }
 
@@ -415,16 +419,14 @@ public class ScheduleBackupService implements SystemService
                 if (lastStartTime >= 0 && confIsActive || lastStartTime == NOT_STARTED_YET)
                 {
                     BackupShippingTask task = new BackupShippingTask(
-                        accCtx,
-                        errorReporter,
-                        backupCrtApiCallHandler.get(),
-                        backupL2LSrcApiCallHandler.get(),
-                        config,
-                        this,
-                        rscDfn.getName().displayValue,
-                        prefNode,
-                        incremental,
-                        lastStartTime
+                        new BackupShippingtaskConfig(
+                            accCtx,
+                            config,
+                            rscDfn.getName().displayValue,
+                            prefNode,
+                            incremental,
+                            lastStartTime
+                        )
                     );
                     config.task = task;
                     synchronized (syncObj)
@@ -963,6 +965,104 @@ public class ScheduleBackupService implements SystemService
             }
             return true;
         }
+    }
 
+    /**
+     * A simple holder class that holds objects required for the BackupShippingTask or can access
+     * ScheduleBackupService's commonly used fields as the *ApiCallHandlers
+     *
+     * This class is deliberately not static so we can create delegate-getters to the containing
+     * {@link ScheduleBackupService} instance.
+     */
+    class BackupShippingtaskConfig
+    {
+        private final AccessContext accCtx;
+        private final ScheduledShippingConfig schedShipCfg;
+        private final String rscName;
+        private final String nodeName;
+        private final boolean incremental;
+        private final long lastStartTime;
+
+        private BackupShippingtaskConfig(
+            AccessContext accCtxRef,
+            ScheduledShippingConfig schedShipCfgRef,
+            String rscNameRef,
+            String nodeNameRef,
+            boolean incrementalRef,
+            long lastStartTimeRef
+        )
+        {
+            accCtx = accCtxRef;
+            schedShipCfg = schedShipCfgRef;
+            rscName = rscNameRef;
+            nodeName = nodeNameRef;
+            incremental = incrementalRef;
+            lastStartTime = lastStartTimeRef;
+        }
+
+        AccessContext getAccCtx()
+        {
+            return accCtx;
+        }
+
+        ScheduledShippingConfig getSchedShipCfg()
+        {
+            return schedShipCfg;
+        }
+
+        String getRscName()
+        {
+            return rscName;
+        }
+
+        String getNodeName()
+        {
+            return nodeName;
+        }
+
+        boolean isIncremental()
+        {
+            return incremental;
+        }
+
+        long getLastStartTime()
+        {
+            return lastStartTime;
+        }
+
+        ErrorReporter getErrorReporter()
+        {
+            return ScheduleBackupService.this.errorReporter;
+        }
+
+        CtrlBackupCreateApiCallHandler getBackupCreateApiCallHandler()
+        {
+            return ScheduleBackupService.this.backupCrtApiCallHandler.get();
+        }
+
+        CtrlBackupL2LSrcApiCallHandler getBackupL2LSrcApiCallHandler()
+        {
+            return ScheduleBackupService.this.backupL2LSrcApiCallHandler.get();
+        }
+
+        ScheduleBackupService getScheduleBackupService()
+        {
+            return ScheduleBackupService.this;
+        }
+
+        BackgroundRunner getBackgroundRunner()
+        {
+            return ScheduleBackupService.this.backgroundRunner;
+        }
+
+        LockGuardFactory getLockGuardFactory()
+        {
+            return ScheduleBackupService.this.lockGuardFactory;
+        }
+
+        ResourceDefinitionRepository getRscDfnRepo()
+        {
+            return ScheduleBackupService.this.rscDfnRepo;
+        }
     }
 }

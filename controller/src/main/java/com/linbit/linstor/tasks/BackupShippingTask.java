@@ -1,11 +1,14 @@
 package com.linbit.linstor.tasks;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.api.ApiModule;
-import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
+import com.linbit.linstor.core.BackgroundRunner.RunConfig;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -13,49 +16,31 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerTask;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.tasks.ScheduleBackupService.BackupShippingtaskConfig;
 import com.linbit.linstor.tasks.ScheduleBackupService.ScheduledShippingConfig;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
+import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import reactor.core.publisher.Flux;
-import reactor.util.context.Context;
 
 public class BackupShippingTask implements TaskScheduleService.Task
 {
-    private final AccessContext accCtx;
-    private final ErrorReporter errorReporter;
-    private final CtrlBackupCreateApiCallHandler backupCrtApiCallHandler;
-    private final CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandler;
-    private final ScheduledShippingConfig conf;
-    private final ScheduleBackupService scheduleBackupService;
-    private final String rscName;
-    private final String nodeName;
-    private final long previousTaskStartTime;
     private final Object syncObj = new Object();
+    private final BackupShippingtaskConfig cfg;
+
     private boolean incremental;
 
-    public BackupShippingTask(
-        AccessContext accCtxRef,
-        ErrorReporter errorReporterRef,
-        CtrlBackupCreateApiCallHandler backupCrtApiCallHandlerRef,
-        CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandlerRef,
-        ScheduledShippingConfig confRef,
-        ScheduleBackupService scheduleBackupServiceRef,
-        String rscNameRef,
-        String nodeNameRef,
-        boolean incrementalRef,
-        long previousTaskStartTimeRef
-    )
+    public BackupShippingTask(BackupShippingtaskConfig baseTaskObjectsRef)
     {
-        accCtx = accCtxRef;
-        errorReporter = errorReporterRef;
-        backupCrtApiCallHandler = backupCrtApiCallHandlerRef;
-        backupL2LSrcApiCallHandler = backupL2LSrcApiCallHandlerRef;
-        conf = confRef;
-        scheduleBackupService = scheduleBackupServiceRef;
-        rscName = rscNameRef;
-        nodeName = nodeNameRef;
-        incremental = incrementalRef;
-        previousTaskStartTime = previousTaskStartTimeRef;
+        cfg = baseTaskObjectsRef;
+
+        incremental = cfg.isIncremental();
     }
 
     @Override
@@ -67,14 +52,24 @@ public class BackupShippingTask implements TaskScheduleService.Task
             inc = incremental;
         }
         final Flux<ApiCallRc> flux;
+
+        ScheduleBackupService scheduleBackupService = cfg.getScheduleBackupService();
+        ScheduledShippingConfig conf = cfg.getSchedShipCfg();
+        AccessContext accCtx = cfg.getAccCtx();
+
         scheduleBackupService.removeSingleTask(conf, true);
         Peer peer = new PeerTask("BackupShippingTaskPeer", accCtx);
+
+        String rscName = cfg.getRscName();
+        String nodeName = cfg.getNodeName();
+        ErrorReporter errorReporter = cfg.getErrorReporter();
+
         if (conf.remote instanceof S3Remote)
         {
             Flux<ApiCallRc> dumbDummyFluxBecauseFinal;
             try
             {
-                dumbDummyFluxBecauseFinal = backupCrtApiCallHandler
+                dumbDummyFluxBecauseFinal = cfg.getBackupCreateApiCallHandler()
                     .createBackup(
                         rscName, "", conf.remote.getName().displayValue, nodeName,
                         conf.schedule.getName().displayValue, inc
@@ -89,7 +84,7 @@ public class BackupShippingTask implements TaskScheduleService.Task
         }
         else if (conf.remote instanceof LinstorRemote)
         {
-            flux = backupL2LSrcApiCallHandler
+            flux = cfg.getBackupL2LSrcApiCallHandler()
                 .shipBackup(
                     nodeName, rscName, conf.remote.getName().displayValue, rscName, null, null, null, null, true,
                     conf.schedule.getName().displayValue, inc
@@ -106,71 +101,97 @@ public class BackupShippingTask implements TaskScheduleService.Task
             );
         }
 
-        Thread t = new Thread(() ->
-        {
-            flux.subscriberContext(
-                Context.of(
-                    AccessContext.class, accCtx, Peer.class, peer, ApiModule.API_CALL_NAME,
-                    "scheduled backup shipping"
+        cfg.getBackgroundRunner()
+            .runInBackground(
+                new RunConfig<>(
+                    "scheduled backup shipping of resource: " + rscName + "(" + (inc ? "incremental" : "full") + ")",
+                    flux,
+                    accCtx,
+                    getNodesToLock(rscName)
                 )
-            )
-                .subscribe(
-                    apiCallRc ->
-                    {
-                        for (ApiCallRc.RcEntry rc : apiCallRc.getEntries())
+                    .putSubscriberContext(Peer.class, peer)
+                    .setSubscriptionConsumers(
+                        apiCallRc ->
                         {
-                            if ((ApiConsts.MASK_ERROR & rc.getReturnCode()) == ApiConsts.MASK_ERROR)
+                            for (ApiCallRc.RcEntry rc : apiCallRc.getEntries())
                             {
-                                try
+                                if ((ApiConsts.MASK_ERROR & rc.getReturnCode()) == ApiConsts.MASK_ERROR)
                                 {
-                                    scheduleBackupService.addTaskAgain(
-                                        conf.rscDfn,
-                                        conf.schedule,
-                                        conf.remote,
-                                        scheduledAt,
-                                        false,
-                                        false,
-                                        conf.lastInc,
-                                        accCtx
-                                    );
-                                }
-                                catch (AccessDeniedException exc)
-                                {
-                                    errorReporter.reportError(exc);
+                                    try
+                                    {
+                                        scheduleBackupService.addTaskAgain(
+                                            conf.rscDfn,
+                                            conf.schedule,
+                                            conf.remote,
+                                            scheduledAt,
+                                            false,
+                                            false,
+                                            conf.lastInc,
+                                            accCtx
+                                        );
+                                    }
+                                    catch (AccessDeniedException exc)
+                                    {
+                                        errorReporter.reportError(exc);
+                                    }
                                 }
                             }
-                        }
-                    },
-                    error ->
-                    {
-                        errorReporter.reportError(error);
-                        try
+                        },
+                        error ->
                         {
-                            scheduleBackupService.addTaskAgain(
-                                conf.rscDfn,
-                                conf.schedule,
-                                conf.remote,
-                                scheduledAt,
-                                false,
-                                false,
-                                conf.lastInc,
-                                accCtx
-                            );
+                            errorReporter.reportError(error);
+                            try
+                            {
+                                scheduleBackupService.addTaskAgain(
+                                    conf.rscDfn,
+                                    conf.schedule,
+                                    conf.remote,
+                                    scheduledAt,
+                                    false,
+                                    false,
+                                    conf.lastInc,
+                                    accCtx
+                                );
+                            }
+                            catch (AccessDeniedException exc)
+                            {
+                                errorReporter.reportError(exc);
+                            }
                         }
-                        catch (AccessDeniedException exc)
-                        {
-                            errorReporter.reportError(exc);
-                        }
-                    }
-                );
-        });
-        t.start();
+                    )
+            );
         return Task.END_TASK;
+    }
+
+    private List<NodeName> getNodesToLock(String rscNameRef)
+    {
+        // TODO: this method is very similar to AutoSnapshotTask#getNodeNamessByRscName, so we should probably combine
+        // those sometime...
+        List<NodeName> ret = new ArrayList<>();
+        try (LockGuard lg = cfg.getLockGuardFactory().build(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP))
+        {
+            AccessContext accCtx = cfg.getAccCtx();
+            ResourceDefinition rscDfn = cfg.getRscDfnRepo().get(accCtx, new ResourceName(rscNameRef));
+            Iterator<Resource> rscIt = rscDfn.iterateResource(accCtx);
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                if (!rsc.isDeleted() && !rsc.getNode().isDeleted())
+                {
+                    ret.add(rsc.getNode().getName());
+                }
+            }
+        }
+        catch (AccessDeniedException | InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return ret;
     }
 
     public long getPreviousTaskStartTime()
     {
-        return previousTaskStartTime;
+        return cfg.getLastStartTime();
     }
 
     public void setIncremental(boolean incRef)
