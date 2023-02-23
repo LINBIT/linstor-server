@@ -58,8 +58,8 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
@@ -469,7 +469,7 @@ public class CtrlBackupRestoreApiCallHandler
                 ApiConsts.MASK_INFO
             );
             SnapshotDefinition nextBackSnapDfn = nextBackup.getSnapshotDefinition();
-            return snapshotCrtHandler.postCreateSnapshot(nextBackSnapDfn)
+            return snapshotCrtHandler.postCreateSnapshot(nextBackSnapDfn, false)
                 .concatWith(Flux.just(responses))
                 .onErrorResume(error -> cleanupAfterFailedRestore(error, nextBackSnapDfn, targetRscName));
         }
@@ -1186,7 +1186,7 @@ public class CtrlBackupRestoreApiCallHandler
                 // deal with that by our self
                 ret = ctrlSatelliteUpdateCaller.updateSatellites(data.stltRemote)
                     .thenMany(
-                        snapshotCrtHandler.postCreateSnapshotSuppressingErrorClasses(snapDfn)
+                        snapshotCrtHandler.postCreateSnapshotSuppressingErrorClasses(snapDfn, true)
                             .onErrorResume(error -> cleanupAfterFailedRestore(error, snapDfn, data.dstRscName))
                             .map(apiCallRcList ->
                             {
@@ -1512,7 +1512,7 @@ public class CtrlBackupRestoreApiCallHandler
                                 "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
                             )
                         )
-                            .concatWith(snapshotCrtHandler.postCreateSnapshot(nextSnapDfn));
+                            .concatWith(snapshotCrtHandler.postCreateSnapshot(nextSnapDfn, true));
                         keepGoing = true;
                     }
                     else

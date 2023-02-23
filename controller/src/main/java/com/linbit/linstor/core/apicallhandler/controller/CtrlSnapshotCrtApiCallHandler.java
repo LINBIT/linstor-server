@@ -9,6 +9,8 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.BackgroundRunner;
+import com.linbit.linstor.core.BackgroundRunner.RunConfig;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
@@ -21,6 +23,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.ebs.EbsStatusManagerService;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -74,6 +77,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private final ErrorReporter errorReporter;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandler;
     private final EbsStatusManagerService ebsStatusMgr;
+    private final BackgroundRunner backgroundRunner;
 
     @Inject
     public CtrlSnapshotCrtApiCallHandler(
@@ -88,7 +92,8 @@ public class CtrlSnapshotCrtApiCallHandler
         CtrlPropsHelper propsHelperRef,
         ErrorReporter errorReporterRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapshotDeleteApiCallHandlerRef,
-        EbsStatusManagerService ebsStatusManagerServiceRef
+        EbsStatusManagerService ebsStatusManagerServiceRef,
+        BackgroundRunner backgroundRunnerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -103,6 +108,7 @@ public class CtrlSnapshotCrtApiCallHandler
         errorReporter = errorReporterRef;
         ctrlSnapshotDeleteApiCallHandler = ctrlSnapshotDeleteApiCallHandlerRef;
         ebsStatusMgr = ebsStatusManagerServiceRef;
+        backgroundRunner = backgroundRunnerRef;
     }
 
     /**
@@ -165,7 +171,7 @@ public class CtrlSnapshotCrtApiCallHandler
             )
         );
         return Flux.<ApiCallRc>just(responses)
-            .concatWith(postCreateSnapshot(snapshotDfn));
+            .concatWith(postCreateSnapshot(snapshotDfn, false));
     }
 
     /**
@@ -256,7 +262,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 )
             );
             flux = Flux.<ApiCallRc>just(responses)
-                .concatWith(postCreateSnapshot(snapDfn))
+                .concatWith(postCreateSnapshot(snapDfn, true))
                 .concatWith(ctrlSnapshotDeleteApiCallHandler.cleanupOldAutoSnapshots(rscDfn));
         }
         return flux;
@@ -338,9 +344,13 @@ public class CtrlSnapshotCrtApiCallHandler
     }
 
     @SuppressWarnings("unchecked")
-    public Flux<ApiCallRc> postCreateSnapshot(SnapshotDefinition snapshotDfn)
+    public Flux<ApiCallRc> postCreateSnapshot(SnapshotDefinition snapshotDfn, boolean runInBackgroundRef)
     {
-        return postCreateSnapshotSuppressingErrorClasses(snapshotDfn, CtrlResponseUtils.DelayedApiRcException.class);
+        return postCreateSnapshotSuppressingErrorClasses(
+            snapshotDfn,
+            runInBackgroundRef,
+            CtrlResponseUtils.DelayedApiRcException.class
+        );
     }
 
     /**
@@ -354,6 +364,7 @@ public class CtrlSnapshotCrtApiCallHandler
     @SuppressWarnings("unchecked")
     public <E extends Throwable> Flux<ApiCallRc> postCreateSnapshotSuppressingErrorClasses(
         SnapshotDefinition snapshotDfn,
+        boolean runInBackgroundRef,
         Class<E>... suppressErrorClasses
     )
     {
@@ -362,17 +373,66 @@ public class CtrlSnapshotCrtApiCallHandler
         ResourceName rscName = rscDfn.getName();
         SnapshotName snapshotName = snapshotDfn.getName();
 
-        Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller
-            .updateSatellites(snapshotDfn, notConnectedError())
-            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
-            .transform(
-                updateResponses -> CtrlResponseUtils.combineResponses(
-                    updateResponses,
-                    rscName,
-                    "Suspended IO of {1} on {0} for snapshot"
+        List<NodeName> nodeNamesToLock = new ArrayList<>();
+        try
+        {
+            // TODO: this is very similar to BackupShippingTask#getNodesToLock, so we should probably combine
+            // the methods sometime...
+            Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+                if (!rsc.isDeleted() && !rsc.getNode().isDeleted())
+                {
+                    nodeNamesToLock.add(rsc.getNode().getName());
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+
+        Flux<ApiCallRc> satelliteUpdateResponses;
+        if (!runInBackgroundRef)
+        {
+            satelliteUpdateResponses = backgroundRunner.syncWithBackgroundFluxes(
+                new RunConfig<>(
+                    0,
+                    "Syncing with background tasks for snapshot " + snapshotDfn.toStringImpl(),
+                    () -> ctrlSatelliteUpdateCaller
+                        .updateSatellites(snapshotDfn, notConnectedError())
+                        .concatWith(
+                            ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty())
+                        )
+                        .transform(
+                            updateResponses -> CtrlResponseUtils.combineResponses(
+                                updateResponses,
+                                rscName,
+                                "Suspended IO of {1} on {0} for snapshot"
+                            )
+                        ),
+                    apiCtx,
+                    nodeNamesToLock,
+                    false
                 )
             );
-
+        }
+        else
+        {
+            satelliteUpdateResponses = ctrlSatelliteUpdateCaller
+                .updateSatellites(snapshotDfn, notConnectedError())
+                .concatWith(
+                    ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty())
+                )
+                .transform(
+                    updateResponses -> CtrlResponseUtils.combineResponses(
+                        updateResponses,
+                        rscName,
+                        "Suspended IO of {1} on {0} for snapshot"
+                    )
+                );
+        }
         Flux<ApiCallRc> flux = satelliteUpdateResponses
             .concatWith(takeSnapshot(rscName, snapshotName))
             .onErrorResume(exception -> abortSnapshot(rscName, snapshotName, exception));

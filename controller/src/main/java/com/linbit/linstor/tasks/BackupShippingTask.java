@@ -71,8 +71,13 @@ public class BackupShippingTask implements TaskScheduleService.Task
             {
                 dumbDummyFluxBecauseFinal = cfg.getBackupCreateApiCallHandler()
                     .createBackup(
-                        rscName, "", conf.remote.getName().displayValue, nodeName,
-                        conf.schedule.getName().displayValue, inc
+                        rscName,
+                        "",
+                        conf.remote.getName().displayValue,
+                        nodeName,
+                        conf.schedule.getName().displayValue,
+                        inc,
+                        true
                     );
             }
             catch (AccessDeniedException exc)
@@ -86,8 +91,18 @@ public class BackupShippingTask implements TaskScheduleService.Task
         {
             flux = cfg.getBackupL2LSrcApiCallHandler()
                 .shipBackup(
-                    nodeName, rscName, conf.remote.getName().displayValue, rscName, null, null, null, null, true,
-                    conf.schedule.getName().displayValue, inc
+                    nodeName,
+                    rscName,
+                    conf.remote.getName().displayValue,
+                    rscName,
+                    null,
+                    null,
+                    null,
+                    null,
+                    true,
+                    conf.schedule.getName().displayValue,
+                    inc,
+                    true
                 );
         }
         else
@@ -107,7 +122,8 @@ public class BackupShippingTask implements TaskScheduleService.Task
                     "scheduled backup shipping of resource: " + rscName + "(" + (inc ? "incremental" : "full") + ")",
                     flux,
                     accCtx,
-                    getNodesToLock(rscName)
+                    getNodesToLock(rscName),
+                    true
                 )
                     .putSubscriberContext(Peer.class, peer)
                     .setSubscriptionConsumers(

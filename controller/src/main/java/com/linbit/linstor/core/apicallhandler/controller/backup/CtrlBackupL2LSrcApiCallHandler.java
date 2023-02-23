@@ -142,7 +142,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable Map<String, String> storPoolRenameRef,
         boolean downloadOnly,
         String scheduleNameRef,
-        boolean allowIncremental
+        boolean allowIncremental,
+        boolean runInBackgroundRef
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -161,7 +162,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 storPoolRenameRef,
                 downloadOnly,
                 scheduleNameRef,
-                allowIncremental
+                allowIncremental,
+                runInBackgroundRef
             )
         );
     }
@@ -177,7 +179,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         Map<String, String> storPoolRenameRef,
         boolean downloadOnly,
         String scheduleNameRef,
-        boolean allowIncremental
+        boolean allowIncremental,
+        boolean runInBackgroundRef
     )
     {
 
@@ -244,7 +247,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             lockGuardFactory.create()
                 .write(LockObj.REMOTE_MAP)
                 .buildDeferred(),
-            () -> createStltRemoteInTransaction(data)
+            () -> createStltRemoteInTransaction(data, runInBackgroundRef)
         );
     }
 
@@ -254,10 +257,11 @@ public class CtrlBackupL2LSrcApiCallHandler
      * Next Flux: create snapshot without starting shipment
      *
      * @param data
+     * @param runInBackgroundRef
      *
      * @return
      */
-    private Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingData data)
+    private Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingData data, boolean runInBackgroundRef)
     {
         StltRemote stltRemote = createStltRemote(
             stltRemoteFactory,
@@ -279,7 +283,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                     lockGuardFactory.create()
                         .read(LockObj.NODES_MAP)
                         .write(LockObj.RSC_DFN_MAP).buildDeferred(),
-                    () -> shipBackupInTransaction(data)
+                    () -> shipBackupInTransaction(data, runInBackgroundRef)
                 )
             );
     }
@@ -293,7 +297,7 @@ public class CtrlBackupL2LSrcApiCallHandler
      *
      * @return
      */
-    private Flux<ApiCallRc> shipBackupInTransaction(BackupShippingData data)
+    private Flux<ApiCallRc> shipBackupInTransaction(BackupShippingData data, boolean runInBackgroundRef)
     {
         Map<ExtTools, Version> requiredExtTools = new HashMap<>();
         requiredExtTools.put(ExtTools.SOCAT, null);
@@ -310,7 +314,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             requiredExtTools,
             optionalExtTools,
             RemoteType.SATELLITE,
-            data.scheduleName
+            data.scheduleName,
+            runInBackgroundRef
         );
         data.srcSnapshot = createSnapshot.objB;
         data.srcNodeName = data.srcSnapshot.getNode().getName().displayValue;

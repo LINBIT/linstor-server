@@ -21,8 +21,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
@@ -67,7 +69,7 @@ public class BackgroundRunner
         {
             nodeNames.add(node.getName());
         }
-        runInBackground(new RunConfig<>(operationDescription, backgroundFlux, accCtx, nodeNames));
+        runInBackground(new RunConfig<>(operationDescription, backgroundFlux, accCtx, nodeNames, true));
     }
 
     public void runInBackground(RunConfig<?> runCfgRef)
@@ -76,7 +78,7 @@ public class BackgroundRunner
         {
             if (canRun(runCfgRef, busyNodes))
             {
-                start(runCfgRef);
+                startBackgroundFlux(runCfgRef);
             }
             else
             {
@@ -85,16 +87,68 @@ public class BackgroundRunner
         }
     }
 
+    public <T> Flux<T> syncWithBackgroundFluxes(RunConfig<T> runCfgRef)
+    {
+        Flux<T> ret;
+        synchronized (runQueuesByNode)
+        {
+            if (canRun(runCfgRef, busyNodes))
+            {
+                takeLocks(runCfgRef);
+                runCfgRef.flux = runCfgRef.fluxSupplier.get();
+                ret = prepareFlux(runCfgRef);
+            }
+            else
+            {
+                queue(runCfgRef);
+                ret = Flux.defer(() ->
+                {
+                    Flux<T> flux;
+                    try
+                    {
+                        runCfgRef.flux = runCfgRef.deferedFluxBlockingQueue.take();
+                        flux = prepareFlux(runCfgRef);
+                    }
+                    catch (InterruptedException exc)
+                    {
+                        exc.printStackTrace();
+                        errorReporter.reportError(
+                            exc,
+                            accCtx,
+                            null,
+                            "Exception occurred during " + runCfgRef.description
+                        );
+                        flux = Flux.empty();
+                    }
+                    return flux;
+                });
+            }
+        }
+        return ret;
+    }
+
+    private void start(RunConfig<?> runCfgRef)
+    {
+        if (runCfgRef.background)
+        {
+            startBackgroundFlux(runCfgRef);
+        }
+        else
+        {
+            startForegroundFlux(runCfgRef);
+        }
+    }
+
     /**
      * Assumes that runQueuesByNode lock is taken
      *
-     * Starts the given Flux and adds the RunConfig to all affected queues stating that the corresponding node is busy
+     * Prepares the given Flux by adding onSubscribe, onTermiate and other callback handlers.
+     * DOES NOT take any locks and DOES NOT subscribe to the given flux.
      */
-    private <T> void start(RunConfig<T> runCfgRef)
+    private <T> Flux<T> prepareFlux(RunConfig<T> runCfgRef)
     {
-        busyNodes.addAll(runCfgRef.nodesToLock);
 
-        runCfgRef.flux
+        return runCfgRef.flux
             .doOnSubscribe(ignored ->
                 errorReporter.logDebug("Background operation " + runCfgRef.description + " start"))
             .doOnTerminate(() ->
@@ -102,7 +156,32 @@ public class BackgroundRunner
                 errorReporter.logDebug("Background operation " + runCfgRef.description + " end");
                 finished(runCfgRef);
             })
-            .subscriberContext(Context.of(runCfgRef.subscriberContext))
+            .subscriberContext(Context.of(runCfgRef.subscriberContext));
+    }
+
+    /**
+     * Assumes that runQueuesByNode lock is taken
+     *
+     * This method assumes that the given Flux is already subscribed to, but is waiting in the artifically created
+     * Flux.defer() method.
+     * All this method has to do is to put the actual Flux into the supplier of the artificial Flux.defer() and let the
+     * already subscribed Flux continue.
+     */
+    private <T> void startForegroundFlux(RunConfig<T> runCfgRef)
+    {
+        takeLocks(runCfgRef);
+        runCfgRef.runDeferredFlux();
+    }
+
+    /**
+     * Assumes that runQueuesByNode lock is taken
+     *
+     * Starts the given Flux and adds the RunConfig to all affected queues stating that the corresponding node is busy
+     */
+    private <T> void startBackgroundFlux(RunConfig<T> runCfgRef)
+    {
+        takeLocks(runCfgRef);
+        prepareFlux(runCfgRef)
             .subscribe(
                 responses ->
                 {
@@ -128,6 +207,11 @@ public class BackgroundRunner
             );
     }
 
+    private <T> void takeLocks(RunConfig<T> runCfgRef)
+    {
+        busyNodes.addAll(runCfgRef.nodesToLock);
+    }
+
     /**
      * Removes the given {@link RunConfig} from the queues and starts new {@link RunConfig}s (possibly multiple) that
      * where blocked until now
@@ -140,11 +224,14 @@ public class BackgroundRunner
             for (NodeName node : runCfgRef.nodesToLock)
             {
                 TreeSet<RunConfig<?>> queue = runQueuesByNode.get(node);
-                queue.remove(runCfgRef);
-
-                if (!queue.isEmpty())
+                if (queue != null)
                 {
-                    nextToCheck.add(queue.first());
+                    queue.remove(runCfgRef);
+
+                    if (!queue.isEmpty())
+                    {
+                        nextToCheck.add(queue.first());
+                    }
                 }
             }
             busyNodes.removeAll(runCfgRef.nodesToLock);
@@ -215,9 +302,6 @@ public class BackgroundRunner
         }
     }
 
-    /**
-     * Note: this class has a natural ordering that is inconsistent with equals.
-     */
     public static class RunConfig<T> implements Comparable<RunConfig<T>>
     {
         private static final AtomicLong ID_GEN = new AtomicLong(0);
@@ -228,40 +312,104 @@ public class BackgroundRunner
         private final long uniqueId = ID_GEN.getAndIncrement();
 
         private final String description;
-        private final Flux<T> flux;
-        private final Map<Object, Object> subscriberContext;
+        private @Nullable Flux<T> flux;
+        private final @Nullable Supplier<Flux<T>> fluxSupplier;
+        private final Map<Object, Object> subscriberContext = new HashMap<>();
 
         private final List<NodeName> nodesToLock;
+        private final boolean background;
 
-        public @Nullable Consumer<T> subscriptionConsumer = null;
-        public @Nullable Consumer<Throwable> subscriptionErrorConsumer = null;
+        private @Nullable Consumer<T> subscriptionConsumer = null;
+        private @Nullable Consumer<Throwable> subscriptionErrorConsumer = null;
 
+        private @Nullable ArrayBlockingQueue<Flux<T>> deferedFluxBlockingQueue;
+
+
+        /*
+         * Usually used by foreground tasks
+         */
+        public RunConfig(
+            long priorityRef,
+            String descriptionRef,
+            Supplier<Flux<T>> fluxSupplierRef,
+            AccessContext accCtxRef,
+            List<NodeName> nodesToLockRef,
+            boolean backgroundRef
+        )
+        {
+            priority = priorityRef;
+            description = descriptionRef;
+            fluxSupplier = fluxSupplierRef;
+            flux = null;
+            nodesToLock = nodesToLockRef;
+            background = backgroundRef;
+
+            initializeSubscriberContext(descriptionRef, accCtxRef);
+
+            if (!backgroundRef)
+            {
+                deferedFluxBlockingQueue = new ArrayBlockingQueue<>(1);
+            }
+            else
+            {
+                deferedFluxBlockingQueue = null;
+            }
+        }
+
+        /*
+         * Usually used by background tasks
+         */
         public RunConfig(
             String descriptionRef,
             Flux<T> fluxRef,
             AccessContext accCtxRef,
-            List<NodeName> nodesToLockRef
+            List<NodeName> nodesToLockRef,
+            boolean backgroundRef
         )
         {
-            this(System.currentTimeMillis(), descriptionRef, fluxRef, accCtxRef, nodesToLockRef);
+            this(System.currentTimeMillis(), descriptionRef, fluxRef, accCtxRef, nodesToLockRef, backgroundRef);
         }
 
+        /*
+         * Usually used by background tasks
+         */
         public RunConfig(
             long priorityRef,
             String descriptionRef,
             Flux<T> fluxRef,
             AccessContext accCtxRef,
-            List<NodeName> nodesToLockRef
+            List<NodeName> nodesToLockRef,
+            boolean backgroundRef
         )
         {
             priority = priorityRef;
             description = descriptionRef;
+            fluxSupplier = null;
             flux = fluxRef;
-            subscriberContext = new HashMap<>();
+            background = backgroundRef;
             nodesToLock = nodesToLockRef;
 
-            subscriberContext.put(ApiModule.API_CALL_NAME, description);
+            initializeSubscriberContext(descriptionRef, accCtxRef);
+
+            if (!backgroundRef)
+            {
+                deferedFluxBlockingQueue = new ArrayBlockingQueue<>(1);
+            }
+            else
+            {
+                deferedFluxBlockingQueue = null;
+            }
+        }
+
+        private void initializeSubscriberContext(String descriptionRef, AccessContext accCtxRef)
+        {
+            subscriberContext.put(ApiModule.API_CALL_NAME, descriptionRef);
             subscriberContext.put(AccessContext.class, accCtxRef);
+        }
+
+        private void runDeferredFlux()
+        {
+            deferedFluxBlockingQueue.add(fluxSupplier.get());
         }
 
         public RunConfig<T> putSubscriberContext(Object key, Object value)

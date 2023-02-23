@@ -205,7 +205,8 @@ public class SnapshotShippingInternalApiCallHandler
                             snapSource.getNodeName().toString(),
                             null,
                             stltPeer.getNode().getName().toString(),
-                            snapDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC)
+                            snapDfn.getProps(apiCtx).getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC),
+                            true
                         )
                     );
                 }

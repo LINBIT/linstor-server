@@ -269,7 +269,8 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                 (cfgRef.shipping ? AUTO_SHIPPING_API_NAME : AUTO_SNAPSHOT_API_NAME) + " of resource " + cfgRef.rscName,
                 getFlux(cfgRef),
                 sysCtx,
-                getNodeNamessByRscName(cfgRef.rscName)
+                getNodeNamessByRscName(cfgRef.rscName),
+                true
             )
         );
         if (cfgRef.shipping)

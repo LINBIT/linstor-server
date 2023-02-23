@@ -156,7 +156,8 @@ public class CtrlBackupCreateApiCallHandler
         String remoteNameRef,
         String nodeNameRef,
         String scheduleNameRef,
-        boolean incremental
+        boolean incremental,
+        boolean runInBackgroundRef
     )
         throws AccessDeniedException
     {
@@ -177,7 +178,8 @@ public class CtrlBackupCreateApiCallHandler
                 Collections.singletonMap(ExtTools.ZSTD, null),
                 null,
                 RemoteType.S3,
-                scheduleNameRef
+                scheduleNameRef,
+                runInBackgroundRef
             ).objA
         );
     }
@@ -196,6 +198,8 @@ public class CtrlBackupCreateApiCallHandler
      * <li>Saves the drbd-node-ids since they will be needed for a restore</li>
      * <li>Sets all flags and props needed for the stlt to start the shipping</li>
      * </ul>
+     *
+     * @param runInBackgroundRef
      */
     Pair<Flux<ApiCallRc>, Snapshot> backupSnapshot(
         String rscNameRef,
@@ -208,7 +212,8 @@ public class CtrlBackupCreateApiCallHandler
         Map<ExtTools, ExtToolsInfo.Version> requiredExtTools,
         Map<ExtTools, ExtToolsInfo.Version> optionalExtTools,
         RemoteType remoteTypeRef,
-        String scheduleNameRef
+        String scheduleNameRef,
+        boolean runInBackgroundRef
     )
     {
         String snapName = snapNameRef;
@@ -384,7 +389,7 @@ public class CtrlBackupCreateApiCallHandler
                 ).putObjRef(ApiConsts.KEY_SNAPSHOT, snapName).build()
             );
 
-            Flux<ApiCallRc> flux = snapshotCrtHandler.postCreateSnapshot(snapDfn)
+            Flux<ApiCallRc> flux = snapshotCrtHandler.postCreateSnapshot(snapDfn, runInBackgroundRef)
                 .concatWith(Flux.<ApiCallRc> just(responses));
             return new Pair<>(flux, createdSnapshot);
         }

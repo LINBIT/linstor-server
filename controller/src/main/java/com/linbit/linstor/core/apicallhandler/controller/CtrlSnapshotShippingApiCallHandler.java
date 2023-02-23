@@ -169,7 +169,7 @@ public class CtrlSnapshotShippingApiCallHandler
             {
                 sourceNodeName = getActiveResourceNodeName(rscDfn);
             }
-            flux = shipSnapshotInTransaction(rscNameRef, sourceNodeName, targetNodeName, null);
+            flux = shipSnapshotInTransaction(rscNameRef, sourceNodeName, targetNodeName, null, true);
         }
         return flux;
     }
@@ -216,7 +216,8 @@ public class CtrlSnapshotShippingApiCallHandler
         String fromNodeNameRef,
         String fromNicRef,
         String toNodeNameRef,
-        String toNicRef
+        String toNicRef,
+        boolean runInBackgroundRef
     )
     {
         ResponseContext context = makeSnapshotContext(
@@ -237,7 +238,8 @@ public class CtrlSnapshotShippingApiCallHandler
                     rscNameRef,
                     fromNodeNameRef,
                     toNodeNameRef,
-                    toNicRef
+                    toNicRef,
+                    runInBackgroundRef
                 )
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
@@ -247,7 +249,8 @@ public class CtrlSnapshotShippingApiCallHandler
         String rscNameRef,
         String fromNodeNameRef,
         String toNodeNameRef,
-        String toNicRef
+        String toNicRef,
+        boolean runInBackgroundRef
     )
     {
         ResourceConnection rscConn = rscConnHelper.loadOrCreateRscConn(
@@ -295,7 +298,7 @@ public class CtrlSnapshotShippingApiCallHandler
 
         ctrlTransactionHelper.commit();
 
-        return snapCrtHandler.postCreateSnapshot(snapDfn);
+        return snapCrtHandler.postCreateSnapshot(snapDfn, runInBackgroundRef);
     }
 
     private void checkIfSnapshotShippingIsSupported(Resource rsc, boolean fromRsc)
