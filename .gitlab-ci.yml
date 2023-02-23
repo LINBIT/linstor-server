@@ -197,7 +197,7 @@ test-e2e-all:
   script:
     - TEST_BRANCH=latest
     - TEST_BUNDLE_BRANCH=master
-    - TMP_VARIANTS="--variant default"
+    - TMP_VARIANTS="--variant nonstandard"
     - !reference [.common_e2e, script]
   artifacts:
     # provide a convenient name so that the downloaded artifacts can be identified
