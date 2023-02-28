@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - query-size-info API as a better version of query-max-value-size API
 - Linstor now automatically sets the resync-after property for drbd resources, grouped by storage pools
+- Added automatic rs-discard-granularity management based on lsblk's DISC-GRAN
 
 ### Changed
 
