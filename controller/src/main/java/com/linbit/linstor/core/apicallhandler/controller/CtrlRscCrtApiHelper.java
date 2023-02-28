@@ -482,7 +482,7 @@ public class CtrlRscCrtApiHelper
 
         if (!isFlagSet(rsc, Resource.Flags.INACTIVE) && !sharedRscMgr.isActivationAllowed(rsc))
         {
-            autoFlux.add(ctrlRscActivateApiCallHandler.activateRsc(nodeNameStr, rscNameStr));
+            autoFlux.add(ctrlRscActivateApiCallHandler.deactivateRsc(nodeNameStr, rscNameStr));
         }
 
         return new Pair<>(autoFlux, new ApiCallRcWith<>(responses, rsc));
