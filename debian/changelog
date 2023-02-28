@@ -1,3 +1,40 @@
+linstor-server (1.21.0~rc.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Drbd: Fix peerSlots
+  * Layer,size: Fixed calculating sizes
+  * Snap,abort: Fixed abort procedure
+  * AutoSnap: Fixed schedule bug
+  * Changelog: Add missing entries
+  * ExtTools: Add check for zfs utils
+  * Props,Rollback: Fix caching entries before clearing
+  * QSI: Add query-size-info API
+  * AbsVlmData: Pulled up devicePath
+  * DevPath: Unify devicePath naming conventions
+  * VlmDfn,discGran: Add automatic rs-discard-granularity calculation
+  * Stlt,DynamicProp: Stlt reports dynamic props to ctrl
+  * Props: Add specialHandlers
+  * Auto-rs-disc-gran: Add auto disable if actual prop is modified
+  * AutoSnap,BackupSchedule: Serialize multi-snapshots
+  * Snap,create: Also serialize snapshots from API
+  * Rsc,Crt,Shared: Automatically deactivate rsc in shared SP
+
+  [ Roland Kammerer ]
+  * containers: add zfs "tools"
+  * containers: fix semantic by using an if
+
+  [ Rene Peinthor ]
+  * sed: use supermicro recommended setup commands
+  * sed: revert SED if some command failed as we didn't store any password yet
+  * sedutils: use static arrays
+  * sedutils: create extcmd for each command
+  * Fix typo: CtrlRscDfnAutoVerfiyAlgoHelper -> CtrlRscDfnAutoVerifyAlgoHelper
+  * ctrlrscdfndelete: improve method name
+  * Add automatic DRBD resync-after setting, as long as not disabled
+  * changelog: update
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 28 Feb 2023 08:33:44 +0000
+
 linstor-server (1.20.3-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

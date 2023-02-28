@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.21.0-rc.1] - 2023-02-28
+
 ### Added
 
 - query-size-info API as a better version of query-max-value-size API
+- Linstor now automatically sets the resync-after property for drbd resources, grouped by storage pools
 
 ### Changed
 
