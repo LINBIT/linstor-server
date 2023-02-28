@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed AutoSnapshot scheduling bug
 - Fixed rollback after clearing entire PropsContainers
 - Fixed that too many concurrent Snapshots led to unnecessarily long suspend-io state
+- Fixed resource getting activated instead of deactivated in shared-sp
 
 ## [1.20.3] - 2023-01-26
 
