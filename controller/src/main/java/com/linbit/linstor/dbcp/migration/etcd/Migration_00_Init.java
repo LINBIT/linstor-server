@@ -1,18 +1,5 @@
 package com.linbit.linstor.dbcp.migration.etcd;
 
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecAccessTypes;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecAclMap;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecConfiguration;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecDfltRoles;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdRoleMap;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecIdentities;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecObjectProtection;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecRoles;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecTypeRules;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecTypes;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.StorPoolDefinitions;
 import com.linbit.linstor.transaction.EtcdTransaction;
 
 @SuppressWarnings("checkstyle:typename")
@@ -23,6 +10,70 @@ import com.linbit.linstor.transaction.EtcdTransaction;
 public class Migration_00_Init extends BaseEtcdMigration
 {
     private static final String PRIMARY_KEY_DELI = ":";
+
+    private static final String TBL_SEC_CFG = "SEC_CONFIGURATION";
+    private static final String COL_SEC_CFG_ENTRY_DSP_KEY = "ENTRY_DSP_KEY";
+    private static final String COL_SEC_CFG_ENTRY_VALUE = "ENTRY_VALUE";
+
+    private static final String TBL_SEC_ID = "SEC_IDENTITIES";
+    private static final String COL_SEC_ID_IDENTITY_NAME = "IDENTITY_NAME";
+    private static final String COL_SEC_ID_IDENTITY_DSP_NAME = "IDENTITY_DSP_NAME";
+    private static final String COL_SEC_ID_ID_ENABLED = "ID_ENABLED";
+    private static final String COL_SEC_ID_ID_LOCKED = "ID_LOCKED";
+
+    private static final String TBL_SC_TYPES = "SEC_TYPES";
+    private static final String COL_SEC_TYPES_TYPE_NAME = "TYPE_NAME";
+    private static final String COL_SEC_TYPES_TYPE_DSP_NAME = "TYPE_DSP_NAME";
+    private static final String COL_SEC_TYPES_TYPE_ENABLED = "TYPE_ENABLED";
+
+    private static final String TBL_SEC_ROLES = "SEC_ROLES";
+    private static final String COL_SEC_ROLES_ROLE_NAME = "ROLE_NAME";
+    private static final String COL_SEC_ROLES_ROLE_DSP_NAME = "ROLE_DSP_NAME";
+    private static final String COL_SEC_ROLES_DOMAIN_NAME = "DOMAIN_NAME";
+    private static final String COL_SEC_ROLES_ROLE_ENABLED = "ROLE_ENABLED";
+    private static final String COL_SEC_ROLES_ROLE_PRIVILEGES = "ROLE_PRIVILEGES";
+
+    private static final String TBL_SEC_ID_ROLE_MAP = "SEC_ID_ROLE_MAP";
+    private static final String COL_SEC_ID_ROLE_MAP_IDENTITY_NAME = "IDENTITY_NAME";
+    private static final String COL_SEC_ID_ROLE_MAP_ROLE_NAME = "ROLE_NAME";
+
+    private static final String TBL_SEC_ACC_TYPES = "SEC_ACCESS_TYPES";
+    private static final String COL_SEC_ACC_TYPES_ACCESS_TYPE_NAME = "ACCESS_TYPE_NAME";
+    private static final String COL_SEC_ACC_TYPES_ACCESS_TYPE_VALUE = "ACCESS_TYPE_VALUE";
+
+    private static final String TBL_SEC_TYPE_RULES = "SEC_TYPE_RULES";
+    private static final String COL_SEC_TYPE_RULES_DOMAIN_NAME = "DOMAIN_NAME";
+    private static final String COL_SEC_TYPE_RULES_TYPE_NAME = "TYPE_NAME";
+    private static final String COL_SEC_TYPE_RULES_ACCESS_TYPE = "ACCESS_TYPE";
+
+    private static final String TBL_SEC_DFLT_ROLES = "SEC_DFLT_ROLES";
+    private static final String COL_SEC_DFLT_ROLES_IDENTITY_NAME = "IDENTITY_NAME";
+    private static final String COL_SEC_DFLT_ROLES_ROLE_NAME = "ROLE_NAME";
+
+    private static final String TBL_SEC_OBJ_PROT = "SEC_OBJECT_PROTECTION";
+    private static final String COL_SEC_OBJ_PROT_OBJECT_PATH = "OBJECT_PATH";
+    private static final String COL_SEC_OBJ_PROT_CREATOR_IDENTITY_NAME = "CREATOR_IDENTITY_NAME";
+    private static final String COL_SEC_OBJ_PROT_OWNER_ROLE_NAME = "OWNER_ROLE_NAME";
+    private static final String COL_SEC_OBJ_PROT_SECURITY_TYPE_NAME = "SECURITY_TYPE_NAME";
+
+    private static final String TBL_SEC_ACL_MAP = "SEC_ACL_MAP";
+    private static final String COL_SEC_ACL_MAP_OBJECT_PATH = "OBJECT_PATH";
+    private static final String COL_SEC_ACL_MAP_ROLE_NAME = "ROLE_NAME";
+    private static final String COL_SEC_ACL_MAP_ACCESS_TYPE = "ACCESS_TYPE";
+
+    private static final String TBL_STOR_POOL_DFNS = "STOR_POOL_DEFINITIONS";
+    private static final String COL_STOR_POOL_DFNS_UUID = "UUID";
+    private static final String COL_STOR_POOL_DFNS_POOL_NAME = "POOL_NAME";
+    private static final String COL_STOR_POOL_DFNS_POOL_DSP_NAME = "POOL_DSP_NAME";
+
+    private static final String TBL_RSC_GRPS = "RESOURCE_GROUPS";
+    private static final String COL_RSC_GRPS_UUID = "UUID";
+    private static final String COL_RSC_GRPS_RESOURCE_GROUP_NAME = "RESOURCE_GROUP_NAME";
+    private static final String COL_RSC_GRPS_RESOURCE_GROUP_DSP_NAME = "RESOURCE_GROUP_DSP_NAME";
+    private static final String COL_RSC_GRPS_REPLICA_COUNT = "REPLICA_COUNT";
+
+    private static final String TBL_PROPS_CONTAINERS = "PROPS_CONTAINERS";
+
     private String etcdPrefix = null;
 
     private void secConfiguration(
@@ -32,8 +83,8 @@ public class Migration_00_Init extends BaseEtcdMigration
         String entryValue
     )
     {
-        tx.put(buildColumnKey(SecConfiguration.ENTRY_DSP_KEY, entryKey), entryDspKey);
-        tx.put(buildColumnKey(SecConfiguration.ENTRY_VALUE, entryKey), entryValue);
+        tx.put(buildKeyStr(TBL_SEC_CFG, COL_SEC_CFG_ENTRY_DSP_KEY, entryKey), entryDspKey);
+        tx.put(buildKeyStr(TBL_SEC_CFG, COL_SEC_CFG_ENTRY_VALUE, entryKey), entryValue);
     }
 
     private void secIdentities(
@@ -44,10 +95,16 @@ public class Migration_00_Init extends BaseEtcdMigration
         boolean idLocked
     )
     {
-        tx.put(buildColumnKey(SecIdentities.IDENTITY_NAME, identityName), identityName);
-        tx.put(buildColumnKey(SecIdentities.IDENTITY_DSP_NAME, identityName), identityDspName);
-        tx.put(buildColumnKey(SecIdentities.ID_ENABLED, identityName), Boolean.toString(idEnabled).toUpperCase());
-        tx.put(buildColumnKey(SecIdentities.ID_LOCKED, identityName), Boolean.toString(idLocked).toUpperCase());
+        tx.put(buildKeyStr(TBL_SEC_ID, COL_SEC_ID_IDENTITY_NAME, identityName), identityName);
+        tx.put(buildKeyStr(TBL_SEC_ID, COL_SEC_ID_IDENTITY_DSP_NAME, identityName), identityDspName);
+        tx.put(
+            buildKeyStr(TBL_SEC_ID, COL_SEC_ID_ID_ENABLED, identityName),
+            Boolean.toString(idEnabled).toUpperCase()
+        );
+        tx.put(
+            buildKeyStr(TBL_SEC_ID, COL_SEC_ID_ID_LOCKED, identityName),
+            Boolean.toString(idLocked).toUpperCase()
+        );
     }
 
     private void secTypes(
@@ -57,9 +114,12 @@ public class Migration_00_Init extends BaseEtcdMigration
         boolean typeEnabled
     )
     {
-        tx.put(buildColumnKey(SecTypes.TYPE_NAME, typeName), typeName);
-        tx.put(buildColumnKey(SecTypes.TYPE_DSP_NAME, typeName), typeDspName);
-        tx.put(buildColumnKey(SecTypes.TYPE_ENABLED, typeName), Boolean.toString(typeEnabled).toUpperCase());
+        tx.put(buildKeyStr(TBL_SC_TYPES, COL_SEC_TYPES_TYPE_NAME, typeName), typeName);
+        tx.put(buildKeyStr(TBL_SC_TYPES, COL_SEC_TYPES_TYPE_DSP_NAME, typeName), typeDspName);
+        tx.put(
+            buildKeyStr(TBL_SC_TYPES, COL_SEC_TYPES_TYPE_ENABLED, typeName),
+            Boolean.toString(typeEnabled).toUpperCase()
+        );
     }
 
     private void secRoles(
@@ -71,11 +131,14 @@ public class Migration_00_Init extends BaseEtcdMigration
         int rolePrivileges
     )
     {
-        tx.put(buildColumnKey(SecRoles.ROLE_NAME, roleName), roleName);
-        tx.put(buildColumnKey(SecRoles.ROLE_DSP_NAME, roleName), roleDspName);
-        tx.put(buildColumnKey(SecRoles.DOMAIN_NAME, roleName), domainName);
-        tx.put(buildColumnKey(SecRoles.ROLE_ENABLED, roleName), Boolean.toString(roleEnabled).toUpperCase());
-        tx.put(buildColumnKey(SecRoles.ROLE_PRIVILEGES, roleName), Integer.toString(rolePrivileges));
+        tx.put(buildKeyStr(TBL_SEC_ROLES, COL_SEC_ROLES_ROLE_NAME, roleName), roleName);
+        tx.put(buildKeyStr(TBL_SEC_ROLES, COL_SEC_ROLES_ROLE_DSP_NAME, roleName), roleDspName);
+        tx.put(buildKeyStr(TBL_SEC_ROLES, COL_SEC_ROLES_DOMAIN_NAME, roleName), domainName);
+        tx.put(
+            buildKeyStr(TBL_SEC_ROLES, COL_SEC_ROLES_ROLE_ENABLED, roleName),
+            Boolean.toString(roleEnabled).toUpperCase()
+        );
+        tx.put(buildKeyStr(TBL_SEC_ROLES, COL_SEC_ROLES_ROLE_PRIVILEGES, roleName), Integer.toString(rolePrivileges));
     }
 
     private void secIdRoleMap(
@@ -85,8 +148,8 @@ public class Migration_00_Init extends BaseEtcdMigration
     )
     {
         final String pk = identityName + PRIMARY_KEY_DELI + roleName;
-        tx.put(buildColumnKey(SecIdRoleMap.IDENTITY_NAME, pk), identityName);
-        tx.put(buildColumnKey(SecIdRoleMap.ROLE_NAME, pk), roleName);
+        tx.put(buildKeyStr(TBL_SEC_ID_ROLE_MAP, COL_SEC_ID_ROLE_MAP_IDENTITY_NAME, pk), identityName);
+        tx.put(buildKeyStr(TBL_SEC_ID_ROLE_MAP, COL_SEC_ID_ROLE_MAP_ROLE_NAME, pk), roleName);
     }
 
     private void secAccessTypes(
@@ -95,8 +158,11 @@ public class Migration_00_Init extends BaseEtcdMigration
         int accessTypeValue
     )
     {
-        tx.put(buildColumnKey(SecAccessTypes.ACCESS_TYPE_NAME, accessTypeName), accessTypeName);
-        tx.put(buildColumnKey(SecAccessTypes.ACCESS_TYPE_VALUE, accessTypeName), Integer.toString(accessTypeValue));
+        tx.put(buildKeyStr(TBL_SEC_ACC_TYPES, COL_SEC_ACC_TYPES_ACCESS_TYPE_NAME, accessTypeName), accessTypeName);
+        tx.put(
+            buildKeyStr(TBL_SEC_ACC_TYPES, COL_SEC_ACC_TYPES_ACCESS_TYPE_VALUE, accessTypeName),
+            Integer.toString(accessTypeValue)
+        );
     }
 
     private void secTypeRules(
@@ -107,9 +173,9 @@ public class Migration_00_Init extends BaseEtcdMigration
     )
     {
         final String pk = domainName + PRIMARY_KEY_DELI + typeName;
-        tx.put(buildColumnKey(SecTypeRules.DOMAIN_NAME, pk), domainName);
-        tx.put(buildColumnKey(SecTypeRules.TYPE_NAME, pk), typeName);
-        tx.put(buildColumnKey(SecTypeRules.ACCESS_TYPE, pk), Integer.toString(accessType));
+        tx.put(buildKeyStr(TBL_SEC_TYPE_RULES, COL_SEC_TYPE_RULES_DOMAIN_NAME, pk), domainName);
+        tx.put(buildKeyStr(TBL_SEC_TYPE_RULES, COL_SEC_TYPE_RULES_TYPE_NAME, pk), typeName);
+        tx.put(buildKeyStr(TBL_SEC_TYPE_RULES, COL_SEC_TYPE_RULES_ACCESS_TYPE, pk), Integer.toString(accessType));
     }
 
     private void secDfltRoles(
@@ -119,8 +185,8 @@ public class Migration_00_Init extends BaseEtcdMigration
     )
     {
         final String pk = identityName;
-        tx.put(buildColumnKey(SecDfltRoles.IDENTITY_NAME, pk), identityName);
-        tx.put(buildColumnKey(SecDfltRoles.ROLE_NAME, pk), roleName);
+        tx.put(buildKeyStr(TBL_SEC_DFLT_ROLES, COL_SEC_DFLT_ROLES_IDENTITY_NAME, pk), identityName);
+        tx.put(buildKeyStr(TBL_SEC_DFLT_ROLES, COL_SEC_DFLT_ROLES_ROLE_NAME, pk), roleName);
     }
 
     private void secObjectProtection(
@@ -132,10 +198,10 @@ public class Migration_00_Init extends BaseEtcdMigration
     )
     {
         final String pk = objectPath;
-        tx.put(buildColumnKey(SecObjectProtection.OBJECT_PATH, pk), objectPath);
-        tx.put(buildColumnKey(SecObjectProtection.CREATOR_IDENTITY_NAME, pk), creatorIdentityName);
-        tx.put(buildColumnKey(SecObjectProtection.OWNER_ROLE_NAME, pk), ownerRoleName);
-        tx.put(buildColumnKey(SecObjectProtection.SECURITY_TYPE_NAME, pk), securityTypeName);
+        tx.put(buildKeyStr(TBL_SEC_OBJ_PROT, COL_SEC_OBJ_PROT_OBJECT_PATH, pk), objectPath);
+        tx.put(buildKeyStr(TBL_SEC_OBJ_PROT, COL_SEC_OBJ_PROT_CREATOR_IDENTITY_NAME, pk), creatorIdentityName);
+        tx.put(buildKeyStr(TBL_SEC_OBJ_PROT, COL_SEC_OBJ_PROT_OWNER_ROLE_NAME, pk), ownerRoleName);
+        tx.put(buildKeyStr(TBL_SEC_OBJ_PROT, COL_SEC_OBJ_PROT_SECURITY_TYPE_NAME, pk), securityTypeName);
     }
 
     private void secAclMap(
@@ -146,9 +212,9 @@ public class Migration_00_Init extends BaseEtcdMigration
     )
     {
         final String pk = objectPath + PRIMARY_KEY_DELI + roleName;
-        tx.put(buildColumnKey(SecAclMap.OBJECT_PATH, pk), objectPath);
-        tx.put(buildColumnKey(SecAclMap.ROLE_NAME, pk), roleName);
-        tx.put(buildColumnKey(SecAclMap.ACCESS_TYPE, pk), Integer.toString(accessType));
+        tx.put(buildKeyStr(TBL_SEC_ACL_MAP, COL_SEC_ACL_MAP_OBJECT_PATH, pk), objectPath);
+        tx.put(buildKeyStr(TBL_SEC_ACL_MAP, COL_SEC_ACL_MAP_ROLE_NAME, pk), roleName);
+        tx.put(buildKeyStr(TBL_SEC_ACL_MAP, COL_SEC_ACL_MAP_ACCESS_TYPE, pk), Integer.toString(accessType));
     }
 
     private void storPoolDefinitions(
@@ -159,9 +225,9 @@ public class Migration_00_Init extends BaseEtcdMigration
     )
     {
         final String pk = poolName;
-        tx.put(buildColumnKey(StorPoolDefinitions.UUID, pk), uuid);
-        tx.put(buildColumnKey(StorPoolDefinitions.POOL_NAME, pk), poolName);
-        tx.put(buildColumnKey(StorPoolDefinitions.POOL_DSP_NAME, pk), poolDspName);
+        tx.put(buildKeyStr(TBL_STOR_POOL_DFNS, COL_STOR_POOL_DFNS_UUID, pk), uuid);
+        tx.put(buildKeyStr(TBL_STOR_POOL_DFNS, COL_STOR_POOL_DFNS_POOL_NAME, pk), poolName);
+        tx.put(buildKeyStr(TBL_STOR_POOL_DFNS, COL_STOR_POOL_DFNS_POOL_DSP_NAME, pk), poolDspName);
     }
 
     private void resourceGroups(
@@ -172,10 +238,10 @@ public class Migration_00_Init extends BaseEtcdMigration
     )
     {
         final String pk = resourceGroupName;
-        tx.put(buildColumnKey(ResourceGroups.UUID, pk), uuid);
-        tx.put(buildColumnKey(ResourceGroups.RESOURCE_GROUP_NAME, pk), resourceGroupName);
-        tx.put(buildColumnKey(ResourceGroups.RESOURCE_GROUP_DSP_NAME, pk), resourceGroupDspName);
-        tx.put(buildColumnKey(ResourceGroups.REPLICA_COUNT, pk), "2");
+        tx.put(buildKeyStr(TBL_RSC_GRPS, COL_RSC_GRPS_UUID, pk), uuid);
+        tx.put(buildKeyStr(TBL_RSC_GRPS, COL_RSC_GRPS_RESOURCE_GROUP_NAME, pk), resourceGroupName);
+        tx.put(buildKeyStr(TBL_RSC_GRPS, COL_RSC_GRPS_RESOURCE_GROUP_DSP_NAME, pk), resourceGroupDspName);
+        tx.put(buildKeyStr(TBL_RSC_GRPS, COL_RSC_GRPS_REPLICA_COUNT, pk), "2");
     }
 
     private void propsContainers(
@@ -187,7 +253,7 @@ public class Migration_00_Init extends BaseEtcdMigration
     {
         tx.put(
             etcdPrefix +
-            GeneratedDatabaseTables.PROPS_CONTAINERS.getName() + "/" +
+                TBL_PROPS_CONTAINERS + "/" +
             propsInstance + PRIMARY_KEY_DELI + propKey,
             propValue
         );
