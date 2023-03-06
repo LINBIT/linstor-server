@@ -57,8 +57,6 @@ public class StltExtToolsChecker
     private static final Pattern THIN_SEND_RECV_VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)");
     private static final Pattern ZFS_KMOD_VERSION_PATTERN = Pattern
         .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
-    private static final Pattern ZFS_UTILS_VERSION_PATTERN = Pattern
-        .compile("^zfs-(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern NVME_VERSION_PATTERN = Pattern
         .compile("(?:nvme version\\s*)(\\d+)\\.(\\d+)");
     private static final Pattern SPDK_VERSION_PATTERN = Pattern
@@ -253,7 +251,7 @@ public class StltExtToolsChecker
 
         return getStdoutOrErrorReason(
             ec -> ec == 0 || ec == 1,
-            "zfs", "list"
+            "zfs", "-?"
         ).map(
             pair -> new ExtToolsInfo(
                 ExtTools.ZFS_UTILS,
