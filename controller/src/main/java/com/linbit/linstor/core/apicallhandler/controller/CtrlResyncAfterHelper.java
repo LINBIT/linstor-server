@@ -1,6 +1,5 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
-import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -33,7 +32,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
-import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.Collections;
@@ -53,7 +51,6 @@ public class CtrlResyncAfterHelper
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final LockGuardFactory lockGuardFactory;
-    private final Provider<AccessContext> peerCtxProvider;
     private final SystemConfRepository sysCfgRepo;
     private final StorPoolDefinitionRepository storPoolDfnRepo;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
@@ -67,7 +64,6 @@ public class CtrlResyncAfterHelper
         ScopeRunner scopeRunnerRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         LockGuardFactory lockGuardFactoryRef,
-        @PeerContext Provider<AccessContext> peerCtxProviderRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
         SystemConfRepository systemConfRepositoryRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef)
@@ -77,7 +73,6 @@ public class CtrlResyncAfterHelper
         scopeRunner = scopeRunnerRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         lockGuardFactory = lockGuardFactoryRef;
-        peerCtxProvider = peerCtxProviderRef;
         sysCfgRepo = systemConfRepositoryRef;
         storPoolDfnRepo = storPoolDefinitionRepositoryRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
@@ -106,13 +101,13 @@ public class CtrlResyncAfterHelper
         try
         {
             for (final Map.Entry<StorPoolName, StorPoolDefinition> entry : storPoolDfnRepo
-                .getMapForView(peerCtxProvider.get()).entrySet())
+                .getMapForView(sysCtx).entrySet())
             {
-                Iterator<StorPool> itStorPool = entry.getValue().iterateStorPools(peerCtxProvider.get());
+                Iterator<StorPool> itStorPool = entry.getValue().iterateStorPools(sysCtx);
                 while (itStorPool.hasNext())
                 {
                     final StorPool sp = itStorPool.next();
-                    for (final VlmProviderObject<Resource> vol : sp.getVolumes(peerCtxProvider.get()))
+                    for (final VlmProviderObject<Resource> vol : sp.getVolumes(sysCtx))
                     {
                         Props props = vol.getVolume().getProps(sysCtx);
                         if (props.contains(Collections.singletonList(DRBD_RESYNC_AFTER_KEY)))
@@ -172,24 +167,24 @@ public class CtrlResyncAfterHelper
 
         try
         {
-            final Props ctrlProps = sysCfgRepo.getCtrlConfForView(peerCtxProvider.get());
+            final Props ctrlProps = sysCfgRepo.getCtrlConfForView(sysCtx);
             final String disableAuto = ctrlProps.getProp(ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER,
                 ApiConsts.NAMESPC_DRBD_OPTIONS);
             if (!"true".equalsIgnoreCase(disableAuto))
             {
                 for (final Map.Entry<StorPoolName, StorPoolDefinition> entry : storPoolDfnRepo
-                    .getMapForView(peerCtxProvider.get()).entrySet())
+                    .getMapForView(sysCtx).entrySet())
                 {
-                    final Iterator<StorPool> itStorPool = entry.getValue().iterateStorPools(peerCtxProvider.get());
+                    final Iterator<StorPool> itStorPool = entry.getValue().iterateStorPools(sysCtx);
                     while (itStorPool.hasNext())
                     {
                         final StorPool sp = itStorPool.next();
                         final TreeMap<MinorNumber, VlmProviderObject<Resource>> spVolsSorted = new TreeMap<>();
-                        for (final VlmProviderObject<Resource> vol : sp.getVolumes(peerCtxProvider.get()))
+                        for (final VlmProviderObject<Resource> vol : sp.getVolumes(sysCtx))
                         {
                             final Resource rsc = vol.getRscLayerObject().getAbsResource();
                             final Set<AbsRscLayerObject<Resource>> drbdRscSet = LayerRscUtils
-                                .getRscDataByProvider(rsc.getLayerData(peerCtxProvider.get()), DeviceLayerKind.DRBD);
+                                .getRscDataByProvider(rsc.getLayerData(sysCtx), DeviceLayerKind.DRBD);
                             if (!drbdRscSet.isEmpty())
                             {
                                 final DrbdRscData<Resource> drbdRsc =
@@ -197,9 +192,9 @@ public class CtrlResyncAfterHelper
                                 final DrbdVlmDfnData<Resource> vlmDfnData = drbdRsc.getVlmLayerObjects()
                                     .get(vol.getVlmNr()).getVlmDfnLayerObject();
                                 if (vlmDfnData != null &&
-                                    !rsc.isDiskless(peerCtxProvider.get()) &&
+                                    !rsc.isDiskless(sysCtx) &&
                                     !rsc.isDeleted() &&
-                                    rsc.getStateFlags().isUnset(peerCtxProvider.get(), Resource.Flags.DELETE))
+                                    rsc.getStateFlags().isUnset(sysCtx, Resource.Flags.DELETE))
                                 {
                                     spVolsSorted.put(vlmDfnData.getMinorNr(), vol);
                                 }
@@ -209,7 +204,7 @@ public class CtrlResyncAfterHelper
                         String rscNameBefore = null;
                         for (VlmProviderObject<Resource> vol : spVolsSorted.values())
                         {
-                            final Props props = vol.getVolume().getProps(peerCtxProvider.get());
+                            final Props props = vol.getVolume().getProps(sysCtx);
                             if (rscNameBefore == null)
                             {
                                 if (props.removeProp(DRBD_RESYNC_AFTER_KEY) != null)
