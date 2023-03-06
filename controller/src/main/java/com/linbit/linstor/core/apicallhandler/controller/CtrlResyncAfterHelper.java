@@ -118,7 +118,9 @@ public class CtrlResyncAfterHelper
                     }
                 }
             }
-            rcs.addEntry("Removed all DRBD resync-after properties", ApiConsts.MASK_INFO);
+            final String infoMsg = "Removed all DRBD resync-after properties";
+            rcs.addEntry(infoMsg, ApiConsts.MASK_INFO);
+            errorReporter.logInfo(infoMsg);
         }
         catch (AccessDeniedException accExc)
         {
@@ -228,7 +230,9 @@ public class CtrlResyncAfterHelper
                     }
                 }
 
+                final String infoMsg = "Updated " + modifiedRscs.size() + " resync-after entries.";
                 apiCallRc.addEntry("Updated " + modifiedRscs.size() + " resync-after entries.", ApiConsts.MASK_INFO);
+                errorReporter.logInfo(infoMsg);
             }
         }
         catch (AccessDeniedException accExc)

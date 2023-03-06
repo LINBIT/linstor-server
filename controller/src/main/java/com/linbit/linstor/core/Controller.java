@@ -61,6 +61,7 @@ import com.linbit.linstor.systemstarter.ConnectNodesInitializer;
 import com.linbit.linstor.systemstarter.GrizzlyInitializer;
 import com.linbit.linstor.systemstarter.PassphraseInitializer;
 import com.linbit.linstor.systemstarter.PreConnectInitializer;
+import com.linbit.linstor.systemstarter.ResyncAfterInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
 import com.linbit.linstor.systemstarter.SpecStltTargetProcMgrInit;
 import com.linbit.linstor.systemstarter.StartupInitializer;
@@ -166,6 +167,7 @@ public final class Controller
     private final PreConnectInitializer preConnectCleanupInitializer;
     private final ScheduleBackupService scheduleBackupService;
     private final EbsStatusManagerService ebsStatusManagerService;
+    private final ResyncAfterInitializer resyncAfterInitializer;
 
     @Inject
     public Controller(
@@ -201,7 +203,8 @@ public final class Controller
         PassphraseInitializer passphraseInitializerRef,
         PreConnectInitializer preConnectCleanupInitializerRef,
         ScheduleBackupService scheduleBackupServiceRef,
-        EbsStatusManagerService ebsStatusManagerServiceRef
+        EbsStatusManagerService ebsStatusManagerServiceRef,
+        ResyncAfterInitializer resyncAfterInitializerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -236,6 +239,7 @@ public final class Controller
         preConnectCleanupInitializer = preConnectCleanupInitializerRef;
         scheduleBackupService = scheduleBackupServiceRef;
         ebsStatusManagerService = ebsStatusManagerServiceRef;
+        resyncAfterInitializer = resyncAfterInitializerRef;
     }
 
     public void start(Injector injector, CtrlConfig linstorCfgRef)
@@ -347,6 +351,7 @@ public final class Controller
                 startOrderlist.add(passphraseInitializer);
             }
             startOrderlist.add(preConnectCleanupInitializer);
+            startOrderlist.add(resyncAfterInitializer);
             startOrderlist.add(connectNodesInitializer);
             startOrderlist.add(openflexTargetProcessMgrInit);
             if (spaceTrackingService != null)
