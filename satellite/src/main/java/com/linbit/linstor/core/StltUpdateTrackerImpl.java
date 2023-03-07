@@ -11,8 +11,10 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -48,6 +50,39 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
         // cachedUpdates.controllerUpdate is NOT null (this will trigger the devMgr to re-generate .res files, etc)
         cachedUpdates.controllerUpdate = Optional.of(new UpdateNotification(null));
         return update(cachedUpdates.controllerUpdate.get());
+    }
+
+    @Override
+    public List<Flux<ApiCallRc>> updateData(AtomicUpdateHolder holder)
+    {
+        List<Flux<ApiCallRc>> ret = new ArrayList<>();
+        synchronized (sched)
+        {
+            // TODO extend for ctrl, nodes, storpools, etc....
+            for (Entry<UUID, Resource.ResourceKey> rscEntry : holder.resources.entrySet())
+            {
+                ret.add(
+                    update(
+                        cachedUpdates.rscUpdates.computeIfAbsent(
+                            rscEntry.getValue(),
+                            ignored -> new UpdateNotification(rscEntry.getKey())
+                        )
+                    )
+                );
+            }
+            for (Entry<UUID, SnapshotDefinition.Key> snapEntry : holder.snapshots.entrySet())
+            {
+                ret.add(
+                    update(
+                        cachedUpdates.snapshotUpdates.computeIfAbsent(
+                            snapEntry.getValue(),
+                            ignored -> new UpdateNotification(snapEntry.getKey())
+                        )
+                    )
+                );
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -301,6 +336,22 @@ public class StltUpdateTrackerImpl implements StltUpdateTracker
             snapshotUpdates.clear();
             externalFileUpdates.clear();
             remoteUpdates.clear();
+        }
+    }
+
+    public static class AtomicUpdateHolder
+    {
+        private final Map<UUID, Resource.ResourceKey> resources = new HashMap<>();
+        private final Map<UUID, SnapshotDefinition.Key> snapshots = new HashMap<>();
+
+        public void putRsc(UUID uuid, NodeName nodeName, ResourceName rscName)
+        {
+            resources.put(uuid, new Resource.ResourceKey(nodeName, rscName));
+        }
+
+        public void putSnap(UUID uuid, ResourceName rscName, SnapshotName snapName)
+        {
+            snapshots.put(uuid, new SnapshotDefinition.Key(rscName, snapName));
         }
     }
 }

@@ -8,6 +8,13 @@ public class InternalApiConsts
     public static final String API_FULL_SYNC_DATA     = "FullSyncData";
     public static final String API_FULL_SYNC_RESPONSE = "FullSyncResponse";
 
+    public static final String API_CHANGED_DATA = "ChangedData"; // this constant should replace in the long run all
+    // other API_CHANGED_* usages
+    public static final String API_REQUEST_DATA = "RequestData"; // this constant should replace in the long run all
+    // other API_REQUEST_* usages
+    public static final String API_APPLY_DATA = "ApplyData"; // this constant should replace in the long run all
+    // other API_APPLY_* (including API_APPLY_*_DELETED) usages
+
     public static final String API_CHANGED_CONTROLLER   = "ChangedController";
     public static final String API_REQUEST_CONTROLLER   = "RequestController";
     public static final String API_APPLY_CONTROLLER     = "ApplyController";

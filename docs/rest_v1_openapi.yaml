@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased
+      - Added POST /v1/action/snapshot/multi as well as CreateMultiSnapshotRequest and CreateMultiSnapshotResponse objects
     * 1.17.0
       - Added POST /v1/resource-groups/{resource_group}/query-size-info
       - Added QuerySizeInfoRequest and QuerySizeInfoResponse objects
@@ -197,7 +199,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.17.0
+  version: 1.18.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -208,6 +210,33 @@ tags:
   - name: developers
     description: Operations available to regular developers
 paths:
+  /v1/action/snapshot/multi:
+    post:
+      tags:
+        - developers
+      summary: creates one snapshot for multiple resources each
+      operationId: createMultiSnapshot
+      description: |
+        Suspends IO for all given resources before taking the snapshots on
+        all participating nodes before resuming IO again.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMultiSnapshotRequest'
+            example:
+              name: snap1
+      responses:
+        '201':
+          description: Snapshot created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateMultiSnapshotResponse'
+        '400':
+          $ref: '#/components/responses/InvalidInput'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
   /v1/storage-pool-definitions:
     get:
       tags:
@@ -7810,6 +7839,18 @@ components:
           type: array
           items:
             type: string
+    CreateMultiSnapshotRequest:
+      type: object
+      properties:
+        snapshots:
+          type: array
+          items:
+            $ref: '#/components/schemas/Snapshot'
+    CreateMultiSnapshotResponse:
+      type: object
+      properties:
+        messages:
+          $ref: '#/components/schemas/ApiCallRcList'
     Snapshot:
       type: object
       properties:

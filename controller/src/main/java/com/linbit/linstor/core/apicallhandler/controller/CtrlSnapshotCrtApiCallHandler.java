@@ -13,6 +13,8 @@ import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.BackgroundRunner.RunConfig;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
+import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest.SnapReq;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -53,6 +55,7 @@ import javax.inject.Singleton;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -128,50 +131,71 @@ public class CtrlSnapshotCrtApiCallHandler
         String snapshotNameStr
     )
     {
-        ResponseContext context = makeSnapshotContext(
-            ApiOperation.makeCreateOperation(),
-            nodeNameStrs,
-            rscNameStr,
-            snapshotNameStr
+        return createSnapshot(
+            singleSnapReq(nodeNameStrs, rscNameStr, snapshotNameStr)
         );
+    }
 
+    private CreateMultiSnapRequest singleSnapReq(
+        List<String> nodeNameStrsRef,
+        String rscNameStrRef,
+        String snapshotNameStrRef
+    )
+    {
+        return new CreateMultiSnapRequest(
+            Collections.singleton(new SnapReq(nodeNameStrsRef, rscNameStrRef, snapshotNameStrRef))
+        );
+    }
+
+    public Flux<ApiCallRc> createSnapshot(CreateMultiSnapRequest req)
+    {
         return scopeRunner
             .fluxInTransactionalScope(
-                "Create snapshot",
+                "Create (multi) snapshot",
                 lockGuardFactory.create()
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> createSnapshotInTransaction(nodeNameStrs, rscNameStr, snapshotNameStr)
+                () -> createSnapshotInTransaction(req)
             )
-            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+            .transform(responses -> responseConverter.reportingExceptions(req.makeSnapshotContext(), responses));
+
     }
 
-    private Flux<ApiCallRc> createSnapshotInTransaction(
-        List<String> nodeNameStrs,
-        String rscNameStr,
-        String snapshotNameStr
-    )
+    private Flux<ApiCallRc> createSnapshotInTransaction(CreateMultiSnapRequest req)
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
 
-        SnapshotDefinition snapshotDfn = ctrlSnapshotCrtHelper.createSnapshots(
-            nodeNameStrs,
-            rscNameStr,
-            snapshotNameStr,
-            responses
-        );
+        List<SnapshotDefinition> snapDfnList = new ArrayList<>();
+        for (SnapReq snapReq : req.getSnapRequests())
+        {
+            List<String> nodeNameStrs = snapReq.getNodeNames();
+            String rscNameStr = snapReq.getRscName();
+            String snapshotNameStr = snapReq.getSnapName();
+            SnapshotDefinition snapDfn = ctrlSnapshotCrtHelper.createSnapshots(
+                nodeNameStrs,
+                rscNameStr,
+                snapshotNameStr,
+                responses
+            );
+            snapDfnList.add(snapDfn);
+            responses.addEntry(
+                ApiSuccessUtils.defaultRegisteredEntry(
+                    snapDfn.getUuid(),
+                    getSnapshotDescriptionInline(
+                        nodeNameStrs,
+                        rscNameStr,
+                        snapshotNameStr
+                    )
+                )
+            );
+        }
 
+        req.setCreatedSnapDfns(snapDfnList);
         ctrlTransactionHelper.commit();
 
-        responses.addEntry(
-            ApiSuccessUtils.defaultRegisteredEntry(
-                snapshotDfn.getUuid(),
-                getSnapshotDescriptionInline(nodeNameStrs, rscNameStr, snapshotNameStr)
-            )
-        );
         return Flux.<ApiCallRc>just(responses)
-            .concatWith(postCreateSnapshot(snapshotDfn, false));
+            .concatWith(postCreateSnapshot(req, false));
     }
 
     /**
@@ -262,7 +286,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 )
             );
             flux = Flux.<ApiCallRc>just(responses)
-                .concatWith(postCreateSnapshot(snapDfn, true))
+                .concatWith(postCreateSnapshot(createSimpleSnapshotRequestPrivileged(snapDfn), true))
                 .concatWith(ctrlSnapshotDeleteApiCallHandler.cleanupOldAutoSnapshots(rscDfn));
         }
         return flux;
@@ -344,15 +368,38 @@ public class CtrlSnapshotCrtApiCallHandler
     }
 
     @SuppressWarnings("unchecked")
-    public Flux<ApiCallRc> postCreateSnapshot(SnapshotDefinition snapshotDfn, boolean runInBackgroundRef)
+    public Flux<ApiCallRc> postCreateSnapshot(SnapshotDefinition snapDfn, boolean runInBackgroundRef)
     {
         return postCreateSnapshotSuppressingErrorClasses(
-            snapshotDfn,
+            createSimpleSnapshotRequestPrivileged(snapDfn),
             runInBackgroundRef,
             CtrlResponseUtils.DelayedApiRcException.class
         );
     }
 
+    @SuppressWarnings("unchecked")
+    public Flux<ApiCallRc> postCreateSnapshot(CreateMultiSnapRequest reqRef, boolean runInBackgroundRef)
+    {
+        return postCreateSnapshotSuppressingErrorClasses(
+            reqRef,
+            runInBackgroundRef,
+            CtrlResponseUtils.DelayedApiRcException.class
+        );
+    }
+
+    @SuppressWarnings("unchecked")
+    public <E extends Throwable> Flux<ApiCallRc> postCreateSnapshotSuppressingErrorClasses(
+        SnapshotDefinition snapDfnRef,
+        boolean runInBackgroundRef,
+        Class<E>... suppressErrorClasses
+        )
+    {
+        return postCreateSnapshotSuppressingErrorClasses(
+            createSimpleSnapshotRequestPrivileged(snapDfnRef),
+            runInBackgroundRef,
+            suppressErrorClasses
+        );
+    }
     /**
      * After Snapshots with their SnapshotDefinition were created, this method now sends the update
      * to the corresponding satellites and also takes care of resuming-io in the end.
@@ -363,34 +410,35 @@ public class CtrlSnapshotCrtApiCallHandler
      */
     @SuppressWarnings("unchecked")
     public <E extends Throwable> Flux<ApiCallRc> postCreateSnapshotSuppressingErrorClasses(
-        SnapshotDefinition snapshotDfn,
+        CreateMultiSnapRequest reqRef,
         boolean runInBackgroundRef,
         Class<E>... suppressErrorClasses
     )
     {
-        ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
-
-        ResourceName rscName = rscDfn.getName();
-        SnapshotName snapshotName = snapshotDfn.getName();
-
-        List<NodeName> nodeNamesToLock = new ArrayList<>();
-        try
+        final List<NodeName> nodeNamesToLock = new ArrayList<>();
         {
-            // TODO: this is very similar to BackupShippingTask#getNodesToLock, so we should probably combine
-            // the methods sometime...
-            Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
-            while (rscIt.hasNext())
+            boolean reqNeedsUpdate = false;
+            for (SnapshotDefinition snapDfn : reqRef.getCreatedSnapDfns())
             {
-                Resource rsc = rscIt.next();
-                if (!rsc.isDeleted() && !rsc.getNode().isDeleted())
+                if (!snapDfn.isDeleted())
                 {
-                    nodeNamesToLock.add(rsc.getNode().getName());
+                    for (Snapshot snap : getAllSnapshotsPrivileged(snapDfn))
+                    {
+                        if (!snap.isDeleted())
+                        {
+                            nodeNamesToLock.add(snap.getNodeName());
+                        }
+                    }
+                }
+                else
+                {
+                    reqNeedsUpdate = true;
                 }
             }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError(exc);
+            if (reqNeedsUpdate)
+            {
+                updateRequstPrivileged(reqRef);
+            }
         }
 
         Flux<ApiCallRc> satelliteUpdateResponses;
@@ -399,16 +447,13 @@ public class CtrlSnapshotCrtApiCallHandler
             satelliteUpdateResponses = backgroundRunner.syncWithBackgroundFluxes(
                 new RunConfig<>(
                     0,
-                    "Syncing with background tasks for snapshot " + snapshotDfn.toStringImpl(),
+                    "Syncing with background tasks for " + reqRef.getDescription(),
                     () -> ctrlSatelliteUpdateCaller
-                        .updateSatellites(snapshotDfn, notConnectedError())
-                        .concatWith(
-                            ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty())
-                        )
+                        .updateSatellites(reqRef, notConnectedError())
                         .transform(
                             updateResponses -> CtrlResponseUtils.combineResponses(
                                 updateResponses,
-                                rscName,
+                                reqRef.getJoinedRscNames(),
                                 "Suspended IO of {1} on {0} for snapshot"
                             )
                         ),
@@ -421,21 +466,18 @@ public class CtrlSnapshotCrtApiCallHandler
         else
         {
             satelliteUpdateResponses = ctrlSatelliteUpdateCaller
-                .updateSatellites(snapshotDfn, notConnectedError())
-                .concatWith(
-                    ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty())
-                )
+                .updateSatellites(reqRef, notConnectedError())
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
                         updateResponses,
-                        rscName,
+                        reqRef.getJoinedRscNames(),
                         "Suspended IO of {1} on {0} for snapshot"
                     )
                 );
         }
         Flux<ApiCallRc> flux = satelliteUpdateResponses
-            .concatWith(takeSnapshot(rscName, snapshotName))
-            .onErrorResume(exception -> abortSnapshot(rscName, snapshotName, exception));
+            .concatWith(takeSnapshot(reqRef))
+            .onErrorResume(exception -> abortSnapshot(reqRef, exception));
         for (Class<E> clazz : suppressErrorClasses)
         {
             flux = flux.onErrorResume(clazz, ignored -> Flux.empty());
@@ -444,20 +486,48 @@ public class CtrlSnapshotCrtApiCallHandler
     }
 
     private Flux<ApiCallRc> abortSnapshot(
-        ResourceName rscName,
-        SnapshotName snapshotName,
+        CreateMultiSnapRequest reqRef,
         Throwable exception
     )
     {
         return scopeRunner
             .fluxInTransactionalScope(
-                "Abort taking snapshot",
+                "Abort taking MultiSnapshot",
                 lockGuardFactory.create()
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> abortSnapshotInTransaction(rscName, snapshotName, exception)
+                () -> abortSnapshotInTransaction(reqRef, exception)
             );
+    }
+
+    private Flux<ApiCallRc> abortSnapshotInTransaction(
+        CreateMultiSnapRequest reqRef,
+        Throwable exception
+    )
+    {
+        // no need for special handling for multi snapshot. Just concat aborting snapshots as if they were single
+        // snapshots
+        Flux<ApiCallRc> ret = Flux.empty();
+        boolean updated = false;
+        for (SnapshotDefinition snapDfn : reqRef.getCreatedSnapDfns())
+        {
+            if (!snapDfn.isDeleted())
+            {
+                ret = ret.concatWith(
+                    abortSnapshotInTransaction(snapDfn.getResourceName(), snapDfn.getName(), exception)
+                );
+            }
+            else
+            {
+                if (!updated)
+                {
+                    updateRequstPrivileged(reqRef);
+                    updated = true;
+                }
+            }
+        }
+        return ret;
     }
 
     private Flux<ApiCallRc> abortSnapshotInTransaction(
@@ -520,7 +590,7 @@ public class CtrlSnapshotCrtApiCallHandler
         return retFlux;
     }
 
-    private Flux<ApiCallRc> takeSnapshot(ResourceName rscName, SnapshotName snapshotName)
+    private Flux<ApiCallRc> takeSnapshot(CreateMultiSnapRequest reqRef)
     {
         return scopeRunner
             .fluxInTransactionalScope(
@@ -529,36 +599,55 @@ public class CtrlSnapshotCrtApiCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> takeSnapshotInTransaction(rscName, snapshotName)
+                () -> takeSnapshotInTransaction(reqRef)
             );
     }
 
-    private Flux<ApiCallRc> takeSnapshotInTransaction(ResourceName rscName, SnapshotName snapshotName)
+    private Flux<ApiCallRc> takeSnapshotInTransaction(CreateMultiSnapRequest reqRef)
     {
         Flux<ApiCallRc> ret;
 
-        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
-
-        Collection<Snapshot> snapshots = getAllSnapshotsPrivileged(snapshotDfn);
-        boolean allUpToDate = SatelliteResourceStateDrbdUtils.allResourcesUpToDate(
-            snapshots.stream().map(AbsResource::getNode).collect(Collectors.toSet()),
-            snapshotDfn.getResourceName(),
-            apiCtx);
+        boolean allUpToDate = true;
+        List<Snapshot> allSnapshots = new ArrayList<>();
+        for (SnapshotDefinition snapDfn : reqRef.getCreatedSnapDfns())
+        {
+            if (!snapDfn.isDeleted())
+            {
+                Collection<Snapshot> snapshots = getAllSnapshotsPrivileged(snapDfn);
+                allSnapshots.addAll(snapshots);
+                boolean snapDfnUpToDate = SatelliteResourceStateDrbdUtils.allResourcesUpToDate(
+                    snapshots.stream().map(AbsResource::getNode).collect(Collectors.toSet()),
+                    snapDfn.getResourceName(),
+                    apiCtx
+                );
+                if (!snapDfnUpToDate)
+                {
+                    allUpToDate = false;
+                    break;
+                }
+            }
+            else
+            {
+                allUpToDate = false;
+                updateRequstPrivileged(reqRef);
+                break;
+            }
+        }
 
         if (allUpToDate)
         {
-            for (Snapshot snapshot : snapshots)
+            for (Snapshot snapshot : allSnapshots)
             {
                 setTakeSnapshotPrivileged(snapshot, true);
             }
             ctrlTransactionHelper.commit();
 
             Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller
-                .updateSatellites(snapshotDfn, notConnectedError())
+                .updateSatellites(reqRef, notConnectedError())
                 .transform(
                     responses -> CtrlResponseUtils.combineResponses(
                         responses,
-                        rscName,
+                        reqRef.getJoinedRscNames(),
                         "Took snapshot of {1} on {0}"
                     )
                 );
@@ -566,47 +655,46 @@ public class CtrlSnapshotCrtApiCallHandler
             ret = satelliteUpdateResponses
                 .timeout(
                     Duration.ofMinutes(2),
-                    abortSnapshot(rscName, snapshotName, new TimeoutException())
+                    abortSnapshot(reqRef, new TimeoutException())
                 )
-                .concatWith(resumeResource(rscName, snapshotName));
+                .concatWith(resumeResource(reqRef));
         }
         else
         {
-            enableFlagPrivileged(snapshotDfn, SnapshotDefinition.Flags.DELETE);
-            unsetInCreationPrivileged(snapshotDfn);
-            ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
-            resumeIoPrivileged(rscDfn);
+            for (SnapshotDefinition snapDfn : reqRef.getCreatedSnapDfns())
+            {
+                // no need for isDeleted check here since we already updated the list before. It should not be possible
+                // that a SnapshotDefinition is deleted in the current list
+                enableFlagPrivileged(snapDfn, SnapshotDefinition.Flags.DELETE);
+                unsetInCreationPrivileged(snapDfn);
+                ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
+                resumeIoPrivileged(rscDfn);
+            }
 
             ctrlTransactionHelper.commit();
 
             ret = ctrlSatelliteUpdateCaller
-                .updateSatellites(snapshotDfn, notConnectedCannotAbort())
+                .updateSatellites(reqRef, notConnectedCannotAbort())
                 .transform(
                     responses -> CtrlResponseUtils.combineResponses(
                         responses,
-                        rscName,
-                        "Aborted snapshot of {1} on {0}"
+                        reqRef.getJoinedRscNames(),
+                        "Aborted snapshot of {1} on {0} and resumed IO"
                     )
-                )
-                .concatWith(
-                    ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
-                        .transform(
-                            responses -> CtrlResponseUtils.combineResponses(
-                                responses,
-                                rscName,
-                                "Resumed IO of {1} on {0} after failed snapshot"
-                            )
-                        )
-                )
-                .concatWith(
-                    ctrlSnapshotDeleteApiCallHandler
-                        .deleteSnapshot(
-                            snapshotDfn.getResourceName().displayValue,
-                            snapshotDfn.getName().displayValue,
-                            null
-                        )
-                )
-                .concatWith(
+                );
+            for (SnapshotDefinition snapDfn : reqRef.getCreatedSnapDfns())
+            {
+                // no need for isDeleted check here since we already updated the list before. It should not be possible
+                // that a SnapshotDefinition is deleted in the current list
+                ret = ret.concatWith(
+                    ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(
+                        snapDfn.getResourceName().displayValue,
+                        snapDfn.getName().displayValue,
+                        null
+                    )
+                );
+            }
+            ret = ret.concatWith(
                     Flux.<ApiCallRc>just(
                         ApiCallRcImpl.singleApiCallRc(
                             ApiConsts.FAIL_SNAPSHOT_NOT_UPTODATE,
@@ -629,7 +717,7 @@ public class CtrlSnapshotCrtApiCallHandler
         return ret;
     }
 
-    private Flux<ApiCallRc> resumeResource(ResourceName rscName, SnapshotName snapshotName)
+    private Flux<ApiCallRc> resumeResource(CreateMultiSnapRequest reqRef)
     {
         return scopeRunner
             .fluxInTransactionalScope(
@@ -638,48 +726,60 @@ public class CtrlSnapshotCrtApiCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> resumeResourceInTransaction(rscName, snapshotName)
+                () -> resumeResourceInTransaction(reqRef)
             );
     }
 
-    private Flux<ApiCallRc> resumeResourceInTransaction(ResourceName rscName, SnapshotName snapshotName)
+    private Flux<ApiCallRc> resumeResourceInTransaction(CreateMultiSnapRequest reqRef)
     {
-        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
-
-        for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
+        boolean updatedReq = false;
+        for (SnapshotDefinition snapDfn : reqRef.getCreatedSnapDfns())
         {
-            unsetSuspendResourcePrivileged(snapshot);
-            try
+            if (!snapDfn.isDeleted())
             {
-                snapshot.setCreateTimestamp(apiCtx, new Date());
+                for (Snapshot snapshot : getAllSnapshotsPrivileged(snapDfn))
+                {
+                    unsetSuspendResourcePrivileged(snapshot);
+                    try
+                    {
+                        snapshot.setCreateTimestamp(apiCtx, new Date());
+                    }
+                    catch (AccessDeniedException | DatabaseException exc)
+                    {
+                        errorReporter.reportError(exc);
+                    }
+                }
+
+                ResourceDefinition rscDfn = snapDfn.getResourceDefinition();
+                resumeIoPrivileged(rscDfn);
             }
-            catch (AccessDeniedException | DatabaseException exc)
+            else
             {
-                errorReporter.reportError(exc);
+                if (!updatedReq)
+                {
+                    updatedReq = true;
+                    updateRequstPrivileged(reqRef);
+                }
             }
         }
-
-        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
-        resumeIoPrivileged(rscDfn);
 
         ctrlTransactionHelper.commit();
 
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller
-            .updateSatellites(snapshotDfn, notConnectedError())
-            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty()))
+            .updateSatellites(reqRef, notConnectedError())
             .transform(
                 responses -> CtrlResponseUtils.combineResponses(
                     responses,
-                    rscName,
+                    reqRef.getJoinedRscNames(),
                     "Resumed IO of {1} on {0} after snapshot"
                 )
             );
 
         return satelliteUpdateResponses
-            .concatWith(removeInProgressSnapshots(rscName, snapshotName));
+            .concatWith(removeInProgressSnapshots(reqRef));
     }
 
-    private Flux<ApiCallRc> removeInProgressSnapshots(ResourceName rscName, SnapshotName snapshotName)
+    private Flux<ApiCallRc> removeInProgressSnapshots(CreateMultiSnapRequest reqRef)
     {
         return scopeRunner
             .fluxInTransactionalScope(
@@ -688,24 +788,37 @@ public class CtrlSnapshotCrtApiCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> removeInProgressSnapshotsInTransaction(rscName, snapshotName)
+                () -> removeInProgressSnapshotsInTransaction(reqRef)
             );
     }
 
-    private Flux<ApiCallRc> removeInProgressSnapshotsInTransaction(ResourceName rscName, SnapshotName snapshotName)
+    private Flux<ApiCallRc> removeInProgressSnapshotsInTransaction(CreateMultiSnapRequest reqRef)
     {
-        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
-
-        unsetInCreationPrivileged(snapshotDfn);
-
         boolean isEbsSnapshot = false;
-        for (Snapshot snapshot : getAllSnapshotsPrivileged(snapshotDfn))
+        boolean updatedRequest = false;
+        for (SnapshotDefinition snapDfn : reqRef.getCreatedSnapDfns())
         {
-            isEbsSnapshot |= isEbsSnapshot(snapshot);
-            setTakeSnapshotPrivileged(snapshot, false);
-        }
+            if (!snapDfn.isDeleted())
+            {
+                unsetInCreationPrivileged(snapDfn);
 
-        enableFlagPrivileged(snapshotDfn, SnapshotDefinition.Flags.SUCCESSFUL);
+                for (Snapshot snapshot : getAllSnapshotsPrivileged(snapDfn))
+                {
+                    isEbsSnapshot |= isEbsSnapshot(snapshot);
+                    setTakeSnapshotPrivileged(snapshot, false);
+                }
+
+                enableFlagPrivileged(snapDfn, SnapshotDefinition.Flags.SUCCESSFUL);
+            }
+            else
+            {
+                if (!updatedRequest)
+                {
+                    updatedRequest = true;
+                    updateRequstPrivileged(reqRef);
+                }
+            }
+        }
 
         ctrlTransactionHelper.commit();
 
@@ -714,7 +827,7 @@ public class CtrlSnapshotCrtApiCallHandler
             pollEbs();
         }
 
-        return ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, notConnectedError())
+        return ctrlSatelliteUpdateCaller.updateSatellites(reqRef, notConnectedError())
             // ensure that the individual node update fluxes are subscribed to, but ignore responses from cleanup
             .flatMap(Tuple2::getT2).thenMany(Flux.empty());
     }
@@ -853,6 +966,29 @@ public class CtrlSnapshotCrtApiCallHandler
         }
     }
 
+    private CreateMultiSnapRequest createSimpleSnapshotRequestPrivileged(SnapshotDefinition snapDfnRef)
+    {
+        try
+        {
+            return new CreateMultiSnapRequest(apiCtx, snapDfnRef);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private void updateRequstPrivileged(CreateMultiSnapRequest reqRef)
+    {
+        try
+        {
+            reqRef.update(apiCtx);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+    }
     private static boolean isFailNotConnected(CtrlResponseUtils.DelayedApiRcException exception)
     {
         return exception.getErrors().stream().flatMap(

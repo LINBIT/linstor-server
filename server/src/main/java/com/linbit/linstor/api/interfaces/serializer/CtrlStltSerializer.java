@@ -2,6 +2,7 @@ package com.linbit.linstor.api.interfaces.serializer;
 
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.apicallhandler.controller.internal.helpers.AtomicUpdateSatelliteData;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.ExternalFile;
@@ -48,6 +49,8 @@ public interface CtrlStltSerializer extends CommonSerializer
         CtrlStltSerializerBuilder primaryRequest(String rscName, String rscUuid, boolean alreadyInitialized);
 
         CtrlStltSerializerBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret);
+
+        CtrlStltSerializerBuilder changedData(AtomicUpdateSatelliteData atomicUpdateDataRef);
 
         CtrlStltSerializerBuilder changedNode(UUID nodeUuid, String nodeName);
         CtrlStltSerializerBuilder changedResource(UUID rscUuid, String rscName);

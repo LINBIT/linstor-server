@@ -9,6 +9,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.core.SatelliteConnectorImpl;
+import com.linbit.linstor.core.apicallhandler.controller.internal.helpers.AtomicUpdateSatelliteData;
+import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -469,6 +471,82 @@ public class CtrlSatelliteUpdateCaller
                     );
 
                     responses.add(Tuples.of(nodeToContact.getName(), response));
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return Flux.fromIterable(responses);
+    }
+
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
+        CreateMultiSnapRequest reqRef,
+        NotConnectedHandler notConnectedErrorRef
+    )
+    {
+        return updateSatellites(
+            new AtomicUpdateSatelliteData().addSnapDfns(reqRef.getCreatedSnapDfns()),
+            notConnectedErrorRef
+        );
+    }
+
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
+        AtomicUpdateSatelliteData atomicUpdateDataRef,
+        NotConnectedHandler notConnectedErrorRef
+    )
+    {
+        try
+        {
+            return updateSatellites(
+                atomicUpdateDataRef.getInvolvedNodes(apiCtx),
+                atomicUpdateDataRef,
+                notConnectedErrorRef
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    /**
+     * Sends the atomic update to all given nodes.
+     *
+     * Different AtomicUpdates to different nodes must be handled outside of this class (or we need a new method for
+     * that which uses something like Map<Node, AtomitUpdateSatelliteData>)
+     */
+    public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellites(
+        Collection<Node> nodesRef,
+        AtomicUpdateSatelliteData atomicUpdateDataRef,
+        NotConnectedHandler notConnectedHandler
+    )
+    {
+        byte[] changedMessage = internalComSerializer.headerlessBuilder()
+            .changedData(atomicUpdateDataRef)
+            .build();
+        List<Tuple2<NodeName, Flux<ApiCallRc>>> responses = new ArrayList<>();
+        try
+        {
+            for (Node node : nodesRef)
+            {
+                Peer peer = node.getPeer(apiCtx);
+                if (peer != null && peer.getConnectionStatus() == ApiConsts.ConnectionStatus.ONLINE)
+                {
+                    NodeName nodeName = node.getName();
+
+                    Flux<ApiCallRc> response = updateSatellite(
+                        node,
+                        InternalApiConsts.API_CHANGED_DATA,
+                        changedMessage
+                    ).onErrorResume(
+                        PeerNotConnectedException.class,
+                        ignored -> notConnectedHandler.handleNotConnected(nodeName)
+                    );
+                    // TODO we should also consider adding a retryTask for atomic updates
+
+                    responses.add(Tuples.of(nodeName, response));
                 }
             }
         }

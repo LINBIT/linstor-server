@@ -8,6 +8,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer.CtrlStltSerializerBuilder;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.core.CtrlSecurityObjects;
+import com.linbit.linstor.core.apicallhandler.controller.internal.helpers.AtomicUpdateSatelliteData;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -26,8 +27,8 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
@@ -83,6 +84,9 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupRcvReadyOuterClass.
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippedOuterClass.MsgIntBackupShipped;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippingIdOuterClass.MsgIntBackupShippingId;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippingWrongPortsOuterClass.MsgIntBackupShippingWrongPorts;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntChangedDataOuterClass.ChangedResource;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntChangedDataOuterClass.ChangedSnapshot;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntChangedDataOuterClass.MsgIntChangedData;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntCloneUpdateOuterClass.MsgIntCloneUpdate;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntPrimaryOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntRequestSharedStorPoolLocksOuterClass.MsgIntRequestSharedStorPoolLocks;
@@ -201,6 +205,43 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     public CtrlStltSerializerBuilder stltConfigApplied(boolean success) throws IOException
     {
         MsgIntApplyConfigResponse.newBuilder().setSuccess(success).build().writeDelimitedTo(baos);
+        return this;
+    }
+
+    @Override
+    public ProtoCtrlStltSerializerBuilder changedData(AtomicUpdateSatelliteData data)
+    {
+        try
+        {
+            MsgIntChangedData.Builder builder = MsgIntChangedData.newBuilder();
+
+            for (ResourceDefinition rscDfn : data.getRscDfnsToUpdate())
+            {
+                builder.addRscs(
+                    ChangedResource.newBuilder()
+                        .setUuid(rscDfn.getUuid().toString())
+                        .setName(rscDfn.getName().displayValue)
+                        .build()
+                );
+            }
+            for (SnapshotDefinition snapDfn : data.getSnapDfnsToUpdate())
+            {
+                builder.addSnaps(
+                    ChangedSnapshot.newBuilder()
+                        .setUuid(snapDfn.getUuid().toString())
+                        .setRscName(snapDfn.getResourceName().displayValue)
+                        .setSnapName(snapDfn.getName().displayValue)
+                        .build()
+                );
+            }
+            // TODO add nodes, storpools, ...
+
+            builder.build().writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
         return this;
     }
 

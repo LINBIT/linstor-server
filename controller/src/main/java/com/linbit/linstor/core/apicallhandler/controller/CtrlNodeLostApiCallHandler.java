@@ -248,7 +248,7 @@ public class CtrlNodeLostApiCallHandler
             ctrlSatelliteUpdateCaller.updateSatellites(nodeUuid, nodeName, nodesToContact.values())
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
-                    null,
+                    (String) null,
                     "Notified {0} that ''" + nodeName + "'' has been lost"
                 ))
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());

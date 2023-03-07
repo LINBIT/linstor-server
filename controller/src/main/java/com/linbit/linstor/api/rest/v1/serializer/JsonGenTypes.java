@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.17.0";
+    public static final String REST_API_VERSION = "1.18.0";
 
     /**
      * Common api reply structure
@@ -1164,6 +1164,18 @@ public class JsonGenTypes
         public Map<String, String> override_props = Collections.emptyMap();
         public List<String> delete_props = Collections.emptyList();
         public List<String> delete_namespaces = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class CreateMultiSnapshotRequest
+    {
+        public List<Snapshot> snapshots = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class CreateMultiSnapshotResponse
+    {
+        public List<ApiCallRc> messages = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

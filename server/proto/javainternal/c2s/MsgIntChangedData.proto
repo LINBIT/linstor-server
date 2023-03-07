@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package com.linbit.linstor.proto.javainternal.s2c;
+
+// Internal message containing IDs of data (node(s), resource(s), ...) that should be
+// updated atomically
+message MsgIntChangedData
+{
+   // TODO add ctrlProps, nodes, storage pools, etc...
+   // repeated ChangedNodes nodes = 1;
+   repeated ChangedResource rscs = 2;
+   repeated ChangedSnapshot snaps = 3;
+}
+
+message ChangedResource
+{
+    string name = 1;
+    string uuid = 2;
+}
+
+message ChangedSnapshot
+{
+    string rsc_name = 1;
+    string snap_name = 2;
+    string uuid = 3;
+}
+
+// TODO add node, storpool, etc...

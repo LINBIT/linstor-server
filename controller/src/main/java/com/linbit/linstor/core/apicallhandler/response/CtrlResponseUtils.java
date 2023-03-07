@@ -41,12 +41,40 @@ public class CtrlResponseUtils
     }
 
     /**
+     * Like {@link #combineResponses(Flux, ResourceName, String)} but with a String for resource
+     * name so that also non-ResourceName-compliant strings can be concatenated
+     */
+    public static Flux<ApiCallRc> combineResponses(
+        Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
+        String rscName,
+        String messageFormat
+    )
+    {
+        return combineResponses(responses, rscName, Collections.emptySet(), messageFormat, messageFormat);
+    }
+
+    /**
      * Like {@link #combineResponses(Flux, ResourceName, String)}, but the success message is chosen based on whether
      * the node is in the given collection.
      */
     public static Flux<ApiCallRc> combineResponses(
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
         ResourceName rscName,
+        Collection<NodeName> nodeNames,
+        String messageFormatThese,
+        String messageFormatOthers
+    )
+    {
+        return combineResponses(responses, rscName.displayValue, nodeNames, messageFormatThese, messageFormatOthers);
+    }
+
+    /**
+     * Like {@link #combineResponses(Flux, ResourceName, Collection, String, String)} but with a String for resource
+     * name so that also non-ResourceName-compliant strings can be concatenated
+     */
+    public static Flux<ApiCallRc> combineResponses(
+        Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
+        String rscName,
         Collection<NodeName> nodeNames,
         String messageFormatThese,
         String messageFormatOthers

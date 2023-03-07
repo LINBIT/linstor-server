@@ -23,6 +23,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -109,7 +110,7 @@ public class CtrlSnapshotApiCallHandler
     }
 
     public static String getSnapshotDescription(
-        List<String> nodeNameStrs,
+        Collection<String> nodeNameStrs,
         String rscNameStr,
         String snapshotNameStr
     )
@@ -130,7 +131,7 @@ public class CtrlSnapshotApiCallHandler
     }
 
     public static String getSnapshotDescriptionInline(
-        List<String> nodeNameStrs,
+        Collection<String> nodeNameStrs,
         String rscNameStr,
         String snapshotNameStr
     )
@@ -199,12 +200,12 @@ public class CtrlSnapshotApiCallHandler
 
     public static ResponseContext makeSnapshotContext(
         ApiOperation operation,
-        List<String> nodeNameStrs,
+        Collection<String> nodeNameStrs,
         String rscNameStr,
         String snapshotNameStr
     )
     {
-        Map<String, String> objRefs = new TreeMap<>();
+        final Map<String, String> objRefs = new TreeMap<>();
         objRefs.put(ApiConsts.KEY_RSC_DFN, rscNameStr);
         objRefs.put(ApiConsts.KEY_SNAPSHOT, snapshotNameStr);
 
