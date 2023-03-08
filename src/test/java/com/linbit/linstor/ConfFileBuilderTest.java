@@ -1,6 +1,7 @@
 package com.linbit.linstor;
 
 import com.linbit.ImplementationError;
+import com.linbit.drbd.DrbdVersion;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
@@ -51,6 +52,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.testutils.EmptyErrorReporter;
+import com.linbit.linstor.timer.CoreTimerImpl;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -107,10 +109,11 @@ public class ConfFileBuilderTest
     private Provider<TransactionMgr> transMgrProvider;
     private TransactionObjectFactory transObjFactory;
 
-    private AtomicInteger idGenerator = new AtomicInteger(0);
+    private final AtomicInteger idGenerator = new AtomicInteger(0);
     private DynamicNumberPool mockedTcpPool;
     private DynamicNumberPool mockedMinorPool;
     private Props stltProps;
+    private DrbdVersion drbdVersion;
 
     @Before
     public void setUp() throws Exception
@@ -154,6 +157,7 @@ public class ConfFileBuilderTest
             .thenReturn(rscConn);
 
         stltProps = propsContainerFactory.getInstance("STLT_CFG");
+        drbdVersion = new DrbdVersion(new CoreTimerImpl(), new EmptyErrorReporter());
     }
 
     private void setProps(String[] nodeNames, String... nicNames)
@@ -176,7 +180,8 @@ public class ConfFileBuilderTest
                 localRscData,
                 null,
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
 
         confFileBuilder.build();
@@ -191,7 +196,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.emptyList(),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
 
         assertThat(confFileBuilder.build().contains("connection\n")).isFalse();
@@ -207,7 +213,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
 
         confFileBuilder.build();
@@ -222,7 +229,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
 
         String confFile = confFileBuilder.build();
@@ -240,7 +248,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
 
         confFileBuilder.build();
@@ -256,7 +265,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
 
         confFileBuilder.build();
@@ -272,7 +282,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
 
         confFileBuilder.build();
@@ -288,7 +299,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
         setProps(new String[] {"alpha", "bravo"}, "666", "666", "666", "666");
 
@@ -304,7 +316,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
         setProps(new String[] {"alpha", "bravo"}, "eth0", "eth1", "eth2", "eth3");
 
@@ -556,7 +569,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
         String confFile = confFileBuilder.build();
 
@@ -576,7 +590,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
         String confFile = confFileBuilder.build();
 
@@ -604,7 +619,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
         String confFileNormal = confFileBuilder.build();
 
@@ -614,7 +630,8 @@ public class ConfFileBuilderTest
             makeMockResource(101, "testNode", "1.2.3.4", true, false, false),
             Collections.singletonList(makeMockResource(202, "testNode", "5.6.7.8", true, false, false)),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         ).build();
 
         assertThat(countOccurrences(confFileNormal, "^ *volume ")).isEqualTo(2);
@@ -631,7 +648,8 @@ public class ConfFileBuilderTest
             localRscData,
             Collections.singletonList(peerRscData),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         );
         String confFileNormal = confFileBuilder.build();
 
@@ -641,7 +659,8 @@ public class ConfFileBuilderTest
             makeMockResource(101, "testNode", "1.2.3.4", false, false, false),
             Collections.singletonList(makeMockResource(202, "testNode", "5.6.7.8", false, true, false)),
             whitelistProps,
-            stltProps
+            stltProps,
+            drbdVersion
         ).build();
 
         assertThat(countOccurrences(confFileNormal, "^ *on ")).isEqualTo(2);
@@ -663,7 +682,8 @@ public class ConfFileBuilderTest
                 makeMockResource(0, "localNode", "1.2.3.4", false, false, false),
                 peerRscs,
                 whitelistProps,
-                stltProps
+                stltProps,
+                drbdVersion
             ).build();
 
             assertThat(countOccurrences(confFileNormal, "^ *connection")).isEqualTo(2);
@@ -679,7 +699,8 @@ public class ConfFileBuilderTest
                 makeMockResource(0, "localNode", "1.2.3.4", false, false, true),
                 peerRscs,
                 whitelistProps,
-                stltProps
+                stltProps,
+                drbdVersion
             ).build();
 
             assertThat(countOccurrences(confFileNormal, "^ *connection")).isEqualTo(1);
@@ -695,7 +716,8 @@ public class ConfFileBuilderTest
                 makeMockResource(0, "localNode", "1.2.3.4", false, false, false),
                 peerRscs,
                 whitelistProps,
-                stltProps
+                stltProps,
+                drbdVersion
             ).build();
 
             assertThat(countOccurrences(confFileNormal, "^ *connection")).isEqualTo(2);
@@ -734,9 +756,9 @@ public class ConfFileBuilderTest
         return new Answer<Stream<T>>()
         {
             @Override
-            public Stream<T> answer(InvocationOnMock invocation) throws Throwable
+            public Stream<T> answer(InvocationOnMock invocation)
             {
-                return Arrays.asList(ts).stream();
+                return Arrays.stream(ts);
             }
         };
     }

@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.drbd.utils;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.drbd.DrbdVersion;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
@@ -38,6 +39,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.utils.Pair;
 
@@ -67,6 +69,7 @@ public class ConfFileBuilder
     private final Collection<DrbdRscData<Resource>> remoteResourceData;
     private final WhitelistProps whitelistProps;
     private final Props stltProps;
+    private final DrbdVersion drbdVersion;
 
     private final StringBuilder stringBuilder;
     private int indentDepth;
@@ -77,7 +80,8 @@ public class ConfFileBuilder
         final DrbdRscData<Resource> localRscRef,
         final Collection<DrbdRscData<Resource>> remoteResourcesRef,
         final WhitelistProps whitelistPropsRef,
-        final Props stltPropsRef
+        final Props stltPropsRef,
+        final DrbdVersion drbdVersionRef
     )
     {
         errorReporter = errorReporterRef;
@@ -86,6 +90,7 @@ public class ConfFileBuilder
         remoteResourceData = remoteResourcesRef;
         whitelistProps = whitelistPropsRef;
         stltProps = stltPropsRef;
+        drbdVersion = drbdVersionRef;
 
         stringBuilder = new StringBuilder();
         indentDepth = 0;
@@ -171,7 +176,8 @@ public class ConfFileBuilder
                         LinStorObject.CONTROLLER,
                         ApiConsts.NAMESPC_DRBD_HANDLER_OPTIONS,
                         localRscPrioProps,
-                        localRscAutoRules
+                        localRscAutoRules,
+                        false
                     );
                 }
             }
@@ -186,7 +192,8 @@ public class ConfFileBuilder
                         LinStorObject.CONTROLLER,
                         ApiConsts.NAMESPC_DRBD_RESOURCE_OPTIONS,
                         localRscPrioProps,
-                        localRscAutoRules
+                        localRscAutoRules,
+                        false
                     );
                 }
             }
@@ -204,7 +211,8 @@ public class ConfFileBuilder
                     LinStorObject.CONTROLLER,
                     ApiConsts.NAMESPC_DRBD_NET_OPTIONS,
                     localRscPrioProps,
-                    localRscAutoRules
+                    localRscAutoRules,
+                    false
                 );
             }
 
@@ -218,7 +226,8 @@ public class ConfFileBuilder
                         LinStorObject.CONTROLLER,
                         ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
                         localRscPrioProps,
-                        localRscAutoRules
+                        localRscAutoRules,
+                        false
                     );
                 }
             }
@@ -345,7 +354,8 @@ public class ConfFileBuilder
                                                     rscGrp.getName()
                                                 )
                                             ),
-                                        peerRscAutoRules
+                                        peerRscAutoRules,
+                                        true
                                     );
                                 }
                             }
@@ -364,7 +374,8 @@ public class ConfFileBuilder
                                         LinStorObject.CONTROLLER,
                                         ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
                                         localRscPrioProps,
-                                        peerRscAutoRules
+                                        peerRscAutoRules,
+                                        false
                                     );
                                 }
                             }
@@ -501,7 +512,8 @@ public class ConfFileBuilder
                         LinStorObject.DRBD_PROXY,
                         ApiConsts.NAMESPC_DRBD_PROXY_OPTIONS,
                         localRscPrioProps,
-                        localRscAutoRules
+                        localRscAutoRules,
+                        false
                     );
 
                     if (compressionTypeProp != null)
@@ -612,11 +624,13 @@ public class ConfFileBuilder
         return ret;
     }
 
+    @SuppressWarnings({"checkstyle:IllegalToken", "checkstyle:MagicNumber"})
     private void appendConflictingDrbdOptions(
         final LinStorObject lsObj,
         final String namespace,
         final PriorityProps prioProps,
-        final ConfFileBuilderAutoRules autoRules
+        final ConfFileBuilderAutoRules autoRules,
+        final boolean isPeerRsc
     )
     {
         Map<String, MultiResult> map = prioProps.renderConflictingMap(namespace, true);
@@ -625,6 +639,12 @@ public class ConfFileBuilder
         StringBuilder confLine = new StringBuilder();
         for (Entry<String, MultiResult> entry : map.entrySet())
         {
+            if (isPeerRsc && entry.getKey().endsWith("resync-after") &&
+                !drbdVersion.getUtilsVsn().greaterOrEqual(new ExtToolsInfo.Version(9, 23, 1)))
+            {
+                continue;
+            }
+
             confLine.setLength(0);
 
             appendIndent(confLine);
@@ -641,7 +661,7 @@ public class ConfFileBuilder
             if (autoRule != null)
             {
                 /*
-                 * We need to check whether or not the automation is enabled.
+                 * We need to check whether the automation is enabled.
                  * If it is enabled, it means that the controller is managing this property only on the Props of the
                  * Pair, not on any other level.
                  * We therefore must ignore the entries in the priorityProps and only check for the entry in the given
@@ -909,7 +929,8 @@ public class ConfFileBuilder
                             LinStorObject.CONTROLLER,
                             ApiConsts.NAMESPC_DRBD_DISK_OPTIONS,
                             vlmPrioProps,
-                            new ConfFileBuilderAutoRules(accCtx, vlmData)
+                            new ConfFileBuilderAutoRules(accCtx, vlmData),
+                            isPeerRsc
                         );
                     }
                 }

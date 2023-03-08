@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.drbd;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
+import com.linbit.drbd.DrbdVersion;
 import com.linbit.drbd.md.AlStripesException;
 import com.linbit.drbd.md.MaxAlSizeException;
 import com.linbit.drbd.md.MaxSizeException;
@@ -106,6 +107,7 @@ public class DrbdLayer implements DeviceLayer
     private final Provider<DeviceHandler> resourceProcessorProvider;
     private final ExtCmdFactory extCmdFactory;
     private final StltConfigAccessor stltCfgAccessor;
+    private final DrbdVersion drbdVersion;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
@@ -127,7 +129,8 @@ public class DrbdLayer implements DeviceLayer
         ControllerPeerConnector controllerPeerConnectorRef,
         Provider<DeviceHandler> resourceProcessorRef,
         ExtCmdFactory extCmdFactoryRef,
-        StltConfigAccessor stltCfgAccessorRef
+        StltConfigAccessor stltCfgAccessorRef,
+        DrbdVersion drbdVersionRef
     )
     {
         workerCtx = workerCtxRef;
@@ -141,6 +144,7 @@ public class DrbdLayer implements DeviceLayer
         resourceProcessorProvider = resourceProcessorRef;
         extCmdFactory = extCmdFactoryRef;
         stltCfgAccessor = stltCfgAccessorRef;
+        drbdVersion = drbdVersionRef;
     }
 
     @Override
@@ -1548,7 +1552,8 @@ public class DrbdLayer implements DeviceLayer
             drbdRscData,
             drbdPeerRscDataList,
             whitelistProps,
-            stltCfgAccessor.getReadonlyProps()
+            stltCfgAccessor.getReadonlyProps(),
+            drbdVersion
         ).build();
 
         try (FileOutputStream resFileOut = new FileOutputStream(tmpResFile.toFile()))
