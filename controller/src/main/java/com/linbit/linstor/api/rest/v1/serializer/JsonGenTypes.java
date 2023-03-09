@@ -843,7 +843,7 @@ public class JsonGenTypes
         /**
          * maximum size in KiB
          */
-        public Long max_vlm_size_in_kib;
+        public long max_vlm_size_in_kib;
         /**
          * available size of the storage pools in KiB
          */

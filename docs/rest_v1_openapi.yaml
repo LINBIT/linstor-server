@@ -7404,6 +7404,8 @@ components:
             $ref: '#/components/schemas/ApiCallRc'
     QuerySizeInfoResponseSpaceInfo:
       type: object
+      required:
+        - max_vlm_size_in_kib
       properties:
         max_vlm_size_in_kib:
           type: integer
@@ -7429,6 +7431,9 @@ components:
             $ref: '#/components/schemas/QuerySizeInfoSpawnResult'
     QuerySizeInfoSpawnResult:
       type: object
+      required:
+        - node_name
+        - stor_pool_name
       properties:
         node_name:
           type: string
