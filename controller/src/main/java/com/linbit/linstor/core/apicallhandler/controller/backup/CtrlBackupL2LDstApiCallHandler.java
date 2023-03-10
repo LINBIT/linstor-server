@@ -20,6 +20,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingRestClient;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponsePrevSnap;
@@ -121,7 +122,7 @@ public class CtrlBackupL2LDstApiCallHandler
         SystemConfRepository systemConfRepositoryRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         BackupInfoManager backupInfoMgrRef,
-        CtrlBackupL2LSrcApiCallHandler helperReference,
+        BackupShippingRestClient restClientRef,
         Provider<Peer> peerProviderRef,
         CtrlBackupApiHelper backupHelperRef
     )
@@ -143,7 +144,7 @@ public class CtrlBackupL2LDstApiCallHandler
         backupInfoMgr = backupInfoMgrRef;
         peerProvider = peerProviderRef;
         backupHelper = backupHelperRef;
-        backupShippingRestClient = helperReference.new BackupShippingRestClient(errorReporter);
+        backupShippingRestClient = restClientRef;
 
         dstToSrcStltRemoteNameMap = new HashMap<>();
     }

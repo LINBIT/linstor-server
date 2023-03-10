@@ -80,6 +80,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
+/**
+ * Creates and ships a backup to a linstor cluster, using the following steps:</br>
+ * 1) find all snapshots that can function as a base snap for an incremental shipping and send their uuids to the target
+ * cluster</br>
+ * ~~~ continue when target cluster responds with the chosen base snap uuid ~~~</br>
+ * 2) create the snapshot and use the base snap the target cluster decided on to find out which node(s) can do the
+ * shipping </br>
+ * 2a) if there is no node available to do the shipping, queue it instead and delay the following steps until it is
+ * processed from the queue</br>
+ * 3) create the stlt-remote and tell the target cluster to start receiving</br>
+ * ~~~ continue when target cluster responds with the port it is listening on ~~~</br>
+ * 4) start sending the backup to the target cluster
+ */
 @Singleton
 public class CtrlBackupL2LSrcApiCallHandler
 {
@@ -107,14 +120,14 @@ public class CtrlBackupL2LSrcApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        ErrorReporter errorReporterRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         StltRemoteControllerFactory stltRemoteFactoryRef,
         CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef,
         SystemConfRepository systemConfRepositoryRef,
         RemoteRepository remoteRepoRef,
         BackupInfoManager backupInfoMgrRef,
-        CtrlSecurityObjects ctrlSecObjsRef
+        CtrlSecurityObjects ctrlSecObjsRef,
+        BackupShippingRestClient restClientRef
     )
     {
         sysCtx = sysCtxRef;
@@ -131,9 +144,15 @@ public class CtrlBackupL2LSrcApiCallHandler
         backupInfoMgr = backupInfoMgrRef;
         ctrlSecObjs = ctrlSecObjsRef;
 
-        restClient = new BackupShippingRestClient(errorReporterRef);
+        restClient = restClientRef;
     }
 
+    /**
+     * (see class-javadoc for overview)</br>
+     * 1) find all snapshots that can function as a base snap for an incremental shipping and send their uuids to the
+     * target cluster</br>
+     * also do a bunch of checks to ensure the shipping is possible in the first place
+     */
     public Flux<ApiCallRc> shipBackup(
         String srcNodeNameRef,
         String srcRscNameRef,
@@ -277,6 +296,13 @@ public class CtrlBackupL2LSrcApiCallHandler
         );
     }
 
+    /**
+     * (see class-javadoc for overview)</br>
+     * 2) create the snapshot and use the base snap the target cluster decided on to find out which node(s) can do the
+     * shipping </br>
+     * 2a) if there is no node available to do the shipping, queue it instead and delay the following steps until it is
+     * processed from the queue
+     */
     private Flux<ApiCallRc> createSnapshot(
         BackupShippingResponsePrevSnap response,
         BackupShippingData data,
@@ -308,36 +334,39 @@ public class CtrlBackupL2LSrcApiCallHandler
                 RemoteType.LINSTOR,
                 data.scheduleName,
                 runInBackgroundRef,
-                response.prevSnapUuid
+                response.prevSnapUuid,
+                data
             );
-            data.srcSnapshot = createSnapshot.objB;
-            data.srcNodeName = data.srcSnapshot.getNode().getName().displayValue;
-            flux = createSnapshot.objA
-                .concatWith(
-                    scopeRunner.fluxInTransactionalScope(
-                        "Backup shipping L2L: Create Stlt-Remote",
-                        lockGuardFactory.create()
-                            .read(LockObj.NODES_MAP)
-                            .write(LockObj.RSC_DFN_MAP)
-                            .buildDeferred(),
-                        () -> createStltRemoteInTransaction(data)
-                    )
-                );
+            if (createSnapshot.objB != null)
+            {
+                data.srcSnapshot = createSnapshot.objB;
+                data.srcNodeName = data.srcSnapshot.getNode().getName().displayValue;
+                flux = createSnapshot.objA
+                    .concatWith(
+                        scopeRunner.fluxInTransactionalScope(
+                            "Backup shipping L2L: Create Stlt-Remote",
+                            lockGuardFactory.create()
+                                .read(LockObj.NODES_MAP)
+                                .write(LockObj.RSC_DFN_MAP)
+                                .buildDeferred(),
+                            () -> createStltRemoteInTransaction(data)
+                        )
+                    );
+            }
+            else
+            {
+                flux = createSnapshot.objA;
+            }
         }
         return flux;
     }
 
     /**
-     * Creates a StltRemote object, updates the satellites.
-     *
-     * Next Flux: create snapshot without starting shipment
-     *
-     * @param data
-     * @param runInBackgroundRef
-     *
-     * @return
+     * (see class-javadoc for overview)</br>
+     * 3) create the stlt-remote</br>
+     * also calls updateSatellites
      */
-    private Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingData data)
+    Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingData data)
     {
         StltRemote stltRemote = createStltRemote(
             stltRemoteFactory,
@@ -407,13 +436,8 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     /**
-     * Contact remote controller and wait for destination satellite's IP/Port
-     *
-     * Next flux: update satellite remote with received IP/Port + start shipment
-     *
-     * @param data
-     *
-     * @return
+     * (see class-javadoc for overview)</br>
+     * 3) create the stlt-remote and tell the target cluster to start receiving
      */
     private Flux<ApiCallRc> prepareShippingInTransaction(BackupShippingData data)
     {
@@ -486,14 +510,9 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     /**
-     * First flux: Updates stltRemote with received IP/Port<br/>
-     *
-     * Second flux: starts shipment
-     *
-     * @param responseRef
-     * @param data
-     *
-     * @return
+     * (see class-javadoc for overview)</br>
+     * 4) start sending the backup to the target cluster
+     * Updates stltRemote with received IP/Port and starts shipment
      */
     public Flux<ApiCallRc> startShipping(
         BackupShippingReceiveRequest responseRef,
@@ -519,13 +538,6 @@ public class CtrlBackupL2LSrcApiCallHandler
         {
             if (responseRef.canReceive)
             {
-                scopeRunner.fluxInTransactionalScope(
-                    "Backup shipping L2L: Creating temporary SatelliteRemote",
-                    lockGuardFactory.create()
-                        .write(LockObj.REMOTE_MAP)
-                        .buildDeferred(),
-                    () -> createStltRemoteInTransaction(data)
-                );
                 AccessContext accCtx = peerAccCtx.get();
                 StltRemote stltRemote = data.stltRemote;
                 stltRemote.setIp(accCtx, responseRef.dstStltIp);
@@ -651,19 +663,23 @@ public class CtrlBackupL2LSrcApiCallHandler
             );
     }
 
-    class BackupShippingRestClient
+    @Singleton
+    static class BackupShippingRestClient
     {
         private final int OK = Response.Status.OK.getStatusCode();
         private final int NOT_FOUND = Response.Status.NOT_FOUND.getStatusCode();
         private final int BAD_REQUEST = Response.Status.BAD_REQUEST.getStatusCode();
         private final int INTERNAL_SERVER_ERROR = Response.Status.INTERNAL_SERVER_ERROR.getStatusCode();
+        private final BackupInfoManager backupInfoMgr;
         private final ErrorReporter errorReporter;
         private final RestHttpClient restClient;
         private final ObjectMapper objMapper;
 
-        BackupShippingRestClient(ErrorReporter errorReporterRef)
+        @Inject
+        BackupShippingRestClient(ErrorReporter errorReporterRef, BackupInfoManager backupInfoMgrRef)
         {
             errorReporter = errorReporterRef;
+            backupInfoMgr = backupInfoMgrRef;
             restClient = new RestHttpClient(errorReporterRef);
             objMapper = new ObjectMapper();
         }
@@ -872,20 +888,20 @@ public class CtrlBackupL2LSrcApiCallHandler
 
     public class BackupShippingData
     {
-        private final String srcClusterId;
-        private String srcNodeName;
+        final String srcClusterId;
+        String srcNodeName;
         private final String srcRscName;
         private final String srcBackupName;
         private final Date now;
-        private Snapshot srcSnapshot;
+        Snapshot srcSnapshot;
         private final LinstorRemote linstorRemote;
         private boolean useZstd;
         private boolean downloadOnly;
         private boolean allowIncremental;
 
         private BackupMetaDataPojo metaDataPojo;
-        private final String dstRscName;
-        private String dstNodeName;
+        final String dstRscName;
+        String dstNodeName;
         private String dstNetIfName;
         private String dstStorPool;
         private final Map<String, String> storPoolRename;

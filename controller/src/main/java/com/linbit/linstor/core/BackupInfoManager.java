@@ -388,11 +388,10 @@ public class BackupInfoManager
     {
         synchronized (l2lSrcData)
         {
-            Map<RemoteName, BackupShippingData> innerMap = l2lSrcData.computeIfAbsent(
+            l2lSrcData.computeIfAbsent(
                 linstorRemoteName,
                 ignore -> new HashMap<>()
-            );
-            innerMap.put(stltRemoteName, data);
+            ).put(stltRemoteName, data);
         }
     }
 
@@ -456,12 +455,13 @@ public class BackupInfoManager
         AbsRemote remote,
         @Nullable SnapshotDefinition prevSnapDfn,
         @Nullable String preferredNode,
+        @Nullable BackupShippingData l2lData,
         @Nullable Set<Node> usableNodes
     )
     {
         synchronized (uploadQueues)
         {
-            QueueItem item = new QueueItem(snapDfn, remote, prevSnapDfn, preferredNode);
+            QueueItem item = new QueueItem(snapDfn, remote, prevSnapDfn, preferredNode, l2lData);
             if (usableNodes != null && !usableNodes.isEmpty())
             {
                 for (Node node : usableNodes)
@@ -538,7 +538,7 @@ public class BackupInfoManager
         synchronized (uploadQueues)
         {
             // this works because hashCode & equals only use snapDfn & remote and ignore the prevSnapDfn
-            QueueItem toDelete = new QueueItem(snapDfn, remote, null, null);
+            QueueItem toDelete = new QueueItem(snapDfn, remote, null, null, null);
             uploadQueues.removeValue(toDelete);
             prevNodeUndecidedQueue.remove(toDelete);
         }
@@ -671,18 +671,22 @@ public class BackupInfoManager
         /** if prevSnapDfn is null, it means a full backup should be made */
         public final @Nullable SnapshotDefinition prevSnapDfn;
         public final @Nullable String preferredNode;
+        public final @Nullable BackupShippingData l2lData;
+        public boolean processed = false;
 
         private QueueItem(
             SnapshotDefinition snapDfnRef,
             AbsRemote remoteRef,
             SnapshotDefinition prevSnapDfnRef,
-            String preferredNodeRef
+            String preferredNodeRef,
+            BackupShippingData l2lDataRef
         )
         {
             snapDfn = snapDfnRef;
             remote = remoteRef;
             prevSnapDfn = prevSnapDfnRef;
             preferredNode = preferredNodeRef;
+            l2lData = l2lDataRef;
         }
 
         @Override

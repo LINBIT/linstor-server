@@ -254,29 +254,18 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
     private void ensureSnapshotNotQueued(SnapshotDefinition snapDfn)
     {
-        try
+        if (backupInfoMgr.isSnapshotQueued(snapDfn))
         {
-            if (backupInfoMgr.isSnapshotQueued(snapDfn))
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_IN_USE,
-                        getSnapshotDfnDescription(
-                            snapDfn.getResourceName().displayValue,
-                            snapDfn.getName().displayValue
-                        ) +
-                            " is currently being queued for backup shipping. " +
-                            "Please wait until the shipping is finished or use backup abort --create"
-                    )
-                );
-            }
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ApiAccessDeniedException(
-                exc,
-                "checking if SnapshotDefinition is in queue",
-                ApiConsts.FAIL_ACC_DENIED_SNAP_DFN
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_IN_USE,
+                    getSnapshotDfnDescription(
+                        snapDfn.getResourceName().displayValue,
+                        snapDfn.getName().displayValue
+                    ) +
+                        " is currently being queued for backup shipping. " +
+                        "Please wait until the shipping is finished or use backup abort --create"
+                )
             );
         }
     }
