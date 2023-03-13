@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -172,10 +173,42 @@ public class K8sCrdEngine implements DbEngine
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
         for (LinstorSpec linstorSpec : tx.getSpec(table).values())
         {
-            Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(
-                new RawParameters(table, linstorSpec.asRawParameters()),
-                parents
-            );
+            Pair<DATA, INIT_MAPS> pair;
+            try
+            {
+                pair = dataLoader.loadImpl(
+                    new RawParameters(table, linstorSpec.asRawParameters()),
+                    parents
+                );
+            }
+            catch (LinStorDBRuntimeException exc)
+            {
+                throw exc;
+            }
+            catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException | RuntimeException exc)
+            {
+                StringBuilder pk = new StringBuilder("Primary key: ");
+                Map<String, Object> objects = linstorSpec.asRawParameters();
+                for (Column col : table.values())
+                {
+                    if (col.isPk())
+                    {
+                        pk.append(col.getName()).append(" = '").append(objects.get(col.getName())).append("', ");
+                    }
+                }
+                pk.setLength(pk.length() - 2);
+                throw new LinStorDBRuntimeException(
+                    String.format(
+                        "Database entry of table %s could not be restored.",
+                        table.getName()
+                    ),
+                    null,
+                    null,
+                    null,
+                    pk.toString(),
+                    exc
+                );
+            }
             // pair might be null when loading objects sharing the same table.
             // For example SnapshotDbDriver will return null when finding a Resource entry
             // and vice versa.

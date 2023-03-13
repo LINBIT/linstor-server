@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Added more details (primary keys) for database-loading exceptions
+
+### Fixed
+
+- Fixed apparent ETCD corruption / database-loading bug
+
 ## [1.21.0-rc.1] - 2023-02-28
 
 ### Added

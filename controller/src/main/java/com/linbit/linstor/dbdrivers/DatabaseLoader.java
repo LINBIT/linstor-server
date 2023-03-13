@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
+import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
@@ -788,78 +789,114 @@ public class DatabaseLoader implements DatabaseDriver
                         parent = pair.objA;
                         currentRscLayerDatasChildren = pair.objB;
                     }
-                    switch (rli.kind)
+                    try
                     {
-                        case DRBD:
-                            rscLayerObjectPair = drbdLayerDriver.<RSC>load(
-                                rsc,
-                                rli.id,
-                                rli.rscSuffix,
-                                parent,
-                                tmpStorPoolMapRef
+                        switch (rli.kind)
+                        {
+                            case DRBD:
+                                rscLayerObjectPair = drbdLayerDriver.<RSC>load(
+                                    rsc,
+                                    rli.id,
+                                    rli.rscSuffix,
+                                    parent,
+                                    tmpStorPoolMapRef
+                                );
+                                break;
+                            case LUKS:
+                                rscLayerObjectPair = luksLayerDriver.load(
+                                    rsc,
+                                    rli.id,
+                                    rli.rscSuffix,
+                                    parent
+                                );
+                                break;
+                            case STORAGE:
+                                rscLayerObjectPair = storageLayerDriver.load(
+                                    rsc,
+                                    rli.id,
+                                    rli.rscSuffix,
+                                    parent
+                                );
+                                break;
+                            case NVME:
+                                rscLayerObjectPair = nvmeLayerDriver.load(
+                                    rsc,
+                                    rli.id,
+                                    rli.rscSuffix,
+                                    parent
+                                );
+                                break;
+                            case OPENFLEX:
+                                rscLayerObjectPair = openflexLayerDriver.load(
+                                    rsc,
+                                    rli.id,
+                                    rli.rscSuffix,
+                                    parent
+                                );
+                                break;
+                            case WRITECACHE:
+                                rscLayerObjectPair = writecacheLayerDriver.load(
+                                    rsc,
+                                    rli.id,
+                                    rli.rscSuffix,
+                                    parent,
+                                    tmpStorPoolMapRef
+                                );
+                                break;
+                            case CACHE:
+                                rscLayerObjectPair = cacheLayerDriver.load(
+                                    rsc,
+                                    rli.id,
+                                    rli.rscSuffix,
+                                    parent,
+                                    tmpStorPoolMapRef
+                                );
+                                break;
+                            case BCACHE:
+                                rscLayerObjectPair = bcacheLayerDriver.load(
+                                    rsc,
+                                    rli.id,
+                                    rli.rscSuffix,
+                                    parent,
+                                    tmpStorPoolMapRef
+                                );
+                                break;
+                            default:
+                                throw new ImplementationError("Unhandled case for device kind '" + rli.kind + "'");
+                        }
+                    }
+                    catch (LinStorDBRuntimeException exc)
+                    {
+                        throw exc;
+                    }
+                    catch (RuntimeException runtimeExc)
+                    {
+                        String objDescr;
+                        if (rsc instanceof Resource)
+                        {
+                            objDescr = String.format(
+                                "resource '%s' on node '%s'",
+                                rsc.getNode().getName().displayValue,
+                                rsc.getResourceDefinition().getName().displayValue
                             );
-                            break;
-                        case LUKS:
-                            rscLayerObjectPair = luksLayerDriver.load(
-                                rsc,
-                                rli.id,
-                                rli.rscSuffix,
-                                parent
+                        }
+                        else
+                        {
+                            objDescr = String.format(
+                                "snapshot '%s' of resource '%s' on node '%s'",
+                                ((Snapshot) rsc).getSnapshotName().displayValue,
+                                rsc.getNode().getName().displayValue,
+                                rsc.getResourceDefinition().getName().displayValue
                             );
-                            break;
-                        case STORAGE:
-                            rscLayerObjectPair = storageLayerDriver.load(
-                                rsc,
-                                rli.id,
-                                rli.rscSuffix,
-                                parent
-                            );
-                            break;
-                        case NVME:
-                            rscLayerObjectPair = nvmeLayerDriver.load(
-                                rsc,
-                                rli.id,
-                                rli.rscSuffix,
-                                parent
-                            );
-                            break;
-                        case OPENFLEX:
-                            rscLayerObjectPair = openflexLayerDriver.load(
-                                rsc,
-                                rli.id,
-                                rli.rscSuffix,
-                                parent
-                            );
-                            break;
-                        case WRITECACHE:
-                            rscLayerObjectPair = writecacheLayerDriver.load(
-                                rsc,
-                                rli.id,
-                                rli.rscSuffix,
-                                parent,
-                                tmpStorPoolMapRef
-                            );
-                            break;
-                        case CACHE:
-                            rscLayerObjectPair = cacheLayerDriver.load(
-                                rsc,
-                                rli.id,
-                                rli.rscSuffix,
-                                parent,
-                                tmpStorPoolMapRef
-                            );
-                            break;
-                        case BCACHE:
-                            rscLayerObjectPair = bcacheLayerDriver.load(
-                                rsc,
-                                rli.id,
-                                rli.rscSuffix,
-                                parent,
-                                tmpStorPoolMapRef
-                            );
-                            break;
-                        default:
-                            throw new ImplementationError("Unhandled case for device kind '" + rli.kind + "'");
+                        }
+                        throw new LinStorDBRuntimeException(
+                            String.format(
+                                "Error occured while loading %s, layer id: %d",
+                                objDescr,
+                                rli.id
+                            ),
+                            runtimeExc
+                        );
                     }
                     AbsRscLayerObject<RSC> rscLayerObject = rscLayerObjectPair.objA;
                     rscLayerObjectChildren.put(rli.id, new Pair<>(rscLayerObject, rscLayerObjectPair.objB));

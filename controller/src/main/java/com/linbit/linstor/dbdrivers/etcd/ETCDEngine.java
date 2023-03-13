@@ -151,7 +151,38 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                     rawObjects.put(col.getName(), colData);
                 }
             }
-            Pair<DATA, INIT_MAPS> pair = dataLoader.loadImpl(new RawParameters(table, rawObjects), parents);
+            Pair<DATA, INIT_MAPS> pair;
+            try
+            {
+                pair = dataLoader.loadImpl(new RawParameters(table, rawObjects), parents);
+            }
+            catch (LinStorDBRuntimeException exc)
+            {
+                throw exc;
+            }
+            catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException | RuntimeException exc)
+            {
+                StringBuilder pk = new StringBuilder("Primary key: ");
+                for (Column col : columns)
+                {
+                    if (col.isPk())
+                    {
+                        pk.append(col.getName()).append(" = '").append(rawObjects.get(col.getName())).append("', ");
+                    }
+                }
+                pk.setLength(pk.length() - 2);
+                throw new LinStorDBRuntimeException(
+                    String.format(
+                        "Database entry of table %s could not be restored.",
+                        table.getName()
+                    ),
+                    null,
+                    null,
+                    null,
+                    pk.toString(),
+                    exc
+                );
+            }
             // pair might be null when loading objects sharing the same table.
             // For example SnapshotDbDriver will return null when finding a Resource entry
             // and vice versa.

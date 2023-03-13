@@ -370,7 +370,11 @@ public class SQLEngine implements DbEngine
         {
             pair = dataLoader.loadImpl(new RawParameters(table, objects), parents);
         }
-        catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException exc)
+        catch (LinStorDBRuntimeException exc)
+        {
+            throw exc;
+        }
+        catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException | RuntimeException exc)
         {
             StringBuilder pk = new StringBuilder("Primary key: ");
             for (Column col : columns)
@@ -383,7 +387,7 @@ public class SQLEngine implements DbEngine
             pk.setLength(pk.length() - 2);
             throw new LinStorDBRuntimeException(
                 String.format(
-                    "Database entry of table %s could not be restore.",
+                    "Database entry of table %s could not be restored.",
                     table.getName()
                 ),
                 null,
