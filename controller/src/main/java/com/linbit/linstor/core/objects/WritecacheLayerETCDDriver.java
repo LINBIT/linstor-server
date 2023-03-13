@@ -102,8 +102,10 @@ public class WritecacheLayerETCDDriver extends BaseEtcdDriver implements Writeca
         int vlmNrInt = -1;
 
         Map<String, String> etcdVlmMap = namespace(
-            GeneratedDatabaseTables.LAYER_WRITECACHE_VOLUMES,
-            Integer.toString(id)
+            buildPrefixedRscLayerIdKey(
+                GeneratedDatabaseTables.LAYER_WRITECACHE_VOLUMES,
+                id
+            )
         )
             .get(true);
         Set<String> composedPkSet = EtcdUtils.getComposedPkList(etcdVlmMap);

@@ -26,6 +26,25 @@ public abstract class BaseEtcdDriver
         return transMgrProvider.get();
     }
 
+    public String buildPrefixedRscLayerIdKey(DatabaseTable table, int rscLayerId)
+    {
+        String etcdKey = EtcdUtils.buildKey(table, Integer.toString(rscLayerId));
+        // we did not specify the full PK, only the rscLayerId. PK should be something like
+        // <rscId>:<vlmNr>
+        // however, the returned etcdKey is something like "/LINSTOR/<table>/<rscId>/"
+        // as we are using the --prefix, we need to cut away the last '/' in order to get all
+        // volumes of this <rscId>
+        etcdKey = etcdKey.substring(0, etcdKey.length() - EtcdUtils.PATH_DELIMITER.length());
+
+        // However, if we have i.e. a rscId of 10, we have to make sure to only match volumes starting with 10 only
+        // and not also match 10* (i.e. 100, 101, ...). Since we cut the last "/" from the initial
+        // "/LINSTOR/<table>/<rscId>/" in the previous step to get
+        // "/LINSTOR/<table>/<rscId>", we now add the PK delimiter to limit the resource-ids properly:
+        // "/LINSTOR/<table>/<rscId>:"
+        etcdKey += EtcdUtils.PK_DELIMITER;
+        return etcdKey;
+    }
+
     /**
      * Starts a new {@link FluentLinstorTransaction} with the given base key
      *

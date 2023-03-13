@@ -76,8 +76,7 @@ public class CacheLayerETCDDriver extends BaseEtcdDriver implements CacheLayerCt
      * @throws DatabaseException
      */
     @Override
-    public <
-        RSC extends AbsResource<RSC>> Pair<CacheRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
+    public <RSC extends AbsResource<RSC>> Pair<CacheRscData<RSC>, Set<AbsRscLayerObject<RSC>>> load(
         RSC absRsc,
         int id,
         String rscSuffixRef,
@@ -103,8 +102,10 @@ public class CacheLayerETCDDriver extends BaseEtcdDriver implements CacheLayerCt
         int vlmNrInt = -1;
 
         Map<String, String> etcdVlmMap = namespace(
-            GeneratedDatabaseTables.LAYER_CACHE_VOLUMES,
-            Integer.toString(id)
+            buildPrefixedRscLayerIdKey(
+                GeneratedDatabaseTables.LAYER_CACHE_VOLUMES,
+                id
+            )
         )
             .get(true);
         Set<String> composedPkSet = EtcdUtils.getComposedPkList(etcdVlmMap);
