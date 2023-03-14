@@ -1146,8 +1146,8 @@ public class CtrlRscGrpApiCallHandler
             ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(querySizeInfoReqRef.getRscGrpName(), true);
             AutoSelectorConfig selectFilter = rscGrp.getAutoPlaceConfig();
             AutoSelectFilterPojo selectCfg = AutoSelectFilterPojo.merge(
-                selectFilter.getApiData(),
-                querySizeInfoReqRef.getAutoSelectFilterData()
+                querySizeInfoReqRef.getAutoSelectFilterData(),
+                selectFilter.getApiData()
             );
 
             AccessContext accCtx = peerAccCtx.get();

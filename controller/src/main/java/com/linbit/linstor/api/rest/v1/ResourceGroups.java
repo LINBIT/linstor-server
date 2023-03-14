@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
@@ -18,6 +19,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 
 import javax.inject.Inject;
@@ -347,33 +349,31 @@ public class ResourceGroups
             Json.querySizeInfoReqToPojo(rscGrpName, qsiReq)
         )
             .subscriberContext(requestHelper.createContext(ApiConsts.API_QRY_SIZE_INFO, request))
+            .onErrorResume(
+                ApiRcException.class,
+                apiExc -> Flux.just(
+                    new ApiCallRcWith<QuerySizeInfoResponsePojo>(apiExc.getApiCallRc(), null)
+                )
+            )
             .flatMap(apiCallRcWith ->
             {
                 Response resp;
-                if (apiCallRcWith.hasApiCallRc())
-                {
-                    resp = ApiCallRcRestUtils.toResponse(
-                        apiCallRcWith.getApiCallRc(),
-                        Response.Status.INTERNAL_SERVER_ERROR
-                    );
-                }
-                else
-                {
-                    QuerySizeInfoResponsePojo respPojo = apiCallRcWith.getValue();
-                    JsonGenTypes.QuerySizeInfoResponse qsiResp = Json.pojoToQuersSizeInfoResp(respPojo);
+                JsonGenTypes.QuerySizeInfoResponse qsiResp = Json.pojoToQuersSizeInfoResp(
+                    apiCallRcWith.getValue(),
+                    apiCallRcWith.getApiCallRc()
+                );
 
-                    try
-                    {
-                        resp = Response
-                            .status(Response.Status.OK)
-                            .entity(objectMapper.writeValueAsString(qsiResp))
-                            .build();
-                    }
-                    catch (JsonProcessingException exc)
-                    {
-                        exc.printStackTrace();
-                        resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
-                    }
+                try
+                {
+                    resp = Response
+                        .status(Response.Status.OK)
+                        .entity(objectMapper.writeValueAsString(qsiResp))
+                        .build();
+                }
+                catch (JsonProcessingException exc)
+                {
+                    exc.printStackTrace();
+                    resp = Response.status(Response.Status.INTERNAL_SERVER_ERROR).build();
                 }
 
                 return Mono.just(resp);

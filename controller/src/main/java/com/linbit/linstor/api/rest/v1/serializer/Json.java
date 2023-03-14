@@ -1382,24 +1382,32 @@ public class Json
     }
 
     public static QuerySizeInfoResponse pojoToQuersSizeInfoResp(
-        QuerySizeInfoResponsePojo pojo
+        QuerySizeInfoResponsePojo pojo,
+        ApiCallRc apiCallRcRef
     )
     {
         JsonGenTypes.QuerySizeInfoResponse resp = new JsonGenTypes.QuerySizeInfoResponse();
-        resp.space_info = new JsonGenTypes.QuerySizeInfoResponseSpaceInfo();
-        QuerySizeInfoResponseSpaceInfo spaceInfo = resp.space_info;
-        spaceInfo.max_vlm_size_in_kib = pojo.getMaxVlmSize();
-        spaceInfo.available_size_in_kib = pojo.getAvailableSize();
-        spaceInfo.capacity_in_kib = pojo.getCapacity();
-        spaceInfo.next_spawn_result = new ArrayList<>();
-        spaceInfo.default_max_oversubscription_ratio = FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
-        List<QuerySizeInfoSpawnResult> nextSpawnList = spaceInfo.next_spawn_result;
-        for (StorPoolApi spApi : pojo.nextSpawnSpList())
+        if (pojo != null)
         {
-            QuerySizeInfoSpawnResult spawnResult = new QuerySizeInfoSpawnResult();
-            spawnResult.node_name = spApi.getNodeName();
-            spawnResult.stor_pool_name = spApi.getStorPoolName();
-            nextSpawnList.add(spawnResult);
+            resp.space_info = new JsonGenTypes.QuerySizeInfoResponseSpaceInfo();
+            QuerySizeInfoResponseSpaceInfo spaceInfo = resp.space_info;
+            spaceInfo.max_vlm_size_in_kib = pojo.getMaxVlmSize();
+            spaceInfo.available_size_in_kib = pojo.getAvailableSize();
+            spaceInfo.capacity_in_kib = pojo.getCapacity();
+            spaceInfo.next_spawn_result = new ArrayList<>();
+            spaceInfo.default_max_oversubscription_ratio = FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
+            List<QuerySizeInfoSpawnResult> nextSpawnList = spaceInfo.next_spawn_result;
+            for (StorPoolApi spApi : pojo.nextSpawnSpList())
+            {
+                QuerySizeInfoSpawnResult spawnResult = new QuerySizeInfoSpawnResult();
+                spawnResult.node_name = spApi.getNodeName();
+                spawnResult.stor_pool_name = spApi.getStorPoolName();
+                nextSpawnList.add(spawnResult);
+            }
+        }
+        if (apiCallRcRef != null)
+        {
+            resp.reports = apiCallRcToJson(apiCallRcRef);
         }
         return resp;
     }
