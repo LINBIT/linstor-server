@@ -14,6 +14,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.util.Collection;
 import java.util.List;
@@ -84,4 +85,6 @@ public interface DeviceProvider
      */
     void update(StorPool storPoolRef)
         throws AccessDeniedException, DatabaseException, StorageException;
+
+    DeviceProviderKind getDeviceProviderKind();
 }

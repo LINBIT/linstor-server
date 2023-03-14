@@ -146,6 +146,12 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.ZFS;
+    }
+
+    @Override
     public void clearCache() throws StorageException
     {
         super.clearCache();

@@ -22,6 +22,7 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -215,6 +216,19 @@ public class BCacheLayer implements DeviceLayer
     }
 
     @Override
+    public boolean isSuspendIoSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef)
+        throws ResourceException, StorageException
+    {
+        DmSetupUtils.manageSuspendIO(errorReporter, extCmdFactory, rscLayerObjectRef);
+    }
+
+    @Override
     public void process(
         AbsRscLayerObject<Resource> rscLayerDataRef,
         List<Snapshot> snapshotListRef,
@@ -272,7 +286,7 @@ public class BCacheLayer implements DeviceLayer
             }
         }
 
-        if (rscLayerDataRef.getAbsResource().getLayerData(storDriverAccCtx).getSuspendIo())
+        if (rscLayerDataRef.getAbsResource().getLayerData(storDriverAccCtx).getShouldSuspendIo())
         {
             /*
              * rsc.getLayerData is either the same reference as our local rscLayerDataRef OR

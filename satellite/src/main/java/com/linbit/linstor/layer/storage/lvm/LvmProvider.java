@@ -140,6 +140,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.LVM;
+    }
+
+    @Override
     protected void updateStates(List<LvmData<Resource>> vlmDataList, List<LvmData<Snapshot>> snapVlmDataList)
         throws StorageException, AccessDeniedException, DatabaseException
     {
@@ -232,6 +238,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             vlmDataRef.setIdentifier(asSnapLvIdentifier((LvmData<Snapshot>) vlmDataRef));
             isAbsRscActive = true; // TODO: not sure about this default...
         }
+
         if (info == null)
         {
             vlmDataRef.setExists(false);

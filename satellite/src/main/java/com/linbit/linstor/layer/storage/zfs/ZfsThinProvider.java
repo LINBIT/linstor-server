@@ -72,6 +72,12 @@ public class ZfsThinProvider extends ZfsProvider
     }
 
     @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.ZFS_THIN;
+    }
+
+    @Override
     protected void createLvImpl(ZfsData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
     {

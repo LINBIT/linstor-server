@@ -86,6 +86,19 @@ public class NvmeLayer implements DeviceLayer
         // no-op
     }
 
+    @Override
+    public boolean isSuspendIoSupported()
+    {
+        return false;
+    }
+
+    @Override
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef)
+        throws ResourceException, StorageException
+    {
+        throw new StorageException("Suspending / Resuming IO for NVMe resources is not supported");
+    }
+
     /**
      * Connects/disconnects an NVMe Target or creates/deletes its data.
      *

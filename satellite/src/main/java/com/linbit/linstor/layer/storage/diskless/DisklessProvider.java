@@ -11,6 +11,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -33,6 +34,12 @@ public class DisklessProvider implements DeviceProvider
     public DisklessProvider()
     {
         // this class definitely needs dependency injection!
+    }
+
+    @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.DISKLESS;
     }
 
     @Override

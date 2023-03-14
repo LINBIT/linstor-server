@@ -55,4 +55,10 @@ public class SpdkLocalProvider extends AbsSpdkProvider<OutputData>
             backupShipMgrRef
         );
     }
+
+    @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.SPDK;
+    }
 }

@@ -43,11 +43,13 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     protected final TransactionMap<VolumeNumber, VLM_TYPE> vlmMap;
     protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> parent;
     protected final TransactionSet<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> children;
+    // TODO: this would make more sense of VLM level since non-DRBD layers can now also be suspended
     protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, Boolean> suspend;
     protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, String> ignoreReason;
 
     // volatile satellite only
     private boolean checkFileSystem;
+    private Boolean isSuspended = null; // unknown
 
     public AbsRscData(
         int rscLayerIdRef,
@@ -127,6 +129,33 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     }
 
     @Override
+    public boolean exists()
+    {
+        boolean exists = true;
+        for (VLM_TYPE vlm : vlmMap.values())
+        {
+            if (!vlm.exists())
+            {
+                exists = false;
+                break;
+            }
+        }
+        return exists;
+    }
+
+    @Override
+    public Boolean isSuspended()
+    {
+        return isSuspended;
+    }
+
+    @Override
+    public void setIsSuspended(boolean isSuspendedRef)
+    {
+        isSuspended = isSuspendedRef;
+    }
+
+    @Override
     public void remove(AccessContext accCtx, VolumeNumber vlmNrRef)
         throws DatabaseException, AccessDeniedException
     {
@@ -191,13 +220,13 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     }
 
     @Override
-    public void setSuspendIo(boolean suspendRef) throws DatabaseException
+    public void setShouldSuspendIo(boolean suspendRef) throws DatabaseException
     {
         suspend.set(suspendRef);
     }
 
     @Override
-    public boolean getSuspendIo()
+    public boolean getShouldSuspendIo()
     {
         return suspend.get();
     }

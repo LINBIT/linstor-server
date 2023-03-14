@@ -50,9 +50,18 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
 
     void disableCheckFileSystem();
 
-    void setSuspendIo(boolean suspend) throws DatabaseException;
+    boolean exists();
 
-    boolean getSuspendIo();
+    void setIsSuspended(boolean suspend) throws DatabaseException;
+
+    /**
+     * @return true / false is the resource is suspended or not, or null if the status is unknown.
+     */
+    @Nullable Boolean isSuspended();
+
+    void setShouldSuspendIo(boolean suspend) throws DatabaseException;
+
+    boolean getShouldSuspendIo();
 
     void setIgnoreReason(String ignoreReasonRef) throws DatabaseException;
 

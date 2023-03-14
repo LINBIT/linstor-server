@@ -23,6 +23,7 @@ import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.layer.storage.utils.SEDUtils;
 import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -31,6 +32,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Either;
@@ -60,6 +62,7 @@ public class StorageLayer implements DeviceLayer
     private final ExtCmdFactory extCmdFactory;
     private final Provider<DeviceHandler> resourceProcessorProvider;
     private final StltSecurityObjects secObjs;
+    private final ErrorReporter errorReporter;
 
     @Inject
     public StorageLayer(
@@ -67,7 +70,8 @@ public class StorageLayer implements DeviceLayer
         DeviceProviderMapper deviceProviderMapperRef,
         ExtCmdFactory extCmdFactoryRef,
         Provider<DeviceHandler> resourceProcessorProviderRef,
-        StltSecurityObjects secObjsRef
+        StltSecurityObjects secObjsRef,
+        ErrorReporter errorReporterRef
     )
     {
         storDriverAccCtx = storDriverAccCtxRef;
@@ -75,6 +79,7 @@ public class StorageLayer implements DeviceLayer
         extCmdFactory = extCmdFactoryRef;
         resourceProcessorProvider = resourceProcessorProviderRef;
         secObjs = secObjsRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -229,6 +234,54 @@ public class StorageLayer implements DeviceLayer
         // just copy (for now) usableSize = allocateSize and let the DeviceProviders recalculate the allocatedSize
         vlmObj.setUsableSize(vlmObj.getAllocatedSize());
         getDevProviderByVlmObj(vlmObj).updateGrossSize(vlmObj);
+    }
+
+    @Override
+    public boolean isSuspendIoSupported()
+    {
+        return false;
+    }
+
+    @Override
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerData)
+        throws ResourceException, StorageException
+    {
+        boolean changed = false;
+        for (VlmProviderObject<Resource> vlmData : rscLayerData.getVlmLayerObjects().values())
+        {
+            DeviceProviderKind kind = vlmData.getProviderKind();
+            switch (kind)
+            {
+                case LVM:
+                case LVM_THIN:
+                case DISKLESS:
+                case EBS_INIT:
+                case EBS_TARGET:
+                case EXOS:
+                case FILE:
+                case FILE_THIN:
+                case OPENFLEX_TARGET:
+                case REMOTE_SPDK:
+                case SPDK:
+                case ZFS:
+                case ZFS_THIN:
+                    throw new StorageException("Suspend / resume io is not supported for " + kind);
+                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                default:
+                    throw new ImplementationError("Unexpected DeviceProviderKind: " + kind);
+            }
+        }
+        if (changed)
+        {
+            try
+            {
+                rscLayerData.setIsSuspended(rscLayerData.getShouldSuspendIo());
+            }
+            catch (DatabaseException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
     }
 
     @Override

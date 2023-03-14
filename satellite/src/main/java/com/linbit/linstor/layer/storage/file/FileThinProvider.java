@@ -65,6 +65,12 @@ public class FileThinProvider extends FileProvider
     }
 
     @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.FILE_THIN;
+    }
+
+    @Override
     protected void createLvImpl(FileData<Resource> fileData)
         throws StorageException, AccessDeniedException, DatabaseException
     {

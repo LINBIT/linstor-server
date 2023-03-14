@@ -66,6 +66,12 @@ public class SpdkRemoteProvider extends AbsSpdkProvider<JsonNode>
     }
 
     @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.REMOTE_SPDK;
+    }
+
+    @Override
     public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
         throws StorageException, AccessDeniedException
     {

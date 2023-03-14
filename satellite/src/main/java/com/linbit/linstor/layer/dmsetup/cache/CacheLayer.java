@@ -231,6 +231,19 @@ public class CacheLayer implements DeviceLayer
     }
 
     @Override
+    public boolean isSuspendIoSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef)
+        throws ResourceException, StorageException
+    {
+        DmSetupUtils.manageSuspendIO(errorReporter, extCmdFactory, rscLayerObjectRef);
+    }
+
+    @Override
     public void process(
         AbsRscLayerObject<Resource> rscLayerDataRef,
         List<Snapshot> snapshotListRef,

@@ -927,7 +927,7 @@ public class CtrlSnapshotCrtApiCallHandler
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
-                rsc.getLayerData(apiCtx).setSuspendIo(false);
+                rsc.getLayerData(apiCtx).setShouldSuspendIo(false);
             }
         }
         catch (AccessDeniedException accDeniedExc)

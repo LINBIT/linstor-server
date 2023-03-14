@@ -80,6 +80,12 @@ public class LvmThinProvider extends LvmProvider
         );
     }
 
+    @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.LVM_THIN;
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     protected void updateInfo(LvmData<?> vlmDataRef, LvsInfo infoRef)

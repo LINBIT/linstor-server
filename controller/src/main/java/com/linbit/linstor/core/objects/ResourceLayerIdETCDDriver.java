@@ -73,7 +73,7 @@ public class ResourceLayerIdETCDDriver extends BaseEtcdDriver implements Resourc
 
         suspendDriver = (rscData, newSuspend) ->
         {
-            boolean oldSuspend = rscData.getSuspendIo();
+            boolean oldSuspend = rscData.getShouldSuspendIo();
             errorReporter.logTrace(
                 "Updating %s's suspend io from [%s] to [%s] %s",
                 rscData.getClass().getSimpleName(),
@@ -139,7 +139,7 @@ public class ResourceLayerIdETCDDriver extends BaseEtcdDriver implements Resourc
             .put(RESOURCE_NAME, rscData.getResourceName().value)
             .put(LAYER_RESOURCE_KIND, rscData.getLayerKind().name())
             .put(LAYER_RESOURCE_SUFFIX, rscData.getResourceNameSuffix())
-            .put(LAYER_RESOURCE_SUSPENDED, Boolean.toString(rscData.getSuspendIo()));
+            .put(LAYER_RESOURCE_SUSPENDED, Boolean.toString(rscData.getShouldSuspendIo()));
         if (rscData.getParent() != null)
         {
             namespace.put(LAYER_RESOURCE_PARENT_ID, Integer.toString(rscData.getParent().getRscLayerId()));

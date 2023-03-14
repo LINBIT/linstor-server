@@ -213,5 +213,4 @@ public class OpenflexRscPojo implements RscLayerDataApi
             return discGran;
         }
     }
-
 }

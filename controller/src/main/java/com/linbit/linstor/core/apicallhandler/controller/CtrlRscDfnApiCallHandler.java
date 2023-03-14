@@ -847,7 +847,7 @@ public class CtrlRscDfnApiCallHandler
     {
         try
         {
-            rsc.getLayerData(peerAccCtx.get()).setSuspendIo(true);
+            rsc.getLayerData(peerAccCtx.get()).setShouldSuspendIo(true);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -871,7 +871,7 @@ public class CtrlRscDfnApiCallHandler
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
-                rsc.getLayerData(apiCtx).setSuspendIo(false);
+                rsc.getLayerData(apiCtx).setShouldSuspendIo(false);
             }
         }
         catch (AccessDeniedException accDeniedExc)

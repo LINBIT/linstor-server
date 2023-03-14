@@ -161,6 +161,12 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
         }
     }
 
+    @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.EBS_INIT;
+    }
+
     public static boolean isSupported(ErrorReporter errorReporterRef)
     {
         return AwsRestClient.isRunningInEc2(errorReporterRef);

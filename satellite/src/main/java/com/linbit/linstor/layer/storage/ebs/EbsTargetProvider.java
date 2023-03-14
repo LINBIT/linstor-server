@@ -139,6 +139,12 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     // }
 
     @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.EBS_TARGET;
+    }
+
+    @Override
     protected Map<String, com.amazonaws.services.ec2.model.Volume> getInfoListImpl(
         List<EbsData<Resource>> vlmDataListRef,
         List<EbsData<Snapshot>> snapVlmsRef

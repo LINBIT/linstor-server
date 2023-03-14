@@ -707,7 +707,7 @@ public class CtrlSnapshotCrtHelper
     {
         try
         {
-            rsc.getLayerData(peerAccCtx.get()).setSuspendIo(suspend);
+            rsc.getLayerData(peerAccCtx.get()).setShouldSuspendIo(suspend);
         }
         catch (AccessDeniedException accDeniedExc)
         {

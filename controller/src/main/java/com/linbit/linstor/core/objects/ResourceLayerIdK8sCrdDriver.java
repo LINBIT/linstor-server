@@ -100,7 +100,7 @@ public class ResourceLayerIdK8sCrdDriver implements ResourceLayerIdCtrlDatabaseD
             rscData.getLayerKind().name(),
             rscData.getParent() != null ? rscData.getParent().getRscLayerId() : null,
             rscData.getResourceNameSuffix(),
-            rscData.getSuspendIo()
+            rscData.getShouldSuspendIo()
         );
 
         tx.createOrReplace(GeneratedDatabaseTables.LAYER_RESOURCE_IDS, val, isNew);

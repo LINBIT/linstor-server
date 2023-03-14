@@ -224,6 +224,7 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
      * Temporary data - will not be persisted
      */
 
+    @Override
     public boolean exists()
     {
         return exists;
@@ -274,12 +275,14 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         promotionScore = promotionScoreRef;
     }
 
-    public boolean isSuspended()
+    @Override
+    public Boolean isSuspended()
     {
         return isSuspended;
     }
 
-    public void setSuspended(boolean isSuspendedRef)
+    @Override
+    public void setIsSuspended(boolean isSuspendedRef)
     {
         isSuspended = isSuspendedRef;
     }

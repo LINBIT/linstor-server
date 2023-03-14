@@ -171,7 +171,7 @@ public class ResourceLayerIdSQLDbDriver implements ResourceLayerIdCtrlDatabaseDr
             }
             stmt.setString(6, rscData.getLayerKind().name());
             stmt.setString(7, rscData.getResourceNameSuffix());
-            stmt.setBoolean(8, rscData.getSuspendIo());
+            stmt.setBoolean(8, rscData.getShouldSuspendIo());
 
             stmt.executeUpdate();
             errorReporter.logTrace("LayerResourceId created %s", getId(rscData));
@@ -294,7 +294,7 @@ public class ResourceLayerIdSQLDbDriver implements ResourceLayerIdCtrlDatabaseDr
         public void update(AbsRscData<?, VlmProviderObject<?>> rscData, Boolean newSuspend)
             throws DatabaseException
         {
-            boolean oldSuspend = rscData.getSuspendIo();
+            boolean oldSuspend = rscData.getShouldSuspendIo();
             errorReporter.logTrace(
                 "Updating %s's suspend io from [%s] to [%s] %s",
                 rscData.getClass().getSimpleName(),

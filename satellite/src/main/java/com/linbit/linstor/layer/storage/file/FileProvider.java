@@ -146,6 +146,12 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.FILE;
+    }
+
+    @Override
     protected void updateStates(List<FileData<Resource>> fileDataList, List<FileData<Snapshot>> snapshots)
         throws StorageException, AccessDeniedException, DatabaseException
     {

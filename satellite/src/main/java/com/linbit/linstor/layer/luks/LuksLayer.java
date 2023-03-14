@@ -15,6 +15,7 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
@@ -192,6 +193,19 @@ public class LuksLayer implements DeviceLayer
     {
         // no-op
         return null;
+    }
+
+    @Override
+    public boolean isSuspendIoSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef)
+        throws ResourceException, StorageException
+    {
+        DmSetupUtils.manageSuspendIO(errorReporter, extCmdFactory, rscLayerObjectRef);
     }
 
     @Override

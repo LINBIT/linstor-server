@@ -361,205 +361,260 @@ public class DeviceHandlerImpl implements DeviceHandler
         List<Resource> sysFsUpdateList = new ArrayList<>();
         List<Resource> sysFsDeleteList = new ArrayList<>();
 
+        /*
+         * We want to run all suspend-io as soon and as close as possible to each other.
+         * resume-io's are not that important to be close together, so we only focus on non-suspended -> suspended
+         * transitions
+         */
+        HashMap<Resource, ApiCallRcImpl> failedRscs = new HashMap<>();
+        errorReporter.logTrace("Checking required changes in suspend-io state...");
+        for (Resource rsc : resourceList)
+        {
+            try
+            {
+                suspendIfNeeded(rsc.getLayerData(wrkCtx));
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (StorageException | ResourceException exc)
+            {
+                failedRscs.put(rsc, handleException(rsc, exc));
+            }
+        }
+
         for (Resource rsc : resourceList)
         {
             ResourceName rscName = rsc.getDefinition().getName();
 
-            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-            try
+            ApiCallRcImpl apiCallRc = failedRscs.get(rsc);
+            if (apiCallRc == null)
             {
-                List<Snapshot> snapshots = snapshotsByRscName.get(rscName);
-                if (snapshots == null)
+                apiCallRc = new ApiCallRcImpl();
+                try
                 {
-                    snapshots = Collections.emptyList();
-                }
-                unprocessedSnapshotsRef.removeAll(snapshots);
-
-                AbsRscLayerObject<Resource> rscLayerObject = rsc.getLayerData(wrkCtx);
-                process(
-                    rscLayerObject,
-                    snapshots,
-                    apiCallRc
-                );
-
-                StateFlags<Flags> rscFlags = rsc.getStateFlags();
-                if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE) &&
-                    rscFlags.isUnset(wrkCtx, Resource.Flags.INACTIVE))
-                {
-                    if (rscLayerObject.getLayerKind().isLocalOnly())
+                    List<Snapshot> snapshots = snapshotsByRscName.get(rscName);
+                    if (snapshots == null)
                     {
-                        MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, wrkCtx, rsc);
+                        snapshots = Collections.emptyList();
                     }
-                    updateDiscGran(rscLayerObject);
-                }
-                for (Snapshot snapshot : snapshots)
-                {
-                    if (snapshot.getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE))
-                    {
-                        snapListNotifyDelete.add(snapshot);
-                        // snapshot.delete is done by the deviceManager
-                    }
-                    else
-                    {
-                        // start the snapshot-shipping-daemons and backup-shipping-daemons if necessary
-                        snapshotShippingManager.allSnapshotPartsRegistered(snapshot);
-                        backupShippingManager.allBackupPartsRegistered(snapshot);
-                    }
-                }
+                    unprocessedSnapshotsRef.removeAll(snapshots);
 
-                /*
-                 * old device manager reported changes of free space after every
-                 * resource operation. As this could require to query the same
-                 * VG or zpool multiple times within the same device manager run,
-                 * we only query the free space after the whole run.
-                 * This also means that we only send the resourceApplied messages
-                 * at the very end
-                 */
-                if (rscFlags.isSet(wrkCtx, Resource.Flags.DELETE))
-                {
-                    rscListNotifyDelete.add(rsc);
-                    notificationListener.get().notifyResourceDeleted(rsc);
-                    // rsc.delete is done by the deviceManager
-                }
-                else
-                {
-                    Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
-                    while (iterateVolumes.hasNext())
+                    AbsRscLayerObject<Resource> rscLayerObject = rsc.getLayerData(wrkCtx);
+                    process(
+                        rscLayerObject,
+                        snapshots,
+                        apiCallRc
+                    );
+
+                    StateFlags<Flags> rscFlags = rsc.getStateFlags();
+                    if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE) &&
+                        rscFlags.isUnset(wrkCtx, Resource.Flags.INACTIVE))
                     {
-                        Volume vlm = iterateVolumes.next();
-                        if (vlm.getFlags().isSet(wrkCtx, Volume.Flags.DELETE))
+                        if (rscLayerObject.getLayerKind().isLocalOnly())
                         {
-                            // verify if all VlmProviderObject were deleted correctly
-                            ensureAllVlmDataDeleted(rscLayerObject, vlm.getVolumeDefinition().getVolumeNumber());
-                            vlmListNotifyDelete.add(vlm);
+                            MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, wrkCtx, rsc);
+                        }
+                        updateDiscGran(rscLayerObject);
+                    }
+                    for (Snapshot snapshot : snapshots)
+                    {
+                        if (snapshot.getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE))
+                        {
+                            snapListNotifyDelete.add(snapshot);
+                            // snapshot.delete is done by the deviceManager
                         }
                         else
                         {
-                            updateDeviceSymlinks(vlm);
+                            // start the snapshot-shipping-daemons and backup-shipping-daemons if necessary
+                            snapshotShippingManager.allSnapshotPartsRegistered(snapshot);
+                            backupShippingManager.allBackupPartsRegistered(snapshot);
                         }
                     }
-                    rscListNotifyApplied.add(rsc);
-                }
 
-                extFileHandler.handle(rsc);
-
-                // give the layer the opportunity to send a "resource ready" event
-                AbsRscLayerObject<Resource> firstNonIgnoredRscData = getFirstRscDataWithoutIgnoredReasonForDataPath(
-                    rsc.getLayerData(wrkCtx)
-                );
-                if (firstNonIgnoredRscData == null)
-                {
-                    errorReporter.logDebug(
-                        "Not calling resourceFinished for any layer as the resource '%s' is completely ignored. " +
-                            "Topmost reason: %s",
-                        rsc.getLayerData(wrkCtx).getSuffixedResourceName(),
-                        rsc.getLayerData(wrkCtx).getIgnoreReason()
-                    );
-                }
-                else
-                {
-                    resourceFinished(firstNonIgnoredRscData);
-                }
-
-                if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE))
-                {
-                    sysFsUpdateList.add(rsc);
-                }
-                else
-                {
-                    sysFsDeleteList.add(rsc);
-                }
-            }
-            catch (AccessDeniedException | DatabaseException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-            catch (Exception | ImplementationError exc)
-            {
-                String errorId = errorReporter.reportError(
-                    exc,
-                    null,
-                    null,
-                    "An error occurred while processing resource '" + rsc + "'"
-                );
-
-                long rc;
-                String errMsg;
-                String cause;
-                String correction;
-                String details;
-                if (exc instanceof StorageException ||
-                    exc instanceof ResourceException ||
-                    exc instanceof VolumeException
-                )
-                {
-                    LinStorException linExc = (LinStorException) exc;
-                    // TODO add returnCode and message to the classes StorageException, ResourceException and
-                    // VolumeException and include them here
-
-                    rc = ApiConsts.FAIL_UNKNOWN_ERROR;
-                    errMsg = exc.getMessage();
-
-                    cause = linExc.getCauseText();
-                    correction = linExc.getCorrectionText();
-                    details = linExc.getDetailsText();
-                }
-                else
-                if (exc instanceof AbortLayerProcessingException)
-                {
-                    AbsRscLayerObject<?> rscLayerData = ((AbortLayerProcessingException) exc).rscLayerObject;
-                    rc = ApiConsts.FAIL_UNKNOWN_ERROR;
-                    errMsg = exc.getMessage();
-
-                    if (errMsg == null)
+                    /*
+                     * old device manager reported changes of free space after every
+                     * resource operation. As this could require to query the same
+                     * VG or zpool multiple times within the same device manager run,
+                     * we only query the free space after the whole run.
+                     * This also means that we only send the resourceApplied messages
+                     * at the very end
+                     */
+                    if (rscFlags.isSet(wrkCtx, Resource.Flags.DELETE))
                     {
-                        errMsg = String.format(
-                            "Layer '%s' failed to process resource '%s'. ",
-                            rscLayerData.getLayerKind().name(),
-                            rscLayerData.getSuffixedResourceName()
+                        rscListNotifyDelete.add(rsc);
+                        notificationListener.get().notifyResourceDeleted(rsc);
+                        // rsc.delete is done by the deviceManager
+                    }
+                    else
+                    {
+                        Iterator<Volume> iterateVolumes = rsc.iterateVolumes();
+                        while (iterateVolumes.hasNext())
+                        {
+                            Volume vlm = iterateVolumes.next();
+                            if (vlm.getFlags().isSet(wrkCtx, Volume.Flags.DELETE))
+                            {
+                                // verify if all VlmProviderObject were deleted correctly
+                                ensureAllVlmDataDeleted(rscLayerObject, vlm.getVolumeDefinition().getVolumeNumber());
+                                vlmListNotifyDelete.add(vlm);
+                            }
+                            else
+                            {
+                                updateDeviceSymlinks(vlm);
+                            }
+                        }
+                        rscListNotifyApplied.add(rsc);
+                    }
+
+                    extFileHandler.handle(rsc);
+
+                    // give the layer the opportunity to send a "resource ready" event
+                    AbsRscLayerObject<Resource> firstNonIgnoredRscData = getFirstRscDataWithoutIgnoredReasonForDataPath(
+                        rsc.getLayerData(wrkCtx)
+                    );
+                    if (firstNonIgnoredRscData == null)
+                    {
+                        errorReporter.logDebug(
+                            "Not calling resourceFinished for any layer as the resource '%s' is completely ignored. " +
+                                "Topmost reason: %s",
+                            rsc.getLayerData(wrkCtx).getSuffixedResourceName(),
+                            rsc.getLayerData(wrkCtx).getIgnoreReason()
                         );
                     }
-
-                    cause = null;
-                    correction = null;
-
-                    List<String> devLayersAbove = new ArrayList<>();
-                    AbsRscLayerObject<?> parent = rscLayerData.getParent();
-                    while (parent != null)
+                    else
                     {
-                        devLayersAbove.add(layerFactory.getDeviceLayer(parent.getLayerKind()).getName());
-                        parent = parent.getParent();
+                        resourceFinished(firstNonIgnoredRscData);
                     }
-                    details = String.format("Skipping layers above %s", devLayersAbove);
+
+                    if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE))
+                    {
+                        sysFsUpdateList.add(rsc);
+                    }
+                    else
+                    {
+                        sysFsDeleteList.add(rsc);
+                    }
                 }
-                else
+                catch (AccessDeniedException | DatabaseException exc)
                 {
-                    rc = ApiConsts.FAIL_UNKNOWN_ERROR;
-                    errMsg = exc.getMessage();
-                    if (errMsg == null)
-                    {
-                        errMsg = "An unknown exception occurred while processing the resource " + rscName.displayValue;
-                    }
-
-                    cause = null;
-                    correction = null;
-                    details = null;
+                    throw new ImplementationError(exc);
                 }
-
-                apiCallRc = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
-                    .entryBuilder(rc, errMsg)
-                    .setCause(cause)
-                    .setCorrection(correction)
-                    .setDetails(details)
-                    .addErrorId(errorId)
-                    .build()
-                );
-
-                notificationListener.get().notifyResourceFailed(rsc, apiCallRc);
+                catch (Exception | ImplementationError exc)
+                {
+                    apiCallRc = handleException(rsc, exc);
+                }
             }
             notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
         }
         sysFsHandler.updateSysFsSettings(sysFsUpdateList, sysFsDeleteList);
+    }
+
+    private ApiCallRcImpl handleException(Resource rsc, Throwable exc)
+    {
+        ResourceName rscName = rsc.getDefinition().getName();
+        ApiCallRcImpl apiCallRc;
+        String errorId = errorReporter.reportError(
+            exc,
+            null,
+            null,
+            "An error occurred while processing resource '" + rsc + "'"
+        );
+
+        long rc;
+        String errMsg;
+        String cause;
+        String correction;
+        String details;
+        if (exc instanceof StorageException ||
+            exc instanceof ResourceException ||
+            exc instanceof VolumeException
+        )
+        {
+            LinStorException linExc = (LinStorException) exc;
+            // TODO add returnCode and message to the classes StorageException, ResourceException and
+            // VolumeException and include them here
+
+            rc = ApiConsts.FAIL_UNKNOWN_ERROR;
+            errMsg = exc.getMessage();
+
+            cause = linExc.getCauseText();
+            correction = linExc.getCorrectionText();
+            details = linExc.getDetailsText();
+        }
+        else
+        if (exc instanceof AbortLayerProcessingException)
+        {
+            AbsRscLayerObject<?> rscLayerData = ((AbortLayerProcessingException) exc).rscLayerObject;
+            rc = ApiConsts.FAIL_UNKNOWN_ERROR;
+            errMsg = exc.getMessage();
+
+            if (errMsg == null)
+            {
+                errMsg = String.format(
+                    "Layer '%s' failed to process resource '%s'. ",
+                    rscLayerData.getLayerKind().name(),
+                    rscLayerData.getSuffixedResourceName()
+                );
+            }
+
+            cause = null;
+            correction = null;
+
+            List<String> devLayersAbove = new ArrayList<>();
+            AbsRscLayerObject<?> parent = rscLayerData.getParent();
+            while (parent != null)
+            {
+                devLayersAbove.add(layerFactory.getDeviceLayer(parent.getLayerKind()).getName());
+                parent = parent.getParent();
+            }
+            details = String.format("Skipping layers above %s", devLayersAbove);
+        }
+        else
+        {
+            rc = ApiConsts.FAIL_UNKNOWN_ERROR;
+            errMsg = exc.getMessage();
+            if (errMsg == null)
+            {
+                errMsg = "An unknown exception occurred while processing the resource " + rscName.displayValue;
+            }
+
+            cause = null;
+            correction = null;
+            details = null;
+        }
+
+        apiCallRc = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
+            .entryBuilder(rc, errMsg)
+            .setCause(cause)
+            .setCorrection(correction)
+            .setDetails(details)
+            .addErrorId(errorId)
+            .build()
+        );
+
+        notificationListener.get().notifyResourceFailed(rsc, apiCallRc);
+        return apiCallRc;
+    }
+
+    private void suspendIfNeeded(AbsRscLayerObject<Resource> rscLayerObjectRef)
+        throws ResourceException, StorageException, AccessDeniedException
+    {
+        StateFlags<Flags> flags = rscLayerObjectRef.getAbsResource().getStateFlags();
+        boolean isRscInactive = flags.isSet(
+            wrkCtx,
+            Resource.Flags.INACTIVE,
+            Resource.Flags.INACTIVE_PERMANENTLY,
+            Resource.Flags.INACTIVATING
+        );
+        if (rscLayerObjectRef.exists() && !isRscInactive)
+        {
+            DeviceLayer topMostLayer = layerFactory.getDeviceLayer(rscLayerObjectRef.getLayerKind());
+            if (topMostLayer.isSuspendIoSupported())
+            {
+                topMostLayer.manageSuspendIO(rscLayerObjectRef);
+            }
+        }
     }
 
     private <RSC extends AbsResource<RSC>> AbsRscLayerObject<RSC> getFirstRscDataWithoutIgnoredReasonForDataPath(

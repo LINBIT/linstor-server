@@ -154,6 +154,12 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
+    public DeviceProviderKind getDeviceProviderKind()
+    {
+        return DeviceProviderKind.EXOS;
+    }
+
+    @Override
     public void clearCache() throws StorageException
     {
         super.clearCache();

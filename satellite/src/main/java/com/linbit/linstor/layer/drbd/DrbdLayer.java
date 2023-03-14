@@ -1058,15 +1058,90 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
+    @Override
+    public boolean isSuspendIoSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef)
+        throws ResourceException, StorageException
+    {
+        if (rscLayerObjectRef.exists())
+        {
+            DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) rscLayerObjectRef;
+
+            // do not use drbdRscData.isSuspended since that boolean still needs to be updated using
+            // updateResourceToCurrentDrbdState(..)
+            try
+            {
+                DrbdResource drbdRscState = drbdState.getDrbdResource(drbdRscData.getSuffixedResourceName());
+                boolean isSuspended = drbdRscState != null && drbdRscState.getSuspendedUser() != null &&
+                    drbdRscState.getSuspendedUser();
+                boolean shouldBeSuspended = drbdRscData.getShouldSuspendIo();
+                if (drbdRscData.isSuspended() == null || drbdRscData.isSuspended() != isSuspended)
+                {
+                    drbdRscData.setIsSuspended(isSuspended);
+                }
+                if (shouldBeSuspended != isSuspended)
+                {
+                    if (isSuspended)
+                    {
+                        errorReporter.logTrace(
+                            "Resuming DRBD-IO for resource '%s'",
+                            drbdRscData.getSuffixedResourceName()
+                        );
+                        drbdUtils.resumeIo(drbdRscData);
+                    }
+                    else
+                    {
+                        errorReporter.logTrace(
+                            "Suspending DRBD-IO for resource '%s'",
+                            drbdRscData.getSuffixedResourceName()
+                        );
+                        drbdUtils.suspendIo(drbdRscData);
+                    }
+                    drbdRscData.setIsSuspended(shouldBeSuspended);
+                }
+            }
+            catch (NoInitialStateException exc)
+            {
+                throw new StorageException("Need initial DRBD state", exc);
+            }
+            catch (ExtCmdFailedException exc)
+            {
+                boolean suspend = drbdRscData.getShouldSuspendIo();
+                throw new ResourceException(
+                    String.format(
+                        "%s of the DRBD resource '%s' failed",
+                        suspend ? "Suspend" : "Resume",
+                        drbdRscData.getSuffixedResourceName()
+                    ),
+                    getAbortMsg(drbdRscData),
+                    String.format(
+                        "The external command for %s the DRBD resource failed",
+                        suspend ? "suspending" : "resuming"
+                    ),
+                    null,
+                    null,
+                    exc
+                );
+            }
+        }
+    }
+
+    // TODO can this method be removed?
     private void adjustSuspendIo(
         DrbdRscData<Resource> drbdRscData,
         List<Snapshot> snapshotList
     )
         throws ResourceException
     {
-        boolean shouldSuspend = drbdRscData.exists() && drbdRscData.getSuspendIo();
+        boolean shouldSuspend = drbdRscData.exists() && drbdRscData.getShouldSuspendIo();
 
-        if (!drbdRscData.isSuspended() && shouldSuspend)
+        boolean isSuspended = drbdRscData.isSuspended() != null && drbdRscData.isSuspended();
+        if (!isSuspended && shouldSuspend)
         {
             try
             {
@@ -1086,7 +1161,7 @@ public class DrbdLayer implements DeviceLayer
             }
         }
         else
-        if (drbdRscData.isSuspended() && !shouldSuspend)
+        if (isSuspended && !shouldSuspend)
         {
             try
             {
@@ -1489,7 +1564,7 @@ public class DrbdLayer implements DeviceLayer
                     drbdRscData.setAdjustRequired(true);
                 }
 
-                drbdRscData.setSuspended(
+                drbdRscData.setIsSuspended(
                     drbdRscState.getSuspendedUser() == null ?
                         false :
                         drbdRscState.getSuspendedUser()

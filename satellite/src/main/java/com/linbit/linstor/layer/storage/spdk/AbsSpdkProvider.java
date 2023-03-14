@@ -58,7 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Resource>, SpdkData<Snapshot>>
+public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, SpdkData<Resource>, SpdkData<Snapshot>>
 {
     private static final int TOLERANCE_FACTOR = 3;
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper

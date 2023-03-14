@@ -234,6 +234,19 @@ public class WritecacheLayer implements DeviceLayer
     }
 
     @Override
+    public boolean isSuspendIoSupported()
+    {
+        return true;
+    }
+
+    @Override
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef)
+        throws ResourceException, StorageException
+    {
+        DmSetupUtils.manageSuspendIO(errorReporter, extCmdFactory, rscLayerObjectRef);
+    }
+
+    @Override
     public void process(
         AbsRscLayerObject<Resource> rscLayerDataRef,
         List<Snapshot> snapshotListRef,
@@ -283,7 +296,7 @@ public class WritecacheLayer implements DeviceLayer
             .getLayerData(storDriverAccCtx);
         final boolean hasDrbd = LayerUtils.hasLayer(rootLayerData, DeviceLayerKind.DRBD);
 
-        if (rootLayerData.getSuspendIo())
+        if (rootLayerData.getShouldSuspendIo())
         {
             /*
              * rsc.getLayerData is either the same reference as our local rscLayerDataRef OR
