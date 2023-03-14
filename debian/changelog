@@ -1,3 +1,20 @@
+linstor-server (1.21.0-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Auto-rs-disc-gran: Add changelog entry
+  * ExtTools: use zfs -? instead of zfs list
+  * QSI: Specify required fields
+  * ETCD,Layer: Fix broken key calculation
+  * DB: Add PK to exception / error report on failure
+  * QSI: Collect ApiCallRcExc in "reports"
+
+  [ Rene Peinthor ]
+  * resync-after: use sysctx for all operations
+  * controller: run resync-after algorithm on controller start
+  * drbdres/resync-after: only write peer option if utils >= 9.23.1
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 14 Mar 2023 10:51:31 +0000
+
 linstor-server (1.21.0~rc.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]

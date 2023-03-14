@@ -8,13 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.21.0] - 2023-03-14
+
 ### Changed
 
 - Added more details (primary keys) for database-loading exceptions
+- ZFS tool checker now uses `zfs -?`
 
 ### Fixed
 
 - Fixed apparent ETCD corruption / database-loading bug
+- Run resync-after manager on every controller startup
 
 ## [1.21.0-rc.1] - 2023-02-28
 
