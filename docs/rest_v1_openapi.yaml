@@ -3631,7 +3631,7 @@ paths:
   /v1/resource-groups/{resource_group}/query-size-info:
     parameters:
       - $ref: '#/components/parameters/ResourceGroupName'
-    get:
+    post:
       tags:
         - developers
       operationId: querySizeInfo
