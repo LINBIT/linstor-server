@@ -397,6 +397,16 @@ public abstract class BaseErrorReporter
         if (printStackTraces)
         {
             errorInfo.printStackTrace();
+            if (errorInfo instanceof ErrorContextSupplier)
+            {
+                System.err.println("ErrorContext: ");
+                ErrorContextSupplier errCtxSup = (ErrorContextSupplier) errorInfo;
+                String errCtx = errCtxSup.getErrorContext();
+                if (errCtx != null)
+                {
+                    System.err.println(errCtx);
+                }
+            }
         }
 
         if (trace == null)
