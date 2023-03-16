@@ -4,6 +4,8 @@ import com.linbit.linstor.LinStorException;
 
 public class DatabaseException extends LinStorException
 {
+    private static final long serialVersionUID = -8772770979952745641L;
+
     public DatabaseException(Throwable cause)
     {
         super("DatabaseException", cause);

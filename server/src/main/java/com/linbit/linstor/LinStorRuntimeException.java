@@ -2,25 +2,25 @@ package com.linbit.linstor;
 
 import javax.annotation.Nullable;
 
-public class LinStorRuntimeException extends RuntimeException
+public class LinStorRuntimeException extends RuntimeException implements ErrorContextSupplier
 {
     private static final long serialVersionUID = 1475777378033472411L;
 
-    private String excDescription;
-    private String excCause;
-    private String excCorrection;
-    private String excDetails;
+    private final String excDescription;
+    private final String excCause;
+    private final String excCorrection;
+    private final String excDetails;
 
-    private Long excNumericCode;
+    private final Long excNumericCode;
 
     public LinStorRuntimeException(String message)
     {
-        super(message);
+        this(message, null, null, null, null, null, null);
     }
 
     public LinStorRuntimeException(String message, Throwable cause)
     {
-        super(message, cause);
+        this(message, null, null, null, null, null, cause);
     }
 
     public LinStorRuntimeException(
@@ -31,7 +31,7 @@ public class LinStorRuntimeException extends RuntimeException
         String detailsText
     )
     {
-        this(message, descriptionText, causeText, correctionText, detailsText, null);
+        this(message, descriptionText, causeText, correctionText, detailsText, null, null);
     }
 
     public LinStorRuntimeException(
@@ -43,11 +43,25 @@ public class LinStorRuntimeException extends RuntimeException
         Throwable cause
     )
     {
+        this(message, descriptionText, causeText, correctionText, detailsText, null, cause);
+    }
+
+    public LinStorRuntimeException(
+        String message,
+        String descriptionText,
+        String causeText,
+        String correctionText,
+        String detailsText,
+        Long numericCode,
+        Throwable cause
+    )
+    {
         super(message, cause);
         excDescription = descriptionText;
         excCause = causeText;
         excCorrection = correctionText;
         excDetails = detailsText;
+        excNumericCode = numericCode;
     }
 
     /**
@@ -73,48 +87,6 @@ public class LinStorRuntimeException extends RuntimeException
             }
         }
         return this;
-    }
-
-    /**
-     * Sets the text that describes the problem for which the exception was generated
-     *
-     * @param text Problem description, or null to clear an existing problem description
-     */
-    public void setDescriptionText(String text)
-    {
-        excDescription = text;
-    }
-
-    /**
-     * Sets the text that describes what caused the problem, for which the exception was generated,
-     * to occur
-     *
-     * @param text Cause description, or null to clear an existing cause description
-     */
-    public void setCauseText(String text)
-    {
-        excCause = text;
-    }
-
-    /**
-     * Sets the text that describes possible or recommended resolutions to the problem for
-     * which the exception was generated
-     *
-     * @param text Correction instructions, or null to clear existing correction instructions
-     */
-    public void setCorrectionText(String text)
-    {
-        excCorrection = text;
-    }
-
-    /**
-     * Sets the text that contains additional information for error reports
-     *
-     * @param text Additional information, or null to clear existing additional information
-     */
-    public void setDetailsText(String text)
-    {
-        excDetails = text;
     }
 
     /**
@@ -159,16 +131,6 @@ public class LinStorRuntimeException extends RuntimeException
     }
 
     /**
-     * Attaches a numeric error code
-     *
-     * @param errorCode Numeric error code for the problem being reported by this exception
-     */
-    public void setNumericCode(Long errorCode)
-    {
-        excNumericCode = errorCode;
-    }
-
-    /**
      * Returns the numeric error code for the problem
      *
      * @return Numeric error code, or null if none has been set
@@ -176,5 +138,33 @@ public class LinStorRuntimeException extends RuntimeException
     public Long getNumericCode()
     {
         return excNumericCode;
+    }
+
+    @Override
+    public String getErrorContext()
+    {
+        StringBuilder sb = new StringBuilder("ErrorContext: ");
+        if (excDescription != null)
+        {
+            sb.append("  Description: ").append(excDescription).append("\n");
+        }
+        if (excCause != null)
+        {
+            sb.append("  Cause:       ").append(excCause).append("\n");
+        }
+        if (excCorrection != null)
+        {
+            sb.append("  Correction:  ").append(excCorrection).append("\n");
+        }
+        if (excDetails != null)
+        {
+            sb.append("  Details:     ").append(excDetails).append("\n");
+        }
+        if (excNumericCode != null)
+        {
+            sb.append("  NumericCode:  ").append(excNumericCode).append("\n");
+        }
+        sb.append("\n");
+        return sb.toString();
     }
 }

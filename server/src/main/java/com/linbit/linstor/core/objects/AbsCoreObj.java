@@ -58,11 +58,13 @@ public abstract class AbsCoreObj<C extends AbsCoreObj<C>> extends BaseTransactio
     {
         if (deleted.get())
         {
-            AccessToDeletedDataException exc = new AccessToDeletedDataException(
-                "Access to deleted " + this.getClass().getSimpleName()
+            throw new AccessToDeletedDataException(
+                "Access to deleted " + this.getClass().getSimpleName(),
+                null,
+                null,
+                null,
+                toStringImpl()
             );
-            exc.setDetailsText(toStringImpl());
-            throw exc;
         }
     }
 

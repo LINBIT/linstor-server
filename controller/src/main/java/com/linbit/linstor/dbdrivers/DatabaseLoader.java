@@ -626,14 +626,10 @@ public class DatabaseLoader implements DatabaseDriver
                     final ResourceDefinition otherRscDfn = rscDfnMapExtName.putIfAbsent(extName, rscDfn);
                     if (otherRscDfn != null)
                     {
-                        // TODO: DatabaseException constructors should probably be extended to simplify
-                        //       throwing exceptions with meaningful messages
-                        DatabaseException dbExc = new DatabaseException((Throwable) null);
-                        dbExc.setDescriptionText(
+                        throw new DatabaseException(
                             "Duplicate external name, resource definitions: " +
-                            rscDfn.getName() + ", " + otherRscDfn.getName()
+                                rscDfn.getName() + ", " + otherRscDfn.getName()
                         );
-                        throw dbExc;
                     }
                 }
             }

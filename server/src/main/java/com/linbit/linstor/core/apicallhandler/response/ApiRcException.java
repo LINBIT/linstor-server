@@ -1,12 +1,18 @@
 package com.linbit.linstor.core.apicallhandler.response;
 
+import com.linbit.linstor.ErrorContextSupplier;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiCallRcImpl;
 
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-public class ApiRcException extends ApiException
+public class ApiRcException extends ApiException implements ErrorContextSupplier
 {
+    private static final long serialVersionUID = -4157838918419476508L;
+
     private final ApiCallRc apiCallRc;
 
     private final boolean hasContext;
@@ -46,5 +52,47 @@ public class ApiRcException extends ApiException
     public boolean hasContext()
     {
         return hasContext;
+    }
+
+    @Override
+    public String getErrorContext()
+    {
+        StringBuilder sb = new StringBuilder("ApiRcException entries: ");
+        int entryNr = 1;
+
+        for (RcEntry entry : getApiCallRc().getEntries())
+        {
+            sb.append("Nr: " + entryNr);
+            if (entry.getMessage() != null)
+            {
+                sb.append("  Message: ").append(entry.getMessage()).append("\n");
+            }
+            if (entry.getCause() != null)
+            {
+                sb.append("  Cause:       ").append(entry.getCause()).append("\n");
+            }
+            if (entry.getCorrection() != null)
+            {
+                sb.append("  Correction:  ").append(entry.getCorrection()).append("\n");
+            }
+            if (entry.getDetails() != null)
+            {
+                sb.append("  Details:     ").append(entry.getDetails()).append("\n");
+            }
+            sb.append("  NumericCode:  ").append(entry.getReturnCode()).append("\n");
+            Map<String, String> objRefs = entry.getObjRefs();
+            if (objRefs != null && !objRefs.isEmpty())
+            {
+                sb.append("  Object References:");
+                for (Entry<String, String> objRefEntry : objRefs.entrySet())
+                {
+                    sb.append("    ").append(objRefEntry.getKey()).append(": ").append(objRefEntry.getValue());
+                }
+            }
+            entryNr++;
+        }
+        sb.append("\n");
+
+        return null;
     }
 }
