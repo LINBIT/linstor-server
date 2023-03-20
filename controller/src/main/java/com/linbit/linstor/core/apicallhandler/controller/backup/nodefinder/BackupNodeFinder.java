@@ -27,6 +27,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
@@ -51,7 +52,10 @@ import java.util.stream.Collectors;
 @Singleton
 public class BackupNodeFinder
 {
-    private static final CategoryZfs CATEGORY_ZFS = new CategoryZfs();
+    private static final CategorySameNode CATEGORY_SAME_NODE = new CategorySameNode();
+    private static final Version VERSION_THIN_SEND_RECV = new ExtToolsInfo.Version(0, 24);
+    private static final Version VERSION_UTIL_LINUX = new ExtToolsInfo.Version(2, 24);
+
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlApiDataLoader ctrlApiDataLoader;
 
@@ -243,14 +247,14 @@ public class BackupNodeFinder
                 if (prevNodeStr != null)
                 {
                     prevNode = ctrlApiDataLoader.loadNode(prevNodeStr, false);
-                    // if node in zfs category, only return that node, else group
+                    // if node in same-node-category, only return that node, else group
                     if (prevNode != null)
                     {
                         for (Entry<Category, Set<Node>> group : usableGroups.entrySet())
                         {
                             if (group.getValue().contains(prevNode))
                             {
-                                if (group.getKey().equals(CATEGORY_ZFS))
+                                if (group.getKey().equals(CATEGORY_SAME_NODE))
                                 {
                                     ret.add(prevNode);
                                 }
@@ -283,24 +287,24 @@ public class BackupNodeFinder
         }
         else
         {
-            // sort after size, excluding zfs
+            // sort after size, excluding all types that need to be shipped on one node only (like zfs & luks)
             /*
-             * while all nodes with zfs are sorted into the same group, once the shipping
+             * while all nodes with zfs (or luks or somethig similar) are sorted into the same group, once the shipping
              * is started on a specific zfs node, only that node can make incremental backups (limitation by zfs),
              * therefore all zfs nodes actually count the same as a group with only 1 node
              */
 
-            Map<Category, Set<Node>> usableGroupsNoZfs = new TreeMap<>(usableGroups);
-            usableGroupsNoZfs.remove(CATEGORY_ZFS);
+            Map<Category, Set<Node>> usableGroupsSameNode = new TreeMap<>(usableGroups);
+            usableGroupsSameNode.remove(CATEGORY_SAME_NODE);
             TreeMap<Integer, List<Set<Node>>> sizes = new TreeMap<>();
-            for (Set<Node> val : usableGroupsNoZfs.values())
+            for (Set<Node> val : usableGroupsSameNode.values())
             {
                 sizes.computeIfAbsent(val.size(), k -> new ArrayList<>()).add(val);
             }
             int biggestGroupSize = sizes.lastKey();
             if (biggestGroupSize == 1)
             {
-                // only include zfs if all other groups contain only 1 node
+                // only include same-node-category if all other groups contain only 1 node
                 ret = usableGroups.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
             }
             else
@@ -332,7 +336,7 @@ public class BackupNodeFinder
                         extToolsManager,
                         ExtTools.UTIL_LINUX,
                         "setsid from util_linux",
-                        new ExtToolsInfo.Version(2, 24)
+                        VERSION_UTIL_LINUX
                     )
                 );
                 if (deviceProviderKind.equals(DeviceProviderKind.LVM_THIN))
@@ -343,7 +347,7 @@ public class BackupNodeFinder
                             extToolsManager,
                             ExtTools.THIN_SEND_RECV,
                             "thin_send_recv",
-                            new ExtToolsInfo.Version(0, 24)
+                            VERSION_THIN_SEND_RECV
                         )
                     );
                 }
@@ -369,46 +373,61 @@ public class BackupNodeFinder
         Category ret = null;
         for (AbsRscLayerObject<Resource> drbdRscData : rscData)
         {
-            List<AbsRscLayerObject<Resource>> storageRscData = LayerUtils.getChildLayerDataByKind(
+            List<AbsRscLayerObject<Resource>> luksRscData = LayerUtils.getChildLayerDataByKind(
                 drbdRscData,
-                DeviceLayerKind.STORAGE
+                DeviceLayerKind.LUKS
             );
-            boolean zfsIncluded = false;
-            for (AbsRscLayerObject<Resource> storLayerRscData : storageRscData)
+            if (!luksRscData.isEmpty())
             {
-                if (RscLayerSuffixes.shouldSuffixBeShipped(storLayerRscData.getResourceNameSuffix()))
-                {
-                    for (VlmProviderObject<Resource> storVlm : storLayerRscData.getVlmLayerObjects().values())
-                    {
-                        DeviceProviderKind providerKind = storVlm.getProviderKind();
-                        if (
-                            providerKind.equals(DeviceProviderKind.ZFS) ||
-                                providerKind.equals(DeviceProviderKind.ZFS_THIN)
-                        )
-                        {
-                            zfsIncluded = true;
-                            break;
-                        }
-                    }
-                    if (zfsIncluded)
-                    {
-                        break;
-                    }
-                }
-            }
-            if (zfsIncluded)
-            {
-                ret = CATEGORY_ZFS;
+                /*
+                 * every luks-volume has a different password and therefore different encoding. If we'd allow different
+                 * nodes to ship incremental luks backups, the result would be undecodable gibberish.
+                 */
+                ret = CATEGORY_SAME_NODE;
             }
             else
             {
-                DrbdRscData<Resource> drbdLayer = (DrbdRscData<Resource>) drbdRscData;
-                Map<VolumeNumber, Boolean> key = new HashMap<>();
-                for (DrbdVlmData<Resource> drbdVlm : drbdLayer.getVlmLayerObjects().values())
+                List<AbsRscLayerObject<Resource>> storageRscData = LayerUtils.getChildLayerDataByKind(
+                    drbdRscData,
+                    DeviceLayerKind.STORAGE
+                );
+                boolean zfsIncluded = false;
+                for (AbsRscLayerObject<Resource> storLayerRscData : storageRscData)
                 {
-                    key.put(drbdVlm.getVlmNr(), drbdVlm.isUsingExternalMetaData());
+                    if (RscLayerSuffixes.shouldSuffixBeShipped(storLayerRscData.getResourceNameSuffix()))
+                    {
+                        for (VlmProviderObject<Resource> storVlm : storLayerRscData.getVlmLayerObjects().values())
+                        {
+                            DeviceProviderKind providerKind = storVlm.getProviderKind();
+                            if (
+                                providerKind.equals(DeviceProviderKind.ZFS) ||
+                                    providerKind.equals(DeviceProviderKind.ZFS_THIN)
+                            )
+                            {
+                                zfsIncluded = true;
+                                break;
+                            }
+                        }
+                        if (zfsIncluded)
+                        {
+                            break;
+                        }
+                    }
                 }
-                ret = new CategoryLvm(key);
+                if (zfsIncluded)
+                {
+                    ret = CATEGORY_SAME_NODE;
+                }
+                else
+                {
+                    DrbdRscData<Resource> drbdLayer = (DrbdRscData<Resource>) drbdRscData;
+                    Map<VolumeNumber, Boolean> key = new HashMap<>();
+                    for (DrbdVlmData<Resource> drbdVlm : drbdLayer.getVlmLayerObjects().values())
+                    {
+                        key.put(drbdVlm.getVlmNr(), drbdVlm.isUsingExternalMetaData());
+                    }
+                    ret = new CategoryLvm(key);
+                }
             }
         }
         return ret;
