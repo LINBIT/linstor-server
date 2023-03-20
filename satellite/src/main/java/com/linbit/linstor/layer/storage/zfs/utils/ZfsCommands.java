@@ -150,23 +150,38 @@ public class ZfsCommands
     }
 
 
-    public static OutputData createSnapshot(ExtCmd extCmd, String zPool, String srcIdentifier, String snapName)
+    public static OutputData createSnapshot(
+        ExtCmd extCmd,
+        String zPool,
+        String srcIdentifier,
+        String snapName,
+        String... additionalParameters
+    )
         throws StorageException
     {
-        return createSnapshotFullName(extCmd, zPool, srcIdentifier + "@" + snapName);
+        return createSnapshotFullName(extCmd, zPool, srcIdentifier + "@" + snapName, additionalParameters);
     }
 
-    public static OutputData createSnapshotFullName(ExtCmd extCmd, String zPool, String fullSnapName)
+    public static OutputData createSnapshotFullName(
+        ExtCmd extCmd,
+        String zPool,
+        String fullSnapName,
+        String... additionalParameters
+    )
         throws StorageException
     {
+
         String fullQualifiedId = zPool + File.separator + fullSnapName;
+
+        ArrayList<String> cmdList = new ArrayList<>();
+        cmdList.add("zfs");
+        cmdList.add("snapshot");
+        cmdList.addAll(Arrays.asList(additionalParameters));
+        cmdList.add(fullQualifiedId);
+
         return genericExecutor(
             extCmd,
-            new String[] {
-                "zfs",
-                "snapshot",
-                fullQualifiedId
-            },
+            cmdList.toArray(new String[0]),
             "Failed to create snapshot '" + fullQualifiedId + "'",
             "Failed to create snapshot '" + fullQualifiedId + "'"
         );

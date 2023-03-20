@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- "StorDriver/LvcreateSnapshotOptions" and "StorDriver/ZfsSnapshotOptions" properties
+
 ### Changed
 
 - Autoplacer now ignores occupied values from evicted or evacuating nodes

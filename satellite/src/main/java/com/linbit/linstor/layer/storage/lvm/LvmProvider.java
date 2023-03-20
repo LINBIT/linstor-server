@@ -17,6 +17,8 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotVolume;
+import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
@@ -344,7 +346,15 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         return type;
     }
 
-    protected PriorityProps getPrioProps(LvmData<Resource> vlmDataRef) throws AccessDeniedException
+    @SuppressWarnings("unchecked")
+    protected PriorityProps getPrioProps(LvmData<?> vlmDataRef) throws AccessDeniedException
+    {
+        return vlmDataRef.getRscLayerObject().getAbsResource() instanceof Resource ?
+            getPrioPropsRsc((LvmData<Resource>) vlmDataRef) :
+            getPrioPropsSnap((LvmData<Snapshot>) vlmDataRef);
+    }
+
+    protected PriorityProps getPrioPropsRsc(LvmData<Resource> vlmDataRef) throws AccessDeniedException
     {
         Volume vlm = (Volume) vlmDataRef.getVolume();
         Resource rsc = vlm.getAbsResource();
@@ -364,16 +374,55 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         );
     }
 
+    protected PriorityProps getPrioPropsSnap(LvmData<Snapshot> vlmDataRef) throws AccessDeniedException
+    {
+        SnapshotVolume snapVlm = (SnapshotVolume) vlmDataRef.getVolume();
+        Snapshot snap = snapVlm.getAbsResource();
+        ResourceDefinition rscDfn = snapVlm.getResourceDefinition();
+        ResourceGroup rscGrp = rscDfn.getResourceGroup();
+        SnapshotVolumeDefinition snapVlmDfn = snapVlm.getSnapshotVolumeDefinition();
+        return new PriorityProps(
+            snapVlm.getProps(storDriverAccCtx),
+            snap.getProps(storDriverAccCtx),
+            vlmDataRef.getStorPool().getProps(storDriverAccCtx),
+            snap.getNode().getProps(storDriverAccCtx),
+            snapVlmDfn.getProps(storDriverAccCtx),
+            snap.getSnapshotDefinition().getProps(storDriverAccCtx),
+            // we have to skip vlmDfn (not snapVlmDfn) since vlmDfn might have been removed in the meantime
+            // we can still include rscDfn, since a rscDfn cannot be removed while it has snapshots
+            rscDfn.getProps(storDriverAccCtx),
+            rscGrp.getVolumeGroupProps(storDriverAccCtx, snapVlmDfn.getVolumeNumber()),
+            rscGrp.getProps(storDriverAccCtx),
+            stltConfigAccessor.getReadonlyProps()
+        );
+    }
+
     protected String getLvcreateOptions(LvmData<Resource> vlmDataRef)
+    {
+        return getProp(
+            vlmDataRef,
+            ApiConsts.NAMESPC_STORAGE_DRIVER,
+            ApiConsts.KEY_STOR_POOL_LVCREATE_OPTIONS,
+            ""
+        );
+    }
+
+    protected String getLvcreateSnapshotOptions(LvmData<?> vlmDataRef)
+    {
+        return getProp(
+            vlmDataRef,
+            ApiConsts.NAMESPC_STORAGE_DRIVER,
+            ApiConsts.KEY_STOR_POOL_LVCREATE_SNAPSHOT_OPTIONS,
+            ""
+        );
+    }
+
+    protected String getProp(LvmData<?> vlmDataRef, String namespace, String key, String dfltValue)
     {
         String options;
         try
         {
-            options = getPrioProps(vlmDataRef).getProp(
-                ApiConsts.KEY_STOR_POOL_LVCREATE_OPTIONS,
-                ApiConsts.NAMESPC_STORAGE_DRIVER,
-                ""
-            );
+            options = getPrioProps(vlmDataRef).getProp(key, namespace, dfltValue);
         }
         catch (AccessDeniedException | InvalidKeyException exc)
         {

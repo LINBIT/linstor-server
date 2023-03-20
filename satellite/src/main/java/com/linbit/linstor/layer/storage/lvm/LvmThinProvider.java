@@ -153,7 +153,8 @@ public class LvmThinProvider extends LvmProvider
                     vlmData.getThinPool(),
                     lvId,
                     vlmData.getExpectedSize(),
-                    config
+                    config,
+                    additionalOptionsArr
                 )
             );
             LvmUtils.execWithRetry(
@@ -201,6 +202,10 @@ public class LvmThinProvider extends LvmProvider
     {
         try
         {
+            List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateSnapshotOptions(snapVlm));
+            String[] additionalOptionsArr = new String[additionalOptions.size()];
+            additionalOptions.toArray(additionalOptionsArr);
+
             LvmData<Snapshot> prevSnapData = getPreviousSnapvlmData(
                 snapVlm,
                 snapVlm.getRscLayerObject().getAbsResource()
@@ -246,6 +251,10 @@ public class LvmThinProvider extends LvmProvider
     protected void createSnapshot(LvmData<Resource> vlmDataRef, LvmData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
+        List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateSnapshotOptions(vlmDataRef));
+        String[] additionalOptionsArr = new String[additionalOptions.size()];
+        additionalOptions.toArray(additionalOptionsArr);
+
         LvmThinData<Resource> vlmData = (LvmThinData<Resource>) vlmDataRef;
         LvmUtils.execWithRetry(
             extCmdFactory,
@@ -256,7 +265,8 @@ public class LvmThinProvider extends LvmProvider
                 vlmData.getThinPool(),
                 vlmData.getIdentifier(),
                 getFullQualifiedIdentifier(snapVlmRef),
-                config
+                config,
+                additionalOptionsArr
             )
         );
     }
@@ -505,6 +515,10 @@ public class LvmThinProvider extends LvmProvider
         final String srcFullSnapshotName = getCloneSnapshotNameFull(srcVlmData, vlmData, "_");
         final String dstId = asLvIdentifier(vlmData);
 
+        List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateSnapshotOptions(lvmVlmData));
+        String[] additionalOptionsArr = new String[additionalOptions.size()];
+        additionalOptions.toArray(additionalOptionsArr);
+
         if (!infoListCache.containsKey(srcVlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
         {
             LvmUtils.execWithRetry(
@@ -516,7 +530,8 @@ public class LvmThinProvider extends LvmProvider
                     srcVlmData.getThinPool(),
                     srcId,
                     srcFullSnapshotName,
-                    config
+                    config,
+                    additionalOptionsArr
                 )
             );
 
@@ -541,7 +556,8 @@ public class LvmThinProvider extends LvmProvider
                     srcFullSnapshotName,
                     srcVlmData.getVolumeGroup(),
                     dstId,
-                    config
+                    config,
+                    additionalOptionsArr
                 )
             );
 

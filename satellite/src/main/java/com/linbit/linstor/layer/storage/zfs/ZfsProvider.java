@@ -265,14 +265,24 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
 
     protected String[] getZfscreateOptions(ZfsData<Resource> vlmDataRef)
     {
+        return getProp(vlmDataRef, ApiConsts.NAMESPC_STORAGE_DRIVER, ApiConsts.KEY_STOR_POOL_ZFS_CREATE_OPTIONS, "");
+    }
+
+    protected String[] getZfsSnapshotOptions(ZfsData<Resource> vlmDataRef)
+    {
+        return getProp(vlmDataRef, ApiConsts.NAMESPC_STORAGE_DRIVER, ApiConsts.KEY_STOR_POOL_ZFS_SNAPSHOT_OPTIONS, "");
+    }
+
+    protected String[] getProp(ZfsData<Resource> vlmDataRef, String namespace, String key, String dfltValue)
+    {
         String[] additionalOptionsArr;
 
         try
         {
             String options = getPrioProps(vlmDataRef).getProp(
-                ApiConsts.KEY_STOR_POOL_ZFS_CREATE_OPTIONS,
-                ApiConsts.NAMESPC_STORAGE_DRIVER,
-                ""
+                key,
+                namespace,
+                dfltValue
             );
             List<String> additionalOptions = MkfsUtils.shellSplit(options);
             additionalOptionsArr = new String[additionalOptions.size()];
@@ -464,7 +474,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 extCmdFactory.create(),
                 vlmData.getZPool(),
                 asLvIdentifier(vlmData),
-                snapVlm.getVolume().getAbsResource().getSnapshotName().displayValue
+                snapVlm.getVolume().getAbsResource().getSnapshotName().displayValue,
+                getZfsSnapshotOptions(vlmData)
             );
         }
     }

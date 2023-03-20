@@ -280,7 +280,8 @@ public class LvmCommands
         String identifier,
         String snapshotIdentifier,
         String lvmConfig,
-        long size
+        long size,
+        String... additionalParameters
     )
         throws StorageException
     {
@@ -291,7 +292,7 @@ public class LvmCommands
             buildCmd(
                 "lvcreate",
                 lvmConfig,
-                (Collection<String>) null,
+                additionalParameters == null ? null : Arrays.asList(additionalParameters),
                 "--size", size + "k",
                 "--snapshot",
                 "--setactivationskip", "y", // snapshot needs to be active from the beginning
@@ -311,7 +312,8 @@ public class LvmCommands
         String thinPool,
         String identifier,
         String snapshotIdentifier,
-        String lvmConfig
+        String lvmConfig,
+        String... additionalParameters
     )
         throws StorageException
     {
@@ -322,7 +324,7 @@ public class LvmCommands
             buildCmd(
                 "lvcreate",
                 lvmConfig,
-                (Collection<String>) null,
+                additionalParameters == null ? null : Arrays.asList(additionalParameters),
                 "--snapshot",
                 "--setactivationskip", "y", // snapshot needs to be active from
                 "--ignoreactivationskip", // the beginning for
@@ -340,7 +342,8 @@ public class LvmCommands
         String sourceLvIdWithSnapName,
         String volumeGroup,
         String targetId,
-        String lvmConfig
+        String lvmConfig,
+        String... additionalParameters
     )
         throws StorageException
     {
@@ -351,7 +354,7 @@ public class LvmCommands
             buildCmd(
                 "lvcreate",
                 lvmConfig,
-                (Collection<String>) null,
+                additionalParameters == null ? null : Arrays.asList(additionalParameters),
                 "--snapshot",
                 "--name", targetId,
                 volumeGroup + File.separator + sourceLvIdWithSnapName
