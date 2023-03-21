@@ -38,7 +38,6 @@ import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
@@ -51,7 +50,6 @@ public class CtrlSnapshotShippingAbortHandler
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlTransactionHelper ctrlTransactionHelper;
-    private final CtrlApiDataLoader ctrlApiDataLoader;
     private final Provider<CtrlSnapshotDeleteApiCallHandler> snapDelHandlerProvider;
     private final BackupInfoManager backupInfoMgr;
     private final BackupToS3 backupHandler;
@@ -65,7 +63,6 @@ public class CtrlSnapshotShippingAbortHandler
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockguardFactoryRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
-        CtrlApiDataLoader ctrlApiDataLoaderRef,
         Provider<CtrlSnapshotDeleteApiCallHandler> snapDelHandlerProviderRef,
         BackupInfoManager backupInfoMgrRef,
         BackupToS3 backupHandlerRef,
@@ -78,7 +75,6 @@ public class CtrlSnapshotShippingAbortHandler
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockguardFactoryRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
-        ctrlApiDataLoader = ctrlApiDataLoaderRef;
         snapDelHandlerProvider = snapDelHandlerProviderRef;
         backupInfoMgr = backupInfoMgrRef;
         backupHandler = backupHandlerRef;
@@ -105,8 +101,6 @@ public class CtrlSnapshotShippingAbortHandler
         Flux<ApiCallRc> flux = Flux.empty();
         try
         {
-            flux = abortBackupShippings(nodeRef);
-
             for (Snapshot snap : nodeRef.getSnapshots(apiCtx))
             {
                 SnapshotDefinition snapDfn = snap.getSnapshotDefinition();
@@ -116,9 +110,7 @@ public class CtrlSnapshotShippingAbortHandler
                         snapDfn.getFlags().isUnset(apiCtx, SnapshotDefinition.Flags.BACKUP)
                 )
                 {
-                    flux = flux.concatWith(snapDelHandlerProvider.get()
-                        .deleteSnapshot(snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue, null)
-                    );
+                    flux = flux.concatWith(abortBackupShippings(snapDfn));
                 }
             }
             ctrlTransactionHelper.commit();
@@ -199,16 +191,8 @@ public class CtrlSnapshotShippingAbortHandler
                 {
                     if (!snap.getFlags().isSet(apiCtx, Snapshot.Flags.BACKUP_TARGET))
                     {
-                        flux = flux.concatWith(
-                            snapDelHandlerProvider.get()
-                                .deleteSnapshot(
-                                    snapDfn.getResourceName().displayValue,
-                                    snapDfn.getName().displayValue,
-                                    null
-                                )
-                        );
-                        // return value ignored on purpose
-                        abortBackupShippings(snap.getNode());
+                        flux = flux.concatWith(abortBackupShippings(snapDfn));
+                        break;
                     }
                 }
             }
@@ -263,86 +247,95 @@ public class CtrlSnapshotShippingAbortHandler
         }
     }
 
-    private Flux<ApiCallRc> abortBackupShippings(Node nodeRef)
+    private Flux<ApiCallRc> abortBackupShippings(SnapshotDefinition snapDfn)
     {
-        Map<SnapshotDefinition.Key, AbortInfo> abortEntries = backupInfoMgr.abortCreateGetEntries(nodeRef.getName());
         Flux<ApiCallRc> flux = Flux.empty();
-        if (abortEntries != null && !abortEntries.isEmpty())
+        boolean shouldAbort = false;
+        try
         {
-            for (Entry<SnapshotDefinition.Key, AbortInfo> abortEntry : abortEntries.entrySet())
+            for (Snapshot snap : snapDfn.getAllSnapshots(apiCtx))
             {
-                AbortInfo abortInfo = abortEntry.getValue();
-                List<AbortS3Info> abortS3List = abortInfo.abortS3InfoList;
-                if (!abortInfo.isEmpty())
+                Map<SnapshotDefinition.Key, AbortInfo> abortEntries = backupInfoMgr.abortCreateGetEntries(
+                    snap.getNodeName()
+                );
+                if (abortEntries != null && !abortEntries.isEmpty())
                 {
-                    for (AbortS3Info abortS3Info : abortS3List)
+                    AbortInfo abortInfo = abortEntries.get(snapDfn.getSnapDfnKey());
+                    if (abortInfo != null && !abortInfo.isEmpty())
                     {
-                        try
+                        shouldAbort = true;
+                        List<AbortS3Info> abortS3List = abortInfo.abortS3InfoList;
+                        for (AbortS3Info abortS3Info : abortS3List)
                         {
-                            S3Remote remote = remoteRepo.getS3(apiCtx, new RemoteName(abortS3Info.remoteName));
-                            byte[] masterKey = ctrlSecObj.getCryptKey();
-                            if (masterKey == null || masterKey.length == 0)
+                            try
                             {
-                                throw new ApiRcException(
-                                    ApiCallRcImpl
-                                        .entryBuilder(
-                                            ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
-                                            "Unable to decrypt the S3 access key and secret key without having a master key"
-                                        )
-                                        .setCause("The masterkey was not initialized yet")
-                                        .setCorrection("Create or enter the master passphrase")
-                                        .build()
+                                S3Remote remote = remoteRepo.getS3(apiCtx, new RemoteName(abortS3Info.remoteName));
+                                byte[] masterKey = ctrlSecObj.getCryptKey();
+                                if (masterKey == null || masterKey.length == 0)
+                                {
+                                    throw new ApiRcException(
+                                        ApiCallRcImpl
+                                            .entryBuilder(
+                                                ApiConsts.FAIL_NOT_FOUND_CRYPT_KEY,
+                                                "Unable to decrypt the S3 access key and secret key " +
+                                                    "without having a master key"
+                                            )
+                                            .setCause("The masterkey was not initialized yet")
+                                            .setCorrection("Create or enter the master passphrase")
+                                            .build()
+                                    );
+                                }
+                                backupHandler.abortMultipart(
+                                    abortS3Info.backupName,
+                                    abortS3Info.uploadId,
+                                    remote,
+                                    apiCtx,
+                                    masterKey
                                 );
                             }
-                            backupHandler.abortMultipart(
-                                abortS3Info.backupName,
-                                abortS3Info.uploadId,
-                                remote,
-                                apiCtx,
-                                masterKey
-                            );
-                        }
-                        catch (SdkClientException exc)
-                        {
-                            if (exc.getClass() == AmazonS3Exception.class)
+                            catch (SdkClientException exc)
                             {
-                                AmazonS3Exception s3Exc = (AmazonS3Exception) exc;
-                                if (s3Exc.getStatusCode() != 404)
+                                if (exc.getClass() == AmazonS3Exception.class)
+                                {
+                                    AmazonS3Exception s3Exc = (AmazonS3Exception) exc;
+                                    if (s3Exc.getStatusCode() != 404)
+                                    {
+                                        errorReporter.reportError(exc);
+                                    }
+                                }
+                                else
                                 {
                                     errorReporter.reportError(exc);
                                 }
                             }
-                            else
+                            catch (InvalidNameException exc)
                             {
-                                errorReporter.reportError(exc);
+                                throw new ImplementationError(exc);
                             }
                         }
-                        catch (AccessDeniedException | InvalidNameException exc)
-                        {
-                            throw new ImplementationError(exc);
-                        }
-                    }
-                    // nothing to do for AbortL2LInfo entries, just enable the ABORT flag
+                        // nothing to do for AbortL2LInfo entries, just enable the ABORT flag
 
-                    SnapshotDefinition.Key snapDfnkey = abortEntry.getKey();
-                    backupInfoMgr.abortCreateDeleteEntries(nodeRef.getName(), snapDfnkey);
-                    SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(
-                        snapDfnkey.getResourceName(),
-                        snapDfnkey.getSnapshotName(),
-                        true
-                    );
-                    enableFlagsPrivileged(
-                        snapDfn,
-                        SnapshotDefinition.Flags.SHIPPING_ABORT
-                    );
-                    flux = flux.concatWith(
-                        snapDelHandlerProvider.get()
-                            .deleteSnapshot(
-                                snapDfn.getResourceName().displayValue, snapDfn.getName().displayValue, null
-                            )
-                    );
+                        backupInfoMgr.abortCreateDeleteEntries(snap.getNodeName(), snapDfn.getSnapDfnKey());
+                    }
                 }
             }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        if (shouldAbort)
+        {
+            enableFlagsPrivileged(
+                snapDfn,
+                SnapshotDefinition.Flags.SHIPPING_ABORT
+            );
+            flux = snapDelHandlerProvider.get()
+                .deleteSnapshot(
+                    snapDfn.getResourceName().displayValue,
+                    snapDfn.getName().displayValue,
+                    null
+                );
         }
         return flux;
     }

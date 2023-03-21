@@ -1196,7 +1196,6 @@ public class CtrlBackupCreateApiCallHandler
             try
             {
                 NodeName nodeName = peerProvider.get().getNode().getName();
-                backupInfoMgr.abortCreateDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
                 boolean doStltCleanup = false;
                 if (!successRef && snapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT))
                 {
@@ -1233,6 +1232,7 @@ public class CtrlBackupCreateApiCallHandler
                 }
                 else
                 {
+                    backupInfoMgr.abortCreateDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
                     doStltCleanup = true;
                     snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                     if (successRef)
