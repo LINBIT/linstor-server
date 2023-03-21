@@ -1,13 +1,9 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.api.ApiCallRcImpl;
-import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -16,8 +12,6 @@ import java.util.Optional;
 
 public class FreeCapacityAutoPoolSelectorUtils
 {
-    public static final double DEFAULT_MAX_OVERSUBSCRIPTION_RATIO = 20.;
-
     /**
      * Returns whether the given storage pool is usable in terms of capacity and provisioning type.
      * If the free capacity is unknown, an empty Optional is returned.
@@ -43,7 +37,8 @@ public class FreeCapacityAutoPoolSelectorUtils
             usable = getFreeCapacityCurrentEstimationPrivileged(
                 apiCtx,
                 freeCapacities,
-                storPool
+                storPool,
+                true
             ).map(freeCapacity -> freeCapacity >= rscSize);
         }
         return usable;
@@ -52,7 +47,8 @@ public class FreeCapacityAutoPoolSelectorUtils
     public static Optional<Long> getFreeCapacityCurrentEstimationPrivileged(
         AccessContext accCtx,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        StorPool storPool
+        StorPool storPool,
+        boolean includeOversubscriptionRatioRef
     )
     {
         long reservedCapacity = getReservedCapacityPrivileged(accCtx, storPool);
@@ -70,9 +66,9 @@ public class FreeCapacityAutoPoolSelectorUtils
             {
                 final long ret;
                 boolean thinPool = storPool.getDeviceProviderKind().usesThinProvisioning();
-                if (thinPool && capacity != Long.MAX_VALUE)
+                if (thinPool && capacity != Long.MAX_VALUE && includeOversubscriptionRatioRef)
                 {
-                    long oversubscriptionCapacity = (long) (capacity * getMaxOversubscriptionRatio(accCtx, storPool));
+                    long oversubscriptionCapacity = (long) (capacity * getOversubscriptionRatio(accCtx, storPool));
                     if (oversubscriptionCapacity < capacity)
                     {
                         // overflow
@@ -154,44 +150,18 @@ public class FreeCapacityAutoPoolSelectorUtils
         return freeSpaceLastUpdated;
     }
 
-    private static double getMaxOversubscriptionRatio(AccessContext accCtx, StorPool storPool)
+    private static double getOversubscriptionRatio(AccessContext accCtx, StorPool storPool)
     {
-        String maxOversubscriptionRatioRaw = getMaxOversubscriptionRatioRaw(accCtx, storPool);
-        double maxOversubscriptionRatio;
-        if (maxOversubscriptionRatioRaw == null)
-        {
-            maxOversubscriptionRatio = DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
-        }
-        else
-        {
-            try
-            {
-                maxOversubscriptionRatio = Double.valueOf(maxOversubscriptionRatioRaw);
-            }
-            catch (NumberFormatException exc)
-            {
-                throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                    ApiConsts.FAIL_INVLD_PROP,
-                    "Invalid value for max oversubscription ratio '" + maxOversubscriptionRatioRaw + "'"
-                ));
-            }
-        }
-        return maxOversubscriptionRatio;
-    }
-
-    private static String getMaxOversubscriptionRatioRaw(AccessContext accCtx, StorPool storPool)
-    {
-        String maxOversubscriptionRatioRaw;
+        double osRatio;
         try
         {
-            maxOversubscriptionRatioRaw = storPool.getDefinition(accCtx).getProps(accCtx)
-                .getProp(ApiConsts.KEY_STOR_POOL_DFN_MAX_OVERSUBSCRIPTION_RATIO);
+            osRatio = storPool.getOversubscriptionRatio(accCtx);
         }
-        catch (InvalidKeyException | AccessDeniedException exc)
+        catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
-        return maxOversubscriptionRatioRaw;
+        return osRatio;
     }
 
     private FreeCapacityAutoPoolSelectorUtils()

@@ -67,6 +67,9 @@ public abstract class LinStor
     public static final String KEY_NODE_NAME = "NodeName";
     public static final String PROP_KEY_CLUSTER_ID = "Cluster/LocalID";
 
+    public static final double OVERSUBSCRIPTION_RATIO_DEFAULT = 20.0;
+    public static final double OVERSUBSCRIPTION_RATIO_UNKOWN = -1.0;
+
     public static void printRunTimeInfo(PrintStream out)
     {
         Properties sysProps = System.getProperties();

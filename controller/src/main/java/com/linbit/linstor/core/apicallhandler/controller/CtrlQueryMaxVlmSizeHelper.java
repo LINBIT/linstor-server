@@ -117,7 +117,8 @@ public class CtrlQueryMaxVlmSizeHelper
                         FreeCapacityAutoPoolSelectorUtils.getFreeCapacityCurrentEstimationPrivileged(
                             apiCtx,
                             thinFreeCapacities,
-                            sp
+                            sp,
+                            false
                         );
                     if (freeCapacityCurrentEstimation.isPresent())
                     {

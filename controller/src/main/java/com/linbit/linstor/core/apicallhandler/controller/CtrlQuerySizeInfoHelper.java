@@ -97,7 +97,8 @@ public class CtrlQuerySizeInfoHelper
                     .getFreeCapacityCurrentEstimationPrivileged(
                         peerCtx,
                         thinFreeCapacitiesRef,
-                        sp
+                        sp,
+                        true
                     );
                 long freeCap = optFreeCap.orElse(0L);
                 if (maxVlmSize == null || freeCap < maxVlmSize)
@@ -131,7 +132,8 @@ public class CtrlQuerySizeInfoHelper
                     .getFreeCapacityCurrentEstimationPrivileged(
                         peerCtx,
                         thinFreeCapacitiesRef,
-                        sp
+                        sp,
+                        false
                     );
                 if (optFreeCap.isPresent())
                 {

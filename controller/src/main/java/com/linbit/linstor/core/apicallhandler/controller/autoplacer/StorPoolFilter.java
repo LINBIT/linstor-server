@@ -483,7 +483,8 @@ public class StorPoolFilter
                 if (diskful)
                 {
                     long freeCapacity = FreeCapacityAutoPoolSelectorUtils
-                        .getFreeCapacityCurrentEstimationPrivileged(apiAccCtx, null, sp).orElse(0L);
+                        .getFreeCapacityCurrentEstimationPrivileged(apiAccCtx, null, sp, true)
+                        .orElse(0L);
                     storPoolMatches = freeCapacity >= sizeInKib;
                     if (!storPoolMatches)
                     {

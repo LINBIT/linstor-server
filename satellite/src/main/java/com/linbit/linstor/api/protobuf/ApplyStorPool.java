@@ -4,6 +4,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.core.ControllerPeerConnector;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
@@ -79,6 +80,7 @@ public class ApplyStorPool implements ApiCall
             protoStorPool.getFreeSpaceMgrName(),
             Optional.empty(), // free space
             Optional.empty(), // total space
+            LinStor.OVERSUBSCRIPTION_RATIO_UNKOWN,
             null,
             protoStorPool.getSnapshotSupported(),
             protoStorPool.getIsPmem(),

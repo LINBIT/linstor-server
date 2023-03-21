@@ -45,7 +45,7 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.NodeConnection;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoResponse;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoResponseSpaceInfo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoSpawnResult;
-import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.apis.BackupApi.BackupS3Api;
 import com.linbit.linstor.core.apis.BackupApi.BackupVlmApi;
@@ -1395,13 +1395,14 @@ public class Json
             spaceInfo.available_size_in_kib = pojo.getAvailableSize();
             spaceInfo.capacity_in_kib = pojo.getCapacity();
             spaceInfo.next_spawn_result = new ArrayList<>();
-            spaceInfo.default_max_oversubscription_ratio = FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
+            spaceInfo.default_max_oversubscription_ratio = LinStor.OVERSUBSCRIPTION_RATIO_DEFAULT;
             List<QuerySizeInfoSpawnResult> nextSpawnList = spaceInfo.next_spawn_result;
             for (StorPoolApi spApi : pojo.nextSpawnSpList())
             {
                 QuerySizeInfoSpawnResult spawnResult = new QuerySizeInfoSpawnResult();
                 spawnResult.node_name = spApi.getNodeName();
                 spawnResult.stor_pool_name = spApi.getStorPoolName();
+                spawnResult.stor_pool_oversubscription_ratio = spApi.getOversubscriptionRatio();
                 nextSpawnList.add(spawnResult);
             }
         }

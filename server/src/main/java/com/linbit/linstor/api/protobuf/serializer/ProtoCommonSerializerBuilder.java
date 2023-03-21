@@ -1272,6 +1272,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .putAllStaticTraits(storPool.getDeviceProviderKind().getStorageDriverKind().getStaticTraits())
             .setIsPmem(storPool.isPmem())
             .setIsVdo(storPool.isVDO())
+            .setOversubscriptionRatio(storPool.getOversubscriptionRatio(accCtx))
             .setIsExternalLocking(storPool.isExternalLocking());
         FreeSpaceTracker freeSpaceTracker = storPool.getFreeSpaceTracker();
         if (freeSpaceTracker.getTotalCapacity(accCtx).isPresent())
@@ -1281,9 +1282,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     .setStorPoolName(storPool.getName().displayValue)
                     .setStorPoolUuid(storPool.getUuid().toString())
                     .setFreeCapacity(freeSpaceTracker.getFreeCapacityLastUpdated(accCtx).get())
-                    .setTotalCapacity(freeSpaceTracker.getTotalCapacity(accCtx).get()
-                )
-                .build()
+                    .setTotalCapacity(freeSpaceTracker.getTotalCapacity(accCtx).get())
+                    .build()
             );
         }
         return builder
@@ -1359,6 +1359,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setFreeSpaceMgrName(apiStorPool.getFreeSpaceManagerName())
             .setIsPmem(apiStorPool.isPmem())
             .setIsVdo(apiStorPool.isVDO())
+            .setOversubscriptionRatio(apiStorPool.getOversubscriptionRatio())
             .setIsExternalLocking(apiStorPool.isExternalLocking());
         if (apiStorPool.getFreeCapacity().isPresent())
         {

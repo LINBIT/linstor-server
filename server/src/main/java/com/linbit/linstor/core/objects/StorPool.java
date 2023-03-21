@@ -1,9 +1,13 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
+import com.linbit.ImplementationError;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -368,6 +372,68 @@ public class StorPool extends AbsCoreObj<StorPool>
         return traits;
     }
 
+    public double getOversubscriptionRatio(AccessContext accCtxRef) throws AccessDeniedException
+    {
+        Double override = null; // override, regardless of property
+        Double dfltVal = null; // use value if property is missing
+        switch (deviceProviderKind)
+        {
+            case DISKLESS:
+            case EBS_INIT:
+                override = Double.POSITIVE_INFINITY;
+                break;
+            case EBS_TARGET:
+            case EXOS:
+            case FILE:
+            case LVM:
+            case OPENFLEX_TARGET:
+            case REMOTE_SPDK:
+            case SPDK:
+            case ZFS:
+                dfltVal = 1.0;
+                break;
+            case FILE_THIN:
+            case LVM_THIN:
+            case ZFS_THIN:
+                dfltVal = LinStor.OVERSUBSCRIPTION_RATIO_DEFAULT;
+                break;
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+            default:
+                throw new ImplementationError("Unexpected device prodivder kind: " + deviceProviderKind);
+        }
+        double ret;
+        if (override != null)
+        {
+            ret = override;
+        }
+        else
+        {
+            // maybe also extend with ctrl-props, but we would need that as
+            // argument, which is weird...
+            String oversubscriptionProp = new PriorityProps(
+                props,
+                getDefinition(accCtxRef).getProps(accCtxRef)
+            )
+                .getProp(ApiConsts.KEY_STOR_POOL_DFN_MAX_OVERSUBSCRIPTION_RATIO);
+            if (oversubscriptionProp == null)
+            {
+                if (dfltVal != null)
+                {
+                    ret = dfltVal;
+                }
+                else
+                {
+                    ret = 1.0; // no oversubscription, capacity is max
+                }
+            }
+            else
+            {
+                ret = Double.parseDouble(oversubscriptionProp);
+            }
+        }
+        return ret;
+    }
+
     public Key getKey()
     {
         // no check-deleted
@@ -442,6 +508,7 @@ public class StorPool extends AbsCoreObj<StorPool>
             getFreeSpaceTracker().getName().displayValue,
             Optional.ofNullable(freeSpaceRef),
             Optional.ofNullable(totalSpaceRef),
+            getOversubscriptionRatio(accCtx),
             getReports(),
             supportsSnapshots.get(),
             isPmem.get(),
