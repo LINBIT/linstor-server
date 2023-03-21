@@ -444,7 +444,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
                     while (storPoolIterator.hasNext())
                     {
                         StorPool storPool = storPoolIterator.next();
-                        if (!hasVolumesPrivileged(storPool))
+                        if (!hasVolumesPrivileged(storPool) && !hasSnapVolumesPrivileged(storPool))
                         {
                             deletePrivileged(storPool);
                         }
@@ -552,6 +552,20 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             throw new ImplementationError(accDeniedExc);
         }
         return hasVolumes;
+    }
+
+    private boolean hasSnapVolumesPrivileged(StorPool storPool)
+    {
+        boolean hasSnapVolumes;
+        try
+        {
+            hasSnapVolumes = !storPool.getSnapVolumes(apiCtx).isEmpty();
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        return hasSnapVolumes;
     }
 
     private Stream<Resource> getRscStreamPrivileged(Node node)
