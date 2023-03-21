@@ -474,23 +474,25 @@ public class CtrlBackupCreateApiCallHandler
      */
     public void deleteNodeQueue(Peer peer)
     {
-        Flux<ApiCallRc> flux = deleteNodeQueueAndReQueueSnapsIfNeeded(peer.getNode());
-        Thread thread = new Thread(() ->
+        Node node = peer.getNode();
+        if (!node.isDeleted())
         {
-            flux.subscriberContext(
-                Context.of(
-                    AccessContext.class,
-                    peer.getAccessContext(),
-                    Peer.class,
-                    peer,
-                    ApiModule.API_CALL_NAME,
-                    "delete node queue"
-                )
-            ).subscribe(ignoredResults ->
+            Flux<ApiCallRc> flux = deleteNodeQueueAndReQueueSnapsIfNeeded(peer.getNode());
+            Thread thread = new Thread(() ->
             {
-            }, errorReporter::reportError);
-        });
-        thread.start();
+                flux.subscriberContext(
+                    Context.of(
+                        AccessContext.class,
+                        peer.getAccessContext(),
+                        Peer.class,
+                        peer,
+                        ApiModule.API_CALL_NAME,
+                        "delete node queue"
+                    )
+                ).subscribe(ignoredResults -> {}, errorReporter::reportError);
+            });
+            thread.start();
+        }
     }
 
     /*

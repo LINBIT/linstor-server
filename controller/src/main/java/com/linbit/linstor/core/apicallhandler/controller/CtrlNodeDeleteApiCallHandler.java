@@ -257,9 +257,6 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             boolean nodeDeleted = deleteNodeIfEmpty(node);
 
             ctrlTransactionHelper.commit();
-            Flux<ApiCallRc> backupShippingFlux = ctrlBackupCrtApiCallHandler.deleteNodeQueueAndReQueueSnapsIfNeeded(
-                node
-            );
             if (nodeDeleted)
             {
 
@@ -290,10 +287,10 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
 
                 responseFlux = Flux
                     .<ApiCallRc>just(responses)
+                    .concatWith(ctrlBackupCrtApiCallHandler.deleteNodeQueueAndReQueueSnapsIfNeeded(node))
                     .concatWith(Flux.merge(deleteSnapshotsPrivileged(node)))
                     .concatWith(Flux.merge(resourceDeletionResponses));
             }
-            responseFlux = responseFlux.concatWith(backupShippingFlux);
         }
 
         return responseFlux;

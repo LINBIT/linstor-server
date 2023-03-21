@@ -590,12 +590,15 @@ public class BackupInfoManager
             List<QueueItem> ret = new ArrayList<>();
             // removes the node from all item-lists, and if the list is empty afterwards, deletes the item as well
             Set<QueueItem> itemsToCheck = uploadQueues.removeKey(node);
-            for (QueueItem item : itemsToCheck)
+            if (itemsToCheck != null)
             {
-                if (!uploadQueues.containsValue(item))
+                for (QueueItem item : itemsToCheck)
                 {
-                    // the backup is not queued anywhere anymore and new nodes need to be chosen for it
-                    ret.add(item);
+                    if (!uploadQueues.containsValue(item))
+                    {
+                        // the backup is not queued anywhere anymore and new nodes need to be chosen for it
+                        ret.add(item);
+                    }
                 }
             }
             return ret;
@@ -628,7 +631,10 @@ public class BackupInfoManager
                     break;
                 }
             }
-            prevNodeUndecidedQueue.remove(ret);
+            if (ret != null)
+            {
+                prevNodeUndecidedQueue.remove(ret);
+            }
             return ret;
         }
     }
