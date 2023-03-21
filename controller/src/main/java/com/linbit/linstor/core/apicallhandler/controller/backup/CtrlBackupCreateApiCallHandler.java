@@ -1412,7 +1412,7 @@ public class CtrlBackupCreateApiCallHandler
     ) throws AccessDeniedException, InvalidNameException
     {
         Flux<ApiCallRc> flux = Flux.empty();
-        while (getFreeShippingSlots(node) > 0 && nextItem.hasNext())
+        while (getFreeShippingSlots(node) > 0 && nextItem.prepareNext())
         {
             flux = flux.concatWith(startQueuedShippings(node, nextItem));
         }
@@ -1431,7 +1431,7 @@ public class CtrlBackupCreateApiCallHandler
         InvalidNameException
     {
         Flux<ApiCallRc> flux = Flux.empty();
-        QueueItem next = nextItem.next();
+        QueueItem next = nextItem.getNext();
         while (next != null)
         {
             SnapshotDefinition prevSnapDfn = next.prevSnapDfn;
@@ -1509,7 +1509,7 @@ public class CtrlBackupCreateApiCallHandler
             }
             if (!node.equals(nodeForShipping))
             {
-                next = nextItem.next();
+                next = nextItem.getNext();
             }
             else
             {

@@ -4,22 +4,27 @@ public class IteratorFromExceptionThrowingSupplier<E, EXC extends Exception>
 {
     private final ExceptionThrowingSupplier<E, EXC> supplier;
     private E next;
+    private boolean supplied;
 
     public IteratorFromExceptionThrowingSupplier(ExceptionThrowingSupplier<E, EXC> supplierRef) throws EXC
     {
         supplier = supplierRef;
-        next = supplier.supply();
+        supplied = false;
     }
 
-    public boolean hasNext()
+    public boolean prepareNext() throws EXC
     {
+        if (!supplied)
+        {
+            next = supplier.supply();
+            supplied = true;
+        }
         return next != null;
     }
 
-    public E next() throws EXC
+    public E getNext()
     {
-        E ret = next;
-        next = supplier.supply();
-        return ret;
+        supplied = false;
+        return next;
     }
 }
