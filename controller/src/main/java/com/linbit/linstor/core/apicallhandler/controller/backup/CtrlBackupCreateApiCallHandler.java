@@ -1002,20 +1002,24 @@ public class CtrlBackupCreateApiCallHandler
             for (Node node : nodes)
             {
                 int freeShippingSlots = getFreeShippingSlots(node);
-                Map<Integer, List<Node>> targetMap;
-                if (hasNodeAllExtTools(node, optionalExtToolsMap, null, null, peerAccCtx.get()))
+                if (freeShippingSlots > 0)
                 {
-                    targetMap = sortedWithExtTools;
-                }
-                else
-                {
-                    targetMap = sortedNoExtTools;
-                }
+                    Map<Integer, List<Node>> targetMap;
+                    if (hasNodeAllExtTools(node, optionalExtToolsMap, null, null, peerAccCtx.get()))
+                    {
+                        targetMap = sortedWithExtTools;
+                    }
+                    else
+                    {
+                        targetMap = sortedNoExtTools;
+                    }
 
-                targetMap.computeIfAbsent(
-                    freeShippingSlots,
-                    k -> new ArrayList<>()
-                ).add(node);
+                    targetMap.computeIfAbsent(
+                        freeShippingSlots,
+                        k -> new ArrayList<>()
+                    ).add(node);
+                }
+                // else no slots open
             }
             // take the one with the most free shipping slots, preferably from the list with all ext tools
             if (!sortedWithExtTools.isEmpty())
