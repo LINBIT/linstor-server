@@ -515,9 +515,9 @@ public class BackupInfoManager
                 while (iterator.hasNext() && ret == null)
                 {
                     QueueItem next = iterator.next();
-                    boolean isValid = next.prevSnapDfn == null;
-                    isValid |= next.prevSnapDfn.isDeleted();
-                    isValid |= next.prevSnapDfn.getFlags().isSet(accCtx, SnapshotDefinition.Flags.SHIPPED);
+                    SnapshotDefinition prevSnapDfn = next.prevSnapDfn;
+                    boolean isValid = prevSnapDfn == null || prevSnapDfn.isDeleted() ||
+                        prevSnapDfn.getFlags().isSet(accCtx, SnapshotDefinition.Flags.SHIPPED);
                     if (isValid)
                     {
                         ret = next;
