@@ -1464,16 +1464,18 @@ public class CtrlBackupRestoreApiCallHandler
             {
                 AccessContext peerCtx = peerAccCtx.get();
 
-                Snapshot snap = snapDfn.getSnapshot(peerCtx, peerProvider.get().getNode().getName());
+                NodeName nodeName = peerProvider.get().getNode().getName();
+                Snapshot snap = snapDfn.getSnapshot(peerCtx, nodeName);
+                boolean deletingSnap = false;
+
                 snapDfn.getFlags().disableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
-                Flux<ApiCallRc> l2lCleanupFlux = Flux.empty();
                 if (snap != null && !snap.isDeleted())
                 {
                     snap.getProps(peerCtx).removeProp(
                         InternalApiConsts.KEY_BACKUP_TO_RESTORE,
                         ApiConsts.NAMESPC_BACKUP_SHIPPING
                     );
-                    snap.getFlags().disableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
+
                     for (Integer port : portsRef)
                     {
                         if (port != null)
@@ -1574,6 +1576,9 @@ public class CtrlBackupRestoreApiCallHandler
                                     )
                                 );
                             }
+                            // no need to remove the BACKUP_TARGET flag if we are deleting the snap anyways in the next
+                            // flux step
+                            deletingSnap = true;
                             keepGoing = false; // last backup failed.
                         }
                     }
@@ -1585,6 +1590,19 @@ public class CtrlBackupRestoreApiCallHandler
                                 InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
                                 ApiConsts.NAMESPC_BACKUP_SHIPPING
                             );
+                        ctrlTransactionHelper.commit();
+
+                        Flux<ApiCallRc> delPropFlux = ctrlSatelliteUpdateCaller.updateSatellites(
+                            snapDfn,
+                            CtrlSatelliteUpdateCaller.notConnectedWarn()
+                        ).transform(
+                            responses -> CtrlResponseUtils.combineResponses(
+                                responses,
+                                LinstorParsingUtils.asRscName(rscNameRef),
+                                "Removing remote property from snapshot '" + snapNameRef + "' of {1} on {0}"
+                            )
+                        );
+
                         AbsRemote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
                         if (remote instanceof StltRemote)
                         {
@@ -1592,31 +1610,27 @@ public class CtrlBackupRestoreApiCallHandler
                             // unavoidable.
                             // This will be fixed with the linstor2 issue 19 (Combine Changed* proto messages for atomic
                             // updates)
-                            l2lCleanupFlux = backupHelper.cleanupStltRemote((StltRemote) remote);
+                            delPropFlux = delPropFlux.concatWith(backupHelper.cleanupStltRemote((StltRemote) remote));
                         }
-                        ctrlTransactionHelper.commit();
                         /*
                          * We need to update the stlts with the flag- & prop-changes before starting the restore
                          */
-                        flux = ctrlSatelliteUpdateCaller.updateSatellites(
-                                snapDfn,
-                                CtrlSatelliteUpdateCaller.notConnectedWarn()
-                            ).transform(
-                                responses -> CtrlResponseUtils.combineResponses(
-                                    responses,
-                                    LinstorParsingUtils.asRscName(rscNameRef),
-                                    "Removing remote property from snapshot '" + snapNameRef + "' of {1} on {0}"
-                                )
-                        ).concatWith(flux);
+                        flux = delPropFlux.concatWith(flux);
                     }
                 }
                 ctrlTransactionHelper.commit();
+                if (snap != null && !deletingSnap)
+                {
+                    flux = flux.concatWith(cleanupBackupTarget(snap));
+                }
                 flux = flux.concatWith(
                     backupHelper.startStltCleanup(
-                        peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
+                        peerProvider.get(),
+                        rscNameRef,
+                        snapNameRef,
+                        nodeName
                     )
                 );
-                flux = l2lCleanupFlux.concatWith(flux);
             }
             catch (AccessDeniedException | InvalidKeyException | InvalidNameException exc)
             {
@@ -1628,5 +1642,45 @@ public class CtrlBackupRestoreApiCallHandler
             }
         }
         return flux;
+    }
+
+    private Flux<ApiCallRc> cleanupBackupTarget(Snapshot snapRef)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Removing BACKUP_TARGET flag",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> cleanupBackupTargetInTransaction(snapRef)
+            );
+    }
+
+    private Flux<ApiCallRc> cleanupBackupTargetInTransaction(Snapshot snapRef)
+    {
+        try
+        {
+            snapRef.getFlags().disableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+        ctrlTransactionHelper.commit();
+        return ctrlSatelliteUpdateCaller.updateSatellites(
+            snapRef.getSnapshotDefinition(),
+            CtrlSatelliteUpdateCaller.notConnectedWarn())
+                .transform(
+                responses -> CtrlResponseUtils.combineResponses(
+                    responses,
+                    snapRef.getResourceName(),
+                    "Removing BACKUP_TARGET flag from snapshot '" + snapRef + "' of {1} on {0}"
+                )
+            );
     }
 }
