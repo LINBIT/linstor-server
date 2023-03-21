@@ -445,7 +445,7 @@ public class CtrlBackupCreateApiCallHandler
             }
 
             ctrlTransactionHelper.commit();
-            return ctrlSatelliteUpdateCaller.updateSatellites(snapDfn, null)
+            return ctrlSatelliteUpdateCaller.updateSatellites(snapDfn, CtrlSatelliteUpdateCaller.notConnectedWarn())
                 .transform(
                     responses -> CtrlResponseUtils
                         .combineResponses(responses, snapDfn.getResourceName(), "Started shipping of resource {1}")
