@@ -861,6 +861,7 @@ public class JsonGenTypes
     {
         public String node_name;
         public String stor_pool_name;
+        public Double stor_pool_oversubscription_ratio;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

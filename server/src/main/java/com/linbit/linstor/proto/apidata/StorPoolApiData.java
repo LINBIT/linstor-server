@@ -154,4 +154,10 @@ public class StorPoolApiData implements StorPoolApi
     {
         return storPool.getIsExternalLocking();
     }
+
+    @Override
+    public double getOversubscriptionRatio()
+    {
+        return storPool.getOversubscriptionRatio();
+    }
 }

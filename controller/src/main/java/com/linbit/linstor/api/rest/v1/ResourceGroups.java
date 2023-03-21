@@ -15,10 +15,10 @@ import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ResourceGroup;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsInfoApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscGrpApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityAutoPoolSelectorUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 
@@ -307,7 +307,7 @@ public class ResourceGroups
                     List<MaxVlmSizeCandidatePojo> maxVlmSizeCandidates = apiCallRcWith.getValue();
                     JsonGenTypes.MaxVolumeSizes maxVolumeSizesData = Json.pojoToMaxVolumeSizes(maxVlmSizeCandidates);
                     maxVolumeSizesData.default_max_oversubscription_ratio =
-                        FreeCapacityAutoPoolSelectorUtils.DEFAULT_MAX_OVERSUBSCRIPTION_RATIO;
+                        LinStor.OVERSUBSCRIPTION_RATIO_DEFAULT;
 
                     try
                     {

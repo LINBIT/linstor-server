@@ -320,6 +320,7 @@ public class ProtoDeserializationUtils
                     storPoolProto.getFreeSpace().getTotalCapacity() :
                     null
             ),
+            storPoolProto.getOversubscriptionRatio(),
             null,
             storPoolProto.getSnapshotSupported(),
             storPoolProto.getIsPmem(),

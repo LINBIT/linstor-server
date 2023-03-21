@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - auto-resync-after for DRBD will be disabled by default (because it can triggers a DRBD bug)
 
+### Fixed
+
+- Fixed available size reported by query-size-info API
+
 ## [1.21.0] - 2023-03-14
 
 ### Changed

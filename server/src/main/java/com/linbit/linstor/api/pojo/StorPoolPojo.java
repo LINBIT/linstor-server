@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.pojo;
 
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -41,6 +42,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     @JsonIgnore
     private final Optional<Long> totalSpace;
     @JsonIgnore
+    private final double oversubscriptionRatio;
+    @JsonIgnore
     private final ApiCallRc reports;
     @JsonIgnore
     private final Boolean supportsSnapshots;
@@ -66,6 +69,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         final String freeSpaceManagerNameRef,
         final Optional<Long> freeSpaceRef,
         final Optional<Long> totalSpaceRef,
+        final double oversubscriptionRatioRef,
         final ApiCallRc reportsRef,
         final Boolean supportsSnapshotsRef,
         final Boolean isPmemRef,
@@ -87,6 +91,7 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         freeSpaceManagerName = freeSpaceManagerNameRef;
         freeSpace = freeSpaceRef;
         totalSpace = totalSpaceRef;
+        oversubscriptionRatio = oversubscriptionRatioRef;
         reports = reportsRef;
         supportsSnapshots = supportsSnapshotsRef;
         isPmem = isPmemRef;
@@ -112,8 +117,9 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         fullSyncId = null;
         updateId = null;
         freeSpaceManagerName = null;
-        freeSpace = null;
-        totalSpace = null;
+        freeSpace = Optional.empty();
+        totalSpace = Optional.empty();
+        oversubscriptionRatio = LinStor.OVERSUBSCRIPTION_RATIO_UNKOWN;
         reports = null;
         supportsSnapshots = null;
         isPmem = null;
@@ -173,6 +179,12 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     public Optional<Long> getFreeCapacity()
     {
         return freeSpace;
+    }
+
+    @Override
+    public double getOversubscriptionRatio()
+    {
+        return oversubscriptionRatio;
     }
 
     @Override

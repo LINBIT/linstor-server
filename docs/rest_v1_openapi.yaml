@@ -7439,6 +7439,9 @@ components:
           type: string
         stor_pool_name:
           type: string
+        stor_pool_oversubscription_ratio:
+          type: number
+          format: double
     ControllerPropsModify:
       type: object
       properties:
