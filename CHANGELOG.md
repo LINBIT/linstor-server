@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.21.1] - 2023-03-22
+
 ### Changed
 
 - auto-resync-after for DRBD will be disabled by default (because it can triggers a DRBD bug)
