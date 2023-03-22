@@ -1,3 +1,15 @@
+linstor-server (1.21.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * gitlab: run nonstandard suite in last MR step
+  * openapi: fix query-size-info using GET (-> POST)
+  * disable auto-resync-after if prop not already set
+
+  [ Gabor Hernadi ]
+  * QSI: Fixed available size calculation
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 22 Mar 2023 14:05:01 +0000
+
 linstor-server (1.21.0-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
