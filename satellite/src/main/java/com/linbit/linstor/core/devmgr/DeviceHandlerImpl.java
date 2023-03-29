@@ -2,10 +2,8 @@ package com.linbit.linstor.core.devmgr;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.EntryBuilder;
@@ -64,7 +62,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -85,7 +82,6 @@ import java.util.stream.Collectors;
 @Singleton
 public class DeviceHandlerImpl implements DeviceHandler
 {
-    private static final long DFLT_WAIT_FOR_DEVICE_IN_MS = 5_000;
 
     private static final int LSBLK_DISC_GRAN_RETRY_COUNT = 500;
     private static final long LSBLK_DISC_GRAN_RETRY_TIMEOUT_IN_MS = 100;
@@ -111,7 +107,6 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private Props localNodeProps;
     private BackupShippingMgr backupShippingManager;
-    private FileSystemWatch fsWatch;
 
     @Inject
     public DeviceHandlerImpl(
@@ -150,15 +145,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         backupShippingManager = backupShippingManagerRef;
 
         fullSyncApplied = new AtomicBoolean(false);
-
-        try
-        {
-            fsWatch = new FileSystemWatch(errorReporter);
-        }
-        catch (IOException exc)
-        {
-            throw new LinStorRuntimeException("Unable to create FileSystemWatch", exc);
-        }
     }
 
     @Override
@@ -220,6 +206,47 @@ public class DeviceHandlerImpl implements DeviceHandler
 
             clearLayerCaches(rscByLayer, snapByLayer);
         }
+        else
+        {
+            // we failed to prepare layers, but we still need to make sure to resume-io if needed so that we do not
+            // leave for example DRBD resources in suspended state
+            manageSuspendIo(rscsRef, true);
+        }
+    }
+
+    private HashMap<Resource, ApiCallRcImpl> manageSuspendIo(Collection<Resource> rscsRef, boolean resumeOnlyRef)
+    {
+        HashMap<Resource, ApiCallRcImpl> failedRscs = new HashMap<>();
+        /*
+         * We want to run all suspend-io as soon and as close as possible to each other.
+         * resume-io's are not that important to be close together, so we only focus on non-suspended -> suspended
+         * transitions
+         */
+        if (resumeOnlyRef)
+        {
+            errorReporter.logTrace("Prepare step failed. Checking if devices need resume-io...");
+        }
+        else
+        {
+            errorReporter.logTrace("Checking required changes in suspend-io state...");
+        }
+        for (Resource rsc : rscsRef)
+        {
+            try
+            {
+                manageSuspendIoIfNeeded(rsc.getLayerData(wrkCtx), resumeOnlyRef);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+            catch (StorageException | ResourceException exc)
+            {
+                failedRscs.put(rsc, handleException(rsc, exc));
+            }
+        }
+
+        return failedRscs;
     }
 
     private <RSC extends AbsResource<RSC>> Map<DeviceLayer, Set<AbsRscLayerObject<RSC>>> groupByLayer(
@@ -361,28 +388,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         List<Resource> sysFsUpdateList = new ArrayList<>();
         List<Resource> sysFsDeleteList = new ArrayList<>();
 
-        /*
-         * We want to run all suspend-io as soon and as close as possible to each other.
-         * resume-io's are not that important to be close together, so we only focus on non-suspended -> suspended
-         * transitions
-         */
-        HashMap<Resource, ApiCallRcImpl> failedRscs = new HashMap<>();
-        errorReporter.logTrace("Checking required changes in suspend-io state...");
-        for (Resource rsc : resourceList)
-        {
-            try
-            {
-                suspendIfNeeded(rsc.getLayerData(wrkCtx));
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-            catch (StorageException | ResourceException exc)
-            {
-                failedRscs.put(rsc, handleException(rsc, exc));
-            }
-        }
+        HashMap<Resource, ApiCallRcImpl> failedRscs = manageSuspendIo(resourceList, false);
 
         for (Resource rsc : resourceList)
         {
@@ -597,7 +603,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         return apiCallRc;
     }
 
-    private void suspendIfNeeded(AbsRscLayerObject<Resource> rscLayerObjectRef)
+    private void manageSuspendIoIfNeeded(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
         throws ResourceException, StorageException, AccessDeniedException
     {
         StateFlags<Flags> flags = rscLayerObjectRef.getAbsResource().getStateFlags();
@@ -612,7 +618,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             DeviceLayer topMostLayer = layerFactory.getDeviceLayer(rscLayerObjectRef.getLayerKind());
             if (topMostLayer.isSuspendIoSupported())
             {
-                topMostLayer.manageSuspendIO(rscLayerObjectRef);
+                topMostLayer.manageSuspendIO(rscLayerObjectRef, resumeOnlyRef);
             }
         }
     }

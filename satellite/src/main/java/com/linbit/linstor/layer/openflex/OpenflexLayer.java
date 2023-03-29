@@ -125,7 +125,7 @@ public class OpenflexLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef)
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
         throws ResourceException, StorageException
     {
         throw new StorageException("Suspending / Resuming IO for OpenFlex resources is not supported");

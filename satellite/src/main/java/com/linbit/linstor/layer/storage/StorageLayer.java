@@ -243,7 +243,7 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerData)
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerData, boolean resumeOnlyRef)
         throws ResourceException, StorageException
     {
         boolean changed = false;

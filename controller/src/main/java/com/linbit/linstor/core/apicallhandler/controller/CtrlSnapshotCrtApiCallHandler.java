@@ -13,6 +13,7 @@ import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.BackgroundRunner.RunConfig;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.internal.helpers.AtomicUpdateSatelliteData;
 import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
 import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest.SnapReq;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
@@ -563,23 +564,16 @@ public class CtrlSnapshotCrtApiCallHandler
             ctrlTransactionHelper.commit();
 
             Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller
-                .updateSatellites(snapshotDfn, notConnectedCannotAbort())
+                .updateSatellites(
+                    new AtomicUpdateSatelliteData().add(rscDfn).add(snapshotDfn),
+                    notConnectedCannotAbort()
+                )
                 .transform(
                     responses -> CtrlResponseUtils.combineResponses(
                         responses,
                         rscName,
-                        "Aborted snapshot of {1} on {0}"
+                        "Aborted snapshot and resumed IO of {1} on {0}"
                     )
-                )
-                .concatWith(
-                    ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
-                        .transform(
-                            responses -> CtrlResponseUtils.combineResponses(
-                                responses,
-                                rscName,
-                                "Resumed IO of {1} on {0} after failed snapshot"
-                            )
-                        )
                 )
                 .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class, ignored -> Flux.empty());
 

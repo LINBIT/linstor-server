@@ -1065,7 +1065,7 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef)
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
         throws ResourceException, StorageException
     {
         if (rscLayerObjectRef.exists())
@@ -1079,7 +1079,7 @@ public class DrbdLayer implements DeviceLayer
                 DrbdResource drbdRscState = drbdState.getDrbdResource(drbdRscData.getSuffixedResourceName());
                 boolean isSuspended = drbdRscState != null && drbdRscState.getSuspendedUser() != null &&
                     drbdRscState.getSuspendedUser();
-                boolean shouldBeSuspended = drbdRscData.getShouldSuspendIo();
+                boolean shouldBeSuspended = drbdRscData.getShouldSuspendIo() && !resumeOnlyRef;
                 if (drbdRscData.isSuspended() == null || drbdRscData.isSuspended() != isSuspended)
                 {
                     drbdRscData.setIsSuspended(isSuspended);

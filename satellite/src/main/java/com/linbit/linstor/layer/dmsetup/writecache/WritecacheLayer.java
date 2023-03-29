@@ -240,10 +240,10 @@ public class WritecacheLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef)
+    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
         throws ResourceException, StorageException
     {
-        DmSetupUtils.manageSuspendIO(errorReporter, extCmdFactory, rscLayerObjectRef);
+        DmSetupUtils.manageSuspendIO(errorReporter, extCmdFactory, rscLayerObjectRef, resumeOnlyRef);
     }
 
     @Override

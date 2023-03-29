@@ -103,13 +103,18 @@ public interface DeviceLayer
     boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
 
     boolean isSuspendIoSupported();
+
     /**
      * Suspends IO if the device(s) are not already in suspended state.
+     *
      * @param rscLayerObjectRef
+     * @param resumeOnlyRef
+     *
      * @throws ResourceException
      * @throws StorageException
      */
-    void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef) throws ResourceException, StorageException;
+    void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
+        throws ResourceException, StorageException;
 
     /**
      * Returns whether or not checking for 'lsblk ... -o DISC-GRAN' makes sense for this RscData.

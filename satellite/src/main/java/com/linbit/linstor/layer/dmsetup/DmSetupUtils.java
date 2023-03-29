@@ -132,17 +132,19 @@ public class DmSetupUtils
      * @param errorReporter
      * @param extCmdFactory
      * @param rscData
+     * @param resumeOnlyRef
      *
      * @throws StorageException
      */
     public static void manageSuspendIO(
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,
-        AbsRscLayerObject<Resource> rscData
+        AbsRscLayerObject<Resource> rscData,
+        boolean resumeOnlyRef
     )
         throws StorageException
     {
-        boolean shouldSuspend = rscData.exists() && rscData.getShouldSuspendIo();
+        boolean shouldSuspend = rscData.exists() && rscData.getShouldSuspendIo() && !resumeOnlyRef;
         boolean isSuspended = rscData.isSuspended() != null && rscData.isSuspended();
 
         if (isSuspended != shouldSuspend)
