@@ -21,6 +21,9 @@ info:
 
     Changelog:
 
+    * unreleased
+      - Added GET /v1/view/backup/queue
+      - Added SnapQueue, NodeQueue, and BackupQueues objects
     * 1.19.0
       - Added POST /v1/queries/resource-groups/query-all-size-info
       - Added QueryAllSizeInfoRequest and QueryAllSizeInfoResponse objects
@@ -4982,7 +4985,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScheduledRscsList'
-  /v1/schedules-by-resource/{rscName}:
+  /v1/view/schedules-by-resource/{rscName}:
     parameters:
       - name: rscName
         in: path
@@ -5002,6 +5005,53 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ScheduleDetailsList'
+  /v1/view/backup/queue:
+    parameters:
+      - name: nodes
+        in: query
+        description: filter by nodes
+        schema:
+          type: array
+          items:
+            type: string
+      - name: snapshots
+        in: query
+        description: filter by snapshots
+        schema:
+          type: array
+          items:
+            type: string
+      - name: resources
+        in: query
+        description: filter by resources
+        schema:
+          type: array
+          items:
+            type: string
+      - name: remotes
+        in: query
+        description: filter by remotes
+        schema:
+          type: array
+          items:
+            type: string
+      - name: snap_to_node
+        in: query
+        description: group the result by snaps instead of by nodes
+        schema:
+          type: boolean
+    get:
+      tags:
+        - developers
+      summary: list queued snapshots
+      description: list which snaps are queued on which node
+      responses:
+        '200':
+          description: map of nodes to snaps (or the other way around)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackupQueues'
   /v1/stats/resources:
     get:
       tags:
@@ -8366,6 +8416,69 @@ components:
             The time at which the next scheduled incremental backup should happen.
             If negative, either there is no cron for incremental backups or
             the time could not be computed
+    BackupQueues:
+      type: object
+      properties:
+        node_queues:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeQueue'
+          description: |
+            All nodes with a list of queued snapshots. Will be empty
+            if snap_queues is set
+        snap_queues:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapQueue'
+          description: |
+            All snapshots with a list of nodes they are queued on. Will be empty
+            if node_queues is set
+    NodeQueue:
+      type: object
+      required:
+        - node_name
+      properties:
+        node_name:
+          type: string
+        queue:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnapQueue'
+          description: |
+            The list of queued snapshots. Will be empty if this is an item of
+            SnapQueue.queue
+    SnapQueue:
+      type: object
+      required:
+        - resource_name
+        - snapshot_name
+        - remote_name
+        - incremental
+        - start_timestamp
+        - pref_node
+      properties:
+        resource_name:
+          type: string
+        snapshot_name:
+          type: string
+        remote_name:
+          type: string
+        incremental:
+          type: boolean
+        based_on:
+          type: string
+        start_timestamp:
+          type: integer
+          format: int64
+        pref_node:
+          type: string
+        queue:
+          type: array
+          items:
+            $ref: '#/components/schemas/NodeQueue'
+          description: |
+            The list of nodes this snapshot is queued on. Will be empty if this 
+            is an item of NodeQueue.queue
     PassPhraseCreate:
       type: object
       properties:

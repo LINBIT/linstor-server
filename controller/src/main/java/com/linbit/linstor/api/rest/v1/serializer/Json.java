@@ -40,6 +40,8 @@ import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.backups.BackupInfoPojo;
 import com.linbit.linstor.api.pojo.backups.BackupInfoStorPoolPojo;
 import com.linbit.linstor.api.pojo.backups.BackupInfoVlmPojo;
+import com.linbit.linstor.api.pojo.backups.BackupNodeQueuesPojo;
+import com.linbit.linstor.api.pojo.backups.BackupSnapQueuesPojo;
 import com.linbit.linstor.api.pojo.backups.ScheduleDetailsPojo;
 import com.linbit.linstor.api.pojo.backups.ScheduledRscsPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
@@ -1232,7 +1234,6 @@ public class Json
             jsonBackup.success = backup.successful();
             jsonBackup.shipping = backup.isShipping();
             jsonBackup.restorable = backup.isRestoreable();
-            // jsonBackup.fail_messages = backup.getfail_messages();
 
             jsonBackup.vlms = new ArrayList<>();
             for (BackupVlmApi backupVlmApi : backup.getVlms().values())
@@ -1372,6 +1373,52 @@ public class Json
         json.rsc_dfn = pojo.getRscDfn();
         json.rsc_grp = pojo.getRscGrp();
         json.ctrl = pojo.getCtrl();
+        return json;
+    }
+
+    public static JsonGenTypes.SnapQueue apiToSnapQueues(BackupSnapQueuesPojo pojo)
+    {
+        JsonGenTypes.SnapQueue json = new JsonGenTypes.SnapQueue();
+        json.snapshot_name = pojo.getSnapshotName();
+        json.resource_name = pojo.getResourceName();
+        json.remote_name = pojo.getRemoteName();
+        json.incremental = pojo.isIncremental();
+        json.based_on = pojo.getBasedOn();
+        json.pref_node = pojo.getPrefNode();
+        json.start_timestamp = pojo.getStartTimestamp();
+        List<BackupNodeQueuesPojo> queue = pojo.getQueue();
+        if (queue != null && !queue.isEmpty())
+        {
+            json.queue = new ArrayList<>();
+            for (BackupNodeQueuesPojo node : queue)
+            {
+                json.queue.add(apiToNodeQueues(node));
+            }
+        }
+        else
+        {
+            json.queue = null;
+        }
+        return json;
+    }
+
+    public static JsonGenTypes.NodeQueue apiToNodeQueues(BackupNodeQueuesPojo pojo)
+    {
+        JsonGenTypes.NodeQueue json = new JsonGenTypes.NodeQueue();
+        json.node_name = pojo.getNodeName();
+        List<BackupSnapQueuesPojo> queue = pojo.getQueue();
+        if (queue != null && !queue.isEmpty())
+        {
+            json.queue = new ArrayList<>();
+            for (BackupSnapQueuesPojo item : queue)
+            {
+                json.queue.add(apiToSnapQueues(item));
+            }
+        }
+        else
+        {
+            json.queue = null;
+        }
         return json;
     }
 

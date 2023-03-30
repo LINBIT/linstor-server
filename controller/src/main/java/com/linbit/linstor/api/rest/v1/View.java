@@ -1,6 +1,8 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.backups.BackupNodeQueuesPojo;
+import com.linbit.linstor.api.pojo.backups.BackupSnapQueuesPojo;
 import com.linbit.linstor.api.pojo.backups.ScheduleDetailsPojo;
 import com.linbit.linstor.api.pojo.backups.ScheduledRscsPojo;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
@@ -9,6 +11,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlScheduleApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
@@ -50,6 +53,7 @@ public class View
     private final CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandler;
     private final ObjectMapper objectMapper;
     private final CtrlScheduleApiCallHandler ctrlScheduleApiCallHandler;
+    private final CtrlBackupApiCallHandler ctrlBackupApiCallHandler;
 
     @Inject
     View(
@@ -57,7 +61,8 @@ public class View
         CtrlApiCallHandler ctrlApiCallHandlerRef,
         CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef,
         CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef,
-        CtrlScheduleApiCallHandler ctrlScheduleApiCallHandlerRef
+        CtrlScheduleApiCallHandler ctrlScheduleApiCallHandlerRef,
+        CtrlBackupApiCallHandler ctrlBackupApiCallHandlerRef
     )
     {
         requestHelper = requestHelperRef;
@@ -65,6 +70,7 @@ public class View
         ctrlVlmListApiCallHandler = ctrlVlmListApiCallHandlerRef;
         ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
         ctrlScheduleApiCallHandler = ctrlScheduleApiCallHandlerRef;
+        ctrlBackupApiCallHandler = ctrlBackupApiCallHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -335,6 +341,57 @@ public class View
                 }
                 JsonGenTypes.ScheduleDetailsList json = new JsonGenTypes.ScheduleDetailsList();
                 json.data = jsonList;
+                return Response.status(Response.Status.OK).entity(objectMapper.writeValueAsString(json)).build();
+            },
+            false
+        );
+    }
+
+    @GET
+    @Path("backup/queue")
+    public Response listBackupQueues(
+        @Context Request request,
+        @QueryParam("nodes") List<String> nodes,
+        @QueryParam("snapshots") List<String> snapshots,
+        @QueryParam("resources") List<String> resources,
+        @QueryParam("remotes") List<String> remotes,
+        @QueryParam("snap_to_node") boolean snapToNode
+    )
+    {
+        return requestHelper.doInScope(
+            ApiConsts.API_LST_QUEUE,
+            request,
+            () ->
+            {
+                JsonGenTypes.BackupQueues json = new JsonGenTypes.BackupQueues();
+                if (snapToNode)
+                {
+                    List<BackupSnapQueuesPojo> queues = ctrlBackupApiCallHandler.listSnapQueues(
+                        nodes,
+                        snapshots,
+                        resources,
+                        remotes
+                    );
+                    json.snap_queues = new ArrayList<>();
+                    for (BackupSnapQueuesPojo queue : queues)
+                    {
+                        json.snap_queues.add(Json.apiToSnapQueues(queue));
+                    }
+                }
+                else
+                {
+                    List<BackupNodeQueuesPojo> queues = ctrlBackupApiCallHandler.listNodeQueues(
+                        nodes,
+                        snapshots,
+                        resources,
+                        remotes
+                    );
+                    json.node_queues = new ArrayList<>();
+                    for (BackupNodeQueuesPojo queue : queues)
+                    {
+                        json.node_queues.add(Json.apiToNodeQueues(queue));
+                    }
+                }
                 return Response.status(Response.Status.OK).entity(objectMapper.writeValueAsString(json)).build();
             },
             false

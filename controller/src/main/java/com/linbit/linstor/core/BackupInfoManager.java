@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -444,6 +445,30 @@ public class BackupInfoManager
     public void removeL2LDstData(Snapshot snap)
     {
         l2lDstData.remove(snap);
+    }
+
+    public Set<Entry<QueueItem, Set<Node>>> getSnapToNodeQueues()
+    {
+        synchronized (uploadQueues)
+        {
+            return uploadQueues.entrySetInverted();
+        }
+    }
+
+    public Set<Entry<Node, Set<QueueItem>>> getNodeToSnapQueues()
+    {
+        synchronized (uploadQueues)
+        {
+            return uploadQueues.entrySet();
+        }
+    }
+
+    public Set<QueueItem> getPrevNodeUndecidedQueue()
+    {
+        synchronized (uploadQueues)
+        {
+            return Collections.unmodifiableSet(prevNodeUndecidedQueue);
+        }
     }
 
     /**

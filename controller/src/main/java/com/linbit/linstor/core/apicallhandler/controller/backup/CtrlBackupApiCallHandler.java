@@ -17,14 +17,17 @@ import com.linbit.linstor.api.pojo.backups.BackupInfoStorPoolPojo;
 import com.linbit.linstor.api.pojo.backups.BackupInfoVlmPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.api.pojo.backups.BackupMetaInfoPojo;
+import com.linbit.linstor.api.pojo.backups.BackupNodeQueuesPojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupS3Pojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVlmS3Pojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVolumePojo;
+import com.linbit.linstor.api.pojo.backups.BackupSnapQueuesPojo;
 import com.linbit.linstor.backupshipping.BackupConsts;
 import com.linbit.linstor.backupshipping.S3MetafileNameInfo;
 import com.linbit.linstor.backupshipping.S3VolumeNameInfo;
 import com.linbit.linstor.core.BackupInfoManager;
+import com.linbit.linstor.core.BackupInfoManager.QueueItem;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
@@ -38,6 +41,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -72,6 +76,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -79,6 +84,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -92,7 +98,6 @@ import reactor.util.function.Tuple2;
 @Singleton
 public class CtrlBackupApiCallHandler
 {
-
     private final Provider<AccessContext> peerAccCtx;
     private final AccessContext sysCtx;
     private final CtrlApiDataLoader ctrlApiDataLoader;
@@ -1456,6 +1461,200 @@ public class CtrlBackupApiCallHandler
                 storPoolMap.get(volume.getStorPoolApi()).add(vlmPojo);
             }
         }
+    }
+
+    public List<BackupSnapQueuesPojo> listSnapQueues(
+        List<String> nodesRef,
+        List<String> snapshotsRef,
+        List<String> resourcesRef,
+        List<String> remotesRef
+    )
+    {
+        List<BackupSnapQueuesPojo> ret = new ArrayList<>();
+        Predicate<QueueItem> snapFilter = createFilter(snapshotsRef, item -> item.snapDfn.getName().displayValue);
+        Predicate<QueueItem> rscFilter = createFilter(
+            resourcesRef,
+            item -> item.snapDfn.getResourceName().displayValue
+        );
+        Predicate<QueueItem> remoteFilter = createFilter(remotesRef, item -> item.remote.getName().displayValue);
+        Predicate<Node> nodeFilter = createFilter(nodesRef, node -> node.getName().displayValue);
+        for (Entry<QueueItem, Set<Node>> queue : backupInfoMgr.getSnapToNodeQueues())
+        {
+            QueueItem item = queue.getKey();
+            boolean matches = snapFilter.test(item) || rscFilter.test(item) || remoteFilter.test(item);
+            if (!matches)
+            {
+                for (Node node : queue.getValue())
+                {
+                    if (nodeFilter.test(node))
+                    {
+                        matches = true;
+                        break;
+                    }
+                }
+            }
+            // not null means at least VIEW access, snapDfn gets checked in queueItemToPojo
+            if (matches && item.remote.getObjProt().queryAccess(peerAccCtx.get()) != null)
+            {
+                List<BackupNodeQueuesPojo> nodes = new ArrayList<>();
+                for (Node node : queue.getValue())
+                {
+                    if (node.getObjProt().queryAccess(peerAccCtx.get()) != null)
+                    {
+                        nodes.add(new BackupNodeQueuesPojo(node.getName().displayValue, null));
+                    }
+                }
+                if (!nodes.isEmpty())
+                {
+                    BackupSnapQueuesPojo snapQueuesPojo = queueItemToPojo(item, nodes);
+                    if (snapQueuesPojo != null)
+                    {
+                        ret.add(snapQueuesPojo);
+                    }
+                }
+            }
+        }
+        for (QueueItem item : backupInfoMgr.getPrevNodeUndecidedQueue())
+        {
+            boolean matches = snapFilter.test(item) || rscFilter.test(item) || remoteFilter.test(item);
+            // not null means at least VIEW access, snapDfn gets checked in queueItemToPojo
+            if (matches && item.remote.getObjProt().queryAccess(peerAccCtx.get()) != null)
+            {
+                List<BackupNodeQueuesPojo> nodes = new ArrayList<>();
+                nodes.add(new BackupNodeQueuesPojo(ApiConsts.VAL_NODE_UNDECIDED, null));
+                BackupSnapQueuesPojo snapQueuesPojo = queueItemToPojo(item, nodes);
+                if (snapQueuesPojo != null)
+                {
+                    ret.add(snapQueuesPojo);
+                }
+            }
+        }
+        return ret;
+    }
+
+    public List<BackupNodeQueuesPojo> listNodeQueues(
+        List<String> nodesRef,
+        List<String> snapshotsRef,
+        List<String> resourcesRef,
+        List<String> remotesRef
+    )
+    {
+        List<BackupNodeQueuesPojo> ret = new ArrayList<>();
+        Predicate<QueueItem> snapFilter = createFilter(snapshotsRef, item -> item.snapDfn.getName().displayValue);
+        Predicate<QueueItem> rscFilter = createFilter(
+            resourcesRef,
+            item -> item.snapDfn.getResourceName().displayValue
+        );
+        Predicate<QueueItem> remoteFilter = createFilter(remotesRef, item -> item.remote.getName().displayValue);
+        Predicate<Node> nodeFilter = createFilter(nodesRef, node -> node.getName().displayValue);
+        for (Entry<Node, Set<QueueItem>> queue : backupInfoMgr.getNodeToSnapQueues())
+        {
+            Node node = queue.getKey();
+            boolean matches = false;
+            if (!nodeFilter.test(node))
+            {
+                for (QueueItem item : queue.getValue())
+                {
+                    matches = snapFilter.test(item) || rscFilter.test(item) || remoteFilter.test(item);
+                    if (matches)
+                    {
+                        matches = true;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                matches = true;
+            }
+            // not null means at least VIEW access
+            if (matches && node.getObjProt().queryAccess(peerAccCtx.get()) != null)
+            {
+                List<BackupSnapQueuesPojo> items = new ArrayList<>();
+                for (QueueItem item : queue.getValue())
+                {
+                    if (item.remote.getObjProt().queryAccess(peerAccCtx.get()) != null)
+                    {
+                        BackupSnapQueuesPojo queueItemPojo = queueItemToPojo(item, null);
+                        // if no access to snapDfn, queueItemPojo is null
+                        if (queueItemPojo != null)
+                        {
+                            items.add(queueItemPojo);
+                        }
+                    }
+                }
+                if (!items.isEmpty())
+                {
+                    ret.add(new BackupNodeQueuesPojo(node.getName().displayValue, items));
+                }
+            }
+        }
+        List<BackupSnapQueuesPojo> items = new ArrayList<>();
+        for (QueueItem item : backupInfoMgr.getPrevNodeUndecidedQueue())
+        {
+            boolean matches = snapFilter.test(item) || rscFilter.test(item) || remoteFilter.test(item);
+            // not null means at least VIEW access
+            if (matches && item.remote.getObjProt().queryAccess(peerAccCtx.get()) != null)
+            {
+                BackupSnapQueuesPojo queueItemPojo = queueItemToPojo(item, null);
+                // if no access to snapDfn, queueItemPojo is null
+                if (queueItemPojo != null)
+                {
+                    items.add(queueItemPojo);
+                }
+            }
+        }
+        if (!items.isEmpty())
+        {
+            ret.add(new BackupNodeQueuesPojo(ApiConsts.VAL_NODE_UNDECIDED, items));
+        }
+        return ret;
+    }
+
+    private BackupSnapQueuesPojo queueItemToPojo(QueueItem item, List<BackupNodeQueuesPojo> nodes)
+    {
+        BackupSnapQueuesPojo ret;
+        String startTimeStr = null;
+        try
+        {
+            startTimeStr = item.snapDfn.getProps(peerAccCtx.get())
+                .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+            boolean inc = item.prevSnapDfn != null;
+            ret = new BackupSnapQueuesPojo(
+                item.snapDfn.getResourceName().displayValue,
+                item.snapDfn.getName().displayValue,
+                item.remote.getName().displayValue,
+                inc,
+                inc ? item.prevSnapDfn.getName().displayValue : null,
+                (startTimeStr == null || startTimeStr.isEmpty()) ? null : Long.parseLong(startTimeStr),
+                item.preferredNode,
+                nodes
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            ret = null;
+        }
+        return ret;
+    }
+
+    private <T> Predicate<T> createFilter(List<String> list, Function<T, String> mapper)
+    {
+        Predicate<T> ret;
+        if (list != null && !list.isEmpty())
+        {
+            Set<String> lowerList = new HashSet<>();
+            for (String item : list)
+            {
+                lowerList.add(item.toLowerCase());
+            }
+            ret = item -> lowerList.contains(mapper.apply(item).toLowerCase());
+        }
+        else
+        {
+            ret = ignored -> true;
+        }
+        return ret;
     }
 
     private static class ToDeleteCollections

@@ -1531,6 +1531,49 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class BackupQueues
+    {
+        /**
+         * All nodes with a list of queued snapshots. Will be empty
+         * if snap_queues is set
+         */
+        public List<NodeQueue> node_queues = Collections.emptyList();
+        /**
+         * All snapshots with a list of nodes they are queued on. Will be empty
+         * if node_queues is set
+         */
+        public List<SnapQueue> snap_queues = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class NodeQueue
+    {
+        public String node_name;
+        /**
+         * The list of queued snapshots. Will be empty if this is an item of
+         * SnapQueue.queue
+         */
+        public List<SnapQueue> queue = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class SnapQueue
+    {
+        public String resource_name;
+        public String snapshot_name;
+        public String remote_name;
+        public boolean incremental;
+        public String based_on;
+        public long start_timestamp;
+        public String pref_node;
+        /**
+         * The list of nodes this snapshot is queued on. Will be empty if this
+         * is an item of NodeQueue.queue
+         */
+        public List<NodeQueue> queue = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class PassPhraseCreate
     {
         public String new_passphrase;
