@@ -139,6 +139,7 @@ public class InternalApiConsts
     public static final String API_NOTIFY_BACKUP_SHIPPING_FINISHED = "BackupShippingFinished";
     public static final String KEY_LAST_FULL_BACKUP_TIMESTAMP = "LastFullBackupTimestamp";
     public static final String KEY_BACKUP_LAST_SNAPSHOT = "BackupLastSnapshot";
+    public static final String KEY_BACKUP_LAST_STARTED_OR_QUEUED = "BackupLastStartedOrQueued";
     public static final String KEY_BACKUP_TO_RESTORE = "BackupToRestore";
     public static final String KEY_BACKUP_NODE_IDS_TO_RESET = "BackupNodeIdsToReset";
     public static final String KEY_BACKUP_NODE_ID_SEPERATOR = ",";

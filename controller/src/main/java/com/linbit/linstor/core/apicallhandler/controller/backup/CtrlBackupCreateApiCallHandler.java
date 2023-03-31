@@ -274,7 +274,7 @@ public class CtrlBackupCreateApiCallHandler
                 backupHelper.getLocalMasterKey();
 
                 remote = backupHelper.getRemote(remoteName);
-                prevSnapDfn = getIncrementalBase(rscDfn, remote, allowIncremental);
+                prevSnapDfn = getIncrementalBase(rscDfn, remote, allowIncremental, false);
             }
             else if (remoteTypeRef.equals(RemoteType.LINSTOR))
             {
@@ -330,6 +330,13 @@ public class CtrlBackupCreateApiCallHandler
                 // only do this for s3, l2l does it on its own later on
                 setIncrementalDependentProps(snapDfn, prevSnapDfn, remoteName, scheduleNameRef);
             }
+            rscDfn.getProps(peerAccCtx.get())
+                .setProp(
+                    InternalApiConsts.KEY_BACKUP_LAST_STARTED_OR_QUEUED,
+                    snapName,
+                    ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" +
+                        remote.getName().displayValue
+                );
             ctrlTransactionHelper.commit();
 
             responses.addEntry(
@@ -871,7 +878,8 @@ public class CtrlBackupCreateApiCallHandler
     private SnapshotDefinition getIncrementalBase(
         ResourceDefinition rscDfn,
         AbsRemote remote,
-        boolean allowIncremental
+        boolean allowIncremental,
+        boolean replacePrevSnap
     )
         throws AccessDeniedException,
         InvalidNameException
@@ -879,15 +887,31 @@ public class CtrlBackupCreateApiCallHandler
         SnapshotDefinition prevSnapDfn = null;
         if (allowIncremental)
         {
-            String prevSnapName = rscDfn.getProps(peerAccCtx.get()).getProp(
-                InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remote.getName()
-            );
+            String prevSnapName;
+            if (replacePrevSnap)
+            {
+                prevSnapName = rscDfn.getProps(peerAccCtx.get())
+                    .getProp(
+                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remote.getName()
+                    );
+            }
+            else
+            {
+                prevSnapName = rscDfn.getProps(peerAccCtx.get())
+                    .getProp(
+                        InternalApiConsts.KEY_BACKUP_LAST_STARTED_OR_QUEUED,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + remote.getName()
+                    );
+            }
 
             if (prevSnapName != null)
             {
                 prevSnapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscDfn, new SnapshotName(prevSnapName), false);
-                if (prevSnapDfn == null)
+                if (
+                    prevSnapDfn == null || prevSnapDfn.isDeleted() ||
+                        prevSnapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.DELETE)
+                )
                 {
                     errorReporter.logWarning(
                         "Could not create an incremental backup for resource %s as the previous snapshot %s needed " +
@@ -898,7 +922,10 @@ public class CtrlBackupCreateApiCallHandler
                 }
                 else
                 {
-                    if (remote instanceof S3Remote)
+                    if (
+                        remote instanceof S3Remote &&
+                            prevSnapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED)
+                    )
                     {
                         S3Remote s3remote = (S3Remote) remote;
                         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -1526,7 +1553,9 @@ public class CtrlBackupCreateApiCallHandler
                         {
                             if (
                                 prevSnapDfn.isDeleted() ||
-                                prevSnapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.DELETE))
+                                    prevSnapDfn.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.DELETE) ||
+                                    prevSnapDfn.getFlags().isUnset(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPED)
+                            )
                             {
                                 needsNewPrefSnapDfn = true;
                             }
@@ -1540,7 +1569,12 @@ public class CtrlBackupCreateApiCallHandler
                         }
                         if (needsNewPrefSnapDfn)
                         {
-                            prevSnapDfn = getIncrementalBase(next.snapDfn.getResourceDefinition(), next.remote, true);
+                            prevSnapDfn = getIncrementalBase(
+                                next.snapDfn.getResourceDefinition(),
+                                next.remote,
+                                true,
+                                true
+                            );
                             if (
                                 prevSnapDfn != null && prevSnapDfn.getSnapshot(peerAccCtx.get(), node.getName()) == null
                             )
