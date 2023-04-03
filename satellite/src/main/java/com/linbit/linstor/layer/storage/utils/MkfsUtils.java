@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.utils;
 
 import com.linbit.TimeoutException;
 import com.linbit.extproc.ExtCmd;
+import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
@@ -18,8 +19,10 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +32,7 @@ public class MkfsUtils
 {
     public static List<String> shellSplit(CharSequence string)
     {
-        List<String> tokens = new ArrayList<String>();
+        List<String> tokens = new ArrayList<>();
         boolean escaping = false;
         char quoteChar = ' ';
         boolean quoting = false;
@@ -184,6 +187,22 @@ public class MkfsUtils
                             ApiConsts.NAMESPC_FILESYSTEM,
                             ""
                         );
+
+                        String mkfsUser = prioProps.getProp(ApiConsts.KEY_FS_USER, ApiConsts.NAMESPC_FILESYSTEM);
+                        String mkfsGroup = prioProps.getProp(ApiConsts.KEY_FS_GROUP, ApiConsts.NAMESPC_FILESYSTEM);
+
+                        if (mkfsUser != null || mkfsGroup != null)
+                        {
+                            if (mkfsUser == null)
+                            {
+                                mkfsUser = "nobody";
+                            }
+                            if (mkfsGroup == null)
+                            {
+                                mkfsGroup = mkfsUser;
+                            }
+                        }
+
                         if (fsType.equals(ApiConsts.VAL_FS_TYPE_EXT4))
                         {
                             if (VolumeUtils.isVolumeThinlyBacked(vlmProviderObject, false) ||
@@ -191,6 +210,15 @@ public class MkfsUtils
                             {
                                 mkfsParametes += " -E nodiscard";
                             }
+
+                            if (mkfsUser != null && mkfsGroup != null)
+                            {
+                                Long mkfsUID = getUserId(extCmdFactory, mkfsUser);
+                                Long mkfsGID = getGroupId(extCmdFactory, mkfsGroup);
+
+                                mkfsParametes += " -E root_owner=" + mkfsUID + ":" + mkfsGID;
+                            }
+
                             MkfsUtils.makeExt4(extCmdFactory.create(), devicePath, mkfsParametes);
                         }
                         else
@@ -201,7 +229,45 @@ public class MkfsUtils
                             {
                                 mkfsParametes += " -K";
                             }
+
+                            File tempFile = null;
+                            if (mkfsUser != null && mkfsGroup != null)
+                            {
+                                try
+                                {
+                                    tempFile = File.createTempFile(
+                                        "linstor",
+                                        "xfs_proto_" + rsc.getDefinition().getName().displayValue
+                                    );
+                                    Long mkfsUID = getUserId(extCmdFactory, mkfsUser);
+                                    Long mkfsGID = getGroupId(extCmdFactory, mkfsGroup);
+                                    Files.write(
+                                        tempFile.toPath(),
+                                        ("/generated/by/linstor 13 42 d--777 " + mkfsUID + " " + mkfsGID + "\n")
+                                            .getBytes()
+                                    );
+
+                                    mkfsParametes += " -p " + tempFile.getAbsolutePath();
+                                }
+                                catch (IOException exc)
+                                {
+                                    throw new StorageException("Failed to create proto file for XFS creation", exc);
+                                }
+                            }
+
                             MkfsUtils.makeXfs(extCmdFactory.create(), devicePath, mkfsParametes);
+
+                            if (tempFile != null)
+                            {
+                                try
+                                {
+                                    Files.deleteIfExists(tempFile.toPath());
+                                }
+                                catch (IOException exc)
+                                {
+                                    throw new StorageException("Failed to delete proto file after XFS creation", exc);
+                                }
+                            }
                         }
                         else
                         {
@@ -214,6 +280,48 @@ public class MkfsUtils
                 }
             }
         }
+    }
+
+    private static long getUserId(ExtCmdFactory extCmdFactory, String name) throws StorageException
+    {
+        return getUserGroupId(extCmdFactory, name, "-u", "user");
+    }
+
+    private static long getGroupId(ExtCmdFactory extCmdFactory, String name) throws StorageException
+    {
+        return getUserGroupId(extCmdFactory, name, "-g", "group");
+    }
+
+    private static long getUserGroupId(ExtCmdFactory extCmdFactory, String idName, String idType, String idDescr)
+        throws StorageException
+    {
+        long ret;
+        try
+        {
+            ret = Long.parseLong(idName);
+        }
+        catch (NumberFormatException nfe)
+        {
+            String errMsg = "Failed to find " + idDescr + " '" + idName + "'s " + idDescr + " id";
+            try
+            {
+                OutputData outputData = Commands.genericExecutor(
+                    extCmdFactory.create(),
+                    new String[]
+                    {
+                        "id", idType, idName
+                    },
+                    errMsg,
+                    errMsg
+                );
+                ret = Long.parseLong(new String(outputData.stdoutData).trim());
+            }
+            catch (NumberFormatException nfe2)
+            {
+                throw new StorageException(errMsg, nfe2);
+            }
+        }
+        return ret;
     }
 
     private MkfsUtils()

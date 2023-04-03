@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - "StorDriver/LvcreateSnapshotOptions" and "StorDriver/ZfsSnapshotOptions" properties
+- "FileSystem/User" and "FileSystem/Group" properties for root-owner of newly created FS
 
 ### Changed
 
