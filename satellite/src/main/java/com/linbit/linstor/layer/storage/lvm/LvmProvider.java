@@ -774,7 +774,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             extCmdFactory,
             Collections.singleton(vlmGrp)
         );
-        return extentSizes.get(vlmGrp);
+        Long extentSize = extentSizes.get(vlmGrp);
+        if (extentSize == null)
+        {
+            throw new StorageException("VolumeGroup " + vlmGrp + " not found");
+        }
+        return extentSize;
     }
 
     @Override
