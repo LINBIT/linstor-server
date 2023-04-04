@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Autoplacer now ignores occupied values from evicted or evacuating nodes
+
 ## [1.21.1] - 2023-03-22
 
 ### Changed

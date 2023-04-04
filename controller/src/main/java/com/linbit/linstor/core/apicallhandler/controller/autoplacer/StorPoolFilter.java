@@ -159,7 +159,13 @@ public class StorPoolFilter
             Iterator<Resource> rscIt = rscDfnRef.iterateResource(apiAccCtx);
             while (rscIt.hasNext())
             {
-                alreadyDeployedNodesProps.add(rscIt.next().getNode().getProps(apiAccCtx));
+                Resource rsc = rscIt.next();
+                Node node = rsc.getNode();
+                if (rsc.getStateFlags().isUnset(apiAccCtx, Resource.Flags.EVACUATE, Resource.Flags.EVICTED) &&
+                    node.getFlags().isUnset(apiAccCtx, Node.Flags.EVACUATE, Node.Flags.EVICTED))
+                {
+                    alreadyDeployedNodesProps.add(node.getProps(apiAccCtx));
+                }
             }
         }
         boolean diskful = disklessTypeRef == null;
