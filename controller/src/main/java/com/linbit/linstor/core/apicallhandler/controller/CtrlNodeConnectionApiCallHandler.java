@@ -43,6 +43,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -358,9 +359,16 @@ public class CtrlNodeConnectionApiCallHandler
                     overrideProps,
                     props,
                     ApiConsts.FAIL_ACC_DENIED_NODE_CONN,
-                    Arrays.asList(ApiConsts.NAMESPC_CONNECTION_PATHS + "/")
+                    new ArrayList<>(Arrays.asList(ApiConsts.NAMESPC_CONNECTION_PATHS + "/"))
                 );
-                ctrlPropsHelper.remove(responses, LinStorObject.NODE_CONN, props, deletePropKeys, deletePropNamespaces);
+                ctrlPropsHelper.remove(
+                    responses,
+                    LinStorObject.NODE_CONN,
+                    props,
+                    deletePropKeys,
+                    deletePropNamespaces,
+                    new ArrayList<>(Arrays.asList(ApiConsts.NAMESPC_CONNECTION_PATHS + "/"))
+                );
 
                 ctrlTransactionHelper.commit();
 

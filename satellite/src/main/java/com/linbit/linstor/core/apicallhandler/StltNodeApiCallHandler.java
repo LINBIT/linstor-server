@@ -1,11 +1,12 @@
 package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
-import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
@@ -21,9 +22,11 @@ import com.linbit.linstor.core.objects.NodeSatelliteFactory;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.types.LsIpAddress;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
@@ -31,6 +34,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -41,7 +45,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.stream.Collectors;
 
 @Singleton
-class StltNodeApiCallHandler
+public class StltNodeApiCallHandler
 {
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
@@ -52,7 +56,6 @@ class StltNodeApiCallHandler
     private final NodeSatelliteFactory nodeFactory;
     private final NodeConnectionFactory nodeConnectionFactory;
     private final NetInterfaceFactory netInterfaceFactory;
-    private final ControllerPeerConnector controllerPeerConnector;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
@@ -66,7 +69,6 @@ class StltNodeApiCallHandler
         NodeSatelliteFactory nodeFactoryRef,
         NodeConnectionFactory nodeConnectionFactoryRef,
         NetInterfaceFactory netInterfaceFactoryRef,
-        ControllerPeerConnector controllerPeerConnectorRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -79,7 +81,6 @@ class StltNodeApiCallHandler
         nodeFactory = nodeFactoryRef;
         nodeConnectionFactory = nodeConnectionFactoryRef;
         netInterfaceFactory = netInterfaceFactoryRef;
-        controllerPeerConnector = controllerPeerConnectorRef;
         transMgrProvider = transMgrProviderRef;
     }
 
@@ -129,60 +130,41 @@ class StltNodeApiCallHandler
         Lock reConfReadLock = reconfigurationLock.readLock();
         Lock nodesWriteLock = nodesMapLock.writeLock();
 
-        Node node = null;
+        Node localNode = null;
         try
         {
             reConfReadLock.lock();
             nodesWriteLock.lock();
 
             Node.Flags[] nodeFlags = Node.Flags.restoreFlags(nodePojo.getNodeFlags());
-            node = nodeFactory.getInstanceSatellite(
+            localNode = nodeFactory.getInstanceSatellite(
                 apiCtx,
                 nodePojo.getUuid(),
                 new NodeName(nodePojo.getName()),
                 Node.Type.valueOf(nodePojo.getType()),
                 nodeFlags
             );
-            checkUuid(node, nodePojo);
+            checkUuid(localNode, nodePojo);
 
-            node.getFlags().resetFlagsTo(apiCtx, nodeFlags);
+            localNode.getFlags().resetFlagsTo(apiCtx, nodeFlags);
 
-            Props nodeProps = node.getProps(apiCtx);
+            Props nodeProps = localNode.getProps(apiCtx);
             nodeProps.map().putAll(nodePojo.getProps());
             nodeProps.keySet().retainAll(nodePojo.getProps().keySet());
 
-            for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
-            {
-                NodePojo otherNodePojo = nodeConn.getOtherNodeApi();
-                Node otherNode = nodeFactory.getInstanceSatellite(
-                    apiCtx,
-                    otherNodePojo.getUuid(),
-                    new NodeName(otherNodePojo.getName()),
-                    Node.Type.valueOf(otherNodePojo.getType()),
-                    Node.Flags.restoreFlags(otherNodePojo.getFlags())
-                );
-                NodeConnection nodeCon = nodeConnectionFactory.getInstanceSatellite(
-                    apiCtx,
-                    nodeConn.getUuid(),
-                    node,
-                    otherNode
-                );
-                Props nodeConnProps = nodeCon.getProps(apiCtx);
-                nodeConnProps.map().putAll(nodeConn.getProps());
-                nodeConnProps.keySet().retainAll(nodeConn.getProps().keySet());
-            }
+            mergeNodeConnections(localNode, nodePojo);
 
             for (NetInterfaceApi netIfApi : nodePojo.getNetInterfaces())
             {
                 NetInterfaceName netIfName = new NetInterfaceName(netIfApi.getName());
                 LsIpAddress ipAddress = new LsIpAddress(netIfApi.getAddress());
-                NetInterface netIf = node.getNetInterface(apiCtx, netIfName);
+                NetInterface netIf = localNode.getNetInterface(apiCtx, netIfName);
                 if (netIf == null)
                 {
                     netInterfaceFactory.getInstanceSatellite(
                         apiCtx,
                         netIfApi.getUuid(),
-                        node,
+                        localNode,
                         netIfName,
                         ipAddress
                     );
@@ -193,12 +175,12 @@ class StltNodeApiCallHandler
                 }
             }
 
-            Set<ResourceName> rscSet = node.streamResources(apiCtx)
+            Set<ResourceName> rscSet = localNode.streamResources(apiCtx)
                 .map(Resource::getDefinition)
                 .map(ResourceDefinition::getName)
                 .collect(Collectors.toSet());
 
-            nodesMap.put(node.getName(), node);
+            nodesMap.put(localNode.getName(), localNode);
             transMgrProvider.get().commit();
 
             errorReporter.logInfo("Node '" + nodePojo.getName() + "' created.");
@@ -216,7 +198,95 @@ class StltNodeApiCallHandler
             nodesWriteLock.unlock();
             reConfReadLock.unlock();
         }
-        return node;
+        return localNode;
+    }
+
+    private void mergeNodeConnections(Node localNode, NodePojo nodePojo)
+        throws AccessDeniedException, ImplementationError, InvalidNameException, DatabaseException
+    {
+        List<NodeConnection> nodeConsToDelete = new ArrayList<>(localNode.getNodeConnections(apiCtx));
+        for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
+        {
+            NodePojo otherNodePojo = nodeConn.getOtherNodeApi();
+            Node otherNode = nodeFactory.getInstanceSatellite(
+                apiCtx,
+                otherNodePojo.getUuid(),
+                new NodeName(otherNodePojo.getName()),
+                Node.Type.valueOf(otherNodePojo.getType()),
+                Node.Flags.restoreFlags(otherNodePojo.getFlags())
+            );
+            NodeConnection nodeCon = nodeConnectionFactory.getInstanceSatellite(
+                apiCtx,
+                nodeConn.getUuid(),
+                localNode,
+                otherNode
+            );
+            nodeConsToDelete.remove(nodeCon);
+            Props nodeConnProps = nodeCon.getProps(apiCtx);
+            nodeConnProps.map().putAll(nodeConn.getProps());
+            nodeConnProps.keySet().retainAll(nodeConn.getProps().keySet());
+        }
+        for (NodeConnection nodeConToDelete : nodeConsToDelete)
+        {
+            Node otherNode = nodeConToDelete.getOtherNode(apiCtx, localNode);
+            localNode.removeNodeConnection(apiCtx, nodeConToDelete);
+            if (!deleteRemoteNodeIfNeeded(apiCtx, nodesMap, localNode, otherNode))
+            {
+                otherNode.removeNodeConnection(apiCtx, nodeConToDelete);
+            }
+        }
+    }
+
+    public static boolean canRemoteNoteBeDeleted(
+        AccessContext apiCtxRef,
+        Node localNodeRef,
+        Node remoteNodeRef
+    )
+        throws AccessDeniedException
+    {
+        /*
+         * Bugfix: if the remoteRsc was the last resource of the remote node
+         * we will no longer receive updates about the remote node (why should we?)
+         * The problem is, that if the remote node gets completely deleted
+         * on the controller, and later recreated, and that "new" node deploys
+         * a resource we are also interested in, we will receive the "new" node's UUID.
+         * However, we will still find our old node-reference when looking up the
+         * "new" node's name and therefore we will find the old node's UUID and check it
+         * against the "new" node's UUID.
+         * This will cause a UUID mismatch upon resource-creation on the other node
+         * (which will trigger an update to us as we also need to know about the new resource
+         * and it's node)
+         *
+         * Therefore, we have to remove the remoteNode completely if it has no
+         * resources left
+         */
+        /*
+         * Exception of the rule above is if there still exist a nodeConnection to that remote node
+         */
+
+        return remoteNodeRef.getResourceCount() < 1 &&
+            localNodeRef.getNodeConnection(apiCtxRef, remoteNodeRef) == null;
+    }
+
+    public static boolean deleteRemoteNodeIfNeeded(
+        AccessContext apiCtxRef,
+        NodesMap nodesMapRef,
+        Node localNodeRef,
+        Node remoteNodeRef
+    )
+        throws AccessDeniedException, DatabaseException
+    {
+
+        boolean deleted = false;
+        boolean shouldDelete = canRemoteNoteBeDeleted(apiCtxRef, localNodeRef, remoteNodeRef);
+        if (shouldDelete)
+        {
+            nodesMapRef.remove(remoteNodeRef.getName());
+            remoteNodeRef.delete(apiCtxRef);
+            deleted = true;
+        }
+
+        return deleted;
     }
 
     private void checkUuid(Node node, NodePojo nodePojo) throws DivergentUuidsException

@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Backup list can now handle more than 1000 entries in bucket (truncation/continuation was handled wrong before)
+- NodeConnection path can now be deleted
+- NodeConnections no longer cause NPE on satellites
 
 ## [1.21.1] - 2023-03-22
 

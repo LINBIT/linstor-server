@@ -651,13 +651,6 @@ class StltRscApiCallHandler
             {
                 rscDfnMap.put(rscName, rscDfnToRegister);
             }
-            for (Node node : nodesToRegister)
-            {
-                if (!node.isDeleted())
-                {
-                    nodesMap.put(node.getName(), node);
-                }
-            }
 
             layerRscDataMerger.mergeLayerData(localRsc, rscRawData.getLayerData(), false);
 

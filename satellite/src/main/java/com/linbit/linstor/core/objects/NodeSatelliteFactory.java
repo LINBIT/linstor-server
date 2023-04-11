@@ -80,6 +80,7 @@ public class NodeSatelliteFactory
                     transObjFactory,
                     transMgrProvider
                 );
+                nodesMap.put(nameRef, node);
             }
         }
         catch (Exception exc)

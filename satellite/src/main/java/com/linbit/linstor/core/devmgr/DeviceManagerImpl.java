@@ -30,6 +30,7 @@ import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateBundle;
 import com.linbit.linstor.core.StltUpdateTrackerImpl.UpdateNotification;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
+import com.linbit.linstor.core.apicallhandler.StltNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.identifier.ExternalFileName;
@@ -1601,6 +1602,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         Lock extFileWrLock = extFileMapLock.writeLock();
         Lock remoteWrLock = remoteMapLock.writeLock();
 
+        Node localNode = controllerPeerConnector.getLocalNode();
+
         rcfgWrLock.lock();
         try
         {
@@ -1661,7 +1664,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                             delRsc.delete(wrkCtx);
                             if (peerNode != controllerPeerConnector.getLocalNode())
                             {
-                                if (peerNode.getResourceCount() < 1)
+                                if (StltNodeApiCallHandler.canRemoteNoteBeDeleted(wrkCtx, localNode, peerNode))
                                 {
                                     // This satellite does no longer have any peer resources
                                     // on the peer node, so is does not need to know about this
@@ -1701,27 +1704,12 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         Node remoteNode = remoteRsc.getNode();
                         remoteRsc.delete(wrkCtx);
 
-                        /*
-                         *  Bugfix: if the remoteRsc was the last resource of the remote node
-                         *  we will no longer receive updates about the remote node (why should we?)
-                         *  The problem is, that if the remote node gets completely deleted
-                         *  on the controller, and later recreated, and that "new" node deploys
-                         *  a resource we are also interested in, we will receive the "new" node's UUID.
-                         *  However, we will still find our old node-reference when looking up the
-                         *  "new" node's name and therefore we will find the old node's UUID and check it
-                         *  against the "new" node's UUID.
-                         *  This will cause a UUID mismatch upon resource-creation on the other node
-                         *  (which will trigger an update to us as we also need to know about the new resource
-                         *  and it's node)
-                         *
-                         *  Therefore, we have to remove the remoteNode completely if it has no
-                         *  resources left
-                         */
-                        if (!remoteNode.iterateResources(wrkCtx).hasNext())
-                        {
-                            nodesMap.remove(remoteNode.getName());
-                            remoteNode.delete(wrkCtx);
-                        }
+                        StltNodeApiCallHandler.deleteRemoteNodeIfNeeded(
+                            wrkCtx,
+                            nodesMap,
+                            localNode,
+                            remoteNode
+                        );
                     }
                     // else the remoteRsc and if needed also the remoteNode were already deleted
                     // when the resource-definition was cleaned up
