@@ -69,12 +69,12 @@ LINSTOR is currently extended with the following plugins. Instructions on how to
 
 | Plugin | More Information |
 | ------ | ------ |
-|ISCSI| https://github.com/LINBIT/linstor-iscsi |
-|Vsan|https://www.linbit.com/linstor-vsan-software-defined-storage-for-vmware%e2%80%8b/|
-|Openshift|https://www.linbit.com/openshift-persistent-container-storage-support/|
-|Open Nebula|https://www.linbit.com/drbd-user-guide/linstor-guide-1_0-en/#ch-opennebula-linstor|
+|iSCSI| https://github.com/LINBIT/linstor-iscsi |
+|VSAN|https://www.linbit.com/linstor-vsan-software-defined-storage-for-vmware%e2%80%8b/|
+|OpenShift|https://www.linbit.com/openshift-persistent-container-storage-support/|
+|OpenNebula|https://www.linbit.com/drbd-user-guide/linstor-guide-1_0-en/#ch-opennebula-linstor|
 |Kubernetes|https://www.linbit.com/drbd-user-guide/linstor-guide-1_0-en/#ch-kubernetes|
-|Openstack|https://www.linbit.com/drbd-user-guide/linstor-guide-1_0-en/#ch-openstack-linstor|
+|OpenStack|https://www.linbit.com/drbd-user-guide/linstor-guide-1_0-en/#ch-openstack-linstor|
 
 ## Support
 
