@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Autoplacer now ignores occupied values from evicted or evacuating nodes
 
+### Fixed
+
+- Backup list can now handle more than 1000 entries in bucket (truncation/continuation was handled wrong before)
+
 ## [1.21.1] - 2023-03-22
 
 ### Changed

@@ -419,7 +419,7 @@ public class BackupToS3
         List<S3ObjectSummary> objects = result.getObjectSummaries();
         while (result.isTruncated())
         {
-            result = s3.listObjectsV2(req.withContinuationToken(result.getContinuationToken()));
+            result = s3.listObjectsV2(req.withContinuationToken(result.getNextContinuationToken()));
             objects.addAll(result.getObjectSummaries());
         }
 
