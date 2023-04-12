@@ -14,7 +14,7 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerCacheVolumes;
 import com.linbit.linstor.dbdrivers.etcd.BaseEtcdDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
@@ -41,14 +41,14 @@ public class CacheLayerETCDDriver extends BaseEtcdDriver implements CacheLayerCt
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
-    private final ResourceLayerIdDatabaseDriver idDriver;
+    private final LayerResourceIdDatabaseDriver idDriver;
     private final TransactionObjectFactory transObjFactory;
 
     @Inject
     public CacheLayerETCDDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
-        ResourceLayerIdDatabaseDriver idDriverRef,
+        LayerResourceIdDatabaseDriver idDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrETCD> transMgrProviderRef
     )
@@ -61,7 +61,7 @@ public class CacheLayerETCDDriver extends BaseEtcdDriver implements CacheLayerCt
     }
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return idDriver;
     }

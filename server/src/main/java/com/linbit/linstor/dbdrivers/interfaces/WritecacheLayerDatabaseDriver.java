@@ -6,7 +6,7 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 
 public interface WritecacheLayerDatabaseDriver
 {
-    ResourceLayerIdDatabaseDriver getIdDriver();
+    LayerResourceIdDatabaseDriver getIdDriver();
 
     void persist(WritecacheRscData<?> writecacheRscDataRef) throws DatabaseException;
     void delete(WritecacheRscData<?> writecacheRscDataRef) throws DatabaseException;

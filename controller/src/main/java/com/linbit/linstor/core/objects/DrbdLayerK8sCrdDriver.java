@@ -19,7 +19,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent.LayerDrbdResourcesSpec;
@@ -61,7 +61,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
-    private final ResourceLayerIdDatabaseDriver idDriver;
+    private final LayerResourceIdDatabaseDriver idDriver;
     private final TransactionObjectFactory transObjFactory;
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
@@ -97,7 +97,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
     public DrbdLayerK8sCrdDriver(
         @SystemContext AccessContext accCtxRef,
         ErrorReporter errorReporterRef,
-        ResourceLayerIdDatabaseDriver idDriverRef,
+        LayerResourceIdDatabaseDriver idDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrK8sCrd> transMgrProviderRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
@@ -126,7 +126,7 @@ public class DrbdLayerK8sCrdDriver implements DrbdLayerCtrlDatabaseDriver
     }
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return idDriver;
     }

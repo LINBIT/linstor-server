@@ -7,7 +7,7 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 
 public interface LuksLayerDatabaseDriver
 {
-    ResourceLayerIdDatabaseDriver getIdDriver();
+    LayerResourceIdDatabaseDriver getIdDriver();
 
     void persist(LuksRscData<?> luksRscDataRef) throws DatabaseException;
 

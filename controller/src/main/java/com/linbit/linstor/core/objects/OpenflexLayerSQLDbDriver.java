@@ -13,7 +13,7 @@ import com.linbit.linstor.core.objects.StorPool.InitMaps;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -112,7 +112,7 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
-    private final ResourceLayerIdDatabaseDriver idDriver;
+    private final LayerResourceIdDatabaseDriver idDriver;
 
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
@@ -129,7 +129,7 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
     public OpenflexLayerSQLDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
-        ResourceLayerIdDatabaseDriver idDriverRef,
+        LayerResourceIdDatabaseDriver idDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef,
         @Named(NameShortener.OPENFLEX) NameShortener nameShortenerRef
@@ -146,7 +146,7 @@ public class OpenflexLayerSQLDbDriver implements OpenflexLayerCtrlDatabaseDriver
     }
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return idDriver;
     }

@@ -4,7 +4,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
@@ -20,7 +20,7 @@ public class SatelliteDrbdLayerDriver implements DrbdLayerDatabaseDriver
 {
     private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
     private final StateFlagsPersistence<?> noopStateFlagsDriver = new NoOpFlagDriver();
-    private final ResourceLayerIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteResourceLayerIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
 
     @Inject
     public SatelliteDrbdLayerDriver()
@@ -88,7 +88,7 @@ public class SatelliteDrbdLayerDriver implements DrbdLayerDatabaseDriver
     }
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return noopResourceLayerIdDriver;
     }

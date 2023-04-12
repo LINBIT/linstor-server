@@ -8,7 +8,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -47,7 +47,7 @@ public class WritecacheLayerSQLDbDriver implements WritecacheLayerCtrlDatabaseDr
 {
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
-    private final ResourceLayerIdDatabaseDriver idDriver;
+    private final LayerResourceIdDatabaseDriver idDriver;
 
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
@@ -78,7 +78,7 @@ public class WritecacheLayerSQLDbDriver implements WritecacheLayerCtrlDatabaseDr
     public WritecacheLayerSQLDbDriver(
         @SystemContext AccessContext accCtx,
         ErrorReporter errorReporterRef,
-        ResourceLayerIdDatabaseDriver idDriverRef,
+        LayerResourceIdDatabaseDriver idDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
@@ -250,7 +250,7 @@ public class WritecacheLayerSQLDbDriver implements WritecacheLayerCtrlDatabaseDr
     }
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return idDriver;
     }

@@ -6,7 +6,7 @@ import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 
 public interface CacheLayerDatabaseDriver
 {
-    ResourceLayerIdDatabaseDriver getIdDriver();
+    LayerResourceIdDatabaseDriver getIdDriver();
 
     void persist(CacheRscData<?> cacheRscDataRef) throws DatabaseException;
     void delete(CacheRscData<?> cacheRscDataRef) throws DatabaseException;

@@ -18,7 +18,7 @@ import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -69,7 +69,7 @@ import java.util.TreeMap;
 @Singleton
 public class LayerDataFactory
 {
-    private final ResourceLayerIdDatabaseDriver resourceLayerIdDatabaseDriver;
+    private final LayerResourceIdDatabaseDriver layerRscIdDatabaseDriver;
 
     private final LuksLayerDatabaseDriver luksDbDriver;
     private final DrbdLayerDatabaseDriver drbdDbDriver;
@@ -87,7 +87,7 @@ public class LayerDataFactory
 
     @Inject
     public LayerDataFactory(
-        ResourceLayerIdDatabaseDriver resourceLayerIdDatabaseDriverRef,
+        LayerResourceIdDatabaseDriver layerRscIdDatabaseDriverRef,
         LuksLayerDatabaseDriver luksDbDriverRef,
         DrbdLayerDatabaseDriver drbdDbDriverRef,
         StorageLayerDatabaseDriver storageDbDriverRef,
@@ -102,7 +102,7 @@ public class LayerDataFactory
         TransactionObjectFactory transObjFactoryRef
     )
     {
-        resourceLayerIdDatabaseDriver = resourceLayerIdDatabaseDriverRef;
+        layerRscIdDatabaseDriver = layerRscIdDatabaseDriverRef;
         luksDbDriver = luksDbDriverRef;
         drbdDbDriver = drbdDbDriverRef;
         storageDbDriver = storageDbDriverRef;
@@ -163,7 +163,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-        resourceLayerIdDatabaseDriver.persist(drbdRscData);
+        layerRscIdDatabaseDriver.create(drbdRscData);
         drbdDbDriver.create(drbdRscData);
         return drbdRscData;
     }
@@ -290,7 +290,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-        resourceLayerIdDatabaseDriver.persist(luksRscData);
+        layerRscIdDatabaseDriver.create(luksRscData);
         luksDbDriver.persist(luksRscData);
         return luksRscData;
     }
@@ -332,7 +332,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-        resourceLayerIdDatabaseDriver.persist(storageRscData);
+        layerRscIdDatabaseDriver.create(storageRscData);
         storageDbDriver.persist(storageRscData);
         return storageRscData;
     }
@@ -356,7 +356,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-        resourceLayerIdDatabaseDriver.persist(nvmeRscData);
+        layerRscIdDatabaseDriver.create(nvmeRscData);
         nvmeDbDriver.create(nvmeRscData);
         return nvmeRscData;
     }
@@ -419,7 +419,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-        resourceLayerIdDatabaseDriver.persist(ofRscData);
+        layerRscIdDatabaseDriver.create(ofRscData);
         openflexDbDriver.create(ofRscData);
         return ofRscData;
     }
@@ -461,7 +461,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-        resourceLayerIdDatabaseDriver.persist(writecacheRscData);
+        layerRscIdDatabaseDriver.create(writecacheRscData);
         writecacheDbDriver.persist(writecacheRscData);
         return writecacheRscData;
     }
@@ -503,7 +503,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-        resourceLayerIdDatabaseDriver.persist(cacheRscData);
+        layerRscIdDatabaseDriver.create(cacheRscData);
         cacheDbDriver.persist(cacheRscData);
         return cacheRscData;
     }
@@ -547,7 +547,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-        resourceLayerIdDatabaseDriver.persist(bcacheRscData);
+        layerRscIdDatabaseDriver.create(bcacheRscData);
         bcacheDbDriver.persist(bcacheRscData);
         return bcacheRscData;
     }

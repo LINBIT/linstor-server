@@ -8,7 +8,7 @@ import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
 
 public interface OpenflexLayerDatabaseDriver
 {
-    ResourceLayerIdDatabaseDriver getIdDriver();
+    LayerResourceIdDatabaseDriver getIdDriver();
 
     // OpenflexRscDfnData methos
     void create(OpenflexRscDfnData<?> ofRscDfnDataRef) throws DatabaseException;

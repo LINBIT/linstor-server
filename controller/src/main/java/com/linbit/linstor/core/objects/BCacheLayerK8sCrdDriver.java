@@ -12,7 +12,7 @@ import com.linbit.linstor.core.objects.db.utils.K8sCrdUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent.LayerBcacheVolumesSpec;
@@ -44,7 +44,7 @@ public class BCacheLayerK8sCrdDriver implements BCacheLayerCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
-    private final ResourceLayerIdDatabaseDriver idDriver;
+    private final LayerResourceIdDatabaseDriver idDriver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrK8sCrd> transMgrProvider;
 
@@ -56,7 +56,7 @@ public class BCacheLayerK8sCrdDriver implements BCacheLayerCtrlDatabaseDriver
     public BCacheLayerK8sCrdDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
-        ResourceLayerIdDatabaseDriver idDriverRef,
+        LayerResourceIdDatabaseDriver idDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrK8sCrd> transMgrProviderRef
     )
@@ -73,7 +73,7 @@ public class BCacheLayerK8sCrdDriver implements BCacheLayerCtrlDatabaseDriver
     }
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return idDriver;
     }

@@ -14,7 +14,7 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerBcacheVolumes;
 import com.linbit.linstor.dbdrivers.etcd.BaseEtcdDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
@@ -42,7 +42,7 @@ public class BCacheLayerETCDDriver extends BaseEtcdDriver implements BCacheLayer
 
     private final AccessContext dbCtx;
     private final ErrorReporter errorReporter;
-    private final ResourceLayerIdDatabaseDriver idDriver;
+    private final LayerResourceIdDatabaseDriver idDriver;
     private final TransactionObjectFactory transObjFactory;
 
     private final SingleColumnDatabaseDriver<BCacheVlmData<?>, UUID> vlmDevUuidDriver;
@@ -51,7 +51,7 @@ public class BCacheLayerETCDDriver extends BaseEtcdDriver implements BCacheLayer
     public BCacheLayerETCDDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
-        ResourceLayerIdDatabaseDriver idDriverRef,
+        LayerResourceIdDatabaseDriver idDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrETCD> transMgrProviderRef
     )
@@ -66,7 +66,7 @@ public class BCacheLayerETCDDriver extends BaseEtcdDriver implements BCacheLayer
     }
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return idDriver;
     }

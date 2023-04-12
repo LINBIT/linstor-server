@@ -6,7 +6,7 @@ import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 
 public interface NvmeLayerDatabaseDriver
 {
-    ResourceLayerIdDatabaseDriver getIdDriver();
+    LayerResourceIdDatabaseDriver getIdDriver();
 
     // NvmeRscData methods
     void create(NvmeRscData<?> drbdRscData) throws DatabaseException;

@@ -8,7 +8,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 
 public interface StorageLayerDatabaseDriver
 {
-    ResourceLayerIdDatabaseDriver getIdDriver();
+    LayerResourceIdDatabaseDriver getIdDriver();
 
     void persist(StorageRscData<?> storageRscDataRef) throws DatabaseException;
     void delete(StorageRscData<?> storgeRscDataRef) throws DatabaseException;

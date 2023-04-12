@@ -8,7 +8,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -37,7 +37,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     protected final int rscLayerId;
     protected final RSC rsc;
     protected final String rscSuffix;
-    protected final ResourceLayerIdDatabaseDriver dbDriver;
+    protected final LayerResourceIdDatabaseDriver dbDriver;
 
     // persisted, serialized
     protected final TransactionMap<VolumeNumber, VLM_TYPE> vlmMap;
@@ -57,7 +57,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
         @Nullable AbsRscLayerObject<RSC> parentRef,
         Set<AbsRscLayerObject<RSC>> childrenRef,
         String rscNameSuffixRef,
-        ResourceLayerIdDatabaseDriver dbDriverRef,
+        LayerResourceIdDatabaseDriver dbDriverRef,
         Map<VolumeNumber, VLM_TYPE> vlmProviderObjectsRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef

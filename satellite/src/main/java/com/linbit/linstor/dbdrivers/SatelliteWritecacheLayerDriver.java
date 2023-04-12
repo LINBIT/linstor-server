@@ -1,6 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
@@ -11,7 +11,7 @@ import javax.inject.Inject;
 public class SatelliteWritecacheLayerDriver implements WritecacheLayerDatabaseDriver
 {
     private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
-    private final ResourceLayerIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteResourceLayerIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
 
     @Inject
     public SatelliteWritecacheLayerDriver()
@@ -20,7 +20,7 @@ public class SatelliteWritecacheLayerDriver implements WritecacheLayerDatabaseDr
 
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return noopResourceLayerIdDriver;
     }

@@ -18,7 +18,7 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.LayerStorageVolumes;
 import com.linbit.linstor.dbdrivers.etcd.BaseEtcdDriver;
 import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -62,7 +62,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     private static final int PK_V_VLM_NR_IDX = 1;
 
     private final ErrorReporter errorReporter;
-    private final ResourceLayerIdDatabaseDriver rscIdDriver;
+    private final LayerResourceIdDatabaseDriver rscIdDriver;
     private final TransactionObjectFactory transObjFactory;
     private final AccessContext dbCtx;
 
@@ -76,7 +76,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
         ErrorReporter errorReporterRef,
         Provider<TransactionMgrETCD> transMgrProviderRef,
         TransactionObjectFactory transObjFactoryRef,
-        ResourceLayerIdDatabaseDriver rscIdDriverRef
+        LayerResourceIdDatabaseDriver rscIdDriverRef
     )
     {
         super(transMgrProviderRef);
@@ -97,7 +97,7 @@ public class StorageLayerETCDDriver extends BaseEtcdDriver implements StorageLay
     }
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return rscIdDriver;
     }

@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
@@ -11,7 +11,7 @@ import javax.inject.Inject;
 public class SatelliteCacheLayerDriver implements CacheLayerDatabaseDriver
 {
     private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
-    private final ResourceLayerIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteResourceLayerIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
 
     @Inject
     public SatelliteCacheLayerDriver()
@@ -20,7 +20,7 @@ public class SatelliteCacheLayerDriver implements CacheLayerDatabaseDriver
 
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return noopResourceLayerIdDriver;
     }

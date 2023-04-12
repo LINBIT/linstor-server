@@ -15,7 +15,7 @@ import com.linbit.linstor.core.objects.StorageLayerSQLDbDriver.StorVlmInfoData;
 import com.linbit.linstor.core.objects.db.utils.K8sCrdUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
@@ -57,7 +57,7 @@ import java.util.TreeMap;
 public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
 {
     private final ErrorReporter errorReporter;
-    private final ResourceLayerIdDatabaseDriver rscIdDriver;
+    private final LayerResourceIdDatabaseDriver rscIdDriver;
     private final TransactionObjectFactory transObjFactory;
     private final AccessContext dbCtx;
     private final Provider<TransactionMgrK8sCrd> transMgrProvider;
@@ -72,7 +72,7 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
         ErrorReporter errorReporterRef,
         Provider<TransactionMgrK8sCrd> transMgrProviderRef,
         TransactionObjectFactory transObjFactoryRef,
-        ResourceLayerIdDatabaseDriver rscIdDriverRef
+        LayerResourceIdDatabaseDriver rscIdDriverRef
     )
     {
         dbCtx = dbCtxRef;
@@ -85,7 +85,7 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
     }
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return rscIdDriver;
     }

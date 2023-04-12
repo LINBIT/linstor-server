@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.core.objects.AbsResource;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.storage.data.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -11,12 +11,12 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class SatelliteResourceLayerIdDriver implements ResourceLayerIdDatabaseDriver
+public class SatelliteLayerResourceIdDriver implements LayerResourceIdDatabaseDriver
 {
     private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
 
     @Inject
-    public SatelliteResourceLayerIdDriver()
+    public SatelliteLayerResourceIdDriver()
     {
     }
 
@@ -27,7 +27,7 @@ public class SatelliteResourceLayerIdDriver implements ResourceLayerIdDatabaseDr
     }
 
     @Override
-    public void persist(AbsRscLayerObject<?> rscLayerObjectRef)
+    public void create(AbsRscLayerObject<?> dataRef) throws DatabaseException
     {
         // no-op
     }

@@ -18,7 +18,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.DbEngine;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -196,7 +196,7 @@ public abstract class AbsLayerRscDataDbDriver<
     protected final TransactionObjectFactory transObjFactory;
     protected final Provider<TransactionMgrSQL> transMgrProvider;
 
-    private final ResourceLayerIdDatabaseDriver rscLayerIdDriver;
+    private final LayerResourceIdDatabaseDriver rscLayerIdDriver;
     private final AbsLayerRscDfnDataDbDriver<RSC_DFN_DATA, RSC_DATA> rscDfnDriver;
     private final AbsLayerVlmDfnDataDbDriver<RSC_DFN_DATA, VLM_DFN_DATA> vlmDfnDriver;
     private final AbsLayerVlmDataDbDriver<VLM_DFN_DATA, RSC_DATA, VLM_DATA> vlmDriver;
@@ -220,7 +220,7 @@ public abstract class AbsLayerRscDataDbDriver<
         Column layerRscIdColumnRef,
         DbEngine dbEngineRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
-        ResourceLayerIdDatabaseDriver rscLayerIdDriverRef,
+        LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
         AbsLayerRscDfnDataDbDriver<RSC_DFN_DATA, RSC_DATA> rscDfnDriverRef,
         AbsLayerVlmDfnDataDbDriver<RSC_DFN_DATA, VLM_DFN_DATA> vlmDfnDriverRef,
         AbsLayerVlmDataDbDriver<VLM_DFN_DATA, RSC_DATA, VLM_DATA> vlmDriverRef,
@@ -486,7 +486,7 @@ public abstract class AbsLayerRscDataDbDriver<
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
         MdException;
 
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return rscLayerIdDriver;
     }

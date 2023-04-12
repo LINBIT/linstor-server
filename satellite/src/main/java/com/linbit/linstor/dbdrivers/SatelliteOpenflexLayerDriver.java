@@ -1,7 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
@@ -12,7 +12,7 @@ import javax.inject.Inject;
 public class SatelliteOpenflexLayerDriver implements OpenflexLayerDatabaseDriver
 {
     private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
-    private final ResourceLayerIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteResourceLayerIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
 
     @Inject
     public SatelliteOpenflexLayerDriver()
@@ -21,7 +21,7 @@ public class SatelliteOpenflexLayerDriver implements OpenflexLayerDatabaseDriver
 
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return noopResourceLayerIdDriver;
     }

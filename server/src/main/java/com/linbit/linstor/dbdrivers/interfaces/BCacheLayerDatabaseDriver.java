@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public interface BCacheLayerDatabaseDriver
 {
-    ResourceLayerIdDatabaseDriver getIdDriver();
+    LayerResourceIdDatabaseDriver getIdDriver();
 
     void persist(BCacheRscData<?> bcacheRscDataRef) throws DatabaseException;
     void delete(BCacheRscData<?> bcacheRscDataRef) throws DatabaseException;

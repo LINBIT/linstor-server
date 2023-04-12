@@ -13,7 +13,7 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -94,7 +94,7 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
 
     private final ErrorReporter errorReporter;
     private final AccessContext dbCtx;
-    private final ResourceLayerIdDatabaseDriver rscIdDriver;
+    private final LayerResourceIdDatabaseDriver rscIdDriver;
     private final TransactionObjectFactory transObjFactory;
     private final Provider<TransactionMgrSQL> transMgrProvider;
 
@@ -106,7 +106,7 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
     public StorageLayerSQLDbDriver(
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext accCtx,
-        ResourceLayerIdDatabaseDriver rscIdDriverRef,
+        LayerResourceIdDatabaseDriver rscIdDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
@@ -121,7 +121,7 @@ public class StorageLayerSQLDbDriver implements StorageLayerCtrlDatabaseDriver
     }
 
     @Override
-    public ResourceLayerIdDatabaseDriver getIdDriver()
+    public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return rscIdDriver;
     }

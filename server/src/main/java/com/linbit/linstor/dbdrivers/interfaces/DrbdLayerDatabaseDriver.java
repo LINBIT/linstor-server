@@ -14,7 +14,7 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.Transp
 
 public interface DrbdLayerDatabaseDriver
 {
-    ResourceLayerIdDatabaseDriver getIdDriver();
+    LayerResourceIdDatabaseDriver getIdDriver();
 
     // DrbdRscData methods
     void create(DrbdRscData<?> drbdRscData) throws DatabaseException;
@@ -38,5 +38,4 @@ public interface DrbdLayerDatabaseDriver
     // DrbdVlmDfnData
     void persist(DrbdVlmDfnData<?> drbdVlmDfnData) throws DatabaseException;
     void delete(DrbdVlmDfnData<?> drbdVlmDfnData) throws DatabaseException;
-
 }

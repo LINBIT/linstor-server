@@ -16,7 +16,7 @@ import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
 import com.linbit.linstor.core.objects.ResourceGroupDbDriver;
-import com.linbit.linstor.core.objects.ResourceLayerIdSQLDbDriver;
+import com.linbit.linstor.core.objects.LayerResourceIdDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDbDriver;
 import com.linbit.linstor.core.objects.SnapshotDefinitionDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDbDriver;
@@ -42,7 +42,7 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.ResourceLayerIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
@@ -115,7 +115,7 @@ public class TestDbModule extends AbstractModule
         bind(SnapshotDatabaseDriver.class).to(SnapshotDbDriver.class);
         bind(SnapshotVolumeDatabaseDriver.class).to(SnapshotVolumeDbDriver.class);
 
-        bind(ResourceLayerIdDatabaseDriver.class).to(ResourceLayerIdSQLDbDriver.class);
+        bind(LayerResourceIdDatabaseDriver.class).to(LayerResourceIdDbDriver.class);
         bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerSQLDbDriver.class);
         bind(LuksLayerDatabaseDriver.class).to(LuksLayerSQLDbDriver.class);
         bind(StorageLayerDatabaseDriver.class).to(StorageLayerSQLDbDriver.class);
