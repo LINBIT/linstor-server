@@ -1,8 +1,10 @@
 package com.linbit.linstor.dbdrivers.k8s.crd;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
@@ -166,7 +168,7 @@ public class K8sCrdEngine implements DbEngine
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoader
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException, InvalidIpAddressException,
-        ValueOutOfRangeException, MdException
+        ValueOutOfRangeException, MdException, ValueInUseException, ExhaustedPoolException
     {
         Map<DATA, INIT_MAPS> loadedObjectsMap = new TreeMap<>();
 
@@ -177,7 +179,7 @@ public class K8sCrdEngine implements DbEngine
             try
             {
                 pair = dataLoader.loadImpl(
-                    new RawParameters(table, linstorSpec.asRawParameters()),
+                    new RawParameters(table, linstorSpec.asRawParameters(), DatabaseType.K8S_CRD),
                     parents
                 );
             }

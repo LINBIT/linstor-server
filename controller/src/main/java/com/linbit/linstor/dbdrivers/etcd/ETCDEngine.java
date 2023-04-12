@@ -1,7 +1,9 @@
 package com.linbit.linstor.dbdrivers.etcd;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
@@ -120,7 +122,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoader
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException, InvalidIpAddressException,
-        ValueOutOfRangeException, MdException
+        ValueOutOfRangeException, MdException, ValueInUseException, ExhaustedPoolException
     {
         Map<DATA, INIT_MAPS> loadedObjectsMap = new TreeMap<>();
         final Column[] columns = table.values();
@@ -154,7 +156,10 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
             Pair<DATA, INIT_MAPS> pair;
             try
             {
-                pair = dataLoader.loadImpl(new RawParameters(table, rawObjects), parents);
+                pair = dataLoader.loadImpl(
+                    new RawParameters(table, rawObjects, DatabaseType.ETCD),
+                    parents
+                );
             }
             catch (LinStorDBRuntimeException exc)
             {

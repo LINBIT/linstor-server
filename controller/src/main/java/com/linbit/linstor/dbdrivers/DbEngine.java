@@ -1,7 +1,9 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.api.ApiCallRc;
@@ -91,7 +93,7 @@ public interface DbEngine
             LOAD_ALL parents
         )
             throws InvalidNameException, InvalidIpAddressException, ValueOutOfRangeException, DatabaseException,
-            MdException;
+            MdException, ValueInUseException, ExhaustedPoolException, AccessDeniedException;
     }
 
     /**
@@ -281,7 +283,7 @@ public interface DbEngine
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoaderRef
     )
         throws DatabaseException, AccessDeniedException, InvalidNameException, InvalidIpAddressException,
-        ValueOutOfRangeException, MdException;
+        ValueOutOfRangeException, MdException, ValueInUseException, ExhaustedPoolException, AccessDeniedException;
 
     String getDbDump() throws DatabaseException;
 

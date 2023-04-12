@@ -1,8 +1,10 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
@@ -23,6 +25,8 @@ import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.sql.JDBCType;
 import java.sql.Types;
@@ -42,7 +46,13 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     protected static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
     private final ErrorReporter errorReporter;
-    private final DatabaseTable table;
+    /**
+     * The database table to read from and write to.
+     * Can be null as some linstor objects (especially layer-related) are skipping "inherited" tables. That means they
+     * do need a (rscData-) driver without having a dedicated table to work with, but are still needed in order to
+     * correctly load vlmData entries from existing database tables
+     */
+    protected final DatabaseTable table;
     private final DbEngine dbEngine;
     private final ObjectProtectionDatabaseDriver objProtDriver;
 
@@ -50,7 +60,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
 
     public AbsDatabaseDriver(
         ErrorReporter errorReporterRef,
-        DatabaseTable tableRef,
+        @Nullable DatabaseTable tableRef,
         DbEngine dbEngineRef,
         ObjectProtectionDatabaseDriver objProtDriverRef
     )
@@ -66,13 +76,16 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     @Override
     public void create(DATA dataRef) throws DatabaseException
     {
-        try
+        if (table != null)
         {
-            dbEngine.create(setters, dataRef, table, this::getId);
-        }
-        catch (AccessDeniedException exc)
-        {
-            throw new ImplementationError("Database driver does not have enough privileges");
+            try
+            {
+                dbEngine.create(setters, dataRef, table, this::getId);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError("Database driver does not have enough privileges");
+            }
         }
     }
 
@@ -81,7 +94,11 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     {
         try
         {
-            dbEngine.delete(setters, dataRef, table, this::getId);
+            if (table != null)
+            {
+                // some drivers simply do not have a table (like LayerStorageRscDbDriver)
+                dbEngine.delete(setters, dataRef, table, this::getId);
+            }
         }
         catch (AccessDeniedException exc)
         {
@@ -105,7 +122,8 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
         {
             throw new ImplementationError("Database context does not have enough privileges");
         }
-        catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException | MdException exc)
+        catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException | MdException |
+            ExhaustedPoolException | ValueInUseException exc)
         {
             // TODO improve exception-handling
             throw new DatabaseException("Failed to restore data", exc);
@@ -234,7 +252,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
         LOAD_ALL parentRef
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
-        MdException;
+        MdException, ExhaustedPoolException, ValueInUseException, RuntimeException, AccessDeniedException;
 
     protected abstract String getId(DATA data) throws AccessDeniedException;
 
@@ -247,11 +265,97 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     {
         private final DatabaseTable table;
         private final Map<String, Object> rawParameters;
+        private final DatabaseType dbType;
 
-        public RawParameters(DatabaseTable tableRef, Map<String, Object> rawParametersRef)
+        public RawParameters(DatabaseTable tableRef, Map<String, Object> rawParametersRef, DatabaseType dbTypeRef)
         {
             table = tableRef;
             rawParameters = rawParametersRef;
+            dbType = dbTypeRef;
+        }
+
+        /**
+         * ETCD always returns Strings for {@link #get(Column)}. This method however will call for ETCD the
+         * {@link #getValueFromEtcd(Column)} before returning the value.
+         * As a result, the value will be parsed based on the {@link Column#getSqlType()}.
+         *
+         * For non-ETCD engines, this method is a simple delegate for {@link #get(Column)}.
+         */
+        public <T> T getParsed(Column col)
+        {
+            T ret;
+            switch (dbType)
+            {
+                case SQL:
+                case K8S_CRD:
+                    ret = get(col);
+                    break;
+                case ETCD:
+                    ret = getValueFromEtcd(col);
+                    break;
+                default:
+                    throw new ImplementationError("Unknown db type: " + dbType);
+            }
+            return ret;
+        }
+
+        /**
+         * This method does the same as {@link #build(Column, Class)}, but instead of depending on {@link #get(Column)}
+         * this method calls {@link #getParsed(Column)}.
+         */
+        public <T, R, EXC extends Exception> R buildParsed(
+            Column col,
+            ExceptionThrowingFunction<T, R, EXC> func
+        )
+            throws EXC
+        {
+            T data = getParsed(col);
+            R ret = null;
+            if (data != null)
+            {
+                ret = func.accept(data);
+            }
+            return ret;
+        }
+
+        @SuppressWarnings("unchecked")
+        private <T> T getValueFromEtcd(Column col) throws ImplementationError
+        {
+            T ret;
+            String etcdVal = (String) rawParameters.get(col.getName());
+            switch (col.getSqlType())
+            {
+                case Types.CHAR:
+                case Types.VARCHAR:
+                case Types.LONGVARBINARY:
+                    ret = (T) etcdVal;
+                    break;
+                case Types.BIT:
+                    ret = (T) ((Boolean) Boolean.parseBoolean(etcdVal));
+                    break;
+                case Types.TINYINT:
+                    ret = (T) ((Byte) Byte.parseByte(etcdVal));
+                    break;
+                case Types.SMALLINT:
+                    ret = (T) ((Short) Short.parseShort(etcdVal));
+                    break;
+                case Types.INTEGER:
+                    ret = (T) ((Integer) Integer.parseInt(etcdVal));
+                    break;
+                case Types.BIGINT:
+                    ret = (T) ((Long) Long.parseLong(etcdVal));
+                    break;
+                case Types.REAL:
+                case Types.FLOAT:
+                    ret = (T) ((Float) Float.parseFloat(etcdVal));
+                    break;
+                case Types.DOUBLE:
+                    ret = (T) ((Double) Double.parseDouble(etcdVal));
+                    break;
+                default:
+                    throw new ImplementationError("Unhandled SQL type: " + col.getSqlType());
+            }
+            return ret;
         }
 
         @SuppressWarnings("unchecked")
@@ -327,6 +431,26 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
             }
 
             return ret;
+        }
+
+        public Short etcdGetShort(Column column)
+        {
+            return this.<String, Short, RuntimeException>build(column, Short::parseShort);
+        }
+
+        public Integer etcdGetInt(Column column)
+        {
+            return this.<String, Integer, RuntimeException>build(column, Integer::parseInt);
+        }
+
+        public Long etcdGetLong(Column column)
+        {
+            return this.<String, Long, RuntimeException>build(column, Long::parseLong);
+        }
+
+        public Boolean etcdGetBoolean(Column column)
+        {
+            return this.<String, Boolean, RuntimeException>build(column, Boolean::parseBoolean);
         }
     }
 }

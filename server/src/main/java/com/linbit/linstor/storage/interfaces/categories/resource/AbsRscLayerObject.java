@@ -2,9 +2,12 @@ package com.linbit.linstor.storage.interfaces.categories.resource;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -112,9 +115,25 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
         return ret;
     }
 
+    default NodeName getNodeName()
+    {
+        return getAbsResource().getNode().getName();
+    }
+
     default ResourceName getResourceName()
     {
         return getAbsResource().getResourceDefinition().getName();
+    }
+
+    default @Nullable SnapshotName getSnapName()
+    {
+        SnapshotName snapName = null;
+        RSC absRsc = getAbsResource();
+        if (absRsc instanceof Snapshot)
+        {
+            snapName = ((Snapshot) absRsc).getSnapshotName();
+        }
+        return snapName;
     }
 
     default String getSuffixedResourceName()

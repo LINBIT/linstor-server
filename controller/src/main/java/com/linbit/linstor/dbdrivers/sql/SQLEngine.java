@@ -1,7 +1,9 @@
 package com.linbit.linstor.dbdrivers.sql;
 
+import com.linbit.ExhaustedPoolException;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
+import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
@@ -368,13 +370,14 @@ public class SQLEngine implements DbEngine
         Pair<DATA, INIT_MAPS> pair;
         try
         {
-            pair = dataLoader.loadImpl(new RawParameters(table, objects), parents);
+            pair = dataLoader.loadImpl(new RawParameters(table, objects, DatabaseType.SQL), parents);
         }
         catch (LinStorDBRuntimeException exc)
         {
             throw exc;
         }
-        catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException | RuntimeException exc)
+        catch (InvalidNameException | InvalidIpAddressException | ValueOutOfRangeException | RuntimeException |
+            AccessDeniedException | ValueInUseException | ExhaustedPoolException exc)
         {
             StringBuilder pk = new StringBuilder("Primary key: ");
             for (Column col : columns)
