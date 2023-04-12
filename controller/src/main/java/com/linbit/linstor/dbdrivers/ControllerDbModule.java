@@ -15,6 +15,8 @@ import com.linbit.linstor.core.objects.LayerDrbdRscDbDriver;
 import com.linbit.linstor.core.objects.LayerDrbdRscDfnDbDriver;
 import com.linbit.linstor.core.objects.LayerDrbdVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerDrbdVlmDfnDbDriver;
+import com.linbit.linstor.core.objects.LayerStorageRscDbDriver;
+import com.linbit.linstor.core.objects.LayerStorageVlmDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerETCDDriver;
 import com.linbit.linstor.core.objects.LuksLayerK8sCrdDriver;
 import com.linbit.linstor.core.objects.LuksLayerSQLDbDriver;
@@ -40,9 +42,6 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDbDriver;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDbDriver;
 import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
-import com.linbit.linstor.core.objects.StorageLayerETCDDriver;
-import com.linbit.linstor.core.objects.StorageLayerK8sCrdDriver;
-import com.linbit.linstor.core.objects.StorageLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
@@ -74,6 +73,9 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
@@ -111,8 +113,6 @@ import com.linbit.linstor.dbdrivers.interfaces.StorPoolCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeCtrlDatabaseDriver;
@@ -222,6 +222,12 @@ public class ControllerDbModule extends AbstractModule
         bind(LayerDrbdVlmDfnDatabaseDriver.class).to(LayerDrbdVlmDfnDbDriver.class);
         bind(LayerDrbdRscDatabaseDriver.class).to(LayerDrbdRscDbDriver.class);
         bind(LayerDrbdVlmDatabaseDriver.class).to(LayerDrbdVlmDbDriver.class);
+
+        layerRscDatabaseDrivers.addBinding(DeviceLayerKind.STORAGE).to(LayerStorageRscDbDriver.class);
+        bind(LayerStorageRscCtrlDatabaseDriver.class).to(LayerStorageRscDbDriver.class);
+        bind(LayerStorageRscDatabaseDriver.class).to(LayerStorageRscDbDriver.class);
+        bind(LayerStorageVlmDatabaseDriver.class).to(LayerStorageVlmDbDriver.class);
+
         switch (dbType)
         {
             case SQL:
@@ -238,8 +244,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
 
-                bind(StorageLayerCtrlDatabaseDriver.class).to(StorageLayerSQLDbDriver.class);
-                bind(StorageLayerDatabaseDriver.class).to(StorageLayerSQLDbDriver.class);
                 bind(LuksLayerCtrlDatabaseDriver.class).to(LuksLayerSQLDbDriver.class);
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerSQLDbDriver.class);
                 bind(NvmeLayerCtrlDatabaseDriver.class).to(NvmeLayerSQLDbDriver.class);
@@ -270,8 +274,6 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(LuksLayerCtrlDatabaseDriver.class).to(LuksLayerETCDDriver.class);
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerETCDDriver.class);
-                bind(StorageLayerCtrlDatabaseDriver.class).to(StorageLayerETCDDriver.class);
-                bind(StorageLayerDatabaseDriver.class).to(StorageLayerETCDDriver.class);
                 bind(NvmeLayerCtrlDatabaseDriver.class).to(NvmeLayerETCDDriver.class);
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerETCDDriver.class);
                 bind(OpenflexLayerCtrlDatabaseDriver.class).to(OpenflexLayerETCDDriver.class);
@@ -300,8 +302,6 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(LuksLayerCtrlDatabaseDriver.class).to(LuksLayerK8sCrdDriver.class);
                 bind(LuksLayerDatabaseDriver.class).to(LuksLayerK8sCrdDriver.class);
-                bind(StorageLayerCtrlDatabaseDriver.class).to(StorageLayerK8sCrdDriver.class);
-                bind(StorageLayerDatabaseDriver.class).to(StorageLayerK8sCrdDriver.class);
                 bind(NvmeLayerCtrlDatabaseDriver.class).to(NvmeLayerK8sCrdDriver.class);
                 bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerK8sCrdDriver.class);
                 bind(OpenflexLayerCtrlDatabaseDriver.class).to(OpenflexLayerK8sCrdDriver.class);

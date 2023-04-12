@@ -8,6 +8,8 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
@@ -26,7 +28,6 @@ import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
@@ -80,8 +81,10 @@ public class SatelliteDbModule extends AbstractModule
         bind(LayerDrbdRscDatabaseDriver.class).to(SatelliteLayerDrbdRscDbDriver.class);
         bind(LayerDrbdVlmDatabaseDriver.class).to(SatelliteLayerDrbdVlmDbDriver.class);
 
+        bind(LayerStorageRscDatabaseDriver.class).to(SatelliteLayerStorageRscDbDriver.class);
+        bind(LayerStorageVlmDatabaseDriver.class).to(SatelliteLayerStorageVlmDbDriver.class);
+
         bind(LuksLayerDatabaseDriver.class).to(SatelliteLuksDriver.class);
-        bind(StorageLayerDatabaseDriver.class).to(SatelliteStorageLayerDriver.class);
         bind(NvmeLayerDatabaseDriver.class).to(SatelliteNvmeLayerDriver.class);
         bind(OpenflexLayerDatabaseDriver.class).to(SatelliteOpenflexLayerDriver.class);
         bind(WritecacheLayerDatabaseDriver.class).to(SatelliteWritecacheLayerDriver.class);

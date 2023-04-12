@@ -6,7 +6,7 @@ import com.linbit.linstor.api.pojo.StorageRscPojo.StorageSpacesVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
@@ -32,7 +32,7 @@ public class StorageSpacesData<RSC extends AbsResource<RSC>>
         StorageRscData<RSC> rscDataRef,
         DeviceProviderKind kindRef,
         StorPool storPoolRef,
-        StorageLayerDatabaseDriver dbDriverRef,
+        LayerStorageVlmDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )

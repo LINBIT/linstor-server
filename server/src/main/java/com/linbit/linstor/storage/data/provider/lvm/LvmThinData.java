@@ -6,7 +6,7 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -29,7 +29,7 @@ public class LvmThinData<RSC extends AbsResource<RSC>>
         AbsVolume<RSC> vlm,
         StorageRscData<RSC> rscData,
         StorPool storPoolRef,
-        StorageLayerDatabaseDriver dbDriverRef,
+        LayerStorageVlmDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -38,7 +38,8 @@ public class LvmThinData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws DatabaseException, AccessDeniedException
+    public void setStorPool(AccessContext accCtxRef, StorPool storPoolRef)
+        throws DatabaseException, AccessDeniedException
     {
         super.setStorPool(accCtxRef, storPoolRef);
         thinPool = null; // force LvmThinProvider to repeat the lookup using the new storage pool

@@ -18,11 +18,12 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -79,7 +80,8 @@ public class LayerDataFactory
     private final LayerDrbdVlmDfnDatabaseDriver layerDrbdVlmDfnDbDriver;
     private final LayerDrbdRscDatabaseDriver layerDrbdRscDbDriver;
     private final LayerDrbdVlmDatabaseDriver layerDrbdVlmDbDriver;
-    private final StorageLayerDatabaseDriver storageDbDriver;
+    private final LayerStorageRscDatabaseDriver layerStorRscDbDriver;
+    private final LayerStorageVlmDatabaseDriver layerStorVlmDbDriver;
     private final NvmeLayerDatabaseDriver nvmeDbDriver;
     private final OpenflexLayerDatabaseDriver openflexDbDriver;
     private final WritecacheLayerDatabaseDriver writecacheDbDriver;
@@ -99,7 +101,8 @@ public class LayerDataFactory
         LayerDrbdVlmDfnDatabaseDriver layerDrbdVlmDfnDbDriverRef,
         LayerDrbdRscDatabaseDriver layerDrbdRscDbDriverRef,
         LayerDrbdVlmDatabaseDriver layerDrbdVlmDbDriverRef,
-        StorageLayerDatabaseDriver storageDbDriverRef,
+        LayerStorageRscDatabaseDriver layerStorRscDbDriverRef,
+        LayerStorageVlmDatabaseDriver layerStorVlmDbDriverRef,
         NvmeLayerDatabaseDriver nvmeDbDriverRef,
         OpenflexLayerDatabaseDriver openflexDbDriverRef,
         WritecacheLayerDatabaseDriver writecacheDbDriverRef,
@@ -117,7 +120,8 @@ public class LayerDataFactory
         layerDrbdVlmDfnDbDriver = layerDrbdVlmDfnDbDriverRef;
         layerDrbdRscDbDriver = layerDrbdRscDbDriverRef;
         layerDrbdVlmDbDriver = layerDrbdVlmDbDriverRef;
-        storageDbDriver = storageDbDriverRef;
+        layerStorRscDbDriver = layerStorRscDbDriverRef;
+        layerStorVlmDbDriver = layerStorVlmDbDriverRef;
         nvmeDbDriver = nvmeDbDriverRef;
         openflexDbDriver = openflexDbDriverRef;
         writecacheDbDriver = writecacheDbDriverRef;
@@ -276,11 +280,11 @@ public class LayerDataFactory
             rscData,
             usableSize,
             storPoolRef,
-            storageDbDriver,
+            layerStorVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(disklessData);
+        layerStorVlmDbDriver.create(disklessData);
         return disklessData;
     }
 
@@ -341,12 +345,13 @@ public class LayerDataFactory
             rsc,
             rscNameSuffix,
             new TreeMap<>(),
-            storageDbDriver,
+            layerStorRscDbDriver,
+            layerStorVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
         layerRscIdDatabaseDriver.create(storageRscData);
-        storageDbDriver.persist(storageRscData);
+        layerStorRscDbDriver.create(storageRscData);
         return storageRscData;
     }
 
@@ -595,11 +600,11 @@ public class LayerDataFactory
             vlm,
             rscData,
             storPoolRef,
-            storageDbDriver,
+            layerStorVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(lvmData);
+        layerStorVlmDbDriver.create(lvmData);
         return lvmData;
     }
 
@@ -614,11 +619,11 @@ public class LayerDataFactory
             vlm,
             rscData,
             storPoolRef,
-            storageDbDriver,
+            layerStorVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(lvmThinData);
+        layerStorVlmDbDriver.create(lvmThinData);
         return lvmThinData;
     }
 
@@ -635,11 +640,11 @@ public class LayerDataFactory
             rscData,
             kind,
             storPoolRef,
-            storageDbDriver,
+            layerStorVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(storageSpacesData);
+        layerStorVlmDbDriver.create(storageSpacesData);
         return storageSpacesData;
     }
 
@@ -656,11 +661,11 @@ public class LayerDataFactory
             rscData,
             kind,
             storPool,
-            storageDbDriver,
+            layerStorVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(spdkData);
+        layerStorVlmDbDriver.create(spdkData);
         return spdkData;
     }
 
@@ -677,11 +682,11 @@ public class LayerDataFactory
             rscData,
             kind,
             storPoolRef,
-            storageDbDriver,
+            layerStorVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(zfsData);
+        layerStorVlmDbDriver.create(zfsData);
         return zfsData;
     }
 
@@ -698,11 +703,11 @@ public class LayerDataFactory
             rscData,
             kind,
             storPool,
-            storageDbDriver,
+            layerStorVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(fileData);
+        layerStorVlmDbDriver.create(fileData);
         return fileData;
     }
 
@@ -717,11 +722,11 @@ public class LayerDataFactory
             vlm,
             rscData,
             storPool,
-            storageDbDriver,
+            layerStorVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(exosData);
+        layerStorVlmDbDriver.create(exosData);
         return exosData;
     }
 
@@ -748,11 +753,11 @@ public class LayerDataFactory
             rscData,
             storPool.getDeviceProviderKind(),
             storPool,
-            storageDbDriver,
+            layerStorVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver.persist(ebsData);
+        layerStorVlmDbDriver.create(ebsData);
         return ebsData;
     }
 }

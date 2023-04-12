@@ -6,7 +6,8 @@ import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsRscData;
@@ -27,7 +28,8 @@ import java.util.Map;
 public class StorageRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, VlmProviderObject<RSC>>
 {
-    private StorageLayerDatabaseDriver storageDbDriver;
+    private final LayerStorageRscDatabaseDriver storageRscDbDriver;
+    private final LayerStorageVlmDatabaseDriver storageVlmDbDriver;
 
     public StorageRscData(
         int rscLayerIdRef,
@@ -35,7 +37,8 @@ public class StorageRscData<RSC extends AbsResource<RSC>>
         RSC rscRef,
         String rscNameSuffixRef,
         Map<VolumeNumber, VlmProviderObject<RSC>> vlmProviderObjectsRef,
-        StorageLayerDatabaseDriver dbDriverRef,
+        LayerStorageRscDatabaseDriver dbDriverRef,
+        LayerStorageVlmDatabaseDriver dbVlmDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -51,7 +54,8 @@ public class StorageRscData<RSC extends AbsResource<RSC>>
             transObjFactory,
             transMgrProvider
         );
-        storageDbDriver = dbDriverRef;
+        storageRscDbDriver = dbDriverRef;
+        storageVlmDbDriver = dbVlmDriverRef;
     }
 
     @Override
@@ -69,13 +73,13 @@ public class StorageRscData<RSC extends AbsResource<RSC>>
     @Override
     protected void deleteVlmFromDatabase(VlmProviderObject<RSC> vlmRef) throws DatabaseException
     {
-        storageDbDriver.delete(vlmRef);
+        storageVlmDbDriver.delete(vlmRef);
     }
 
     @Override
     protected void deleteRscFromDatabase() throws DatabaseException
     {
-        storageDbDriver.delete(this);
+        storageRscDbDriver.delete(this);
     }
 
     @Override

@@ -194,6 +194,14 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
         return dbEngine.generateCollectionToJsonStringArrayDriver(setters, col, this::getId);
     }
 
+    @SafeVarargs
+    protected final <INPUT_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateMultiColumnDriver(
+        SingleColumnDatabaseDriver<DATA, INPUT_TYPE>... singleColumnDriversRef
+    )
+    {
+        return new MultiColumnDriver<>(singleColumnDriversRef);
+    }
+
     protected void setColumnSetter(
         Column colRef,
         ExceptionThrowingFunction<DATA, Object, AccessDeniedException> setterRef
@@ -451,6 +459,27 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
         public Boolean etcdGetBoolean(Column column)
         {
             return this.<String, Boolean, RuntimeException>build(column, Boolean::parseBoolean);
+        }
+    }
+
+    private static class MultiColumnDriver<PARENT, COL_VALUE> implements SingleColumnDatabaseDriver<PARENT, COL_VALUE>
+    {
+        private final SingleColumnDatabaseDriver<PARENT, COL_VALUE>[] updaterArr;
+
+        MultiColumnDriver(
+            SingleColumnDatabaseDriver<PARENT, COL_VALUE>[] updaterArrRef
+        )
+        {
+            updaterArr = updaterArrRef;
+        }
+
+        @Override
+        public void update(PARENT parentRef, COL_VALUE elementRef) throws DatabaseException
+        {
+            for (SingleColumnDatabaseDriver<PARENT, COL_VALUE> updater : updaterArr)
+            {
+                updater.update(parentRef, elementRef);
+            }
         }
     }
 }

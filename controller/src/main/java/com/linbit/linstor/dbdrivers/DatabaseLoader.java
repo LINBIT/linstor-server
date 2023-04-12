@@ -76,7 +76,6 @@ import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionCtrlDatabaseDriver;
@@ -164,7 +163,6 @@ public class DatabaseLoader implements DatabaseDriver
     private final LayerResourceIdCtrlDatabaseDriver layerRscIdDriver;
     private final Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMap;
     private final LuksLayerCtrlDatabaseDriver luksLayerDriver;
-    private final StorageLayerCtrlDatabaseDriver storageLayerDriver;
     private final NvmeLayerCtrlDatabaseDriver nvmeLayerDriver;
     private final OpenflexLayerCtrlDatabaseDriver openflexLayerDriver;
     private final WritecacheLayerCtrlDatabaseDriver writecacheLayerDriver;
@@ -216,7 +214,6 @@ public class DatabaseLoader implements DatabaseDriver
         LayerResourceIdCtrlDatabaseDriver layerRscIdDriverRef,
         Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMapRef,
         LuksLayerCtrlDatabaseDriver luksLayerDriverRef,
-        StorageLayerCtrlDatabaseDriver storageLayerDriverRef,
         NvmeLayerCtrlDatabaseDriver nvmeLayerDriverRef,
         OpenflexLayerCtrlDatabaseDriver openflexLayerDriverRef,
         WritecacheLayerCtrlDatabaseDriver writecacheLayerDriverRef,
@@ -265,7 +262,6 @@ public class DatabaseLoader implements DatabaseDriver
         layerRscIdDriver = layerRscIdDriverRef;
         layerDriversMap = layerDriversMapRef;
         luksLayerDriver = luksLayerDriverRef;
-        storageLayerDriver = storageLayerDriverRef;
         nvmeLayerDriver = nvmeLayerDriverRef;
         openflexLayerDriver = openflexLayerDriverRef;
         writecacheLayerDriver = writecacheLayerDriverRef;
@@ -700,7 +696,6 @@ public class DatabaseLoader implements DatabaseDriver
         throws DatabaseException, AccessDeniedException, ImplementationError, InvalidNameException,
         ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
-        storageLayerDriver.fetchForLoadAll(tmpStorPoolMapWithInitMapsRef);
         openflexLayerDriver.fetchForLoadAll(tmpStorPoolMapWithInitMapsRef, tmpRscDfnMapRef);
 
         bcacheLayerDriver.fetchForLoadAll();
@@ -710,7 +705,6 @@ public class DatabaseLoader implements DatabaseDriver
         nvmeLayerDriver.fetchForLoadAll();
 
         // load RscDfnLayerObjects and VlmDfnLayerObjects
-        storageLayerDriver.fetchForLoadAll(tmpRscDfnMapRef, tmpSnapDfnMapRef);
         // no *DfnLayerObjects for nvme
         // no *DfnLayerObjects for luks
 
@@ -772,7 +766,6 @@ public class DatabaseLoader implements DatabaseDriver
         writecacheLayerDriver.clearLoadAllCache();
         luksLayerDriver.clearLoadAllCache();
         nvmeLayerDriver.clearLoadAllCache();
-        storageLayerDriver.clearLoadAllCache();
 
         CtrlRscLayerDataFactory rscLayerDataHelper = ctrlRscLayerDataHelper.get();
         for (Resource rsc : resourcesWithLayerData)
@@ -873,19 +866,12 @@ public class DatabaseLoader implements DatabaseDriver
                         switch (rlo.getLayerKind())
                         {
                             case DRBD:
+                            case STORAGE:
                                 ControllerLayerRscDatabaseDriver driver = layerDriversMap.get(rlo.getLayerKind());
                                 rscLayerObjectPair = driver.load(rsc, rlo.getRscLayerId());
                                 break;
                             case LUKS:
                                 rscLayerObjectPair = luksLayerDriver.load(
-                                    rsc,
-                                    rlo.getRscLayerId(),
-                                    rlo.getResourceNameSuffix(),
-                                    parent
-                                );
-                                break;
-                            case STORAGE:
-                                rscLayerObjectPair = storageLayerDriver.load(
                                     rsc,
                                     rlo.getRscLayerId(),
                                     rlo.getResourceNameSuffix(),

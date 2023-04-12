@@ -27,13 +27,15 @@ import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdRscDbDriver;
 import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdRscDfnDbDriver;
 import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdVlmDbDriver;
 import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdVlmDfnDbDriver;
+import com.linbit.linstor.dbdrivers.SatelliteLayerStorageRscDbDriver;
+import com.linbit.linstor.dbdrivers.SatelliteLayerStorageVlmDbDriver;
 import com.linbit.linstor.dbdrivers.SatellitePropDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.SatelliteStorageLayerDriver;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.layer.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -101,7 +103,8 @@ public class ConfFileBuilderTest
     private static final LayerDrbdVlmDfnDatabaseDriver LAYER_DRBD_VLM_DFN_NO_OP_DRIVER = new SatelliteLayerDrbdVlmDfnDbDriver();
     private static final LayerDrbdRscDatabaseDriver LAYER_DRBD_RSC_NO_OP_DRIVER = new SatelliteLayerDrbdRscDbDriver();
     private static final LayerDrbdVlmDatabaseDriver LAYER_DRBD_VLM_NO_OP_DRIVER = new SatelliteLayerDrbdVlmDbDriver();
-    private static final StorageLayerDatabaseDriver STORAGE_LAYER_NO_OP_DRIVER = new SatelliteStorageLayerDriver();
+    private static final LayerStorageRscDatabaseDriver LAYER_STORAGE_RSC_NO_OP_DRIVER = new SatelliteLayerStorageRscDbDriver();
+    private static final LayerStorageVlmDatabaseDriver LAYER_STORAGE_VLM_NO_OP_DRIVER = new SatelliteLayerStorageVlmDbDriver();
 
     private ErrorReporter errorReporter;
     private AccessContext accessContext;
@@ -517,7 +520,8 @@ public class ConfFileBuilderTest
                 resource,
                 "",
                 vlmProviderMap,
-                STORAGE_LAYER_NO_OP_DRIVER,
+                LAYER_STORAGE_RSC_NO_OP_DRIVER,
+                LAYER_STORAGE_VLM_NO_OP_DRIVER,
                 transObjFactory,
                 transMgrProvider
             );
@@ -556,7 +560,7 @@ public class ConfFileBuilderTest
                         vlm,
                         storRscData,
                         storPool,
-                        STORAGE_LAYER_NO_OP_DRIVER,
+                        LAYER_STORAGE_VLM_NO_OP_DRIVER,
                         transObjFactory,
                         transMgrProvider
                     )

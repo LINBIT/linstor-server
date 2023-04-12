@@ -7,7 +7,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsVlmData;
@@ -51,7 +51,7 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         AbsVolume<RSC> vlmRef,
         StorageRscData<RSC> rscDataRef,
         StorPool storPoolRef,
-        StorageLayerDatabaseDriver dbDriverRef,
+        LayerStorageVlmDatabaseDriver dbDriverRef,
         DeviceProviderKind providerKindRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider

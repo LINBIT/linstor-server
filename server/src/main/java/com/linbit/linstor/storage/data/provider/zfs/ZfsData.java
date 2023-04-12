@@ -8,7 +8,7 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
@@ -42,7 +42,7 @@ public class ZfsData<RSC extends AbsResource<RSC>>
         StorageRscData<RSC> rscDataRef,
         DeviceProviderKind kindRef,
         StorPool storPoolRef,
-        StorageLayerDatabaseDriver dbDriverRef,
+        LayerStorageVlmDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
@@ -69,7 +69,8 @@ public class ZfsData<RSC extends AbsResource<RSC>>
     }
 
     @Override
-    public void setStorPool(AccessContext accCtxRef, StorPool storPoolRef) throws DatabaseException, AccessDeniedException
+    public void setStorPool(AccessContext accCtxRef, StorPool storPoolRef)
+        throws DatabaseException, AccessDeniedException
     {
         super.setStorPool(accCtxRef, storPoolRef);
         zpool = null; // force Zfs(Thin)Provider to repeat the lookup using the new storage pool
