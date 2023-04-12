@@ -56,7 +56,6 @@ import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdCtrlDatabaseDriver;
@@ -163,7 +162,7 @@ public class DatabaseLoader implements DatabaseDriver
     private final SnapshotVolumeCtrlDatabaseDriver snapshotVolumeDriver;
     private final KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriver;
     private final LayerResourceIdCtrlDatabaseDriver layerRscIdDriver;
-    private final DrbdLayerCtrlDatabaseDriver drbdLayerDriver;
+    private final Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMap;
     private final LuksLayerCtrlDatabaseDriver luksLayerDriver;
     private final StorageLayerCtrlDatabaseDriver storageLayerDriver;
     private final NvmeLayerCtrlDatabaseDriver nvmeLayerDriver;
@@ -215,7 +214,7 @@ public class DatabaseLoader implements DatabaseDriver
         SnapshotVolumeCtrlDatabaseDriver snapshotVolumeDriverRef,
         KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriverRef,
         LayerResourceIdCtrlDatabaseDriver layerRscIdDriverRef,
-        DrbdLayerCtrlDatabaseDriver drbdLayerDriverRef,
+        Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMapRef,
         LuksLayerCtrlDatabaseDriver luksLayerDriverRef,
         StorageLayerCtrlDatabaseDriver storageLayerDriverRef,
         NvmeLayerCtrlDatabaseDriver nvmeLayerDriverRef,
@@ -264,7 +263,7 @@ public class DatabaseLoader implements DatabaseDriver
         snapshotVolumeDriver = snapshotVolumeDriverRef;
         keyValueStoreGenericDbDriver = keyValueStoreGenericDbDriverRef;
         layerRscIdDriver = layerRscIdDriverRef;
-        drbdLayerDriver = drbdLayerDriverRef;
+        layerDriversMap = layerDriversMapRef;
         luksLayerDriver = luksLayerDriverRef;
         storageLayerDriver = storageLayerDriverRef;
         nvmeLayerDriver = nvmeLayerDriverRef;
@@ -292,6 +291,21 @@ public class DatabaseLoader implements DatabaseDriver
         storPoolResolveHelper = storPoolResolveHelperRef;
         remoteMap = remoteMapRef;
         scheduleMap = scheduleMapRef;
+
+        ArrayList<DeviceLayerKind> layerKindsWithoutDriver = new ArrayList<>();
+        for (DeviceLayerKind kind : DeviceLayerKind.values())
+        {
+            if (!layerDriversMap.containsKey(kind))
+            {
+                layerKindsWithoutDriver.add(kind);
+            }
+        }
+
+        // TODO: enable this check once all layers have proper drivers
+        // if (!layerDriversMapRef.isEmpty())
+        // {
+        // throw new ImplementationError(layerKindsWithoutDriver + " have no database drivers!");
+        // }
     }
 
     /**
@@ -696,7 +710,6 @@ public class DatabaseLoader implements DatabaseDriver
         nvmeLayerDriver.fetchForLoadAll();
 
         // load RscDfnLayerObjects and VlmDfnLayerObjects
-        drbdLayerDriver.fetchForLoadAll(tmpRscDfnMapRef, tmpSnapDfnMapRef);
         storageLayerDriver.fetchForLoadAll(tmpRscDfnMapRef, tmpSnapDfnMapRef);
         // no *DfnLayerObjects for nvme
         // no *DfnLayerObjects for luks
@@ -708,6 +721,11 @@ public class DatabaseLoader implements DatabaseDriver
             tmpSnapMapRef,
             tmpStorPoolMapWithInitMapsRef
         );
+        for (ControllerLayerRscDatabaseDriver driver : layerDriversMap.values())
+        {
+            driver.cacheAll(parentObjects);
+        }
+
         List<Resource> resourcesWithLayerData = loadLayerData(
             parentObjects,
             tmpStorPoolMapWithInitMapsRef,
@@ -743,13 +761,17 @@ public class DatabaseLoader implements DatabaseDriver
             }
         );
 
+        for (ControllerLayerRscDatabaseDriver driver : layerDriversMap.values())
+        {
+            driver.clearLoadingCaches();
+        }
+
         openflexLayerDriver.clearLoadAllCache();
         bcacheLayerDriver.clearLoadAllCache();
         cacheLayerDriver.clearLoadAllCache();
         writecacheLayerDriver.clearLoadAllCache();
         luksLayerDriver.clearLoadAllCache();
         nvmeLayerDriver.clearLoadAllCache();
-        drbdLayerDriver.clearLoadAllCache();
         storageLayerDriver.clearLoadAllCache();
 
         CtrlRscLayerDataFactory rscLayerDataHelper = ctrlRscLayerDataHelper.get();
@@ -851,13 +873,8 @@ public class DatabaseLoader implements DatabaseDriver
                         switch (rlo.getLayerKind())
                         {
                             case DRBD:
-                                rscLayerObjectPair = drbdLayerDriver.<RSC>load(
-                                    rsc,
-                                    rlo.getRscLayerId(),
-                                    rlo.getResourceNameSuffix(),
-                                    parent,
-                                    tmpStorPoolMapWithInitMapsRef
-                                );
+                                ControllerLayerRscDatabaseDriver driver = layerDriversMap.get(rlo.getLayerKind());
+                                rscLayerObjectPair = driver.load(rsc, rlo.getRscLayerId());
                                 break;
                             case LUKS:
                                 rscLayerObjectPair = luksLayerDriver.load(
@@ -974,6 +991,12 @@ public class DatabaseLoader implements DatabaseDriver
                 }
             }
         }
+
+        for (ControllerLayerRscDatabaseDriver driver : layerDriversMap.values())
+        {
+            driver.loadAllLayerVlmData();
+        }
+
         return resourcesWithLayerData;
     }
 

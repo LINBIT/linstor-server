@@ -5,7 +5,10 @@ import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.core.objects.BCacheLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.CacheLayerSQLDbDriver;
-import com.linbit.linstor.core.objects.DrbdLayerSQLDbDriver;
+import com.linbit.linstor.core.objects.LayerDrbdRscDbDriver;
+import com.linbit.linstor.core.objects.LayerDrbdRscDfnDbDriver;
+import com.linbit.linstor.core.objects.LayerDrbdVlmDbDriver;
+import com.linbit.linstor.core.objects.LayerDrbdVlmDfnDbDriver;
 import com.linbit.linstor.core.objects.LuksLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
@@ -30,7 +33,11 @@ import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.WritecacheLayerSQLDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDfnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
@@ -116,7 +123,13 @@ public class TestDbModule extends AbstractModule
         bind(SnapshotVolumeDatabaseDriver.class).to(SnapshotVolumeDbDriver.class);
 
         bind(LayerResourceIdDatabaseDriver.class).to(LayerResourceIdDbDriver.class);
-        bind(DrbdLayerDatabaseDriver.class).to(DrbdLayerSQLDbDriver.class);
+
+        bind(LayerDrbdRscDfnDatabaseDriver.class).to(LayerDrbdRscDfnDbDriver.class);
+        bind(LayerDrbdVlmDfnDatabaseDriver.class).to(LayerDrbdVlmDfnDbDriver.class);
+        bind(LayerDrbdRscDatabaseDriver.class).to(LayerDrbdRscDbDriver.class);
+        bind(LayerDrbdRscCtrlDatabaseDriver.class).to(LayerDrbdRscDbDriver.class);
+        bind(LayerDrbdVlmDatabaseDriver.class).to(LayerDrbdVlmDbDriver.class);
+
         bind(LuksLayerDatabaseDriver.class).to(LuksLayerSQLDbDriver.class);
         bind(StorageLayerDatabaseDriver.class).to(StorageLayerSQLDbDriver.class);
         bind(NvmeLayerDatabaseDriver.class).to(NvmeLayerSQLDbDriver.class);

@@ -7,7 +7,8 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -31,7 +32,7 @@ import java.util.Set;
 
 public class DrbdRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, DrbdVlmData<RSC>>
-    implements DrbdRscObject<RSC>
+    implements DrbdRscObject<RSC>, Comparable<DrbdRscData<RSC>>
 {
     // unmodifiable data, once initialized
     private final DrbdRscDfnData<RSC> drbdRscDfnData;
@@ -39,7 +40,8 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     private final short peerSlots;
     private final int alStripes;
     private final long alStripeSize;
-    private final DrbdLayerDatabaseDriver drbdDbDriver;
+    private final LayerDrbdRscDatabaseDriver drbdRscDbDriver;
+    private final LayerDrbdVlmDatabaseDriver drbdVlmDbDriver;
 
     // persisted, serialized
     private final StateFlags<DrbdRscFlags> flags;
@@ -69,7 +71,8 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
         @Nullable Integer alStripesRef,
         @Nullable Long alStripeSizeRef,
         long initFlags,
-        DrbdLayerDatabaseDriver dbDriverRef,
+        LayerDrbdRscDatabaseDriver drbdRscDbDriverRef,
+        LayerDrbdVlmDatabaseDriver drbdVlmDbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -80,20 +83,21 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             parentRef,
             childrenRef,
             rscNameSuffixRef,
-            dbDriverRef.getIdDriver(),
+            drbdRscDbDriverRef.getIdDriver(),
             vlmLayerObjectsMapRef,
             transObjFactory,
             transMgrProvider
         );
 
-        nodeId = transObjFactory.createTransactionSimpleObject(this, nodeIdRef, dbDriverRef.getNodeIdDriver());
-        drbdDbDriver = dbDriverRef;
+        nodeId = transObjFactory.createTransactionSimpleObject(this, nodeIdRef, drbdRscDbDriverRef.getNodeIdDriver());
+        drbdRscDbDriver = drbdRscDbDriverRef;
+        drbdVlmDbDriver = drbdVlmDbDriverRef;
 
         flags = transObjFactory.createStateFlagsImpl(
             rscRef.getObjProt(),
             this,
             DrbdRscFlags.class,
-            dbDriverRef.getRscStateFlagPersistence(),
+            drbdRscDbDriverRef.getRscStateFlagPersistence(),
             initFlags
         );
         drbdRscDfnData = Objects.requireNonNull(drbdRscDfnDataRef);
@@ -211,13 +215,13 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
     @Override
     protected void deleteVlmFromDatabase(DrbdVlmData<RSC> drbdVlmData) throws DatabaseException
     {
-        drbdDbDriver.delete(drbdVlmData);
+        drbdVlmDbDriver.delete(drbdVlmData);
     }
 
     @Override
     protected void deleteRscFromDatabase() throws DatabaseException
     {
-        drbdDbDriver.delete(this);
+        drbdRscDbDriver.delete(this);
     }
 
     /*
@@ -321,5 +325,11 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             mayPromote,
             ignoreReason.get()
         );
+    }
+
+    @Override
+    public int compareTo(DrbdRscData<RSC> other)
+    {
+        return Integer.compare(rscLayerId, other.rscLayerId);
     }
 }

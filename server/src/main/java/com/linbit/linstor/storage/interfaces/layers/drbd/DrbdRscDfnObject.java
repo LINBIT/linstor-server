@@ -26,7 +26,7 @@ public interface DrbdRscDfnObject extends RscDfnLayerObject
     {
         IP, RDMA, RoCE;
 
-        public static TransportType byValue(String str)
+        public static TransportType byValue(String str) throws IllegalArgumentException
         {
             TransportType type = null;
             switch (str.toUpperCase())

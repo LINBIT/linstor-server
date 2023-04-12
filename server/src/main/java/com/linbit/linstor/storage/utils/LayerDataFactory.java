@@ -14,7 +14,10 @@ import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDfnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
@@ -72,7 +75,10 @@ public class LayerDataFactory
     private final LayerResourceIdDatabaseDriver layerRscIdDatabaseDriver;
 
     private final LuksLayerDatabaseDriver luksDbDriver;
-    private final DrbdLayerDatabaseDriver drbdDbDriver;
+    private final LayerDrbdRscDfnDatabaseDriver layerDrbdRscDfnDbDriver;
+    private final LayerDrbdVlmDfnDatabaseDriver layerDrbdVlmDfnDbDriver;
+    private final LayerDrbdRscDatabaseDriver layerDrbdRscDbDriver;
+    private final LayerDrbdVlmDatabaseDriver layerDrbdVlmDbDriver;
     private final StorageLayerDatabaseDriver storageDbDriver;
     private final NvmeLayerDatabaseDriver nvmeDbDriver;
     private final OpenflexLayerDatabaseDriver openflexDbDriver;
@@ -89,7 +95,10 @@ public class LayerDataFactory
     public LayerDataFactory(
         LayerResourceIdDatabaseDriver layerRscIdDatabaseDriverRef,
         LuksLayerDatabaseDriver luksDbDriverRef,
-        DrbdLayerDatabaseDriver drbdDbDriverRef,
+        LayerDrbdRscDfnDatabaseDriver layerDrbdRscDfnDbDriverRef,
+        LayerDrbdVlmDfnDatabaseDriver layerDrbdVlmDfnDbDriverRef,
+        LayerDrbdRscDatabaseDriver layerDrbdRscDbDriverRef,
+        LayerDrbdVlmDatabaseDriver layerDrbdVlmDbDriverRef,
         StorageLayerDatabaseDriver storageDbDriverRef,
         NvmeLayerDatabaseDriver nvmeDbDriverRef,
         OpenflexLayerDatabaseDriver openflexDbDriverRef,
@@ -104,7 +113,10 @@ public class LayerDataFactory
     {
         layerRscIdDatabaseDriver = layerRscIdDatabaseDriverRef;
         luksDbDriver = luksDbDriverRef;
-        drbdDbDriver = drbdDbDriverRef;
+        layerDrbdRscDfnDbDriver = layerDrbdRscDfnDbDriverRef;
+        layerDrbdVlmDfnDbDriver = layerDrbdVlmDfnDbDriverRef;
+        layerDrbdRscDbDriver = layerDrbdRscDbDriverRef;
+        layerDrbdVlmDbDriver = layerDrbdVlmDbDriverRef;
         storageDbDriver = storageDbDriverRef;
         nvmeDbDriver = nvmeDbDriverRef;
         openflexDbDriver = openflexDbDriverRef;
@@ -159,12 +171,13 @@ public class LayerDataFactory
             alStripes,
             alStripeSize,
             initFlags,
-            drbdDbDriver,
+            layerDrbdRscDbDriver,
+            layerDrbdVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
         layerRscIdDatabaseDriver.create(drbdRscData);
-        drbdDbDriver.create(drbdRscData);
+        layerDrbdRscDbDriver.create(drbdRscData);
         return drbdRscData;
     }
 
@@ -194,11 +207,11 @@ public class LayerDataFactory
             new ArrayList<>(),
             new TreeMap<>(),
             tcpPortPool,
-            drbdDbDriver,
+            layerDrbdRscDfnDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        drbdDbDriver.persist(drbdRscDfnData);
+        layerDrbdRscDfnDbDriver.create(drbdRscDfnData);
         return drbdRscDfnData;
     }
 
@@ -222,10 +235,10 @@ public class LayerDataFactory
             minorNrInt,
             minorPool,
             drbdRscDfnData,
-            drbdDbDriver,
+            layerDrbdVlmDfnDbDriver,
             transMgrProvider
         );
-        drbdDbDriver.persist(drbdVlmDfnData);
+        layerDrbdVlmDfnDbDriver.create(drbdVlmDfnData);
         return drbdVlmDfnData;
     }
 
@@ -242,11 +255,11 @@ public class LayerDataFactory
             rscData,
             vlmDfnData,
             extMetaStorPool,
-            drbdDbDriver,
+            layerDrbdVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        drbdDbDriver.persist(drbdVlmData);
+        layerDrbdVlmDbDriver.create(drbdVlmData);
         return drbdVlmData;
     }
 

@@ -23,10 +23,16 @@ import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.SatelliteDrbdLayerDriver;
+import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdRscDbDriver;
+import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdRscDfnDbDriver;
+import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdVlmDbDriver;
+import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdVlmDfnDbDriver;
 import com.linbit.linstor.dbdrivers.SatellitePropDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDfnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.SatelliteStorageLayerDriver;
-import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.StorageLayerDatabaseDriver;
 import com.linbit.linstor.layer.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -91,7 +97,10 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("checkstyle:magicnumber")
 public class ConfFileBuilderTest
 {
-    private static final DrbdLayerDatabaseDriver DRBD_LAYER_NO_OP_DRIVER = new SatelliteDrbdLayerDriver();
+    private static final LayerDrbdRscDfnDatabaseDriver LAYER_DRBD_RSC_DFN_NO_OP_DRIVER = new SatelliteLayerDrbdRscDfnDbDriver();
+    private static final LayerDrbdVlmDfnDatabaseDriver LAYER_DRBD_VLM_DFN_NO_OP_DRIVER = new SatelliteLayerDrbdVlmDfnDbDriver();
+    private static final LayerDrbdRscDatabaseDriver LAYER_DRBD_RSC_NO_OP_DRIVER = new SatelliteLayerDrbdRscDbDriver();
+    private static final LayerDrbdVlmDatabaseDriver LAYER_DRBD_VLM_NO_OP_DRIVER = new SatelliteLayerDrbdVlmDbDriver();
     private static final StorageLayerDatabaseDriver STORAGE_LAYER_NO_OP_DRIVER = new SatelliteStorageLayerDriver();
 
     private ErrorReporter errorReporter;
@@ -469,7 +478,7 @@ public class ConfFileBuilderTest
             rscDataList,
             new TreeMap<>(),
             mockedTcpPool,
-            DRBD_LAYER_NO_OP_DRIVER,
+            LAYER_DRBD_RSC_DFN_NO_OP_DRIVER,
             transObjFactory,
             transMgrProvider
         );
@@ -494,7 +503,8 @@ public class ConfFileBuilderTest
                 null, // copied from rscDfnData
                 resource.isDrbdDiskless(accessContext) ?
                     DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue : 0,
-                DRBD_LAYER_NO_OP_DRIVER,
+                LAYER_DRBD_RSC_NO_OP_DRIVER,
+                LAYER_DRBD_VLM_NO_OP_DRIVER,
                 transObjFactory,
                 transMgrProvider
             );
@@ -524,7 +534,7 @@ public class ConfFileBuilderTest
                     99,
                     mockedMinorPool,
                     rscDfnData,
-                    DRBD_LAYER_NO_OP_DRIVER,
+                    LAYER_DRBD_VLM_DFN_NO_OP_DRIVER,
                     transMgrProvider
                 );
                 drbdVlmDfnMap.put(vlmNr, drbdVlmDfnData);
@@ -534,7 +544,7 @@ public class ConfFileBuilderTest
                     rscData,
                     drbdVlmDfnData,
                     null,
-                    DRBD_LAYER_NO_OP_DRIVER,
+                    LAYER_DRBD_VLM_NO_OP_DRIVER,
                     transObjFactory,
                     transMgrProvider
                 );

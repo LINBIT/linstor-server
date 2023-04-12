@@ -11,7 +11,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.DrbdLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDfnDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject;
@@ -34,7 +34,7 @@ import java.util.Objects;
 
 public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
     extends BaseTransactionObject
-    implements DrbdRscDfnObject
+    implements DrbdRscDfnObject, Comparable<DrbdRscDfnData<RSC>>
 {
     public static final int SNAPSHOT_TCP_PORT = -1;
 
@@ -45,7 +45,7 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
     private final long alStripeSize;
     private final String suffixedResourceName;
     private final String resourceNameSuffix;
-    private final DrbdLayerDatabaseDriver dbDriver;
+    private final LayerDrbdRscDfnDatabaseDriver dbDriver;
     private final DynamicNumberPool tcpPortPool;
 
     // persisted, serialized, ctrl and stlt
@@ -72,7 +72,7 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
         List<DrbdRscData<RSC>> drbdRscDataListRef,
         Map<VolumeNumber, DrbdVlmDfnData<RSC>> vlmDfnMap,
         DynamicNumberPool tcpPortPoolRef,
-        DrbdLayerDatabaseDriver dbDriverRef,
+        LayerDrbdRscDfnDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -313,5 +313,30 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
                 Objects.equals(rscName, other.rscName) && Objects.equals(snapName, other.snapName);
         }
         return ret;
+    }
+
+    @Override
+    public int compareTo(DrbdRscDfnData<RSC> oRef)
+    {
+        int cmp = rscName.compareTo(oRef.rscName);
+        if (cmp == 0)
+        {
+            if (snapName != null)
+            {
+                cmp = snapName.compareTo(oRef.snapName);
+            }
+            else
+            {
+                if (oRef.snapName != null)
+                {
+                    cmp = 1;
+                }
+            }
+            if (cmp == 0)
+            {
+                cmp = resourceNameSuffix.compareTo(oRef.resourceNameSuffix);
+            }
+        }
+        return cmp;
     }
 }
