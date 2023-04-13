@@ -43,6 +43,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     implements GenericDatabaseDriver<DATA>, ControllerDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
 {
+    protected static final String MSG_DO_NOT_LOG = "do not log";
+
     protected static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
 
     private final ErrorReporter errorReporter;

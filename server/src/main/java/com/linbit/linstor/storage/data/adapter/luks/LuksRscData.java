@@ -6,7 +6,8 @@ import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerLuksRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerLuksVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsRscData;
@@ -29,7 +30,8 @@ public class LuksRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, LuksVlmData<RSC>>
     implements LuksRscObject<RSC>
 {
-    private final LuksLayerDatabaseDriver luksDbDriver;
+    private final LayerLuksRscDatabaseDriver luksRscDbDriver;
+    private final LayerLuksVlmDatabaseDriver luksVlmDbDriver;
 
     public LuksRscData(
         int rscLayerIdRef,
@@ -38,7 +40,8 @@ public class LuksRscData<RSC extends AbsResource<RSC>>
         @Nullable AbsRscLayerObject<RSC> parentRef,
         Set<AbsRscLayerObject<RSC>> childrenRef,
         Map<VolumeNumber, LuksVlmData<RSC>> vlmLayerObjectsRef,
-        LuksLayerDatabaseDriver dbDriverRef,
+        LayerLuksRscDatabaseDriver luksRscDbDriverRef,
+        LayerLuksVlmDatabaseDriver luksVlmDbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -49,12 +52,13 @@ public class LuksRscData<RSC extends AbsResource<RSC>>
             parentRef,
             childrenRef,
             rscNameSuffixRef,
-            dbDriverRef.getIdDriver(),
+            luksRscDbDriverRef.getIdDriver(),
             vlmLayerObjectsRef,
             transObjFactory,
             transMgrProvider
         );
-        luksDbDriver = dbDriverRef;
+        luksRscDbDriver = luksRscDbDriverRef;
+        luksVlmDbDriver = luksVlmDbDriverRef;
     }
 
     @Override
@@ -72,13 +76,13 @@ public class LuksRscData<RSC extends AbsResource<RSC>>
     @Override
     protected void deleteVlmFromDatabase(LuksVlmData<RSC> vlmRef) throws DatabaseException
     {
-        luksDbDriver.delete(vlmRef);
+        luksVlmDbDriver.delete(vlmRef);
     }
 
     @Override
     protected void deleteRscFromDatabase() throws DatabaseException
     {
-        luksDbDriver.delete(this);
+        luksRscDbDriver.delete(this);
     }
 
     @Override

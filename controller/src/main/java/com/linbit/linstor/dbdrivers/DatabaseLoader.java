@@ -59,7 +59,6 @@ import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LuksLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
@@ -162,7 +161,6 @@ public class DatabaseLoader implements DatabaseDriver
     private final KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriver;
     private final LayerResourceIdCtrlDatabaseDriver layerRscIdDriver;
     private final Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMap;
-    private final LuksLayerCtrlDatabaseDriver luksLayerDriver;
     private final NvmeLayerCtrlDatabaseDriver nvmeLayerDriver;
     private final OpenflexLayerCtrlDatabaseDriver openflexLayerDriver;
     private final WritecacheLayerCtrlDatabaseDriver writecacheLayerDriver;
@@ -213,7 +211,6 @@ public class DatabaseLoader implements DatabaseDriver
         KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriverRef,
         LayerResourceIdCtrlDatabaseDriver layerRscIdDriverRef,
         Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMapRef,
-        LuksLayerCtrlDatabaseDriver luksLayerDriverRef,
         NvmeLayerCtrlDatabaseDriver nvmeLayerDriverRef,
         OpenflexLayerCtrlDatabaseDriver openflexLayerDriverRef,
         WritecacheLayerCtrlDatabaseDriver writecacheLayerDriverRef,
@@ -261,7 +258,6 @@ public class DatabaseLoader implements DatabaseDriver
         keyValueStoreGenericDbDriver = keyValueStoreGenericDbDriverRef;
         layerRscIdDriver = layerRscIdDriverRef;
         layerDriversMap = layerDriversMapRef;
-        luksLayerDriver = luksLayerDriverRef;
         nvmeLayerDriver = nvmeLayerDriverRef;
         openflexLayerDriver = openflexLayerDriverRef;
         writecacheLayerDriver = writecacheLayerDriverRef;
@@ -701,7 +697,6 @@ public class DatabaseLoader implements DatabaseDriver
         bcacheLayerDriver.fetchForLoadAll();
         cacheLayerDriver.fetchForLoadAll();
         writecacheLayerDriver.fetchForLoadAll();
-        luksLayerDriver.fetchForLoadAll();
         nvmeLayerDriver.fetchForLoadAll();
 
         // load RscDfnLayerObjects and VlmDfnLayerObjects
@@ -764,7 +759,6 @@ public class DatabaseLoader implements DatabaseDriver
         bcacheLayerDriver.clearLoadAllCache();
         cacheLayerDriver.clearLoadAllCache();
         writecacheLayerDriver.clearLoadAllCache();
-        luksLayerDriver.clearLoadAllCache();
         nvmeLayerDriver.clearLoadAllCache();
 
         CtrlRscLayerDataFactory rscLayerDataHelper = ctrlRscLayerDataHelper.get();
@@ -866,17 +860,10 @@ public class DatabaseLoader implements DatabaseDriver
                         switch (rlo.getLayerKind())
                         {
                             case DRBD:
+                            case LUKS:
                             case STORAGE:
                                 ControllerLayerRscDatabaseDriver driver = layerDriversMap.get(rlo.getLayerKind());
                                 rscLayerObjectPair = driver.load(rsc, rlo.getRscLayerId());
-                                break;
-                            case LUKS:
-                                rscLayerObjectPair = luksLayerDriver.load(
-                                    rsc,
-                                    rlo.getRscLayerId(),
-                                    rlo.getResourceNameSuffix(),
-                                    parent
-                                );
                                 break;
                             case NVME:
                                 rscLayerObjectPair = nvmeLayerDriver.load(

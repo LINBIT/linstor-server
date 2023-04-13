@@ -105,22 +105,22 @@ public class S3RemoteDbDriver extends AbsDatabaseDriver<S3Remote, S3Remote.InitM
             case ETCD:
                 accessKeyDriver = generateSingleColumnDriver(
                     ACCESS_KEY,
-                    ignored -> "do not log",
+                    ignored -> MSG_DO_NOT_LOG,
                     byteArr -> Base64.encode(byteArr)
                 );
                 secretKeyDriver = generateSingleColumnDriver(
                     SECRET_KEY,
-                    ignored -> "do not log",
+                    ignored -> MSG_DO_NOT_LOG,
                     byteArr -> Base64.encode(byteArr)
                 );
                 break;
             case SQL: // fall-through
             case K8S_CRD:
                 accessKeyDriver = generateSingleColumnDriver(
-                    ACCESS_KEY, ignored -> "do not log", Function.identity()
+                    ACCESS_KEY, ignored -> MSG_DO_NOT_LOG, Function.identity()
                 );
                 secretKeyDriver = generateSingleColumnDriver(
-                    SECRET_KEY, ignored -> "do not log", Function.identity()
+                    SECRET_KEY, ignored -> MSG_DO_NOT_LOG, Function.identity()
                 );
                 break;
             default:

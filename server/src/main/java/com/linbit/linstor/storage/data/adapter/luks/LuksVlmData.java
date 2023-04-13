@@ -4,7 +4,7 @@ import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.LuksLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerLuksVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.data.AbsVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
@@ -46,7 +46,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         AbsVolume<RSC> vlmRef,
         LuksRscData<RSC> rscDataRef,
         byte[] encryptedPasswordRef,
-        LuksLayerDatabaseDriver dbDriver,
+        LayerLuksVlmDatabaseDriver luksVlmDbDriver,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -58,7 +58,7 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         encryptedPassword = transObjFactory.createTransactionSimpleObject(
             this,
             encryptedPasswordRef,
-            dbDriver.getVlmEncryptedPasswordDriver()
+            luksVlmDbDriver.getVlmEncryptedPasswordDriver()
         );
 
         transObjs = Arrays.asList(
