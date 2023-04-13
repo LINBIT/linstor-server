@@ -10,6 +10,7 @@ import com.linbit.linstor.core.objects.AbsLayerVlmDataDbDriver.VlmParentObjects;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
+import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -19,7 +20,10 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
+
 import java.util.Map;
+import java.util.Set;
 
 public abstract class AbsLayerVlmDataDbDriver<
     VLM_DFN_DATA extends VlmDfnLayerObject,
@@ -27,6 +31,14 @@ public abstract class AbsLayerVlmDataDbDriver<
     VLM_DATA extends VlmProviderObject<?>>
     extends AbsDatabaseDriver<VLM_DATA, Void, VlmParentObjects<VLM_DFN_DATA, RSC_DATA, VLM_DATA>>
 {
+    /**
+     * A special column that is used to populate the RawParameter in case the current (this) *VlmDbDriver does not have
+     * a table on its own (like NVMe layer which has no tables or data besides the data stored in LAYER_RESOURCE_IDS).
+     * The RawParameters will be populated with only one entry, with this NULL_TABLE_LAYER_VLM_NR_COLUMN as key and the
+     * int value of the volume number as value.
+     */
+    static final NullTableLayerVlmNrColumn NULL_TABLE_LAYER_VLM_NR_COLUMN = new NullTableLayerVlmNrColumn();
+
     public static class VlmParentObjects<
         VLM_DFN_DATA_INNER extends VlmDfnLayerObject,
         RSC_DATA_INNER extends AbsRscLayerObject<?>,
@@ -55,7 +67,7 @@ public abstract class AbsLayerVlmDataDbDriver<
 
     AbsLayerVlmDataDbDriver(
         ErrorReporter errorReporterRef,
-        DatabaseTable tableRef,
+        @Nullable DatabaseTable tableRef,
         DbEngine dbEngineRef,
         ObjectProtectionDatabaseDriver objProtDriverRef
     )
@@ -78,18 +90,53 @@ public abstract class AbsLayerVlmDataDbDriver<
     )
         throws DatabaseException
     {
-        Map<VLM_DATA, Void> vlmDataMap = loadAll(
+        Set<VLM_DATA> vlmDataSet = super.loadAll(
             new VlmParentObjects<>(
                 allVlmDfnDataRef,
                 rscDataByLayerIdRef,
                 parentObjectsRef.storPoolWithInitMap
             )
-        );
+        ).keySet();
 
-        for (VLM_DATA vlmData : vlmDataMap.keySet())
+        for (VLM_DATA vlmData : vlmDataSet)
         {
             rscDataByLayerIdRef.get(vlmData.getRscLayerObject().getRscLayerId()).vlmDataMap
                 .put(vlmData.getVlmNr(), vlmData);
+        }
+    }
+
+    static class NullTableLayerVlmNrColumn implements Column
+    {
+        protected static final String NULL_TABLE_LAYER_VLM_NR_OBJ = "NullTableLayerVlmNrObj";
+
+        @Override
+        public String getName()
+        {
+            return NULL_TABLE_LAYER_VLM_NR_OBJ;
+        }
+
+        @Override
+        public int getSqlType()
+        {
+            return java.sql.Types.OTHER;
+        }
+
+        @Override
+        public boolean isPk()
+        {
+            return false;
+        }
+
+        @Override
+        public boolean isNullable()
+        {
+            return false;
+        }
+
+        @Override
+        public DatabaseTable getTable()
+        {
+            return null;
         }
     }
 }

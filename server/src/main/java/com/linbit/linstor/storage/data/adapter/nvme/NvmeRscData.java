@@ -7,7 +7,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerNvmeRscDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsRscData;
@@ -42,7 +42,7 @@ public class NvmeRscData<RSC extends AbsResource<RSC>>
         Set<AbsRscLayerObject<RSC>> childrenRef,
         Map<VolumeNumber, NvmeVlmData<RSC>> vlmLayerObjectsMapRef,
         String rscNameSuffixRef,
-        NvmeLayerDatabaseDriver dbDriverRef,
+        LayerNvmeRscDatabaseDriver nvmeRscDbDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -53,7 +53,7 @@ public class NvmeRscData<RSC extends AbsResource<RSC>>
             parentRef,
             childrenRef,
             rscNameSuffixRef,
-            dbDriverRef.getIdDriver(),
+            nvmeRscDbDriverRef.getIdDriver(),
             vlmLayerObjectsMapRef,
             transObjFactory,
             transMgrProvider
@@ -123,6 +123,7 @@ public class NvmeRscData<RSC extends AbsResource<RSC>>
      * Temporary data - will not be persisted
      */
 
+    @Override
     public boolean exists()
     {
         return exists;

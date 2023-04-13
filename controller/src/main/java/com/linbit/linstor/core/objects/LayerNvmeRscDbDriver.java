@@ -9,13 +9,13 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
-import com.linbit.linstor.dbdrivers.interfaces.LayerLuksRscCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerNvmeRscCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
-import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
-import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
+import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
+import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
@@ -30,24 +30,22 @@ import javax.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 @Singleton
-public class LayerLuksRscDbDriver
-    extends AbsLayerRscDataDbDriver<RscDfnLayerObject, VlmDfnLayerObject, LuksRscData<?>, LuksVlmData<?>>
-    implements LayerLuksRscCtrlDatabaseDriver
+public class LayerNvmeRscDbDriver
+    extends AbsLayerRscDataDbDriver<RscDfnLayerObject, VlmDfnLayerObject, NvmeRscData<?>, NvmeVlmData<?>>
+    implements LayerNvmeRscCtrlDatabaseDriver
 {
-    private final LayerLuksVlmDbDriver layerLuksVlmDbDriver;
-
     @Inject
-    public LayerLuksRscDbDriver(
+    public LayerNvmeRscDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
         ObjectProtectionDatabaseDriver objProtDriverRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
-        LayerLuksVlmDbDriver layerLuksVlmDbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
@@ -62,21 +60,20 @@ public class LayerLuksRscDbDriver
             rscLayerIdDriverRef,
             null,
             null,
-            layerLuksVlmDbDriverRef,
+            null,
             transObjFactoryRef,
             transMgrProviderRef
         );
-        layerLuksVlmDbDriver = layerLuksVlmDbDriverRef;
     }
 
     @Override
     public DeviceLayerKind getDeviceLayerKind()
     {
-        return DeviceLayerKind.LUKS;
+        return DeviceLayerKind.NVME;
     }
 
     @Override
-    protected <RSC extends AbsResource<RSC>> RscDataLoadOutput<LuksRscData<?>, LuksVlmData<?>> loadImpl(
+    protected <RSC extends AbsResource<RSC>> RscDataLoadOutput<NvmeRscData<?>, NvmeVlmData<?>> loadImpl(
         RawParameters rawRef,
         ParentObjects parentRef,
         AbsRscLayerObject<?> currentDummyLoadingRLORef,
@@ -87,45 +84,74 @@ public class LayerLuksRscDbDriver
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
         AbsRscLayerObject<?> absRscLayerObject = rawRef.get(NULL_TABLE_LAYER_RSC_DATA_COLUMN);
-        Map<VolumeNumber, LuksVlmData<?>> vlmMap = new HashMap<>();
+        Map<VolumeNumber, NvmeVlmData<?>> vlmMap = new HashMap<>();
         Set<AbsRscLayerObject<?>> childrenSet = new HashSet<>();
 
-        LuksRscData<?> rscData = genericCreate(
+        /*
+         * We do not have a LayerNvmeVolumes database table. That leads to two things:
+         * 1) we do not know which NvmeVlmData we need to create/restore and which not -> so we create for all AbsVolume
+         * an NvmeVlmData (see issue 835 for more information)
+         * 2) we do not need a LayerNvmeVlmDbDriver - for now. As soon as we create a DB table where we store which
+         * NvmeVlmData we need to restore (which could be simply the rscId of the NvmeRscData and the volume number), we
+         * would also need a LayerNvmeVlmDbDriver.
+         *
+         * If we create a LayerNvmeVolumes database table, make sure to also update LayerDataFactory#createNvmeVlmData
+         * method to persist the newly created NvmeVlmData
+         *
+         * The NvmeVlmData are created as as part of the genericCreate method
+         */
+
+        NvmeRscData<?> rscData = genericCreate(
             absRscLayerObject,
             loadedParentRscDataRef,
             absRscRef,
             childrenSet,
             vlmMap
         );
+
         return new RscDataLoadOutput<>(rscData, childrenSet, vlmMap);
     }
 
     @SuppressWarnings("unchecked")
-    private <RSC extends AbsResource<RSC>> LuksRscData<RSC> genericCreate(
+    private <RSC extends AbsResource<RSC>> NvmeRscData<RSC> genericCreate(
         AbsRscLayerObject<?> absRscLayerObjectRef,
         AbsRscLayerObject<?> loadedParentRscDataRef,
         RSC absRscRef,
         Set<AbsRscLayerObject<?>> childrenSetRef,
-        Map<VolumeNumber, LuksVlmData<?>> vlmMapRef
+        Map<VolumeNumber, NvmeVlmData<?>> vlmMapRef
     )
     {
         Object typelessVlmMap = vlmMapRef;
-        Map<VolumeNumber, LuksVlmData<RSC>> typedVlmMap = (Map<VolumeNumber, LuksVlmData<RSC>>) typelessVlmMap;
+        Map<VolumeNumber, NvmeVlmData<RSC>> typedVlmMap = (Map<VolumeNumber, NvmeVlmData<RSC>>) typelessVlmMap;
 
         Object typelessChildrenSet = childrenSetRef;
         Set<AbsRscLayerObject<RSC>> typedChildrenSet = (Set<AbsRscLayerObject<RSC>>) typelessChildrenSet;
 
-        return new LuksRscData<>(
+        NvmeRscData<RSC> nvmeRscData = new NvmeRscData<>(
             absRscLayerObjectRef.getRscLayerId(),
             absRscRef,
-            absRscLayerObjectRef.getResourceNameSuffix(),
             (AbsRscLayerObject<RSC>) loadedParentRscDataRef,
             typedChildrenSet,
             typedVlmMap,
+            absRscLayerObjectRef.getResourceNameSuffix(),
             this,
-            layerLuksVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
+
+        /*
+         * Create also NvmeVlmData for all absVolumes since we do not know better
+         */
+        Iterator<? extends AbsVolume<RSC>> vlmsIt = absRscRef.iterateVolumes();
+        while (vlmsIt.hasNext())
+        {
+            AbsVolume<RSC> absVolume = vlmsIt.next();
+            vlmMapRef.put(
+                absVolume.getVolumeNumber(),
+                new NvmeVlmData<>(absVolume, nvmeRscData, transObjFactory, transMgrProvider)
+            );
+        }
+
+        return nvmeRscData;
     }
 }

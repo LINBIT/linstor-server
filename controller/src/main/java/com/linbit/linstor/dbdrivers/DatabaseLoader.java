@@ -62,7 +62,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdCtrlDatabaseDriver
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
@@ -161,7 +160,6 @@ public class DatabaseLoader implements DatabaseDriver
     private final KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriver;
     private final LayerResourceIdCtrlDatabaseDriver layerRscIdDriver;
     private final Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMap;
-    private final NvmeLayerCtrlDatabaseDriver nvmeLayerDriver;
     private final OpenflexLayerCtrlDatabaseDriver openflexLayerDriver;
     private final WritecacheLayerCtrlDatabaseDriver writecacheLayerDriver;
     private final CacheLayerCtrlDatabaseDriver cacheLayerDriver;
@@ -211,7 +209,6 @@ public class DatabaseLoader implements DatabaseDriver
         KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriverRef,
         LayerResourceIdCtrlDatabaseDriver layerRscIdDriverRef,
         Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMapRef,
-        NvmeLayerCtrlDatabaseDriver nvmeLayerDriverRef,
         OpenflexLayerCtrlDatabaseDriver openflexLayerDriverRef,
         WritecacheLayerCtrlDatabaseDriver writecacheLayerDriverRef,
         CacheLayerCtrlDatabaseDriver cacheLayerDriverRef,
@@ -258,7 +255,6 @@ public class DatabaseLoader implements DatabaseDriver
         keyValueStoreGenericDbDriver = keyValueStoreGenericDbDriverRef;
         layerRscIdDriver = layerRscIdDriverRef;
         layerDriversMap = layerDriversMapRef;
-        nvmeLayerDriver = nvmeLayerDriverRef;
         openflexLayerDriver = openflexLayerDriverRef;
         writecacheLayerDriver = writecacheLayerDriverRef;
         cacheLayerDriver = cacheLayerDriverRef;
@@ -697,7 +693,6 @@ public class DatabaseLoader implements DatabaseDriver
         bcacheLayerDriver.fetchForLoadAll();
         cacheLayerDriver.fetchForLoadAll();
         writecacheLayerDriver.fetchForLoadAll();
-        nvmeLayerDriver.fetchForLoadAll();
 
         // load RscDfnLayerObjects and VlmDfnLayerObjects
         // no *DfnLayerObjects for nvme
@@ -759,7 +754,6 @@ public class DatabaseLoader implements DatabaseDriver
         bcacheLayerDriver.clearLoadAllCache();
         cacheLayerDriver.clearLoadAllCache();
         writecacheLayerDriver.clearLoadAllCache();
-        nvmeLayerDriver.clearLoadAllCache();
 
         CtrlRscLayerDataFactory rscLayerDataHelper = ctrlRscLayerDataHelper.get();
         for (Resource rsc : resourcesWithLayerData)
@@ -860,18 +854,11 @@ public class DatabaseLoader implements DatabaseDriver
                         switch (rlo.getLayerKind())
                         {
                             case DRBD:
+                            case NVME:
                             case LUKS:
                             case STORAGE:
                                 ControllerLayerRscDatabaseDriver driver = layerDriversMap.get(rlo.getLayerKind());
                                 rscLayerObjectPair = driver.load(rsc, rlo.getRscLayerId());
-                                break;
-                            case NVME:
-                                rscLayerObjectPair = nvmeLayerDriver.load(
-                                    rsc,
-                                    rlo.getRscLayerId(),
-                                    rlo.getResourceNameSuffix(),
-                                    parent
-                                );
                                 break;
                             case OPENFLEX:
                                 rscLayerObjectPair = openflexLayerDriver.load(

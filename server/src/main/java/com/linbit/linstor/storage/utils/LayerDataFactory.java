@@ -20,10 +20,10 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksVlmDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerNvmeRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.NvmeLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -87,7 +87,8 @@ public class LayerDataFactory
     private final LayerStorageRscDatabaseDriver layerStorRscDbDriver;
     private final LayerStorageVlmDatabaseDriver layerStorVlmDbDriver;
 
-    private final NvmeLayerDatabaseDriver nvmeDbDriver;
+    private final LayerNvmeRscDatabaseDriver layerNvmeRscDbDriver;
+
     private final OpenflexLayerDatabaseDriver openflexDbDriver;
     private final WritecacheLayerDatabaseDriver writecacheDbDriver;
     private final CacheLayerDatabaseDriver cacheDbDriver;
@@ -109,7 +110,7 @@ public class LayerDataFactory
         LayerDrbdVlmDatabaseDriver layerDrbdVlmDbDriverRef,
         LayerStorageRscDatabaseDriver layerStorRscDbDriverRef,
         LayerStorageVlmDatabaseDriver layerStorVlmDbDriverRef,
-        NvmeLayerDatabaseDriver nvmeDbDriverRef,
+        LayerNvmeRscDatabaseDriver layerNvmeRscDbDriverRef,
         OpenflexLayerDatabaseDriver openflexDbDriverRef,
         WritecacheLayerDatabaseDriver writecacheDbDriverRef,
         CacheLayerDatabaseDriver cacheDbDriverRef,
@@ -129,7 +130,7 @@ public class LayerDataFactory
         layerDrbdVlmDbDriver = layerDrbdVlmDbDriverRef;
         layerStorRscDbDriver = layerStorRscDbDriverRef;
         layerStorVlmDbDriver = layerStorVlmDbDriverRef;
-        nvmeDbDriver = nvmeDbDriverRef;
+        layerNvmeRscDbDriver = layerNvmeRscDbDriverRef;
         openflexDbDriver = openflexDbDriverRef;
         writecacheDbDriver = writecacheDbDriverRef;
         cacheDbDriver = cacheDbDriverRef;
@@ -378,12 +379,12 @@ public class LayerDataFactory
             new HashSet<>(),
             new TreeMap<>(),
             rscNameSuffix,
-            nvmeDbDriver,
+            layerNvmeRscDbDriver,
             transObjFactory,
             transMgrProvider
         );
         layerRscIdDatabaseDriver.create(nvmeRscData);
-        nvmeDbDriver.create(nvmeRscData);
+        layerNvmeRscDbDriver.create(nvmeRscData);
         return nvmeRscData;
     }
 
@@ -391,16 +392,14 @@ public class LayerDataFactory
         AbsVolume<RSC> vlm,
         NvmeRscData<RSC> rscData
     )
-        throws DatabaseException
     {
-        NvmeVlmData<RSC> nvmeVlmData = new NvmeVlmData<>(
+        // no LayerNvmeVolumes table right now
+        return new NvmeVlmData<>(
             vlm,
             rscData,
             transObjFactory,
             transMgrProvider
         );
-        nvmeDbDriver.persist(nvmeVlmData);
-        return nvmeVlmData;
     }
 
     public <RSC extends AbsResource<RSC>> OpenflexRscDfnData<RSC> createOpenflexRscDfnData(

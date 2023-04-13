@@ -189,7 +189,7 @@ public abstract class AbsLayerRscDataDbDriver<
      * The RawParameters will be populated with only one entry, with this NULL_TABLE_LAYER_RSC_ID_COLUMN as key and the
      * actual {@link LayerResourceIdDbDriver.ResourceLayerIdLoadingPojo} as value
      */
-    protected static final NullTableLayerRscIdColumn NULL_TABLE_LAYER_RSC_ID_COLUMN = new NullTableLayerRscIdColumn();
+    static final NullTableLayerRscDataColumn NULL_TABLE_LAYER_RSC_DATA_COLUMN = new NullTableLayerRscDataColumn();
 
     protected final AccessContext dbCtx;
 
@@ -288,7 +288,7 @@ public abstract class AbsLayerRscDataDbDriver<
                     {
                         Map<String, Object> rawMap = new HashMap<>();
 
-                        rawMap.put(NULL_TABLE_LAYER_RSC_ID_COLUMN.getName(), absRscLayerObject);
+                        rawMap.put(NULL_TABLE_LAYER_RSC_DATA_COLUMN.getName(), absRscLayerObject);
 
                         rscDataRawCache.put(absRscLayerObject.getRscLayerId(), new RawParameters(null, rawMap, dbType));
                     }
@@ -536,7 +536,7 @@ public abstract class AbsLayerRscDataDbDriver<
             ", LayerRscId=" + rscDataRef.getRscLayerId() + ")";
     }
 
-    private static class NullTableLayerRscIdColumn implements Column
+    static class NullTableLayerRscDataColumn implements Column
     {
         protected static final String NULL_TABLE_LAYER_RSC_ID_OBJ = "NullTableLayerRscIdObj";
 

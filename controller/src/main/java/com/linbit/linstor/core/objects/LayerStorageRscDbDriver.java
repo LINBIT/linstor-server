@@ -84,7 +84,7 @@ public class LayerStorageRscDbDriver
     )
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
-        AbsRscLayerObject<?> absRscLayerObject = rawRef.get(NULL_TABLE_LAYER_RSC_ID_COLUMN);
+        AbsRscLayerObject<?> absRscLayerObject = rawRef.get(NULL_TABLE_LAYER_RSC_DATA_COLUMN);
         Map<VolumeNumber, VlmProviderObject<?>> vlmMap = new HashMap<>();
 
         StorageRscData<?> rscData = genericCreate(
