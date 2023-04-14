@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Autoplacer now ignores occupied values from evicted or evacuating nodes
+- DrbdLayer skips processChildren when DRBD_DELETE flag is set
 
 ### Fixed
 

@@ -476,12 +476,17 @@ public class DrbdLayer implements DeviceLayer
         throws AccessDeniedException, StorageException, ResourceException, VolumeException, DatabaseException
     {
         boolean isDiskless = drbdRscData.getAbsResource().isDrbdDiskless(workerCtx);
-        boolean isDiskRemoving = drbdRscData.getAbsResource().getStateFlags()
-            .isSet(workerCtx, Resource.Flags.DISK_REMOVING);
+        StateFlags<Flags> rscFlags = drbdRscData.getAbsResource().getStateFlags();
+        boolean isDiskRemoving = rscFlags.isSet(workerCtx, Resource.Flags.DISK_REMOVING);
 
         boolean contProcess = isDiskless;
 
-        if (!isDiskless || isDiskRemoving)
+        boolean processChildren = !isDiskless || isDiskRemoving;
+        // do not process children when ONLY DRBD_DELETE flag is set (DELETE flag is still unset)
+        processChildren &= (!rscFlags.isSet(workerCtx, Resource.Flags.DRBD_DELETE) ||
+            rscFlags.isSet(workerCtx, Resource.Flags.DELETE));
+
+        if (processChildren)
         {
             AbsRscLayerObject<Resource> dataChild = drbdRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
             resourceProcessorProvider.get().process(
