@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backup list can now handle more than 1000 entries in bucket (truncation/continuation was handled wrong before)
 - NodeConnection path can now be deleted
 - NodeConnections no longer cause NPE on satellites
+- Database loading causing ClassCastException with drbd,luks,storage during toggle disk
 
 ## [1.21.1] - 2023-03-22
 

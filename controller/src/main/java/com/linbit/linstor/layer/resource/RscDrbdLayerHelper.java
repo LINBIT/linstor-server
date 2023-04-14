@@ -467,7 +467,13 @@ public class RscDrbdLayerHelper extends
     {
         StateFlags<Flags> rscFlags = childRscDataRef.getAbsResource().getStateFlags();
         return rscFlags.isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) &&
-            !rscFlags.isSomeSet(apiCtx, Resource.Flags.DISK_ADD_REQUESTED, Resource.Flags.DISK_ADDING);
+            !rscFlags.isSomeSet(
+                apiCtx,
+                Resource.Flags.DISK_ADD_REQUESTED,
+                Resource.Flags.DISK_ADDING,
+                Resource.Flags.DISK_REMOVING,
+                Resource.Flags.DISK_REMOVE_REQUESTED
+            );
     }
 
     @Override
