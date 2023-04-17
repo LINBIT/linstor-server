@@ -21,10 +21,12 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerNvmeRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDfnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -89,7 +91,9 @@ public class LayerDataFactory
 
     private final LayerNvmeRscDatabaseDriver layerNvmeRscDbDriver;
 
-    private final OpenflexLayerDatabaseDriver openflexDbDriver;
+    private final LayerOpenflexRscDfnDatabaseDriver layerOpenflexRscDfnDbDriver;
+    private final LayerOpenflexRscDatabaseDriver layerOpenflexRscDbDriver;
+    private final LayerOpenflexVlmDatabaseDriver layerOpenflexVlmDbDriver;
     private final WritecacheLayerDatabaseDriver writecacheDbDriver;
     private final CacheLayerDatabaseDriver cacheDbDriver;
     private final BCacheLayerDatabaseDriver bcacheDbDriver;
@@ -98,6 +102,7 @@ public class LayerDataFactory
 
     private final Provider<TransactionMgr> transMgrProvider;
     private final TransactionObjectFactory transObjFactory;
+
 
     @Inject
     public LayerDataFactory(
@@ -111,7 +116,9 @@ public class LayerDataFactory
         LayerStorageRscDatabaseDriver layerStorRscDbDriverRef,
         LayerStorageVlmDatabaseDriver layerStorVlmDbDriverRef,
         LayerNvmeRscDatabaseDriver layerNvmeRscDbDriverRef,
-        OpenflexLayerDatabaseDriver openflexDbDriverRef,
+        LayerOpenflexRscDfnDatabaseDriver layerOpenflexRscDfnDbDriverRef,
+        LayerOpenflexRscDatabaseDriver layerOpenflexRscDbDriverRef,
+        LayerOpenflexVlmDatabaseDriver layerOpenflexVlmDbDriverRef,
         WritecacheLayerDatabaseDriver writecacheDbDriverRef,
         CacheLayerDatabaseDriver cacheDbDriverRef,
         BCacheLayerDatabaseDriver bcacheDbDriverRef,
@@ -131,7 +138,9 @@ public class LayerDataFactory
         layerStorRscDbDriver = layerStorRscDbDriverRef;
         layerStorVlmDbDriver = layerStorVlmDbDriverRef;
         layerNvmeRscDbDriver = layerNvmeRscDbDriverRef;
-        openflexDbDriver = openflexDbDriverRef;
+        layerOpenflexRscDfnDbDriver = layerOpenflexRscDfnDbDriverRef;
+        layerOpenflexRscDbDriver = layerOpenflexRscDbDriverRef;
+        layerOpenflexVlmDbDriver = layerOpenflexVlmDbDriverRef;
         writecacheDbDriver = writecacheDbDriverRef;
         cacheDbDriver = cacheDbDriverRef;
         bcacheDbDriver = bcacheDbDriverRef;
@@ -416,12 +425,12 @@ public class LayerDataFactory
             shortNameRef,
             new ArrayList<>(),
             nqnRef,
-            openflexDbDriver,
+            layerOpenflexRscDfnDbDriver,
             transObjFactory,
             transMgrProvider
         );
 
-        openflexDbDriver.create(ofRscDfnData);
+        layerOpenflexRscDfnDbDriver.create(ofRscDfnData);
         return ofRscDfnData;
     }
 
@@ -440,12 +449,13 @@ public class LayerDataFactory
             parentData,
             new HashSet<>(),
             new TreeMap<>(),
-            openflexDbDriver,
+            layerOpenflexRscDbDriver,
+            layerOpenflexVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
         layerRscIdDatabaseDriver.create(ofRscData);
-        openflexDbDriver.create(ofRscData);
+        layerOpenflexRscDbDriver.create(ofRscData);
         return ofRscData;
     }
 
@@ -463,7 +473,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-        openflexDbDriver.persist(ofTargetData);
+        layerOpenflexVlmDbDriver.create(ofTargetData);
         return ofTargetData;
     }
 

@@ -62,7 +62,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdCtrlDatabaseDriver
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionCtrlDatabaseDriver;
@@ -160,7 +159,6 @@ public class DatabaseLoader implements DatabaseDriver
     private final KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriver;
     private final LayerResourceIdCtrlDatabaseDriver layerRscIdDriver;
     private final Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMap;
-    private final OpenflexLayerCtrlDatabaseDriver openflexLayerDriver;
     private final WritecacheLayerCtrlDatabaseDriver writecacheLayerDriver;
     private final CacheLayerCtrlDatabaseDriver cacheLayerDriver;
     private final BCacheLayerCtrlDatabaseDriver bcacheLayerDriver;
@@ -209,7 +207,6 @@ public class DatabaseLoader implements DatabaseDriver
         KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriverRef,
         LayerResourceIdCtrlDatabaseDriver layerRscIdDriverRef,
         Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMapRef,
-        OpenflexLayerCtrlDatabaseDriver openflexLayerDriverRef,
         WritecacheLayerCtrlDatabaseDriver writecacheLayerDriverRef,
         CacheLayerCtrlDatabaseDriver cacheLayerDriverRef,
         BCacheLayerCtrlDatabaseDriver bcacheLayerDriverRef,
@@ -255,7 +252,6 @@ public class DatabaseLoader implements DatabaseDriver
         keyValueStoreGenericDbDriver = keyValueStoreGenericDbDriverRef;
         layerRscIdDriver = layerRscIdDriverRef;
         layerDriversMap = layerDriversMapRef;
-        openflexLayerDriver = openflexLayerDriverRef;
         writecacheLayerDriver = writecacheLayerDriverRef;
         cacheLayerDriver = cacheLayerDriverRef;
         bcacheLayerDriver = bcacheLayerDriverRef;
@@ -688,8 +684,6 @@ public class DatabaseLoader implements DatabaseDriver
         throws DatabaseException, AccessDeniedException, ImplementationError, InvalidNameException,
         ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
-        openflexLayerDriver.fetchForLoadAll(tmpStorPoolMapWithInitMapsRef, tmpRscDfnMapRef);
-
         bcacheLayerDriver.fetchForLoadAll();
         cacheLayerDriver.fetchForLoadAll();
         writecacheLayerDriver.fetchForLoadAll();
@@ -750,7 +744,6 @@ public class DatabaseLoader implements DatabaseDriver
             driver.clearLoadingCaches();
         }
 
-        openflexLayerDriver.clearLoadAllCache();
         bcacheLayerDriver.clearLoadAllCache();
         cacheLayerDriver.clearLoadAllCache();
         writecacheLayerDriver.clearLoadAllCache();
@@ -855,18 +848,11 @@ public class DatabaseLoader implements DatabaseDriver
                         {
                             case DRBD:
                             case NVME:
+                            case OPENFLEX:
                             case LUKS:
                             case STORAGE:
                                 ControllerLayerRscDatabaseDriver driver = layerDriversMap.get(rlo.getLayerKind());
                                 rscLayerObjectPair = driver.load(rsc, rlo.getRscLayerId());
-                                break;
-                            case OPENFLEX:
-                                rscLayerObjectPair = openflexLayerDriver.load(
-                                    rsc,
-                                    rlo.getRscLayerId(),
-                                    rlo.getResourceNameSuffix(),
-                                    parent
-                                );
                                 break;
                             case WRITECACHE:
                                 rscLayerObjectPair = writecacheLayerDriver.load(

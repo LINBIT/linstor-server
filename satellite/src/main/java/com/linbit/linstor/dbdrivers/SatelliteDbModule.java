@@ -11,13 +11,15 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerNvmeRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDfnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
@@ -90,7 +92,10 @@ public class SatelliteDbModule extends AbstractModule
 
         bind(LayerNvmeRscDatabaseDriver.class).to(SatelliteLayerNvmeRscDbDriver.class);
 
-        bind(OpenflexLayerDatabaseDriver.class).to(SatelliteOpenflexLayerDriver.class);
+        bind(LayerOpenflexRscDfnDatabaseDriver.class).to(SatelliteLayerOpenflexRscDfnDbDriver.class);
+        bind(LayerOpenflexRscDatabaseDriver.class).to(SatelliteLayerOpenflexRscDbDriver.class);
+        bind(LayerOpenflexVlmDatabaseDriver.class).to(SatelliteLayerOpenflexVlmDbDriver.class);
+
         bind(WritecacheLayerDatabaseDriver.class).to(SatelliteWritecacheLayerDriver.class);
         bind(CacheLayerDatabaseDriver.class).to(SatelliteCacheLayerDriver.class);
         bind(BCacheLayerDatabaseDriver.class).to(SatelliteBCacheLayerDriver.class);

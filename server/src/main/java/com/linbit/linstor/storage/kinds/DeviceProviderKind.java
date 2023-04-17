@@ -155,7 +155,6 @@ public enum DeviceProviderKind
         false,
         false,
         true,
-
         true,
         false,
         true, // OpenFlex provides nvmeTarget, nothing to worry about

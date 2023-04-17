@@ -12,13 +12,15 @@ import com.linbit.linstor.core.objects.LayerDrbdVlmDfnDbDriver;
 import com.linbit.linstor.core.objects.LayerLuksRscDbDriver;
 import com.linbit.linstor.core.objects.LayerLuksVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerNvmeRscDbDriver;
+import com.linbit.linstor.core.objects.LayerOpenflexRscDbDriver;
+import com.linbit.linstor.core.objects.LayerOpenflexRscDfnDbDriver;
+import com.linbit.linstor.core.objects.LayerOpenflexVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerResourceIdDbDriver;
 import com.linbit.linstor.core.objects.LayerStorageRscDbDriver;
 import com.linbit.linstor.core.objects.LayerStorageVlmDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.NodeGenericDbDriver;
-import com.linbit.linstor.core.objects.OpenflexLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
@@ -44,6 +46,9 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerLuksRscCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerNvmeRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDfnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
@@ -51,7 +56,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
@@ -146,7 +150,10 @@ public class TestDbModule extends AbstractModule
 
         bind(LayerNvmeRscDatabaseDriver.class).to(LayerNvmeRscDbDriver.class);
 
-        bind(OpenflexLayerDatabaseDriver.class).to(OpenflexLayerSQLDbDriver.class);
+        bind(LayerOpenflexRscDfnDatabaseDriver.class).to(LayerOpenflexRscDfnDbDriver.class);
+        bind(LayerOpenflexRscDatabaseDriver.class).to(LayerOpenflexRscDbDriver.class);
+        bind(LayerOpenflexVlmDatabaseDriver.class).to(LayerOpenflexVlmDbDriver.class);
+
         bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerSQLDbDriver.class);
         bind(CacheLayerDatabaseDriver.class).to(CacheLayerSQLDbDriver.class);
         bind(BCacheLayerDatabaseDriver.class).to(BCacheLayerSQLDbDriver.class);

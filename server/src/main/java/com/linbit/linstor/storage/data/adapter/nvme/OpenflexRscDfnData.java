@@ -5,7 +5,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDfnDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.interfaces.layers.nvme.OpenflexRscDfnObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -28,7 +28,7 @@ public class OpenflexRscDfnData<RSC extends AbsResource<RSC>>
     // unmodifiable data, once initialized
     private final ResourceName rscName;
     private final String resourceNameSuffix;
-    private final OpenflexLayerDatabaseDriver ofDbDriver;
+    private final LayerOpenflexRscDfnDatabaseDriver ofDbDriver;
 
     private final String shortName;
 
@@ -42,7 +42,7 @@ public class OpenflexRscDfnData<RSC extends AbsResource<RSC>>
         String shortNameRef,
         List<OpenflexRscData<RSC>> ofRscDataListRef,
         String nqnRef,
-        OpenflexLayerDatabaseDriver dbDriverRef,
+        LayerOpenflexRscDfnDatabaseDriver dbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )

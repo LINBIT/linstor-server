@@ -7,7 +7,8 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.OpenflexLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsRscData;
@@ -31,7 +32,8 @@ public class OpenflexRscData<RSC extends AbsResource<RSC>>
     implements OpenflexRscObject<RSC>
 {
     // unmodifiable data, once initialized
-    private final OpenflexLayerDatabaseDriver ofDbDriver;
+    private final LayerOpenflexRscDatabaseDriver openflexRscDbDriver;
+    private final LayerOpenflexVlmDatabaseDriver openflexVlmDbDriver;
     private final OpenflexRscDfnData<RSC> rscDfnData;
 
     private final TransactionSimpleObject<OpenflexRscData<?>, Boolean> inUse;
@@ -45,7 +47,8 @@ public class OpenflexRscData<RSC extends AbsResource<RSC>>
         AbsRscLayerObject<RSC> parentRef,
         Set<AbsRscLayerObject<RSC>> childrenRef,
         Map<VolumeNumber, OpenflexVlmData<RSC>> vlmProviderObjectsRef,
-        OpenflexLayerDatabaseDriver dbDriverRef,
+        LayerOpenflexRscDatabaseDriver openflexRscDriverRef,
+        LayerOpenflexVlmDatabaseDriver openflexVlmDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
     )
@@ -56,13 +59,14 @@ public class OpenflexRscData<RSC extends AbsResource<RSC>>
             parentRef,
             childrenRef,
             rscDfnDataRef.getRscNameSuffix(),
-            dbDriverRef.getIdDriver(),
+            openflexRscDriverRef.getIdDriver(),
             vlmProviderObjectsRef,
             transObjFactoryRef,
             transMgrProviderRef
         );
         rscDfnData = rscDfnDataRef;
-        ofDbDriver = dbDriverRef;
+        openflexRscDbDriver = openflexRscDriverRef;
+        openflexVlmDbDriver = openflexVlmDriverRef;
 
         inUse = transObjFactoryRef.createTransactionSimpleObject(this, null, null);
 
@@ -97,6 +101,7 @@ public class OpenflexRscData<RSC extends AbsResource<RSC>>
         return rscDfnData;
     }
 
+    @Override
     public boolean exists()
     {
         return exists;
@@ -116,13 +121,13 @@ public class OpenflexRscData<RSC extends AbsResource<RSC>>
     @Override
     protected void deleteVlmFromDatabase(OpenflexVlmData<RSC> vlmRef) throws DatabaseException
     {
-        ofDbDriver.delete(vlmRef);
+        openflexVlmDbDriver.delete(vlmRef);
     }
 
     @Override
     protected void deleteRscFromDatabase() throws DatabaseException
     {
-        ofDbDriver.delete(this);
+        openflexRscDbDriver.delete(this);
     }
 
     @Override
