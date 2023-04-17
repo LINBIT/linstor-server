@@ -1,3 +1,29 @@
+linstor-server (1.22.0-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Exc context: Add new ErrorContextSupplier interface
+  * Exc context: Also print errCtx on stdErr if printstacktraces is enabled
+  * ETCD,Migration: remove dependency on GeneratedDatabaseTables
+  * QSI: Fixed available size calculation
+  * MultiSnap: Add support for multiple snapshots
+  * MultiSnap: get suspend-ios closer together
+  * Snap,Abort: Ensure resume-io
+  * Lvm: Throw StorageExc if volumeGroupe does not exist
+  * Autoplacer: Ignore evacuating / evicting nodes
+  * NodeCon: Fix nodeCon only existing on one side
+  * Added LvcreateSnapshotOptions and ZfsSnapshotOptions
+  * Mkfs: Add optional user and group
+  * Drbd,DbLoader: Fix database loading issue
+  * DrbdLayer: Skip children in DRBD_DELETE state
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * add migration tools to linstor-config
+
+  [ Johanna Kucera ]
+  * BackupShipping: allow listing of more than 1000 objects
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 17 Apr 2023 11:20:52 +0000
+
 linstor-server (1.21.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

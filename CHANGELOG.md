@@ -8,10 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.0] - 2023-04-17
+
 ### Added
 
 - "StorDriver/LvcreateSnapshotOptions" and "StorDriver/ZfsSnapshotOptions" properties
 - "FileSystem/User" and "FileSystem/Group" properties for root-owner of newly created FS
+- Support to do multiple snapshots within one device manager run
 
 ### Changed
 
@@ -24,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NodeConnection path can now be deleted
 - NodeConnections no longer cause NPE on satellites
 - Database loading causing ClassCastException with drbd,luks,storage during toggle disk
+- Aborted snapshot now always should resume-io
 
 ## [1.21.1] - 2023-03-22
 

@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.18.0
       - Added POST /v1/action/snapshot/multi as well as CreateMultiSnapshotRequest and CreateMultiSnapshotResponse objects
     * 1.17.0
       - Added POST /v1/resource-groups/{resource_group}/query-size-info
