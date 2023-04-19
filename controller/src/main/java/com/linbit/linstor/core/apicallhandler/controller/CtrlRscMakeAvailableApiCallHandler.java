@@ -262,6 +262,8 @@ public class CtrlRscMakeAvailableApiCallHandler
                 }
                 else
                 {
+                    // unset TIE_BREAKER flag to mark resource as a wanted diskless
+                    unsetFlag(rsc, Flags.TIE_BREAKER);
                     errorReporter.logTrace("Resource already in expected state. Nothing to do");
                     flux = Flux.just(
                         ApiCallRcImpl.singleApiCallRc(ApiConsts.MASK_SUCCESS, "Resource already deployed as requested")
