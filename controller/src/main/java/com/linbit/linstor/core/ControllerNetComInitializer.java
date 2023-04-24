@@ -300,16 +300,15 @@ public final class ControllerNetComInitializer implements StartupInitializer
                 if (dfltPlainConSvc == null || dfltPlainConSvc.isEmpty())
                 {
                     TransactionMgr transMgr = null;
+                    initScope.enter();
                     try
                     {
                         transMgr = transactionMgrGenerator.startTransaction();
-                        initScope.enter();
                         TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
 
                         ctrlConf.setProp(PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, serviceName.displayValue);
 
                         transMgr.commit();
-                        initScope.exit();
                     }
                     catch (DatabaseException dbExc)
                     {
@@ -322,6 +321,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
                     }
                     finally
                     {
+                        initScope.exit();
                         if (transMgr != null)
                         {
                             try

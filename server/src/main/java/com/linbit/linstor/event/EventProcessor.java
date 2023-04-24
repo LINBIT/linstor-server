@@ -24,6 +24,7 @@ import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Map;
@@ -190,6 +191,9 @@ public class EventProcessor
             errorReporter.reportError(exc, null, null,
                 "Event handler for " + eventIdentifier + " failed on connection closed");
         }
-        linstorScope.exit();
+        finally
+        {
+            linstorScope.exit();
+        }
     }
 }

@@ -63,7 +63,7 @@ import reactor.util.context.Context;
 @Singleton
 public class AutoDiskfulTask implements TaskScheduleService.Task
 {
-    private static final long MINUTES_TO_MS = 1000 * 60;
+    private static final long MINUTES_TO_MS = 1000 * 60L;
 
     private static final long TASK_TIMEOUT = 10_000;
 
@@ -332,29 +332,37 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                         !rscFlags.isSet(sysCtx, Resource.Flags.DISK_ADDING)
                 )
                 {
-                    ResourceDefinition rscDfn = rsc.getResourceDefinition();
-                    long sizeInKib = getSize(rscDfn);
-
+                    Set<StorPool> autoPlace;
                     linstorScope.enter();
-                    linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
+                    try
+                    {
+                        ResourceDefinition rscDfn = rsc.getResourceDefinition();
+                        long sizeInKib = getSize(rscDfn);
 
-                    Set<StorPool> autoPlace = autoplacer.autoPlace(
-                        AutoSelectFilterPojo.merge(
-                            new AutoSelectFilterBuilder()
-                                .setPlaceCount(1)
-                                .setNodeNameList(Collections.singletonList(rsc.getNode().getName().displayValue))
-                                .setSkipAlreadyPlacedOnNodeNamesCheck(
-                                    rscDfn.streamResource(sysCtx)
-                                    .map(tmpRsc -> tmpRsc.getNode().getName().displayValue)
-                                        .collect(Collectors.toList())
-                                )
-                                .build(),
-                            rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
-                        ),
-                        rscDfn,
-                        sizeInKib
-                    );
-                    linstorScope.exit();
+                        linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
+
+                        autoPlace = autoplacer.autoPlace(
+                            AutoSelectFilterPojo.merge(
+                                new AutoSelectFilterBuilder()
+                                    .setPlaceCount(1)
+                                    .setNodeNameList(Collections.singletonList(rsc.getNode().getName().displayValue))
+                                    .setSkipAlreadyPlacedOnNodeNamesCheck(
+                                        rscDfn.streamResource(sysCtx)
+                                            .map(tmpRsc -> tmpRsc.getNode().getName().displayValue)
+                                            .collect(Collectors.toList())
+                                    )
+                                    .build(),
+                                rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
+                            ),
+                            rscDfn,
+                            sizeInKib
+                        );
+                    }
+                    finally
+                    {
+                        // needs to exit here to ensure the following subscribe does not try to use the same scope
+                        linstorScope.exit();
+                    }
 
                     if (autoPlace == null || autoPlace.isEmpty())
                     {
@@ -400,7 +408,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         return getNextFutureReschedule(scheduleAt, Math.min(nextRunIn, TASK_TIMEOUT));
     }
 
-    private Mono<ApiCallRc> removeExcessFlux(Resource rsc) throws AccessDeniedException
+    private Mono<ApiCallRc> removeExcessFlux(Resource rsc)
     {
         return Mono.fromRunnable(
             () -> backgroundRunner.runInBackground(
