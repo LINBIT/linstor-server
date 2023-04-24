@@ -179,10 +179,9 @@ public class EventProcessor
         EventIdentifier eventIdentifier
     )
     {
-        linstorScope.enter();
-        linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
-        try
+        try (LinStorScope.ScopeAutoCloseable close = linstorScope.enter())
         {
+            linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
             eventHandler.get().execute(
                 InternalApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION, eventIdentifier, null);
         }
@@ -190,10 +189,6 @@ public class EventProcessor
         {
             errorReporter.reportError(exc, null, null,
                 "Event handler for " + eventIdentifier + " failed on connection closed");
-        }
-        finally
-        {
-            linstorScope.exit();
         }
     }
 }

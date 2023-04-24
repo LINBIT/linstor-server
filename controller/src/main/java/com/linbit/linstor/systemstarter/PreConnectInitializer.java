@@ -62,8 +62,7 @@ public class PreConnectInitializer implements StartupInitializer
     public void initialize()
         throws InitializationException, AccessDeniedException, DatabaseException, SystemServiceStartException
     {
-        apiCallScope.enter();
-        try
+        try (LinStorScope.ScopeAutoCloseable close = apiCallScope.enter())
         {
             TransactionMgrUtil.seedTransactionMgr(apiCallScope, transactionMgrGenerator.startTransaction());
 
@@ -133,10 +132,6 @@ public class PreConnectInitializer implements StartupInitializer
         catch (Exception exc)
         {
             throw new SystemServiceStartException("Automatic cleanup after restart failed", exc, true);
-        }
-        finally
-        {
-            apiCallScope.exit();
         }
     }
 }

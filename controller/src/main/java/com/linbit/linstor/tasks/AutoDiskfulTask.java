@@ -333,8 +333,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                 )
                 {
                     Set<StorPool> autoPlace;
-                    linstorScope.enter();
-                    try
+                    try (LinStorScope.ScopeAutoCloseable close = linstorScope.enter())
                     {
                         ResourceDefinition rscDfn = rsc.getResourceDefinition();
                         long sizeInKib = getSize(rscDfn);
@@ -358,11 +357,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                             sizeInKib
                         );
                     }
-                    finally
-                    {
-                        // needs to exit here to ensure the following subscribe does not try to use the same scope
-                        linstorScope.exit();
-                    }
+                    // need to exit scope here to ensure the following subscribe does not try to use the same scope
 
                     if (autoPlace == null || autoPlace.isEmpty())
                     {

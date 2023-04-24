@@ -216,8 +216,7 @@ public class RequestHelper
 
         TransactionMgr transMgr = transactional ? transactionMgrGenerator.startTransaction() : null;
 
-        apiCallScope.enter();
-        try
+        try (LinStorScope.ScopeAutoCloseable close = apiCallScope.enter())
         {
             apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), accCtx);
             apiCallScope.seed(Key.get(AccessContext.class, ErrorReporterContext.class), accCtx);
@@ -268,7 +267,6 @@ public class RequestHelper
         }
         finally
         {
-            apiCallScope.exit();
             if (transMgr != null)
             {
                 if (transMgr.isDirty())

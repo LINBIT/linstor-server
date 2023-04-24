@@ -17,6 +17,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.List;
 
 @Singleton
@@ -127,13 +128,14 @@ public class EmptySecurityDbDriver implements DbAccessor
             objProt = new ObjectProtection(accCtx, "", this, transObjFactoryRef, transMgrProviderRef);
 
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
-            initScope.enter();
-            TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
+            try (LinStorScope.ScopeAutoCloseable close = initScope.enter())
+            {
+                TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
 
-            objProt.addAclEntry(accCtx, accCtx.getRole(), AccessType.CONTROL);
+                objProt.addAclEntry(accCtx, accCtx.getRole(), AccessType.CONTROL);
 
-            transMgr.commit();
-            initScope.exit();
+                transMgr.commit();
+            }
         }
 
         @Override

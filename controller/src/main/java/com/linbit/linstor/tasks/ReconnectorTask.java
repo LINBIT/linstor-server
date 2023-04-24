@@ -288,21 +288,19 @@ public class ReconnectorTask implements Task
                     Node node = config.peer.getNode();
                     if (node != null && !node.isDeleted())
                     {
-                        boolean hasEnteredScope = false;
                         TransactionMgr transMgr = null;
                         try (LockGuard ignore = lockGuardFactory
                             .create()
                             .read(CTRL_CONFIG)
                             .write(NODES_MAP)
-                            .build()
+                            .build();
+                            LinStorScope.ScopeAutoCloseable close = reconnScope.enter()
                         )
                         {
                             // another check needed to detect race conditions (someone could have called node.delete()
                             // while we were waiting for the lock)
                             if (!node.isDeleted())
                             {
-                                reconnScope.enter();
-                                hasEnteredScope = true;
                                 transMgr = transactionMgrGenerator.startTransaction();
                                 TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
 
@@ -328,10 +326,6 @@ public class ReconnectorTask implements Task
                         }
                         finally
                         {
-                            if (hasEnteredScope)
-                            {
-                                reconnScope.exit();
-                            }
                             if (transMgr != null)
                             {
 

@@ -276,66 +276,41 @@ public class DebugConsoleImpl implements DebugConsole
 
                 try
                 {
-                    boolean scopeEntered = false;
-                    if (setupScope && debugCmd.requiresScope())
+                    boolean doScope = setupScope && debugCmd.requiresScope();
+                    // java will skip this autocloseable if it is null, no NPE
+                    try (LinStorScope.ScopeAutoCloseable close = doScope ? debugScope.enter() : null)
                     {
-                        try
-                        {
-                            debugScope.enter();
-                            scopeEntered = true;
-                        }
-                        catch (Exception exc)
-                        {
-                            String reportId = errorReporter.reportError(exc);
-                            debugErr.printf(
-                                "DebugConsole: An unhandled exception was encountered when attempting to enter " +
-                                    "the injector scope (" + LinStorScope.class.getSimpleName() + ").\n" +
-                                    "Some commands may not work as a result of this problem.\n" +
-                                    "The report ID of the error report is %s\n",
-                                reportId
-                            );
-                        }
-
-                        try
-                        {
-                            TransactionMgr transMgr = transactionMgrGenerator.startTransaction();
-                            TransactionMgrUtil.seedTransactionMgr(debugScope, transMgr);
-                        }
-                        catch (Exception exc)
-                        {
-                            String reportId = errorReporter.reportError(exc);
-                            debugErr.printf(
-                                "DebugConsole: An unhandled exception was encountered when attempting to start " +
-                                "the transaction.\n" +
-                                "Some commands may not work as a result of this problem.\n" +
-                                "The report ID of the error report is %s\n",
-                                reportId
-                            );
-                        }
-                    }
-                    try
-                    {
-                        debugCmd.execute(debugOut, debugErr, debugCtx, parameters);
-                    }
-                    finally
-                    {
-                        if (scopeEntered)
+                        if (doScope)
                         {
                             try
                             {
-                                debugScope.exit();
+                                TransactionMgr transMgr = transactionMgrGenerator.startTransaction();
+                                TransactionMgrUtil.seedTransactionMgr(debugScope, transMgr);
                             }
                             catch (Exception exc)
                             {
                                 String reportId = errorReporter.reportError(exc);
                                 debugErr.printf(
-                                    "DebugConsole: An unhandled exception was encountered when attempting to exit " +
-                                    "the injector scope (" + LinStorScope.class.getSimpleName() + ").\n" +
+                                    "DebugConsole: An unhandled exception was encountered when attempting to start " +
+                                        "the transaction.\n" +
+                                        "Some commands may not work as a result of this problem.\n" +
                                     "The report ID of the error report is %s\n",
                                     reportId
                                 );
                             }
                         }
+                        debugCmd.execute(debugOut, debugErr, debugCtx, parameters);
+                    }
+                    catch (Exception exc)
+                    {
+                        String reportId = errorReporter.reportError(exc);
+                        debugErr.printf(
+                            "DebugConsole: An unhandled exception was encountered when attempting to enter or exit " +
+                                "the injector scope (" + LinStorScope.class.getSimpleName() + ").\n" +
+                                "Some commands may not work as a result of this problem.\n" +
+                                "The report ID of the error report is %s\n",
+                            reportId
+                        );
                     }
                 }
                 catch (Exception exc)

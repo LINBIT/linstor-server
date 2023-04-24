@@ -6,6 +6,7 @@ import com.linbit.linstor.api.ApiCallRc.RcEntry;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.ApiRcUtils;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.utils.AbsApiCallTester;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
@@ -76,23 +77,22 @@ public abstract class ApiTestBase extends GenericDbBase
             // new ApiTestModule(stltConnector)
         ));
 
-        testScope.enter();
+        try (LinStorScope.ScopeAutoCloseable close = testScope.enter())
+        {
+            TransactionMgrSQL transMgr = new ControllerSQLTransactionMgr(dbConnPool);
+            testScope.seed(TransactionMgr.class, transMgr);
+            testScope.seed(TransactionMgrSQL.class, transMgr);
 
-        TransactionMgrSQL transMgr = new ControllerSQLTransactionMgr(dbConnPool);
-        testScope.seed(TransactionMgr.class, transMgr);
-        testScope.seed(TransactionMgrSQL.class, transMgr);
+            ctrlConf.setConnection(transMgr);
+            ctrlConf.setProp(ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, "ignore");
+            ctrlConf.setProp(ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_SSL_CON_SVC, "ignore");
 
-        ctrlConf.setConnection(transMgr);
-        ctrlConf.setProp(ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_PLAIN_CON_SVC, "ignore");
-        ctrlConf.setProp(ControllerNetComInitializer.PROPSCON_KEY_DEFAULT_SSL_CON_SVC, "ignore");
+            create(transMgr, ALICE_ACC_CTX);
+            create(transMgr, BOB_ACC_CTX);
 
-        create(transMgr, ALICE_ACC_CTX);
-        create(transMgr, BOB_ACC_CTX);
-
-        transMgr.commit();
-        transMgr.returnConnection();
-
-        testScope.exit();
+            transMgr.commit();
+            transMgr.returnConnection();
+        }
 
         Mockito.when(netComContainer.getNetComConnector(Mockito.any(ServiceName.class)))
             .thenReturn(tcpConnectorMock);

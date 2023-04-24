@@ -48,6 +48,7 @@ public class ResourceDefinitionSatelliteTest
     private final TransportType transportType;
 
     private java.util.UUID resDfnUuid;
+    LinStorScope.ScopeAutoCloseable close;
 
     @Inject
     private VolumeDefinitionSatelliteFactory volumeDefinitionFactory;
@@ -86,7 +87,8 @@ public class ResourceDefinitionSatelliteTest
         );
         injector.injectMembers(this);
         TransactionMgr transMgr = new SatelliteTransactionMgr();
-        testScope.enter();
+        // do not use scopes like this unless you absolutely need it for a test, use try-with-resource whenever possible
+        close = testScope.enter();
         testScope.seed(TransactionMgr.class, transMgr);
 
         resDfnUuid = UUID.randomUUID();
@@ -95,7 +97,7 @@ public class ResourceDefinitionSatelliteTest
     @After
     public void tearDown() throws Exception
     {
-        testScope.exit();
+        close.close();
         errorReporter.shutdown();
     }
 

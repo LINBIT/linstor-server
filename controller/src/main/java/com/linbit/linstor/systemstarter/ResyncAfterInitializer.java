@@ -34,9 +34,8 @@ public class ResyncAfterInitializer implements StartupInitializer
     @Override
     public void initialize() throws SystemServiceStartException
     {
-        apiCallScope.enter();
 
-        try
+        try (LinStorScope.ScopeAutoCloseable close = apiCallScope.enter())
         {
             TransactionMgr txMgr = transactionMgrGenerator.startTransaction();
             TransactionMgrUtil.seedTransactionMgr(apiCallScope, txMgr);
@@ -48,10 +47,6 @@ public class ResyncAfterInitializer implements StartupInitializer
         catch (Throwable exc)
         {
             throw new SystemServiceStartException("ResyncAfter field setter failed", exc, true);
-        }
-        finally
-        {
-            apiCallScope.exit();
         }
     }
 }

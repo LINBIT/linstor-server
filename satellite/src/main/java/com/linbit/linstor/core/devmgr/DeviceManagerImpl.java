@@ -1034,16 +1034,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
             Node localNode = controllerPeerConnector.getLocalNode();
 
-            deviceMgrScope.enter();
-            TransactionMgrUtil.seedTransactionMgr(deviceMgrScope, transMgr);
-            deviceMgrScope.seed(NotificationListener.class, this);
-            deviceMgrScope.seed(
-                Key.get(Props.class, Names.named(DevMgrModule.LOCAL_NODE_PROPS)),
-                localNode.getProps(wrkCtx)
-            );
-
-            try
+            try (LinStorScope.ScopeAutoCloseable close = deviceMgrScope.enter())
             {
+                TransactionMgrUtil.seedTransactionMgr(deviceMgrScope, transMgr);
+                deviceMgrScope.seed(NotificationListener.class, this);
+                deviceMgrScope.seed(
+                    Key.get(Props.class, Names.named(DevMgrModule.LOCAL_NODE_PROPS)),
+                    localNode.getProps(wrkCtx)
+                );
                 // Check whether the master key for encrypted volumes is known
                 boolean haveMasterKey = stltSecObj.getCryptKey() != null;
 
@@ -1186,7 +1184,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 // always commit transaction as we most likely changed our environment which we cannot
                 // rollback
                 transMgr.commit();
-                deviceMgrScope.exit();
                 extfileWrLock.unlock();
                 storPoolWrLock.unlock();
                 rscDfnWrLock.unlock();

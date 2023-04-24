@@ -85,10 +85,9 @@ public class DbDataInitializer implements StartupInitializer
 
         InitializationException initExc = null;
 
-        try
+        try (LinStorScope.ScopeAutoCloseable close = initScope.enter())
         {
             transMgr = transactionMgrGenerator.startTransaction();
-            initScope.enter();
             TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
 
             // rebuilding layerData also runs an additional check to verify the used storage pools
@@ -109,7 +108,6 @@ public class DbDataInitializer implements StartupInitializer
             initializeDisklessStorPoolDfn();
 
             transMgr.commit();
-            initScope.exit();
         }
         catch (DatabaseException exc)
         {

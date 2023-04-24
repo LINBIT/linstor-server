@@ -403,7 +403,7 @@ public class NodeApiTest extends ApiTestBase
     private void commitAndLeaveScope() throws Exception
     {
         commit();
-        testScope.exit();
+        close.close();
         inScope = false;
     }
 }

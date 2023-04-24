@@ -164,6 +164,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     private List<Statement> statements = new ArrayList<>();
     private Connection con;
     private List<Connection> connections = new ArrayList<>();
+    protected LinStorScope.ScopeAutoCloseable close;
 
     @Mock
     protected Peer mockPeer;
@@ -362,7 +363,8 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     protected void enterScope() throws Exception
     {
         TransactionMgrSQL transMgr = new ControllerSQLTransactionMgr(dbConnPool);
-        testScope.enter();
+        // do not use scopes like this unless you absolutely need it for a test, use try-with-resource whenever possible
+        close = testScope.enter();
         testScope.seed(TransactionMgr.class, transMgr);
         testScope.seed(TransactionMgrSQL.class, transMgr);
         if (seedDefaultPeerRule.shouldSeedDefaultPeer())
@@ -418,7 +420,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         {
             if (inScope && testScope != null)
             {
-                testScope.exit();
+                close.close();
             }
         }
     }

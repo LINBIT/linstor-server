@@ -300,8 +300,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
                 if (dfltPlainConSvc == null || dfltPlainConSvc.isEmpty())
                 {
                     TransactionMgr transMgr = null;
-                    initScope.enter();
-                    try
+                    try (LinStorScope.ScopeAutoCloseable close = initScope.enter())
                     {
                         transMgr = transactionMgrGenerator.startTransaction();
                         TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
@@ -321,7 +320,6 @@ public final class ControllerNetComInitializer implements StartupInitializer
                     }
                     finally
                     {
-                        initScope.exit();
                         if (transMgr != null)
                         {
                             try
@@ -442,16 +440,14 @@ public final class ControllerNetComInitializer implements StartupInitializer
                             (dfltSslSvcName == null || dfltSslSvcName.isEmpty()))
                         {
                             TransactionMgr transMgr = null;
-                            try
+                            try (LinStorScope.ScopeAutoCloseable close = initScope.enter())
                             {
                                 transMgr = transactionMgrGenerator.startTransaction();
-                                initScope.enter();
                                 TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
 
                                 ctrlConf.setProp(PROPSCON_KEY_DEFAULT_SSL_CON_SVC, serviceName.displayValue);
 
                                 transMgr.commit();
-                                initScope.exit();
                             }
                             catch (DatabaseException dbExc)
                             {

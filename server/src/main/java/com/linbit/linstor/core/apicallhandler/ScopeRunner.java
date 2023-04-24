@@ -127,9 +127,8 @@ public class ScopeRunner
 
         Exception caughtExc = null;
         ImplementationError caughtImplError = null;
-        apiCallScope.enter();
         lockGuard.lock();
-        try
+        try (LinStorScope.ScopeAutoCloseable close = apiCallScope.enter())
         {
             apiCallScope.seed(Key.get(AccessContext.class, PeerContext.class), accCtx);
             apiCallScope.seed(Key.get(AccessContext.class, ErrorReporterContext.class), accCtx);
@@ -163,7 +162,6 @@ public class ScopeRunner
         {
             try
             {
-                apiCallScope.exit();
                 rollbackIfNeeded(apiCallName, accCtx, peer, transMgr);
                 errorLog.logTrace(
                     "%s%s '%s' scope '%s' end",

@@ -7,8 +7,6 @@
 
 package com.linbit.linstor.api;
 
-import static com.google.common.base.Preconditions.checkState;
-
 import com.linbit.linstor.annotation.ErrorReporterContext;
 
 import java.lang.annotation.Annotation;
@@ -20,6 +18,8 @@ import com.google.inject.OutOfScopeException;
 import com.google.inject.Provider;
 import com.google.inject.Scope;
 import com.google.inject.Scopes;
+
+import static com.google.common.base.Preconditions.checkState;
 
 /**
  * Holds objects which are scoped to a specific API call.
@@ -49,13 +49,14 @@ public class LinStorScope implements Scope
 
     private final ThreadLocal<Map<Key<?>, Object>> values = new ThreadLocal<>();
 
-    public void enter()
+    public ScopeAutoCloseable enter()
     {
         checkState(values.get() == null, "The current scope has already been entered");
         values.set(Maps.<Key<?>, Object>newHashMap());
+        return this::exit;
     }
 
-    public void exit()
+    private void exit()
     {
         checkState(values.get() != null, "There is no current scope to exit");
         values.remove();
@@ -136,5 +137,11 @@ public class LinStorScope implements Scope
     public static <T> Provider<T> seededKeyProvider()
     {
         return (Provider<T>) SEEDED_KEY_PROVIDER;
+    }
+
+    public interface ScopeAutoCloseable extends AutoCloseable
+    {
+        @Override
+        void close();
     }
 }

@@ -80,10 +80,9 @@ public class DbCoreObjProtInitializer implements StartupInitializer
         throws InitializationException
     {
         TransactionMgr transMgr = null;
-        try
+        try (LinStorScope.ScopeAutoCloseable close = initScope.enter())
         {
             transMgr = transactionMgrGenerator.startTransaction();
-            initScope.enter();
             TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
 
             // initializing ObjectProtections for nodeMap, rscDfnMap, storPoolMap and freeSpaceMgrMap
@@ -181,7 +180,6 @@ public class DbCoreObjProtInitializer implements StartupInitializer
             {
                 transMgr.returnConnection();
             }
-            initScope.exit();
         }
     }
 
