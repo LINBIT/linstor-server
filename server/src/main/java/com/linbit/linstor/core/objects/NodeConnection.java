@@ -324,8 +324,12 @@ public class NodeConnection extends AbsCoreObj<NodeConnection>
     @Override
     public int compareTo(NodeConnection other)
     {
-        return (sourceNode.getName().value + targetNode.getName().value).compareTo(
-            other.sourceNode.getName().value + targetNode.getName().value);
+        int cmp = sourceNode.compareTo(other.sourceNode);
+        if (cmp == 0)
+        {
+            cmp = targetNode.compareTo(other.targetNode);
+        }
+        return cmp;
     }
 
     @Override

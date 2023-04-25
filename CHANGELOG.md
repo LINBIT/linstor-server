@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- NodeCon: Fixed compareTo() causing node connection paths loaded incorrectly.
+
 ## [1.22.0] - 2023-04-17
 
 ### Added

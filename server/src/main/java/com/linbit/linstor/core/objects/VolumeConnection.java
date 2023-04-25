@@ -30,7 +30,6 @@ import java.util.UUID;
  */
 public class VolumeConnection extends AbsCoreObj<VolumeConnection>
 {
-
     private final Volume sourceVolume;
     private final Volume targetVolume;
 
@@ -258,15 +257,14 @@ public class VolumeConnection extends AbsCoreObj<VolumeConnection>
     @Override
     public int compareTo(VolumeConnection other)
     {
-        return (sourceVolume.getAbsResource().getNode().getName().value +
-            targetVolume.getAbsResource().getNode().getName().value +
-            sourceVolume.getResourceDefinition().getName().value +
-            sourceVolume.getVolumeDefinition().getVolumeNumber()).compareTo(
-                other.sourceVolume.getAbsResource().getNode().getName().value +
-                other.targetVolume.getAbsResource().getNode().getName().value +
-                other.sourceVolume.getResourceDefinition().getName().value +
-                other.sourceVolume.getVolumeDefinition().getVolumeNumber()
-        );
+        // since source and target are already sorted, it should be enough to only compare sourceVolumes with each other
+        // and if those match then also the targetVolumes
+        int cmp = sourceVolume.compareTo(other.sourceVolume);
+        if (cmp == 0)
+        {
+            cmp = targetVolume.compareTo(other.targetVolume);
+        }
+        return cmp;
     }
 
     @Override
