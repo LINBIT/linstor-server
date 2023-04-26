@@ -315,24 +315,6 @@ public abstract class AbsRscLayerHelper<
     }
 
     /**
-     * Clear known volatile information so they have to be recalculated.
-     * This way we can prevent calling i.e. setIgnoreReason with null reason, which might override still valid reasons
-     * from ancestors
-     *
-     * @return true if recalculation changed something that requires an updateSatellites, false otherwise
-     */
-    protected boolean recalculateVolatileProperties(
-        RSC_LO rscDataRef,
-        List<DeviceLayerKind> layerListRef,
-        LayerPayload payloadRef
-    )
-        throws AccessDeniedException, DatabaseException
-    {
-        setIgnoreReasonImpl(rscDataRef, IGNORE_REASON_NONE);
-        return recalculateVolatilePropertiesImpl(rscDataRef, layerListRef, payloadRef);
-    }
-
-    /**
      * Calling this method will call {@link #setIgnoreReasonImpl(AbsRscLayerObject, String)} of the
      * layerHelper class matching the rscDataRef's DeviceLayerKind AND upwards until the parent is null.
      *
@@ -342,7 +324,7 @@ public abstract class AbsRscLayerHelper<
      */
     protected boolean setIgnoreReason(
         @Nullable AbsRscLayerObject<Resource> rscDataRef,
-        String ignoreReasonNvmeTargetRef,
+        String ignoreReasonRef,
         boolean goUpRef,
         boolean goDownRef,
         boolean skipSelfRef
@@ -374,7 +356,7 @@ public abstract class AbsRscLayerHelper<
         }
         return setIgnoreReasonRec(
             rscDataRef,
-            ignoreReasonNvmeTargetRef,
+            ignoreReasonRef,
             skipSelfRef,
             visited
         );
@@ -382,7 +364,7 @@ public abstract class AbsRscLayerHelper<
 
     private boolean setIgnoreReasonRec(
         AbsRscLayerObject<Resource> rscDataRef,
-        String ignoreReasonNvmeTargetRef,
+        String ignoreReasonRef,
         boolean skipRef,
         HashSet<AbsRscLayerObject<Resource>> visitedRef
     )
@@ -399,25 +381,32 @@ public abstract class AbsRscLayerHelper<
 
             if (!skipRef)
             {
-                changed |= layerHelperByKind.setIgnoreReasonImpl(rscDataRef, ignoreReasonNvmeTargetRef);
+                changed |= layerHelperByKind.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
             }
 
+            // if goUp was set to false, our parent (if not null) was added to visited set so we will soon continue here
             changed |= setIgnoreReasonRec(
                 rscDataRef.getParent(),
-                ignoreReasonNvmeTargetRef,
+                ignoreReasonRef,
                 false, // only first might be skipped
                 visitedRef
             );
 
             String currentIgnoreReason = rscDataRef.getIgnoreReason();
-            if (Objects.equals(ignoreReasonNvmeTargetRef, currentIgnoreReason) &&
-                !Objects.equals(reasonPreSet, currentIgnoreReason))
+
+            // we only need to process our children if the ignore reason has changed.
+            // however, since we are able to skip changing the ignore reason for the first rscData, we also have to
+            // process our children in that case.
+            boolean hasOwnIgnoreReasonChanged = !Objects.equals(reasonPreSet, currentIgnoreReason);
+            if (skipRef || hasOwnIgnoreReasonChanged)
             {
+                // if goDown was set to false, our children (if any) were added to visited set so we will
+                // come back here soon
                 for (AbsRscLayerObject<Resource> childRscData : rscDataRef.getChildren())
                 {
                     changed |= setIgnoreReasonRec(
                         childRscData,
-                        ignoreReasonNvmeTargetRef,
+                        ignoreReasonRef,
                         false, // only first might be skipped
                         visitedRef
                     );

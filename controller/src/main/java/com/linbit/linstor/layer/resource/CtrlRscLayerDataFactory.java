@@ -171,8 +171,6 @@ public class CtrlRscLayerDataFactory
 
             rootObj = ensureDataRec(rscRef, payload, layerList, new ChildResourceData(""), null);
 
-            clearIgnoreReasonsRec(rootObj);
-
             rscRef.setLayerData(apiCtx, rootObj);
             recalculateVolatileRscData(rscRef);
         }
@@ -568,6 +566,7 @@ public class CtrlRscLayerDataFactory
     {
         AbsRscLayerObject<Resource> rscData = rscRef.getLayerData(apiCtx);
         List<DeviceLayerKind> layerStack = getLayerStack(rscRef);
+        clearIgnoreReasonsRec(rscData);
         return recalculateVolatileRscDataRec(rscData, layerStack, new LayerPayload());
     }
 
@@ -580,7 +579,7 @@ public class CtrlRscLayerDataFactory
         throws AccessDeniedException, DatabaseException
     {
         AbsRscLayerHelper<RSC_LO, ?, ?, ?> layerHelper = getLayerHelperByKind(rscDataRef.getLayerKind());
-        layerHelper.recalculateVolatileProperties((RSC_LO) rscDataRef, layerStackRef, layerPayloadRef);
+        layerHelper.recalculateVolatilePropertiesImpl((RSC_LO) rscDataRef, layerStackRef, layerPayloadRef);
 
         boolean changed = false;
         for (AbsRscLayerObject<Resource> child : rscDataRef.getChildren())

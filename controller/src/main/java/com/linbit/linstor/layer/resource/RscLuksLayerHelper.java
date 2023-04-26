@@ -340,21 +340,6 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     }
 
     @Override
-    protected boolean setIgnoreReasonImpl(
-        AbsRscLayerObject<Resource> rscDataRef,
-        String ignoreReasonRef
-    )
-        throws DatabaseException
-    {
-        boolean changed = false;
-        if (!IGNORE_REASON_LUKS_MISSING_KEY.equals(ignoreReasonRef))
-        {
-            changed = super.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
-        }
-        return changed;
-    }
-
-    @Override
     protected boolean isExpectedToProvideDevice(LuksRscData<Resource> luksRscData)
     {
         return luksRscData.getIgnoreReason() != null;

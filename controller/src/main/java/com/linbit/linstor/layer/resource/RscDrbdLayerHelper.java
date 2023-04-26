@@ -772,21 +772,6 @@ public class RscDrbdLayerHelper extends
         return changed;
     }
 
-    @Override
-    protected boolean setIgnoreReasonImpl(
-        AbsRscLayerObject<Resource> rscDataRef,
-        String ignoreReasonRef
-    )
-        throws DatabaseException
-    {
-        boolean changed = false;
-        if (!IGNORE_REASON_DRBD_DISKLESS.equals(ignoreReasonRef))
-        {
-            changed = super.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
-        }
-        return changed;
-    }
-
     public StorPool getMetaStorPool(Volume vlmRef, AccessContext accCtx)
         throws AccessDeniedException, InvalidNameException
     {
