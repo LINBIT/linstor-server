@@ -27,7 +27,8 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheVlmDatabaseDriver;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
@@ -94,7 +95,10 @@ public class LayerDataFactory
     private final LayerOpenflexRscDfnDatabaseDriver layerOpenflexRscDfnDbDriver;
     private final LayerOpenflexRscDatabaseDriver layerOpenflexRscDbDriver;
     private final LayerOpenflexVlmDatabaseDriver layerOpenflexVlmDbDriver;
-    private final WritecacheLayerDatabaseDriver writecacheDbDriver;
+
+    private final LayerWritecacheRscDatabaseDriver layerWritecacheRscDbDriver;
+    private final LayerWritecacheVlmDatabaseDriver layerWritecacheVlmDbDriver;
+
     private final CacheLayerDatabaseDriver cacheDbDriver;
     private final BCacheLayerDatabaseDriver bcacheDbDriver;
     private final DynamicNumberPool tcpPortPool;
@@ -119,7 +123,8 @@ public class LayerDataFactory
         LayerOpenflexRscDfnDatabaseDriver layerOpenflexRscDfnDbDriverRef,
         LayerOpenflexRscDatabaseDriver layerOpenflexRscDbDriverRef,
         LayerOpenflexVlmDatabaseDriver layerOpenflexVlmDbDriverRef,
-        WritecacheLayerDatabaseDriver writecacheDbDriverRef,
+        LayerWritecacheRscDatabaseDriver layerWritecacheRscDbDriverRef,
+        LayerWritecacheVlmDatabaseDriver layerWritecacheVlmDbDriverRef,
         CacheLayerDatabaseDriver cacheDbDriverRef,
         BCacheLayerDatabaseDriver bcacheDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
@@ -141,7 +146,8 @@ public class LayerDataFactory
         layerOpenflexRscDfnDbDriver = layerOpenflexRscDfnDbDriverRef;
         layerOpenflexRscDbDriver = layerOpenflexRscDbDriverRef;
         layerOpenflexVlmDbDriver = layerOpenflexVlmDbDriverRef;
-        writecacheDbDriver = writecacheDbDriverRef;
+        layerWritecacheRscDbDriver = layerWritecacheRscDbDriverRef;
+        layerWritecacheVlmDbDriver = layerWritecacheVlmDbDriverRef;
         cacheDbDriver = cacheDbDriverRef;
         bcacheDbDriver = bcacheDbDriverRef;
         tcpPortPool = tcpPortPoolRef;
@@ -491,13 +497,14 @@ public class LayerDataFactory
             parentData,
             new HashSet<>(),
             rscNameSuffix,
-            writecacheDbDriver,
+            layerWritecacheRscDbDriver,
+            layerWritecacheVlmDbDriver,
             new TreeMap<>(),
             transObjFactory,
             transMgrProvider
         );
         layerRscIdDatabaseDriver.create(writecacheRscData);
-        writecacheDbDriver.persist(writecacheRscData);
+        layerWritecacheRscDbDriver.create(writecacheRscData);
         return writecacheRscData;
     }
 
@@ -515,7 +522,7 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-        writecacheDbDriver.persist(writecacheVlmData);
+        layerWritecacheVlmDbDriver.create(writecacheVlmData);
         return writecacheVlmData;
     }
 

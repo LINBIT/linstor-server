@@ -17,6 +17,8 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
@@ -35,7 +37,6 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.EbsRemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteDatabaseDriver;
 import com.linbit.linstor.security.DbAccessor;
@@ -96,7 +97,9 @@ public class SatelliteDbModule extends AbstractModule
         bind(LayerOpenflexRscDatabaseDriver.class).to(SatelliteLayerOpenflexRscDbDriver.class);
         bind(LayerOpenflexVlmDatabaseDriver.class).to(SatelliteLayerOpenflexVlmDbDriver.class);
 
-        bind(WritecacheLayerDatabaseDriver.class).to(SatelliteWritecacheLayerDriver.class);
+        bind(LayerWritecacheRscDatabaseDriver.class).to(SatelliteLayerWritecacheRscDbDriver.class);
+        bind(LayerWritecacheVlmDatabaseDriver.class).to(SatelliteLayerWritecacheVlmDbDriver.class);
+
         bind(CacheLayerDatabaseDriver.class).to(SatelliteCacheLayerDriver.class);
         bind(BCacheLayerDatabaseDriver.class).to(SatelliteBCacheLayerDriver.class);
     }

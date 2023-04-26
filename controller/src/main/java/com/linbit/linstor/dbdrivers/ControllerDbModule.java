@@ -24,6 +24,8 @@ import com.linbit.linstor.core.objects.LayerOpenflexVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerResourceIdDbDriver;
 import com.linbit.linstor.core.objects.LayerStorageRscDbDriver;
 import com.linbit.linstor.core.objects.LayerStorageVlmDbDriver;
+import com.linbit.linstor.core.objects.LayerWritecacheRscDbDriver;
+import com.linbit.linstor.core.objects.LayerWritecacheVlmDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.NodeDbDriver;
@@ -43,9 +45,6 @@ import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
-import com.linbit.linstor.core.objects.WritecacheLayerETCDDriver;
-import com.linbit.linstor.core.objects.WritecacheLayerK8sCrdDriver;
-import com.linbit.linstor.core.objects.WritecacheLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.remotes.EbsRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.LinstorRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.S3RemoteDbDriver;
@@ -84,6 +83,9 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheRscCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
@@ -121,8 +123,6 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionCtrlDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeGroupDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.EbsRemoteCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.EbsRemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.LinstorRemoteCtrlDatabaseDriver;
@@ -243,6 +243,11 @@ public class ControllerDbModule extends AbstractModule
         bind(LayerOpenflexRscDatabaseDriver.class).to(LayerOpenflexRscDbDriver.class);
         bind(LayerOpenflexVlmDatabaseDriver.class).to(LayerOpenflexVlmDbDriver.class);
 
+        layerRscDatabaseDrivers.addBinding(DeviceLayerKind.WRITECACHE).to(LayerWritecacheRscDbDriver.class);
+        bind(LayerWritecacheRscCtrlDatabaseDriver.class).to(LayerWritecacheRscDbDriver.class);
+        bind(LayerWritecacheRscDatabaseDriver.class).to(LayerWritecacheRscDbDriver.class);
+        bind(LayerWritecacheVlmDatabaseDriver.class).to(LayerWritecacheVlmDbDriver.class);
+
         switch (dbType)
         {
             case SQL:
@@ -259,8 +264,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
 
-                bind(WritecacheLayerCtrlDatabaseDriver.class).to(WritecacheLayerSQLDbDriver.class);
-                bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerSQLDbDriver.class);
                 bind(CacheLayerCtrlDatabaseDriver.class).to(CacheLayerSQLDbDriver.class);
                 bind(CacheLayerDatabaseDriver.class).to(CacheLayerSQLDbDriver.class);
                 bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerSQLDbDriver.class);
@@ -281,8 +284,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(NodeCtrlDatabaseDriver.class).to(NodeETCDDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeETCDDriver.class);
 
-                bind(WritecacheLayerCtrlDatabaseDriver.class).to(WritecacheLayerETCDDriver.class);
-                bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerETCDDriver.class);
                 bind(CacheLayerCtrlDatabaseDriver.class).to(CacheLayerETCDDriver.class);
                 bind(CacheLayerDatabaseDriver.class).to(CacheLayerETCDDriver.class);
                 bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerETCDDriver.class);
@@ -303,8 +304,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
 
-                bind(WritecacheLayerCtrlDatabaseDriver.class).to(WritecacheLayerK8sCrdDriver.class);
-                bind(WritecacheLayerDatabaseDriver.class).to(WritecacheLayerK8sCrdDriver.class);
                 bind(CacheLayerCtrlDatabaseDriver.class).to(CacheLayerK8sCrdDriver.class);
                 bind(CacheLayerDatabaseDriver.class).to(CacheLayerK8sCrdDriver.class);
                 bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerK8sCrdDriver.class);

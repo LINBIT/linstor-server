@@ -6,7 +6,8 @@ import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.WritecacheLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsRscData;
@@ -28,7 +29,8 @@ public class WritecacheRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, WritecacheVlmData<RSC>>
     implements WritecacheRscObject<RSC>
 {
-    private final WritecacheLayerDatabaseDriver writecacheDbDriver;
+    private final LayerWritecacheRscDatabaseDriver writecacheRscDbDriver;
+    private final LayerWritecacheVlmDatabaseDriver writecacheVlmDbDriver;
 
     public WritecacheRscData(
         int rscLayerIdRef,
@@ -36,7 +38,8 @@ public class WritecacheRscData<RSC extends AbsResource<RSC>>
         AbsRscLayerObject<RSC> parentRef,
         Set<AbsRscLayerObject<RSC>> childrenRef,
         String rscNameSuffixRef,
-        WritecacheLayerDatabaseDriver dbDriverRef,
+        LayerWritecacheRscDatabaseDriver writecacheRscDbDriverRef,
+        LayerWritecacheVlmDatabaseDriver writecacheVlmDbDriverRef,
         Map<VolumeNumber, WritecacheVlmData<RSC>> vlmProviderObjectsRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
@@ -48,12 +51,13 @@ public class WritecacheRscData<RSC extends AbsResource<RSC>>
             parentRef,
             childrenRef,
             rscNameSuffixRef,
-            dbDriverRef.getIdDriver(),
+            writecacheRscDbDriverRef.getIdDriver(),
             vlmProviderObjectsRef,
             transObjFactoryRef,
             transMgrProviderRef
         );
-        writecacheDbDriver = dbDriverRef;
+        writecacheRscDbDriver = writecacheRscDbDriverRef;
+        writecacheVlmDbDriver = writecacheVlmDbDriverRef;
     }
 
     @Override
@@ -89,13 +93,13 @@ public class WritecacheRscData<RSC extends AbsResource<RSC>>
     @Override
     protected void deleteVlmFromDatabase(WritecacheVlmData<RSC> vlmRef) throws DatabaseException
     {
-        writecacheDbDriver.delete(vlmRef);
+        writecacheVlmDbDriver.delete(vlmRef);
     }
 
     @Override
     protected void deleteRscFromDatabase() throws DatabaseException
     {
-        writecacheDbDriver.delete(this);
+        writecacheRscDbDriver.delete(this);
     }
 
 }
