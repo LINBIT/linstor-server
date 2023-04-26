@@ -6,7 +6,8 @@ import com.linbit.linstor.api.pojo.CacheRscPojo.CacheVlmPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerCacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerCacheVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsRscData;
@@ -28,7 +29,8 @@ public class CacheRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, CacheVlmData<RSC>>
     implements CacheRscObject<RSC>
 {
-    private final CacheLayerDatabaseDriver cacheDbDriver;
+    private final LayerCacheRscDatabaseDriver cacheRscDbDriver;
+    private final LayerCacheVlmDatabaseDriver cacheVlmDbDriver;
 
     public CacheRscData(
         int rscLayerIdRef,
@@ -36,7 +38,8 @@ public class CacheRscData<RSC extends AbsResource<RSC>>
         AbsRscLayerObject<RSC> parentRef,
         Set<AbsRscLayerObject<RSC>> childrenRef,
         String rscNameSuffixRef,
-        CacheLayerDatabaseDriver dbDriverRef,
+        LayerCacheRscDatabaseDriver cacheRscDbDriverRef,
+        LayerCacheVlmDatabaseDriver cacheVlmDbDriverRef,
         Map<VolumeNumber, CacheVlmData<RSC>> vlmProviderObjectsRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
@@ -48,12 +51,13 @@ public class CacheRscData<RSC extends AbsResource<RSC>>
             parentRef,
             childrenRef,
             rscNameSuffixRef,
-            dbDriverRef.getIdDriver(),
+            cacheRscDbDriverRef.getIdDriver(),
             vlmProviderObjectsRef,
             transObjFactoryRef,
             transMgrProviderRef
         );
-        cacheDbDriver = dbDriverRef;
+        cacheRscDbDriver = cacheRscDbDriverRef;
+        cacheVlmDbDriver = cacheVlmDbDriverRef;
     }
 
     @Override
@@ -89,13 +93,13 @@ public class CacheRscData<RSC extends AbsResource<RSC>>
     @Override
     protected void deleteVlmFromDatabase(CacheVlmData<RSC> vlmRef) throws DatabaseException
     {
-        cacheDbDriver.delete(vlmRef);
+        cacheVlmDbDriver.delete(vlmRef);
     }
 
     @Override
     protected void deleteRscFromDatabase() throws DatabaseException
     {
-        cacheDbDriver.delete(this);
+        cacheRscDbDriver.delete(this);
     }
 
 }

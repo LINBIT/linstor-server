@@ -6,11 +6,10 @@ import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.core.objects.BCacheLayerETCDDriver;
 import com.linbit.linstor.core.objects.BCacheLayerK8sCrdDriver;
 import com.linbit.linstor.core.objects.BCacheLayerSQLDbDriver;
-import com.linbit.linstor.core.objects.CacheLayerETCDDriver;
-import com.linbit.linstor.core.objects.CacheLayerK8sCrdDriver;
-import com.linbit.linstor.core.objects.CacheLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.ExternalFileDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
+import com.linbit.linstor.core.objects.LayerCacheRscDbDriver;
+import com.linbit.linstor.core.objects.LayerCacheVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerDrbdRscDbDriver;
 import com.linbit.linstor.core.objects.LayerDrbdRscDfnDbDriver;
 import com.linbit.linstor.core.objects.LayerDrbdVlmDbDriver;
@@ -58,12 +57,13 @@ import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrdInitializer;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.CacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerCacheRscCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerCacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerCacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDfnDatabaseDriver;
@@ -248,6 +248,11 @@ public class ControllerDbModule extends AbstractModule
         bind(LayerWritecacheRscDatabaseDriver.class).to(LayerWritecacheRscDbDriver.class);
         bind(LayerWritecacheVlmDatabaseDriver.class).to(LayerWritecacheVlmDbDriver.class);
 
+        layerRscDatabaseDrivers.addBinding(DeviceLayerKind.CACHE).to(LayerCacheRscDbDriver.class);
+        bind(LayerCacheRscCtrlDatabaseDriver.class).to(LayerCacheRscDbDriver.class);
+        bind(LayerCacheRscDatabaseDriver.class).to(LayerCacheRscDbDriver.class);
+        bind(LayerCacheVlmDatabaseDriver.class).to(LayerCacheVlmDbDriver.class);
+
         switch (dbType)
         {
             case SQL:
@@ -264,8 +269,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
 
-                bind(CacheLayerCtrlDatabaseDriver.class).to(CacheLayerSQLDbDriver.class);
-                bind(CacheLayerDatabaseDriver.class).to(CacheLayerSQLDbDriver.class);
                 bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerSQLDbDriver.class);
                 bind(BCacheLayerDatabaseDriver.class).to(BCacheLayerSQLDbDriver.class);
                 break;
@@ -284,8 +287,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(NodeCtrlDatabaseDriver.class).to(NodeETCDDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeETCDDriver.class);
 
-                bind(CacheLayerCtrlDatabaseDriver.class).to(CacheLayerETCDDriver.class);
-                bind(CacheLayerDatabaseDriver.class).to(CacheLayerETCDDriver.class);
                 bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerETCDDriver.class);
                 bind(BCacheLayerDatabaseDriver.class).to(BCacheLayerETCDDriver.class);
                 break;
@@ -304,8 +305,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
 
-                bind(CacheLayerCtrlDatabaseDriver.class).to(CacheLayerK8sCrdDriver.class);
-                bind(CacheLayerDatabaseDriver.class).to(CacheLayerK8sCrdDriver.class);
                 bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerK8sCrdDriver.class);
                 bind(BCacheLayerDatabaseDriver.class).to(BCacheLayerK8sCrdDriver.class);
                 break;

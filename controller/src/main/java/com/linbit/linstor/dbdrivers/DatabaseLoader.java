@@ -55,7 +55,6 @@ import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.CacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdCtrlDatabaseDriver;
@@ -158,7 +157,6 @@ public class DatabaseLoader implements DatabaseDriver
     private final KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriver;
     private final LayerResourceIdCtrlDatabaseDriver layerRscIdDriver;
     private final Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMap;
-    private final CacheLayerCtrlDatabaseDriver cacheLayerDriver;
     private final BCacheLayerCtrlDatabaseDriver bcacheLayerDriver;
     private final ExternalFileCtrlDatabaseDriver extFileDriver;
     private final S3RemoteCtrlDatabaseDriver s3remoteDriver;
@@ -205,7 +203,6 @@ public class DatabaseLoader implements DatabaseDriver
         KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriverRef,
         LayerResourceIdCtrlDatabaseDriver layerRscIdDriverRef,
         Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMapRef,
-        CacheLayerCtrlDatabaseDriver cacheLayerDriverRef,
         BCacheLayerCtrlDatabaseDriver bcacheLayerDriverRef,
         ExternalFileCtrlDatabaseDriver extFilesDriverRef,
         S3RemoteCtrlDatabaseDriver s3remoteDriverRef,
@@ -249,7 +246,6 @@ public class DatabaseLoader implements DatabaseDriver
         keyValueStoreGenericDbDriver = keyValueStoreGenericDbDriverRef;
         layerRscIdDriver = layerRscIdDriverRef;
         layerDriversMap = layerDriversMapRef;
-        cacheLayerDriver = cacheLayerDriverRef;
         bcacheLayerDriver = bcacheLayerDriverRef;
         extFileDriver = extFilesDriverRef;
         s3remoteDriver = s3remoteDriverRef;
@@ -681,7 +677,6 @@ public class DatabaseLoader implements DatabaseDriver
         ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
         bcacheLayerDriver.fetchForLoadAll();
-        cacheLayerDriver.fetchForLoadAll();
 
         // load RscDfnLayerObjects and VlmDfnLayerObjects
         // no *DfnLayerObjects for nvme
@@ -740,7 +735,6 @@ public class DatabaseLoader implements DatabaseDriver
         }
 
         bcacheLayerDriver.clearLoadAllCache();
-        cacheLayerDriver.clearLoadAllCache();
 
         CtrlRscLayerDataFactory rscLayerDataHelper = ctrlRscLayerDataHelper.get();
         for (Resource rsc : resourcesWithLayerData)
@@ -845,18 +839,10 @@ public class DatabaseLoader implements DatabaseDriver
                             case OPENFLEX:
                             case LUKS:
                             case WRITECACHE:
+                            case CACHE:
                             case STORAGE:
                                 ControllerLayerRscDatabaseDriver driver = layerDriversMap.get(rlo.getLayerKind());
                                 rscLayerObjectPair = driver.load(rsc, rlo.getRscLayerId());
-                                break;
-                            case CACHE:
-                                rscLayerObjectPair = cacheLayerDriver.load(
-                                    rsc,
-                                    rlo.getRscLayerId(),
-                                    rlo.getResourceNameSuffix(),
-                                    parent,
-                                    tmpStorPoolMapWithInitMapsRef
-                                );
                                 break;
                             case BCACHE:
                                 rscLayerObjectPair = bcacheLayerDriver.load(
