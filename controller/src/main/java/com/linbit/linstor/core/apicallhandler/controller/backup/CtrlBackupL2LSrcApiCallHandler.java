@@ -329,7 +329,6 @@ public class CtrlBackupL2LSrcApiCallHandler
                 data.srcNodeName,
                 data.srcBackupName,
                 data.now,
-                false,
                 data.allowIncremental && response.prevSnapUuid != null,
                 RemoteType.LINSTOR,
                 data.scheduleName,

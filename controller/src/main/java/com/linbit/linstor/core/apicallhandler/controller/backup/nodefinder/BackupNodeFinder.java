@@ -15,6 +15,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -93,8 +94,7 @@ public class BackupNodeFinder
     public Set<Node> findUsableNodes(
         ResourceDefinition rscDfn,
         @Nullable SnapshotDefinition prevSnapDfnRef,
-        String remoteName,
-        RemoteType remoteType
+        AbsRemote remote
     )
         throws AccessDeniedException
     {
@@ -108,6 +108,7 @@ public class BackupNodeFinder
         Set<Node> ret = new HashSet<>();
 
         Iterator<Resource> rscIt = rscDfn.iterateResource(accCtx);
+        RemoteType remoteType = remote.getType();
         while (rscIt.hasNext())
         {
             Resource rsc = rscIt.next();
@@ -220,6 +221,7 @@ public class BackupNodeFinder
             {
                 // get node that did last shipping
                 String prevNodeStr;
+                String remoteName = remote.getName().displayValue;
                 if (remoteType == RemoteType.S3)
                 {
                     prevNodeStr = prevSnapDfnRef.getProps(accCtx)

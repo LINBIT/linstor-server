@@ -195,7 +195,6 @@ public class CtrlBackupCreateApiCallHandler
                 nodeNameRef,
                 snapNameRef,
                 new Date(),
-                true,
                 incremental,
                 RemoteType.S3,
                 scheduleNameRef,
@@ -229,7 +228,6 @@ public class CtrlBackupCreateApiCallHandler
         String nodeName,
         String snapNameRef,
         Date nowRef,
-        boolean setShippingFlag,
         boolean allowIncremental,
         RemoteType remoteTypeRef,
         String scheduleNameRef,
@@ -299,7 +297,6 @@ public class CtrlBackupCreateApiCallHandler
                 prevSnapDfn,
                 snapDfn,
                 remote,
-                remoteTypeRef,
                 nodeName,
                 responses,
                 queueAnyways,
@@ -350,7 +347,7 @@ public class CtrlBackupCreateApiCallHandler
             if (chosenNode != null)
             {
                 flux = flux.concatWith(
-                    startShipping(snapDfn, chosenNode, remote, prevSnapDfn, setShippingFlag, responses)
+                    startShipping(snapDfn, chosenNode, remote, prevSnapDfn, responses)
                 );
             }
             return new Pair<>(
@@ -377,7 +374,6 @@ public class CtrlBackupCreateApiCallHandler
         Node node,
         AbsRemote remote,
         SnapshotDefinition prevSnapDfn,
-        boolean setStartShippingFlag,
         ApiCallRcImpl responses
     )
     {
@@ -387,7 +383,7 @@ public class CtrlBackupCreateApiCallHandler
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
                 .buildDeferred(),
-            () -> startShippingInTransaction(snapDfn, node, remote, prevSnapDfn, setStartShippingFlag, responses)
+            () -> startShippingInTransaction(snapDfn, node, remote, prevSnapDfn, responses)
         );
     }
 
@@ -396,7 +392,6 @@ public class CtrlBackupCreateApiCallHandler
         Node node,
         AbsRemote remote,
         SnapshotDefinition prevSnapDfn,
-        boolean setStartShippingFlag,
         ApiCallRcImpl responsesRef
     )
     {
@@ -428,14 +423,12 @@ public class CtrlBackupCreateApiCallHandler
             QueueItem item = backupInfoMgr.getItemFromPrevNodeUndecidedQueue(snapDfn, remote);
             if (item != null)
             {
-                RemoteType type = item.remote.getType();
                 // return value is ignored since queueAnyways is set
                 getNodeForBackupOrQueue(
                     snapDfn.getResourceDefinition(),
                     snapDfn,
                     item.snapDfn,
                     item.remote,
-                    type,
                     item.preferredNode,
                     responsesRef,
                     true, // always queue to avoid simultaneous shippings of consecutive backups
@@ -444,7 +437,7 @@ public class CtrlBackupCreateApiCallHandler
             }
 
             Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), node.getName());
-            if (setStartShippingFlag)
+            if (remote instanceof S3Remote)
             {
                 // l2l does not need this to be set...
                 snap.getFlags()
@@ -548,7 +541,6 @@ public class CtrlBackupCreateApiCallHandler
                     item.prevSnapDfn,
                     item.snapDfn,
                     item.remote,
-                    item.remote.getType(),
                     item.preferredNode,
                     responses,
                     false,
@@ -562,7 +554,6 @@ public class CtrlBackupCreateApiCallHandler
                             shipFromNode,
                             item.remote,
                             item.prevSnapDfn,
-                            item.remote instanceof S3Remote,
                             responses
                         )
                     );
@@ -719,7 +710,6 @@ public class CtrlBackupCreateApiCallHandler
         SnapshotDefinition prevSnapDfn,
         SnapshotDefinition snapDfn,
         AbsRemote remote,
-        RemoteType remoteTypeRef,
         String prefNodeName,
         ApiCallRcImpl responses,
         boolean queueAnyways,
@@ -729,13 +719,12 @@ public class CtrlBackupCreateApiCallHandler
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
             prevSnapDfn,
-            remote.getName().displayValue,
-            remoteTypeRef
+            remote
         );
         Node chosenNode = null;
         if (!queueAnyways)
         {
-            chosenNode = chooseNode(usableNodes, prefNodeName, responses, remoteTypeRef.getOptionalExtTools());
+            chosenNode = chooseNode(usableNodes, prefNodeName, responses, remote.getType().getOptionalExtTools());
         }
         if (chosenNode == null)
         {
@@ -1589,7 +1578,6 @@ public class CtrlBackupCreateApiCallHandler
                                     prevSnapDfn,
                                     next.snapDfn,
                                     next.remote,
-                                    RemoteType.S3,
                                     next.preferredNode,
                                     new ApiCallRcImpl(),
                                     queueAnyways,
@@ -1608,8 +1596,6 @@ public class CtrlBackupCreateApiCallHandler
                                         nodeForShipping,
                                         next.remote,
                                         prevSnapDfn,
-                                        // needs to be false if shipping goes to l2l, and true if to s3
-                                        next.remote instanceof S3Remote,
                                         new ApiCallRcImpl()
                                     )
                                 );
@@ -1703,7 +1689,6 @@ public class CtrlBackupCreateApiCallHandler
                     l2lPrevSnapDfn,
                     next.snapDfn,
                     next.remote,
-                    RemoteType.LINSTOR,
                     next.preferredNode,
                     new ApiCallRcImpl(),
                     queueAnyways,
@@ -1718,8 +1703,6 @@ public class CtrlBackupCreateApiCallHandler
                         l2lNodeForShipping,
                         next.remote,
                         l2lPrevSnapDfn,
-                        // needs to be false if shipping goes to l2l, and true if to s3
-                        next.remote instanceof S3Remote,
                         new ApiCallRcImpl()
                     ).concatWith(
                         scopeRunner.fluxInTransactionalScope(

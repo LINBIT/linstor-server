@@ -9,6 +9,7 @@ import com.linbit.linstor.core.ApiTestBase;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.apicallhandler.controller.backup.nodefinder.BackupNodeFinder;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -25,6 +26,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.netcom.Peer;
@@ -85,6 +87,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
     private boolean supportShipping = true;
     private ResourceDefinition rscDfn;
     private SnapshotDefinition snapDfn;
+    private AbsRemote mockedRemote;
     private Node nodeA;
     private Node nodeB;
     private Node nodeC;
@@ -108,6 +111,9 @@ public class BackupFindUsableNodesTest extends ApiTestBase
                     "Shipping not supported"
                 )
         ).when(backupNodeFinder).backupShippingSupported(Mockito.any());
+        mockedRemote = Mockito.mock(AbsRemote.class);
+        Mockito.when(mockedRemote.getName()).thenReturn(new RemoteName(REMOTE_NAME));
+        Mockito.when(mockedRemote.getType()).thenReturn(RemoteType.S3);
 
         LayerPayload payload = new LayerPayload();
         payload.drbdRscDfn.tcpPort = 4242;
@@ -200,8 +206,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
             snapDfn,
-            REMOTE_NAME,
-            RemoteType.S3
+            mockedRemote
         );
         assertSet(usableNodes, NODE_A);
         singleStorageRsc(nodeB);
@@ -210,8 +215,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
             usableNodes = backupNodeFinder.findUsableNodes(
                 rscDfn,
                 snapDfn,
-                REMOTE_NAME,
-                RemoteType.S3
+                mockedRemote
             );
             fail();
         }
@@ -245,8 +249,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
             null,
-            REMOTE_NAME,
-            RemoteType.S3
+            mockedRemote
         );
         assertSet(usableNodes, NODE_A, NODE_B);
         singleDrbdRsc(nodeD, false);
@@ -257,7 +260,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
                 nodeA.getName().displayValue,
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
-        usableNodes = backupNodeFinder.findUsableNodes(rscDfn, snapDfn, REMOTE_NAME, RemoteType.S3);
+        usableNodes = backupNodeFinder.findUsableNodes(rscDfn, snapDfn, mockedRemote);
         assertSet(usableNodes, NODE_A, NODE_B);
     }
 
@@ -308,8 +311,7 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
             rscDfn,
             inc ? snapDfn : null,
-            REMOTE_NAME,
-            RemoteType.S3
+            mockedRemote
         );
         // assertMap(usableNodes, input.objB);
 
