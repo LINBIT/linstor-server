@@ -3,11 +3,10 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
-import com.linbit.linstor.core.objects.BCacheLayerETCDDriver;
-import com.linbit.linstor.core.objects.BCacheLayerK8sCrdDriver;
-import com.linbit.linstor.core.objects.BCacheLayerSQLDbDriver;
 import com.linbit.linstor.core.objects.ExternalFileDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
+import com.linbit.linstor.core.objects.LayerBCacheRscDbDriver;
+import com.linbit.linstor.core.objects.LayerBCacheVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerCacheRscDbDriver;
 import com.linbit.linstor.core.objects.LayerCacheVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerDrbdRscDbDriver;
@@ -55,12 +54,13 @@ import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrdInitializer;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
-import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheRscCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerCacheRscCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerCacheRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerCacheVlmDatabaseDriver;
@@ -253,6 +253,11 @@ public class ControllerDbModule extends AbstractModule
         bind(LayerCacheRscDatabaseDriver.class).to(LayerCacheRscDbDriver.class);
         bind(LayerCacheVlmDatabaseDriver.class).to(LayerCacheVlmDbDriver.class);
 
+        layerRscDatabaseDrivers.addBinding(DeviceLayerKind.BCACHE).to(LayerBCacheRscDbDriver.class);
+        bind(LayerBCacheRscCtrlDatabaseDriver.class).to(LayerBCacheRscDbDriver.class);
+        bind(LayerBCacheRscDatabaseDriver.class).to(LayerBCacheRscDbDriver.class);
+        bind(LayerBCacheVlmDatabaseDriver.class).to(LayerBCacheVlmDbDriver.class);
+
         switch (dbType)
         {
             case SQL:
@@ -268,9 +273,6 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
-
-                bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerSQLDbDriver.class);
-                bind(BCacheLayerDatabaseDriver.class).to(BCacheLayerSQLDbDriver.class);
                 break;
             case ETCD:
                 bind(ControllerDatabase.class).to(DbEtcd.class);
@@ -286,9 +288,6 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(NodeCtrlDatabaseDriver.class).to(NodeETCDDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeETCDDriver.class);
-
-                bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerETCDDriver.class);
-                bind(BCacheLayerDatabaseDriver.class).to(BCacheLayerETCDDriver.class);
                 break;
             case K8S_CRD:
                 bind(ControllerDatabase.class).to(DbK8sCrd.class);
@@ -304,9 +303,6 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
-
-                bind(BCacheLayerCtrlDatabaseDriver.class).to(BCacheLayerK8sCrdDriver.class);
-                bind(BCacheLayerDatabaseDriver.class).to(BCacheLayerK8sCrdDriver.class);
                 break;
             default:
                 throw new RuntimeException("Unknown database type: " + dbType);

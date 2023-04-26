@@ -6,7 +6,8 @@ import com.linbit.linstor.api.pojo.BCacheRscPojo.BCacheVlmPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsRscData;
@@ -28,7 +29,8 @@ public class BCacheRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, BCacheVlmData<RSC>>
     implements WritecacheRscObject<RSC>
 {
-    private final BCacheLayerDatabaseDriver bcacheDbDriver;
+    private final LayerBCacheRscDatabaseDriver bcacheRscDbDriver;
+    private final LayerBCacheVlmDatabaseDriver bcacheVlmDbDriver;
 
     public BCacheRscData(
         int rscLayerIdRef,
@@ -36,7 +38,8 @@ public class BCacheRscData<RSC extends AbsResource<RSC>>
         AbsRscLayerObject<RSC> parentRef,
         Set<AbsRscLayerObject<RSC>> childrenRef,
         String rscNameSuffixRef,
-        BCacheLayerDatabaseDriver dbDriverRef,
+        LayerBCacheRscDatabaseDriver bcacheRscDbDriverRef,
+        LayerBCacheVlmDatabaseDriver bcacheVlmDbDriverRef,
         Map<VolumeNumber, BCacheVlmData<RSC>> vlmProviderObjectsRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef
@@ -48,12 +51,13 @@ public class BCacheRscData<RSC extends AbsResource<RSC>>
             parentRef,
             childrenRef,
             rscNameSuffixRef,
-            dbDriverRef.getIdDriver(),
+            bcacheRscDbDriverRef.getIdDriver(),
             vlmProviderObjectsRef,
             transObjFactoryRef,
             transMgrProviderRef
         );
-        bcacheDbDriver = dbDriverRef;
+        bcacheRscDbDriver = bcacheRscDbDriverRef;
+        bcacheVlmDbDriver = bcacheVlmDbDriverRef;
     }
 
     @Override
@@ -89,12 +93,12 @@ public class BCacheRscData<RSC extends AbsResource<RSC>>
     @Override
     protected void deleteVlmFromDatabase(BCacheVlmData<RSC> vlmRef) throws DatabaseException
     {
-        bcacheDbDriver.delete(vlmRef);
+        bcacheVlmDbDriver.delete(vlmRef);
     }
 
     @Override
     protected void deleteRscFromDatabase() throws DatabaseException
     {
-        bcacheDbDriver.delete(this);
+        bcacheRscDbDriver.delete(this);
     }
 }

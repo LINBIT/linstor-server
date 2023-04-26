@@ -12,7 +12,8 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerCacheRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerCacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
@@ -103,7 +104,9 @@ public class LayerDataFactory
     private final LayerCacheRscDatabaseDriver layerCacheRscDbDriver;
     private final LayerCacheVlmDatabaseDriver layerCacheVlmDbDriver;
 
-    private final BCacheLayerDatabaseDriver bcacheDbDriver;
+    private final LayerBCacheRscDatabaseDriver layerBCacheRscDbDriver;
+    private final LayerBCacheVlmDatabaseDriver layerBCacheVlmDbDriver;
+
     private final DynamicNumberPool tcpPortPool;
     private final DynamicNumberPool minorPool;
 
@@ -130,7 +133,8 @@ public class LayerDataFactory
         LayerWritecacheVlmDatabaseDriver layerWritecacheVlmDbDriverRef,
         LayerCacheRscDatabaseDriver layerCacheRscDbDriverRef,
         LayerCacheVlmDatabaseDriver layerCacheVlmDbDriverRef,
-        BCacheLayerDatabaseDriver bcacheDbDriverRef,
+        LayerBCacheRscDatabaseDriver layerBCacheRscDbDriverRef,
+        LayerBCacheVlmDatabaseDriver layerBCacheVlmDbDriverRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
         Provider<TransactionMgr> transMgrProviderRef,
@@ -154,7 +158,8 @@ public class LayerDataFactory
         layerWritecacheVlmDbDriver = layerWritecacheVlmDbDriverRef;
         layerCacheRscDbDriver = layerCacheRscDbDriverRef;
         layerCacheVlmDbDriver = layerCacheVlmDbDriverRef;
-        bcacheDbDriver = bcacheDbDriverRef;
+        layerBCacheRscDbDriver = layerBCacheRscDbDriverRef;
+        layerBCacheVlmDbDriver = layerBCacheVlmDbDriverRef;
         tcpPortPool = tcpPortPoolRef;
         minorPool = minorPoolRef;
 
@@ -590,13 +595,14 @@ public class LayerDataFactory
             parentData,
             new HashSet<>(),
             rscNameSuffix,
-            bcacheDbDriver,
+            layerBCacheRscDbDriver,
+            layerBCacheVlmDbDriver,
             new TreeMap<>(),
             transObjFactory,
             transMgrProvider
         );
         layerRscIdDatabaseDriver.create(bcacheRscData);
-        bcacheDbDriver.persist(bcacheRscData);
+        layerBCacheRscDbDriver.create(bcacheRscData);
         return bcacheRscData;
     }
 
@@ -611,11 +617,11 @@ public class LayerDataFactory
             vlm,
             rscData,
             cacheStorPool,
-            bcacheDbDriver,
+            layerBCacheVlmDbDriver,
             transObjFactory,
             transMgrProvider
         );
-        bcacheDbDriver.persist(bCacheVlmData);
+        layerBCacheVlmDbDriver.create(bCacheVlmData);
         return bCacheVlmData;
     }
 

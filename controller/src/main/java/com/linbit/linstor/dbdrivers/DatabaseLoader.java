@@ -54,7 +54,6 @@ import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
-import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdCtrlDatabaseDriver;
@@ -157,7 +156,6 @@ public class DatabaseLoader implements DatabaseDriver
     private final KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriver;
     private final LayerResourceIdCtrlDatabaseDriver layerRscIdDriver;
     private final Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMap;
-    private final BCacheLayerCtrlDatabaseDriver bcacheLayerDriver;
     private final ExternalFileCtrlDatabaseDriver extFileDriver;
     private final S3RemoteCtrlDatabaseDriver s3remoteDriver;
     private final LinstorRemoteCtrlDatabaseDriver linstorRemoteDriver;
@@ -203,7 +201,6 @@ public class DatabaseLoader implements DatabaseDriver
         KeyValueStoreCtrlDatabaseDriver keyValueStoreGenericDbDriverRef,
         LayerResourceIdCtrlDatabaseDriver layerRscIdDriverRef,
         Map<DeviceLayerKind, ControllerLayerRscDatabaseDriver> layerDriversMapRef,
-        BCacheLayerCtrlDatabaseDriver bcacheLayerDriverRef,
         ExternalFileCtrlDatabaseDriver extFilesDriverRef,
         S3RemoteCtrlDatabaseDriver s3remoteDriverRef,
         LinstorRemoteCtrlDatabaseDriver linstorRemoteDriverRef,
@@ -246,7 +243,6 @@ public class DatabaseLoader implements DatabaseDriver
         keyValueStoreGenericDbDriver = keyValueStoreGenericDbDriverRef;
         layerRscIdDriver = layerRscIdDriverRef;
         layerDriversMap = layerDriversMapRef;
-        bcacheLayerDriver = bcacheLayerDriverRef;
         extFileDriver = extFilesDriverRef;
         s3remoteDriver = s3remoteDriverRef;
         linstorRemoteDriver = linstorRemoteDriverRef;
@@ -676,8 +672,6 @@ public class DatabaseLoader implements DatabaseDriver
         throws DatabaseException, AccessDeniedException, ImplementationError, InvalidNameException,
         ValueOutOfRangeException, InvalidIpAddressException, MdException
     {
-        bcacheLayerDriver.fetchForLoadAll();
-
         // load RscDfnLayerObjects and VlmDfnLayerObjects
         // no *DfnLayerObjects for nvme
         // no *DfnLayerObjects for luks
@@ -733,8 +727,6 @@ public class DatabaseLoader implements DatabaseDriver
         {
             driver.clearLoadingCaches();
         }
-
-        bcacheLayerDriver.clearLoadAllCache();
 
         CtrlRscLayerDataFactory rscLayerDataHelper = ctrlRscLayerDataHelper.get();
         for (Resource rsc : resourcesWithLayerData)
@@ -832,32 +824,14 @@ public class DatabaseLoader implements DatabaseDriver
                     }
                     try
                     {
-                        switch (rlo.getLayerKind())
+                        ControllerLayerRscDatabaseDriver driver = layerDriversMap.get(rlo.getLayerKind());
+                        if (driver == null)
                         {
-                            case DRBD:
-                            case NVME:
-                            case OPENFLEX:
-                            case LUKS:
-                            case WRITECACHE:
-                            case CACHE:
-                            case STORAGE:
-                                ControllerLayerRscDatabaseDriver driver = layerDriversMap.get(rlo.getLayerKind());
-                                rscLayerObjectPair = driver.load(rsc, rlo.getRscLayerId());
-                                break;
-                            case BCACHE:
-                                rscLayerObjectPair = bcacheLayerDriver.load(
-                                    rsc,
-                                    rlo.getRscLayerId(),
-                                    rlo.getResourceNameSuffix(),
-                                    parent,
-                                    tmpStorPoolMapWithInitMapsRef
-                                );
-                                break;
-                            default:
-                                throw new ImplementationError(
-                                    "Unhandled case for device kind '" + rlo.getLayerKind() + "'"
-                                );
+                            throw new ImplementationError(
+                                "No driver found for device kind '" + rlo.getLayerKind() + "'"
+                            );
                         }
+                        rscLayerObjectPair = driver.load(rsc, rlo.getRscLayerId());
                     }
                     catch (LinStorDBRuntimeException exc)
                     {

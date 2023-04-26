@@ -1,8 +1,9 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.SatelliteDbDriver;
-import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerCacheRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerCacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
@@ -104,6 +105,7 @@ public class SatelliteDbModule extends AbstractModule
         bind(LayerCacheRscDatabaseDriver.class).to(SatelliteLayerCacheRscDbDriver.class);
         bind(LayerCacheVlmDatabaseDriver.class).to(SatelliteLayerCacheVlmDbDriver.class);
 
-        bind(BCacheLayerDatabaseDriver.class).to(SatelliteBCacheLayerDriver.class);
+        bind(LayerBCacheRscDatabaseDriver.class).to(SatelliteLayerBCacheRscDbDriver.class);
+        bind(LayerBCacheVlmDatabaseDriver.class).to(SatelliteLayerBCacheVlmDbDriver.class);
     }
 }

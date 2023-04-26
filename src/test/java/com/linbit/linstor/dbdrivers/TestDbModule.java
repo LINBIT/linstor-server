@@ -3,7 +3,8 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
-import com.linbit.linstor.core.objects.BCacheLayerSQLDbDriver;
+import com.linbit.linstor.core.objects.LayerBCacheRscDbDriver;
+import com.linbit.linstor.core.objects.LayerBCacheVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerCacheRscDbDriver;
 import com.linbit.linstor.core.objects.LayerCacheVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerDrbdRscDbDriver;
@@ -37,7 +38,8 @@ import com.linbit.linstor.core.objects.StorPoolDefinitionDbDriver;
 import com.linbit.linstor.core.objects.VolumeConnectionDbDriver;
 import com.linbit.linstor.core.objects.VolumeDbDriver;
 import com.linbit.linstor.core.objects.VolumeDefinitionDbDriver;
-import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheRscDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerCacheRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerCacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscCtrlDatabaseDriver;
@@ -164,6 +166,7 @@ public class TestDbModule extends AbstractModule
         bind(LayerCacheRscDatabaseDriver.class).to(LayerCacheRscDbDriver.class);
         bind(LayerCacheVlmDatabaseDriver.class).to(LayerCacheVlmDbDriver.class);
 
-        bind(BCacheLayerDatabaseDriver.class).to(BCacheLayerSQLDbDriver.class);
+        bind(LayerBCacheRscDatabaseDriver.class).to(LayerBCacheRscDbDriver.class);
+        bind(LayerBCacheVlmDatabaseDriver.class).to(LayerBCacheVlmDbDriver.class);
     }
 }

@@ -5,7 +5,7 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.BCacheLayerDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheVlmDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.AbsVlmData;
@@ -50,7 +50,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
         AbsVolume<RSC> vlmRef,
         BCacheRscData<RSC> rscDataRef,
         StorPool cacheStorPoolRef,
-        BCacheLayerDatabaseDriver dbDriver,
+        LayerBCacheVlmDatabaseDriver bcacheVlmdbDriver,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -60,7 +60,7 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
 
         unmodStates = Collections.emptyList();
 
-        deviceUuid = transObjFactory.createTransactionSimpleObject(this, null, dbDriver.getDeviceUuidDriver());
+        deviceUuid = transObjFactory.createTransactionSimpleObject(this, null, bcacheVlmdbDriver.getDeviceUuidDriver());
 
         transObjs = new ArrayList<>();
         transObjs.add(vlm);
