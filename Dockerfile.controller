@@ -82,6 +82,8 @@ ARG ARCH=amd64
 ARG K8S_AWAIT_ELECTION_VERSION=v0.3.1
 RUN curl --fail --location "https://github.com/LINBIT/k8s-await-election/releases/download/${K8S_AWAIT_ELECTION_VERSION}/k8s-await-election-${K8S_AWAIT_ELECTION_VERSION}-linux-${ARCH}.tar.gz" | tar -xvz -C /usr/local/bin/
 
+RUN curl --fail --location "https://dl.k8s.io/$(curl --fail --location https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/${TARGETARCH}/kubectl" -o /usr/local/bin/kubectl && chmod +x /usr/local/bin/kubectl
+
 RUN groupadd linstor
 RUN useradd -m -g linstor linstor
 RUN mkdir /var/log/linstor-controller
