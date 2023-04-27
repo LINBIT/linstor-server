@@ -265,6 +265,33 @@ public class BackupFindUsableNodesTest extends ApiTestBase
     }
 
     @Test
+    public void testChooseAny() throws Exception
+    {
+        /*
+         * A: int, ext
+         * B: int, int
+         * C: ext, int
+         * every node different, make sure all groups are returned
+         */
+        VolumeDefinition vlmDfn = makeVlmDfn();
+        makeSnapVlmDfn(vlmDfn);
+        VolumeDefinition vlmDfn2 = makeVlmDfn();
+        makeSnapVlmDfn(vlmDfn2);
+        setExtMeta(vlmDfn2.getVolumeNumber().value, true);
+        singleDrbdRsc(nodeA);
+        setExtMeta(vlmDfn2.getVolumeNumber().value, false);
+        singleDrbdRsc(nodeB);
+        setExtMeta(vlmDfn.getVolumeNumber().value, true);
+        singleDrbdRsc(nodeC);
+        Set<Node> usableNodes = backupNodeFinder.findUsableNodes(
+            rscDfn,
+            null,
+            mockedRemote
+        );
+        assertEquals(3, usableNodes.size());
+    }
+
+    @Test
     @Parameters(method = "createInput")
     public void test(Input input) throws Exception
     {
@@ -663,23 +690,6 @@ public class BackupFindUsableNodesTest extends ApiTestBase
         {
             return new InputNodeBuilder(this, nodeName);
         }
-
-        // public InputBuilder addToList(String... expectedNodes)
-        // {
-        // input.add(new Pair<>(map, expectedNodes));
-        // return this;
-        // }
-        //
-        // public InputBuilder nextEntry()
-        // {
-        // map = new HashMap<>();
-        // return this;
-        // }
-        //
-        // public List<Pair<Map<String, Map<Integer, Boolean>>, String[]>> getInput()
-        // {
-        // return input;
-        // }
 
         public InputBuilder closeInputWithExpectedNodes(String... expectedNodeNamesRef)
         {
