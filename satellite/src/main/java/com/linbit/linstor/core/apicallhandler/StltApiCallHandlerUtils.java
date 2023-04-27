@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.apicallhandler;
 
-import static java.util.stream.Collectors.toList;
-
 import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -44,6 +42,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+
+import static java.util.stream.Collectors.toList;
 
 public class StltApiCallHandlerUtils
 {
@@ -168,11 +168,14 @@ public class StltApiCallHandlerUtils
                     {
                         try
                         {
-                            deviceProvider.updateAllocatedSize(vlmProviderObject);
-                            allocatedMap.put(
-                                ((Volume) vlmProviderObject.getVolume()).getKey(),
-                                Either.left(vlmProviderObject.getAllocatedSize())
-                            );
+                            if (!vlmProviderObject.getRscLayerObject().hasIgnoreReason())
+                            {
+                                deviceProvider.updateAllocatedSize(vlmProviderObject);
+                                allocatedMap.put(
+                                    ((Volume) vlmProviderObject.getVolume()).getKey(),
+                                    Either.left(vlmProviderObject.getAllocatedSize())
+                                );
+                            }
                         }
                         catch (StorageException exc)
                         {
