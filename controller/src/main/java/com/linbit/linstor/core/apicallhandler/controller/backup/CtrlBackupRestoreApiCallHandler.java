@@ -1187,7 +1187,8 @@ public class CtrlBackupRestoreApiCallHandler
     Snapshot getIncrementalBaseL2LPrivileged(
         ResourceDefinition rscDfnRef,
         Set<String> srcSnapDfnUuidsForIncrementalRef,
-        @Nullable String dstNodeRef
+        @Nullable String dstNodeRef,
+        ApiCallRcImpl apiCallRc
     )
         throws AccessDeniedException
     {
@@ -1197,13 +1198,29 @@ public class CtrlBackupRestoreApiCallHandler
         {
             try
             {
-                dstNode = new NodeName(dstNodeRef);
+                Node node = ctrlApiDataLoader.loadNode(new NodeName(dstNodeRef), false);
+                if (node != null)
+                {
+                    dstNode = node.getName();
+                }
+                else
+                {
+                    apiCallRc.addEntries(
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.WARN_NOT_FOUND,
+                            "Preferred target node does not exist, choosing different node instead"
+                        )
+                    );
+                }
             }
             catch (InvalidNameException exc)
             {
-                /*
-                 * ignored, treat invalid node name the same as no node name given
-                 */
+                apiCallRc.addEntries(
+                    ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.WARN_NOT_FOUND,
+                        "Preferred target node name is not valid, choosing different node instead"
+                    )
+                );
             }
         }
 

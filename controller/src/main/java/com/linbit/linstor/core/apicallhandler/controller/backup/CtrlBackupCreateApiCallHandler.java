@@ -495,7 +495,6 @@ public class CtrlBackupCreateApiCallHandler
         {
             Flux<ApiCallRc> flux = deleteNodeQueueAndReQueueSnapsIfNeeded(peer.getNode());
             Thread thread = new Thread(() ->
-            {
                 flux.subscriberContext(
                     Context.of(
                         AccessContext.class,
@@ -505,8 +504,8 @@ public class CtrlBackupCreateApiCallHandler
                         ApiModule.API_CALL_NAME,
                         "delete node queue"
                     )
-                ).subscribe(ignoredResults -> {}, errorReporter::reportError);
-            });
+                ).subscribe(ignoredResults -> { }, errorReporter::reportError)
+            );
             thread.start();
         }
     }

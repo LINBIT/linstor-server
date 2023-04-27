@@ -194,7 +194,8 @@ public class CtrlBackupL2LDstApiCallHandler
                     incrementalBaseSnap = backupRestoreApiCallHandler.getIncrementalBaseL2LPrivileged(
                         targetRscDfn,
                         srcSnapDfnUuids,
-                        dstNodeName
+                        dstNodeName,
+                        rc
                     );
                 }
                 resetData = targetRscDfn == null || targetRscDfn.getResourceCount() == 0;
@@ -213,7 +214,7 @@ public class CtrlBackupL2LDstApiCallHandler
                             resetData,
                             incrementalBaseSnap.getSnapshotName().displayValue,
                             incrementalBaseSnap.getNodeName().displayValue,
-                            new ApiCallRcImpl()
+                            rc
                         )
                     );
                 }
@@ -226,7 +227,7 @@ public class CtrlBackupL2LDstApiCallHandler
                             resetData,
                             null,
                             null,
-                            new ApiCallRcImpl()
+                            rc
                         )
                     );
                 }
