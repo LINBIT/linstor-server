@@ -1,3 +1,25 @@
+linstor-server (1.22.1-1) experimental; urgency=medium
+
+  [ Franciosi ]
+  * Update README.md
+
+  [ Rene Peinthor ]
+  * make-available: upgrade a tiebreaker into a real diskless resource
+  * gitlab-ci: fix unittest coverage report
+
+  [ Johanna Kucera ]
+  * LinstorScope: ensure enter and exit are executed correctly
+  * LinstorScope: use AutoCloseable to ensure exit is called
+
+  [ Gabor Hernadi ]
+  * NodeCon: Fixed compareTo
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * docker: include migration script for k8s DB
+  * docker: use ARCH build argument
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 27 Apr 2023 11:58:24 +0000
+
 linstor-server (1.22.0-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]

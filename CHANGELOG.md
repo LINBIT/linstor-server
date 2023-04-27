@@ -8,9 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.1] - 2023-04-27
+
 ### Fixed
 
 - NodeCon: Fixed compareTo() causing node connection paths loaded incorrectly.
+- LinstorScope not always enter and exit correctly.
+- Make-Available API not correctly upgrading a tiebreaker to a diskless resource.
 
 ## [1.22.0] - 2023-04-17
 
