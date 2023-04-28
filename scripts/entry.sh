@@ -10,7 +10,7 @@ run_migration() {
 
   # In k8s contexts, the host name will be the unique pod name, so we can assume
   # a unique backup name, which is still stable for a one specific attempted migration.
-  BACKUP_NAME=${BACKUP_NAME:-linstor-backup-for-$(hostname)}
+  BACKUP_NAME=${BACKUP_NAME:-linstor-backup-for-$(uname -n)}
 
   if ! kubectl get secrets "${BACKUP_NAME}"; then
     mkdir -p /run/migration
