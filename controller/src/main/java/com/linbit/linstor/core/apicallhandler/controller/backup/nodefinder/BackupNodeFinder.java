@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.backup.nodefinder;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
@@ -17,6 +18,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
+import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
@@ -59,15 +61,18 @@ public class BackupNodeFinder
 
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlApiDataLoader ctrlApiDataLoader;
+    private final SystemConfProtectionRepository sysCfgRepo;
 
     @Inject
     public BackupNodeFinder(
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlApiDataLoader ctrlApiDataLoaderRef
+        CtrlApiDataLoader ctrlApiDataLoaderRef,
+        SystemConfProtectionRepository sysCfgRepoRef
     )
     {
         peerAccCtx = peerAccCtxRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
+        sysCfgRepo = sysCfgRepoRef;
 
     }
 
@@ -76,7 +81,7 @@ public class BackupNodeFinder
      * also has that snapshot created, otherwise we are not able to send an incremental backup.
      * This method could also be used to verify if the backed up DeviceProviderKind match with the node's snapshot
      * DeviceProviderKind, but as we are currently not supporting mixed DeviceProviderKinds we also neglect
-     * this check here.
+     * this check here.<br/>
      * This method returns a list of Nodes, which are the nodes that are able and allowed to make the shipping.
      * Should this list be empty, it does NOT mean that there are no nodes that can do the shipping, since this case
      * throws an ApiRcException. Instead, it means that this is an incremental shipping whose prevSnap has yet to start
@@ -87,7 +92,7 @@ public class BackupNodeFinder
      * @param prevSnapDfnRef
      * @param requiredExtToolsRef
      *
-     * @return List<Node>
+     * @return List&lt;Node&gt;
      *
      * @throws AccessDeniedException
      */
@@ -112,22 +117,7 @@ public class BackupNodeFinder
         while (rscIt.hasNext())
         {
             Resource rsc = rscIt.next();
-            boolean isSomeSortOfDiskless = rsc.getStateFlags()
-                .isSomeSet(
-                    accCtx,
-                    Resource.Flags.DRBD_DISKLESS,
-                    Resource.Flags.NVME_INITIATOR,
-                    Resource.Flags.EBS_INITIATOR
-                );
-            boolean isNodeAvailable = !rsc.getNode()
-                .getFlags()
-                .isSomeSet(
-                    accCtx,
-                    Node.Flags.DELETE,
-                    Node.Flags.EVACUATE,
-                    Node.Flags.EVICTED
-                ) && rsc.getNode().getPeer(accCtx).isOnline();
-            if (!isSomeSortOfDiskless && isNodeAvailable)
+            if (canNodeShip(rsc, accCtx))
             {
                 ApiCallRcImpl backupShippingSupported = backupShippingSupported(rsc);
                 if (backupShippingSupported.isEmpty())
@@ -277,6 +267,39 @@ public class BackupNodeFinder
 
         }
         return ret;
+    }
+
+    private boolean canNodeShip(Resource rsc, AccessContext accCtx) throws AccessDeniedException
+    {
+        boolean isSomeSortOfDiskless = rsc.getStateFlags()
+            .isSomeSet(
+                accCtx,
+                Resource.Flags.DRBD_DISKLESS,
+                Resource.Flags.NVME_INITIATOR,
+                Resource.Flags.EBS_INITIATOR
+            );
+        boolean isNodeAvailable = !rsc.getNode()
+            .getFlags()
+            .isSomeSet(
+                accCtx,
+                Node.Flags.DELETE,
+                Node.Flags.EVACUATE,
+                Node.Flags.EVICTED
+            ) && rsc.getNode().getPeer(accCtx).isOnline();
+        PriorityProps prioProps = new PriorityProps(
+            rsc.getNode().getProps(peerAccCtx.get()),
+            sysCfgRepo.getCtrlConfForView(peerAccCtx.get())
+        );
+        String maxBackups = prioProps.getProp(
+            ApiConsts.KEY_MAX_CONCURRENT_BACKUPS_PER_NODE,
+            ApiConsts.NAMESPC_BACKUP_SHIPPING
+        );
+        /*
+         * This does NOT check for free shipping slots, that is not important here, since we only want to know if the
+         * node is able to do a shipment, not if it is possible to start it right now
+         */
+        boolean isNodeAllowedToShip = maxBackups == null || maxBackups.isEmpty() || Integer.parseInt(maxBackups) != 0;
+        return !isSomeSortOfDiskless && isNodeAvailable && isNodeAllowedToShip;
     }
 
     private Set<Node> getNodesForFullBackup(Map<Category, Set<Node>> usableGroups)

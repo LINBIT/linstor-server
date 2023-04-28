@@ -535,9 +535,39 @@ public class CtrlBackupCreateApiCallHandler
         {
             try
             {
+                SnapshotDefinition prevSnap = item.prevSnapDfn;
+                if (prevSnap != null)
+                {
+                    boolean needsNewPrevSnap = false;
+                    boolean isDeleted = prevSnap.isDeleted() ||
+                        prevSnap.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.DELETE);
+                    if (isDeleted)
+                    {
+                        needsNewPrevSnap = true;
+                    }
+                    else
+                    {
+                        boolean isLastSnapOnNodeToClear = prevSnap.getAllNotDeletingSnapshots(peerAccCtx.get())
+                            .size() == 1 && prevSnap.getSnapshot(peerAccCtx.get(), node.getName()) != null;
+                        if (isLastSnapOnNodeToClear)
+                        {
+                            needsNewPrevSnap = true;
+                        }
+                    }
+                    if (needsNewPrevSnap)
+                    {
+                        /*
+                         * TODO: a better but far more complicated option would be to do the same flux-loop-stuff as
+                         * with startQueuedL2LShippingInTransaction in order to get a new prevSnap from the
+                         * targetCluster
+                         * instead, we simply force a full backup
+                         */
+                        prevSnap = null;
+                    }
+                }
                 Node shipFromNode = getNodeForBackupOrQueue(
                     item.snapDfn.getResourceDefinition(),
-                    item.prevSnapDfn,
+                    prevSnap,
                     item.snapDfn,
                     item.remote,
                     item.preferredNode,

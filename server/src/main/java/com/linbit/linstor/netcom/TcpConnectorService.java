@@ -1,10 +1,5 @@
 package com.linbit.linstor.netcom;
 
-import static java.nio.channels.SelectionKey.OP_ACCEPT;
-import static java.nio.channels.SelectionKey.OP_CONNECT;
-import static java.nio.channels.SelectionKey.OP_READ;
-import static java.nio.channels.SelectionKey.OP_WRITE;
-
 import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
@@ -22,6 +17,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Inet6Address;
@@ -51,6 +47,11 @@ import java.util.ListIterator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.event.Level;
+
+import static java.nio.channels.SelectionKey.OP_ACCEPT;
+import static java.nio.channels.SelectionKey.OP_CONNECT;
+import static java.nio.channels.SelectionKey.OP_READ;
+import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
  * TCP/IP network communication service
@@ -991,7 +992,6 @@ public class TcpConnectorService implements Runnable, TcpConnector
         Peer client = (TcpConnectorPeer) currentKey.attachment();
         if (client != null)
         {
-            connObserver.connectionClosed(client, allowReconnect, shuttingDown);
             try
             {
                 if (client.isConnected(false))
@@ -1003,6 +1003,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             {
                 // connectionClosing() calls interestOps on the selection Key, which may fail
             }
+            connObserver.connectionClosed(client, allowReconnect, shuttingDown);
         }
 
         try

@@ -228,6 +228,22 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         return snapshotMap.values();
     }
 
+    public Collection<Snapshot> getAllNotDeletingSnapshots(AccessContext accCtx)
+        throws AccessDeniedException
+    {
+        checkDeleted();
+        requireAccess(accCtx, AccessType.VIEW);
+        TreeSet<Snapshot> ret = new TreeSet<>();
+        for (Snapshot snap : snapshotMap.values())
+        {
+            if (!snap.isDeleted() && snap.getFlags().isUnset(accCtx, Snapshot.Flags.DELETE))
+            {
+                ret.add(snap);
+            }
+        }
+        return ret;
+    }
+
     public void addSnapshot(AccessContext accCtx, Snapshot snapshotRef)
         throws AccessDeniedException
     {
