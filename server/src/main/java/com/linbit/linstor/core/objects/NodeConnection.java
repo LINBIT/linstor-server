@@ -99,7 +99,7 @@ public class NodeConnection extends AbsCoreObj<NodeConnection>
                 throw new LinStorDataAlreadyExistsException("The NodeConnection already exists");
             }
             throw new LinStorDataAlreadyExistsException(
-                "The NodeConnection already exists for one of the resources"
+                "The NodeConnection already exists for one of the nodes"
             );
         }
 

@@ -1661,7 +1661,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                             delRsc.delete(wrkCtx);
                             if (peerNode != controllerPeerConnector.getLocalNode())
                             {
-                                if (StltNodeApiCallHandler.canRemoteNoteBeDeleted(wrkCtx, localNode, peerNode))
+                                if (StltNodeApiCallHandler.canRemoteNodeBeDeleted(wrkCtx, localNode, peerNode))
                                 {
                                     // This satellite does no longer have any peer resources
                                     // on the peer node, so is does not need to know about this

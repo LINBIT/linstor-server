@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
+import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.DeviceManager;
@@ -57,6 +58,7 @@ public class StltNodeApiCallHandler
     private final NodeConnectionFactory nodeConnectionFactory;
     private final NetInterfaceFactory netInterfaceFactory;
     private final Provider<TransactionMgr> transMgrProvider;
+    private final ControllerPeerConnector controllerPeerConnector;
 
     @Inject
     StltNodeApiCallHandler(
@@ -69,6 +71,7 @@ public class StltNodeApiCallHandler
         NodeSatelliteFactory nodeFactoryRef,
         NodeConnectionFactory nodeConnectionFactoryRef,
         NetInterfaceFactory netInterfaceFactoryRef,
+        ControllerPeerConnector controllerPeerConnectorRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -81,6 +84,7 @@ public class StltNodeApiCallHandler
         nodeFactory = nodeFactoryRef;
         nodeConnectionFactory = nodeConnectionFactoryRef;
         netInterfaceFactory = netInterfaceFactoryRef;
+        controllerPeerConnector = controllerPeerConnectorRef;
         transMgrProvider = transMgrProviderRef;
     }
 
@@ -130,41 +134,41 @@ public class StltNodeApiCallHandler
         Lock reConfReadLock = reconfigurationLock.readLock();
         Lock nodesWriteLock = nodesMapLock.writeLock();
 
-        Node localNode = null;
+        Node curNode = null;
         try
         {
             reConfReadLock.lock();
             nodesWriteLock.lock();
 
             Node.Flags[] nodeFlags = Node.Flags.restoreFlags(nodePojo.getNodeFlags());
-            localNode = nodeFactory.getInstanceSatellite(
+            curNode = nodeFactory.getInstanceSatellite(
                 apiCtx,
                 nodePojo.getUuid(),
                 new NodeName(nodePojo.getName()),
                 Node.Type.valueOf(nodePojo.getType()),
                 nodeFlags
             );
-            checkUuid(localNode, nodePojo);
+            checkUuid(curNode, nodePojo);
 
-            localNode.getFlags().resetFlagsTo(apiCtx, nodeFlags);
+            curNode.getFlags().resetFlagsTo(apiCtx, nodeFlags);
 
-            Props nodeProps = localNode.getProps(apiCtx);
+            Props nodeProps = curNode.getProps(apiCtx);
             nodeProps.map().putAll(nodePojo.getProps());
             nodeProps.keySet().retainAll(nodePojo.getProps().keySet());
 
-            mergeNodeConnections(localNode, nodePojo);
+            mergeNodeConnections(curNode, nodePojo);
 
             for (NetInterfaceApi netIfApi : nodePojo.getNetInterfaces())
             {
                 NetInterfaceName netIfName = new NetInterfaceName(netIfApi.getName());
                 LsIpAddress ipAddress = new LsIpAddress(netIfApi.getAddress());
-                NetInterface netIf = localNode.getNetInterface(apiCtx, netIfName);
+                NetInterface netIf = curNode.getNetInterface(apiCtx, netIfName);
                 if (netIf == null)
                 {
                     netInterfaceFactory.getInstanceSatellite(
                         apiCtx,
                         netIfApi.getUuid(),
-                        localNode,
+                        curNode,
                         netIfName,
                         ipAddress
                     );
@@ -175,12 +179,11 @@ public class StltNodeApiCallHandler
                 }
             }
 
-            Set<ResourceName> rscSet = localNode.streamResources(apiCtx)
+            Set<ResourceName> rscSet = curNode.streamResources(apiCtx)
                 .map(Resource::getDefinition)
                 .map(ResourceDefinition::getName)
                 .collect(Collectors.toSet());
 
-            nodesMap.put(localNode.getName(), localNode);
             transMgrProvider.get().commit();
 
             errorReporter.logInfo("Node '" + nodePojo.getName() + "' created.");
@@ -198,46 +201,67 @@ public class StltNodeApiCallHandler
             nodesWriteLock.unlock();
             reConfReadLock.unlock();
         }
-        return localNode;
+        return curNode;
     }
 
     private void mergeNodeConnections(Node localNode, NodePojo nodePojo)
         throws AccessDeniedException, ImplementationError, InvalidNameException, DatabaseException
     {
-        List<NodeConnection> nodeConsToDelete = new ArrayList<>(localNode.getNodeConnections(apiCtx));
-        for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
+        // do not compare getLocalNode().equals(localNode), since .getLocalNodeName() queries the nodesMap
+        // which was cleared at the beginning of the FullSync. If we are alphanumerically later than the
+        // other node, this check would run a "null.equals(localNode)" -> NPE
+        if (controllerPeerConnector.getLocalNodeName().equals(localNode.getName()))
         {
-            NodePojo otherNodePojo = nodeConn.getOtherNodeApi();
-            Node otherNode = nodeFactory.getInstanceSatellite(
-                apiCtx,
-                otherNodePojo.getUuid(),
-                new NodeName(otherNodePojo.getName()),
-                Node.Type.valueOf(otherNodePojo.getType()),
-                Node.Flags.restoreFlags(otherNodePojo.getFlags())
-            );
-            NodeConnection nodeCon = nodeConnectionFactory.getInstanceSatellite(
-                apiCtx,
-                nodeConn.getUuid(),
-                localNode,
-                otherNode
-            );
-            nodeConsToDelete.remove(nodeCon);
-            Props nodeConnProps = nodeCon.getProps(apiCtx);
-            nodeConnProps.map().putAll(nodeConn.getProps());
-            nodeConnProps.keySet().retainAll(nodeConn.getProps().keySet());
-        }
-        for (NodeConnection nodeConToDelete : nodeConsToDelete)
-        {
-            Node otherNode = nodeConToDelete.getOtherNode(apiCtx, localNode);
-            localNode.removeNodeConnection(apiCtx, nodeConToDelete);
-            if (!deleteRemoteNodeIfNeeded(apiCtx, nodesMap, localNode, otherNode))
+            /*
+             * The controller only sends our nodeConnections and that also only in our nodePojo.
+             * That means, if we are node A, only nodeA's pojo will contain node connections to
+             * i.e. nodeB. nodeB's pojo will *not* contain any node connections, not even to
+             * nodeA (to prevent recursion).
+             *
+             * Therefore we only have to merge nodeConnections if curNode == localNode.
+             *
+             * If we would still call this method for other nodes, since those node's pojos do not
+             * contain node connections to our local node, otherNode.removeNodeConnection will be
+             * called. If we then try to update that node connection (i.e. by setting a property),
+             * only our local node will have a reference to the node connection, but not the other
+             * node, which will result in an error.
+             */
+
+            List<NodeConnection> nodeConsToDelete = new ArrayList<>(localNode.getNodeConnections(apiCtx));
+            for (NodeConnPojo nodeConn : nodePojo.getNodeConns())
             {
-                otherNode.removeNodeConnection(apiCtx, nodeConToDelete);
+                NodePojo otherNodePojo = nodeConn.getOtherNodeApi();
+                Node otherNode = nodeFactory.getInstanceSatellite(
+                    apiCtx,
+                    otherNodePojo.getUuid(),
+                    new NodeName(otherNodePojo.getName()),
+                    Node.Type.valueOf(otherNodePojo.getType()),
+                    Node.Flags.restoreFlags(otherNodePojo.getFlags())
+                );
+                NodeConnection nodeCon = nodeConnectionFactory.getInstanceSatellite(
+                    apiCtx,
+                    nodeConn.getUuid(),
+                    localNode,
+                    otherNode
+                );
+                nodeConsToDelete.remove(nodeCon);
+                Props nodeConnProps = nodeCon.getProps(apiCtx);
+                nodeConnProps.map().putAll(nodeConn.getProps());
+                nodeConnProps.keySet().retainAll(nodeConn.getProps().keySet());
+            }
+            for (NodeConnection nodeConToDelete : nodeConsToDelete)
+            {
+                Node otherNode = nodeConToDelete.getOtherNode(apiCtx, localNode);
+                localNode.removeNodeConnection(apiCtx, nodeConToDelete);
+                if (!deleteRemoteNodeIfNeeded(apiCtx, nodesMap, localNode, otherNode))
+                {
+                    otherNode.removeNodeConnection(apiCtx, nodeConToDelete);
+                }
             }
         }
     }
 
-    public static boolean canRemoteNoteBeDeleted(
+    public static boolean canRemoteNodeBeDeleted(
         AccessContext apiCtxRef,
         Node localNodeRef,
         Node remoteNodeRef
@@ -278,7 +302,7 @@ public class StltNodeApiCallHandler
     {
 
         boolean deleted = false;
-        boolean shouldDelete = canRemoteNoteBeDeleted(apiCtxRef, localNodeRef, remoteNodeRef);
+        boolean shouldDelete = canRemoteNodeBeDeleted(apiCtxRef, localNodeRef, remoteNodeRef);
         if (shouldDelete)
         {
             nodesMapRef.remove(remoteNodeRef.getName());
