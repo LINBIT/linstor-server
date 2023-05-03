@@ -77,7 +77,7 @@ public class FileUtils
         {
             if (errorReporter != null)
             {
-                errorReporter.logTrace("Deleted %s%s", accessibleRef ? "inaccessible " : "", dirRef.toString());
+                errorReporter.logTrace("Deleted %s%s", accessibleRef ? "" : "inaccessible ", dirRef.toString());
             }
         }
     }

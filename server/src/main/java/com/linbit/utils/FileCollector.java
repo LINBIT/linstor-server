@@ -14,7 +14,8 @@ import java.util.Set;
 
 public class FileCollector extends SimpleFileVisitor<Path>
 {
-    private static final PathMatcher LOG_MATCHER = FileSystems.getDefault().getPathMatcher("glob:**.{mv.db,log}");
+    private static final PathMatcher LOG_MATCHER = FileSystems.getDefault()
+        .getPathMatcher("glob:**.{mv.db,log,log.zip}");
     private final Set<SosReportType> files = new HashSet<>();
 
     public FileCollector()
