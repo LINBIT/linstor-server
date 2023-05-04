@@ -510,6 +510,14 @@ public class BackupInfoManager
         }
     }
 
+    public boolean hasNodeQueuedSnaps(Node node)
+    {
+        synchronized (uploadQueues)
+        {
+            return uploadQueues.containsKey(node);
+        }
+    }
+
     private boolean setContainsSnapDfn(SnapshotDefinition snapDfn, Set<QueueItem> set)
     {
         boolean ret = false;
@@ -693,11 +701,15 @@ public class BackupInfoManager
     {
         public final SnapshotDefinition snapDfn;
         public final AbsRemote remote;
-        /** if prevSnapDfn is null, it means a full backup should be made */
+        /* if prevSnapDfn is null, it means a full backup should be made */
         public final @Nullable SnapshotDefinition prevSnapDfn;
         public final @Nullable String preferredNode;
         public final @Nullable BackupShippingData l2lData;
-        public boolean processed = false;
+        /*
+         * This is needed to make it possible that the queueItems from getFollowUpSnaps can be started on any available
+         * node. Without alreadyStartedOn, an already finished shipping could be started again on another node.
+         */
+        public @Nullable Node alreadyStartedOn;
 
         private QueueItem(
             SnapshotDefinition snapDfnRef,
@@ -712,6 +724,13 @@ public class BackupInfoManager
             prevSnapDfn = prevSnapDfnRef;
             preferredNode = preferredNodeRef;
             l2lData = l2lDataRef;
+        }
+
+        @Override
+        public String toString()
+        {
+            return "QueueItem [snapDfn=" + snapDfn + ", remote=" + remote + ", prevSnapDfn=" + prevSnapDfn +
+                ", preferredNode=" + preferredNode + ", l2lData=" + l2lData + "]";
         }
 
         @Override
