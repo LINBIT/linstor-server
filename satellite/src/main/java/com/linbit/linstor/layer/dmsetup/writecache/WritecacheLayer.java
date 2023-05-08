@@ -60,6 +60,7 @@ public class WritecacheLayer implements DeviceLayer
      */
     private static final Map<String, String> OPTS_LUT;
     private static final String DFLT_CACHE_SIZE = "5%";
+    private static final String DM_SETUP_WRITECACHE_FLUSH_ON_SUSPEND = "flush_on_suspend";
 
     private final ErrorReporter errorReporter;
     private final AccessContext storDriverAccCtx;
@@ -243,7 +244,18 @@ public class WritecacheLayer implements DeviceLayer
     public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
         throws ResourceException, StorageException
     {
-        DmSetupUtils.manageSuspendIO(errorReporter, extCmdFactory, rscLayerObjectRef, resumeOnlyRef);
+        DmSetupUtils.manageSuspendIO(
+            errorReporter,
+            extCmdFactory,
+            rscLayerObjectRef,
+            resumeOnlyRef,
+            vlmData -> DmSetupUtils.message(
+                extCmdFactory,
+                vlmData.getDevicePath(),
+                null,
+                DM_SETUP_WRITECACHE_FLUSH_ON_SUSPEND
+            )
+        );
     }
 
     @Override

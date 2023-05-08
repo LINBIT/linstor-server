@@ -13,7 +13,10 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.utils.ExceptionThrowingConsumer;
 import com.linbit.utils.StringUtils;
+
+import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -97,7 +100,7 @@ public class DmSetupUtils
         {
             try
             {
-                suspendIo(errorReporter, extCmdFactory, vlmData, shouldSuspend);
+                suspendIo(errorReporter, extCmdFactory, vlmData, shouldSuspend, null);
             }
             catch (IOException ioExc)
             {
@@ -125,6 +128,17 @@ public class DmSetupUtils
         return changed;
     }
 
+    public static void manageSuspendIO(
+        ErrorReporter errorReporter,
+        ExtCmdFactory extCmdFactory,
+        AbsRscLayerObject<Resource> rscData,
+        boolean resumeOnlyRef
+    )
+        throws StorageException
+    {
+        manageSuspendIO(errorReporter, extCmdFactory, rscData, resumeOnlyRef, null);
+    }
+
     /**
      * Suspends or resumes IO of all volumes of the given resource if needed.
      * If the suspend state changed, rscData's isSuspended is also updated accordingly.
@@ -140,7 +154,8 @@ public class DmSetupUtils
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,
         AbsRscLayerObject<Resource> rscData,
-        boolean resumeOnlyRef
+        boolean resumeOnlyRef,
+        ExceptionThrowingConsumer<VlmProviderObject<Resource>, StorageException> preSuspendConsumerRef
     )
         throws StorageException
     {
@@ -157,7 +172,7 @@ public class DmSetupUtils
                     if (vlmData.exists())
                     {
                         currentDev = vlmData.getDevicePath();
-                        suspendIo(errorReporter, extCmdFactory, vlmData, shouldSuspend);
+                        suspendIo(errorReporter, extCmdFactory, vlmData, shouldSuspend, preSuspendConsumerRef);
                     }
                 }
                 rscData.setIsSuspended(shouldSuspend);
@@ -187,10 +202,16 @@ public class DmSetupUtils
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,
         VlmProviderObject<Resource> vlmData,
-        boolean suspendRef
+        boolean suspendRef,
+        ExceptionThrowingConsumer<VlmProviderObject<Resource>, StorageException> preSuspendConsumerRef
     )
-        throws IOException, ChildProcessTimeoutException
+        throws IOException, ChildProcessTimeoutException, StorageException
     {
+        if (suspendRef && preSuspendConsumerRef != null)
+        {
+            preSuspendConsumerRef.accept(vlmData);
+        }
+
         errorReporter.logTrace(
             "%s IO for %s resource '%s', volume: %d",
             suspendRef ? "Suspending" : "Resuming",
@@ -447,7 +468,7 @@ public class DmSetupUtils
     public static void message(
         ExtCmdFactory extCmdFactory,
         String device,
-        Long sector,
+        @Nullable Long sector,
         String message
     )
         throws StorageException
