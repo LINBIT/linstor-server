@@ -164,7 +164,7 @@ public class CtrlRscMakeAvailableApiCallHandler
         String nodeNameRef,
         String rscNameRef,
         List<String> layerStackRef,
-        boolean diskfulRef,
+        boolean diskfulRequestedRef,
         ResponseContext contextRef
     )
     {
@@ -234,7 +234,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                  * checking for DRBD_DISKLESS instead of DISKLESS to prevent NVMe and other cases.
                  * Toggle disk ONLY works with DRBD.
                  */
-                if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS) && diskfulRef)
+                if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS) && diskfulRequestedRef)
                 {
                     // toggle disk
                     AutoSelectFilterPojo autoSelect = createAutoSelectConfig(nodeNameRef, layerStack, null);
@@ -262,8 +262,16 @@ public class CtrlRscMakeAvailableApiCallHandler
                 }
                 else
                 {
-                    // unset TIE_BREAKER flag to mark resource as a wanted diskless
-                    unsetFlag(rsc, Flags.TIE_BREAKER);
+                    if (isFlagSet(rsc, Resource.Flags.TIE_BREAKER))
+                    {
+                        // unset TIE_BREAKER flag to mark resource as a wanted diskless
+                        unsetFlag(rsc, Flags.TIE_BREAKER);
+                        // TIE_BREAKER has DRBD_DISKLESS (which also has DISKLESS) flags + a new bit. we just removed
+                        // all 3 bits, but we need to restore DISKLESS and DRBD_DISKLESS
+                        setFlag(rsc, Flags.DRBD_DISKLESS);
+                    }
+                    // else we are either diskful, or diskless while diskfulRequested is false => noop
+
                     errorReporter.logTrace("Resource already in expected state. Nothing to do");
                     flux = Flux.just(
                         ApiCallRcImpl.singleApiCallRc(ApiConsts.MASK_SUCCESS, "Resource already deployed as requested")
@@ -308,7 +316,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                     )
                 ).onErrorResume(
                     error -> abortDeactivateOldRsc(activeRsc, rsc)
-                        .concatWith(placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRef))
+                        .concatWith(placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRequestedRef))
                 );
             }
             else
@@ -324,7 +332,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                             LockObj.RSC_DFN_MAP,
                             LockObj.STOR_POOL_DFN_MAP
                         ),
-                        () -> placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRef)
+                        () -> placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRequestedRef)
                     )
                 );
             }

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- MakeAvailable: Fix incorrect deletion of TIE_BREAKER flag
+
 ## [1.22.1] - 2023-04-27
 
 ### Fixed
