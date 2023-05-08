@@ -180,6 +180,7 @@ public class BackupToS3
             parts
         ).withRequesterPays(reqPays);
         s3.completeMultipartUpload(compRequest);
+        errorReporter.logTrace("Backup upload of %s to bucket %s completed in %d parts", key, bucket, partId);
     }
 
     public void abortMultipart(String key, String uploadId, S3Remote remote, AccessContext accCtx, byte[] masterKey)

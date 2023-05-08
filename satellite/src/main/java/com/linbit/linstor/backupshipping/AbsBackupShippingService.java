@@ -234,7 +234,6 @@ public abstract class AbsBackupShippingService implements SystemService
                         snapVlmData
                     )
                 },
-                snapNameRef,
                 backupName,
                 remoteMap.get(new RemoteName(remoteName, true)),
                 false,
@@ -286,7 +285,6 @@ public abstract class AbsBackupShippingService implements SystemService
                     "-c",
                     getCommandReceiving(cmdRef, remote, snapVlmData)
                 },
-                snapVlm.getSnapshotName().displayValue,
                 backupName,
                 remote,
                 true,
@@ -380,7 +378,6 @@ public abstract class AbsBackupShippingService implements SystemService
     private void startDaemon(
         String sendRecvCommand,
         String[] fullCommand,
-        String shippingDescr,
         String backupNameRef,
         AbsRemote remote,
         boolean restore,
@@ -418,7 +415,6 @@ public abstract class AbsBackupShippingService implements SystemService
                     new SnapVlmDataInfo(
                         createDaemon(
                             snapVlmData,
-                            shippingDescr,
                             fullCommand,
                             backupNameRef,
                             remote,
@@ -860,7 +856,6 @@ public abstract class AbsBackupShippingService implements SystemService
 
     protected abstract BackupShippingDaemon createDaemon(
         AbsStorageVlmData<Snapshot> snapVlmDataRef,
-        String shippingDescrRef,
         String[] fullCommandRef,
         String backupNameRef,
         AbsRemote remoteRef,
