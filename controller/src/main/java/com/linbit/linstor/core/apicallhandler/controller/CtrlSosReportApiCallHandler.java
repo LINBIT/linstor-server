@@ -167,9 +167,8 @@ public class CtrlSosReportApiCallHandler
         try
         {
             final Path tmpDir = Files.createTempDirectory("sos");
-            makeDir(tmpDir.resolve("tmp"));
-
             String sosReportName = SOS_PREFIX + sdfUtc.format(new Date());
+            makeDir(tmpDir.resolve(sosReportName));
 
             ret = scopeRunner.fluxInTransactionlessScope(
                 "Send SOS report queries",
@@ -243,7 +242,7 @@ public class CtrlSosReportApiCallHandler
         if (peer != null)
         {
             // already create the extTools file here, because you need the peer
-            createExtToolsInfo(tmpDir.resolve("tmp/" + node.getName().displayValue), peer);
+            createExtToolsInfo(tmpDir.resolve(sosReportName + "/" + node.getName().displayValue), peer);
             byte[] msg = stltComSerializer.headerlessBuilder().requestSosReport(sosReportName, since).build();
             fluxReturn = peer.apiCall(InternalApiConsts.API_REQ_SOS_REPORT_FILE_LIST, msg)
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
@@ -313,7 +312,7 @@ public class CtrlSosReportApiCallHandler
         }
         else
         {
-            Path sosDir = tmpDirRef.resolve("tmp/" + msgSosReportListReply.getNodeName());
+            Path sosDir = tmpDirRef.resolve(sosReportName + "/" + msgSosReportListReply.getNodeName());
             String sosReportDirOnStltStr = LinStor.SOS_REPORTS_DIR.resolve(sosReportName).toString();
             String sosDirStr = sosDir.toString();
             LinkedList<RequestFilePojo> filesToRequest = new LinkedList<>();
@@ -488,7 +487,7 @@ public class CtrlSosReportApiCallHandler
         }
 
         String nodeName = protoFilesReply.getNodeName();
-        Path sosDir = tmpDirRef.resolve("tmp/" + nodeName);
+        Path sosDir = tmpDirRef.resolve(sosReportNameRef + "/" + nodeName);
         String sosDirStr = sosDir.toString();
         String sosReportDirOnStltStr = LinStor.SOS_REPORTS_DIR.resolve(sosReportNameRef).toString();
         for (File file : protoFilesReply.getFilesList())
@@ -530,7 +529,7 @@ public class CtrlSosReportApiCallHandler
 
         Stream<Node> nodeStream = getNodeStreamForSosReport(nodes, rscs, excludeNodes);
         List<Node> nodeList = nodeStream.collect(Collectors.toList());
-        List<String> namesForTar = nodeList.stream().map(node -> node.getName().displayValue)
+        List<String> namesForTar = nodeList.stream().map(node -> sosReportName + "/" + node.getName().displayValue)
             .collect(Collectors.toList());
         for (String name : namesForTar)
         {
@@ -551,12 +550,12 @@ public class CtrlSosReportApiCallHandler
         }
         if (includeCtrl)
         {
-            namesForTar.add("_" + LinStor.CONTROLLER_MODULE);
-            createControllerFilesInto(tmpDir, since);
+            namesForTar.add(sosReportName + "/_" + LinStor.CONTROLLER_MODULE);
+            createControllerFilesInto(tmpDir, sosReportName, since);
         }
-        namesForTar.add(QUERY_FILE);
+        namesForTar.add(sosReportName + "/" + QUERY_FILE);
         append(
-            tmpDir.resolve("tmp/" + QUERY_FILE),
+            tmpDir.resolve(sosReportName + "/" + QUERY_FILE),
             (queryParams == null ? "<no query-params>" : queryParams).getBytes(),
             System.currentTimeMillis()
         );
@@ -644,13 +643,13 @@ public class CtrlSosReportApiCallHandler
      * <tr><td>release</td><td>'cat /etc/redhat-release /etc/lsb-release /etc/os-release'</td></tr>
      * </table>
      */
-    private void createControllerFilesInto(Path tmpDir, Date since) throws IOException
+    private void createControllerFilesInto(Path tmpDir, String sosReportName, Date since) throws IOException
     {
         long nowMillis = System.currentTimeMillis();
         Date now = new Date(nowMillis);
 
         String nodeName = "_" + LinStor.CONTROLLER_MODULE;
-        Path sosDir = tmpDir.resolve("tmp/" + nodeName);
+        Path sosDir = tmpDir.resolve(sosReportName + "/" + nodeName);
         String infoContent = LinStor.linstorInfo() + "\n\nuname -a:           " + LinStor.getUname("-a");
         append(sosDir.resolve("linstorInfo"), infoContent.getBytes(), nowMillis);
 
@@ -930,7 +929,7 @@ public class CtrlSosReportApiCallHandler
         List<String> cmd = new ArrayList<>();
         cmd.add("tar");
         cmd.add("-C");
-        cmd.add(source.toString() + "/tmp");
+        cmd.add(source.toString());
         cmd.add("-czvf");
         cmd.add(fileName);
         cmd.addAll(directories);
