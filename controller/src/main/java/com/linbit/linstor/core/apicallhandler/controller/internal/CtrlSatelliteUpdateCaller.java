@@ -167,7 +167,7 @@ public class CtrlSatelliteUpdateCaller
         Publisher<ApiCallRc> nextStepRef
     )
     {
-        return updateSatellites(rscDfn, notConnectedWarn(), nextStepRef);
+        return updateSatellites(rscDfn, notConnectedError(), nextStepRef);
     }
 
     /**
@@ -292,6 +292,10 @@ public class CtrlSatelliteUpdateCaller
         {
             response = Flux.error(new ApiRcException(ResponseUtils.makeFullSyncFailedResponse(currentPeer)));
         }
+        else if (!currentPeer.isOnline())
+        {
+            response = notConnectedHandler.handleNotConnected(nodeName);
+        }
         else
         {
             response = currentPeer
@@ -405,11 +409,37 @@ public class CtrlSatelliteUpdateCaller
             Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName))) : Flux.empty();
     }
 
+    public static NotConnectedHandler notConnectedErrorForNodesWarnForOthers(NodeName... errorNodeNames)
+    {
+        return nodeName -> {
+            Flux<ApiCallRc> ret;
+            boolean error = false;
+            for (NodeName errNodeName : errorNodeNames)
+            {
+                if (nodeName.equals(errNodeName))
+                {
+                    error = true;
+                    break;
+                }
+            }
+            if (error)
+            {
+                ret = Flux.error(new ApiRcException(ResponseUtils.makeNotConnectedWarning(nodeName)));
+            }
+            else
+            {
+                ret = Flux.just(new ApiCallRcImpl(ResponseUtils.makeNotConnectedWarning(nodeName)));
+            }
+            return ret;
+
+        };
+    }
+
     public static NotConnectedHandler notConnectedError()
     {
         return nodeName -> Flux.error(new ApiRcException(ApiCallRcImpl.simpleEntry(
             ApiConsts.FAIL_NOT_CONNECTED,
-            "Connection to satellite '" + nodeName + "' lost"
+            "No connection to satellite '" + nodeName + "'"
         )));
     }
 

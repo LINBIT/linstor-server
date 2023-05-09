@@ -834,7 +834,12 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(activateFlux)
-            .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rsc, migrationFlux)
+            .concatWith(
+                ctrlSatelliteUpdateCaller.updateSatellites(
+                    rsc.getDefinition(),
+                    CtrlSatelliteUpdateCaller.notConnectedErrorForNodesWarnForOthers(nodeName),
+                    migrationFlux
+                )
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     updateResponses,
                     rscName,

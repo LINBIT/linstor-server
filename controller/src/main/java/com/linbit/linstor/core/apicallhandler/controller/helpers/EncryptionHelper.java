@@ -27,8 +27,8 @@ import com.linbit.linstor.core.ebs.EbsStatusManagerService;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
@@ -312,7 +312,12 @@ public class EncryptionHelper
                     if (updateSatellites)
                     {
                         flux = flux.concatWith(
-                            ctrlstltUpdateCaller.updateSatellites(rscDfn, Flux.empty()).transform(
+                            ctrlstltUpdateCaller.updateSatellites(
+                                rscDfn,
+                                CtrlSatelliteUpdateCaller.notConnectedWarn(),
+                                Flux.empty()
+                            )
+                                .transform(
                                 updateResponses -> CtrlResponseUtils.combineResponses(
                                     updateResponses,
                                     rscDfn.getName(),

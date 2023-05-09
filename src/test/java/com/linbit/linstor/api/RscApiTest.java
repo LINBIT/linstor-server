@@ -156,7 +156,9 @@ public class RscApiTest extends ApiTestBase
     public void createRscSuccess() throws Exception
     {
         Mockito.when(mockPeer.getAccessContext()).thenReturn(BOB_ACC_CTX);
+        Mockito.when(mockPeer.isOnline()).thenReturn(true);
         Mockito.when(mockSatellite.getExtToolsManager()).thenReturn(mockExtToolsMgr);
+        Mockito.when(mockSatellite.isOnline()).thenReturn(true);
         Mockito.when(mockExtToolsMgr.getSupportedLayers())
             .thenReturn(new TreeSet<>(Arrays.asList(DeviceLayerKind.values())));
         Mockito.when(mockExtToolsMgr.getSupportedProviders())
