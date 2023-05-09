@@ -12,9 +12,12 @@ import javax.annotation.Nullable;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class AutoSelectFilterPojo implements AutoSelectFilterApi
 {
+    // Dont forget to update / regenerate hashcode and equals if you create new fields here!
+
     private @Nullable Integer placeCount; // null only allowed for resource groups
     private @Nullable Integer additionalPlaceCount;
     private @Nullable List<String> nodeNameList;
@@ -362,4 +365,58 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     {
         disklessType = disklessTypeRef;
     }
+
+    @Override
+    public int hashCode()
+    {
+        return Objects.hash(
+            additionalPlaceCount,
+            disklessOnRemaining,
+            disklessType,
+            doNotPlaceWithRegex,
+            doNotPlaceWithRscList,
+            layerStackList,
+            nodeNameList,
+            placeCount,
+            providerList,
+            replicasOnDifferentList,
+            replicasOnSameList,
+            requiredExtTools,
+            skipAlreadyPlacedOnAllNodeCheck,
+            skipAlreadyPlacedOnNodeNamesCheck,
+            storPoolDisklessNameList,
+            storPoolNameList
+        );
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (this == obj)
+        {
+            return true;
+        }
+        if (!(obj instanceof AutoSelectFilterPojo))
+        {
+            return false;
+        }
+        AutoSelectFilterPojo other = (AutoSelectFilterPojo) obj;
+        return Objects.equals(additionalPlaceCount, other.additionalPlaceCount) &&
+            Objects.equals(disklessOnRemaining, other.disklessOnRemaining) &&
+            Objects.equals(disklessType, other.disklessType) &&
+            Objects.equals(doNotPlaceWithRegex, other.doNotPlaceWithRegex) &&
+            Objects.equals(doNotPlaceWithRscList, other.doNotPlaceWithRscList) &&
+            Objects.equals(layerStackList, other.layerStackList) &&
+            Objects.equals(nodeNameList, other.nodeNameList) &&
+            Objects.equals(placeCount, other.placeCount) &&
+            Objects.equals(providerList, other.providerList) &&
+            Objects.equals(replicasOnDifferentList, other.replicasOnDifferentList) &&
+            Objects.equals(replicasOnSameList, other.replicasOnSameList) &&
+            Objects.equals(requiredExtTools, other.requiredExtTools) &&
+            Objects.equals(skipAlreadyPlacedOnAllNodeCheck, other.skipAlreadyPlacedOnAllNodeCheck) &&
+            Objects.equals(skipAlreadyPlacedOnNodeNamesCheck, other.skipAlreadyPlacedOnNodeNamesCheck) &&
+            Objects.equals(storPoolDisklessNameList, other.storPoolDisklessNameList) &&
+            Objects.equals(storPoolNameList, other.storPoolNameList);
+    }
+
 }

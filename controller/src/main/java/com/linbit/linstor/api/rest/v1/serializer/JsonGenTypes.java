@@ -828,6 +828,7 @@ public class JsonGenTypes
     public static class QuerySizeInfoRequest
     {
         public AutoSelectFilter select_filter;
+        public int ignore_cache_older_than_sec = -1;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -841,6 +842,7 @@ public class JsonGenTypes
     public static class QueryAllSizeInfoRequest
     {
         public AutoSelectFilter select_filter;
+        public int ignore_cache_older_than_sec = -1;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

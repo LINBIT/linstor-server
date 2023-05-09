@@ -69,6 +69,7 @@ import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.linstor.tasks.LogArchiveTask;
 import com.linbit.linstor.tasks.PingTask;
+import com.linbit.linstor.tasks.QsiClearCacheTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
 import com.linbit.linstor.tasks.RetryResourcesTask;
 import com.linbit.linstor.tasks.ScheduleBackupService;
@@ -150,6 +151,7 @@ public final class Controller
     private final AutoSnapshotTask autoSnapshotTask;
     private final AutoDiskfulTask autoDiskfulTask;
     private final UpdateSpaceInfoTask updateSpaceInfoTask;
+    private final QsiClearCacheTask qsiClearCache;
 
     private final DebugConsoleCreator debugConsoleCreator;
     private final ControllerNetComInitializer controllerNetComInitializer;
@@ -195,6 +197,7 @@ public final class Controller
         AutoSnapshotTask autoSnapshotTaskRef,
         AutoDiskfulTask autoDiskfulTaskRef,
         ExosEnclosurePingTask exosPingTaskRef,
+        QsiClearCacheTask qsiClearCacheRef,
         DebugConsoleCreator debugConsoleCreatorRef,
         ControllerNetComInitializer controllerNetComInitializerRef,
         SpecialSatelliteProcessManager specialStltTargetProcessManagerRef,
@@ -230,6 +233,7 @@ public final class Controller
         autoSnapshotTask = autoSnapshotTaskRef;
         autoDiskfulTask = autoDiskfulTaskRef;
         exosPingTask = exosPingTaskRef;
+        qsiClearCache = qsiClearCacheRef;
         debugConsoleCreator = debugConsoleCreatorRef;
         controllerNetComInitializer = controllerNetComInitializerRef;
         specStltTargetProcessManager = specialStltTargetProcessManagerRef;
@@ -293,6 +297,7 @@ public final class Controller
             taskScheduleService.addTask(autoDiskfulTask);
             taskScheduleService.addTask(updateSpaceInfoTask);
             taskScheduleService.addTask(exosPingTask);
+            taskScheduleService.addTask(qsiClearCache);
 
             systemServicesMap.put(controllerDb.getInstanceName(), controllerDb);
             systemServicesMap.put(taskScheduleService.getInstanceName(), taskScheduleService);

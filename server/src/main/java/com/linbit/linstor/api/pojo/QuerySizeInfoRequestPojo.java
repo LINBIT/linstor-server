@@ -2,14 +2,19 @@ package com.linbit.linstor.api.pojo;
 
 public class QuerySizeInfoRequestPojo
 {
-
     private final String rscGrpName;
     private final AutoSelectFilterPojo autoSelectFilterData;
+    private final int ignoreCacheOlderThanSec;
 
-    public QuerySizeInfoRequestPojo(String rscGrpNameRef, AutoSelectFilterPojo autoSelectFilterDataRef)
+    public QuerySizeInfoRequestPojo(
+        String rscGrpNameRef,
+        AutoSelectFilterPojo autoSelectFilterDataRef,
+        int ignoreCacheOlderThanSecRef
+    )
     {
         rscGrpName = rscGrpNameRef;
         autoSelectFilterData = autoSelectFilterDataRef;
+        ignoreCacheOlderThanSec = ignoreCacheOlderThanSecRef;
     }
 
     public AutoSelectFilterPojo getAutoSelectFilterData()
@@ -20,5 +25,10 @@ public class QuerySizeInfoRequestPojo
     public String getRscGrpName()
     {
         return rscGrpName;
+    }
+
+    public int getIgnoreCacheOlderThanSec()
+    {
+        return ignoreCacheOlderThanSec;
     }
 }

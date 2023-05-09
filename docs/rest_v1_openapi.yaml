@@ -7425,6 +7425,10 @@ components:
       properties:
         select_filter:
           $ref: '#/components/schemas/AutoSelectFilter'
+        ignore_cache_older_than_sec:
+          type: integer
+          format: int32
+          default: -1
     QuerySizeInfoResponse:
       type: object
       properties:
@@ -7439,6 +7443,10 @@ components:
       properties:
         select_filter:
           $ref: '#/components/schemas/AutoSelectFilter'
+        ignore_cache_older_than_sec:
+          type: integer
+          format: int32
+          default: -1
     QueryAllSizeInfoResponse:
       type: object
       properties:

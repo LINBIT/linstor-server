@@ -1382,7 +1382,8 @@ public class Json
     {
         return new QuerySizeInfoRequestPojo(
             rscGrpName,
-            AutoSelectFilterPojo.copy(new AutoSelectFilterData(req.select_filter))
+            AutoSelectFilterPojo.copy(new AutoSelectFilterData(req.select_filter)),
+            req.ignore_cache_older_than_sec
         );
     }
 
@@ -1421,7 +1422,8 @@ public class Json
     public static QueryAllSizeInfoRequestPojo queryAllSizeInfoReqToPojo(JsonGenTypes.QueryAllSizeInfoRequest qasiReqRef)
     {
         return new QueryAllSizeInfoRequestPojo(
-            AutoSelectFilterPojo.copy(new AutoSelectFilterData(qasiReqRef.select_filter))
+            AutoSelectFilterPojo.copy(new AutoSelectFilterData(qasiReqRef.select_filter)),
+            qasiReqRef.ignore_cache_older_than_sec
         );
     }
 

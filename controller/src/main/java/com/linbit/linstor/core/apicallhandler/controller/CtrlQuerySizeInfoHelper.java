@@ -1,43 +1,65 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRcWith;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
+import com.linbit.linstor.api.pojo.QueryAllSizeInfoRequestPojo;
+import com.linbit.linstor.api.pojo.QueryAllSizeInfoResponsePojo;
+import com.linbit.linstor.api.pojo.QuerySizeInfoRequestPojo;
 import com.linbit.linstor.api.pojo.QuerySizeInfoResponsePojo;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.StorPoolFilter;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.Key;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 @Singleton
 public class CtrlQuerySizeInfoHelper
 {
+    private static final int SEC_TO_MS = 1000;
+
+    private final ErrorReporter errorReporter;
     private final Provider<AccessContext> peerCtxProvider;
     private final Autoplacer autoplacer;
     private final StorPoolFilter storPoolFilter;
 
+    private final Map<AutoSelectFilterPojo, CacheEntry<QueryAllSizeInfoResponsePojo>> cachedQasiMap;
+    private final Map<String /* RgName */, Map<AutoSelectFilterPojo, CacheEntry<ApiCallRcWith<QuerySizeInfoResponsePojo>>>> cachedQsiPojoMap;
+
     @Inject
     public CtrlQuerySizeInfoHelper(
+        ErrorReporter errorReporterRef,
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
         Autoplacer autoplacerRef,
         StorPoolFilter storPoolFilterRef
     )
     {
+        errorReporter = errorReporterRef;
         peerCtxProvider = peerCtxProviderRef;
         autoplacer = autoplacerRef;
         storPoolFilter = storPoolFilterRef;
+
+        // weak hash maps so the garbage-collector is free to cleanup the cache if it feels like it
+        cachedQasiMap = new WeakHashMap<>();
+        cachedQsiPojoMap = new WeakHashMap<>();
     }
 
     public QuerySizeInfoResponsePojo queryMaxVlmSize(
@@ -191,5 +213,124 @@ public class CtrlQuerySizeInfoHelper
             }
         }
         return simulate(capacitySizes, placeCountRef);
+    }
+
+    public Pair<QueryAllSizeInfoResponsePojo, Double> getQasiResponse(
+        QueryAllSizeInfoRequestPojo queryAllSizeInfoReqRef
+    )
+    {
+        Pair<QueryAllSizeInfoResponsePojo, Double> ret;
+        synchronized (cachedQasiMap)
+        {
+            ret = getCached(
+                cachedQasiMap,
+                queryAllSizeInfoReqRef.getIgnoreCacheOlderThanSec(),
+                queryAllSizeInfoReqRef.getAutoSelectFilterData()
+            );
+        }
+        return ret;
+    }
+
+    public void cache(QueryAllSizeInfoRequestPojo queryAllSizeInfoReqRef, QueryAllSizeInfoResponsePojo responseRef)
+    {
+        synchronized (cachedQasiMap)
+        {
+            // we need to create a copy of the pojo to make sure that the values do not change, since changing the value
+            // would also cause a changed hashcode, which would mess up the hashmap
+            AutoSelectFilterPojo copy = AutoSelectFilterPojo.merge(queryAllSizeInfoReqRef.getAutoSelectFilterData());
+            cachedQasiMap.put(copy, new CacheEntry<>(responseRef));
+        }
+    }
+
+    public Pair<ApiCallRcWith<QuerySizeInfoResponsePojo>, Double> getQsiResponse(
+        QuerySizeInfoRequestPojo querySizeInfoReqRef
+    )
+    {
+        Pair<ApiCallRcWith<QuerySizeInfoResponsePojo>, Double> ret;
+        synchronized (cachedQsiPojoMap)
+        {
+            ret = getCached(
+                cachedQsiPojoMap.get(querySizeInfoReqRef.getRscGrpName()),
+                querySizeInfoReqRef.getIgnoreCacheOlderThanSec(),
+                querySizeInfoReqRef.getAutoSelectFilterData()
+            );
+        }
+        return ret;
+    }
+
+    public void cache(String rscGrpName,
+        @Nullable AutoSelectFilterPojo autoSelectFilterPojoRef,
+        ApiCallRcWith<QuerySizeInfoResponsePojo> responseRef
+    )
+    {
+        synchronized (cachedQsiPojoMap)
+        {
+            Map<AutoSelectFilterPojo, CacheEntry<ApiCallRcWith<QuerySizeInfoResponsePojo>>> map = cachedQsiPojoMap
+                .computeIfAbsent(rscGrpName, ignored -> new HashMap<>());
+
+            // we need to create a copy of the pojo to make sure that the values do not change, since changing the value
+            // would also cause a changed hashcode, which would mess up the hashmap
+            AutoSelectFilterPojo copy = AutoSelectFilterPojo.merge(autoSelectFilterPojoRef);
+            map.put(copy, new CacheEntry<>(responseRef));
+        }
+    }
+
+    private <T> Pair<T, Double> getCached(
+        Map<AutoSelectFilterPojo, CacheEntry<T>> cachedMapRef,
+        int ignoreCacheOlderThanSecRef,
+        @Nullable AutoSelectFilterApi autoSelectFilterRef
+    )
+    {
+        Pair<T, Double> ret = null;
+        if (cachedMapRef != null)
+        {
+            CacheEntry<T> cacheEntry = cachedMapRef.get(autoSelectFilterRef);
+            if (cacheEntry != null)
+            {
+                long now = System.currentTimeMillis();
+                if (cacheEntry.cacheTimestampInMs + ignoreCacheOlderThanSecRef * SEC_TO_MS > now)
+                {
+                    ret = new Pair<>(cacheEntry.obj, (now - cacheEntry.cacheTimestampInMs) * 1.0 / SEC_TO_MS);
+                }
+            }
+        }
+        return ret;
+    }
+
+    public void clearCache()
+    {
+        boolean cacheCleared;
+        synchronized (cachedQasiMap)
+        {
+            cacheCleared = !cachedQasiMap.isEmpty();
+            cachedQasiMap.clear();
+        }
+        synchronized (cachedQsiPojoMap)
+        {
+            cacheCleared |= !cachedQsiPojoMap.isEmpty();
+            cachedQsiPojoMap.clear();
+        }
+
+        if (cacheCleared)
+        {
+            errorReporter.logDebug("QSI cache cleared");
+        }
+    }
+
+    private static class CacheEntry<T>
+    {
+        T obj;
+        long cacheTimestampInMs;
+
+        CacheEntry(T objRef)
+        {
+            this(objRef, System.currentTimeMillis());
+        }
+
+        CacheEntry(T objRef, long cacheTimestampInMsRef)
+        {
+            obj = objRef;
+            cacheTimestampInMs = cacheTimestampInMsRef;
+        }
     }
 }

@@ -73,6 +73,7 @@ import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.NODES_MAP;
@@ -1127,15 +1128,32 @@ public class CtrlRscGrpApiCallHandler
 
     public Flux<ApiCallRcWith<QuerySizeInfoResponsePojo>> querySizeInfo(QuerySizeInfoRequestPojo querySizeInfoReqRef)
     {
-        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
-            .flatMapMany(
-                thinFreeCapacities -> scopeRunner
-                    .fluxInTransactionlessScope(
-                        "Query size info",
-                        lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
-                        () -> querySizeInfoInTransaction(querySizeInfoReqRef, thinFreeCapacities)
-                    )
-            );
+        Flux<ApiCallRcWith<QuerySizeInfoResponsePojo>> ret;
+        Pair<ApiCallRcWith<QuerySizeInfoResponsePojo>, Double> cachedResponsePair = qsiHelper.getQsiResponse(
+            querySizeInfoReqRef
+        );
+        if (cachedResponsePair != null)
+        {
+            errorReporter.logDebug("Returning %.3fs old answer from cache", cachedResponsePair.objB);
+            ret = Flux.just(cachedResponsePair.objA);
+        }
+        else
+        {
+            ret = freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
+                .flatMapMany(
+                    thinFreeCapacities -> scopeRunner
+                        .fluxInTransactionlessScope(
+                            "Query size info",
+                            lockGuardFactory.buildDeferred(
+                                LockType.WRITE,
+                                LockObj.NODES_MAP,
+                                LockObj.STOR_POOL_DFN_MAP
+                            ),
+                            () -> querySizeInfoInTransaction(querySizeInfoReqRef, thinFreeCapacities)
+                        )
+                );
+        }
+        return ret;
     }
 
     public Flux<ApiCallRcWith<QuerySizeInfoResponsePojo>> querySizeInfoInTransaction(
@@ -1196,20 +1214,39 @@ public class CtrlRscGrpApiCallHandler
                 qsiHelper.queryMaxVlmSize(selectCfg, thinFreeCapacities)
             );
         }
+        qsiHelper.cache(rscGrp.getName().value, autoSelectFilterData, result);
         return result;
     }
 
     public Flux<QueryAllSizeInfoResponsePojo> queryAllSizeInfo(QueryAllSizeInfoRequestPojo queryAllSizeInfoReqRef)
     {
-        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
-            .flatMapMany(
-                thinFreeCapacities -> scopeRunner
-                    .fluxInTransactionlessScope(
-                        "Query all size info",
-                        lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
-                        () -> queryAllSizeInfoInTransaction(thinFreeCapacities, queryAllSizeInfoReqRef)
-                    )
-            );
+        Flux<QueryAllSizeInfoResponsePojo> ret;
+        Pair<QueryAllSizeInfoResponsePojo, Double> cachedResponsePair = qsiHelper.getQasiResponse(
+            queryAllSizeInfoReqRef
+        );
+        if (cachedResponsePair != null)
+        {
+            errorReporter.logDebug("Returning %.3fs old answer from cache", cachedResponsePair.objB);
+            ret = Flux.just(cachedResponsePair.objA);
+        }
+        else
+        {
+            ret = freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
+                .flatMapMany(
+                    thinFreeCapacities -> scopeRunner
+                        .fluxInTransactionlessScope(
+                            "Query all size info",
+                            lockGuardFactory.buildDeferred(
+                                LockType.WRITE,
+                                LockObj.NODES_MAP,
+                                LockObj.STOR_POOL_DFN_MAP
+                            ),
+                            () -> queryAllSizeInfoInTransaction(thinFreeCapacities, queryAllSizeInfoReqRef)
+                        )
+                );
+        }
+
+        return ret;
     }
 
     private Flux<QueryAllSizeInfoResponsePojo> queryAllSizeInfoInTransaction(
@@ -1251,7 +1288,9 @@ public class CtrlRscGrpApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_GRP
             );
         }
-        return Flux.just(new QueryAllSizeInfoResponsePojo(map, apiCallRcOuterImpl));
+        QueryAllSizeInfoResponsePojo response = new QueryAllSizeInfoResponsePojo(map, apiCallRcOuterImpl);
+        qsiHelper.cache(queryAllSizeInfoReqRef, response);
+        return Flux.just(response);
     }
 
     public Flux<ApiCallRc> adjust(
