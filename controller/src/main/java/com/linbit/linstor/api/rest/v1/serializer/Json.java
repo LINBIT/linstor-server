@@ -26,6 +26,9 @@ import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.OpenflexRscPojo;
+import com.linbit.linstor.api.pojo.QueryAllSizeInfoRequestPojo;
+import com.linbit.linstor.api.pojo.QueryAllSizeInfoResponsePojo;
+import com.linbit.linstor.api.pojo.QueryAllSizeInfoResponsePojo.QueryAllSizeInfoResponseEntryPojo;
 import com.linbit.linstor.api.pojo.QuerySizeInfoRequestPojo;
 import com.linbit.linstor.api.pojo.QuerySizeInfoResponsePojo;
 import com.linbit.linstor.api.pojo.RscPojo;
@@ -42,6 +45,7 @@ import com.linbit.linstor.api.pojo.backups.ScheduledRscsPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ExosDefaults;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.NodeConnection;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QueryAllSizeInfoResponse;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoResponse;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoResponseSpaceInfo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoSpawnResult;
@@ -99,6 +103,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -1381,7 +1386,7 @@ public class Json
         );
     }
 
-    public static QuerySizeInfoResponse pojoToQuersSizeInfoResp(
+    public static QuerySizeInfoResponse pojoToQuerySizeInfoResp(
         QuerySizeInfoResponsePojo pojo,
         ApiCallRc apiCallRcRef
     )
@@ -1413,7 +1418,42 @@ public class Json
         return resp;
     }
 
+    public static QueryAllSizeInfoRequestPojo queryAllSizeInfoReqToPojo(JsonGenTypes.QueryAllSizeInfoRequest qasiReqRef)
+    {
+        return new QueryAllSizeInfoRequestPojo(
+            AutoSelectFilterPojo.copy(new AutoSelectFilterData(qasiReqRef.select_filter))
+        );
+    }
+
+    public static JsonGenTypes.QueryAllSizeInfoResponse pojoToQueryAllSizeInfoResp(
+        QueryAllSizeInfoResponsePojo resultPojoRef
+    )
+    {
+        JsonGenTypes.QueryAllSizeInfoResponse resp = new QueryAllSizeInfoResponse();
+        if (resultPojoRef != null)
+        {
+            Map<String, QueryAllSizeInfoResponseEntryPojo> map = resultPojoRef.getResult();
+            resp.result = new TreeMap<>();
+            for (Entry<String, QueryAllSizeInfoResponseEntryPojo> entry : map.entrySet())
+            {
+                QueryAllSizeInfoResponseEntryPojo qsiResponsePojo = entry.getValue();
+                resp.result.put(
+                    entry.getKey(),
+                    pojoToQuerySizeInfoResp(qsiResponsePojo.getQsiRespPojo(), qsiResponsePojo.getApiCallRc())
+                );
+            }
+
+            ApiCallRc apiCallRc = resultPojoRef.getApiCallRc();
+            if (apiCallRc != null)
+            {
+                resp.reports = apiCallRcToJson(apiCallRc);
+            }
+        }
+        return resp;
+    }
+
     private Json()
     {
     }
+
 }

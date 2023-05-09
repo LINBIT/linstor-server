@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.18.0";
+    public static final String REST_API_VERSION = "1.19.0";
 
     /**
      * Common api reply structure
@@ -834,6 +834,19 @@ public class JsonGenTypes
     public static class QuerySizeInfoResponse
     {
         public QuerySizeInfoResponseSpaceInfo space_info;
+        public List<ApiCallRc> reports = Collections.emptyList();
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class QueryAllSizeInfoRequest
+    {
+        public AutoSelectFilter select_filter;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class QueryAllSizeInfoResponse
+    {
+        public Map<String, QuerySizeInfoResponse> result = Collections.emptyMap();
         public List<ApiCallRc> reports = Collections.emptyList();
     }
 

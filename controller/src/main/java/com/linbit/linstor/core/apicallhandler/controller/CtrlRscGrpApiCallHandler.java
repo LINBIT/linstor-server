@@ -17,6 +17,8 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
+import com.linbit.linstor.api.pojo.QueryAllSizeInfoRequestPojo;
+import com.linbit.linstor.api.pojo.QueryAllSizeInfoResponsePojo;
 import com.linbit.linstor.api.pojo.QuerySizeInfoRequestPojo;
 import com.linbit.linstor.api.pojo.QuerySizeInfoResponsePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
@@ -49,6 +51,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.ResourceGroupControllerFactory;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPool.Key;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeGroup;
@@ -1144,35 +1147,10 @@ public class CtrlRscGrpApiCallHandler
         try
         {
             ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(querySizeInfoReqRef.getRscGrpName(), true);
-            AutoSelectorConfig selectFilter = rscGrp.getAutoPlaceConfig();
-            AutoSelectFilterPojo selectCfg = AutoSelectFilterPojo.merge(
-                querySizeInfoReqRef.getAutoSelectFilterData(),
-                selectFilter.getApiData()
+            AutoSelectFilterPojo autoSelectFilterData = querySizeInfoReqRef.getAutoSelectFilterData();
+            flux = Flux.just(
+                querySizeInfoImpl(thinFreeCapacities, rscGrp, autoSelectFilterData)
             );
-
-            AccessContext accCtx = peerAccCtx.get();
-
-            if (selectFilter.getReplicaCount(accCtx) == null)
-            {
-                flux = Flux.error(
-                    new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_INVLD_PLACE_COUNT,
-                            "Replica count is required for this operation",
-                            true
-                        )
-                    )
-                );
-            }
-            else
-            {
-                flux = Flux.just(
-                    new ApiCallRcWith<>(
-                        new ApiCallRcImpl(),
-                        qsiHelper.queryMaxVlmSize(selectCfg, thinFreeCapacities)
-                    )
-                );
-            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -1183,6 +1161,97 @@ public class CtrlRscGrpApiCallHandler
             );
         }
         return flux;
+    }
+
+    private ApiCallRcWith<QuerySizeInfoResponsePojo> querySizeInfoImpl(
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        ResourceGroup rscGrp,
+        AutoSelectFilterPojo autoSelectFilterData
+    )
+        throws AccessDeniedException
+    {
+        ApiCallRcWith<QuerySizeInfoResponsePojo> result;
+        AutoSelectorConfig selectFilter = rscGrp.getAutoPlaceConfig();
+        AutoSelectFilterPojo selectCfg = AutoSelectFilterPojo.merge(
+            autoSelectFilterData,
+            selectFilter.getApiData()
+        );
+
+        AccessContext accCtx = peerAccCtx.get();
+
+        if (selectFilter.getReplicaCount(accCtx) == null)
+        {
+            result = new ApiCallRcWith<>(
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_INVLD_PLACE_COUNT,
+                    "Replica count is required for this operation"
+                ),
+                null
+            );
+        }
+        else
+        {
+            result = new ApiCallRcWith<>(
+                new ApiCallRcImpl(),
+                qsiHelper.queryMaxVlmSize(selectCfg, thinFreeCapacities)
+            );
+        }
+        return result;
+    }
+
+    public Flux<QueryAllSizeInfoResponsePojo> queryAllSizeInfo(QueryAllSizeInfoRequestPojo queryAllSizeInfoReqRef)
+    {
+        return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet())
+            .flatMapMany(
+                thinFreeCapacities -> scopeRunner
+                    .fluxInTransactionlessScope(
+                        "Query all size info",
+                        lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.STOR_POOL_DFN_MAP),
+                        () -> queryAllSizeInfoInTransaction(thinFreeCapacities, queryAllSizeInfoReqRef)
+                    )
+            );
+    }
+
+    private Flux<QueryAllSizeInfoResponsePojo> queryAllSizeInfoInTransaction(
+        Map<Key, Long> thinFreeCapacitiesRef,
+        QueryAllSizeInfoRequestPojo queryAllSizeInfoReqRef
+    )
+    {
+        ApiCallRcImpl apiCallRcOuterImpl = new ApiCallRcImpl();
+        Map<String, QueryAllSizeInfoResponsePojo.QueryAllSizeInfoResponseEntryPojo> map = new TreeMap<>();
+        try
+        {
+            requireRscGrpMapChangeAccess();
+            AutoSelectFilterPojo autoSelectFilterData = queryAllSizeInfoReqRef.getAutoSelectFilterData();
+            for (ResourceGroup rscGrp : resourceGroupRepository.getMapForView(peerAccCtx.get()).values())
+            {
+                ApiCallRcWith<QuerySizeInfoResponsePojo> result = querySizeInfoImpl(
+                    thinFreeCapacitiesRef,
+                    rscGrp,
+                    autoSelectFilterData
+                );
+                ApiCallRcImpl apiCallRcInnerImpl = new ApiCallRcImpl();
+
+                QuerySizeInfoResponsePojo querySizeInfoResponsePojo = result.extractApiCallRc(apiCallRcInnerImpl);
+
+                map.put(
+                    rscGrp.getName().displayValue,
+                    new QueryAllSizeInfoResponsePojo.QueryAllSizeInfoResponseEntryPojo(
+                        querySizeInfoResponsePojo,
+                        apiCallRcInnerImpl
+                    )
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "querying all size info",
+                ApiConsts.FAIL_ACC_DENIED_RSC_GRP
+            );
+        }
+        return Flux.just(new QueryAllSizeInfoResponsePojo(map, apiCallRcOuterImpl));
     }
 
     public Flux<ApiCallRc> adjust(

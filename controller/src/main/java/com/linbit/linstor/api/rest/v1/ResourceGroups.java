@@ -358,7 +358,7 @@ public class ResourceGroups
             .flatMap(apiCallRcWith ->
             {
                 Response resp;
-                JsonGenTypes.QuerySizeInfoResponse qsiResp = Json.pojoToQuersSizeInfoResp(
+                JsonGenTypes.QuerySizeInfoResponse qsiResp = Json.pojoToQuerySizeInfoResp(
                     apiCallRcWith.getValue(),
                     apiCallRcWith.getApiCallRc()
                 );

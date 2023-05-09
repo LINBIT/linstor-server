@@ -21,6 +21,9 @@ info:
 
     Changelog:
 
+    * unreleased
+      - Added POST /v1/view/resource-groups/query-all-size-info
+      - Added QueryAllSizeInfoRequest and QueryAllSizeInfoResponse objects
     * 1.18.0
       - Added POST /v1/action/snapshot/multi as well as CreateMultiSnapshotRequest and CreateMultiSnapshotResponse objects
     * 1.17.0
@@ -199,7 +202,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.18.0
+  version: 1.19.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -7427,6 +7430,22 @@ components:
       properties:
         space_info:
           $ref: '#/components/schemas/QuerySizeInfoResponseSpaceInfo'
+        reports:
+          type: array
+          items:
+            $ref: '#/components/schemas/ApiCallRc'
+    QueryAllSizeInfoRequest:
+      type: object
+      properties:
+        select_filter:
+          $ref: '#/components/schemas/AutoSelectFilter'
+    QueryAllSizeInfoResponse:
+      type: object
+      properties:
+        result:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/QuerySizeInfoResponse'
         reports:
           type: array
           items:

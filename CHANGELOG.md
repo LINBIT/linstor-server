@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- query-all-size-info API to query-size-info for all currently available resource groups
+
 ### Changed
 
 - SOS-Report has now a parent directory in the tgz file
