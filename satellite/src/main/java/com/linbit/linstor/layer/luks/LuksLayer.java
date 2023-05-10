@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.luks;
 
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
@@ -202,10 +203,30 @@ public class LuksLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
-        throws ResourceException, StorageException
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
     {
-        DmSetupUtils.manageSuspendIO(errorReporter, extCmdFactory, rscLayerObjectRef, resumeOnlyRef);
+        DmSetupUtils.suspendIo(
+            errorReporter,
+            extCmdFactory,
+            rscDataRef,
+            true,
+            null
+        );
+    }
+
+    @Override
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
+    {
+        DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, false, null);
+    }
+
+    @Override
+    public void updateSuspendState(AbsRscLayerObject<Resource> rscDataRef)
+        throws DatabaseException, ExtCmdFailedException
+    {
+        rscDataRef.setIsSuspended(DmSetupUtils.isSuspended(extCmdFactory, rscDataRef));
     }
 
     @Override

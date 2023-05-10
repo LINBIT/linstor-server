@@ -1,13 +1,12 @@
 package com.linbit.linstor.layer.dmsetup;
 
 import com.linbit.ChildProcessTimeoutException;
-import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
@@ -38,178 +37,33 @@ public class DmSetupUtils
     {
     }
 
-    /**
-     * Suspends or resumes IO only for the given volume if needed.
-     * If the suspended state changed, the vlmData's parent rscData is NOT updated regarding the isSuspended state,
-     * since that could prevent other vlmData from this rscData to also get suspended.
-     * That means, that the CALLER of this method has to update the rscData's isSuspended state after calling this
-     * method.
-     * Since this method is not allowed to change the rscData's isSuspended state, this method returns true if the
-     * suspended state of the give volume changed, false otherwise.
-     *
-     * @param errorReporter
-     * @param extCmdFactory
-     * @param vlmData
-     *
-     * @return
-     *
-     * @throws StorageException
-     */
-    public static boolean manageSuspendIO(
-        ErrorReporter errorReporter,
-        ExtCmdFactory extCmdFactory,
-        VlmProviderObject<Resource> vlmData
-    )
-        throws StorageException
-    {
-        AbsRscLayerObject<Resource> rscData = vlmData.getRscLayerObject();
-        boolean shouldSuspend = rscData.getShouldSuspendIo();
-        boolean isSuspended;
-
-        // the two try/catch blocks are intentionally not merged, since this if is only executed at the first time we
-        // visit this.
-        // that means, if no changes in suspend-io is required, we never enter a try block, which is usually quite
-        // costly.
-        if (rscData.isSuspended() == null)
-        {
-            try
-            {
-                isSuspended = vlmData.exists() && isSuspended(extCmdFactory, vlmData);
-            }
-            catch (IOException ioExc)
-            {
-                throw new StorageException(
-                    String.format("Failed to check suspended state of device %s", vlmData.getDevicePath()),
-                    ioExc
-                );
-            }
-            catch (ChildProcessTimeoutException exc)
-            {
-                throw new StorageException(
-                    String.format("Checking suspended state of device %s timed out", vlmData.getDevicePath()),
-                    exc
-                );
-            }
-        }
-        else
-        {
-            isSuspended = rscData.isSuspended();
-        }
-        boolean changed = vlmData.exists() && isSuspended != shouldSuspend;
-        if (changed)
-        {
-            try
-            {
-                suspendIo(errorReporter, extCmdFactory, vlmData, shouldSuspend, null);
-            }
-            catch (IOException ioExc)
-            {
-                throw new StorageException(
-                    String.format(
-                        "Failed to %s device %s",
-                        shouldSuspend ? "suspend" : "resume",
-                        vlmData.getDevicePath()
-                    ),
-                    ioExc
-                );
-            }
-            catch (ChildProcessTimeoutException exc)
-            {
-                throw new StorageException(
-                    String.format(
-                        "%s device %s timed out",
-                        shouldSuspend ? "Suspending" : "Resuming",
-                        vlmData.getDevicePath()
-                    ),
-                    exc
-                );
-            }
-        }
-        return changed;
-    }
-
-    public static void manageSuspendIO(
+    public static void suspendIo(
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,
         AbsRscLayerObject<Resource> rscData,
-        boolean resumeOnlyRef
+        boolean suspendRef,
+        ExceptionThrowingConsumer<VlmProviderObject<Resource>, StorageException> preExecConsumerRef
     )
-        throws StorageException
+        throws StorageException, ExtCmdFailedException
     {
-        manageSuspendIO(errorReporter, extCmdFactory, rscData, resumeOnlyRef, null);
-    }
-
-    /**
-     * Suspends or resumes IO of all volumes of the given resource if needed.
-     * If the suspend state changed, rscData's isSuspended is also updated accordingly.
-     *
-     * @param errorReporter
-     * @param extCmdFactory
-     * @param rscData
-     * @param resumeOnlyRef
-     *
-     * @throws StorageException
-     */
-    public static void manageSuspendIO(
-        ErrorReporter errorReporter,
-        ExtCmdFactory extCmdFactory,
-        AbsRscLayerObject<Resource> rscData,
-        boolean resumeOnlyRef,
-        ExceptionThrowingConsumer<VlmProviderObject<Resource>, StorageException> preSuspendConsumerRef
-    )
-        throws StorageException
-    {
-        boolean shouldSuspend = rscData.exists() && rscData.getShouldSuspendIo() && !resumeOnlyRef;
-        boolean isSuspended = rscData.isSuspended() != null && rscData.isSuspended();
-
-        if (isSuspended != shouldSuspend)
+        for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
-            String currentDev = null;
-            try
-            {
-                for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
-                {
-                    if (vlmData.exists())
-                    {
-                        currentDev = vlmData.getDevicePath();
-                        suspendIo(errorReporter, extCmdFactory, vlmData, shouldSuspend, preSuspendConsumerRef);
-                    }
-                }
-                rscData.setIsSuspended(shouldSuspend);
-            }
-            catch (IOException ioExc)
-            {
-                throw new StorageException(
-                    String.format("Failed to %s device %s", shouldSuspend ? "suspend" : "resume", currentDev),
-                    ioExc
-                );
-            }
-            catch (ChildProcessTimeoutException exc)
-            {
-                throw new StorageException(
-                    String.format("%s device %s timed out", shouldSuspend ? "Suspending" : "Resuming", currentDev),
-                    exc
-                );
-            }
-            catch (DatabaseException exc)
-            {
-                throw new ImplementationError(exc);
-            }
+            suspendIo(errorReporter, extCmdFactory, vlmData, suspendRef, preExecConsumerRef);
         }
     }
 
-    private static void suspendIo(
+    public static void suspendIo(
         ErrorReporter errorReporter,
         ExtCmdFactory extCmdFactory,
         VlmProviderObject<Resource> vlmData,
         boolean suspendRef,
-        ExceptionThrowingConsumer<VlmProviderObject<Resource>, StorageException> preSuspendConsumerRef
+        ExceptionThrowingConsumer<VlmProviderObject<Resource>, StorageException> preExecConsumerRef
     )
-        throws IOException, ChildProcessTimeoutException, StorageException
+        throws StorageException, ExtCmdFailedException
     {
-        if (suspendRef && preSuspendConsumerRef != null)
+        if (suspendRef && preExecConsumerRef != null)
         {
-            preSuspendConsumerRef.accept(vlmData);
+            preExecConsumerRef.accept(vlmData);
         }
 
         errorReporter.logTrace(
@@ -219,22 +73,70 @@ public class DmSetupUtils
             vlmData.getRscLayerObject().getSuffixedResourceName(),
             vlmData.getVlmNr().value
         );
-        extCmdFactory.create().exec("dmsetup", suspendRef ? "suspend" : "resume", vlmData.getDevicePath());
+        String[] cmd = {
+            "dmsetup",
+            suspendRef ? "suspend" : "resume",
+            vlmData.getDevicePath()
+        };
+        try
+        {
+            extCmdFactory.create().exec(cmd);
+        }
+        catch (ChildProcessTimeoutException timeoutExc)
+        {
+            throw new ExtCmdFailedException(cmd, timeoutExc);
+        }
+        catch (IOException ioExc)
+        {
+            throw new ExtCmdFailedException(cmd, ioExc);
+        }
     }
 
-    private static boolean isSuspended(ExtCmdFactory extCmdFactoryRef, VlmProviderObject<Resource> vlmDataRef)
-        throws ChildProcessTimeoutException, IOException
+    public static boolean isSuspended(ExtCmdFactory extCmdFactoryRef, AbsRscLayerObject<Resource> rscData)
+        throws ExtCmdFailedException
     {
-        OutputData outputData = extCmdFactoryRef.create()
-            .exec(
+        boolean isAnyVlmSuspended = false;
+        for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
+        {
+            if (isSuspended(extCmdFactoryRef, vlmData))
+            {
+                isAnyVlmSuspended = true;
+                break;
+            }
+        }
+        return isAnyVlmSuspended;
+    }
+
+    public static boolean isSuspended(ExtCmdFactory extCmdFactoryRef, VlmProviderObject<Resource> vlmDataRef)
+        throws ExtCmdFailedException
+    {
+        boolean isSuspended;
+        String[] cmd = {
             "dmsetup",
             "info",
             "-c", // columns
             "-o", "attr", // show only attributes
             "--noheadings", // make an educated guess
             vlmDataRef.getDevicePath()
-        );
-        return new String(outputData.stdoutData).contains("s"); // "s" in "attr" column means "suspended"
+        };
+        try
+        {
+            OutputData outputData = extCmdFactoryRef.create().exec(cmd);
+            if (outputData.exitCode != 0)
+            {
+                throw new ExtCmdFailedException(cmd, outputData);
+            }
+            isSuspended = new String(outputData.stdoutData).contains("s"); // "s" in "attr" column means "suspended"
+        }
+        catch (ChildProcessTimeoutException timeoutExc)
+        {
+            throw new ExtCmdFailedException(cmd, timeoutExc);
+        }
+        catch (IOException ioExc)
+        {
+            throw new ExtCmdFailedException(cmd, ioExc);
+        }
+        return isSuspended;
     }
 
     public static Set<String> list(ExtCmd extCmd, String target) throws StorageException
@@ -449,20 +351,32 @@ public class DmSetupUtils
 
     public static void flush(
         ExtCmdFactory extCmdFactory,
-        String device
+        AbsRscLayerObject<Resource> rscDataRef
     )
         throws StorageException
     {
-        message(extCmdFactory, device, 0L, DM_SETUP_MESSAGE_FLUSH);
+        for (VlmProviderObject<Resource> vlmData : rscDataRef.getVlmLayerObjects().values())
+        {
+            flush(extCmdFactory, vlmData);
+        }
+    }
+
+    public static void flush(
+        ExtCmdFactory extCmdFactory,
+        VlmProviderObject<Resource> vlmDataRef
+    )
+        throws StorageException
+    {
+        message(extCmdFactory, vlmDataRef.getDevicePath(), 0L, DM_SETUP_MESSAGE_FLUSH);
     }
 
     public static void flushOnSuspend(
         ExtCmdFactory extCmdFactory,
-        String device
+        VlmProviderObject<Resource> vlmDataRef
     )
         throws StorageException
     {
-        message(extCmdFactory, device, 0L, DM_SETUP_MESSAGE_FLUSH_ON_SUSPEND);
+        message(extCmdFactory, vlmDataRef.getDevicePath(), 0L, DM_SETUP_MESSAGE_FLUSH_ON_SUSPEND);
     }
 
     public static void message(

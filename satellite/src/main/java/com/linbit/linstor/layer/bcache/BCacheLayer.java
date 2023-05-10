@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.bcache;
 
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -222,10 +223,37 @@ public class BCacheLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
-        throws ResourceException, StorageException
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
     {
-        DmSetupUtils.manageSuspendIO(errorReporter, extCmdFactory, rscLayerObjectRef, resumeOnlyRef);
+        DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, true, null);
+        managePostRootSuspend(rscDataRef); // also flush our data after suspending
+    }
+
+    @Override
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
+    {
+        DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, false, null);
+    }
+
+    @Override
+    public void updateSuspendState(AbsRscLayerObject<Resource> rscDataRef)
+        throws DatabaseException, ExtCmdFailedException
+    {
+        rscDataRef.setIsSuspended(DmSetupUtils.isSuspended(extCmdFactory, rscDataRef));
+    }
+
+    @Override
+    public void managePostRootSuspend(AbsRscLayerObject<Resource> rscDataRef) throws StorageException
+    {
+        for (VlmProviderObject<Resource> vlmData : rscDataRef.getVlmLayerObjects().values())
+        {
+            BCacheUtils.flush(
+                errorReporter,
+                ((BCacheVlmData<Resource>) vlmData).getIdentifier()
+            );
+        }
     }
 
     @Override
@@ -283,27 +311,6 @@ public class BCacheLayer implements DeviceLayer
                     errorReporter.logDebug(
                         "BCache: noop as no bcache device exist for %s",
                         toString(vlmData)
-                    );
-                }
-            }
-        }
-
-        if (rscLayerDataRef.getAbsResource().getLayerData(storDriverAccCtx).getShouldSuspendIo())
-        {
-            /*
-             * rsc.getLayerData is either the same reference as our local rscLayerDataRef OR
-             * it is the root-layerData.
-             * In case of suspendIO, only the root-layerData gets the suspendIO set.
-             * However, even if root-layerData != rscLayerDataRef, we still want to flush
-             * our write-cache.
-             */
-            for (VlmProviderObject<Resource> vlmData : rscLayerDataRef.getVlmLayerObjects().values())
-            {
-                if (vlmData.exists())
-                {
-                    BCacheUtils.flush(
-                        errorReporter,
-                        ((BCacheVlmData<Resource>) vlmData).getIdentifier()
                     );
                 }
             }

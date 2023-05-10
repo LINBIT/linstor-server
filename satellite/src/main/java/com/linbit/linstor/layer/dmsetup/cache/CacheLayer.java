@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.dmsetup.cache;
 
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -237,10 +238,24 @@ public class CacheLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
-        throws ResourceException, StorageException
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
     {
-        DmSetupUtils.manageSuspendIO(errorReporter, extCmdFactory, rscLayerObjectRef, resumeOnlyRef);
+        DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, true, null);
+    }
+
+    @Override
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
+    {
+        DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, false, null);
+    }
+
+    @Override
+    public void updateSuspendState(AbsRscLayerObject<Resource> rscDataRef)
+        throws DatabaseException, ExtCmdFailedException
+    {
+        rscDataRef.setIsSuspended(DmSetupUtils.isSuspended(extCmdFactory, rscDataRef));
     }
 
     @Override

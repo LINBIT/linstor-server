@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.openflex;
 
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.SpaceInfo;
@@ -47,6 +48,8 @@ import java.util.Set;
 @Singleton
 public class OpenflexLayer implements DeviceLayer
 {
+    private static final String SUSPEND_IO_NOT_SUPPORTED_ERR_MSG =
+        "Suspending / Resuming IO for OpenFlex resources is not supported";
     private static final int KiB = 1024;
     // linstor calculates everything in KiB.. 1<<20 is therefore 1GiB outside of linstor
     private static final Align ALIGN_TO_NEXT_GB = new Align(1L << 20);
@@ -125,10 +128,24 @@ public class OpenflexLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
-        throws ResourceException, StorageException
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
     {
-        throw new StorageException("Suspending / Resuming IO for OpenFlex resources is not supported");
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
+    }
+
+    @Override
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
+    {
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
+    }
+
+    @Override
+    public void updateSuspendState(AbsRscLayerObject<Resource> rscDataRef)
+        throws DatabaseException, ExtCmdFailedException, StorageException
+    {
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
     }
 
     @Override

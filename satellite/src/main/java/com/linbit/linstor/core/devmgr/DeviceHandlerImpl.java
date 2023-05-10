@@ -107,7 +107,8 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final StltExternalFileHandler extFileHandler;
 
     private Props localNodeProps;
-    private BackupShippingMgr backupShippingManager;
+    private final BackupShippingMgr backupShippingManager;
+    private final SuspendManager suspendMgr;
 
     @Inject
     public DeviceHandlerImpl(
@@ -125,7 +126,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         UdevHandler udevHandlerRef,
         SnapshotShippingService snapshotShippingManagerRef,
         StltExternalFileHandler extFileHandlerRef,
-        BackupShippingMgr backupShippingManagerRef
+        BackupShippingMgr backupShippingManagerRef,
+        SuspendManager suspendMgrRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -144,6 +146,9 @@ public class DeviceHandlerImpl implements DeviceHandler
         snapshotShippingManager = snapshotShippingManagerRef;
         extFileHandler = extFileHandlerRef;
         backupShippingManager = backupShippingManagerRef;
+        suspendMgr = suspendMgrRef;
+
+        suspendMgrRef.setExceptionHandler(this::handleException);
 
         fullSyncApplied = new AtomicBoolean(false);
     }
@@ -211,43 +216,9 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             // we failed to prepare layers, but we still need to make sure to resume-io if needed so that we do not
             // leave for example DRBD resources in suspended state
-            manageSuspendIo(rscsRef, true);
-        }
-    }
-
-    private HashMap<Resource, ApiCallRcImpl> manageSuspendIo(Collection<Resource> rscsRef, boolean resumeOnlyRef)
-    {
-        HashMap<Resource, ApiCallRcImpl> failedRscs = new HashMap<>();
-        /*
-         * We want to run all suspend-io as soon and as close as possible to each other.
-         * resume-io's are not that important to be close together, so we only focus on non-suspended -> suspended
-         * transitions
-         */
-        if (resumeOnlyRef)
-        {
             errorReporter.logTrace("Prepare step failed. Checking if devices need resume-io...");
+            suspendMgr.manageSuspendIo(rscsRef, true);
         }
-        else
-        {
-            errorReporter.logTrace("Checking required changes in suspend-io state...");
-        }
-        for (Resource rsc : rscsRef)
-        {
-            try
-            {
-                manageSuspendIoIfNeeded(rsc.getLayerData(wrkCtx), resumeOnlyRef);
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-            catch (StorageException | ResourceException exc)
-            {
-                failedRscs.put(rsc, handleException(rsc, exc));
-            }
-        }
-
-        return failedRscs;
     }
 
     private <RSC extends AbsResource<RSC>> Map<DeviceLayer, Set<AbsRscLayerObject<RSC>>> groupByLayer(
@@ -389,7 +360,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         List<Resource> sysFsUpdateList = new ArrayList<>();
         List<Resource> sysFsDeleteList = new ArrayList<>();
 
-        HashMap<Resource, ApiCallRcImpl> failedRscs = manageSuspendIo(resourceList, false);
+        HashMap<Resource, ApiCallRcImpl> failedRscs = suspendMgr.manageSuspendIo(resourceList, false);
 
         for (Resource rsc : resourceList)
         {
@@ -605,26 +576,6 @@ public class DeviceHandlerImpl implements DeviceHandler
 
         notificationListener.get().notifyResourceFailed(rsc, apiCallRc);
         return apiCallRc;
-    }
-
-    private void manageSuspendIoIfNeeded(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
-        throws ResourceException, StorageException, AccessDeniedException
-    {
-        StateFlags<Flags> flags = rscLayerObjectRef.getAbsResource().getStateFlags();
-        boolean isRscInactive = flags.isSet(
-            wrkCtx,
-            Resource.Flags.INACTIVE,
-            Resource.Flags.INACTIVE_PERMANENTLY,
-            Resource.Flags.INACTIVATING
-        );
-        if (rscLayerObjectRef.exists() && !isRscInactive)
-        {
-            DeviceLayer topMostLayer = layerFactory.getDeviceLayer(rscLayerObjectRef.getLayerKind());
-            if (topMostLayer.isSuspendIoSupported())
-            {
-                topMostLayer.manageSuspendIO(rscLayerObjectRef, resumeOnlyRef);
-            }
-        }
     }
 
     private <RSC extends AbsResource<RSC>> AbsRscLayerObject<RSC> getFirstRscDataWithoutIgnoredReasonForDataPath(

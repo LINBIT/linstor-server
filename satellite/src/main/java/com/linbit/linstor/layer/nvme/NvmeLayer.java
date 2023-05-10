@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.nvme;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
@@ -51,6 +52,8 @@ import java.util.Set;
 @Singleton
 public class NvmeLayer implements DeviceLayer
 {
+    private static final String SUSPEND_IO_NOT_SUPPORTED_ERR_MSG =
+        "Suspending / Resuming IO for NVMe resources is not supported";
     private final ErrorReporter errorReporter;
     private final AccessContext sysCtx;
     private final Provider<DeviceHandler> resourceProcessorProvider;
@@ -93,10 +96,24 @@ public class NvmeLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
-        throws ResourceException, StorageException
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
     {
-        throw new StorageException("Suspending / Resuming IO for NVMe resources is not supported");
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
+    }
+
+    @Override
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
+    {
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
+    }
+
+    @Override
+    public void updateSuspendState(AbsRscLayerObject<Resource> rscDataRef)
+        throws DatabaseException, ExtCmdFailedException, StorageException
+    {
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
     }
 
     /**

@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -32,7 +33,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Either;
@@ -57,6 +57,9 @@ import java.util.stream.Collectors;
 @Singleton
 public class StorageLayer implements DeviceLayer
 {
+    private static final String SUSPEND_IO_NOT_SUPPORTED_ERR_MSG =
+        "Suspending / Resuming IO for Storage resources is not supported";
+
     private final AccessContext storDriverAccCtx;
     private final DeviceProviderMapper deviceProviderMapper;
     private final ExtCmdFactory extCmdFactory;
@@ -243,47 +246,24 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerData, boolean resumeOnlyRef)
-        throws ResourceException, StorageException
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
     {
-        boolean changed = false;
-        for (VlmProviderObject<Resource> vlmData : rscLayerData.getVlmLayerObjects().values())
-        {
-            DeviceProviderKind kind = vlmData.getProviderKind();
-            switch (kind)
-            {
-                case LVM:
-                case LVM_THIN:
-                case DISKLESS:
-                case EBS_INIT:
-                case EBS_TARGET:
-                case EXOS:
-                case FILE:
-                case FILE_THIN:
-                case OPENFLEX_TARGET:
-                case REMOTE_SPDK:
-                case SPDK:
-                case ZFS:
-                case ZFS_THIN:
-                case STORAGE_SPACES:
-                case STORAGE_SPACES_THIN:
-                    throw new StorageException("Suspend / resume io is not supported for " + kind);
-                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
-                default:
-                    throw new ImplementationError("Unexpected DeviceProviderKind: " + kind);
-            }
-        }
-        if (changed)
-        {
-            try
-            {
-                rscLayerData.setIsSuspended(rscLayerData.getShouldSuspendIo());
-            }
-            catch (DatabaseException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-        }
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
+    }
+
+    @Override
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
+    {
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
+    }
+
+    @Override
+    public void updateSuspendState(AbsRscLayerObject<Resource> rscDataRef)
+        throws DatabaseException, ExtCmdFailedException, StorageException
+    {
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
     }
 
     @Override

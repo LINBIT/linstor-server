@@ -1,11 +1,13 @@
 package com.linbit.linstor.layer;
 
 import com.linbit.ImplementationError;
+import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.devmgr.SuspendManager;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -102,19 +104,44 @@ public interface DeviceLayer
 
     boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;
 
+    /**
+     * @return true if this layer supports suspend, false otherwise
+     */
     boolean isSuspendIoSupported();
 
     /**
-     * Suspends IO if the device(s) are not already in suspended state.
+     * @param rscDataRef
      *
-     * @param rscLayerObjectRef
-     * @param resumeOnlyRef
+     * @return if this layer needs to run some extra code after its parent layer has already suspended IO
      *
-     * @throws ResourceException
      * @throws StorageException
      */
-    void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
-        throws ResourceException, StorageException;
+    default void managePostRootSuspend(AbsRscLayerObject<Resource> rscDataRef) throws StorageException
+    {
+        // noop
+    }
+
+    /**
+     * The layer is expected to update the given rscData's {@link AbsRscLayerObject#setIsSuspended(boolean)} state so
+     * that the {@link SuspendManager} can properly check if a {@link #suspendIo(AbsRscLayerObject)} or
+     * {@link #resumeIo(AbsRscLayerObject)} call is needed
+     *
+     * @throws StorageException
+     * @throws DatabaseException
+     * @throws ExtCmdFailedException
+     */
+    void updateSuspendState(AbsRscLayerObject<Resource> rscDataRef)
+        throws StorageException, DatabaseException, ExtCmdFailedException;
+
+    /*
+     * Performs a suspend-io
+     */
+    void suspendIo(AbsRscLayerObject<Resource> rscDataRef) throws ExtCmdFailedException, StorageException;
+
+    /*
+     * Performs a resume-io
+     */
+    void resumeIo(AbsRscLayerObject<Resource> rscDataRef) throws ExtCmdFailedException, StorageException;
 
     /**
      * Returns whether or not checking for 'lsblk ... -o DISC-GRAN' makes sense for this RscData.

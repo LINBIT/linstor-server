@@ -606,7 +606,6 @@ public class DrbdLayer implements DeviceLayer
             /*
              *  we have to split here into several steps:
              *  - first we have to detach all volumes marked for deletion and delete the DRBD-volumes
-             *  - suspend IO if required by a snapshot
              *  - call the underlying layer's process method
              *  - create metaData for new volumes
              *  -- check which volumes are new
@@ -626,8 +625,6 @@ public class DrbdLayer implements DeviceLayer
             List<DrbdVlmData<Resource>> checkMetaData = detachVolumesIfNecessary(drbdRscData);
 
             shrinkVolumesIfNecessary(drbdRscData);
-
-            adjustSuspendIo(drbdRscData, snapshotList);
 
             if (!childAlreadyProcessed)
             {
@@ -1100,122 +1097,34 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
-        throws ResourceException, StorageException
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef) throws ExtCmdFailedException
     {
-        if (rscLayerObjectRef.exists())
-        {
-            DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) rscLayerObjectRef;
+        drbdUtils.resumeIo((DrbdRscData<Resource>) rscDataRef);
+    }
 
-            // do not use drbdRscData.isSuspended since that boolean still needs to be updated using
-            // updateResourceToCurrentDrbdState(..)
-            try
-            {
-                DrbdResource drbdRscState = drbdState.getDrbdResource(drbdRscData.getSuffixedResourceName());
-                boolean isSuspended = drbdRscState != null && drbdRscState.getSuspendedUser() != null &&
-                    drbdRscState.getSuspendedUser();
-                boolean shouldBeSuspended = drbdRscData.getShouldSuspendIo() && !resumeOnlyRef;
-                if (drbdRscData.isSuspended() == null || drbdRscData.isSuspended() != isSuspended)
-                {
-                    drbdRscData.setIsSuspended(isSuspended);
-                }
-                if (shouldBeSuspended != isSuspended)
-                {
-                    if (isSuspended)
-                    {
-                        errorReporter.logTrace(
-                            "Resuming DRBD-IO for resource '%s'",
-                            drbdRscData.getSuffixedResourceName()
-                        );
-                        drbdUtils.resumeIo(drbdRscData);
-                    }
-                    else
-                    {
-                        errorReporter.logTrace(
-                            "Suspending DRBD-IO for resource '%s'",
-                            drbdRscData.getSuffixedResourceName()
-                        );
-                        drbdUtils.suspendIo(drbdRscData);
-                    }
-                    drbdRscData.setIsSuspended(shouldBeSuspended);
-                }
-            }
-            catch (NoInitialStateException exc)
-            {
-                throw new StorageException("Need initial DRBD state", exc);
-            }
-            catch (ExtCmdFailedException exc)
-            {
-                boolean suspend = drbdRscData.getShouldSuspendIo();
-                throw new ResourceException(
-                    String.format(
-                        "%s of the DRBD resource '%s' failed",
-                        suspend ? "Suspend" : "Resume",
-                        drbdRscData.getSuffixedResourceName()
-                    ),
-                    getAbortMsg(drbdRscData),
-                    String.format(
-                        "The external command for %s the DRBD resource failed",
-                        suspend ? "suspending" : "resuming"
-                    ),
-                    null,
-                    null,
-                    exc
-                );
-            }
+    @Override
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef) throws ExtCmdFailedException
+    {
+        drbdUtils.suspendIo((DrbdRscData<Resource>) rscDataRef);
+    }
+
+    @Override
+    public void updateSuspendState(AbsRscLayerObject<Resource> rscDataRef) throws StorageException, DatabaseException
+    {
+        try
+        {
+            DrbdResource drbdRscState = drbdState.getDrbdResource(rscDataRef.getSuffixedResourceName());
+            rscDataRef.setIsSuspended(
+                drbdRscState != null && drbdRscState.getSuspendedUser() != null &&
+                    drbdRscState.getSuspendedUser()
+            );
+        }
+        catch (NoInitialStateException exc)
+        {
+            throw new StorageException("Need initial DRBD state", exc);
         }
     }
 
-    // TODO can this method be removed?
-    private void adjustSuspendIo(
-        DrbdRscData<Resource> drbdRscData,
-        List<Snapshot> snapshotList
-    )
-        throws ResourceException
-    {
-        boolean shouldSuspend = drbdRscData.exists() && drbdRscData.getShouldSuspendIo();
-
-        boolean isSuspended = drbdRscData.isSuspended() != null && drbdRscData.isSuspended();
-        if (!isSuspended && shouldSuspend)
-        {
-            try
-            {
-                errorReporter.logTrace("Suspending DRBD-IO for resource '%s'", drbdRscData.getSuffixedResourceName());
-                drbdUtils.suspendIo(drbdRscData);
-            }
-            catch (ExtCmdFailedException exc)
-            {
-                throw new ResourceException(
-                    "Suspend of the DRBD resource '" + drbdRscData.getSuffixedResourceName() + " failed",
-                    getAbortMsg(drbdRscData),
-                    "The external command for suspending the DRBD resource failed",
-                    null,
-                    null,
-                    exc
-                );
-            }
-        }
-        else
-        if (isSuspended && !shouldSuspend)
-        {
-            try
-            {
-                errorReporter.logTrace("Resuming DRBD-IO for resource '%s'", drbdRscData.getSuffixedResourceName());
-                drbdUtils.resumeIo(drbdRscData);
-            }
-            catch (ExtCmdFailedException exc)
-            {
-                throw new ResourceException(
-                    "Resume of the DRBD resource '" + drbdRscData.getSuffixedResourceName() + " failed",
-                    getAbortMsg(drbdRscData),
-                    "The external command for resuming the DRBD resource failed",
-                    null,
-                    null,
-                    exc
-                );
-            }
-        }
-    }
 
     private boolean hasMetaData(DrbdVlmData<Resource> drbdVlmData)
         throws VolumeException, AccessDeniedException

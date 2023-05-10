@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.dmsetup.writecache;
 
 import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -36,8 +37,6 @@ import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import javax.inject.Inject;
@@ -60,7 +59,6 @@ public class WritecacheLayer implements DeviceLayer
      */
     private static final Map<String, String> OPTS_LUT;
     private static final String DFLT_CACHE_SIZE = "5%";
-    private static final String DM_SETUP_WRITECACHE_FLUSH_ON_SUSPEND = "flush_on_suspend";
 
     private final ErrorReporter errorReporter;
     private final AccessContext storDriverAccCtx;
@@ -241,21 +239,39 @@ public class WritecacheLayer implements DeviceLayer
     }
 
     @Override
-    public void manageSuspendIO(AbsRscLayerObject<Resource> rscLayerObjectRef, boolean resumeOnlyRef)
-        throws ResourceException, StorageException
+    public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
     {
-        DmSetupUtils.manageSuspendIO(
+        DmSetupUtils.suspendIo(
             errorReporter,
             extCmdFactory,
-            rscLayerObjectRef,
-            resumeOnlyRef,
-            vlmData -> DmSetupUtils.message(
+            rscDataRef,
+            true,
+            vlmData -> DmSetupUtils.flushOnSuspend(
                 extCmdFactory,
-                vlmData.getDevicePath(),
-                null,
-                DM_SETUP_WRITECACHE_FLUSH_ON_SUSPEND
+                vlmData
             )
         );
+    }
+
+    @Override
+    public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
+        throws ExtCmdFailedException, StorageException
+    {
+        DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, false, null);
+    }
+
+    @Override
+    public void managePostRootSuspend(AbsRscLayerObject<Resource> rscDataRef) throws StorageException
+    {
+        DmSetupUtils.flush(extCmdFactory, rscDataRef);
+    }
+
+    @Override
+    public void updateSuspendState(AbsRscLayerObject<Resource> rscDataRef)
+        throws DatabaseException, ExtCmdFailedException
+    {
+        rscDataRef.setIsSuspended(DmSetupUtils.isSuspended(extCmdFactory, rscDataRef));
     }
 
     @Override
@@ -303,64 +319,6 @@ public class WritecacheLayer implements DeviceLayer
                         vlmData.getIdentifier(),
                         vlmData.getDevicePath()
                     );
-                }
-            }
-        }
-
-        final AbsRscLayerObject<Resource> rootLayerData = rscLayerDataRef.getAbsResource()
-            .getLayerData(storDriverAccCtx);
-        final boolean hasDrbd = LayerUtils.hasLayer(rootLayerData, DeviceLayerKind.DRBD);
-
-        if (rootLayerData.getShouldSuspendIo())
-        {
-            /*
-             * rsc.getLayerData is either the same reference as our local rscLayerDataRef OR
-             * it is the root-layerData.
-             * In case of suspendIO, only the root-layerData gets the suspendIO set.
-             * However, even if root-layerData != rscLayerDataRef, we still want to flush
-             * our write-cache.
-             */
-            for (VlmProviderObject<Resource> vlmData : rscLayerDataRef.getVlmLayerObjects().values())
-            {
-                if (vlmData.exists())
-                {
-                    boolean isSuspended = DmSetupUtils.isSuspended(extCmdFactory.create(), vlmData.getDevicePath());
-
-                    if (!isSuspended)
-                    {
-                        // only suspend if drbd isn't involved (drbd will suspend otherwise)
-                        if (!hasDrbd)
-                        {
-                            // send flush on suspend, so we flush before suspend \o/
-                            // and afterwards suspend the device
-                            DmSetupUtils.flushOnSuspend(extCmdFactory, vlmData.getDevicePath());
-                            DmSetupUtils.suspend(extCmdFactory.create(), vlmData.getDevicePath());
-                        }
-                        else
-                        {
-                            // only flush if drbd is involved
-                            DmSetupUtils.flush(extCmdFactory, vlmData.getDevicePath());
-                        }
-                    }
-                }
-            }
-        }
-        else
-        {
-            if (!hasDrbd)
-            {
-                // resumeIO if necessary
-                for (VlmProviderObject<Resource> vlmData : rscLayerDataRef.getVlmLayerObjects().values())
-                {
-                    if (vlmData.exists())
-                    {
-                        boolean isSuspended = DmSetupUtils.isSuspended(extCmdFactory.create(), vlmData.getDevicePath());
-
-                        if (isSuspended)
-                        {
-                            DmSetupUtils.resume(extCmdFactory.create(), vlmData.getDevicePath());
-                        }
-                    }
                 }
             }
         }
