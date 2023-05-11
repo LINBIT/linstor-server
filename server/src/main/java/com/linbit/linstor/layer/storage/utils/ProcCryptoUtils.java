@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.storage.utils;
 
 import com.linbit.linstor.storage.ProcCryptoEntry;
+import com.linbit.Platform;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -93,8 +94,19 @@ public class ProcCryptoUtils
 
     public static List<ProcCryptoEntry> parseProcCrypto() throws IOException
     {
-        final String procCryptoContent = new String(Files.readAllBytes(Paths.get("/proc/crypto")));
-        return parseProcCryptoString(procCryptoContent);
+        List<ProcCryptoEntry> cryptoEntries = new ArrayList<ProcCryptoEntry>();
+
+        if (Platform.isLinux())
+        {
+            final String procCryptoContent = new String(Files.readAllBytes(Paths.get("/proc/crypto")));
+            cryptoEntries = parseProcCryptoString(procCryptoContent);
+        }
+        if (Platform.isWindows())
+        {
+            /* driver name must be lower case. */
+            cryptoEntries.add(new ProcCryptoEntry("crc32c", "windrbd", ProcCryptoEntry.CryptoType.SHASH, 200));
+        }
+        return cryptoEntries;
     }
 
     public static List<ProcCryptoEntry> getHashByPriority(List<ProcCryptoEntry> entries) {

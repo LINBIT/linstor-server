@@ -166,12 +166,36 @@ public class ConfFileBuilder
             final String disableAutoVerifyAlgo = prioProps.getProp(ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO,
                 ApiConsts.NAMESPC_DRBD_OPTIONS);
 
+            boolean supportsCramHmac = true;
+
             if (disableAutoVerifyAlgo == null && verifyAlgo == null && autoVerifyAlgo != null)
             {
                 localRscPrioProps.setFallbackProp(
                     InternalApiConsts.DRBD_VERIFY_ALGO,
                     autoVerifyAlgo,
                     ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+
+                if (autoVerifyAlgo.equalsIgnoreCase("windrbd"))
+                {
+                    /* Currently, only crc32c is supported */
+                    localRscPrioProps.setFallbackProp(
+                        InternalApiConsts.DRBD_VERIFY_ALGO,
+                        "crc32c",
+                        ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+                }
+                else
+                {
+                    localRscPrioProps.setFallbackProp(
+                        InternalApiConsts.DRBD_VERIFY_ALGO,
+                        autoVerifyAlgo,
+                        ApiConsts.NAMESPC_DRBD_NET_OPTIONS);
+                }
+            }
+
+            /* No sha1 on WinDRBD, sorry */
+            if (autoVerifyAlgo == null || autoVerifyAlgo.equalsIgnoreCase("windrbd"))
+            {
+                supportsCramHmac = false;
             }
 
             final ConfFileBuilderAutoRules localRscAutoRules = new ConfFileBuilderAutoRules(accCtx, localRscData);
@@ -211,10 +235,13 @@ public class ConfFileBuilder
             appendLine("net");
             try (Section netSection = new Section())
             {
-                // TODO: make configurable
-                appendLine("cram-hmac-alg     %s;", "sha1");
-                // TODO: make configurable
-                appendLine("shared-secret     \"%s\";", rscDfnData.getSecret());
+                if (supportsCramHmac)
+                {
+                    // TODO: make configurable
+                    appendLine("cram-hmac-alg     sha1;");
+                    // TODO: make configurable
+                    appendLine("shared-secret     \"%s\";", rscDfnData.getSecret());
+                }
 
                 appendConflictingDrbdOptions(
                     LinStorObject.CONTROLLER,

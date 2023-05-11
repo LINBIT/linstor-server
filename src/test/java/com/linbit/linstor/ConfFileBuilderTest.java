@@ -596,8 +596,6 @@ public class ConfFileBuilderTest
         String confFile = confFileBuilder.build();
 
         assertThat(countOccurrences(confFile, "^ *resource")).isEqualTo(1);
-        assertThat(countOccurrences(confFile, "^ *cram-hmac-alg ")).isEqualTo(1);
-        assertThat(countOccurrences(confFile, "^ *shared-secret ")).isEqualTo(1);
         assertThat(countOccurrences(confFile, "^ *on ")).isEqualTo(2);
         assertThat(countOccurrences(confFile, "^ *volume ")).isEqualTo(2);
         assertThat(countOccurrences(confFile, "^ *disk ")).isEqualTo(2);

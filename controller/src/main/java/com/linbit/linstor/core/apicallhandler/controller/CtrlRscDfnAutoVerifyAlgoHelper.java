@@ -74,8 +74,7 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                     {
                         if (!rsc.getNode().isDeleted())
                         {
-                            result = !rsc.isDrbdDiskless(peerCtxProvider.get()) &&
-                                LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get()).contains(DeviceLayerKind.DRBD);
+                            result = LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get()).contains(DeviceLayerKind.DRBD);
                         }
                     }
                     catch (AccessDeniedException ignored)
