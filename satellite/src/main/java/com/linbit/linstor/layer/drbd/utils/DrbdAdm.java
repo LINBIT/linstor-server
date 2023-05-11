@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.drbd.utils;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.extproc.ChildProcessHandler.TimeoutType;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
@@ -594,6 +595,10 @@ public class DrbdAdm
         {
             File nullDevice = new File(Platform.nullDevice());
             ExtCmd extCmd = extCmdFactory.create();
+            if (Platform.isWindows())
+            {
+                extCmd.setTimeout(TimeoutType.WAIT, 5*60*1000);
+            }
             OutputData outputData = extCmd.pipeExec(ProcessBuilder.Redirect.from(nullDevice), command);
             if (outputData.exitCode != 0)
             {
