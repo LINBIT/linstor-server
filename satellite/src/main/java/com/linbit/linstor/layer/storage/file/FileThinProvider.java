@@ -22,6 +22,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.PlatformStlt;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -44,7 +45,8 @@ public class FileThinProvider extends FileProvider
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef
+        BackupShippingMgr backupShipMgrRef,
+        PlatformStlt platformStltRef
     )
     {
         super(
@@ -60,7 +62,8 @@ public class FileThinProvider extends FileProvider
             snapShipMrgRef,
             extToolsCheckerRef,
             cloneServiceRef,
-            backupShipMgrRef
+            backupShipMgrRef,
+            platformStltRef
         );
     }
 

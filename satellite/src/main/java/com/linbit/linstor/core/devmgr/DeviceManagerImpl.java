@@ -71,6 +71,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
+import com.linbit.PlatformStlt;
 import com.linbit.utils.Either;
 
 import static com.linbit.linstor.api.ApiConsts.MODIFIED;
@@ -184,6 +185,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private boolean firstTimeDevMgrRun = true;
     private final ExtCmdFactory extCmdFactory;
 
+    private final PlatformStlt platformStlt;
+
     private static final ServiceName DEV_MGR_NAME;
     static
     {
@@ -263,7 +266,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         SnapshotShippingService snapshipServiceRef,
         BackupShippingMgr backupServiceMgrRef,
         StltExternalFileHandler extFileHandlerRef,
-        StltConfig stltCfgRef
+        StltConfig stltCfgRef,
+        PlatformStlt platformStltRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -295,6 +299,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         backupServiceMgr = backupServiceMgrRef;
         extFileHandler = extFileHandlerRef;
         stltCfg = stltCfgRef;
+        platformStlt = platformStltRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
@@ -860,7 +865,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     {
         try
         {
-            Path varDrbdPath = Paths.get(LinStor.CONFIG_PATH);
+            Path varDrbdPath =  Paths.get(platformStlt.sysRoot() + LinStor.CONFIG_PATH);
 
             final Pattern keepResPattern = stltCfg.getDrbdKeepResPattern();
             Function<Path, Boolean> keepFunc;
@@ -904,7 +909,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         catch (IOException ioExc)
         {
             throw new ImplementationError(
-                "Unable to list content of: " + LinStor.CONFIG_PATH,
+                "Unable to list content of: " + platformStlt.sysRoot() + LinStor.CONFIG_PATH,
                 ioExc
             );
         }

@@ -43,6 +43,7 @@ import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.PlatformStlt;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -80,6 +81,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
 
     private static final Map<String, String> LOSETUP_DEVICES = new TreeMap<>();
 
+    private final PlatformStlt platformStlt;
+
     protected FileProvider(
         ErrorReporter errorReporter,
         ExtCmdFactoryStlt extCmdFactory,
@@ -93,7 +96,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef
+        BackupShippingMgr backupShipMgrRef,
+        PlatformStlt platformStltRef
     )
     {
         super(
@@ -111,6 +115,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             cloneServiceRef,
             backupShipMgrRef
         );
+        platformStlt = platformStltRef;
     }
 
     @Inject
@@ -125,7 +130,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         SnapshotShippingService snapShipMrgRef,
         StltExtToolsChecker extToolsCheckerRef,
         CloneService cloneServiceRef,
-        BackupShippingMgr backupShipMgrRef
+        BackupShippingMgr backupShipMgrRef,
+        PlatformStlt platformStltRef
     )
     {
         super(
@@ -143,6 +149,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             cloneServiceRef,
             backupShipMgrRef
         );
+        platformStlt = platformStltRef;
     }
 
     @Override
@@ -722,32 +729,37 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     public void clearCache() throws StorageException
     {
         StringBuilder sb = new StringBuilder();
+        String tmpName, lodevName;
+
         for (Entry<String, String> entry : LOSETUP_DEVICES.entrySet())
         {
             sb.append(entry.getKey()).append(":").append(entry.getValue()).append("\n");
         }
 
-        File tmp = new File(LODEV_FILE_TMP);
+        tmpName = platformStlt.sysRoot() + LODEV_FILE_TMP;
+        lodevName = platformStlt.sysRoot() + LODEV_FILE;
+
+        File tmp = new File(tmpName);
         try (FileOutputStream fos = new FileOutputStream(tmp))
         {
             fos.write(sb.toString().getBytes());
         }
         catch (IOException exc)
         {
-            throw new StorageException("Failed to write active loopback devices to " + LODEV_FILE_TMP, exc);
+            throw new StorageException("Failed to write active loopback devices to " + tmpName, exc);
         }
 
         try
         {
             Files.move(
                 tmp.toPath(),
-                new File(LODEV_FILE).toPath(),
+                new File(lodevName).toPath(),
                 StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
             );
         }
         catch (IOException exc)
         {
-            throw new StorageException("Failed to move " + LODEV_FILE_TMP + " to " + LODEV_FILE, exc);
+            throw new StorageException("Failed to move " + tmpName + " to " + lodevName, exc);
         }
 
         super.clearCache();

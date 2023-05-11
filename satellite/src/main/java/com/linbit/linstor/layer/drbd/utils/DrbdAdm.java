@@ -14,6 +14,7 @@ import com.linbit.linstor.layer.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.Platform;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -287,7 +288,7 @@ public class DrbdAdm
 
         String[] params = getGetGiCommand(minorNr, blockDevPath, mdTypeParam);
         ExtCmd utilsCmd = extCmdFactory.create();
-        File nullDevice = new File("/dev/null");
+        File nullDevice = new File(Platform.nullDevice());
         try
         {
             OutputData outputData = utilsCmd.pipeExec(ProcessBuilder.Redirect.from(nullDevice), params);
@@ -443,9 +444,16 @@ public class DrbdAdm
         throws ExtCmdFailedException
     {
         String tmpResPathStr = tmpResPath.toString();
+        String resPathStr = resPath.toString();
+
+        /* On Windows this is a cygwin path which requires forward slashes. */
+        if (Platform.isWindows())
+        {
+            resPathStr = resPathStr.replace('\\', '/');
+        }
         execute(
             DRBDADM_UTIL, "--config-to-test", tmpResPathStr,
-            "--config-to-exclude", resPath.toString(),
+            "--config-to-exclude", resPathStr,
             "sh-nop"
         );
 
@@ -584,8 +592,7 @@ public class DrbdAdm
         String[] command = commandList.toArray(new String[commandList.size()]);
         try
         {
-            // FIXME: Works only on Unix
-            File nullDevice = new File("/dev/null");
+            File nullDevice = new File(Platform.nullDevice());
             ExtCmd extCmd = extCmdFactory.create();
             OutputData outputData = extCmd.pipeExec(ProcessBuilder.Redirect.from(nullDevice), command);
             if (outputData.exitCode != 0)

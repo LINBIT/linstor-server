@@ -67,6 +67,7 @@ import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFl
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.Platform;
+import com.linbit.PlatformStlt;
 import com.linbit.utils.AccessUtils;
 
 import javax.inject.Inject;
@@ -111,6 +112,7 @@ public class DrbdLayer implements DeviceLayer
     private final StltConfigAccessor stltCfgAccessor;
     private final DrbdVersion drbdVersion;
     private final WindowsFirewall windowsFirewall;
+    private final PlatformStlt platformStlt;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
@@ -134,7 +136,8 @@ public class DrbdLayer implements DeviceLayer
         ExtCmdFactory extCmdFactoryRef,
         StltConfigAccessor stltCfgAccessorRef,
         DrbdVersion drbdVersionRef,
-        WindowsFirewall windowsFirewallRef
+        WindowsFirewall windowsFirewallRef,
+        PlatformStlt platformStltRef
     )
     {
         workerCtx = workerCtxRef;
@@ -150,6 +153,7 @@ public class DrbdLayer implements DeviceLayer
         stltCfgAccessor = stltCfgAccessorRef;
         drbdVersion = drbdVersionRef;
         windowsFirewall = windowsFirewallRef;
+        platformStlt = platformStltRef;
     }
 
     @Override
@@ -541,7 +545,7 @@ public class DrbdLayer implements DeviceLayer
             {
                 errorReporter.logTrace("Shutting down drbd resource %s", suffixedRscName);
                 drbdUtils.down(drbdRscData);
-                Path resFile = asResourceFile(drbdRscData, false);
+                Path resFile = asResourceFile(drbdRscData, false, false);
                 errorReporter.logTrace("Deleting res file: %s ", resFile);
                 Files.deleteIfExists(resFile);
                 drbdRscData.setResFileExists(false);
@@ -1635,8 +1639,14 @@ public class DrbdLayer implements DeviceLayer
     private void regenerateResFile(DrbdRscData<Resource> drbdRscData)
         throws AccessDeniedException, StorageException
     {
-        Path resFile = asResourceFile(drbdRscData, false);
-        Path tmpResFile = asResourceFile(drbdRscData, true);
+        Path resFile = asResourceFile(drbdRscData, false, false);
+
+            /* On Linux this will be the same as resFile above.
+             * On Windows it has the format /cygdrive/c/WinDRBD/var/lib/linstor
+             * We need it for drbdadm's --config-to-exclude parameter.
+             */
+        Path resFileCygwin = asResourceFile(drbdRscData, false, true);
+        Path tmpResFile = asResourceFile(drbdRscData, true, false);
 
         List<DrbdRscData<Resource>> drbdPeerRscDataList = drbdRscData.getRscDfnLayerObject()
             .getDrbdRscDataList().stream()
@@ -1685,7 +1695,7 @@ public class DrbdLayer implements DeviceLayer
 
         try
         {
-            drbdUtils.checkResFile(tmpResFile, resFile);
+            drbdUtils.checkResFile(tmpResFile, resFileCygwin);
         }
         catch (ExtCmdFailedException exc)
         {
@@ -1727,7 +1737,7 @@ public class DrbdLayer implements DeviceLayer
 
     private void copyResFileToBackup(DrbdRscData<Resource> drbdRscData) throws StorageException
     {
-        Path resFile = asResourceFile(drbdRscData, false);
+        Path resFile = asResourceFile(drbdRscData, false, false);
         Path backupFile = asBackupResourceFile(drbdRscData);
         try
         {
@@ -1983,10 +1993,21 @@ public class DrbdLayer implements DeviceLayer
      * DELETE method and its utilities
      */
 
-    private Path asResourceFile(DrbdRscData<Resource> drbdRscData, boolean temp)
+    private Path asResourceFile(DrbdRscData<Resource> drbdRscData, boolean temp, boolean cygwinFormat)
     {
+        String prefix;
+
+        if (cygwinFormat)
+        {
+            prefix = platformStlt.sysRootCygwin();
+        }
+        else
+        {
+            prefix = platformStlt.sysRoot();
+        }
+
         return Paths.get(
-            LinStor.CONFIG_PATH,
+            prefix + LinStor.CONFIG_PATH,
             drbdRscData.getSuffixedResourceName() + (temp ? DRBD_CONFIG_TMP_SUFFIX : DRBD_CONFIG_SUFFIX)
         );
     }
@@ -1994,7 +2015,7 @@ public class DrbdLayer implements DeviceLayer
     private Path asBackupResourceFile(DrbdRscData<Resource> drbdRscData)
     {
         return Paths.get(
-            LinStor.BACKUP_PATH,
+            platformStlt.sysRoot() + LinStor.BACKUP_PATH,
             drbdRscData.getSuffixedResourceName() + DRBD_CONFIG_SUFFIX
         );
     }
