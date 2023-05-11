@@ -1,12 +1,18 @@
 package com.linbit.linstor.layer.drbd.utils;
 
+import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.extproc.ExtCmdFactory;
+import com.linbit.linstor.layer.storage.utils.Commands;
+import com.linbit.linstor.storage.StorageUtils;
+import com.linbit.ImplementationError;
+import com.linbit.Platform;
+import com.linbit.linstor.storage.StorageException;
+
+import java.io.RandomAccessFile;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
 
@@ -66,23 +72,60 @@ public class MdSuperblockBuffer
         buffer.order(ByteOrder.BIG_ENDIAN);
     }
 
-    public void readObject(final String objPath, final boolean externalMd)
+    private static long getFileSize(ExtCmdFactory extCmdFactory, String objPath, FileChannel inChan)
+        throws IOException
+    {
+        long fileSize = 0;
+
+        if (Platform.isWindows())
+        {
+            try
+            {
+                OutputData res = Commands.genericExecutor(
+                    extCmdFactory.create(),
+                    new String[] {
+                        "windrbd", "get-blockdevice-size", objPath
+                    },
+                    "Failed to get size of block device " + objPath + " please use at least WinDRBD 1.0.3",
+                    "Failed to get size of block device " + objPath + " please use at least WinDRBD 1.0.3"
+                );
+                String num = new String(res.stdoutData).trim();
+                fileSize = StorageUtils.parseDecimalAsLong(num);
+            }
+            catch (StorageException | NumberFormatException exc)
+            {
+                throw new IOException("Cannot get size of object '" + objPath + "' " + exc);
+            }
+        }
+        else if (Platform.isLinux())
+        {
+            fileSize = inChan.size();
+        }
+        else
+        {
+            throw new ImplementationError("Platform is neither Linux nor Windows, please add support for it to LINSTOR");
+        }
+
+        // Align to a 4 kiB boundary
+        fileSize &= ALIGN_4K_MASK;
+
+        if (fileSize < SUPERBLK_SIZE)
+        {
+            throw new IOException("Object '" + objPath + "' is too small to contain a DRBD meta data superblock");
+        }
+        return fileSize;
+    }
+
+    public void readObject(ExtCmdFactory extCmdFactory, final String objPath, final boolean externalMd)
         throws IOException
     {
         clear();
-        Path openPath = FileSystems.getDefault().getPath(objPath);
-        try (FileChannel inChan = FileChannel.open(openPath, StandardOpenOption.READ))
+        String name = Platform.toBlockDeviceName(objPath);
+
+        try (RandomAccessFile file = ( new RandomAccessFile(name, "r") ))
         {
-            long fileSize = inChan.size();
-
-            // Align to a 4 kiB boundary
-            fileSize &= ALIGN_4K_MASK;
-
-            // Calculate the offset where to find the DRBD meta data superblock
-            if (fileSize < SUPERBLK_SIZE)
-            {
-                throw new IOException("Object '" + objPath + "' is too small to contain a DRBD meta data superblock");
-            }
+            FileChannel inChan = file.getChannel();
+            long fileSize = getFileSize(extCmdFactory, objPath, inChan);
 
             // Read the DRBD meta data superblock
             if (!externalMd)
@@ -118,36 +161,54 @@ public class MdSuperblockBuffer
         buffer.rewind();
     }
 
-    public static void wipe(final String objPath) throws IOException
+        /* TODO: external meta data no? */
+    public static void wipe(ExtCmdFactory extCmdFactory, final String objPath) throws IOException
     {
-        synchronized (ZEROES_BUFFER)
+        if (Platform.isWindows())
         {
-            Path openPath = FileSystems.getDefault().getPath(objPath);
-            try (FileChannel inChan = FileChannel.open(openPath, StandardOpenOption.WRITE))
+            try
             {
-                long fileSize = inChan.size();
+                OutputData res = Commands.genericExecutor(
+                    extCmdFactory.create(),
+                    new String[] {
+                        "windrbd", "wipe-metadata", objPath, "internal"
+                    },
+                    "Failed to get size of block device " + objPath + " please use at least WinDRBD 1.0.3",
+                    "Failed to get size of block device " + objPath + " please use at least WinDRBD 1.0.3"
+                );
+            }
+            catch (StorageException exc)
+            {
+                throw new IOException("Cannot wipe meta data of object '" + objPath + "' " + exc);
+            }
+        }
+        else if (Platform.isLinux())
+        {
+            synchronized (ZEROES_BUFFER)
+            {
+                String name = Platform.toBlockDeviceName(objPath);
 
-                // Align to a 4 kiB boundary
-                fileSize &= ALIGN_4K_MASK;
-
-                // Calculate the offset where to find the DRBD meta data superblock
-                if (fileSize < SUPERBLK_SIZE)
+                try (RandomAccessFile file = ( new RandomAccessFile(name, "rws") ))
                 {
-                    throw new IOException(
-                        "Object '" + objPath + "' is too small to contain a DRBD meta data superblock"
-                    );
+                    FileChannel inChan = file.getChannel();
+                    long fileSize = getFileSize(extCmdFactory, objPath, inChan);
+
+                    long offset = fileSize - SUPERBLK_SIZE;
+
+                    // Read the DRBD meta data superblock
+                    inChan.position(offset);
+
+                    inChan.write(ZEROES_BUFFER);
                 }
-                long offset = fileSize - SUPERBLK_SIZE;
-
-                // Read the DRBD meta data superblock
-                inChan.position(offset);
-
-                inChan.write(ZEROES_BUFFER);
+                finally
+                {
+                    ZEROES_BUFFER.flip();
+                }
             }
-            finally
-            {
-                ZEROES_BUFFER.flip();
-            }
+        }
+        else
+        {
+            throw new ImplementationError("Platform is neither Linux nor Windows, please add support for it to LINSTOR");
         }
     }
 

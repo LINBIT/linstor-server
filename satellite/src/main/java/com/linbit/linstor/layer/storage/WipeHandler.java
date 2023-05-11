@@ -47,7 +47,7 @@ public class WipeHandler
         Commands.wipeFs(extCmdFactory.create(), Collections.singleton(devicePath));
         try
         {
-            MdSuperblockBuffer.wipe(devicePath);
+            MdSuperblockBuffer.wipe(extCmdFactory, devicePath);
         }
         catch (IOException ioExc)
         {
@@ -69,7 +69,7 @@ public class WipeHandler
          */
         try
         {
-            MdSuperblockBuffer.wipe(devicePath);
+            MdSuperblockBuffer.wipe(extCmdFactory, devicePath);
         }
         catch (IOException exc)
         {

@@ -1227,7 +1227,7 @@ public class DrbdLayer implements DeviceLayer
         MdSuperblockBuffer mdUtils = new MdSuperblockBuffer();
         try
         {
-            mdUtils.readObject(metaDiskPath, externalMd);
+            mdUtils.readObject(extCmdFactory, metaDiskPath, externalMd);
         }
         catch (IOException exc)
         {
