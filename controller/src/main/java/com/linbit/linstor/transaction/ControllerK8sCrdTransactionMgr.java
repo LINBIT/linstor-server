@@ -32,6 +32,8 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 
 public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
 {
+    private static final Object SYNC_OBJ = new Object();
+
     private final TransactionObjectCollection transactionObjectCollection;
     private final ControllerK8sCrdDatabase controllerK8sCrdDatabase;
 
@@ -139,36 +141,46 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     @Override
     public void commit() throws TransactionException
     {
-        try
+        synchronized (SYNC_OBJ)
         {
-            ControllerK8sCrdRollbackMgr.createRollbackEntry(currentTransaction);
-        }
-        catch (DatabaseException exc)
-        {
-            throw new TransactionException("Error creating rollback entry", exc);
-        }
+            /*
+             * We need to synchronize to prevent other threads to also start a new rollback entry but also to prevent
+             * other to rollback a transaction
+             */
+            try
+            {
+                ControllerK8sCrdRollbackMgr.createRollbackEntry(currentTransaction);
+            }
+            catch (DatabaseException exc)
+            {
+                throw new TransactionException("Error creating rollback entry", exc);
+            }
 
-        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransaction.rscsToCreate.entrySet())
-        {
-            create(entry.getKey(), entry.getValue());
+            for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransaction.rscsToCreate
+                .entrySet())
+            {
+                create(entry.getKey(), entry.getValue());
+            }
+            for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransaction.rscsToReplace
+                .entrySet())
+            {
+                replace(entry.getKey(), entry.getValue());
+            }
+            for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransaction.rscsToDelete
+                .entrySet())
+            {
+                delete(entry.getKey(), entry.getValue());
+            }
+
+            transactionObjectCollection.commitAll();
+
+            clearTransactionObjects();
+
+            K8sCrdTransaction transactionToClean = currentTransaction;
+            currentTransaction = createNewTx();
+
+            ControllerK8sCrdRollbackMgr.cleanup(transactionToClean);
         }
-        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransaction.rscsToReplace.entrySet())
-        {
-            replace(entry.getKey(), entry.getValue());
-        }
-        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransaction.rscsToDelete.entrySet())
-        {
-            delete(entry.getKey(), entry.getValue());
-        }
-
-        transactionObjectCollection.commitAll();
-
-        clearTransactionObjects();
-
-        K8sCrdTransaction transactionToClean = currentTransaction;
-        currentTransaction = createNewTx();
-
-        ControllerK8sCrdRollbackMgr.cleanup(transactionToClean);
     }
 
     @SuppressWarnings("unchecked")
@@ -216,13 +228,16 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     @Override
     public void rollback() throws TransactionException
     {
-        ControllerK8sCrdRollbackMgr.rollback(currentTransaction);
+        synchronized (SYNC_OBJ)
+        {
+            ControllerK8sCrdRollbackMgr.rollback(currentTransaction);
 
-        transactionObjectCollection.rollbackAll();
+            transactionObjectCollection.rollbackAll();
 
-        currentTransaction = createNewTx();
+            currentTransaction = createNewTx();
 
-        clearTransactionObjects();
+            clearTransactionObjects();
+        }
     }
 
     public void rollbackIfNeeded() throws TransactionException
@@ -243,12 +258,12 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
                 rollback();
             }
         }
-        catch (KubernetesClientException e)
+        catch (KubernetesClientException exc)
         {
             // This could just mean that no rollback CRD was applied, so there can also be no rollback.
-            if (e.getCode() != HttpURLConnection.HTTP_NOT_FOUND)
+            if (exc.getCode() != HttpURLConnection.HTTP_NOT_FOUND)
             {
-                throw e;
+                throw exc;
             }
         }
     }

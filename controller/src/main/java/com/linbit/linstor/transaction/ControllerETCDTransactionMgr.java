@@ -11,6 +11,8 @@ import com.ibm.etcd.client.kv.KvClient.FluentTxnOps;
 
 public class ControllerETCDTransactionMgr implements TransactionMgrETCD
 {
+    private static final Object SYNC_OBJ = new Object();
+
     private final ControllerETCDDatabase etcdDb;
     private final TransactionObjectCollection transactionObjectCollection;
     private final ControllerETCDRollbackMgr rollbackMgr;
@@ -47,49 +49,59 @@ public class ControllerETCDTransactionMgr implements TransactionMgrETCD
     @Override
     public void commit() throws TransactionException
     {
-        List<FluentTxnOps<?>> txList = rollbackMgr.prepare(currentTransaction);
-
-        boolean allSucceeded = true;
-        TxnResponse txnResponse = null;
-        for (FluentTxnOps<?> tx : txList)
+        synchronized (SYNC_OBJ)
         {
-            txnResponse = EtcdTransaction.requestWithRetry(tx);
-            if (!txnResponse.getSucceeded())
+            /*
+             * We need to synchronize to prevent other threads to also start a new rollback entry but also to prevent
+             * other to rollback a transaction
+             */
+            List<FluentTxnOps<?>> txList = rollbackMgr.prepare(currentTransaction);
+
+            boolean allSucceeded = true;
+            TxnResponse txnResponse = null;
+            for (FluentTxnOps<?> tx : txList)
             {
-                allSucceeded = false;
+                txnResponse = EtcdTransaction.requestWithRetry(tx);
+                if (!txnResponse.getSucceeded())
+                {
+                    allSucceeded = false;
+                }
             }
-        }
 
-        if (allSucceeded)
-        {
-            transactionObjectCollection.commitAll();
+            if (allSucceeded)
+            {
+                transactionObjectCollection.commitAll();
 
-            clearTransactionObjects();
+                clearTransactionObjects();
 
-            currentTransaction = createNewEtcdTx();
+                currentTransaction = createNewEtcdTx();
 
-            rollbackMgr.cleanup();
-        }
-        else
-        {
-            currentTransaction = createNewEtcdTx();
-            throw new TransactionException(
-                "ETCD commit failed.",
-                new LinStorDBRuntimeException(txnResponse.toString())
-            );
+                rollbackMgr.cleanup();
+            }
+            else
+            {
+                currentTransaction = createNewEtcdTx();
+                throw new TransactionException(
+                    "ETCD commit failed.",
+                    new LinStorDBRuntimeException(txnResponse.toString())
+                );
+            }
         }
     }
 
     @Override
     public void rollback() throws TransactionException
     {
-        rollbackMgr.rollback();
+        synchronized (SYNC_OBJ)
+        {
+            rollbackMgr.rollback();
 
-        transactionObjectCollection.rollbackAll();
+            transactionObjectCollection.rollbackAll();
 
-        currentTransaction = createNewEtcdTx();
+            currentTransaction = createNewEtcdTx();
 
-        clearTransactionObjects();
+            clearTransactionObjects();
+        }
     }
 
     /**
