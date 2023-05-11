@@ -51,7 +51,7 @@ DEBVERSION = $(shell echo $(VERSION) | sed -e 's/-/~/g')
 
 tgz:
 	test -s .filelist
-	@if [ ! -d .git ]; then \
+	@if [ ! -e .git ]; then \
 		echo >&2 "Not a git directory!"; exit 1; \
 	fi; \
 	tar --transform="s,^,linstor-server-$(VERSION)/,S"         \
