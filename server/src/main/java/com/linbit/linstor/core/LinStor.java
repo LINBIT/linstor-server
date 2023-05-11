@@ -1,6 +1,7 @@
 package com.linbit.linstor.core;
 
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.Platform;
 import com.linbit.utils.InjectorLoader;
 
 import java.io.BufferedReader;
@@ -153,9 +154,29 @@ public abstract class LinStor
      *
      * @return Hostname by 'uname -n'.
      */
-    static String getHostName()
+    public static String getHostName()
     {
-        return getUname("-n");
+        String hostname = "";
+
+        if (Platform.isLinux())
+        {
+            hostname = getUname("-n");
+        }
+        else if (Platform.isWindows())
+        {
+            hostname = System.getenv().get("COMPUTERNAME");
+            try
+            {
+                Process process = new ProcessBuilder("hostname").start();
+                process.waitFor(1, TimeUnit.SECONDS);
+                BufferedReader br = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                hostname = br.readLine().trim();
+            }
+            catch (IOException | InterruptedException ignored)
+            {
+            }
+        }
+        return hostname;
     }
 
     public static String getUname(String param)

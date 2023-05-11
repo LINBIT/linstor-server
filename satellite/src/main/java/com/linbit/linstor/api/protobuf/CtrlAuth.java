@@ -1,7 +1,5 @@
 package com.linbit.linstor.api.protobuf;
 
-import com.linbit.ChildProcessTimeoutException;
-import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
@@ -71,16 +69,7 @@ public class CtrlAuth implements ApiCall
         throws IOException
     {
         // get the host uname for the drbd config
-        String nodeUname = "";
-        try
-        {
-            ExtCmd.OutputData out = extCmdFactory.create().exec("uname", "-n");
-            nodeUname = new String(out.stdoutData).trim();
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            errorReporter.reportError(exc);
-        }
+        String nodeUname = LinStor.getHostName();
 
         // TODO: implement authentication
         MsgIntAuth auth = MsgIntAuth.parseDelimitedFrom(msgDataIn);
