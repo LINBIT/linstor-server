@@ -56,6 +56,7 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.utils.SetUtils;
+import com.linbit.Platform;
 import com.linbit.utils.Either;
 
 import javax.inject.Inject;
@@ -513,7 +514,10 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
             notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
         }
-        sysFsHandler.updateSysFsSettings(sysFsUpdateList, sysFsDeleteList);
+        if (Platform.isLinux())
+        {
+            sysFsHandler.updateSysFsSettings(sysFsUpdateList, sysFsDeleteList);
+        }
     }
 
     private ApiCallRcImpl handleException(Resource rsc, Throwable exc)
