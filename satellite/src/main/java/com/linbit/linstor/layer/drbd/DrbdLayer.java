@@ -47,6 +47,7 @@ import com.linbit.linstor.layer.drbd.helper.ReadyForPrimaryNotifier;
 import com.linbit.linstor.layer.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.layer.drbd.utils.DrbdAdm;
 import com.linbit.linstor.layer.drbd.utils.MdSuperblockBuffer;
+import com.linbit.linstor.layer.drbd.utils.WindowsFirewall;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.layer.storage.utils.VolumeUtils;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -65,6 +66,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
+import com.linbit.Platform;
 import com.linbit.utils.AccessUtils;
 
 import javax.inject.Inject;
@@ -108,6 +110,7 @@ public class DrbdLayer implements DeviceLayer
     private final ExtCmdFactory extCmdFactory;
     private final StltConfigAccessor stltCfgAccessor;
     private final DrbdVersion drbdVersion;
+    private final WindowsFirewall windowsFirewall;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
@@ -130,7 +133,8 @@ public class DrbdLayer implements DeviceLayer
         Provider<DeviceHandler> resourceProcessorRef,
         ExtCmdFactory extCmdFactoryRef,
         StltConfigAccessor stltCfgAccessorRef,
-        DrbdVersion drbdVersionRef
+        DrbdVersion drbdVersionRef,
+        WindowsFirewall windowsFirewallRef
     )
     {
         workerCtx = workerCtxRef;
@@ -145,6 +149,7 @@ public class DrbdLayer implements DeviceLayer
         extCmdFactory = extCmdFactoryRef;
         stltCfgAccessor = stltCfgAccessorRef;
         drbdVersion = drbdVersionRef;
+        windowsFirewall = windowsFirewallRef;
     }
 
     @Override
@@ -541,6 +546,11 @@ public class DrbdLayer implements DeviceLayer
                 Files.deleteIfExists(resFile);
                 drbdRscData.setResFileExists(false);
 
+                if (Platform.isWindows())
+                {
+                    windowsFirewall.closePort(drbdRscData.getRscDfnLayerObject().getTcpPort().value);
+                }
+
                 drbdRscData.setExists(false);
                 for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                 {
@@ -601,6 +611,12 @@ public class DrbdLayer implements DeviceLayer
              *  - adjust all remaining and newly created volumes
              *  - resume IO if allowed by all snapshots
              */
+
+            if (Platform.isWindows())
+            {
+                windowsFirewall.openPort(drbdRscData.getRscDfnLayerObject().getTcpPort().value);
+            }
+
             updateResourceToCurrentDrbdState(drbdRscData);
 
             List<DrbdVlmData<Resource>> checkMetaData = detachVolumesIfNecessary(drbdRscData);
