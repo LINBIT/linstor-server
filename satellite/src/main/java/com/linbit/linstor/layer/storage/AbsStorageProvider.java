@@ -60,6 +60,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.Platform;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.Pair;
@@ -100,6 +101,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected final StltExtToolsChecker extToolsChecker;
     private final BackupShippingMgr backupShipMapper;
     protected final HashMap<String, INFO> infoListCache;
+    protected boolean subclassMaintainsInfoListCache;
     protected final List<Consumer<Map<String, Long>>> postRunVolumeNotifications = new ArrayList<>();
     protected final Set<String> changedStoragePoolStrings = new HashSet<>();
     private final String typeDescr;
@@ -142,6 +144,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         cloneService = cloneServiceRef;
         backupShipMapper = backupShipMgrRef;
 
+        subclassMaintainsInfoListCache = false;
         infoListCache = new HashMap<>();
         try
         {
@@ -170,7 +173,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     private void clearCache(boolean processPostRunVolumeNotifications) throws StorageException
     {
-        infoListCache.clear();
+        if (!subclassMaintainsInfoListCache)
+        {
+            infoListCache.clear();
+        }
 
         if (processPostRunVolumeNotifications && !changedStoragePoolStrings.isEmpty())
         {
@@ -205,7 +211,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private void updateVolumeAndSnapshotStates(List<LAYER_DATA> vlmDataList, List<LAYER_SNAP_DATA> snapVlms)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        infoListCache.putAll(getInfoListImpl(vlmDataList, snapVlms));
+        Map<String, INFO> currentInfo = getInfoListImpl(vlmDataList, snapVlms);
+        if (!subclassMaintainsInfoListCache)
+        {
+            infoListCache.putAll(currentInfo);
+        }   /* else this already has been done */
 
         updateStates(vlmDataList, snapVlms);
     }
@@ -1454,7 +1464,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private void waitUntilDeviceCreated(String devicePath, long waitTimeoutAfterCreateMillis)
         throws StorageException
     {
-        DeviceUtils.waitUntilDeviceVisible(devicePath, waitTimeoutAfterCreateMillis, errorReporter, fsWatch);
+        if (Platform.isLinux())
+        {
+            DeviceUtils.waitUntilDeviceVisible(devicePath, waitTimeoutAfterCreateMillis, errorReporter, fsWatch);
+        }
+            /* On Windows, do nothing. Device will appear as soon as
+             * resource is made primary. Also it has no representation
+             * in the file system (like /dev/...).
+             */
     }
 
     protected final @Nonnull Resource getResource(LAYER_DATA vlmData, String rscName)

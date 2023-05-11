@@ -32,6 +32,8 @@ import com.linbit.linstor.api.pojo.StorageRscPojo.LvmThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.LvmVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.RemoteSpdkVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.SpdkVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.StorageSpacesVlmPojo;
+import com.linbit.linstor.api.pojo.StorageRscPojo.StorageSpacesThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsThinVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo.ZfsVlmPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
@@ -598,6 +600,30 @@ public class ProtoLayerUtils
                     storPoolApi
                 );
                 break;
+            case STORAGE_SPACES:
+                ret = new StorageSpacesVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
+                break;
+            case STORAGE_SPACES_THIN:
+                ret = new StorageSpacesThinVlmPojo(
+                    vlmNr,
+                    devicePath,
+                    allocatedSize,
+                    usableSize,
+                    null,
+                    null,
+                    diskState,
+                    storPoolApi
+                );
+                break;
             case ZFS:
                 ret = new ZfsVlmPojo(
                     vlmNr,
@@ -736,6 +762,8 @@ public class ProtoLayerUtils
             case EBS_INIT: // fall-through
             case EBS_TARGET: // fall-through
             case EXOS:
+            case STORAGE_SPACES:
+            case STORAGE_SPACES_THIN:
                 vlmDfnApi = null;
                 break;
             case UNKNOWN_PROVIDER: // fall-through

@@ -12,6 +12,8 @@ import com.linbit.linstor.storage.OpenflexTargetDriverKind;
 import com.linbit.linstor.storage.RemoteSpdkDriverKind;
 import com.linbit.linstor.storage.SpdkDriverKind;
 import com.linbit.linstor.storage.StorageDriverKind;
+import com.linbit.linstor.storage.StorageSpacesKind;
+import com.linbit.linstor.storage.StorageSpacesThinKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
 
@@ -184,6 +186,34 @@ public enum DeviceProviderKind
         false,
         new EbsTargetDriverKind()
     ),
+    STORAGE_SPACES( /* Microsoft storage spaces, Windows only */
+        false,  /* snapshots currently not implemented */
+        false,
+        false,
+        true,  /* resize yes (1GB granularity) */
+        false, /* but no shrinking - TODO: possible via partition resize */
+
+        true,   /* backing device yes */
+        false,  /* no thin provisioning - TODO: this should be easy to implement */
+        false,
+        false,
+        new StorageSpacesKind(),
+        ExtTools.STORAGE_SPACES
+    ),
+    STORAGE_SPACES_THIN( /* Microsoft storage spaces, Windows only */
+        false,  /* snapshots currently not implemented */
+        false,
+        false,
+        true,  /* resize yes (1GB granularity) */
+        false, /* but no shrinking - TODO: possible via partition resize */
+
+        true,   /* backing device yes */
+        true,  /* thin provisioning yes */
+        false,
+        false,
+        new StorageSpacesThinKind(),
+        ExtTools.STORAGE_SPACES
+    ),
     FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER(
         false,
         false,
@@ -302,10 +332,12 @@ public enum DeviceProviderKind
                 allowed = kind2.equals(FILE) || kind2.equals(FILE_THIN);
                 break;
             case LVM:
-                allowed = kind2.equals(LVM) || kind2.equals(EXOS);
+                allowed = kind2.equals(LVM) || kind2.equals(EXOS) ||
+                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
                 break;
             case LVM_THIN:
-                allowed = kind2.equals(LVM_THIN);
+                allowed = kind2.equals(LVM_THIN) ||
+                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
                 break;
             case OPENFLEX_TARGET:
                 allowed = kind2.equals(OPENFLEX_TARGET);
@@ -318,7 +350,8 @@ public enum DeviceProviderKind
                 break;
             case ZFS:
             case ZFS_THIN:
-                allowed = kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
+                allowed = kind2.equals(ZFS) || kind2.equals(ZFS_THIN) ||
+                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
                 break;
             case EXOS:
                 allowed = kind2.equals(EXOS) || kind2.equals(LVM);
@@ -326,6 +359,12 @@ public enum DeviceProviderKind
             case EBS_INIT: // fall-through
             case EBS_TARGET:
                 allowed = kind2.equals(EBS_INIT) || kind2.equals(EBS_TARGET) || kind2.equals(DISKLESS);
+                break;
+            case STORAGE_SPACES:
+            case STORAGE_SPACES_THIN:
+                allowed = kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN) ||
+                    kind2.equals(LVM) || kind2.equals(LVM_THIN) ||
+                    kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:

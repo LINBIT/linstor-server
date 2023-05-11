@@ -56,6 +56,7 @@ import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
+import com.linbit.linstor.storage.data.provider.storagespaces.StorageSpacesData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -412,6 +413,21 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
                 else
                 {
                     mergeLvmThinVlmData(vlmPojo, vlmData);
+                }
+                break;
+            case STORAGE_SPACES: // fall-through
+            case STORAGE_SPACES_THIN:
+                if (vlmData == null || !(vlmData instanceof StorageSpacesData))
+                {
+                    if (vlmData != null)
+                    {
+                        removeStorageVlm(storRscData, vlmNr);
+                    }
+                    vlmData = createStorageSpacesVlmData(vlm, storRscData, vlmPojo, storPool);
+                }
+                else
+                {
+                    mergeStorageSpacesVlmData(vlmPojo, vlmData);
                 }
                 break;
             case ZFS: // fall-through
@@ -1017,6 +1033,17 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
         VlmLayerDataApi vlmPojo,
         StorPool storPool
     )
+        throws DatabaseException;
+
+    protected abstract VlmProviderObject<RSC> createStorageSpacesVlmData(
+        AbsVolume<RSC> vlm,
+        StorageRscData<RSC> storRscData,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPool
+    )
+        throws DatabaseException;
+
+    protected abstract void mergeStorageSpacesVlmData(VlmLayerDataApi vlmPojo, VlmProviderObject<RSC> vlmData)
         throws DatabaseException;
 
     protected abstract void mergeSpdkVlmData(VlmLayerDataApi vlmPojo, VlmProviderObject<RSC> vlmData)

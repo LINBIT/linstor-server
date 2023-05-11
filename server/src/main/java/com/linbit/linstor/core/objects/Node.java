@@ -983,7 +983,9 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
                 DeviceProviderKind.SPDK,
                 DeviceProviderKind.OPENFLEX_TARGET,
                 DeviceProviderKind.EXOS,
-                DeviceProviderKind.EBS_INIT
+                DeviceProviderKind.EBS_INIT,
+                DeviceProviderKind.STORAGE_SPACES,
+                DeviceProviderKind.STORAGE_SPACES_THIN
             ),
             false
         ),
@@ -1000,7 +1002,9 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
                 DeviceProviderKind.SPDK,
                 DeviceProviderKind.OPENFLEX_TARGET,
                 DeviceProviderKind.EXOS,
-                DeviceProviderKind.EBS_INIT
+                DeviceProviderKind.EBS_INIT,
+                DeviceProviderKind.STORAGE_SPACES,
+                DeviceProviderKind.STORAGE_SPACES_THIN
             ),
             false
         ),

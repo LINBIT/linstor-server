@@ -126,6 +126,8 @@ public class DevicePoolHandler
             case FILE: // fall-through
             case FILE_THIN: // fall-through
             case OPENFLEX_TARGET: // fall-through
+            case STORAGE_SPACES: // fall-through
+            case STORAGE_SPACES_THIN: // fall-through
             default:
                 apiCallRc.addEntry(
                     ApiCallRcImpl.simpleEntry(
@@ -512,6 +514,8 @@ public class DevicePoolHandler
             case FILE: // fall-through
             case FILE_THIN: // fall-through
             case OPENFLEX_TARGET: // fall-through
+            case STORAGE_SPACES: // fall-through
+            case STORAGE_SPACES_THIN: // fall-through
             default:
                 apiCallRc.addEntry(
                     ApiCallRcImpl.simpleEntry(
@@ -562,6 +566,8 @@ public class DevicePoolHandler
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
                 case FILE: // fall-through
                 case FILE_THIN: // fall-through
+                case STORAGE_SPACES: // fall-through
+                case STORAGE_SPACES_THIN: // fall-through
                 default:
                     break;
             }

@@ -1151,7 +1151,9 @@ public class DeviceHandlerImpl implements DeviceHandler
                 case ZFS_THIN: // fall-through
                 case EBS_INIT: // fall-through
                 case EBS_TARGET: // fall-through
-                case EXOS:
+                case EXOS: // fall-through
+                case STORAGE_SPACES: // fall-through
+                case STORAGE_SPACES_THIN:
                     layer = storageLayer;
                     break;
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
@@ -1257,7 +1259,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     private void updateDiscGran(AbsRscLayerObject<Resource> rscLayerObjectRef)
         throws DatabaseException, StorageException, AccessDeniedException
     {
-        if (rscLayerObjectRef != null)
+        if (!Platform.isWindows() && rscLayerObjectRef != null)
         {
             DeviceLayer layer = layerFactory.getDeviceLayer(rscLayerObjectRef.getLayerKind());
             if (!rscLayerObjectRef.hasIgnoreReason() && layer.isDiscGranFeasible(rscLayerObjectRef))

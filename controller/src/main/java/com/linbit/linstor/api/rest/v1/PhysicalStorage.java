@@ -157,6 +157,8 @@ public class PhysicalStorage
             case SPDK:
             case REMOTE_SPDK:
             case LVM:
+            case STORAGE_SPACES:
+            case STORAGE_SPACES_THIN:
                 map.put(ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME, pool);
                 break;
 

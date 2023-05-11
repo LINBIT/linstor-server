@@ -48,6 +48,7 @@ import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
+import com.linbit.linstor.storage.data.provider.storagespaces.StorageSpacesData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
@@ -606,6 +607,27 @@ public class LayerDataFactory
         );
         storageDbDriver.persist(lvmThinData);
         return lvmThinData;
+    }
+
+    public <RSC extends AbsResource<RSC>, VLM extends AbsVolume<RSC>> StorageSpacesData<RSC> createStorageSpacesData(
+        VLM vlm,
+        StorageRscData<RSC> rscData,
+        DeviceProviderKind kind,
+        StorPool storPoolRef
+    )
+        throws DatabaseException
+    {
+        StorageSpacesData<RSC> storageSpacesData = new StorageSpacesData<>(
+            vlm,
+            rscData,
+            kind,
+            storPoolRef,
+            storageDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
+        storageDbDriver.persist(storageSpacesData);
+        return storageSpacesData;
     }
 
     public <RSC extends AbsResource<RSC>> SpdkData<RSC> createSpdkData(

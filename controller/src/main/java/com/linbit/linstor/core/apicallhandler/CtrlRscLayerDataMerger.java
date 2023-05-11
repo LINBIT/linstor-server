@@ -59,6 +59,7 @@ import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
+import com.linbit.linstor.storage.data.provider.storagespaces.StorageSpacesData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -302,6 +303,28 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         lvmData.setDevicePath(vlmPojoRef.getDevicePath());
         lvmData.setUsableSize(vlmPojoRef.getUsableSize());
         lvmData.setDiscGran(vlmPojoRef.getDiscGran());
+    }
+
+    @Override
+    protected VlmProviderObject<Resource> createStorageSpacesVlmData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
+    )
+        throws DatabaseException
+    {
+        throw new ImplementationError("Received unknown Storage Spaces storage volume from satellite");
+    }
+
+    @Override
+    protected void mergeStorageSpacesVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
+    {
+        StorageSpacesData<Resource> storageSpacesData = (StorageSpacesData<Resource>) vlmDataRef;
+        storageSpacesData.setAllocatedSize(vlmPojoRef.getAllocatedSize());
+        storageSpacesData.setDevicePath(vlmPojoRef.getDevicePath());
+        storageSpacesData.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
     @Override

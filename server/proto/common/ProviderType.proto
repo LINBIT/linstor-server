@@ -20,4 +20,6 @@ enum ProviderType
     REMOTE_SPDK = 13;
     EBS_INIT = 14;
     EBS_TARGET = 15;
+    STORAGE_SPACES = 16;
+    STORAGE_SPACES_THIN = 17;
 }

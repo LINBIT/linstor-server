@@ -281,6 +281,10 @@ public class RscStorageLayerHelper extends
                 case LVM_THIN:
                     vlmData = layerDataFactory.createLvmThinData(vlm, rscData, storPool);
                     break;
+                case STORAGE_SPACES: // fall-through
+                case STORAGE_SPACES_THIN:
+                    vlmData = layerDataFactory.createStorageSpacesData(vlm, rscData, kind, storPool);
+                    break;
                 case ZFS: // fall-through
                 case ZFS_THIN:
                     vlmData = layerDataFactory.createZfsData(vlm, rscData, kind, storPool);
@@ -817,6 +821,10 @@ public class RscStorageLayerHelper extends
                 break;
             case LVM_THIN:
                 vlmData = layerDataFactory.createLvmThinData(vlmRef, storRscData, storPool);
+                break;
+            case STORAGE_SPACES:    // fall-through
+            case STORAGE_SPACES_THIN:
+                vlmData = layerDataFactory.createStorageSpacesData(vlmRef, storRscData, providerKind, storPool);
                 break;
             case ZFS:
             case ZFS_THIN:

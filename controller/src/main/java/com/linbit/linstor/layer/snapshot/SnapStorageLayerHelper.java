@@ -133,6 +133,10 @@ class SnapStorageLayerHelper extends AbsSnapLayerHelper<
             case LVM_THIN:
                 snapVlmData = layerDataFactory.createLvmThinData(snapVlmRef, snapDataRef, storPool);
                 break;
+            case STORAGE_SPACES: // fall-through
+            case STORAGE_SPACES_THIN:
+                snapVlmData = layerDataFactory.createStorageSpacesData(snapVlmRef, snapDataRef, providerKind, storPool);
+                break;
             case ZFS: // fall-through
             case ZFS_THIN:
                 snapVlmData = layerDataFactory.createZfsData(snapVlmRef, snapDataRef, providerKind, storPool);
@@ -248,6 +252,10 @@ class SnapStorageLayerHelper extends AbsSnapLayerHelper<
                 break;
             case LVM_THIN:
                 snapVlmData = layerDataFactory.createLvmThinData(snapVlmRef, snapDataRef, storPool);
+                break;
+            case STORAGE_SPACES:  // fall-through
+            case STORAGE_SPACES_THIN:
+                snapVlmData = layerDataFactory.createStorageSpacesData(snapVlmRef, snapDataRef, providerKind, storPool);
                 break;
             case ZFS: // fall-through
             case ZFS_THIN:

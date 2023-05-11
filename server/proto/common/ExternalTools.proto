@@ -32,8 +32,9 @@ message ExternalToolsInfo
         BCACHE_TOOLS = 20;
         EBS_INIT = 22;
         EBS_TARGET = 23;
-
-        // next id: 25
+        STORAGE_SPACES = 25;
+        STORAGE_SPACES_THIN = 26;
+        // next id: 27
     }
 
     common.ExternalToolsInfo.ExternalTools ext_tool = 1;

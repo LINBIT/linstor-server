@@ -82,6 +82,10 @@ public interface StorPoolApi
             case EBS_INIT: // fall-through
             case EBS_TARGET: // fall-through
             case LVM:
+                // fall-through
+            case STORAGE_SPACES:
+                // fall-through
+            case STORAGE_SPACES_THIN:
                 result = getStorPoolProps().get(
                     StorageConstants.NAMESPACE_STOR_DRIVER + "/" + ApiConsts.KEY_STOR_POOL_NAME
                 );

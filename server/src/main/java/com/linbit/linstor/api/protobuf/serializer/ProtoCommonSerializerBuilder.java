@@ -114,6 +114,8 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.RemoteSpdkVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SpdkVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageSpacesVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageSpacesThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsVlm;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass;
@@ -1335,6 +1337,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case EBS_TARGET:
                 type = ProviderType.EBS_TARGET;
                 break;
+            case STORAGE_SPACES:
+                type = ProviderType.STORAGE_SPACES;
+                break;
+            case STORAGE_SPACES_THIN:
+                type = ProviderType.STORAGE_SPACES_THIN;
+                break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
             default:
                 throw new ImplementationError("Unknown storage driver: " + deviceProviderKindRef);
@@ -1596,6 +1604,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 break;
             case EBS_TARGET:
                 ret = ExternalTools.EBS_TARGET;
+                break;
+            case STORAGE_SPACES:
+                ret = ExternalTools.STORAGE_SPACES;
                 break;
             default:
                 throw new RuntimeException("Not implemented.");
@@ -1999,6 +2010,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case LVM_THIN:
                     builder.setLvmThin(LvmThinVlm.newBuilder().build());
+                    break;
+                case STORAGE_SPACES:
+                    builder.setStorageSpaces(StorageSpacesVlm.newBuilder().build());
+                    break;
+                case STORAGE_SPACES_THIN:
+                    builder.setStorageSpacesThin(StorageSpacesThinVlm.newBuilder().build());
                     break;
                 case ZFS:
                     builder.setZfs(ZfsVlm.newBuilder().build());

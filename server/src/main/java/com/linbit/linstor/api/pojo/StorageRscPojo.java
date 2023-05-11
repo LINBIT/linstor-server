@@ -16,6 +16,8 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.REMOTE_SPDK;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.STORAGE_SPACES;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.STORAGE_SPACES_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SPDK;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
@@ -328,6 +330,110 @@ public class StorageRscPojo implements RscLayerDataApi
                 VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 LVM
+            );
+        }
+    }
+
+    public static class StorageSpacesVlmPojo extends AbsVlmProviderPojo
+    {
+        public StorageSpacesVlmPojo(
+            int vlmNrRef,
+            String devicePathRef,
+            long allocatedSizeRef,
+            long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
+        )
+        {
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                64,
+                storPoolApiRef,
+                STORAGE_SPACES
+            );
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public StorageSpacesVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
+        )
+        {
+            super(
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
+                64,
+                storPoolApiRef,
+                STORAGE_SPACES
+            );
+        }
+    }
+
+    public static class StorageSpacesThinVlmPojo extends AbsVlmProviderPojo
+    {
+        public StorageSpacesThinVlmPojo(
+            int vlmNrRef,
+            String devicePathRef,
+            long allocatedSizeRef,
+            long usableSizeRef,
+            Long snapAllocatedSizeRef,
+            Long snapUsableSizeRef,
+            String diskStateRef,
+            StorPoolApi storPoolApiRef
+        )
+        {
+            super(
+                vlmNrRef,
+                devicePathRef,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                diskStateRef,
+                64,
+                storPoolApiRef,
+                STORAGE_SPACES_THIN
+            );
+        }
+
+        @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
+        public StorageSpacesThinVlmPojo(
+            @JsonProperty("vlmNr") int vlmNrRef,
+            @JsonProperty("storPoolApi") StorPoolApi storPoolApiRef,
+            @JsonProperty("usableSize") long usableSizeRef,
+            @JsonProperty("allocatedSize") long allocatedSizeRef,
+            @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
+        )
+        {
+            super(
+                vlmNrRef,
+                null,
+                allocatedSizeRef,
+                usableSizeRef,
+                snapAllocatedSizeRef,
+                snapUsableSizeRef,
+                null,
+                64,
+                storPoolApiRef,
+                STORAGE_SPACES_THIN
             );
         }
     }

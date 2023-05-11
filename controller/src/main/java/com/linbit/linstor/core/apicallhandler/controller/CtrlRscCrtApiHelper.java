@@ -603,6 +603,8 @@ public class CtrlRscCrtApiHelper
                                 case EBS_INIT: // fall-through
                                 case EBS_TARGET: // fall-through
                                 case EXOS:
+                                    // fall-through
+                                case STORAGE_SPACES:
                                     hasFatStorPool = true;
                                     break;
                                 case FILE:
@@ -641,6 +643,7 @@ public class CtrlRscCrtApiHelper
                                     discardZerosIfAligned = true;
                                     // fall-through
                                 case FILE_THIN:
+                                case STORAGE_SPACES_THIN:
                                     hasThinStorPool = true;
                                     break;
                                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:

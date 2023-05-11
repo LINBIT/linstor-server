@@ -518,6 +518,27 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
     }
 
     @Override
+    protected VlmProviderObject<Snapshot> createStorageSpacesVlmData(
+        AbsVolume<Snapshot> vlmRef,
+        StorageRscData<Snapshot> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
+    )
+        throws DatabaseException
+    {
+        return layerDataFactory.createStorageSpacesData(vlmRef, storRscDataRef, vlmPojoRef.getProviderKind(), storPoolRef);
+    }
+
+    @Override
+    protected void mergeStorageSpacesVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Snapshot> vlmDataRef)
+        throws DatabaseException
+    {
+        // ignoring allocatedSize
+        // ignoring devicePath
+        // ignoring usableSize
+    }
+
+    @Override
     protected VlmProviderObject<Snapshot> createZfsData(
         AbsVolume<Snapshot> vlmRef,
         StorageRscData<Snapshot> storSnapDataRef,

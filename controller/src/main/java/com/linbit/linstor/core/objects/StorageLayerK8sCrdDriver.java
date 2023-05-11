@@ -30,6 +30,7 @@ import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
+import com.linbit.linstor.storage.data.provider.storagespaces.StorageSpacesData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -268,6 +269,18 @@ public class StorageLayerK8sCrdDriver implements StorageLayerCtrlDatabaseDriver
                 vlmProviderObj = new LvmThinData<>(
                     vlmRef,
                     rscDataRef,
+                    vlmInfo.storPool,
+                    this,
+                    transObjFactory,
+                    transMgrProvider
+                );
+                break;
+            case STORAGE_SPACES:    // fall-through
+            case STORAGE_SPACES_THIN:
+                vlmProviderObj = new StorageSpacesData<>(
+                    vlmRef,
+                    rscDataRef,
+                    vlmInfo.kind,
                     vlmInfo.storPool,
                     this,
                     transObjFactory,

@@ -379,7 +379,7 @@ public class DrbdLayer implements DeviceLayer
     @Override
     public boolean isDiscGranFeasible(AbsRscLayerObject<Resource> rscLayerObjectRef) throws AccessDeniedException
     {
-        return !rscLayerObjectRef.getAbsResource().isDrbdDiskless(workerCtx);
+        return !Platform.isWindows() && !rscLayerObjectRef.getAbsResource().isDrbdDiskless(workerCtx);
     }
 
     @Override
@@ -938,7 +938,11 @@ public class DrbdLayer implements DeviceLayer
             .isSet(workerCtx, Volume.Flags.DRBD_RESIZE);
         boolean needsResize = isResizeFlagSet && drbdVlmData.hasDisk();
 
-        if (needsResize)
+        /* No way to query DRBD size on Windows. The block
+         * device only exists when it is Primary.
+         */
+
+        if (needsResize && Platform.isLinux())
         {
             long sizeInSectors = SysBlockUtils.getDrbdSizeInSectors(
                 extCmdFactory,

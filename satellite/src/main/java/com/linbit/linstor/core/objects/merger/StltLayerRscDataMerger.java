@@ -535,6 +535,30 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
+    protected VlmProviderObject<Resource> createStorageSpacesVlmData(
+        AbsVolume<Resource> vlmRef,
+        StorageRscData<Resource> storRscDataRef,
+        VlmLayerDataApi vlmPojoRef,
+        StorPool storPoolRef
+    )
+        throws DatabaseException
+    {
+        return layerDataFactory.createStorageSpacesData(vlmRef, storRscDataRef, vlmPojoRef.getProviderKind(), storPoolRef);
+    }
+
+    @Override
+    protected void mergeStorageSpacesVlmData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
+        throws DatabaseException
+    {
+        // ignoring allocatedSize
+        // ignoring devicePath
+
+        // The local usable size is going to be recalculated (and will override the pojo's value),
+        // whereas the remote usable sizes will be used AbsStorageProvider#getSmallestCommonUsableStorageSize
+        vlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
+    }
+
+    @Override
     protected VlmProviderObject<Resource> createSpdkVlmData(
         AbsVolume<Resource> vlmRef,
         StorageRscData<Resource> storRscDataRef,

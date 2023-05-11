@@ -182,6 +182,12 @@ public class ProtoDeserializationUtils
                 case EBS_TARGET:
                     kind = DeviceProviderKind.EBS_TARGET;
                     break;
+                case STORAGE_SPACES:
+                    kind = DeviceProviderKind.STORAGE_SPACES;
+                    break;
+                case STORAGE_SPACES_THIN:
+                    kind = DeviceProviderKind.STORAGE_SPACES_THIN;
+                    break;
                 case UNKNOWN_PROVIDER: // fall-through
                 case UNRECOGNIZED: // fall-through
                 default:
@@ -442,6 +448,9 @@ public class ProtoDeserializationUtils
                 break;
             case EBS_TARGET:
                 tool = ExtTools.EBS_TARGET;
+                break;
+            case STORAGE_SPACES:
+                tool = ExtTools.STORAGE_SPACES;
                 break;
             case UNKNOWN: // fall-through
             case UNRECOGNIZED: // fall-through

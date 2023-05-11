@@ -390,11 +390,13 @@ public class StorPool extends AbsCoreObj<StorPool>
             case REMOTE_SPDK:
             case SPDK:
             case ZFS:
+            case STORAGE_SPACES:
                 dfltVal = 1.0;
                 break;
             case FILE_THIN:
             case LVM_THIN:
             case ZFS_THIN:
+            case STORAGE_SPACES_THIN:
                 dfltVal = LinStor.OVERSUBSCRIPTION_RATIO_DEFAULT;
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:

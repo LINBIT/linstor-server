@@ -447,6 +447,14 @@ public class LinstorParsingUtils
             case "EBS_INIT":
                 kind = DeviceProviderKind.EBS_INIT;
                 break;
+            case "STORAGE_SPACES":
+            case "STORAGE_SPACES_TARGET":
+                kind = DeviceProviderKind.STORAGE_SPACES;
+                break;
+            case "STORAGE_SPACES_THIN":
+            case "STORAGE_SPACES_THIN_TARGET":
+                kind = DeviceProviderKind.STORAGE_SPACES_THIN;
+                break;
             default:
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
