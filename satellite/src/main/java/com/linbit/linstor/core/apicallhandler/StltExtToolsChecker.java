@@ -12,6 +12,8 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
+import com.linbit.ImplementationError;
+import com.linbit.Platform;
 import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -68,6 +70,8 @@ public class StltExtToolsChecker
     private static final Pattern UTIL_LINUX_VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)");
     private static final Pattern UDEVADM_VERSION_PATTERN = Pattern.compile("(\\d+)");
     private static final Pattern LSSCSI_VERSION_PATTERN = Pattern.compile("(?:version: )?(\\d+)\\.(\\d+)");
+    private static final String PLATFORM_LINUX = "Linux";
+    private static final String PLATFORM_WINDOWS = "Windows";
 
     private final ErrorReporter errorReporter;
     private final DrbdVersion drbdVersionCheck;
@@ -90,41 +94,92 @@ public class StltExtToolsChecker
         stltCfg = stltCfgRef;
     }
 
+    private ExtToolsInfo[] getInfoArrayForLinux()
+    {
+        List<String> loadedModules = getLoadedModules();
+
+        return new ExtToolsInfo[]
+        {
+            getDrbd9Info(),
+            getDrbdUtilsInfo(),
+            getDrbdProxyInfo(),
+            getCryptSetupInfo(),
+            getLvmInfo(),
+            getLvmThinInfo(),
+            getThinSendRecvInfo(),
+            getZfsKmodInfo(),
+            getZfsUtilsInfo(),
+            getNvmeInfo(loadedModules),
+            getSpdkInfo(),
+            getEbsTargetInfo(),
+            getEbsInitInfo(),
+            getWritecacheInfo(loadedModules),
+            getCacheInfo(loadedModules),
+            getBCacheInfo(loadedModules),
+            getLosetupInfo(),
+            getZstdInfo(),
+            getSocatInfo(),
+            getUtilLinuxInfo(),
+            getUdevadmInfo(),
+            getLsscsiInfo(),
+            getSasPhyInfo(),
+            getSasDeviceInfo(),
+            doesNotExist(ExtTools.STORAGE_SPACES, PLATFORM_WINDOWS)
+        };
+    }
+
+    private ExtToolsInfo[] getInfoArrayForWindows()
+    {
+        return new ExtToolsInfo[]
+        {
+            getDrbd9Info(),
+            getDrbdUtilsInfo(),
+            getStorageSpacesInfo(),
+            doesNotExist(ExtTools.DRBD_PROXY, PLATFORM_LINUX),
+            doesNotExist(ExtTools.CRYPT_SETUP, PLATFORM_LINUX),
+            doesNotExist(ExtTools.LVM, PLATFORM_LINUX),
+            doesNotExist(ExtTools.LVM_THIN, PLATFORM_LINUX),
+            doesNotExist(ExtTools.THIN_SEND_RECV, PLATFORM_LINUX),
+            doesNotExist(ExtTools.ZFS_UTILS, PLATFORM_LINUX),
+            doesNotExist(ExtTools.ZFS_KMOD, PLATFORM_LINUX),
+            doesNotExist(ExtTools.NVME, PLATFORM_LINUX),
+            doesNotExist(ExtTools.SPDK, PLATFORM_LINUX),
+            doesNotExist(ExtTools.EBS_TARGET, PLATFORM_LINUX),
+            doesNotExist(ExtTools.EBS_INIT, PLATFORM_LINUX),
+            doesNotExist(ExtTools.DM_WRITECACHE, PLATFORM_LINUX),
+            doesNotExist(ExtTools.LOSETUP, PLATFORM_LINUX),
+            doesNotExist(ExtTools.ZSTD, PLATFORM_LINUX),
+            doesNotExist(ExtTools.SOCAT, PLATFORM_LINUX),
+            doesNotExist(ExtTools.UTIL_LINUX, PLATFORM_LINUX),
+            doesNotExist(ExtTools.UDEVADM, PLATFORM_LINUX),
+            doesNotExist(ExtTools.LSSCSI, PLATFORM_LINUX),
+            doesNotExist(ExtTools.SAS_PHY, PLATFORM_LINUX),
+            doesNotExist(ExtTools.SAS_DEVICE, PLATFORM_LINUX),
+            doesNotExist(ExtTools.BCACHE_TOOLS, PLATFORM_LINUX)
+        };
+    }
+
     public Map<ExtTools, ExtToolsInfo> getExternalTools(boolean recache)
     {
         if (recache || cache == null)
         {
-            List<String> loadedModules = getLoadedModules();
+            ExtToolsInfo[] infoArray = null;
 
             // needed by getDrbd9Info() and getDrbdUtilsInfo(). however, calling checkVersions() once is enough
             drbdVersionCheck.checkVersions();
 
-            ExtToolsInfo[] infoArray = {
-                getDrbd9Info(),
-                getDrbdUtilsInfo(),
-                getDrbdProxyInfo(),
-                getCryptSetupInfo(),
-                getLvmInfo(),
-                getLvmThinInfo(),
-                getThinSendRecvInfo(),
-                getZfsKmodInfo(),
-                getZfsUtilsInfo(),
-                getNvmeInfo(loadedModules),
-                getSpdkInfo(),
-                getEbsTargetInfo(),
-                getEbsInitInfo(),
-                getWritecacheInfo(loadedModules),
-                getCacheInfo(loadedModules),
-                getBCacheInfo(loadedModules),
-                getLosetupInfo(),
-                getZstdInfo(),
-                getSocatInfo(),
-                getUtilLinuxInfo(),
-                getUdevadmInfo(),
-                getLsscsiInfo(),
-                getSasPhyInfo(),
-                getSasDeviceInfo()
-            };
+            if (Platform.isLinux())
+            {
+                infoArray = getInfoArrayForLinux();
+            }
+            else if (Platform.isWindows())
+            {
+                infoArray = getInfoArrayForWindows();
+            }
+            else
+            {
+                throw new ImplementationError("Platform is neither Linux nor Windows, please add support for it to LINSTOR");
+            }
 
             Map<ExtTools, ExtToolsInfo> extTools = new HashMap<>();
             for (ExtToolsInfo info : infoArray)
@@ -151,6 +206,14 @@ public class StltExtToolsChecker
             }
         }
         return supported;
+    }
+
+    private ExtToolsInfo doesNotExist(ExtTools tool, String whereItExists)
+    {
+        List<String> reasons = new ArrayList<String>();
+        reasons.add(String.format("This tool does not exist on non-%s platforms.", whereItExists));
+
+        return new ExtToolsInfo(tool, false, null, null, null, reasons);
     }
 
     private ExtToolsInfo getDrbd9Info()
@@ -202,7 +265,60 @@ public class StltExtToolsChecker
                 drbdVersionCheck.getUtilsNotSupportedReasons()
             );
         }
+        String windrbdVersion = drbdVersionCheck.getWindrbdVsn();
+        if (windrbdVersion != null)
+        {
+            errorReporter.logTrace("Found WinDRBD version " + windrbdVersion + "\n");
+        }
         return drbdInfo;
+    }
+
+    private ExtToolsInfo getStorageSpacesInfo()
+    {
+        ExtToolsInfo extToolsInfo;
+        Either<Pair<String, String>, List<String>> stdoutOrErrorReason = getStdoutOrErrorReason(
+            ec -> ec == 0,
+            "linstor-wmi-helper",
+            "storage-pool",
+            "list"
+        );
+
+        extToolsInfo = stdoutOrErrorReason.map(
+            pair ->
+            {
+                return new ExtToolsInfo(
+                    ExtTools.STORAGE_SPACES,
+                    true,
+                    null,
+                    null,
+                    null,
+                    Collections.emptyList());
+            },
+            notSupportedReasonList -> new ExtToolsInfo(
+                ExtTools.STORAGE_SPACES,
+                false,
+                null,
+                null,
+                null,
+                notSupportedReasonList
+            )
+        );
+
+        if (extToolsInfo.isSupported())
+        {
+            errorReporter.logInfo(
+                "Checking support for %s: supported ",
+                ExtTools.STORAGE_SPACES.name()
+            );
+        }
+        else
+        {
+            errorReporter.logInfo(
+                "Checking support for %s: NOT supported ",
+                ExtTools.STORAGE_SPACES.name()
+            );
+        }
+        return extToolsInfo;
     }
 
     private ExtToolsInfo getDrbdProxyInfo()

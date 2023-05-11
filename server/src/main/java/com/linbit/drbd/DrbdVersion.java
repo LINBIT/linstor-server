@@ -38,6 +38,8 @@ public class DrbdVersion
 
     public static final String KEY_DRBD_VSN_CODE = "DRBD_KERNEL_VERSION_CODE";
     public static final String KEY_UTILS_VSN_CODE = "DRBDADM_VERSION_CODE";
+    public static final String KEY_VSN_CODE = "DRBD_KERNEL_VERSION_CODE";
+    public static final String KEY_WINDRBD_VSN = "WINDRBD_VERSION";
 
     private static final Object SYNC_OBJ = new Object();
 
@@ -58,6 +60,7 @@ public class DrbdVersion
 
     private Version drbdVsn = UNDETERMINED_VERSION;
     private Version utilsVsn = UNDETERMINED_VERSION;
+    private String windrbdVsn = null;
 
     private final CoreTimer timerRef;
     private final ErrorReporter errorLogRef;
@@ -91,6 +94,7 @@ public class DrbdVersion
 
                 utilsVsn = getVersion(cmdData, KEY_UTILS_VSN_CODE);
                 drbdVsn = getVersion(cmdData, KEY_DRBD_VSN_CODE);
+                windrbdVsn = getVersionAsString(cmdData, KEY_WINDRBD_VSN);
 
                 if (!hasDrbd9())
                 {
@@ -166,6 +170,25 @@ public class DrbdVersion
         return ret;
     }
 
+    private String getVersionAsString(OutputData cmdDataRef, String key) throws IOException
+    {
+        String ret = null;
+
+        try (BufferedReader vsnReader = new BufferedReader(new InputStreamReader(cmdDataRef.getStdoutStream())))
+        {
+            String longKey = key + "=";
+            for (String vsnLine = vsnReader.readLine(); vsnLine != null; vsnLine = vsnReader.readLine())
+            {
+                if (vsnLine.startsWith(longKey))
+                {
+                    ret = vsnLine.substring(longKey.length());
+
+                    break;
+                }
+            }
+        }
+        return ret;
+    }
     /**
      * Returns the DRBD major version
      * <br/>
@@ -283,6 +306,20 @@ public class DrbdVersion
     }
 
     /**
+     * Returns the WinDRBD version string
+     *
+     * If the instance was unable to determine the WinDRBD version,
+     * the method returns null.
+     *
+     * @return WinDRBD version as reported by drbdadm --version or
+     * null if driver not loaded or not a WinDRBD machine.
+     */
+    public String getWindrbdVsn()
+    {
+        return windrbdVsn;
+    }
+
+    /**
      * Indicates whether the DRBD version that was detected is at least DRBD 9
      * <br/>
      * If the instance was unable to determine the DRBD version, the method returns {@code false}.
@@ -313,6 +350,7 @@ public class DrbdVersion
     {
         utilsVsn = UNDETERMINED_VERSION;
         drbdVsn = UNDETERMINED_VERSION;
+        windrbdVsn = null;
         drbdNotSupportedReasons.clear();
         utilsNotSupportedReasons.clear();
     }
