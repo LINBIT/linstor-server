@@ -48,7 +48,7 @@ public class UdevHandler
         TreeSet<String> ret = null;
         ExtToolsInfo udevadmInfo = extTools.getExternalTools(false).get(ExtTools.UDEVADM);
 
-        if (devicePath != null && udevadmInfo.isSupported())
+        if (devicePath != null && udevadmInfo != null && udevadmInfo.isSupported())
         {
             OutputData outputData = Commands.genericExecutor(
                 extCmdFactory.create(),
