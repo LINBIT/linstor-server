@@ -1,5 +1,7 @@
 package com.linbit.linstor.layer.storage;
 
+import com.linbit.ImplementationError;
+import com.linbit.Platform;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.layer.drbd.utils.MdSuperblockBuffer;
@@ -87,16 +89,36 @@ public class WipeHandler
 
     public static OutputData wipeFs(ExtCmdFactory extCmdFactoryRef, String device) throws StorageException
     {
-        return Commands.genericExecutor(
-            extCmdFactoryRef.create(),
-            new String[]
-            {
-                "wipefs",
-                "-a",
-                device
-            },
-            "Failed to clear BCache metadata",
-            "Failed to clear BCache metadata"
-        );
+        OutputData res = null;
+
+        if (Platform.isLinux())
+        {
+            res = Commands.genericExecutor(
+                extCmdFactoryRef.create(),
+                new String[]
+                {
+                    "wipefs",
+                    "-a",
+                    device
+                },
+                "Failed to clear BCache metadata",
+                "Failed to clear BCache metadata"
+            );
+        }
+        else if (Platform.isWindows())
+        {
+            /* TODO: should this do something? */
+            res = new OutputData(
+                    new String[] {},
+                    new byte[] {},
+                    new byte[] {},
+                    0
+            );
+        }
+        else
+        {
+            throw new ImplementationError("Platform is neither Linux nor Windows, please add support for it to LINSTOR");
+        }
+        return res;
     }
 }

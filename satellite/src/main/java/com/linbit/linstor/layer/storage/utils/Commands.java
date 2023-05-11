@@ -1,6 +1,8 @@
 package com.linbit.linstor.layer.storage.utils;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ImplementationError;
+import com.linbit.Platform;
 import com.linbit.SizeConv;
 import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd;
@@ -129,18 +131,37 @@ public class Commands
     )
         throws StorageException
     {
-        return genericExecutor(
-            extCmd,
-            StringUtils.concat(
-                new String[]
-                {
-                    "wipefs", "-a", "-f"
-                },
-                devicePaths
-            ),
-            "Failed to wipeFs of " + String.join(", ", devicePaths),
-            "Failed to wipeFs of " + String.join(", ", devicePaths)
-        );
+        OutputData outputData = null;
+
+        if (Platform.isLinux())
+        {
+            outputData = genericExecutor(
+                extCmd,
+                StringUtils.concat(
+                    new String[]
+                    {
+                        "wipefs", "-a", "-f"
+                    },
+                    devicePaths
+                ),
+                "Failed to wipeFs of " + String.join(", ", devicePaths),
+                "Failed to wipeFs of " + String.join(", ", devicePaths)
+            );
+        }
+        else if (Platform.isWindows())
+        {
+            outputData = new OutputData(
+                    new String[] {},
+                    new byte[] {},
+                    new byte[] {},
+                    0
+            );
+        }
+        else
+        {
+            throw new ImplementationError("Platform is neither Linux nor Windows, please add support for it to LINSTOR");
+        }
+        return outputData;
     }
 
     public static long getDeviceSizeInSectors(

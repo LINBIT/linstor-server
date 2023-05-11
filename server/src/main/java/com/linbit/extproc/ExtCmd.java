@@ -222,7 +222,7 @@ public class ExtCmd extends ChildProcessHandler
         public final byte[] stderrData;
         public final int exitCode;
 
-        protected OutputData(String[] executeCmd, byte[] out, byte[] err, int retCode)
+        public OutputData(String[] executeCmd, byte[] out, byte[] err, int retCode)
         {
             executedCommand = executeCmd;
             stdoutData = out;
