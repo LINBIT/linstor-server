@@ -300,8 +300,9 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         null,
                         null,
                         true,
-                        null
-                    ).concatWith(setTiebreakerFlag(rsc))
+                        null,
+                        true
+                    )
                 );
 
                 ctx.preventUpdateSatellitesForResourceDelete = true;

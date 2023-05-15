@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MakeAvailable: Fix incorrect deletion of TIE_BREAKER flag
 - SOS-Report missing some rolling .log.zip files
 - Offline satellite: Fixed handling of offline satellites
+- Rsc,Delete,Takeover: Fix possible double tiebreaker scenarios
 
 ## [1.22.1] - 2023-04-27
 

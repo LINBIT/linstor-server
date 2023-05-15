@@ -193,7 +193,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             if (diskAddRequested || diskRemoveRequested)
             {
                 NodeName nodeName = rsc.getNode().getName();
-                fluxes.add(updateAndAdjustDisk(nodeName, rscName, diskRemoveRequested, context));
+                fluxes.add(updateAndAdjustDisk(nodeName, rscName, diskRemoveRequested, false, context));
             }
         }
 
@@ -228,6 +228,29 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         Resource.DiskfulBy diskfulByRef
     )
     {
+        return resourceToggleDisk(
+            nodeNameStr,
+            rscNameStr,
+            storPoolNameStr,
+            migrateFromNodeNameStr,
+            layerListRef,
+            removeDisk,
+            diskfulByRef,
+            false
+        );
+    }
+
+    public Flux<ApiCallRc> resourceToggleDisk(
+        String nodeNameStr,
+        String rscNameStr,
+        String storPoolNameStr,
+        String migrateFromNodeNameStr,
+        List<String> layerListRef,
+        boolean removeDisk,
+        Resource.DiskfulBy diskfulByRef,
+        boolean toggleIntoTiebreakerRef
+    )
+    {
         ResponseContext context = makeRscContext(
             ApiOperation.makeModifyOperation(),
             nodeNameStr,
@@ -246,6 +269,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     layerListRef,
                     removeDisk,
                     diskfulByRef,
+                    toggleIntoTiebreakerRef,
                     context
                 )
             )
@@ -260,6 +284,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         List<String> layerListStr,
         boolean removeDisk,
         Resource.DiskfulBy diskfulByRef,
+        boolean toggleIntoTiebreakerRef,
         ResponseContext context
     )
     {
@@ -489,7 +514,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return Flux
             .<ApiCallRc>just(responses)
             .concatWith(deactivateFlux)
-            .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, context))
+            .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, toggleIntoTiebreakerRef, context))
             .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rsc.getResourceDefinition()));
     }
 
@@ -637,6 +662,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         NodeName nodeName,
         ResourceName rscName,
         boolean removeDisk,
+        boolean toggleIntoTiebreakerRef,
         ResponseContext context
     )
     {
@@ -644,7 +670,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             .fluxInTransactionalScope(
                 "Update for disk toggle",
                 createLockGuard(),
-                () -> updateAndAdjustDiskInTransaction(nodeName, rscName, removeDisk, context)
+                () -> updateAndAdjustDiskInTransaction(nodeName, rscName, removeDisk, toggleIntoTiebreakerRef, context)
             );
     }
 
@@ -652,6 +678,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         NodeName nodeName,
         ResourceName rscName,
         boolean removeDisk,
+        boolean toggleIntoTiebreakerRef,
         ResponseContext context
     )
     {
@@ -683,7 +710,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             if (removeDisk)
             {
-                markDiskRemoving(rsc);
+                markDiskRemoving(rsc, toggleIntoTiebreakerRef);
             }
             else
             {
@@ -1212,13 +1239,13 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
     }
 
-    private void markDiskRemoving(Resource rsc)
+    private void markDiskRemoving(Resource rsc, boolean toggleIntoTiebreakerRef)
     {
         try
         {
             rsc.getStateFlags().enableFlags(
                 apiCtx,
-                Resource.Flags.DRBD_DISKLESS,
+                toggleIntoTiebreakerRef ? Resource.Flags.TIE_BREAKER : Resource.Flags.DRBD_DISKLESS,
                 Resource.Flags.DISK_REMOVING
             );
         }
