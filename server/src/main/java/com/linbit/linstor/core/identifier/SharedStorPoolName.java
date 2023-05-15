@@ -14,7 +14,7 @@ public class SharedStorPoolName extends GenericName
     public static final int MIN_LENGTH = 1;
     public static final int MAX_LENGTH = 48;
 
-    public static final byte[] VALID_CHARS = {'_'};
+    public static final byte[] VALID_CHARS = {'_', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
     // FIXME: as shown below a FreeSpaceMgrName might be a concatenation of
     // NodeName and StorPoolName. This means FreeSpaceName has to allow
     // at least as much as NodeName!

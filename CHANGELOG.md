@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+
 - SOS-Report has now a parent directory in the tgz file
+- SharedSPName have now a less strict name checking
 
 ### Fixed
 
