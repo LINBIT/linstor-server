@@ -315,56 +315,72 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     {
         Resource rsc = ctrlApiDataLoader.loadRsc(nodeNameStr, rscNameStr, false);
 
-        Set<NodeName> nodeNamesToDelete = new TreeSet<>();
-        NodeName nodeName = rsc.getNode().getName();
-
-        ctrlRscDeleteApiHelper.markDeletedWithVolumes(rsc);
-        nodeNamesToDelete.add(nodeName);
-
         ApiCallRcImpl responses = new ApiCallRcImpl();
-        AutoHelperResult autoResult = autoHelper.manage(
-            new AutoHelperContext(
-                responses,
-                context,
-                rsc.getDefinition()
-            )
-        );
-
-        Flux<ApiCallRc> abortSnapShipFlux = snapShipAbortHandler.abortSnapshotShippingPrivileged(rsc.getDefinition());
-
-        ctrlTransactionHelper.commit();
-
         Flux<ApiCallRc> flux;
-        if (!autoResult.isPreventUpdateSatellitesForResourceDelete())
+        if (rsc == null)
         {
-            String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
             responses.addEntries(
-                ApiCallRcImpl.singletonApiCallRc(
-                    ApiCallRcImpl
-                        .entryBuilder(
-                            ApiConsts.DELETED,
-                            descriptionFirstLetterCaps + " marked for deletion."
-                        )
-                        .setDetails(descriptionFirstLetterCaps + " UUID is: " + rsc.getUuid())
-                        .build()
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.WARN_NOT_FOUND | ApiConsts.MASK_RSC,
+                    "Resource that should be deleted was no longer found"
                 )
             );
             flux = Flux.just(responses);
-
-            ResourceName rscName = rsc.getDefinition().getName();
-            flux = flux.concatWith(
-                ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(nodeNamesToDelete, rscName)
-            );
+            // no updateSatellites are required, since we are called within a flux-chain that will
+            // call updateSatellites if necessary
         }
         else
         {
-            flux = Flux.just(responses);
-        }
-        flux = flux
-            .concatWith(abortSnapShipFlux)
-            .concatWith(autoResult.getFlux())
-            .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rsc.getResourceDefinition()));
+            Set<NodeName> nodeNamesToDelete = new TreeSet<>();
+            NodeName nodeName = rsc.getNode().getName();
 
+            ctrlRscDeleteApiHelper.markDeletedWithVolumes(rsc);
+            nodeNamesToDelete.add(nodeName);
+
+            AutoHelperResult autoResult = autoHelper.manage(
+                new AutoHelperContext(
+                    responses,
+                    context,
+                    rsc.getDefinition()
+                )
+            );
+
+            Flux<ApiCallRc> abortSnapShipFlux = snapShipAbortHandler.abortSnapshotShippingPrivileged(
+                rsc.getDefinition()
+            );
+
+            ctrlTransactionHelper.commit();
+
+            if (!autoResult.isPreventUpdateSatellitesForResourceDelete())
+            {
+                String descriptionFirstLetterCaps = firstLetterCaps(getRscDescription(rsc));
+                responses.addEntries(
+                    ApiCallRcImpl.singletonApiCallRc(
+                        ApiCallRcImpl
+                            .entryBuilder(
+                                ApiConsts.DELETED,
+                                descriptionFirstLetterCaps + " marked for deletion."
+                            )
+                            .setDetails(descriptionFirstLetterCaps + " UUID is: " + rsc.getUuid())
+                            .build()
+                    )
+                );
+                flux = Flux.just(responses);
+
+                ResourceName rscName = rsc.getDefinition().getName();
+                flux = flux.concatWith(
+                    ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(nodeNamesToDelete, rscName)
+                );
+            }
+            else
+            {
+                flux = Flux.just(responses);
+            }
+            flux = flux
+                .concatWith(abortSnapShipFlux)
+                .concatWith(autoResult.getFlux())
+                .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rsc.getResourceDefinition()));
+        }
         return flux;
     }
 
