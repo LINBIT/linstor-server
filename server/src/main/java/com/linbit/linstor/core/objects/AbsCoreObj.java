@@ -6,6 +6,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionObjectCollection;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -56,7 +57,7 @@ public abstract class AbsCoreObj<C extends AbsCoreObj<C>> extends BaseTransactio
 
     protected void checkDeleted()
     {
-        if (deleted.get())
+        if (TransactionObjectCollection.isCheckDeletedEnabled() && deleted.get())
         {
             throw new AccessToDeletedDataException(
                 "Access to deleted " + this.getClass().getSimpleName(),

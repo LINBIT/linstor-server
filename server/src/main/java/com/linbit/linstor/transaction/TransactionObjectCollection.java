@@ -7,6 +7,8 @@ import java.util.Set;
 
 public class TransactionObjectCollection
 {
+    private static final ThreadLocal<Boolean> ENABLE_CHECK_DELETED = ThreadLocal.withInitial(() -> true);
+
     private Set<TransactionObject> transObjects;
 
     public TransactionObjectCollection()
@@ -16,6 +18,7 @@ public class TransactionObjectCollection
 
     public void register(TransactionObject transObj)
     {
+        ENABLE_CHECK_DELETED.set(false);
         if (transObj.isDirtyWithoutTransMgr() && !transObjects.contains(transObj))
         {
             throw new ImplementationError(
@@ -24,6 +27,7 @@ public class TransactionObjectCollection
             );
         }
         transObjects.add(transObj);
+        ENABLE_CHECK_DELETED.set(true);
     }
 
     public void commitAll()
@@ -40,6 +44,7 @@ public class TransactionObjectCollection
 
     public void rollbackAll()
     {
+        ENABLE_CHECK_DELETED.set(false);
         for (TransactionObject transObj : transObjects)
         {
             // checking if isDirty to prevent endless indirect recursion
@@ -48,6 +53,7 @@ public class TransactionObjectCollection
                 transObj.rollback();
             }
         }
+        ENABLE_CHECK_DELETED.set(true);
     }
 
     public void clearAll()
@@ -78,5 +84,10 @@ public class TransactionObjectCollection
     public int sizeObjects()
     {
         return transObjects.size();
+    }
+
+    public static boolean isCheckDeletedEnabled()
+    {
+        return ENABLE_CHECK_DELETED.get();
     }
 }
