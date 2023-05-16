@@ -83,7 +83,7 @@ import java.util.stream.Collectors;
 public class DeviceHandlerImpl implements DeviceHandler
 {
 
-    private static final int LSBLK_DISC_GRAN_RETRY_COUNT = 500;
+    private static final int LSBLK_DISC_GRAN_RETRY_COUNT = 10;
     private static final long LSBLK_DISC_GRAN_RETRY_TIMEOUT_IN_MS = 100;
 
     private final AccessContext wrkCtx;
