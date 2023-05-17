@@ -763,14 +763,32 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         }
     }
 
-    private void updateInfo(ZfsData<?> vlmData, ZfsInfo zfsInfo) throws DatabaseException
+    @SuppressWarnings("unchecked")
+    private void updateInfo(ZfsData<?> vlmData, ZfsInfo zfsInfo) throws DatabaseException, AccessDeniedException
     {
         vlmData.setExists(true);
         vlmData.setZPool(zfsInfo.poolName);
         vlmData.setIdentifier(zfsInfo.identifier);
         vlmData.setAllocatedSize(zfsInfo.allocatedSize);
         vlmData.setUsableSize(zfsInfo.usableSize);
-        vlmData.setDevicePath(zfsInfo.path);
+
+        String devicePath;
+
+        if (vlmData.getRscLayerObject().getAbsResource() instanceof Resource &&
+            isCloning((ZfsData<Resource>) vlmData))
+        {
+            /*
+             * while the volume is cloning, we do not want to set the device path so that other tools do not try to
+             * access it
+             */
+            devicePath = null;
+        }
+        else
+        {
+            devicePath = zfsInfo.path;
+        }
+
+        vlmData.setDevicePath(devicePath);
     }
 
     protected PriorityProps getPrioProps(ZfsData<Resource> vlmDataRef) throws AccessDeniedException

@@ -227,18 +227,23 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     protected void updateInfo(LvmData<?> vlmDataRef, LvsInfo info)
         throws DatabaseException, AccessDeniedException, StorageException
     {
-        boolean isAbsRscActive;
+        boolean setDevicePath;
         if (vlmDataRef.getVolume() instanceof Volume)
         {
             LvmData<Resource> vlmData = (LvmData<Resource>) vlmDataRef;
             vlmDataRef.setIdentifier(asLvIdentifier(vlmData));
-            isAbsRscActive = !vlmData.getVolume().getAbsResource().getStateFlags()
+            setDevicePath = !vlmData.getVolume().getAbsResource().getStateFlags()
                 .isSet(storDriverAccCtx, Resource.Flags.INACTIVE);
+            /*
+             * while the volume is cloning, we do not want to set the device path so that other tools do not try to
+             * access it
+             */
+            setDevicePath &= !isCloning(vlmData);
         }
         else
         {
             vlmDataRef.setIdentifier(asSnapLvIdentifier((LvmData<Snapshot>) vlmDataRef));
-            isAbsRscActive = true; // TODO: not sure about this default...
+            setDevicePath = true; // TODO: not sure about this default...
         }
 
         if (info == null)
@@ -254,7 +259,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         {
             vlmDataRef.setExists(true);
             vlmDataRef.setVolumeGroup(info.volumeGroup);
-            if (isAbsRscActive)
+            if (setDevicePath)
             {
                 vlmDataRef.setDevicePath(info.path);
             }
@@ -267,7 +272,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             vlmDataRef.setUsableSize(info.size);
             vlmDataRef.setAttributes(info.attributes);
 
-            if (!info.attributes.contains("a") && isAbsRscActive)
+            if (!info.attributes.contains("a") && setDevicePath)
             {
                 LvmUtils.execWithRetry(
                     extCmdFactory,

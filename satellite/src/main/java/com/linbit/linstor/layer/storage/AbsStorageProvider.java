@@ -472,6 +472,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         return rsc.getVolume(vlmData.getVlmNr()).getFlags().isSet(storDriverAccCtx, Volume.Flags.CLONING_START);
     }
 
+    protected boolean isCloning(LAYER_DATA vlmData) throws AccessDeniedException
+    {
+        final Resource rsc = vlmData.getRscLayerObject().getAbsResource();
+        return rsc.getVolume(vlmData.getVlmNr()).getFlags().isSet(storDriverAccCtx, Volume.Flags.CLONING);
+    }
+
     protected String getCloneSnapshotName(LAYER_DATA dstVlmData)
     {
         return String.format("%s%x", CLONE_PREFIX, asLvIdentifier(dstVlmData).hashCode());

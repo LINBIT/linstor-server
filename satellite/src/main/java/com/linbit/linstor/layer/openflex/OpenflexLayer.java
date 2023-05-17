@@ -179,9 +179,11 @@ public class OpenflexLayer implements DeviceLayer
             OpenflexVolume ofVlm = ofVlmsByName.get(vlmName);
 
             vlm.setExists(ofVlm != null);
-            boolean vlmShouldExist = !((Volume) vlm.getVolume()).getFlags().isSet(
-                sysCtx,
-                Volume.Flags.DELETE
+            boolean vlmShouldExist = !((Volume) vlm.getVolume()).getFlags()
+                .isSomeSet(
+                    sysCtx,
+                    Volume.Flags.DELETE,
+                    Volume.Flags.CLONING
             );
             vlmShouldExist &= !vlm.getRscLayerObject().getAbsResource().getStateFlags().isSet(
                 sysCtx,

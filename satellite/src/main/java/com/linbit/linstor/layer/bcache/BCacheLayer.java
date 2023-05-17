@@ -248,9 +248,11 @@ public class BCacheLayer implements DeviceLayer
 
         for (BCacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
-            boolean vlmDeleteFlagSet = ((Volume) vlmData.getVolume()).getFlags().isSet(
-                storDriverAccCtx,
-                Volume.Flags.DELETE
+            boolean vlmDeleteFlagSet = ((Volume) vlmData.getVolume()).getFlags()
+                .isSomeSet(
+                    storDriverAccCtx,
+                    Volume.Flags.DELETE,
+                    Volume.Flags.CLONING
             );
             boolean vlmDfnDeleteFlagSet = vlmData.getVolume().getVolumeDefinition().getFlags().isSet(
                 storDriverAccCtx,
@@ -331,9 +333,11 @@ public class BCacheLayer implements DeviceLayer
         {
             for (BCacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
-                boolean vlmDeleteFlagSet = ((Volume) vlmData.getVolume()).getFlags().isSet(
-                    storDriverAccCtx,
-                    Volume.Flags.DELETE
+                boolean vlmDeleteFlagSet = ((Volume) vlmData.getVolume()).getFlags()
+                    .isSomeSet(
+                        storDriverAccCtx,
+                        Volume.Flags.DELETE,
+                        Volume.Flags.CLONING
                 );
                 boolean vlmDfnDeleteFlagSet = vlmData.getVolume().getVolumeDefinition().getFlags().isSet(
                     storDriverAccCtx,

@@ -847,7 +847,12 @@ public class DrbdLayer implements DeviceLayer
                     for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
                     {
                         StateFlags<Volume.Flags> vlmFlags = ((Volume) drbdVlmData.getVolume()).getFlags();
-                        if (isDiskless && vlmFlags.isSomeSet(workerCtx, Volume.Flags.DELETE, Volume.Flags.DRBD_DELETE))
+                        if (isDiskless && vlmFlags.isSomeSet(
+                            workerCtx,
+                            Volume.Flags.DELETE,
+                            Volume.Flags.DRBD_DELETE,
+                            Volume.Flags.CLONING
+                        ))
                         {
                             // `drbdadm adjust` just deleted that volume or an exception was thrown.
                             drbdVlmData.setExists(false);
@@ -969,7 +974,8 @@ public class DrbdLayer implements DeviceLayer
                 if (((Volume) drbdVlmData.getVolume()).getFlags().isSomeSet(
                     workerCtx,
                     Volume.Flags.DELETE,
-                    Volume.Flags.DRBD_DELETE
+                    Volume.Flags.DRBD_DELETE,
+                    Volume.Flags.CLONING
                 ))
                 {
                     if (drbdVlmData.hasDisk() && !drbdVlmData.hasFailed())

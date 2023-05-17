@@ -104,7 +104,8 @@ public class LvmThinProvider extends LvmProvider
             lvmThinData.setAllocatedPercent(infoRef.dataPercent / 100.0f);
         }
 
-        if (vlmDataRef.exists() && vlmDataRef.getVolume() instanceof Volume)
+        if (vlmDataRef.exists() && vlmDataRef.getVolume() instanceof Volume &&
+            !isCloning((LvmData<Resource>) vlmDataRef))
         {
             // update allocated size after we set the dataPercent
             updateAllocatedSize((LvmThinData<Resource>) vlmDataRef);

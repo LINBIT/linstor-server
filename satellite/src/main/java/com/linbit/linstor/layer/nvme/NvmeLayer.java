@@ -164,8 +164,12 @@ public class NvmeLayer implements DeviceLayer
                     // complain about us not having properly cleaned up
                     AbsVolume<Resource> vlm = nvmeVlmData.getVolume();
                     VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-                    if (((Volume) vlm).getFlags().isSet(sysCtx, Volume.Flags.DELETE) ||
-                        vlmDfn.getFlags().isSet(sysCtx, VolumeDefinition.Flags.DELETE))
+                    if (((Volume) vlm).getFlags()
+                        .isSomeSet(
+                            sysCtx,
+                            Volume.Flags.DELETE,
+                            Volume.Flags.CLONING
+                        ) || vlmDfn.getFlags().isSet(sysCtx, VolumeDefinition.Flags.DELETE))
                     {
                         nvmeVlmData.setExists(false);
                         errorReporter.logTrace(
@@ -229,7 +233,12 @@ public class NvmeLayer implements DeviceLayer
                         List<NvmeVlmData<Resource>> newVolumes = new ArrayList<>();
                         for (NvmeVlmData<Resource> nvmeVlmData : nvmeRscData.getVlmLayerObjects().values())
                         {
-                            if (((Volume) nvmeVlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.DELETE))
+                            if (((Volume) nvmeVlmData.getVolume()).getFlags()
+                                .isSomeSet(
+                                    sysCtx,
+                                    Volume.Flags.DELETE,
+                                    Volume.Flags.CLONING
+                                ))
                             {
                                 if (nvmeRscData.isSpdk())
                                 {

@@ -236,7 +236,12 @@ public class LuksLayer implements DeviceLayer
             for (LuksVlmData<Resource> vlmData : luksRscData.getVlmLayerObjects().values())
             {
                 boolean deleteVlm = deleteRsc ||
-                    ((Volume) vlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.DELETE);
+                    ((Volume) vlmData.getVolume()).getFlags()
+                        .isSomeSet(
+                            sysCtx,
+                            Volume.Flags.DELETE,
+                            Volume.Flags.CLONING
+                        );
                 if (deleteVlm || deactivateRsc)
                 {
                     String identifier = getIdentifier(vlmData);
@@ -293,7 +298,12 @@ public class LuksLayer implements DeviceLayer
             for (LuksVlmData<Resource> vlmData : luksRscData.getVlmLayerObjects().values())
             {
                 boolean deleteVlm = deleteRsc ||
-                    ((Volume) vlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.DELETE);
+                    ((Volume) vlmData.getVolume()).getFlags()
+                        .isSomeSet(
+                            sysCtx,
+                            Volume.Flags.DELETE,
+                            Volume.Flags.CLONING
+                        );
                 if (!deleteVlm && !deactivateRsc)
                 {
                     String identifier = getIdentifier(vlmData);

@@ -253,19 +253,22 @@ public class CacheLayer implements DeviceLayer
     {
         CacheRscData<Resource> rscData = (CacheRscData<Resource>) rscLayerDataRef;
         StateFlags<Flags> rscFlags = rscData.getAbsResource().getStateFlags();
-        boolean deleteFlagSet = rscFlags.isSet(storDriverAccCtx, Resource.Flags.DELETE) ||
-            rscFlags.isSet(storDriverAccCtx, Resource.Flags.INACTIVE);
+        boolean shouldRscExist = rscFlags.isUnset(
+            storDriverAccCtx,
+            Resource.Flags.DELETE,
+            Resource.Flags.INACTIVE
+        );
         for (CacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
-            boolean vlmDeleteFlagSet = ((Volume) vlmData.getVolume()).getFlags().isSet(
+            boolean shouldVlmExist = ((Volume) vlmData.getVolume()).getFlags().isUnset(
                 storDriverAccCtx,
-                Volume.Flags.DELETE
-            );
-            boolean vlmDfnDeleteFlagSet = vlmData.getVolume().getVolumeDefinition().getFlags().isSet(
+                Volume.Flags.DELETE,
+                Volume.Flags.CLONING
+            ) && vlmData.getVolume().getVolumeDefinition().getFlags().isUnset(
                 storDriverAccCtx,
                 VolumeDefinition.Flags.DELETE
             );
-            if (deleteFlagSet || vlmDeleteFlagSet || vlmDfnDeleteFlagSet)
+            if (!shouldRscExist || !shouldVlmExist)
             {
                 if (vlmData.exists())
                 {
@@ -315,20 +318,20 @@ public class CacheLayer implements DeviceLayer
             );
         }
 
-        if (!deleteFlagSet)
+        if (shouldRscExist)
         {
             for (CacheVlmData<Resource> vlmData : rscData.getVlmLayerObjects().values())
             {
                 Volume vlm = (Volume) vlmData.getVolume();
-                boolean vlmDeleteFlagSet = vlm.getFlags().isSet(
+                boolean shouldVlmExist = vlm.getFlags().isUnset(
                     storDriverAccCtx,
-                    Volume.Flags.DELETE
-                );
-                boolean vlmDfnDeleteFlagSet = vlm.getVolumeDefinition().getFlags().isSet(
+                    Volume.Flags.DELETE,
+                    Volume.Flags.CLONING
+                ) && vlm.getVolumeDefinition().getFlags().isUnset(
                     storDriverAccCtx,
                     VolumeDefinition.Flags.DELETE
                 );
-                if (!vlmDeleteFlagSet && !vlmDfnDeleteFlagSet)
+                if (shouldVlmExist)
                 {
                     PriorityProps prioProps;
                     {
