@@ -1270,10 +1270,13 @@ public class CtrlBackupCreateApiCallHandler
                     snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
                     ctrlTransactionHelper.commit();
                     cleanupFlux = ctrlSnapShipAbortHandler
-                        .abortBackupShippingPrivileged(snapDfn)
+                        .abortBackupShippingPrivileged(snapDfn, false)
                         .concatWith(
                             backupHelper.startStltCleanup(
-                                peerProvider.get(), rscNameRef, snapNameRef, peerProvider.get().getNode().getName()
+                                peerProvider.get(),
+                                rscNameRef,
+                                snapNameRef,
+                                peerProvider.get().getNode().getName()
                             )
                         );
                     Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);

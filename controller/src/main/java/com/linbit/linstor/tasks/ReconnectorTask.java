@@ -167,7 +167,7 @@ public class ReconnectorTask implements Task
              */
             if (!node.isDeleted())
             {
-                snapShipAbortHandler.abortAllShippingPrivileged(node)
+                snapShipAbortHandler.abortAllShippingPrivileged(node, true)
                     .subscriberContext(
                         Context.of(
                             ApiModule.API_CALL_NAME,
