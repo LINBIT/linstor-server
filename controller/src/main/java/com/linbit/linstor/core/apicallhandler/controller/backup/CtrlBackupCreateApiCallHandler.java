@@ -1768,7 +1768,14 @@ public class CtrlBackupCreateApiCallHandler
                 }
                 else
                 {
-                    ret = Flux.just(resp.responses);
+                    if (resp.responses != null)
+                    {
+                        ret = Flux.just(resp.responses);
+                    }
+                    else
+                    {
+                        ret = Flux.empty();
+                    }
                 }
             }
             if (!node.equals(l2lNodeForShipping) && nextItem.hasNext())
@@ -1843,21 +1850,19 @@ public class CtrlBackupCreateApiCallHandler
         IteratorFromNodeQueue(Node nodeRef)
         {
             node = nodeRef;
-
         }
 
         @Override
-        public boolean hasNext()
+        public boolean hasNext() throws AccessDeniedException
         {
-            return backupInfoMgr.hasNodeQueuedSnaps(node);
+            return backupInfoMgr.getNextFromQueue(peerAccCtx.get(), node, false) != null;
         }
 
         @Override
         public QueueItem next() throws AccessDeniedException
         {
-            return backupInfoMgr.getNextFromQueue(peerAccCtx.get(), node);
+            return backupInfoMgr.getNextFromQueue(peerAccCtx.get(), node, true);
         }
-
     }
 
     private class IteratorFromSingleItem implements ExceptionThrowingIterator<QueueItem, AccessDeniedException>
@@ -1886,6 +1891,5 @@ public class CtrlBackupCreateApiCallHandler
             }
             return ret;
         }
-
     }
 }

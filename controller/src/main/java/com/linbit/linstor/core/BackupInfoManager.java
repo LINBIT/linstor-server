@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 @Singleton
@@ -536,7 +537,7 @@ public class BackupInfoManager
      * Return the next snapDfn from the queue of the given node and remove it from all queues it was in (including the
      * given node's)
      */
-    public QueueItem getNextFromQueue(AccessContext accCtx, Node node) throws AccessDeniedException
+    public QueueItem getNextFromQueue(AccessContext accCtx, Node node, boolean consume) throws AccessDeniedException
     {
         QueueItem ret = null;
         synchronized (uploadQueues)
@@ -556,7 +557,7 @@ public class BackupInfoManager
                         ret = next;
                     }
                 }
-                if (ret != null)
+                if (ret != null && consume)
                 {
                     // make sure this snapDfn gets removed from all queues so that the shipping is only started once
                     uploadQueues.removeValue(ret);
@@ -681,7 +682,7 @@ public class BackupInfoManager
              * has yet to start shipping, whereas the snaps we are looking for have the snap that just finished shipping
              * as their prevSnap
              */
-            Map<QueueItem, TreeSet<Node>> ret = new HashMap<>();
+            Map<QueueItem, TreeSet<Node>> ret = new TreeMap<>();
             for (Entry<QueueItem, Set<Node>> entry : uploadQueues.entrySetInverted())
             {
                 QueueItem item = entry.getKey();
