@@ -408,7 +408,7 @@ public class LvmThinProvider extends LvmProvider
         {
             throw new StorageException("Thin pool \'" + thinPool + "\' does not exist.");
         }
-        return new SpaceInfo(capacity, freeSpace);
+        return SpaceInfo.buildOrThrowOnError(capacity, freeSpace, storPool);
     }
 
     @Override

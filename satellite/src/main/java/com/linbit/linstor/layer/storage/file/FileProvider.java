@@ -631,7 +631,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         Path dir = getStorageDirectory(storPool);
         long capacity = FileProviderUtils.getPoolCapacity(extCmdFactory.create(), dir);
         long freeSpace = FileProviderUtils.getFreeSpace(extCmdFactory.create(), dir);
-        return new SpaceInfo(capacity, freeSpace);
+        return SpaceInfo.buildOrThrowOnError(capacity, freeSpace, storPool);
     }
 
     @Override

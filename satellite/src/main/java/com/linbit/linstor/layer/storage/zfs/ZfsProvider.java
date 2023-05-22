@@ -606,7 +606,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             Collections.singleton(zPool)
         ).get(zPool);
 
-        return new SpaceInfo(capacity, freeSpace);
+        return SpaceInfo.buildOrThrowOnError(capacity, freeSpace, storPool);
     }
 
     @Override

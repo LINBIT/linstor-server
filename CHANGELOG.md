@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - SOS-Report has now a parent directory in the tgz file
 - SharedSPName have now a less strict name checking
+- Improved error handling with broken storage pools
 
 ### Fixed
 

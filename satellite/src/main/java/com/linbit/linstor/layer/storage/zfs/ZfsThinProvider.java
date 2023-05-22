@@ -150,6 +150,6 @@ public class ZfsThinProvider extends ZfsProvider
             Collections.singleton(zPool)
         ).get(zPool).usableSize;
 
-        return new SpaceInfo(capacity, freeSpace);
+        return SpaceInfo.buildOrThrowOnError(capacity, freeSpace, storPool);
     }
 }

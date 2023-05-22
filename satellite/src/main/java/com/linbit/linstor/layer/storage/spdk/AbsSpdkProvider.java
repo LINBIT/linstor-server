@@ -418,7 +418,7 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
             Collections.singleton(vg)
         ).get(vg);
 
-        return new SpaceInfo(capacity, freespace);
+        return SpaceInfo.buildOrThrowOnError(capacity, freespace, storPool);
     }
 
     @Override

@@ -657,7 +657,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
             extCmdFactory,
             Collections.singleton(vg)
         ).get(vg);
-        return new SpaceInfo(capacity, freespace);
+        return SpaceInfo.buildOrThrowOnError(capacity, freespace, storPool);
     }
 
     /*

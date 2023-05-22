@@ -30,11 +30,6 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
-
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -47,6 +42,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
+import reactor.util.function.Tuples;
 
 @Singleton
 public class FreeCapacityFetcherProto implements FreeCapacityFetcher
