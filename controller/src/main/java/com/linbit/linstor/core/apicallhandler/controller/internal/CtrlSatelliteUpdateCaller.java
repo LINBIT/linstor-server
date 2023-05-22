@@ -483,6 +483,17 @@ public class CtrlSatelliteUpdateCaller
         );
     }
 
+    public Flux<ApiCallRc> updateSatellitesConf()
+    {
+        return Flux.merge(
+            updateAllSatellites(
+                InternalApiConsts.API_CHANGED_CONTROLLER,
+                internalComSerializer.headerlessBuilder()
+                    .build()
+            ).map(Tuple2::getT2)
+        );
+    }
+
     public Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateAllSatellites(String apiChangedNodeRef, byte[] message)
     {
         List<Tuple2<NodeName, Flux<ApiCallRc>>> responses = new ArrayList<>();

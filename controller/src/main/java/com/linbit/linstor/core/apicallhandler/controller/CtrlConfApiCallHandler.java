@@ -361,21 +361,11 @@ public class CtrlConfApiCallHandler
         }
 
         transMgrProvider.get().commit();
+
+        Flux<ApiCallRc> updSatellites = Flux.empty();
         if (notifyStlts)
         {
-            try
-            {
-                updateSatelliteConf();
-            }
-            catch (AccessDeniedException accExc)
-            {
-                throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
-                    ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
-                    ResponseUtils.getAccDeniedMsg(
-                        peerAccCtx.get(),
-                        "set a controller config property"
-                )));
-            }
+            updSatellites = ctrlSatelliteUpdateCaller.updateSatellitesConf();
         }
 
         String autoDiskfulKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_DISKFUL;
@@ -416,6 +406,7 @@ public class CtrlConfApiCallHandler
         }
 
         return Flux.<ApiCallRc>just(apiCallRc)
+            .concatWith(updSatellites)
             .concatWith(evictionFlux)
             .concatWith(autoSnapFlux)
             .concatWith(fluxUpdRscDfns)

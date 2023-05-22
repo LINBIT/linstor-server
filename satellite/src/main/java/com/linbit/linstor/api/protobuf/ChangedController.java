@@ -1,7 +1,9 @@
 package com.linbit.linstor.api.protobuf;
 
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallReactive;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.apicallhandler.ResponseSerializer;
 
@@ -39,6 +41,7 @@ public class ChangedController implements ApiCallReactive
     {
         return deviceManager.getUpdateTracker()
             .updateController()
+            .concatWith(Flux.just(ApiCallRcImpl.singleApiCallRc(ApiConsts.MASK_INFO, "Controller properties applied")))
             .transform(responseSerializer::transform);
     }
 }
