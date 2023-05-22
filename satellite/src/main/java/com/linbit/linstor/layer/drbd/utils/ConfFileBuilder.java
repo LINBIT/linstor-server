@@ -236,7 +236,7 @@ public class ConfFileBuilder
             // Create local network configuration
             {
                 appendLine("");
-                appendLine("on %s", localRsc.getNode().getProps(accCtx).getPropWithDefault(
+                appendLine("on \"%s\"", localRsc.getNode().getProps(accCtx).getPropWithDefault(
                     InternalApiConsts.NODE_UNAME,
                     localRsc.getNode().getName().displayValue)
                 );
@@ -257,7 +257,7 @@ public class ConfFileBuilder
                 if (peerRsc.getStateFlags().isUnset(accCtx, Resource.Flags.DELETE))
                 {
                     appendLine("");
-                    appendLine("on %s", peerRsc.getNode().getProps(accCtx)
+                    appendLine("on \"%s\"", peerRsc.getNode().getProps(accCtx)
                         .getPropWithDefault(
                             InternalApiConsts.NODE_UNAME,
                             peerRsc.getNode().getName().displayValue)
@@ -553,7 +553,7 @@ public class ConfFileBuilder
 
         if (rscConn != null && rscConn.getStateFlags().isSet(accCtx, ResourceConnection.Flags.LOCAL_DRBD_PROXY))
         {
-            appendLine("host %s address 127.0.0.1:%d via proxy on %s", hostName, port, hostName);
+            appendLine("host \"%s\" address 127.0.0.1:%d via proxy on %s", hostName, port, hostName);
             try (Section ignore = new Section())
             {
                 appendLine("inside 127.0.0.2:%d;", port);
@@ -562,7 +562,7 @@ public class ConfFileBuilder
         }
         else
         {
-            appendLine("host %s address %s;", hostName, outsideAddress);
+            appendLine("host \"%s\" address %s;", hostName, outsideAddress);
         }
     }
 
