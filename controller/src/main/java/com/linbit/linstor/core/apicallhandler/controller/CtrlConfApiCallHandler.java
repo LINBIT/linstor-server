@@ -690,14 +690,22 @@ public class CtrlConfApiCallHandler
         return changed;
     }
 
-    private ApiCallRc updateRscDfns()
+    /**
+     * Trigger update auto-verify-algorithm for all resource definitions.
+     * This is called on global enable/disable operations.
+     * @return Pair of ApiCallRc and resources that got updated.
+     */
+    private Pair<ApiCallRc, Set<Resource>> updateRscDfns()
     {
+        final Set<Resource> touchedResources = new HashSet<>();
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         for (ResourceDefinition rscDfn : rscDfnMap.values())
         {
-            apiCallRc.addEntries(ctrlRscDfnAutoVerifyAlgoHelper.updateVerifyAlgorithm(rscDfn));
+            Pair<ApiCallRc, Set<Resource>> result = ctrlRscDfnAutoVerifyAlgoHelper.updateVerifyAlgorithm(rscDfn);
+            apiCallRc.addEntries(result.objA);
+            touchedResources.addAll(result.objB);
         }
-        return apiCallRc;
+        return new Pair<>(apiCallRc, touchedResources);
     }
 
     public Triple<ApiCallRc, Boolean, Set<Resource>> setProp(
@@ -786,6 +794,7 @@ public class CtrlConfApiCallHandler
                             updateRscDfns();
                             break;
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER:
+                        {
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             Pair<ApiCallRc, Set<Resource>> result;
                             if (normalized != null && normalized.equalsIgnoreCase("true"))
@@ -799,10 +808,20 @@ public class CtrlConfApiCallHandler
                             apiCallRc.addEntries(result.objA);
                             changedRscs.addAll(result.objB);
                             notifyStlts = true;
+                        }
+                            break;
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO:
+                        {
+                            setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
+                            // also set on satellite, so conffile builder can ignore if disabled
+                            setStltProp(peerAccCtx.get(), fullKey, normalized, propChangedListener);
+                            Pair<ApiCallRc, Set<Resource>> result = updateRscDfns();
+                            apiCallRc.addEntries(result.objA);
+                            // ignore touched resources, as we disable auto-verify-algo by conf file builder global prop
+                            notifyStlts = true;
+                        }
                             break;
                         case ApiConsts.KEY_UPDATE_CACHE_INTERVAL:
-                            // fall-through
-                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO:
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION:
                             // fall-through
@@ -1319,9 +1338,18 @@ public class CtrlConfApiCallHandler
                             snapShipPortPool.reloadRange();
                             break;
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER:
+                        {
                             Pair<ApiCallRc, Set<Resource>> result = ctrlResyncAfterHelper.manage();
                             apiCallRc.addEntries(result.objA);
                             changedRscs.addAll(result.objB);
+                        }
+                            break;
+                        case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO:
+                        {
+                            Pair<ApiCallRc, Set<Resource>> result = updateRscDfns();
+                            apiCallRc.addEntries(result.objA);
+                            changedRscs.addAll(result.objB);
+                        }
                             break;
                         // TODO: check for other properties
                         default:

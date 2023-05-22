@@ -10,6 +10,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -22,14 +23,18 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Singleton
@@ -54,7 +59,7 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
     public void manage(CtrlRscAutoHelper.AutoHelperContext ctx)
     {
         ctx.responses.addEntries(checkVerifyAlgorithm(ctx.rscDfn));
-        ctx.responses.addEntries(updateVerifyAlgorithm(ctx.rscDfn));
+        ctx.responses.addEntries(updateVerifyAlgorithm(ctx.rscDfn).objA);
     }
 
     private Map<String, List<ProcCryptoEntry>> getCryptoEntryMap(ResourceDefinition rscDfn)
@@ -135,9 +140,10 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
      * @throws ApiDatabaseException if setProp fails
      * @throws ApiAccessDeniedException if apiCtx doesn't have access to resource definition
      */
-    public ApiCallRc updateVerifyAlgorithm(ResourceDefinition rscDfn)
+    public Pair<ApiCallRc, Set<Resource>> updateVerifyAlgorithm(ResourceDefinition rscDfn)
     {
         final ApiCallRcImpl rc = new ApiCallRcImpl();
+        final Set<Resource> touchedResources = new HashSet<>();
 
         final AccessContext peerCtx = peerCtxProvider.get();
         try
@@ -190,6 +196,8 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                             commonHashAlgo.getDriver(),
                             ApiConsts.NAMESPC_DRBD_OPTIONS
                         );
+                        touchedResources.addAll(rscDfn.streamResource(
+                            peerCtxProvider.get()).collect(Collectors.toList()));
                         rc.addEntry(
                             String.format("Updated %s DRBD auto verify algorithm to '%s'",
                                 rscDfn.getName(), commonHashAlgo.getDriver()),
@@ -204,6 +212,20 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                     errorReporter.logInfo(msg);
                     final Props rscDfnProps = rscDfn.getProps(peerCtx);
                     rscDfnProps.removeProp(InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS);
+                    touchedResources.addAll(rscDfn.streamResource(
+                        peerCtxProvider.get()).collect(Collectors.toList()));
+                }
+            }
+            else
+            {
+                // Auto Verify Algo is disabled, so delete the property if it is set
+                final Props rscDfnProps = rscDfn.getProps(peerCtx);
+                if (rscDfnProps.getProp(
+                        InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS) != null)
+                {
+                    rscDfnProps.removeProp(InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS);
+                    touchedResources.addAll(rscDfn.streamResource(
+                        peerCtxProvider.get()).collect(Collectors.toList()));
                 }
             }
         }
@@ -224,6 +246,6 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
             throw new ApiException(invValExc);
         }
 
-        return rc;
+        return new Pair<>(rc, touchedResources);
     }
 }
