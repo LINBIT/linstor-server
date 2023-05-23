@@ -1,3 +1,37 @@
+linstor-server (1.23.0-1) experimental; urgency=medium
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * docker: fix migration script
+  * drbd: quote hostnames
+
+  [ Joel Colledge ]
+  * containers: add basic administrative tools to the satellite image
+
+  [ Gabor Hernadi ]
+  * NodeCon: Fix NPE on stlt startup
+  * MkAvail: Fix incorrect deletion of TIE_BREAKER flags
+  * Sos,Log: Fixed logging and collecting logs
+  * K8s,Etcd: Synchronize commit and rollback
+  * ApiCall,offline: Fix offline handling
+  * SharedSPName: Allow digits as first character
+  * Rsc,Delete: Prevent possible NPE
+  * Rsc,del: Fix tiebreaker-takeover issue
+  * QueryAllSizeInfo: New API to run qsi for all existing RGs
+  * Qsi,Qasi: Add cache
+  * DevMgr: Reduce disc_gran retry count to 10
+  * Clone: Disable layers when cloning
+  * SpaceInfo: throw exception if sp is broken
+
+  [ Rene Peinthor ]
+  * sos-report: have a parent directory for the tar.gz file
+  * ctrlconfapih: wait for satellite property updates (flux)
+  * auto-verify-algo: remove/ignore auto-verify-algo prop if disabled
+
+  [ Johanna Kucera ]
+  * Transactions: prevent AccessToDeletedDataException in transMgr
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 23 May 2023 06:25:30 +0000
+
 linstor-server (1.22.1-1) experimental; urgency=medium
 
   [ Franciosi ]

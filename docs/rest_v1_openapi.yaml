@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.19.0
       - Added POST /v1/view/resource-groups/query-all-size-info
       - Added QueryAllSizeInfoRequest and QueryAllSizeInfoResponse objects
     * 1.18.0

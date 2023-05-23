@@ -1,5 +1,5 @@
 Name: linstor
-Version: 1.22.1
+Version: 1.23.0
 Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
@@ -144,6 +144,9 @@ test -f %{_bindir}/firewall-cmd && firewall-cmd --reload --quiet || :
 %systemd_preun linstor-satellite.service
 
 %changelog
+* Tue May 23 2023 Rene Peinthor <rene.peinthor@linbit.com> 1.23.0-1
+- New upstream release. Bug fixes
+
 * Thu Apr 27 2023 Rene Peinthor <rene.peinthor@linbit.com> 1.22.1-1
 - New upstream release. Bug fixes
 
