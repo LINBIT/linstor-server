@@ -24,8 +24,8 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
-import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
@@ -40,6 +40,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.exos.ExosData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -701,7 +702,19 @@ public class RscStorageLayerHelper extends
                 !areAllVolumeFlagsSetPrivileged(vlm, Volume.Flags.CLONING_FINISHED)
         ))
         {
-            changed |= setIgnoreReason(rscDataRef, IGNORE_REASON_RSC_CLONING, true, false, true);
+            changed |= setIgnoreReason(
+                rscDataRef,
+                IGNORE_REASON_RSC_CLONING,
+                true,
+                false, // does not matter, it should not be possible that anything exists below storage layer
+                rscData ->
+                /*
+                 * set ignore reason for all non-STORAGE rscData as well as for STORAGE data that have a rscSuffix
+                 * that should not be cloned
+                 */
+                !rscData.getLayerKind().equals(DeviceLayerKind.STORAGE) ||
+                    !RscLayerSuffixes.shouldSuffixBeCloned(rscData.getResourceNameSuffix())
+            );
         }
 
         if (!secObjs.areAllSet())

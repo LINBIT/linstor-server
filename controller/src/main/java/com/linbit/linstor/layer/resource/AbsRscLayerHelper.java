@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Predicate;
 
 public abstract class AbsRscLayerHelper<
     RSC_LO extends AbsRscLayerObject<Resource>,
@@ -331,6 +332,24 @@ public abstract class AbsRscLayerHelper<
     )
         throws DatabaseException
     {
+        return setIgnoreReason(
+            rscDataRef,
+            ignoreReasonRef,
+            goUpRef,
+            goDownRef,
+            skipSelfRef ? rscData -> rscData != rscDataRef : ignored -> true
+        );
+    }
+
+    protected boolean setIgnoreReason(
+        @Nullable AbsRscLayerObject<Resource> rscDataRef,
+        String ignoreReasonRef,
+        boolean goUpRef,
+        boolean goDownRef,
+        Predicate<AbsRscLayerObject<Resource>> setIgnoreReasonForRscDataPredicateRef
+    )
+        throws DatabaseException
+    {
         HashSet<AbsRscLayerObject<Resource>> visited = new HashSet<>();
         if (rscDataRef != null)
         {
@@ -357,7 +376,7 @@ public abstract class AbsRscLayerHelper<
         return setIgnoreReasonRec(
             rscDataRef,
             ignoreReasonRef,
-            skipSelfRef,
+            setIgnoreReasonForRscDataPredicateRef,
             visited
         );
     }
@@ -365,7 +384,7 @@ public abstract class AbsRscLayerHelper<
     private boolean setIgnoreReasonRec(
         AbsRscLayerObject<Resource> rscDataRef,
         String ignoreReasonRef,
-        boolean skipRef,
+        Predicate<AbsRscLayerObject<Resource>> setIgnoreReasonForRscDataPredicateRef,
         HashSet<AbsRscLayerObject<Resource>> visitedRef
     )
         throws DatabaseException
@@ -379,7 +398,8 @@ public abstract class AbsRscLayerHelper<
                 .getLayerHelperByKind(rscDataRef.getLayerKind());
             String reasonPreSet = rscDataRef.getIgnoreReason();
 
-            if (!skipRef)
+            boolean setIgnoreReasonForCurrent = setIgnoreReasonForRscDataPredicateRef.test(rscDataRef);
+            if (setIgnoreReasonForCurrent)
             {
                 changed |= layerHelperByKind.setIgnoreReasonImpl(rscDataRef, ignoreReasonRef);
             }
@@ -388,17 +408,17 @@ public abstract class AbsRscLayerHelper<
             changed |= setIgnoreReasonRec(
                 rscDataRef.getParent(),
                 ignoreReasonRef,
-                false, // only first might be skipped
+                setIgnoreReasonForRscDataPredicateRef,
                 visitedRef
             );
 
             String currentIgnoreReason = rscDataRef.getIgnoreReason();
 
             // we only need to process our children if the ignore reason has changed.
-            // however, since we are able to skip changing the ignore reason for the first rscData, we also have to
-            // process our children in that case.
+            // however, since we are able to skip changing the ignore reason for some rscData, we also have to
+            // process our children in those cases.
             boolean hasOwnIgnoreReasonChanged = !Objects.equals(reasonPreSet, currentIgnoreReason);
-            if (skipRef || hasOwnIgnoreReasonChanged)
+            if (!setIgnoreReasonForCurrent || hasOwnIgnoreReasonChanged)
             {
                 // if goDown was set to false, our children (if any) were added to visited set so we will
                 // come back here soon
@@ -407,7 +427,7 @@ public abstract class AbsRscLayerHelper<
                     changed |= setIgnoreReasonRec(
                         childRscData,
                         ignoreReasonRef,
-                        false, // only first might be skipped
+                        setIgnoreReasonForRscDataPredicateRef,
                         visitedRef
                     );
                 }
