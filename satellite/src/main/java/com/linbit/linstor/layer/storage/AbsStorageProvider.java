@@ -479,7 +479,9 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private boolean isCloneVolume(LAYER_DATA vlmData) throws AccessDeniedException
     {
         final Resource rsc = vlmData.getRscLayerObject().getAbsResource();
-        return rsc.getVolume(vlmData.getVlmNr()).getFlags().isSet(storDriverAccCtx, Volume.Flags.CLONING_START);
+        StateFlags<Volume.Flags> vlmFlags = rsc.getVolume(vlmData.getVlmNr()).getFlags();
+        return vlmFlags.isSet(storDriverAccCtx, Volume.Flags.CLONING_START) &&
+            !vlmFlags.isSet(storDriverAccCtx, Volume.Flags.CLONING_FINISHED);
     }
 
     protected boolean isCloning(LAYER_DATA vlmData) throws AccessDeniedException
@@ -1565,7 +1567,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         LAYER_DATA vlmData = (LAYER_DATA) vlmDataRef;
         boolean isVlmActive = !vlmData.getVolume().getAbsResource().getStateFlags()
-            .isSet(storDriverAccCtx, Resource.Flags.INACTIVE);
+            .isSet(storDriverAccCtx, Resource.Flags.INACTIVE) &&
+            ((Volume) vlmData.getVolume()).getFlags().isUnset(storDriverAccCtx, Volume.Flags.CLONING) &&
+            vlmData.exists() &&
+            vlmData.getDevicePath() != null;
+
         // if a volume is not active, there is no devicePath we can run a 'blockdev --getsize64' on...
         if (isVlmActive)
         {

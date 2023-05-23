@@ -12,7 +12,22 @@ public class StltProviderUtils
         long size;
         if (vlmData.exists())
         {
-            size = getAllocatedSize(vlmData.getDevicePath(), extCmd);
+            String devicePath = vlmData.getDevicePath();
+            if (devicePath != null)
+            {
+                size = getAllocatedSize(devicePath, extCmd);
+            }
+            else
+            {
+                throw new StorageException(
+                    "DevicePath does not exist. VlmData: " + vlmData.getVolume() + ", suffix: " +
+                        vlmData.getRscLayerObject().getResourceNameSuffix(),
+                    "Device path is empty.",
+                    "The volume could not be found on the system.",
+                    null,
+                    null
+                );
+            }
         }
         else
         {

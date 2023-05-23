@@ -29,6 +29,7 @@ public final class RscLayerSuffixes
     public static final String SUFFIX_BCACHE_CACHE = ".bcache";
 
     private static final List<String> SUFFIXES_TO_SHIP;
+    private static final List<String> SUFFIXES_TO_CLONE;
 
     static
     {
@@ -37,6 +38,17 @@ public final class RscLayerSuffixes
                 SUFFIX_DATA
                 /*
                  * Metadata does not need to be shipped since it will be recreated anyways
+                 */
+            )
+        );
+        SUFFIXES_TO_CLONE = Collections.unmodifiableList(
+            Arrays.asList(
+                SUFFIX_DATA,
+                SUFFIX_DRBD_META
+                /*
+                 * Cache, Writecache and BCache do not need to be cloned since cloning
+                 * suspend the topmost device before creating a snapshot. Suspending
+                 * a device includes flushing its content to the storage disk.
                  */
             )
         );
@@ -57,6 +69,11 @@ public final class RscLayerSuffixes
     public static boolean shouldSuffixBeShipped(String rscNameSuffixRef)
     {
         return SUFFIXES_TO_SHIP.contains(rscNameSuffixRef);
+    }
+
+    public static boolean shouldSuffixBeCloned(String rscNameSuffixRef)
+    {
+        return SUFFIXES_TO_CLONE.contains(rscNameSuffixRef);
     }
 
     public static DeviceLayerKind getLayerKindFromLastSuffix(String rscNameSuffixRef)
