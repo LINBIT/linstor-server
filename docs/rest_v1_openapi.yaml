@@ -22,7 +22,7 @@ info:
     Changelog:
 
     * 1.19.0
-      - Added POST /v1/view/resource-groups/query-all-size-info
+      - Added POST /v1/queries/resource-groups/query-all-size-info
       - Added QueryAllSizeInfoRequest and QueryAllSizeInfoResponse objects
     * 1.18.0
       - Added POST /v1/action/snapshot/multi as well as CreateMultiSnapshotRequest and CreateMultiSnapshotResponse objects
@@ -6118,7 +6118,29 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
-
+  /v1/queries/resource-groups/query-all-size-info:
+    post:
+      tags:
+        - developers
+      operationId: QryAllSizeInfo
+      summary: Queries size information from all available resource groups
+      description: |
+        Unlike /v1/resource-groups/{resource_group}/query-size-info, this API
+        returns the QSI result for all currently available resource groups
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryAllSizeInfoRequest'
+      responses:
+        '200':
+          description: map of QSI result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryAllSizeInfoResponse'
+        '500':
+          $ref: '#/components/responses/OperationFailed'
 components:
   parameters:
     Resource:
