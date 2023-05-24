@@ -132,6 +132,7 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
         return discGran.get();
     }
 
+    @Override
     public void setDiscGran(long discGranRef) throws DatabaseException
     {
         discGran.set(discGranRef);
@@ -175,10 +176,29 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
         }
         else
         {
-            throw new ImplementationError(
-                "Unknown (other volume) AbsVolume class: " + otherVolume.getClass() +
-                    " (local volume: " + vlm.getClass() + ")"
-            );
+            // we know that one of us is a Volume and the other a SnapshotVolume, or null
+            if (vlm == null || otherVolume == null)
+            {
+                if (vlm == null && otherVolume == null)
+                {
+                    throw new ImplementationError("Both volumes are null");
+                }
+                if (vlm == null)
+                {
+                    throw new ImplementationError("Local volume is null, other is: " + otherVolume.getClass());
+                }
+                throw new ImplementationError("Other volume is null, local is: " + vlm.getClass());
+            }
+
+            // sort volumes before snapshotVolumes
+            if (vlm instanceof Volume)
+            {
+                compareTo = -1;
+            }
+            else
+            {
+                compareTo = 1;
+            }
         }
         if (compareTo == 0)
         {

@@ -323,7 +323,14 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
         {
             if (snapName != null)
             {
-                cmp = snapName.compareTo(oRef.snapName);
+                if (oRef.snapName == null)
+                {
+                    cmp = -1;
+                }
+                else
+                {
+                    cmp = snapName.compareTo(oRef.snapName);
+                }
             }
             else
             {
