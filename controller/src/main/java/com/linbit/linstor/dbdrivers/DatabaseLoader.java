@@ -723,6 +723,17 @@ public class DatabaseLoader implements DatabaseDriver
             }
         );
 
+        /**
+         * This needs to be done AFTER we have already loaded all layerRscData (for both, Resources and Snapshots).
+         * Otherwise, if only the layerRscData for Resources are loaded, loading the layerVlmData for Snapshots would
+         * not find their corresponding layerRscData
+         */
+        for (ControllerLayerRscDatabaseDriver driver : layerDriversMap.values())
+        {
+
+            driver.loadAllLayerVlmData();
+        }
+
         for (ControllerLayerRscDatabaseDriver driver : layerDriversMap.values())
         {
             driver.clearLoadingCaches();
@@ -882,11 +893,6 @@ public class DatabaseLoader implements DatabaseDriver
                     parentIds.add(rlo.getRscLayerId());
                 }
             }
-        }
-
-        for (ControllerLayerRscDatabaseDriver driver : layerDriversMap.values())
-        {
-            driver.loadAllLayerVlmData();
         }
 
         return resourcesWithLayerData;
