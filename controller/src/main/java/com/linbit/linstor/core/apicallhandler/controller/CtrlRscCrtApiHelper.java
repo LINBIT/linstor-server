@@ -739,9 +739,22 @@ public class CtrlRscCrtApiHelper
             Map<Resource, Integer> onlineNodeIds = new HashMap<>();
             try
             {
-                for (Resource rsc : deployedResources)
+                // deployedResources only contains the resources that were just created in the current API call, not the
+                // already existing ones
+                Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
+                while (rscIt.hasNext())
                 {
-                    if (rsc.getNode().getPeer(apiCtx).getConnectionStatus().equals(ConnectionStatus.ONLINE))
+                    Resource rsc = rscIt.next();
+
+                    /*
+                     * do NOT wait for resources that are
+                     * * not online
+                     * * diskless DRBD
+                     * * not an active DRBD (i.e. nvme target, inactive, etc...)
+                     */
+                    if (rsc.getNode().getPeer(apiCtx).getConnectionStatus().equals(ConnectionStatus.ONLINE) &&
+                        !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) &&
+                        containsDrbdLayerData(rsc))
                     {
                         Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
                             rsc.getLayerData(apiCtx),
@@ -767,41 +780,48 @@ public class CtrlRscCrtApiHelper
             }
 
             List<Mono<ApiCallRc>> resourceReadyResponses = new ArrayList<>();
-            for (Resource rsc : deployedResources)
+            if (rscDfn.getResourceCount() > 1)
             {
-                if (
-                    AccessUtils.execPrivileged(
-                        () -> DrbdLayerUtils.isAnyDrbdResourceExpected(apiCtx, rsc)
-                    )
-                )
-                {
-                    NodeName nodeName = rsc.getNode().getName();
-                    if (containsDrbdLayerData(rsc))
-                    {
-                        Map<Resource, Integer> onlinePeerdNodeIds = new HashMap<>(onlineNodeIds);
-                        onlinePeerdNodeIds.remove(rsc);
+                // if we are the first resource, there is no other DRBD peer to connect.
 
-                        resourceReadyResponses.add(
-                            eventWaiter
-                                .waitForStream(
-                                    resourceStateEvent.get(),
-                                    // TODO if anything is allowed above DRBD, this resource-name must be adjusted
-                                    ObjectIdentifier.resource(nodeName, rscName))
-                                .skipUntil(rscState -> rscState.isReady(onlinePeerdNodeIds.values()))
-                                .timeout(Duration.ofMillis(DFLT_RSC_READY_WAIT_TIME_IN_MS))
-                                .next()
-                                .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
-                                .onErrorResume(
-                                    PeerNotConnectedException.class, ignored -> Mono.just(
-                                        ApiCallRcImpl.singletonApiCallRc(
-                                            ResponseUtils.makeNotConnectedWarning(nodeName)
+                for (Resource rsc : deployedResources)
+                {
+                    if (AccessUtils.execPrivileged(
+                        () -> DrbdLayerUtils.isAnyDrbdResourceExpected(apiCtx, rsc)
+                    ))
+                    {
+                        NodeName nodeName = rsc.getNode().getName();
+                        if (containsDrbdLayerData(rsc))
+                        {
+                            Map<Resource, Integer> onlinePeerdNodeIds = new HashMap<>(onlineNodeIds);
+                            onlinePeerdNodeIds.remove(rsc);
+
+                            resourceReadyResponses.add(
+                                eventWaiter
+                                    .waitForStream(
+                                        resourceStateEvent.get(),
+                                        // TODO if anything is allowed above DRBD, this resource-name must be adjusted
+                                        ObjectIdentifier.resource(nodeName, rscName)
+                                    )
+                                    .skipUntil(rscState -> rscState.isReady(onlinePeerdNodeIds.values()))
+                                    .timeout(Duration.ofMillis(DFLT_RSC_READY_WAIT_TIME_IN_MS))
+                                    .next()
+                                    .thenReturn(makeResourceReadyMessage(context, nodeName, rscName))
+                                    .onErrorResume(
+                                        PeerNotConnectedException.class,
+                                        ignored -> Mono.just(
+                                            ApiCallRcImpl.singletonApiCallRc(
+                                                ResponseUtils.makeNotConnectedWarning(nodeName)
+                                            )
+                                            )
                                         )
-                                    ))
-                                .onErrorResume(TimeoutException.class, te -> makeRdyTimeoutApiRc(nodeName))
-                        );
+                                    .onErrorResume(TimeoutException.class, te -> makeRdyTimeoutApiRc(nodeName))
+                            );
+                        }
                     }
                 }
             }
+
             readyResponses = Flux.merge(resourceReadyResponses);
         }
         return readyResponses;
@@ -1271,13 +1291,20 @@ public class CtrlRscCrtApiHelper
 
     private boolean containsDrbdLayerData(Resource rsc)
     {
-        List<AbsRscLayerObject<Resource>> drbdLayerData;
+        boolean ret = false;
         try
         {
-            drbdLayerData = LayerUtils.getChildLayerDataByKind(
+            List<AbsRscLayerObject<Resource>> drbdLayerDataSet = LayerUtils.getChildLayerDataByKind(
                 rsc.getLayerData(peerAccCtx.get()),
                 DeviceLayerKind.DRBD
             );
+            for (AbsRscLayerObject<Resource> drbdData : drbdLayerDataSet)
+            {
+                if (!drbdData.hasIgnoreReason())
+                {
+                    ret = true;
+                }
+            }
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -1287,7 +1314,7 @@ public class CtrlRscCrtApiHelper
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
-        return !drbdLayerData.isEmpty();
+        return ret;
     }
 
     private ApiCallRc makeResourceReadyMessage(
