@@ -20,7 +20,6 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -398,19 +397,19 @@ public class CtrlBackupApiHelper
      * by the stlt itself since that might be too early and therefore trigger a second shipping by an
      * unrelated update
      */
-    public Flux<ApiCallRc> startStltCleanup(Peer peer, String rscNameRef, String snapNameRef, NodeName nodeNameRef)
+    public Flux<ApiCallRc> startStltCleanup(Peer peer, String rscNameRef, String snapNameRef)
     {
         byte[] msg = ctrlStltSerializer.headerlessBuilder().notifyBackupShippingFinished(rscNameRef, snapNameRef)
             .build();
         return peer.apiCall(InternalApiConsts.API_NOTIFY_BACKUP_SHIPPING_FINISHED, msg).map(
             inputStream -> CtrlSatelliteUpdateCaller.deserializeApiCallRc(
-                nodeNameRef,
+                peer.getNode().getName(),
                 inputStream
             )
         );
     }
 
-    Flux<ApiCallRc> cleanupStltRemote(StltRemote remote)
+    public Flux<ApiCallRc> cleanupStltRemote(StltRemote remote)
     {
         return scopeRunner
             .fluxInTransactionalScope(

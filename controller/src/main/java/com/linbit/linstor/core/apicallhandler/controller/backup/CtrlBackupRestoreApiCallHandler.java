@@ -1644,8 +1644,7 @@ public class CtrlBackupRestoreApiCallHandler
                     backupHelper.startStltCleanup(
                         peerProvider.get(),
                         rscNameRef,
-                        snapNameRef,
-                        nodeName
+                        snapNameRef
                     )
                 );
             }

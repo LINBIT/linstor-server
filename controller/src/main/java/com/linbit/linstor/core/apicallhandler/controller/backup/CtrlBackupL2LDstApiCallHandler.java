@@ -452,10 +452,9 @@ public class CtrlBackupL2LDstApiCallHandler
                 stltRemote.setAllPorts(apiCtx, newPorts);
                 ctrlTransactionHelper.commit();
                 SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapName, true);
-                final NodeName nodeName = peerProvider.get().getNode().getName();
 
                 return ctrlSatelliteUpdateCaller.updateSatellites(stltRemote)
-                    .concatWith(backupHelper.startStltCleanup(peerProvider.get(), rscName, snapName, nodeName))
+                    .concatWith(backupHelper.startStltCleanup(peerProvider.get(), rscName, snapName))
                     .concatWith(
                         ctrlSatelliteUpdateCaller.updateSatellites(
                             snapDfn,

@@ -113,7 +113,7 @@ public class CtrlScheduledBackupsApiCallHandler
     /**
      * Makes sure the scheduled-shipping-task gets re-added correctly
      */
-    boolean rescheduleShipping(
+    public boolean rescheduleShipping(
         SnapshotDefinition snapDfn,
         NodeName nodeName,
         ResourceDefinition rscDfn,
@@ -151,7 +151,7 @@ public class CtrlScheduledBackupsApiCallHandler
     /**
      * Checks and if needed deletes snaps and backups as specified in the schedule
      */
-    Flux<ApiCallRc> checkScheduleKeep(ResourceDefinition rscDfn, Schedule schedule, AbsRemote remote)
+    public Flux<ApiCallRc> checkScheduleKeep(ResourceDefinition rscDfn, Schedule schedule, AbsRemote remote)
         throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
     {
         Flux<ApiCallRc> deleteFlux = Flux.empty();

@@ -365,7 +365,7 @@ public class CtrlBackupL2LSrcApiCallHandler
      * 3) create the stlt-remote</br>
      * also calls updateSatellites
      */
-    Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingData data)
+    public Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingData data)
     {
         StltRemote stltRemote = createStltRemote(
             stltRemoteFactory,
@@ -663,7 +663,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     @Singleton
-    static class BackupShippingRestClient
+    public static class BackupShippingRestClient
     {
         private final int OK = Response.Status.OK.getStatusCode();
         private final int NOT_FOUND = Response.Status.NOT_FOUND.getStatusCode();
@@ -887,20 +887,20 @@ public class CtrlBackupL2LSrcApiCallHandler
 
     public class BackupShippingData
     {
-        final String srcClusterId;
-        String srcNodeName;
+        public final String srcClusterId;
+        public String srcNodeName;
         private final String srcRscName;
         private final String srcBackupName;
         private final Date now;
-        Snapshot srcSnapshot;
+        public Snapshot srcSnapshot;
         private final LinstorRemote linstorRemote;
         private boolean useZstd;
         private boolean downloadOnly;
         private boolean allowIncremental;
 
         private BackupMetaDataPojo metaDataPojo;
-        final String dstRscName;
-        String dstNodeName;
+        public final String dstRscName;
+        public String dstNodeName;
         private String dstNetIfName;
         private String dstStorPool;
         private final Map<String, String> storPoolRename;
