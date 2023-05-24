@@ -333,11 +333,14 @@ public class CtrlStorPoolApiCallHandler
                 {
                     Resource rsc = vlmObj.getVolume().getAbsResource();
                     volListSb.append("\n   Node name: '")
-                         .append(rsc.getNode().getName().displayValue)
-                         .append("', resource name: '")
-                         .append(rsc.getResourceDefinition().getName().displayValue)
-                         .append("', volume number: ")
-                         .append(vlmObj.getVlmNr().value);
+                        .append(rsc.getNode().getName().displayValue)
+                        .append("', resource name: '")
+                        .append(rsc.getResourceDefinition().getName().displayValue)
+                        .append("', volume number: ")
+                        .append(vlmObj.getVlmNr().value)
+                        .append(", resource suffix: '")
+                        .append(vlmObj.getRscLayerObject().getResourceNameSuffix())
+                        .append("'");
                 }
                 for (VlmProviderObject<Snapshot> snapVlmObj : snapVlms)
                 {
@@ -349,7 +352,10 @@ public class CtrlStorPoolApiCallHandler
                         .append("', snapshot name: '")
                         .append(snap.getSnapshotDefinition().getName().displayValue)
                         .append("', volume number: ")
-                        .append(snapVlmObj.getVlmNr().value);
+                        .append(snapVlmObj.getVlmNr().value)
+                        .append(", resource suffix: '")
+                        .append(snapVlmObj.getRscLayerObject().getResourceNameSuffix())
+                        .append("'");
                 }
 
                 throw new ApiRcException(ApiCallRcImpl
