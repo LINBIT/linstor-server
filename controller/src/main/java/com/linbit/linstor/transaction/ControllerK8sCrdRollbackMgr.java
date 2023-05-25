@@ -184,6 +184,7 @@ public class ControllerK8sCrdRollbackMgr
         {
             // Reset resource version, otherwise we incur extra requests while solving conflicts
             gkr.getMetadata().setResourceVersion("");
+            gkr.getMetadata().setUid(null);
             gkrClient.createOrReplace(gkr);
         }
     }
