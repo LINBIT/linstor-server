@@ -22,8 +22,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiHelper.S3ObjectInfo;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
 import com.linbit.linstor.core.apicallhandler.controller.backup.nodefinder.BackupNodeFinder;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupShippingSentInternalCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupShippingSentInternalCallHandler.IteratorFromBackupNodeQueue;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler.IteratorFromBackupNodeQueue;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -101,7 +101,7 @@ public class CtrlBackupCreateApiCallHandler
     private final CtrlBackupApiHelper backupHelper;
     private final BackupNodeFinder backupNodeFinder;
     private final NodeRepository nodeRepo;
-    private final Provider<CtrlBackupShippingSentInternalCallHandler> shippingSentHandler;
+    private final Provider<CtrlBackupQueueInternalCallHandler> backupQueueHandler;
 
     @Inject
     public CtrlBackupCreateApiCallHandler(
@@ -121,7 +121,7 @@ public class CtrlBackupCreateApiCallHandler
         CtrlBackupApiHelper backupHelperRef,
         BackupNodeFinder backupNodeFinderRef,
         NodeRepository nodeRepoRef,
-        Provider<CtrlBackupShippingSentInternalCallHandler> shippingSentHandlerRef
+        Provider<CtrlBackupQueueInternalCallHandler> shippingSentHandlerRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -140,7 +140,7 @@ public class CtrlBackupCreateApiCallHandler
         backupHelper = backupHelperRef;
         backupNodeFinder = backupNodeFinderRef;
         nodeRepo = nodeRepoRef;
-        shippingSentHandler = shippingSentHandlerRef;
+        backupQueueHandler = shippingSentHandlerRef;
 
     }
 
@@ -617,7 +617,8 @@ public class CtrlBackupCreateApiCallHandler
         {
             if (getFreeShippingSlots(node) > 0)
             {
-                flux = shippingSentHandler.get().startMultipleQueuedShippings(
+                flux = backupQueueHandler.get()
+                    .startMultipleQueuedShippings(
                     node,
                     new IteratorFromBackupNodeQueue(node, backupInfoMgr, peerAccCtx.get())
                 );
@@ -696,7 +697,8 @@ public class CtrlBackupCreateApiCallHandler
                 if (getFreeShippingSlots(node) > 0)
                 {
                     flux = flux.concatWith(
-                        shippingSentHandler.get().startMultipleQueuedShippings(
+                        backupQueueHandler.get()
+                            .startMultipleQueuedShippings(
                             node,
                             new IteratorFromBackupNodeQueue(node, backupInfoMgr, peerAccCtx.get())
                         )
