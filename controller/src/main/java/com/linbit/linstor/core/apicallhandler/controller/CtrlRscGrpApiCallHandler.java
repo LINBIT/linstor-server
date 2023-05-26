@@ -30,6 +30,7 @@ import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -37,6 +38,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
@@ -116,6 +118,7 @@ public class CtrlRscGrpApiCallHandler
     private final ResponseConverter responseConverter;
     private final CtrlVlmGrpApiCallHandler ctrlVlmGrpApiCallHandler;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
+    private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final CtrlQueryMaxVlmSizeHelper qmvsHelper;
     private final CtrlQuerySizeInfoHelper qsiHelper;
@@ -144,6 +147,7 @@ public class CtrlRscGrpApiCallHandler
         ResponseConverter responseConverterRef,
         CtrlVlmGrpApiCallHandler ctrlVlmGrpApiCallHandlerRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlRscDfnApiCallHandler ctrlRscDfnApiCallHandlerRef,
         CtrlRscAutoPlaceApiCallHandler ctrlRscAutoPlaceApiCallHandlerRef,
         CtrlQueryMaxVlmSizeHelper qmvsHelperRef,
@@ -171,6 +175,7 @@ public class CtrlRscGrpApiCallHandler
         responseConverter = responseConverterRef;
         ctrlVlmGrpApiCallHandler = ctrlVlmGrpApiCallHandlerRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
         ctrlRscAutoPlaceApiCallHandler = ctrlRscAutoPlaceApiCallHandlerRef;
         qmvsHelper = qmvsHelperRef;
@@ -464,6 +469,7 @@ public class CtrlRscGrpApiCallHandler
     )
     {
         Flux<ApiCallRc> reRunAutoPlace = Flux.empty();
+        Flux<ApiCallRc> updateStlts = Flux.empty();
         ApiCallRcImpl apiCallRcs = new ApiCallRcImpl();
         boolean notifyStlts = false;
 
@@ -586,10 +592,15 @@ public class CtrlRscGrpApiCallHandler
             {
                 for (ResourceDefinition rscDfn : rscGrpData.getRscDfns(peerCtx))
                 {
-                    responseConverter.addWithDetail(
-                            apiCallRcs,
-                            context,
-                            ctrlSatelliteUpdater.updateSatellites(rscDfn)
+                    updateStlts = updateStlts.concatWith(
+                        ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
+                            .transform(
+                                updateResponses -> CtrlResponseUtils.combineResponses(
+                                    updateResponses,
+                                    rscDfn.getName(),
+                                    "Updated Resource definition {1} on {0}"
+                                )
+                            )
                     );
                 }
             }
@@ -600,7 +611,8 @@ public class CtrlRscGrpApiCallHandler
         }
 
         return Flux.<ApiCallRc>just(apiCallRcs)
-            .concatWith(reRunAutoPlace);
+            .concatWith(reRunAutoPlace)
+            .concatWith(updateStlts);
     }
 
     private Flux<ApiCallRc> handleChangedProperties(
