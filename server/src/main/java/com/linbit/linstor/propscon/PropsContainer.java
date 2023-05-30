@@ -12,7 +12,8 @@ import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver.PropsDbEntry;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.AbsTransactionObject;
 import com.linbit.linstor.transaction.TransactionObject;
@@ -89,7 +90,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     private Set<Map.Entry<String, String>> entrySetAccessor;
     private Collection<String> valuesCollectionAccessor;
 
-    protected final PropsConDatabaseDriver dbDriver;
+    protected final PropsDatabaseDriver dbDriver;
     protected Provider<TransactionMgr> transMgrProvider;
     private Map<String, String> cachedPropMap;
 
@@ -98,7 +99,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     PropsContainer(
         String key,
         PropsContainer parent,
-        PropsConDatabaseDriver dbDriverRef,
+        PropsDatabaseDriver dbDriverRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
         throws InvalidKeyException
@@ -245,15 +246,17 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * setProp("a", "value", "b/c") has the same effect as setProp("b/c/a", "value", null)
      *
      * @param namespace Acts as a prefix for {@param keys}
+     *
      * @return The old value or null if no entry was present
+     *
      * @throws InvalidKeyException if the key contains a path separator
      * @throws InvalidValueException if the value of an entry of {@param entryMap} is null
-     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
-     *                      a database operation
+     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs
+     *     during a database operation
      */
     @Override
     public String setProp(String key, String value, String namespace)
-            throws InvalidKeyException, InvalidValueException, DatabaseException
+        throws InvalidKeyException, InvalidValueException, DatabaseException
     {
         if (value == null)
         {
@@ -283,24 +286,16 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @return True if any property has been modified by this method, false otherwise
      */
     public boolean setAllProps(Map<? extends String, ? extends String> entryMap, String namespace)
-            throws InvalidKeyException, InvalidValueException, DatabaseException
+        throws InvalidKeyException, InvalidValueException, DatabaseException
     {
         boolean modified = false;
         for (Map.Entry<? extends String, ? extends String> entry : entryMap.entrySet())
         {
             String key = entry.getKey();
             String value = entry.getValue();
-            try
+            if (!value.equalsIgnoreCase(setProp(key, value, namespace)))
             {
-                if (!value.equalsIgnoreCase(setProp(key, value, namespace)))
-                {
-                    modified = true;
-                }
-            }
-            catch (InvalidKeyException | InvalidValueException exc)
-            {
-                rollbackImpl();
-                throw exc;
+                modified = true;
             }
         }
         return modified;
@@ -313,8 +308,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
      *
      * @param namespace Acts as a prefix for {@param keys}
      * @return The old value or null if no entry was present
-     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
-     *                      a database operation
+     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs
+     *     during a database operation
      */
     @Override
     public String removeProp(String key, String namespace) throws DatabaseException
@@ -350,8 +345,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @param selection Set of properties to be deleted
      * @param namespace Acts as a prefix for all keys of the map
      * @return True if any property has been modified by this method, false otherwise
-     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs during
-     *                      a database operation
+     * @throws DatabaseException if the namespace of an entry of {@param entryMap} does not exist or an error occurs
+     *     during a database operation
      */
     public boolean removeAllProps(Set<String> selection, String namespace) throws DatabaseException
     {
@@ -421,7 +416,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     {
         try
         {
-            Map<String, String> loadedProps = dbDriver.loadAll(instanceName);
+            Map<String, String> loadedProps = dbDriver.loadCachedInstance(instanceName);
             for (Map.Entry<String, String> entry : loadedProps.entrySet())
             {
                 String key = entry.getKey();
@@ -462,31 +457,27 @@ public class PropsContainer extends AbsTransactionObject implements Props
     @Override
     public void clear() throws DatabaseException
     {
-        // first cache all entries in case we need to rollback
-        // then clear the internal maps
-        // then clear the database
+        // cache all entries in case we need to rollback
 
         rootContainer.activateTransMgr();
         Set<Entry<String, String>> entrySet = rootContainer.entrySet();
         for (Entry<String, String> entry : entrySet)
         {
-            cache(entry.getKey(), entry.getValue());
+            String key = entry.getKey();
+            String value = entry.getValue();
+            cache(key, value);
+
+            if (dbDriver != null)
+            {
+                // TODO: since the rework that PropsContainers also use the AbsDatabaseDrivers, there is no longer a
+                // removeAll(instanceName) method, since the DbEngines are not smart enough (yet?) to delete all
+                // entries for partial primary keys
+                dbDriver.delete(new PropsDbEntry(rootContainer.instanceName, key, value));
+            }
         }
 
         containerMap.clear();
         propMap.clear();
-        if (dbDriver != null)
-        {
-            try
-            {
-                dbDriver.removeAll(rootContainer.instanceName);
-            }
-            catch (DatabaseException dbExc)
-            {
-                rollback();
-                throw dbExc;
-            }
-        }
 
         if (parentContainer != null)
         {
@@ -800,7 +791,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     }
 
     @SuppressWarnings("unused") // for the throw of DatabaseException - which is needed by SerialPropsContainer
-    private PropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException, DatabaseException
+    private PropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException
     {
         return new PropsContainer(key, con, dbDriver, transMgrProvider);
     }
@@ -976,14 +967,17 @@ public class PropsContainer extends AbsTransactionObject implements Props
         cache(key, oldValue);
         if (dbDriver != null)
         {
-            try
+            if (oldValue == null)
             {
-                dbDriver.persist(rootContainer.instanceName, key, value, oldValue == null);
+                dbDriver.create(new PropsDbEntry(rootContainer.instanceName, key, value));
             }
-            catch (DatabaseException sqlExc)
+            else
             {
-                rollback();
-                throw sqlExc;
+                dbDriver.getValueDriver()
+                    .update(
+                        new PropsDbEntry(rootContainer.instanceName, key, oldValue),
+                        value
+                    );
             }
         }
     }
@@ -994,15 +988,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
         cache(key, oldValue);
         if (dbDriver != null)
         {
-            try
-            {
-                dbDriver.remove(rootContainer.instanceName, key);
-            }
-            catch (DatabaseException sqlExc)
-            {
-                rollback();
-                throw sqlExc;
-            }
+            dbDriver.delete(new PropsDbEntry(rootContainer.instanceName, key, oldValue));
         }
     }
 

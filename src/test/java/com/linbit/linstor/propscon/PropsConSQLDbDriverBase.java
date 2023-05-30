@@ -1,7 +1,17 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.PropsDbDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.GenericDbBase;
-import org.junit.Before;
+import com.linbit.linstor.security.Identity;
+import com.linbit.linstor.security.ObjectProtection;
+import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.Role;
+import com.linbit.linstor.security.SecurityType;
+
+import javax.inject.Inject;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,6 +21,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.junit.Before;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -32,13 +44,13 @@ public class PropsConSQLDbDriverBase extends GenericDbBase
 
     protected static final String DEFAULT_INSTANCE_NAME = "DEFAULT_INSTANCE";
 
-    protected PropsConSQLDbDriver dbDriver;
+    @Inject
+    protected PropsDbDriver dbDriver;
 
     @Before
     public void setUp() throws Exception
     {
         super.setUpAndEnterScope();
-        dbDriver = new PropsConSQLDbDriver(errorReporter, transMgrProvider);
     }
 
     protected String debugGetAllProps() throws SQLException
@@ -112,7 +124,7 @@ public class PropsConSQLDbDriverBase extends GenericDbBase
             {
                 preparedStatement.setString(COL_ID_INSTANCE, instanceName);
 
-                Set<Entry<String,String>> entrySet = map.entrySet();
+                Set<Entry<String, String>> entrySet = map.entrySet();
                 for (Entry<String, String> entry : entrySet)
                 {
                     preparedStatement.setString(COL_ID_KEY, entry.getKey());
@@ -128,7 +140,7 @@ public class PropsConSQLDbDriverBase extends GenericDbBase
     {
         assertEquals("Unexpected entries in PropsContainer", expectedMap.size(), props.size());
 
-        Set<Entry<String,String>> entrySet = expectedMap.entrySet();
+        Set<Entry<String, String>> entrySet = expectedMap.entrySet();
         // we use this map so we do not trigger props.removeProp (which triggers a DB remove)
         Map<String, String> propsMap = new HashMap<>(props.map());
         for (Entry<String, String> entry : entrySet)
@@ -165,6 +177,67 @@ public class PropsConSQLDbDriverBase extends GenericDbBase
                 stmt.executeUpdate();
             }
             con.commit();
+        }
+    }
+
+    private static class NoopObjProtDriver implements ObjectProtectionDatabaseDriver
+    {
+
+        @Override
+        public void insertOp(ObjectProtection objProtRef) throws DatabaseException
+        {
+            // no-op
+        }
+
+        @Override
+        public void deleteOp(String objectPathRef) throws DatabaseException
+        {
+            // no-op
+        }
+
+        @Override
+        public void insertAcl(ObjectProtection parentRef, Role roleRef, AccessType grantedAccessRef)
+            throws DatabaseException
+        {
+            // no-op
+        }
+
+        @Override
+        public void updateAcl(ObjectProtection parentRef, Role roleRef, AccessType grantedAccessRef)
+            throws DatabaseException
+        {
+            // no-op
+        }
+
+        @Override
+        public void deleteAcl(ObjectProtection parentRef, Role roleRef) throws DatabaseException
+        {
+            // no-op
+        }
+
+        @Override
+        public ObjectProtection loadObjectProtection(String objectPathRef, boolean logWarnIfNotExistsRef)
+            throws DatabaseException
+        {
+            return null;
+        }
+
+        @Override
+        public SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier()
+        {
+            return null;
+        }
+
+        @Override
+        public SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver()
+        {
+            return null;
+        }
+
+        @Override
+        public SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver()
+        {
+            return null;
         }
     }
 }

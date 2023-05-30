@@ -63,7 +63,7 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
@@ -78,7 +78,6 @@ import com.linbit.linstor.dbdrivers.interfaces.VolumeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
-import com.linbit.linstor.propscon.PropsConSQLDbDriver;
 import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.DbSQLPersistence;
 import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
@@ -120,7 +119,7 @@ public class TestDbModule extends AbstractModule
             }
         });
 
-        bind(PropsConDatabaseDriver.class).to(PropsConSQLDbDriver.class);
+        bind(PropsDatabaseDriver.class).to(PropsDbDriver.class);
         bind(NodeDatabaseDriver.class).to(NodeGenericDbDriver.class);
         bind(ResourceGroupDatabaseDriver.class).to(ResourceGroupDbDriver.class);
         bind(ResourceDefinitionDatabaseDriver.class).to(ResourceDefinitionDbDriver.class);

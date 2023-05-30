@@ -13,7 +13,6 @@ import com.linbit.linstor.dbdrivers.DatabaseDriver;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -36,8 +35,6 @@ public class DbDataInitializer implements StartupInitializer
     private final ErrorReporter errorReporter;
     private final AccessContext initCtx;
     private final LinStorScope initScope;
-    private final Props ctrlConf;
-    private final Props stltConf;
     private final NodeRepository nodeRepository;
     private final ResourceDefinitionRepository resourceDefinitionRepository;
     private final StorPoolDefinitionRepository storPoolDefinitionRepository;
@@ -51,8 +48,6 @@ public class DbDataInitializer implements StartupInitializer
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext initCtxRef,
         LinStorScope initScopeRef,
-        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
-        @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
         NodeRepository nodeRepositoryRef,
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
@@ -65,8 +60,6 @@ public class DbDataInitializer implements StartupInitializer
         errorReporter = errorReporterRef;
         initCtx = initCtxRef;
         initScope = initScopeRef;
-        ctrlConf = ctrlConfRef;
-        stltConf = stltConfRef;
         nodeRepository = nodeRepositoryRef;
         resourceDefinitionRepository = resourceDefinitionRepositoryRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
@@ -103,7 +96,6 @@ public class DbDataInitializer implements StartupInitializer
             // for nodes, resource definition, storage pool definitions, etc. can be skipped.
             recfgWriteLock.lock();
 
-            loadCoreConf();
             loadCoreObjects();
             initializeDisklessStorPoolDfn();
 
@@ -153,13 +145,6 @@ public class DbDataInitializer implements StartupInitializer
              */
             throw initExc;
         }
-    }
-
-    private void loadCoreConf()
-        throws DatabaseException, AccessDeniedException
-    {
-        ctrlConf.loadAll();
-        stltConf.loadAll();
     }
 
     private void loadCoreObjects()

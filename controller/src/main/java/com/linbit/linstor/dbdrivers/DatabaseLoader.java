@@ -16,6 +16,7 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ExternalFileMap;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.CoreModule.ScheduleMap;
+import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -60,6 +61,7 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdCtrlDatabaseDriver
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.PropsCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionCtrlDatabaseDriver;
@@ -83,6 +85,7 @@ import com.linbit.linstor.layer.resource.AbsRscLayerHelper;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.layer.snapshot.CtrlSnapLayerDataFactory;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -95,6 +98,7 @@ import com.linbit.utils.Pair;
 import com.linbit.utils.Triple;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -137,6 +141,7 @@ public class DatabaseLoader implements DatabaseDriver
     }
 
     private final AccessContext dbCtx;
+    private final PropsCtrlDatabaseDriver propsDriver;
     private final ResourceGroupCtrlDatabaseDriver rscGrpDriver;
     private final NodeCtrlDatabaseDriver nodeDriver;
     private final NetInterfaceCtrlDatabaseDriver netIfDriver;
@@ -164,6 +169,8 @@ public class DatabaseLoader implements DatabaseDriver
     private final Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelper;
     private final Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelper;
 
+    private final Props ctrlConf;
+    private final Props stltConf;
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.ResourceGroupMap rscGrpMap;
@@ -181,6 +188,7 @@ public class DatabaseLoader implements DatabaseDriver
     @Inject
     public DatabaseLoader(
         @SystemContext AccessContext privCtx,
+        PropsCtrlDatabaseDriver propsDriverRef,
         ResourceGroupCtrlDatabaseDriver rscGrpDriverRef,
         NodeCtrlDatabaseDriver nodeDriverRef,
         NetInterfaceCtrlDatabaseDriver netIfDriverRef,
@@ -208,6 +216,8 @@ public class DatabaseLoader implements DatabaseDriver
         ScheduleCtrlDatabaseDriver scheduleDriverRef,
         Provider<CtrlRscLayerDataFactory> ctrlRscLayerDataHelperRef,
         Provider<CtrlSnapLayerDataFactory> ctrlSnapLayerDataHelperRef,
+        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(LinStor.SATELLITE_PROPS) Props stltConfRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.ResourceGroupMap rscGrpMapRef,
@@ -223,6 +233,7 @@ public class DatabaseLoader implements DatabaseDriver
     )
     {
         dbCtx = privCtx;
+        propsDriver = propsDriverRef;
         rscGrpDriver = rscGrpDriverRef;
         nodeDriver = nodeDriverRef;
         netIfDriver = netIfDriverRef;
@@ -250,6 +261,8 @@ public class DatabaseLoader implements DatabaseDriver
         scheduleDriver = scheduleDriverRef;
         ctrlRscLayerDataHelper = ctrlRscLayerDataHelperRef;
         ctrlSnapLayerDataHelper = ctrlSnapLayerDataHelperRef;
+        ctrlConf = ctrlConfRef;
+        stltConf = stltConfRef;
 
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
@@ -294,6 +307,12 @@ public class DatabaseLoader implements DatabaseDriver
              * since an error during DB loading time is fatal.
              */
             storPoolResolveHelper.setEnableChecks(false);
+
+            propsDriver.loadAll(null); // will load into cache
+
+            // depends on loaded (cached) props
+            ctrlConf.loadAll();
+            stltConf.loadAll();
 
             // load the resource groups
             Map<ResourceGroup, ResourceGroup.InitMaps> loadedRscGroupsMap =
@@ -630,6 +649,8 @@ public class DatabaseLoader implements DatabaseDriver
 
             AbsRscLayerHelper.databaseLoadingFinished();
             exosMappingMgr.allocateAfterDbLoad();
+
+            propsDriver.clearCache();
         }
         catch (AccessDeniedException exc)
         {

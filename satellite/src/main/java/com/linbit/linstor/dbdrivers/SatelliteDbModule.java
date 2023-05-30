@@ -24,7 +24,7 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
@@ -58,7 +58,7 @@ public class SatelliteDbModule extends AbstractModule
 
         bind(DatabaseDriver.class).to(SatelliteDbDriver.class);
 
-        bind(PropsConDatabaseDriver.class).to(SatellitePropDriver.class);
+        bind(PropsDatabaseDriver.class).to(SatellitePropDriver.class);
         bind(NodeDatabaseDriver.class).to(SatelliteNodeDriver.class);
         bind(ResourceDefinitionDatabaseDriver.class).to(SatelliteResDfnDriver.class);
         bind(ResourceDatabaseDriver.class).to(SatelliteResDriver.class);

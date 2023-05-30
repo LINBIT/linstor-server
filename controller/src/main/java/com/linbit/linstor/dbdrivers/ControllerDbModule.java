@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
+import com.linbit.linstor.ControllerSQLDatabase;
 import com.linbit.linstor.core.objects.ExternalFileDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.LayerBCacheRscDbDriver;
@@ -92,7 +93,8 @@ import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.PropsConDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.PropsCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceCtrlDatabaseDriver;
@@ -131,9 +133,6 @@ import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteCtrlDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.k8s.crd.K8sCrdEngine;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
-import com.linbit.linstor.propscon.PropsConETCDDriver;
-import com.linbit.linstor.propscon.PropsConK8sCrdDriver;
-import com.linbit.linstor.propscon.PropsConSQLDbDriver;
 import com.linbit.linstor.security.DbAccessor;
 import com.linbit.linstor.security.DbEtcdPersistence;
 import com.linbit.linstor.security.DbK8sCrdPersistence;
@@ -258,18 +257,20 @@ public class ControllerDbModule extends AbstractModule
         bind(LayerBCacheRscDatabaseDriver.class).to(LayerBCacheRscDbDriver.class);
         bind(LayerBCacheVlmDatabaseDriver.class).to(LayerBCacheVlmDbDriver.class);
 
+        bind(PropsDatabaseDriver.class).to(PropsDbDriver.class);
+        bind(PropsCtrlDatabaseDriver.class).to(PropsDbDriver.class);
+
         switch (dbType)
         {
             case SQL:
                 bind(ControllerDatabase.class).to(DbConnectionPool.class);
+                bind(ControllerSQLDatabase.class).to(DbConnectionPool.class);
                 bind(DbEngine.class).to(SQLEngine.class);
 
                 bind(DbInitializer.class).to(DbConnectionPoolInitializer.class);
                 bind(DbAccessor.class).to(DbSQLPersistence.class);
 
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionSQLDbDriver.class);
-
-                bind(PropsConDatabaseDriver.class).to(PropsConSQLDbDriver.class);
 
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
@@ -284,8 +285,6 @@ public class ControllerDbModule extends AbstractModule
 
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionEtcdDriver.class);
 
-                bind(PropsConDatabaseDriver.class).to(PropsConETCDDriver.class);
-
                 bind(NodeCtrlDatabaseDriver.class).to(NodeETCDDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeETCDDriver.class);
                 break;
@@ -298,8 +297,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(DbAccessor.class).to(DbK8sCrdPersistence.class);
 
                 bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionK8sCrdDriver.class);
-
-                bind(PropsConDatabaseDriver.class).to(PropsConK8sCrdDriver.class);
 
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);

@@ -366,7 +366,7 @@ public class PropsContainerTest extends GenericDbBase
 
         final Map<String, String> overrideMap = new HashMap<>();
         overrideMap.put("a", "overriddenA");
-        overrideMap.put("b", null); // should cause an invalidValueException and a rollback
+        overrideMap.put("b", null); // should cause an invalidValueException
         overrideMap.put("", "not root");
 
         try
@@ -376,7 +376,8 @@ public class PropsContainerTest extends GenericDbBase
         }
         catch (IllegalArgumentException invValueExc)
         {
-            // expected
+            // expected. but we still want to rollback the changes
+            transMgrProvider.get().rollback();
         }
         Iterator<Entry<String, String>> iterateProps = root.iterator();
         while (iterateProps.hasNext())

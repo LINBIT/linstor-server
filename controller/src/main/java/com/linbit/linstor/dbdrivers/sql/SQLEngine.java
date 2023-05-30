@@ -31,6 +31,7 @@ import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.sql.Connection;
@@ -44,8 +45,6 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import com.google.inject.Provider;
 
 @Singleton
 public class SQLEngine implements DbEngine

@@ -1,12 +1,12 @@
 package com.linbit.linstor.propscon;
 
-import org.junit.Test;
-
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -122,6 +122,8 @@ public class PropsConSQLDbDriverTest extends PropsConSQLDbDriverBase
         String value = "b";
         insert(instanceName, key, value);
 
+        // load props into cache so that .getInstance()'s container.load() can get the cached data from the DbDriver
+        dbDriver.loadAll(null);
         Props props = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME);
 
         Set<Entry<String, String>> entrySet = props.entrySet();
@@ -140,6 +142,9 @@ public class PropsConSQLDbDriverTest extends PropsConSQLDbDriverBase
         String value2 = "d";
         insert(instanceName, key1, value1);
         insert(instanceName, key2, value2);
+
+        // load props into cache so that .getInstance()'s container.load() can get the cached data from the DbDriver
+        dbDriver.loadAll(null);
 
         Props props = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME);
         assertEquals("Unexpected entries in PropsContainer", 2, props.size());
@@ -164,18 +169,24 @@ public class PropsConSQLDbDriverTest extends PropsConSQLDbDriverBase
         insert(instanceName, key1, value1);
         map.put(key1, value1);
 
+        // load props into cache so that .getInstance()'s container.load() can get the cached data from the DbDriver
+        dbDriver.loadAll(null);
         Props props = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME);
         checkExpectedMap(map, props);
 
         insert(instanceName, key2, value2);
         map.put(key2, value2);
 
+        dbDriver.clearCache();
+        dbDriver.loadAll(null);
         props = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME);
         checkExpectedMap(map, props);
 
         delete(instanceName, key2);
         map.remove(key2);
 
+        dbDriver.clearCache();
+        dbDriver.loadAll(null);
         props = propsContainerFactory.getInstance(DEFAULT_INSTANCE_NAME);
         checkExpectedMap(map, props);
     }
@@ -198,6 +209,9 @@ public class PropsConSQLDbDriverTest extends PropsConSQLDbDriverBase
 
         insert(instanceName1, map1);
         insert(instanceName2, map2);
+
+        // load props into cache so that .getInstance()'s container.load() can get the cached data from the DbDriver
+        dbDriver.loadAll(null);
 
         Props props1 = propsContainerFactory.getInstance(instanceName1);
         Props props2 = propsContainerFactory.getInstance(instanceName2);
