@@ -21,11 +21,11 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.NodesMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
-import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.IncorrectPassphraseException;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -127,7 +127,7 @@ public class CtrlConfApiCallHandler
 
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
 
-    private final CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandler;
+    private final CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandler;
 
     @FunctionalInterface
     private interface SpecialPropHandler
@@ -174,7 +174,7 @@ public class CtrlConfApiCallHandler
         CtrlResyncAfterHelper ctrlResyncAfterHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
-        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef
+        CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef
     )
     {
         errorReporter = errorReporterRef;
@@ -204,7 +204,7 @@ public class CtrlConfApiCallHandler
         ctrlResyncAfterHelper = ctrlResyncAfterHelperRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
-        ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
+        ctrlBackupQueueHandler = ctrlBackupQueueHandlerRef;
     }
 
     public void updateSatelliteConf() throws AccessDeniedException
@@ -420,7 +420,7 @@ public class CtrlConfApiCallHandler
         Flux<ApiCallRc> shippingFlux = Flux.empty();
         if (maxConcurrentShippingsChanged)
         {
-            shippingFlux = ctrlBackupCrtApiCallHandler.maxConcurrentShippingsChangedForCtrl();
+            shippingFlux = ctrlBackupQueueHandler.maxConcurrentShippingsChangedForCtrl();
         }
 
         return Flux.<ApiCallRc>just(apiCallRc)

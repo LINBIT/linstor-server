@@ -11,8 +11,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlScheduleApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlStorPoolListApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
@@ -53,7 +53,7 @@ public class View
     private final CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandler;
     private final ObjectMapper objectMapper;
     private final CtrlScheduleApiCallHandler ctrlScheduleApiCallHandler;
-    private final CtrlBackupApiCallHandler ctrlBackupApiCallHandler;
+    private final CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandler;
 
     @Inject
     View(
@@ -62,7 +62,7 @@ public class View
         CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef,
         CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef,
         CtrlScheduleApiCallHandler ctrlScheduleApiCallHandlerRef,
-        CtrlBackupApiCallHandler ctrlBackupApiCallHandlerRef
+        CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef
     )
     {
         requestHelper = requestHelperRef;
@@ -70,7 +70,7 @@ public class View
         ctrlVlmListApiCallHandler = ctrlVlmListApiCallHandlerRef;
         ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
         ctrlScheduleApiCallHandler = ctrlScheduleApiCallHandlerRef;
-        ctrlBackupApiCallHandler = ctrlBackupApiCallHandlerRef;
+        ctrlBackupQueueHandler = ctrlBackupQueueHandlerRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -366,7 +366,7 @@ public class View
                 JsonGenTypes.BackupQueues json = new JsonGenTypes.BackupQueues();
                 if (snapToNode)
                 {
-                    List<BackupSnapQueuesPojo> queues = ctrlBackupApiCallHandler.listSnapQueues(
+                    List<BackupSnapQueuesPojo> queues = ctrlBackupQueueHandler.listSnapQueues(
                         nodes,
                         snapshots,
                         resources,
@@ -380,7 +380,7 @@ public class View
                 }
                 else
                 {
-                    List<BackupNodeQueuesPojo> queues = ctrlBackupApiCallHandler.listNodeQueues(
+                    List<BackupNodeQueuesPojo> queues = ctrlBackupQueueHandler.listNodeQueues(
                         nodes,
                         snapshots,
                         resources,

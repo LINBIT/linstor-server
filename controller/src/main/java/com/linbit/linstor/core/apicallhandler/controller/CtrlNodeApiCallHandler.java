@@ -32,6 +32,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoH
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
@@ -153,6 +154,7 @@ public class CtrlNodeApiCallHandler
     private final EventNodeHandlerBridge eventNodeHandlerBridge;
     private final Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProvider;
     private final CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandler;
+    private final CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandler;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -187,7 +189,8 @@ public class CtrlNodeApiCallHandler
         CtrlRscCrtApiCallHandler ctrlRscCrtApiCallHandlerRef,
         EventNodeHandlerBridge eventNodeHandlerBridgeRef,
         Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProviderRef,
-        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef
+        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef,
+        CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -222,6 +225,7 @@ public class CtrlNodeApiCallHandler
         eventNodeHandlerBridge = eventNodeHandlerBridgeRef;
         ctrlNodeCrtApiCallHandlerProvider = ctrlNodeCrtApiCallHandlerProviderRef;
         ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
+        ctrlBackupQueueHandler = ctrlBackupQueueHandlerRef;
     }
 
     Node createNodeImpl(
@@ -1083,7 +1087,7 @@ public class CtrlNodeApiCallHandler
         }
         if (maxConcurrentShippingsChanged)
         {
-            retFlux = retFlux.concatWith(ctrlBackupCrtApiCallHandler.maxConcurrentShippingsChangedForNode(node));
+            retFlux = retFlux.concatWith(ctrlBackupQueueHandler.maxConcurrentShippingsChangedForNode(node));
         }
 
         return retFlux;
