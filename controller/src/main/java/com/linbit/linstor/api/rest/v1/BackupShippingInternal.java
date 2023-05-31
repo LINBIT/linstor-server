@@ -241,10 +241,54 @@ public class BackupShippingInternal
             receiveRequest = objectMapper.readValue(jsonData, BackupShippingReceiveRequest.class);
             RemoteName linstorRemoteName = new RemoteName(receiveRequest.linstorRemoteName);
             RemoteName stltRemoteName = new RemoteName(receiveRequest.srcStltRemoteName, true);
-            BackupShippingData data = backupInfoMgr.removeL2LSrcData(linstorRemoteName, stltRemoteName);
+            BackupShippingData data = backupInfoMgr.getL2LSrcData(linstorRemoteName, stltRemoteName);
             responses = backupL2LSrcApiCallHandler.startShipping(receiveRequest, data)
                 .subscriberContext(
                     requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
+                );
+        }
+        catch (JsonProcessingException exc)
+        {
+            responses = Flux.just(
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_INVLD_REQUEST,
+                    "Failed to deserialize JSON",
+                    exc.getMessage()
+                )
+            );
+        }
+        catch (InvalidNameException exc)
+        {
+            responses = Flux.just(
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_INVLD_REMOTE_NAME,
+                    "Given RemoteName was invalid",
+                    exc.getMessage()
+                )
+            );
+        }
+        ApiCallRcRestUtils.mapToMonoResponse(responses).subscribe(asyncResponse::resume);
+    }
+
+    @POST
+    @Path("requestReceiveDone")
+    public void internalRequestReceiveDone(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        Flux<ApiCallRc> responses;
+        BackupShippingReceiveRequest receiveRequest;
+        try
+        {
+            receiveRequest = objectMapper.readValue(jsonData, BackupShippingReceiveRequest.class);
+            RemoteName linstorRemoteName = new RemoteName(receiveRequest.linstorRemoteName);
+            RemoteName stltRemoteName = new RemoteName(receiveRequest.srcStltRemoteName, true);
+            BackupShippingData data = backupInfoMgr.removeL2LSrcData(linstorRemoteName, stltRemoteName);
+            responses = backupL2LSrcApiCallHandler.startQueues(data)
+                .subscriberContext(
+                    requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_RECEIVING_DONE, request)
                 );
         }
         catch (JsonProcessingException exc)

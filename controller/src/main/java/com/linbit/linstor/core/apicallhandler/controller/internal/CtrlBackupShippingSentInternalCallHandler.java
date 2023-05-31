@@ -24,6 +24,7 @@ import com.linbit.linstor.core.objects.Schedule;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -201,7 +202,11 @@ public class CtrlBackupShippingSentInternalCallHandler
                         nodeName,
                         scheduleName
                     )
-                ).concatWith(queueHandler.handleBackupQueues(snapDfn, remoteForSchedule));
+                );
+                if (remoteForSchedule instanceof S3Remote)
+                {
+                    ret = ret.concatWith(queueHandler.handleBackupQueues(snapDfn, remoteForSchedule));
+                }
             }
             catch (
                 AccessDeniedException | InvalidNameException | InvalidValueException | InvalidKeyException exc

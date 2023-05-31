@@ -639,7 +639,6 @@ public class CtrlBackupL2LDstApiCallHandler
             Snapshot snap = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapName, true)
                 .getSnapshot(apiCtx, new NodeName(nodeName));
             BackupShippingData data = backupInfoMgr.getL2LDstData(snap);
-            backupInfoMgr.removeL2LDstData(snap);
             Node node = snap.getNode();
             if (data.dstNetIfName != null)
             {

@@ -16,11 +16,13 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveDoneRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequestPrevSnap;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponsePrevSnap;
+import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -111,6 +113,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     private final BackupInfoManager backupInfoMgr;
     private final RemoteRepository remoteRepo;
     private final CtrlSecurityObjects ctrlSecObjs;
+    private final CtrlBackupQueueInternalCallHandler queueHandler;
 
     @Inject
     public CtrlBackupL2LSrcApiCallHandler(
@@ -127,7 +130,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         RemoteRepository remoteRepoRef,
         BackupInfoManager backupInfoMgrRef,
         CtrlSecurityObjects ctrlSecObjsRef,
-        BackupShippingRestClient restClientRef
+        BackupShippingRestClient restClientRef,
+        CtrlBackupQueueInternalCallHandler queueHandlerRef
     )
     {
         sysCtx = sysCtxRef;
@@ -145,6 +149,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         ctrlSecObjs = ctrlSecObjsRef;
 
         restClient = restClientRef;
+        queueHandler = queueHandlerRef;
     }
 
     /**
@@ -634,6 +639,27 @@ public class CtrlBackupL2LSrcApiCallHandler
         return flux;
     }
 
+    public Flux<ApiCallRc> startQueues(
+        BackupShippingData data
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Backup shipping L2L: start queued snaps after shipping done",
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
+            () -> startQueuesInTransaction(data)
+        );
+    }
+
+    private Flux<ApiCallRc> startQueuesInTransaction(
+        BackupShippingData data
+    ) throws AccessDeniedException
+    {
+        return queueHandler.handleBackupQueues(data.srcSnapshot.getSnapshotDefinition(), data.linstorRemote);
+    }
+
     private Flux<ApiCallRc> unsetTakeSnapshotInTransaction(BackupShippingData dataRef)
     {
         AccessContext accCtx = peerAccCtx.get();
@@ -739,7 +765,6 @@ public class CtrlBackupL2LSrcApiCallHandler
                 {
                     try
                     {
-
                         backupInfoMgr.addL2LSrcData(
                             data.linstorRemote.getName(),
                             data.stltRemote.getName(),
@@ -810,9 +835,52 @@ public class CtrlBackupL2LSrcApiCallHandler
                 {
                     try
                     {
-
                         String restURL = data.remoteUrl +
                             "/v1/internal/backups/requestReceive";
+                        RestResponse<JsonGenTypes.ApiCallRc[]> response = restClient.execute(
+                            null,
+                            RestOp.POST,
+                            restURL,
+                            Collections.emptyMap(),
+                            objMapper.writeValueAsString(
+                                data
+                            ),
+                            Arrays.asList(OK, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR),
+                            JsonGenTypes.ApiCallRc[].class
+                        );
+                        if (isResponseOk(response, data.linstorRemoteName, fluxSink, data.responses))
+                        {
+                            for (JsonGenTypes.ApiCallRc rc : response.getData())
+                            {
+                                fluxSink.next(rc);
+                            }
+                            fluxSink.complete();
+                        }
+                    }
+                    catch (StorageException | IOException exc)
+                    {
+                        errorReporter.reportError(exc);
+                        fluxSink.error(exc);
+                    }
+                };
+                new Thread(run).start();
+            });
+        }
+
+        public Flux<JsonGenTypes.ApiCallRc> sendBackupReceiveDoneRequest(
+            BackupShippingReceiveDoneRequest data
+        )
+        {
+            return Flux.create(fluxSink ->
+            {
+                // Runnable needed for flux shenanigans
+                // (avoids deadlock if flux error occurs while building pipeline)
+                Runnable run = () ->
+                {
+                    try
+                    {
+                        String restURL = data.remoteUrl +
+                            "/v1/internal/backups/requestReceiveDone";
                         RestResponse<JsonGenTypes.ApiCallRc[]> response = restClient.execute(
                             null,
                             RestOp.POST,

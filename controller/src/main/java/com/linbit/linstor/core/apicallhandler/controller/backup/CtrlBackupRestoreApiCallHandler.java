@@ -38,7 +38,10 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnCrtApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LDstApiCallHandler.BackupShippingData;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LDstApiCallHandler.BackupShippingStartInfo;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingRestClient;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveDoneRequest;
 import com.linbit.linstor.core.apicallhandler.controller.exceptions.MissingKeyPropertyException;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -147,6 +150,7 @@ public class CtrlBackupRestoreApiCallHandler
     private final CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandler;
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandler;
     private final CtrlBackupApiCallHandler backupApiCallHandler;
+    private final BackupShippingRestClient backupShippingRestClient;
 
     @Inject
     public CtrlBackupRestoreApiCallHandler(
@@ -174,7 +178,8 @@ public class CtrlBackupRestoreApiCallHandler
         @Named(NumberPoolModule.SNAPSHOPT_SHIPPING_PORT_POOL) DynamicNumberPool snapshotShippingPortPoolRef,
         CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandlerRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandlerRef,
-        CtrlBackupApiCallHandler backupApiCallHandlerRef
+        CtrlBackupApiCallHandler backupApiCallHandlerRef,
+        BackupShippingRestClient backupShippingRestClientRef
     )
     {
         freeCapacityFetcher = freeCapacityFetcherRef;
@@ -202,6 +207,7 @@ public class CtrlBackupRestoreApiCallHandler
         ctrlSnapRestoreApiCallHandler = ctrlSnapRestoreApiCallHandlerRef;
         ctrlSnapDeleteApiCallHandler = ctrlSnapDeleteApiCallHandlerRef;
         backupApiCallHandler = backupApiCallHandlerRef;
+        backupShippingRestClient = backupShippingRestClientRef;
     }
 
     public Flux<ApiCallRc> restoreBackup(
@@ -1628,6 +1634,17 @@ public class CtrlBackupRestoreApiCallHandler
                             // This will be fixed with the linstor2 issue 19 (Combine Changed* proto messages for atomic
                             // updates)
                             delPropFlux = delPropFlux.concatWith(backupHelper.cleanupStltRemote((StltRemote) remote));
+                            // since we have a stltRemote, we are at the end of an l2l shipping. This means that we need
+                            // to tell the src-cluster that we are done with the download.
+                            BackupShippingData data = backupInfoMgr.getL2LDstData(snap);
+                            backupInfoMgr.removeL2LDstData(snap);
+                            BackupShippingReceiveDoneRequest request = new BackupShippingReceiveDoneRequest(
+                                new ApiCallRcImpl(),
+                                data.srcL2LRemoteName,
+                                data.srcStltRemoteName,
+                                data.srcL2LRemoteUrl
+                            );
+                            backupShippingRestClient.sendBackupReceiveDoneRequest(request);
                         }
                         /*
                          * We need to update the stlts with the flag- & prop-changes before starting the restore

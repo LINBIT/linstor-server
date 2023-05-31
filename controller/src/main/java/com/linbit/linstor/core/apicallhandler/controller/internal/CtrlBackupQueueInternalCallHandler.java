@@ -100,7 +100,7 @@ public class CtrlBackupQueueInternalCallHandler
 
     }
 
-    Flux<ApiCallRc> handleBackupQueues(
+    public Flux<ApiCallRc> handleBackupQueues(
         SnapshotDefinition snapDfn,
         AbsRemote remoteForSchedule
     ) throws AccessDeniedException
