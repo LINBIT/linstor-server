@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed UID-mismatch when creating rollback entries in K8s/CRD
+- Resync-After: Update entries after vlm definition delete
 
 ## [1.23.0] - 2023-05-23
 

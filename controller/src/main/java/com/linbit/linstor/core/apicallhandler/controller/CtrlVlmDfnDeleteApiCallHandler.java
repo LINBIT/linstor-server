@@ -67,6 +67,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final LockGuardFactory lockguardFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final BackupInfoManager backupInfoMgr;
+    private final CtrlResyncAfterHelper ctrlResyncAfterHelper;
 
     @Inject
     public CtrlVlmDfnDeleteApiCallHandler(
@@ -78,7 +79,8 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         ResponseConverter responseConverterRef,
         LockGuardFactory lockguardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        BackupInfoManager backupInfoMgrRef
+        BackupInfoManager backupInfoMgrRef,
+        CtrlResyncAfterHelper ctrlResyncAfterHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -90,6 +92,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         lockguardFactory = lockguardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         backupInfoMgr = backupInfoMgrRef;
+        ctrlResyncAfterHelper = ctrlResyncAfterHelperRef;
     }
 
     @Override
@@ -203,6 +206,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
 
         return Flux
             .just(responses)
+            .concatWith(ctrlResyncAfterHelper.fluxManage())
             .concatWith(updateResponses);
     }
 

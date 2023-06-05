@@ -13,6 +13,7 @@ import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.core.types.MinorNumber;
@@ -196,6 +197,9 @@ public class CtrlResyncAfterHelper
                                 if (vlmDfnData != null &&
                                     !rsc.isDiskless(sysCtx) &&
                                     !rsc.isDeleted() &&
+                                    !vlmDfnData.getVolumeDefinition().isDeleted() &&
+                                    vlmDfnData.getVolumeDefinition().getFlags().isUnset(
+                                        sysCtx, VolumeDefinition.Flags.DELETE) &&
                                     rsc.getStateFlags().isUnset(sysCtx, Resource.Flags.DELETE))
                                 {
                                     spVolsSorted.put(vlmDfnData.getMinorNr(), vol);
@@ -231,7 +235,7 @@ public class CtrlResyncAfterHelper
                 }
 
                 final String infoMsg = "Updated " + modifiedRscs.size() + " resync-after entries.";
-                apiCallRc.addEntry("Updated " + modifiedRscs.size() + " resync-after entries.", ApiConsts.MASK_INFO);
+                apiCallRc.addEntry(infoMsg, ApiConsts.MASK_INFO);
                 errorReporter.logInfo(infoMsg);
             }
         }
