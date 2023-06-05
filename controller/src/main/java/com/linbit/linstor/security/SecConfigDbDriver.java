@@ -57,6 +57,12 @@ public class SecConfigDbDriver extends AbsDatabaseDriver<SecConfigDbEntry, Void,
     }
 
     @Override
+    public SingleColumnDatabaseDriver<SecConfigDbEntry, String> getValueDriver()
+    {
+        return valueDriver;
+    }
+
+    @Override
     protected Pair<SecConfigDbEntry, Void> load(RawParameters rawRef, Void parentRef)
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
         MdException, ExhaustedPoolException, ValueInUseException, RuntimeException, AccessDeniedException

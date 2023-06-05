@@ -4,9 +4,6 @@ import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.pojo.IdentityRoleEntryPojo;
 import com.linbit.linstor.security.pojo.SignInEntryPojo;
-import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
-
-import java.util.List;
 
 /**
  * Database interface for security objects persistence
@@ -19,12 +16,10 @@ public interface DbAccessor<DB_TYPE extends ControllerDatabase>
         throws DatabaseException;
 
     void createSignInEntry(
-        DB_TYPE         ctrlDb,
-        IdentityName    idName,
-        RoleName        dfltRlName,
-        SecTypeName     dmnName,
-        byte[]          passwordSalt,
-        byte[]          passwordHash
+        Identity idRef,
+        Role dfltRoleRef,
+        byte[] passwordSalt,
+        byte[] passwordHash
     )
         throws DatabaseException;
 
@@ -32,30 +27,6 @@ public interface DbAccessor<DB_TYPE extends ControllerDatabase>
         throws DatabaseException;
 
     IdentityRoleEntryPojo getDefaultRole(DB_TYPE ctrlDb, IdentityName idName)
-        throws DatabaseException;
-
-    List<String> loadIdentities(DB_TYPE ctrlDb)
-        throws DatabaseException;
-
-    /**
-     * Loads all security types and return them in a string list.
-     * @param ctrlDb Controller database object from where to load the data.
-     * @return List of security type strings
-     * @throws DatabaseException
-     */
-    List<String> loadSecurityTypes(DB_TYPE ctrlDb)
-        throws DatabaseException;
-
-    List<String> loadRoles(DB_TYPE ctrlDb)
-        throws DatabaseException;
-
-    List<TypeEnforcementRulePojo> loadTeRules(DB_TYPE ctrlDb)
-        throws DatabaseException;
-
-    String loadSecurityLevel(DB_TYPE ctrlDb)
-        throws DatabaseException;
-
-    boolean loadAuthRequired(DB_TYPE ctrlDb)
         throws DatabaseException;
 
     void setSecurityLevel(DB_TYPE ctrlDb, SecurityLevel newLevel)

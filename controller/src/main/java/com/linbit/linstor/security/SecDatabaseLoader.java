@@ -8,7 +8,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.interfaces.SecConfigDatabaseDriver.SecConfigDbEntry;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdentityCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SecIdentityCtrlDatabaseDriver.SecIdentityInitObj;
+import com.linbit.linstor.dbdrivers.interfaces.SecIdentityDatabaseDriver.SecIdentityDbObj;
 import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclCtrlDatabaseDriver.SecObjProtAclParent;
 import com.linbit.linstor.dbdrivers.interfaces.SecObjProtCtrlDatabaseDriver;
@@ -96,9 +96,13 @@ public class SecDatabaseLoader
             }
         }
 
-        Map<Identity, SecIdentityInitObj> idsMap = secIdentityDriver.loadAll(null);
+        Map<SecIdentityDbObj, Void> idsMap = secIdentityDriver.loadAll(null);
         Identity.ensureDefaultsExist();
-        TreeMap<IdentityName, Identity> idsMapByName = DatabaseLoader.mapByName(idsMap, id -> id.name);
+        TreeMap<IdentityName, Identity> idsMapByName = new TreeMap<>();
+        for (SecIdentityDbObj dbObj : idsMap.keySet())
+        {
+            idsMapByName.put(dbObj.getIdentity().name, dbObj.getIdentity());
+        }
 
         Map<SecurityType, SecTypeInitObj> secTypesMap = secTypeDriver.loadAll(null);
         // SecurityType.ensureDefaultsExists is not needed here, since we have to call .setLoadedSecTypes soon which

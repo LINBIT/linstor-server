@@ -2,6 +2,7 @@ package com.linbit.linstor.api.protobuf.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCall;
@@ -37,7 +38,7 @@ import java.io.InputStream;
 public class SignIn implements ApiCall
 {
     private final ErrorReporter errorReporter;
-    private final CtrlAuthentication idAuthentication;
+    private final CtrlAuthentication<ControllerDatabase> idAuthentication;
     private final ApiCallAnswerer apiCallAnswerer;
     private final AccessContext sysCtx;
     private final Provider<AccessContext> clientCtxProvider;
@@ -46,7 +47,7 @@ public class SignIn implements ApiCall
     @Inject
     public SignIn(
         ErrorReporter errorReporterRef,
-        CtrlAuthentication idAuthenticationRef,
+        CtrlAuthentication<ControllerDatabase> idAuthenticationRef,
         ApiCallAnswerer apiCallAnswererRef,
         @SystemContext AccessContext sysCtxRef,
         @PeerContext Provider<AccessContext> clientCtxProviderRef,

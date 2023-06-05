@@ -2,6 +2,7 @@ package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.annotation.ErrorReporterContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.PublicContext;
@@ -56,7 +57,7 @@ public class RequestHelper
     private final AccessContext sysContext;
     private final AccessContext publicContext;
     private final TransactionMgrGenerator transactionMgrGenerator;
-    private final CtrlAuthentication authentication;
+    private final CtrlAuthentication<ControllerDatabase> authentication;
     private final CtrlConfig linstorConfig;
 
     @Inject
@@ -66,7 +67,7 @@ public class RequestHelper
         @SystemContext AccessContext sysContextRef,
         @PublicContext AccessContext accessContextRef,
         TransactionMgrGenerator transactionMgrGeneratorRef,
-        CtrlAuthentication authenticationRef,
+        CtrlAuthentication<ControllerDatabase> authenticationRef,
         CtrlConfig linstorConfigRef
     )
     {

@@ -11,48 +11,52 @@ import javax.inject.Singleton;
 @Singleton
 public class SatelliteSecIdentityDbDriver implements SecIdentityDatabaseDriver
 {
-    private final SingleColumnDatabaseDriver<Identity, byte[]> noopPassHashDriver = new SatelliteSingleColDriver<>();
-    private final SingleColumnDatabaseDriver<Identity, byte[]> noopPassSaltDriver = new SatelliteSingleColDriver<>();
-    private final SingleColumnDatabaseDriver<Identity, Boolean> noopIdEnabledDriver = new SatelliteSingleColDriver<>();
-    private final SingleColumnDatabaseDriver<Identity, Boolean> noopIdLockedDriver = new SatelliteSingleColDriver<>();
+    private final SingleColumnDatabaseDriver<SecIdentityDbObj, byte[]> noopPassHashDriver;
+    private final SingleColumnDatabaseDriver<SecIdentityDbObj, byte[]> noopPassSaltDriver;
+    private final SingleColumnDatabaseDriver<SecIdentityDbObj, Boolean> noopIdEnabledDriver;
+    private final SingleColumnDatabaseDriver<SecIdentityDbObj, Boolean> noopIdLockedDriver;
 
     @Inject
     public SatelliteSecIdentityDbDriver()
     {
+        noopPassHashDriver = new SatelliteSingleColDriver<>();
+        noopPassSaltDriver = new SatelliteSingleColDriver<>();
+        noopIdEnabledDriver = new SatelliteSingleColDriver<>();
+        noopIdLockedDriver = new SatelliteSingleColDriver<>();
     }
 
     @Override
-    public void create(Identity dataRef) throws DatabaseException
+    public void create(SecIdentityDbObj dataRef) throws DatabaseException
     {
         // noop
     }
 
     @Override
-    public void delete(Identity dataRef) throws DatabaseException
+    public void delete(SecIdentityDbObj dataRef) throws DatabaseException
     {
         // noop
     }
 
     @Override
-    public SingleColumnDatabaseDriver<Identity, byte[]> getPassHashDriver()
+    public SingleColumnDatabaseDriver<SecIdentityDbObj, byte[]> getPassHashDriver()
     {
         return noopPassHashDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<Identity, byte[]> getPassSaltDriver()
+    public SingleColumnDatabaseDriver<SecIdentityDbObj, byte[]> getPassSaltDriver()
     {
         return noopPassSaltDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<Identity, Boolean> getIdEnabledDriver()
+    public SingleColumnDatabaseDriver<SecIdentityDbObj, Boolean> getIdEnabledDriver()
     {
         return noopIdEnabledDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<Identity, Boolean> getIdLockedDriver()
+    public SingleColumnDatabaseDriver<SecIdentityDbObj, Boolean> getIdLockedDriver()
     {
         return noopIdLockedDriver;
     }

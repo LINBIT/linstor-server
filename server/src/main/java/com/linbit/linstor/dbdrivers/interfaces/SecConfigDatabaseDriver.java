@@ -2,6 +2,7 @@ package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.SecConfiguration;
 import com.linbit.linstor.dbdrivers.interfaces.SecConfigDatabaseDriver.SecConfigDbEntry;
+import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 
 import java.util.Objects;
 
@@ -12,6 +13,8 @@ import java.util.Objects;
  */
 public interface SecConfigDatabaseDriver extends GenericDatabaseDriver<SecConfigDbEntry>
 {
+    SingleColumnDatabaseDriver<SecConfigDbEntry, String> getValueDriver();
+
     final class SecConfigDbEntry implements Comparable<SecConfigDbEntry>
     {
         public final String key;

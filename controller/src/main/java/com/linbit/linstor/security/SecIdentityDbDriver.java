@@ -13,7 +13,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdentityCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.SecIdentityCtrlDatabaseDriver.SecIdentityInitObj;
+import com.linbit.linstor.dbdrivers.interfaces.SecIdentityDatabaseDriver.SecIdentityDbObj;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.Base64;
@@ -32,14 +32,14 @@ import javax.inject.Singleton;
 import java.util.function.Function;
 
 @Singleton
-public class SecIdentityDbDriver extends AbsDatabaseDriver<Identity, SecIdentityInitObj, Void>
+public class SecIdentityDbDriver extends AbsDatabaseDriver<SecIdentityDbObj, Void, Void>
     implements SecIdentityCtrlDatabaseDriver
 {
     private final AccessContext dbCtx;
-    private final SingleColumnDatabaseDriver<Identity, byte[]> passHashDriver;
-    private final SingleColumnDatabaseDriver<Identity, byte[]> passSaltDriver;
-    private final SingleColumnDatabaseDriver<Identity, Boolean> idEnabledDriver;
-    private final SingleColumnDatabaseDriver<Identity, Boolean> idLockedDriver;
+    private final SingleColumnDatabaseDriver<SecIdentityDbObj, byte[]> passHashDriver;
+    private final SingleColumnDatabaseDriver<SecIdentityDbObj, byte[]> passSaltDriver;
+    private final SingleColumnDatabaseDriver<SecIdentityDbObj, Boolean> idEnabledDriver;
+    private final SingleColumnDatabaseDriver<SecIdentityDbObj, Boolean> idLockedDriver;
 
     @Inject
     public SecIdentityDbDriver(
@@ -52,22 +52,18 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<Identity, SecIdentity
         super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_IDENTITIES, dbEngineRef, objProtFactoryRef);
         dbCtx = dbCtxRef;
 
-        setColumnSetter(IDENTITY_NAME, id -> id.name.value);
-        setColumnSetter(IDENTITY_DSP_NAME, id -> id.name.displayValue);
+        setColumnSetter(IDENTITY_NAME, id -> id.getIdentity().name.value);
+        setColumnSetter(IDENTITY_DSP_NAME, id -> id.getIdentity().name.displayValue);
 
-        // Identities do not store their own password. Passwords are only checked during authentication and are always
-        // queried directly from the database
-        // That also means that an password-less Identity has to be created first before an (optional, see LDAP
-        // authentication) password can be set via the value setters
-        setColumnSetter(PASS_HASH, ignored -> null);
-        setColumnSetter(PASS_SALT, ignored -> null);
-        // new entries are always enabled and unlocked
-        setColumnSetter(ID_ENABLED, ignored -> true);
-        setColumnSetter(ID_LOCKED, ignored -> false);
 
         switch (getDbType()) {
             case SQL: // fall-through
             case K8S_CRD:
+                setColumnSetter(PASS_HASH, SecIdentityDbObj::getPassHash);
+                setColumnSetter(PASS_SALT, SecIdentityDbObj::getPassSalt);
+                setColumnSetter(ID_ENABLED, SecIdentityDbObj::isEnabled);
+                setColumnSetter(ID_LOCKED, SecIdentityDbObj::isLocked);
+
                 passHashDriver = generateSingleColumnDriver(
                     PASS_HASH,
                     ignored -> MSG_DO_NOT_LOG,
@@ -91,6 +87,11 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<Identity, SecIdentity
                 );
                 break;
             case ETCD:
+                setColumnSetter(PASS_HASH, id -> Base64.encode(id.getPassHash()));
+                setColumnSetter(PASS_SALT, id -> Base64.encode(id.getPassSalt()));
+                setColumnSetter(ID_ENABLED, id -> Boolean.toString(id.isEnabled()));
+                setColumnSetter(ID_LOCKED, id -> Boolean.toString(id.isLocked()));
+
                 passHashDriver = generateSingleColumnDriver(
                     PASS_HASH,
                     ignored -> MSG_DO_NOT_LOG,
@@ -118,31 +119,31 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<Identity, SecIdentity
         }
     }
     @Override
-    public SingleColumnDatabaseDriver<Identity, byte[]> getPassHashDriver()
+    public SingleColumnDatabaseDriver<SecIdentityDbObj, byte[]> getPassHashDriver()
     {
         return passHashDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<Identity, byte[]> getPassSaltDriver()
+    public SingleColumnDatabaseDriver<SecIdentityDbObj, byte[]> getPassSaltDriver()
     {
         return passSaltDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<Identity, Boolean> getIdEnabledDriver()
+    public SingleColumnDatabaseDriver<SecIdentityDbObj, Boolean> getIdEnabledDriver()
     {
         return idEnabledDriver;
     }
 
     @Override
-    public SingleColumnDatabaseDriver<Identity, Boolean> getIdLockedDriver()
+    public SingleColumnDatabaseDriver<SecIdentityDbObj, Boolean> getIdLockedDriver()
     {
         return idLockedDriver;
     }
 
     @Override
-    protected Pair<Identity, SecIdentityInitObj> load(RawParameters rawRef, Void parentRef)
+    protected Pair<SecIdentityDbObj, Void> load(RawParameters rawRef, Void parentRef)
         throws DatabaseException, InvalidNameException, ValueOutOfRangeException, InvalidIpAddressException,
         MdException, ExhaustedPoolException, ValueInUseException, RuntimeException, AccessDeniedException
     {
@@ -172,14 +173,14 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<Identity, SecIdentity
         }
 
         return new Pair<>(
-            Identity.create(dbCtx, idName),
-            new SecIdentityInitObj(passHash, passSalt, enabled, locked)
+            new SecIdentityDbObj(Identity.create(dbCtx, idName), passHash, passSalt, enabled, locked),
+            null
         );
     }
 
     @Override
-    protected String getId(Identity dataRef) throws AccessDeniedException
+    protected String getId(SecIdentityDbObj dataRef) throws AccessDeniedException
     {
-        return "Identity: " + dataRef.name.displayValue;
+        return "Identity: " + dataRef.getIdentity().name.displayValue;
     }
 }

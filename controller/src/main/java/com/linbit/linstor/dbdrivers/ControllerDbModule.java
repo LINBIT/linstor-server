@@ -48,8 +48,12 @@ import com.linbit.linstor.core.objects.remotes.EbsRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.LinstorRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.S3RemoteDbDriver;
 import com.linbit.linstor.dbcp.DbConnectionPool;
+import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
+import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.etcd.DbEtcd;
+import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
+import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrdInitializer;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
@@ -103,6 +107,8 @@ import com.linbit.linstor.dbdrivers.interfaces.ScheduleCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ScheduleDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecConfigCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecConfigDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecDefaultRoleCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecDefaultRoleDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdRoleCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdRoleDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdentityCtrlDatabaseDriver;
@@ -145,7 +151,12 @@ import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteCtrlDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.k8s.crd.K8sCrdEngine;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
+import com.linbit.linstor.security.DbAccessor;
+import com.linbit.linstor.security.DbEtcdPersistence;
+import com.linbit.linstor.security.DbK8sCrdPersistence;
+import com.linbit.linstor.security.DbSQLPersistence;
 import com.linbit.linstor.security.SecConfigDbDriver;
+import com.linbit.linstor.security.SecDefaultRoleDbDriver;
 import com.linbit.linstor.security.SecIdRoleDbDriver;
 import com.linbit.linstor.security.SecIdentityDbDriver;
 import com.linbit.linstor.security.SecObjectProtectionAclDbDriver;
@@ -156,6 +167,7 @@ import com.linbit.linstor.security.SecTypeRulesDbDriver;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 
 public class ControllerDbModule extends AbstractModule
@@ -274,6 +286,8 @@ public class ControllerDbModule extends AbstractModule
 
         bind(SecConfigCtrlDatabaseDriver.class).to(SecConfigDbDriver.class);
         bind(SecConfigDatabaseDriver.class).to(SecConfigDbDriver.class);
+        bind(SecDefaultRoleCtrlDatabaseDriver.class).to(SecDefaultRoleDbDriver.class);
+        bind(SecDefaultRoleDatabaseDriver.class).to(SecDefaultRoleDbDriver.class);
         bind(SecIdentityCtrlDatabaseDriver.class).to(SecIdentityDbDriver.class);
         bind(SecIdentityDatabaseDriver.class).to(SecIdentityDbDriver.class);
         bind(SecIdRoleCtrlDatabaseDriver.class).to(SecIdRoleDbDriver.class);
@@ -296,6 +310,13 @@ public class ControllerDbModule extends AbstractModule
                 bind(ControllerSQLDatabase.class).to(DbConnectionPool.class);
                 bind(DbEngine.class).to(SQLEngine.class);
 
+                bind(DbInitializer.class).to(DbConnectionPoolInitializer.class);
+                bind(new TypeLiteral<DbAccessor<? extends ControllerDatabase>>()
+                {
+                }).to(new TypeLiteral<DbSQLPersistence>()
+                {
+                });
+
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
                 break;
@@ -304,6 +325,13 @@ public class ControllerDbModule extends AbstractModule
                 bind(ControllerETCDDatabase.class).to(DbEtcd.class);
                 bind(DbEngine.class).to(ETCDEngine.class);
 
+                bind(DbInitializer.class).to(DbEtcdInitializer.class);
+                bind(new TypeLiteral<DbAccessor<? extends ControllerDatabase>>()
+                {
+                }).to(new TypeLiteral<DbEtcdPersistence>()
+                {
+                });
+
                 bind(NodeCtrlDatabaseDriver.class).to(NodeETCDDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeETCDDriver.class);
                 break;
@@ -311,6 +339,13 @@ public class ControllerDbModule extends AbstractModule
                 bind(ControllerDatabase.class).to(DbK8sCrd.class);
                 bind(ControllerK8sCrdDatabase.class).to(DbK8sCrd.class);
                 bind(DbEngine.class).to(K8sCrdEngine.class);
+
+                bind(DbInitializer.class).to(DbK8sCrdInitializer.class);
+                bind(new TypeLiteral<DbAccessor<? extends ControllerDatabase>>()
+                {
+                }).to(new TypeLiteral<DbK8sCrdPersistence>()
+                {
+                });
 
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);

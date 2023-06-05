@@ -10,8 +10,8 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.security.pojo.SignInEntryPojo;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+import com.linbit.linstor.security.pojo.SignInEntryPojo;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -25,10 +25,10 @@ import java.util.Hashtable;
 
 import org.slf4j.event.Level;
 
-public class CtrlAuthentication
+public class CtrlAuthentication<CTRL_DB_TYPE extends ControllerDatabase>
 {
-    private final ControllerDatabase ctrlDb;
-    private final DbAccessor dbDriver;
+    private final CTRL_DB_TYPE ctrlDb;
+    private final DbAccessor<CTRL_DB_TYPE> dbDriver;
     private final ErrorReporter errorLog;
     private final AccessContext publicCtx;
     private final AccessContext sysCtx;
@@ -41,22 +41,21 @@ public class CtrlAuthentication
         AccessContext initCtx,
         AccessContext sysCtxRef,
         AccessContext publicCtxRef,
-        ControllerDatabase ctrlDbRef,
-        DbAccessor dbDriverRef,
+        CTRL_DB_TYPE ctrlDbRef,
+        DbAccessor<CTRL_DB_TYPE> dbDriverRef,
         ModularCryptoProvider cryptoProvider,
         ErrorReporter errorLogRef,
         CtrlConfig ctrlCfgRef
     )
-        throws AccessDeniedException, LinStorException
+        throws LinStorException
     {
+        dbDriver = dbDriverRef;
         ErrorCheck.ctorNotNull(CtrlAuthentication.class, AccessContext.class, initCtx);
         ErrorCheck.ctorNotNull(CtrlAuthentication.class, ControllerDatabase.class, ctrlDbRef);
-        ErrorCheck.ctorNotNull(CtrlAuthentication.class, DbAccessor.class, dbDriverRef);
 
         initCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
 
         ctrlDb = ctrlDbRef;
-        dbDriver = dbDriverRef;
         errorLog = errorLogRef;
         sysCtx = sysCtxRef;
         publicCtx = publicCtxRef;
@@ -232,10 +231,8 @@ public class CtrlAuthentication
             {
                 // Create an Identity entry in the database, use the PUBLIC role and the PUBLIC security domain
                 dbDriver.createSignInEntry(
-                    ctrlDb,
-                    idName,
-                    Role.PUBLIC_ROLE.name,
-                    SecurityType.PUBLIC_TYPE.name,
+                    Identity.get(idName),
+                    Role.PUBLIC_ROLE,
                     new byte[0],
                     new byte[0]
                 );

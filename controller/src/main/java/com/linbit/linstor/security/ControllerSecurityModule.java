@@ -3,17 +3,17 @@ package com.linbit.linstor.security;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.PublicContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 import javax.inject.Singleton;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
-import com.linbit.linstor.LinStorException;
-import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 
 public class ControllerSecurityModule extends AbstractModule
 {
@@ -25,7 +25,7 @@ public class ControllerSecurityModule extends AbstractModule
     @Provides
     public SecurityLevelSetter securityLevelSetter(
         final ControllerDatabase dbConnectionPool,
-        final DbAccessor securityDbDriver
+        final DbAccessor<? extends ControllerDatabase> securityDbDriver
     )
     {
         return (accCtx, newLevel) ->
@@ -35,21 +35,22 @@ public class ControllerSecurityModule extends AbstractModule
     @Provides
     public MandatoryAuthSetter mandatoryAuthSetter(
         final ControllerDatabase dbConnectionPool,
-        final DbAccessor securityDbDriver
+        final DbAccessor<? extends ControllerDatabase> securityDbDriver
     )
     {
         return (accCtx, newPolicy) ->
             Authentication.setRequired(accCtx, newPolicy, dbConnectionPool, securityDbDriver);
     }
 
+    @SuppressWarnings("unchecked")
     @Provides
     @Singleton
-    public CtrlAuthentication initializeAuthentication(
+    public CtrlAuthentication<ControllerDatabase> initializeAuthentication(
         @SystemContext AccessContext initCtx,
         @PublicContext AccessContext publicCtx,
         ErrorReporter errorLogRef,
         ControllerDatabase dbConnPool,
-        DbAccessor securityDbDriver,
+        DbAccessor<? extends ControllerDatabase> dbAccessor,
         ModularCryptoProvider cryptoProvider,
         CtrlConfig ctrlConfRef
     )
@@ -57,15 +58,15 @@ public class ControllerSecurityModule extends AbstractModule
     {
         errorLogRef.logInfo("Initializing authentication subsystem");
 
-        CtrlAuthentication authentication;
+        CtrlAuthentication<ControllerDatabase> authentication;
         try
         {
-            authentication = new CtrlAuthentication(
+            authentication = new CtrlAuthentication<>(
                 initCtx,
                 initCtx,
                 publicCtx,
                 dbConnPool,
-                securityDbDriver,
+                (DbAccessor<ControllerDatabase>) dbAccessor,
                 cryptoProvider,
                 errorLogRef,
                 ctrlConfRef
@@ -92,7 +93,7 @@ public class ControllerSecurityModule extends AbstractModule
         @SystemContext AccessContext initCtx,
         ErrorReporter errorLogRef,
         ControllerDatabase dbConnPool,
-        DbAccessor securityDbDriver
+        DbAccessor<? extends ControllerDatabase> securityDbDriver
     )
     {
         errorLogRef.logInfo("Initializing authorization subsystem");
