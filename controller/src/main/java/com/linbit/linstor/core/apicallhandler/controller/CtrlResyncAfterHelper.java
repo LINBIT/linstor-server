@@ -28,6 +28,7 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Pair;
@@ -163,6 +164,7 @@ public class CtrlResyncAfterHelper
      * @throws ApiDatabaseException     if setProp fails
      * @throws ApiAccessDeniedException if apiCtx doesn't have access to resource definition
      */
+    @SuppressWarnings("checkstyle:IllegalToken")
     private Pair<ApiCallRc, Set<Resource>> updateResyncAfter()
     {
         final ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -182,6 +184,12 @@ public class CtrlResyncAfterHelper
                     while (itStorPool.hasNext())
                     {
                         final StorPool sp = itStorPool.next();
+                        if (sp.getDeviceProviderKind() == DeviceProviderKind.DISKLESS)
+                        {
+                            // ignore diskless pools
+                            continue;
+                        }
+
                         final TreeMap<MinorNumber, VlmProviderObject<Resource>> spVolsSorted = new TreeMap<>();
                         for (final VlmProviderObject<Resource> vol : sp.getVolumes(sysCtx))
                         {
