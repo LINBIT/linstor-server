@@ -1,15 +1,16 @@
 package com.linbit.linstor.security;
 
 import com.linbit.InvalidNameException;
+import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-
-import org.junit.Before;
-import org.junit.Test;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import org.junit.Before;
+import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -118,7 +119,8 @@ public class ObjectProtectionGenericDbDriverTest extends GenericDbBase
 
     @SuppressWarnings({"checkstyle:magicnumber"})
     @Test
-    public void testLoadSimpleObjProt() throws DatabaseException, SQLException, AccessDeniedException
+    public void testLoadSimpleObjProt()
+        throws DatabaseException, SQLException, AccessDeniedException, InitializationException
     {
         Connection con = getNewConnection();
         PreparedStatement stmt = con.prepareStatement(OP_INSERT);
@@ -133,6 +135,7 @@ public class ObjectProtectionGenericDbDriverTest extends GenericDbBase
         con.commit();
         con.close();
 
+        reloadSecurityObjects();
         ObjectProtection objProt = objectProtectionFactory.getInstance(SYS_CTX, objPath, false);
 
         assertEquals(SYS_CTX.subjectId, objProt.getCreator());
@@ -234,6 +237,7 @@ public class ObjectProtectionGenericDbDriverTest extends GenericDbBase
         con.commit();
         con.close();
 
+        reloadSecurityObjects();
         ObjectProtection objProt = objectProtectionFactory.getInstance(SYS_CTX, objPath, false);
 
         assertEquals(AccessType.CHANGE, objProt.getAcl().getEntry(SYS_CTX));

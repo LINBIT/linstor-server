@@ -1,5 +1,7 @@
 package com.linbit.linstor.security;
 
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtDatabaseDriver;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
@@ -8,18 +10,21 @@ import javax.inject.Provider;
 
 public class SecurityTestUtils
 {
-    private ObjectProtectionDatabaseDriver driver;
-    private TransactionObjectFactory transObjFactory;
-    private Provider<TransactionMgr> transMgrProvider;
+    private final SecObjProtDatabaseDriver objProtDriver;
+    private final SecObjProtAclDatabaseDriver objProtAclDriver;
+    private final TransactionObjectFactory transObjFactory;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public SecurityTestUtils(
-        ObjectProtectionDatabaseDriver driverRef,
+        SecObjProtDatabaseDriver objProtDriverRef,
+        SecObjProtAclDatabaseDriver objProtAclDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
-        driver = driverRef;
+        objProtDriver = objProtDriverRef;
+        objProtAclDriver = objProtAclDriverRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
     }
@@ -32,7 +37,8 @@ public class SecurityTestUtils
         return new ObjectProtection(
             accCtx,
             objPathRef,
-            driver,
+            new AccessControlList(objPathRef, objProtAclDriver, transObjFactory, transMgrProvider),
+            objProtDriver,
             transObjFactory,
             transMgrProvider
         );

@@ -18,7 +18,7 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
 import com.linbit.linstor.storage.data.provider.diskless.DisklessData;
@@ -57,16 +57,22 @@ public class LayerStorageVlmDbDriver
 
     @Inject
     public LayerStorageVlmDbDriver(
-        ErrorReporter errorReporterRef,
         @SystemContext AccessContext dbCtxRef,
+        ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef,
+        ObjectProtectionFactory objProtFactoryRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
-        super(errorReporterRef, GeneratedDatabaseTables.LAYER_STORAGE_VOLUMES, dbEngineRef, objProtDriverRef);
+        super(
+            dbCtxRef,
+            errorReporterRef,
+            GeneratedDatabaseTables.LAYER_STORAGE_VOLUMES,
+            dbEngineRef,
+            objProtFactoryRef
+        );
         dbCtx = dbCtxRef;
         rscLayerIdDriver = rscLayerIdDriverRef;
         transObjFactory = transObjFactoryRef;

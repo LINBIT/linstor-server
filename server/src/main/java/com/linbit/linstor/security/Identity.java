@@ -2,10 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -36,6 +33,7 @@ public final class Identity implements Comparable<Identity>
         {
             SYSTEM_ID = new Identity(new IdentityName("SYSTEM"));
             PUBLIC_ID = new Identity(new IdentityName("PUBLIC"));
+            ensureDefaultsExist();
         }
         catch (InvalidNameException nameExc)
         {
@@ -127,29 +125,21 @@ public final class Identity implements Comparable<Identity>
         return count;
     }
 
-    static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws DatabaseException, InvalidNameException
+    static void ensureDefaultsExist()
     {
         Lock writeLock = GLOBAL_IDENTITY_MAP_LOCK.writeLock();
 
         try
         {
             writeLock.lock();
-            GLOBAL_IDENTITY_MAP.clear();
 
-            GLOBAL_IDENTITY_MAP.put(SYSTEM_ID.name, SYSTEM_ID);
-            GLOBAL_IDENTITY_MAP.put(PUBLIC_ID.name, PUBLIC_ID);
-
-            List<String> loadData = secDb.loadIdentities(ctrlDb);
-            for (String name : loadData)
+            if (!GLOBAL_IDENTITY_MAP.containsKey(SYSTEM_ID.name))
             {
-                IdentityName idName = new IdentityName(name);
-                if (!idName.equals(SYSTEM_ID.name) &&
-                    !idName.equals(PUBLIC_ID.name))
-                {
-                    Identity secId = new Identity(idName);
-                    GLOBAL_IDENTITY_MAP.put(idName, secId);
-                }
+                GLOBAL_IDENTITY_MAP.put(SYSTEM_ID.name, SYSTEM_ID);
+            }
+            if (!GLOBAL_IDENTITY_MAP.containsKey(PUBLIC_ID.name))
+            {
+                GLOBAL_IDENTITY_MAP.put(PUBLIC_ID.name, PUBLIC_ID);
             }
         }
         finally

@@ -11,7 +11,7 @@ import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
-import com.linbit.linstor.core.objects.NodeGenericDbDriver;
+import com.linbit.linstor.core.objects.NodeDbDriver;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -80,7 +80,7 @@ public class NodeDbDriverTest extends GenericDbBase
 
     private final NodeName nodeName;
 
-    @Inject private NodeGenericDbDriver dbDriver;
+    @Inject private NodeDbDriver dbDriver;
     private java.util.UUID uuid;
     private ObjectProtection objProt;
     private long initialFlags;
@@ -196,7 +196,7 @@ public class NodeDbDriverTest extends GenericDbBase
         ObjectProtection loadedObjProt = objectProtectionFactory.getInstance(
             SYS_CTX,
             ObjectProtection.buildPath(nodeName),
-            false
+            true
         );
         assertNotNull("Database did not persist objectProtection", loadedObjProt);
 
@@ -214,7 +214,7 @@ public class NodeDbDriverTest extends GenericDbBase
         insertNode(uuid, nodeName, 0, Node.Type.AUXILIARY);
         commit();
 
-        Iterator<Node> nodeIt = dbDriver.loadAll().keySet().iterator();
+        Iterator<Node> nodeIt = dbDriver.loadAll(null).keySet().iterator();
         Node loaded = nodeIt.next();
         assertFalse(nodeIt.hasNext());
 
@@ -710,7 +710,7 @@ public class NodeDbDriverTest extends GenericDbBase
         );
         nodesMap.put(nodeName, node);
         nodesMap.put(nodeName2, node2);
-        Map<Node, Node.InitMaps> allNodes = dbDriver.loadAll();
+        Map<Node, Node.InitMaps> allNodes = dbDriver.loadAll(null);
         assertEquals(2, allNodes.size());
 
         Iterator<Node> loadedNodesIterator = allNodes.keySet().iterator();

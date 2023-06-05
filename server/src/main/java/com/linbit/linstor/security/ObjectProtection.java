@@ -13,9 +13,9 @@ import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.transaction.BaseTransactionObject;
-import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -25,14 +25,13 @@ import javax.inject.Provider;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Security protection for linstor object
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class ObjectProtection extends BaseTransactionObject
+public final class ObjectProtection extends BaseTransactionObject implements Comparable<ObjectProtection>
 {
     private static final String PATH_SEPARATOR               = "/";
     private static final String PATH_RESOURCES               = "/resources/";
@@ -59,66 +58,22 @@ public final class ObjectProtection extends BaseTransactionObject
     // The creator's identity may change if the
     // account that was used to create the object
     // is deleted
-    private TransactionSimpleObject<ObjectProtection, Identity> objectCreator;
+    private final TransactionSimpleObject<ObjectProtection, Identity> objectCreator;
 
     // Role that has owner rights on the object
-    private TransactionSimpleObject<ObjectProtection, Role> objectOwner;
+    private final TransactionSimpleObject<ObjectProtection, Role> objectOwner;
 
     // Access control list for the object
     private final AccessControlList objectAcl;
-    private Map<Role, AccessControlEntry> cachedAcl;
+    private final Map<Role, AccessControlEntry> cachedAcl;
 
     // Security type for the object
-    private TransactionSimpleObject<ObjectProtection, SecurityType> objectType;
+    private final TransactionSimpleObject<ObjectProtection, SecurityType> objectType;
 
     // Database driver
-    private ObjectProtectionDatabaseDriver dbDriver;
+    private final SecObjProtDatabaseDriver dbDriver;
 
-    // Is this object already persisted or not
-    private boolean persisted;
-    private String objPath;
-
-    static ObjectProtection getInstance(
-        AccessContext accCtx,
-        String objPath,
-        boolean createIfNotExists,
-        Provider<? extends TransactionMgr> transMgrProvider,
-        TransactionObjectFactory transObjFactoryRef,
-        ObjectProtectionDatabaseDriver dbDriver
-    )
-        throws DatabaseException, AccessDeniedException
-    {
-        ObjectProtection objProt = null;
-
-        objProt = dbDriver.loadObjectProtection(objPath, false);
-
-        if (objProt == null && createIfNotExists)
-        {
-            objProt = new ObjectProtection(
-                accCtx,
-                objPath,
-                dbDriver,
-                transObjFactoryRef,
-                transMgrProvider
-            );
-            dbDriver.insertOp(objProt);
-            objProt.persisted = true;
-            // as we just created a new ObjProt, we have to set the permissions
-            // use the *Impl to skip the access checks as there are no rules yet and would cause
-            // an exception
-            objProt.addAclEntryImpl(accCtx.subjectRole, AccessType.CONTROL, true);
-        }
-
-        if (objProt != null)
-        {
-            objProt.requireAccess(accCtx, AccessType.CHANGE);
-            objProt.dbDriver = dbDriver;
-
-            objProt.persisted = true;
-        }
-
-        return objProt;
-    }
+    private final String objPath;
 
     /**
      * Creates an ObjectProtection instance for a newly created object
@@ -132,7 +87,8 @@ public final class ObjectProtection extends BaseTransactionObject
     ObjectProtection(
         AccessContext accCtx,
         String objPathRef,
-        ObjectProtectionDatabaseDriver driver,
+        AccessControlList objectAclRef,
+        SecObjProtDatabaseDriver driver,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProvider
     )
@@ -149,24 +105,24 @@ public final class ObjectProtection extends BaseTransactionObject
 
         if (driver != null)
         {
-            idDriver = driver.getIdentityDatabaseDrier();
-            roleDriver = driver.getRoleDatabaseDriver();
+            idDriver = driver.getCreatorIdentityDriver();
+            roleDriver = driver.getOwnerRoleDriver();
             secTypeDriver = driver.getSecurityTypeDriver();
         }
 
         objectCreator = transObjFactoryRef.createTransactionSimpleObject(this, accCtx.subjectId, idDriver);
         objectOwner = transObjFactoryRef.createTransactionSimpleObject(this, accCtx.subjectRole, roleDriver);
         objectType = transObjFactoryRef.createTransactionSimpleObject(this, accCtx.subjectDomain, secTypeDriver);
-        objectAcl = new AccessControlList();
+        objectAcl = objectAclRef;
         cachedAcl = new HashMap<>();
 
-        transObjs = Arrays.<TransactionObject>asList(
+        transObjs = Arrays.asList(
             objectCreator,
             objectOwner,
-            objectType
+            objectType,
+            objectAcl
         );
     }
-
 
     /**
      * Check whether a subject can be granted the requested level of access
@@ -293,18 +249,7 @@ public final class ObjectProtection extends BaseTransactionObject
                 );
             }
         }
-        addAclEntryImpl(entryRole, grantedAccess, true);
-    }
-
-    /* package */ void restoreAclEntry(Role entryRole, AccessType grantedAccess) throws DatabaseException
-    {
-        addAclEntryImpl(entryRole, grantedAccess, false);
-    }
-
-    private void addAclEntryImpl(Role entryRole, AccessType grantedAccess, boolean persist) throws DatabaseException
-    {
-        AccessControlEntry oldValue = objectAcl.addEntry(entryRole, grantedAccess);
-        setAcl(entryRole, grantedAccess, oldValue, persist);
+        objectAcl.addEntry(entryRole, grantedAccess);
     }
 
     public void delAclEntry(AccessContext context, Role entryRole)
@@ -336,8 +281,7 @@ public final class ObjectProtection extends BaseTransactionObject
                 );
             }
         }
-        AccessControlEntry oldEntry = objectAcl.delEntry(entryRole);
-        delAcl(entryRole, oldEntry);
+        objectAcl.delEntry(entryRole);
     }
 
     @Override
@@ -349,26 +293,13 @@ public final class ObjectProtection extends BaseTransactionObject
     @Override
     public void commitImpl()
     {
-        cachedAcl.clear();
+        // noop, all sub-objects can commit themselves
     }
 
     @Override
     public void rollbackImpl()
     {
-        super.rollback();
-
-        for (Entry<Role, AccessControlEntry> entry : cachedAcl.entrySet())
-        {
-            if (entry.getValue() == null)
-            {
-                objectAcl.delEntry(entry.getKey());
-            }
-            else
-            {
-                objectAcl.addEntry(entry.getKey(), entry.getValue().access);
-            }
-        }
-        cachedAcl.clear();
+        // noop, all sub-objects can rollback themselves
     }
 
     /**
@@ -382,68 +313,14 @@ public final class ObjectProtection extends BaseTransactionObject
     {
         requireAccess(accCtx, AccessType.CONTROL);
         activateTransMgr();
-        for (AccessControlEntry acEntry : objectAcl.getEntries().values())
-        {
-            dbDriver.deleteAcl(this, acEntry.subjectRole);
-        }
-        dbDriver.deleteOp(objPath);
+        objectAcl.deleteAll();
+        dbDriver.delete(this);
     }
 
-    public void setPersisted(boolean persistedRef)
+    @Override
+    public int compareTo(ObjectProtection otherRef)
     {
-        persisted = persistedRef;
-    }
-
-    private void setAcl(
-        Role entryRole,
-        AccessType grantedAccess,
-        AccessControlEntry oldEntry,
-        boolean persist
-    )
-        throws DatabaseException
-    {
-        if (persist)
-        {
-            ensureObjProtIsPersisted();
-
-            activateTransMgr();
-            if (oldEntry == null)
-            {
-                dbDriver.insertAcl(this, entryRole, grantedAccess);
-            }
-            else
-            {
-                dbDriver.updateAcl(this, entryRole, grantedAccess);
-            }
-
-            if (!cachedAcl.containsKey(entryRole))
-            {
-                cachedAcl.put(entryRole, oldEntry);
-            }
-        }
-    }
-
-    private void delAcl(Role entryRole, AccessControlEntry oldEntry) throws DatabaseException
-    {
-        ensureObjProtIsPersisted();
-
-        activateTransMgr();
-        dbDriver.deleteAcl(this, entryRole);
-
-        if (!cachedAcl.containsKey(entryRole))
-        {
-            cachedAcl.put(entryRole, oldEntry);
-        }
-    }
-
-    private void ensureObjProtIsPersisted() throws DatabaseException
-    {
-        if (!persisted)
-        {
-            activateTransMgr();
-            dbDriver.insertOp(this);
-            persisted = true;
-        }
+        return objPath.compareTo(otherRef.objPath);
     }
 
     /**

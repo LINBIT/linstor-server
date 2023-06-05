@@ -7,12 +7,14 @@ package com.linbit.linstor.security;
  */
 public final class AccessControlEntry
 {
+    public final String objPath;
     public final Role subjectRole;
     public final AccessType access;
 
-    AccessControlEntry(Role subjRole, AccessType acc)
+    AccessControlEntry(String objPathRef, Role subjRoleRef, AccessType accRef)
     {
-        subjectRole = subjRole;
-        access = acc;
+        objPath = objPathRef;
+        subjectRole = subjRoleRef;
+        access = accRef;
     }
 }

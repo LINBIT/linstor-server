@@ -8,6 +8,7 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.DbEngine.DataToString;
@@ -17,9 +18,10 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.utils.ExceptionThrowingFunction;
@@ -46,6 +48,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     protected static final String MSG_DO_NOT_LOG = "do not log";
 
     protected static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
+    private AccessContext dbCtx;
 
     private final ErrorReporter errorReporter;
     /**
@@ -56,21 +59,22 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
      */
     protected final DatabaseTable table;
     private final DbEngine dbEngine;
-    private final ObjectProtectionDatabaseDriver objProtDriver;
+    private final ObjectProtectionFactory objProtFactory;
 
     private final Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters;
 
-    public AbsDatabaseDriver(
+    protected AbsDatabaseDriver(
+        @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         @Nullable DatabaseTable tableRef,
-        DbEngine dbEngineRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef
+        DbEngine dbEngineRef, ObjectProtectionFactory objProtFactoryRef
     )
     {
         errorReporter = errorReporterRef;
         table = tableRef;
         dbEngine = dbEngineRef;
-        objProtDriver = objProtDriverRef;
+        dbCtx = dbCtxRef;
+        objProtFactory = objProtFactoryRef;
 
         setters = new HashMap<>();
     }
@@ -214,18 +218,7 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
 
     protected ObjectProtection getObjectProtection(String objProtPath) throws DatabaseException
     {
-        ObjectProtection objProt = objProtDriver.loadObjectProtection(
-            objProtPath,
-            false // no need to log a warning, as we would fail then anyways
-        );
-        if (objProt == null)
-        {
-            throw new ImplementationError(
-                table.getName() + "'s DB entry exists, but is missing an entry in ObjProt table! " + objProtPath,
-                null
-            );
-        }
-        return objProt;
+        return objProtFactory.getInstance(dbCtx, objProtPath, false);
     }
 
     protected DatabaseType getDbType()

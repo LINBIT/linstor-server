@@ -53,7 +53,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.DbCoreObjProtInitializer;
-import com.linbit.linstor.security.DbSecurityInitializer;
 import com.linbit.linstor.security.DummySecurityManager;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
@@ -134,7 +133,6 @@ public final class Controller
     private final ControllerDatabase controllerDb;
 
     private final DbInitializer dbInitializer;
-    private final DbSecurityInitializer dbSecurityInitializer;
     private final DbCoreObjProtInitializer dbCoreObjProtInitializer;
     private final DbDataInitializer dbDataInitializer;
     private final DbNumberPoolInitializer dbNumberPoolInitializer;
@@ -182,7 +180,6 @@ public final class Controller
         Map<ServiceName, SystemService> systemServicesMapRef,
         ControllerDatabase controllerDatabaseRef,
         DbInitializer dbConnectionPoolInitializerRef,
-        DbSecurityInitializer dbSecurityInitializerRef,
         DbCoreObjProtInitializer dbCoreObjProtInitializerRef,
         DbDataInitializer dbDataInitializerRef,
         DbNumberPoolInitializer dbNumberPoolInitializerRef,
@@ -217,7 +214,6 @@ public final class Controller
         systemServicesMap = systemServicesMapRef;
         controllerDb = controllerDatabaseRef;
         dbInitializer = dbConnectionPoolInitializerRef;
-        dbSecurityInitializer = dbSecurityInitializerRef;
         dbCoreObjProtInitializer = dbCoreObjProtInitializerRef;
         dbDataInitializer = dbDataInitializerRef;
         dbNumberPoolInitializer = dbNumberPoolInitializerRef;
@@ -340,11 +336,6 @@ public final class Controller
             startOrderlist.add(new ServiceStarter(timerEventSvc));
             startOrderlist.add(dbInitializer);
             startOrderlist.add(new ServiceStarter(controllerDb));
-            // Object protection loading has a hidden dependency on initializing the security objects
-            // (via com.linbit.linstor.security.Role.GLOBAL_ROLE_MAP).
-            // Hence the security objects should be initialized first.
-            startOrderlist.add(dbSecurityInitializer);
-            startOrderlist.add(dbCoreObjProtInitializer);
             startOrderlist.add(dbDataInitializer);
             startOrderlist.add(dbNumberPoolInitializer);
             startOrderlist.add(new ServiceStarter(taskScheduleService));

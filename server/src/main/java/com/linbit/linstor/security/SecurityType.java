@@ -2,12 +2,11 @@ package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.pojo.TypeEnforcementRulePojo;
 
+import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -42,6 +41,7 @@ public final class SecurityType implements Comparable<SecurityType>
         {
             SYSTEM_TYPE = new SecurityType(new SecTypeName("SYSTEM"));
             PUBLIC_TYPE = new SecurityType(new SecTypeName("PUBLIC"));
+            ensureDefaultsExist();
         }
         catch (InvalidNameException nameExc)
         {
@@ -56,6 +56,29 @@ public final class SecurityType implements Comparable<SecurityType>
     {
         name = typeName;
         rules = Collections.synchronizedMap(new TreeMap<SecTypeName, AccessType>());
+    }
+
+    static void ensureDefaultsExist()
+    {
+        Lock writeLock = GLOBAL_TYPE_MAP_LOCK.writeLock();
+
+        try
+        {
+            writeLock.lock();
+
+            if (!GLOBAL_TYPE_MAP.containsKey(SYSTEM_TYPE.name))
+            {
+                GLOBAL_TYPE_MAP.put(SYSTEM_TYPE.name, SYSTEM_TYPE);
+            }
+            if (!GLOBAL_TYPE_MAP.containsKey(PUBLIC_TYPE.name))
+            {
+                GLOBAL_TYPE_MAP.put(PUBLIC_TYPE.name, PUBLIC_TYPE);
+            }
+        }
+        finally
+        {
+            writeLock.unlock();
+        }
     }
 
     public static SecurityType create(AccessContext accCtx, SecTypeName typeName)
@@ -152,46 +175,44 @@ public final class SecurityType implements Comparable<SecurityType>
         return count;
     }
 
-    static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws DatabaseException, InvalidNameException
+    static void setLoadedSecTypes(
+        Set<SecurityType> loadedSecTypeSet,
+        Collection<TypeEnforcementRulePojo> typeEnforementRules
+    )
+        throws DatabaseException
     {
         Lock writeLock = GLOBAL_TYPE_MAP_LOCK.writeLock();
-
         try
         {
             writeLock.lock();
             GLOBAL_TYPE_MAP.clear();
 
-            GLOBAL_TYPE_MAP.put(SYSTEM_TYPE.name, SYSTEM_TYPE);
-            GLOBAL_TYPE_MAP.put(PUBLIC_TYPE.name, PUBLIC_TYPE);
-
-            // Load all security types
+            for (SecurityType loadedST : loadedSecTypeSet)
             {
-                List<String> loadData = secDb.loadSecurityTypes(ctrlDb);
-                for (String dspName : loadData)
-                {
-                    SecTypeName typeName = new SecTypeName(dspName);
-                    if (!typeName.equals(SYSTEM_TYPE.name) &&
-                        !typeName.equals(PUBLIC_TYPE.name))
-                    {
-                        SecurityType secType = new SecurityType(typeName);
-                        GLOBAL_TYPE_MAP.put(typeName, secType);
-                    }
-                }
+                GLOBAL_TYPE_MAP.put(loadedST.name, loadedST);
             }
 
-            // Load type enforcement rules
+            if (!GLOBAL_TYPE_MAP.containsKey(SYSTEM_TYPE.name))
             {
-                List<TypeEnforcementRulePojo> loadData = secDb.loadTeRules(ctrlDb);
-                for (TypeEnforcementRulePojo ter : loadData)
-                {
-                    SecurityType secDomain = get(new SecTypeName(ter.getDomainName()));
-                    SecurityType secType = get(new SecTypeName(ter.getTypeName()));
-                    AccessType accType = AccessType.get(ter.getAccessType());
-
-                    secType.rules.put(secDomain.name, accType);
-                }
+                GLOBAL_TYPE_MAP.put(SYSTEM_TYPE.name, SYSTEM_TYPE);
             }
+            if (!GLOBAL_TYPE_MAP.containsKey(PUBLIC_TYPE.name))
+            {
+                GLOBAL_TYPE_MAP.put(PUBLIC_TYPE.name, PUBLIC_TYPE);
+            }
+
+            for (TypeEnforcementRulePojo ter : typeEnforementRules)
+            {
+                SecurityType secDomain = get(new SecTypeName(ter.getDomainName()));
+                SecurityType secType = get(new SecTypeName(ter.getTypeName()));
+                AccessType accType = AccessType.get(ter.getAccessType());
+
+                secType.rules.put(secDomain.name, accType);
+            }
+        }
+        catch (InvalidNameException invldNameExc)
+        {
+            throw new DatabaseException("Loaded invalid name from database", invldNameExc);
         }
         finally
         {

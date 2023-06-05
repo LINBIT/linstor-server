@@ -1,6 +1,16 @@
 package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclDatabaseDriver;
+import com.linbit.linstor.transaction.BaseTransactionObject;
+import com.linbit.linstor.transaction.TransactionMap;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+
+import javax.inject.Provider;
+
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
@@ -10,13 +20,40 @@ import java.util.TreeMap;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public final class AccessControlList
+public final class AccessControlList extends BaseTransactionObject
 {
+    private final SecObjProtAclDatabaseDriver dbDriver;
     private final Map<RoleName, AccessControlEntry> acl;
+    private final String objPath;
 
-    AccessControlList()
+    AccessControlList(
+        String objPathRef,
+        SecObjProtAclDatabaseDriver dbDriverRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef
+    )
     {
-        acl = Collections.synchronizedMap(new TreeMap<RoleName, AccessControlEntry>());
+        this(objPathRef, new TreeMap<>(), dbDriverRef, transObjFactoryRef, transMgrProviderRef);
+    }
+
+    AccessControlList(
+        String objPathRef,
+        Map<RoleName, AccessControlEntry> backingMapRef,
+        SecObjProtAclDatabaseDriver dbDriverRef,
+        TransactionObjectFactory transObjFactoryRef,
+        Provider<? extends TransactionMgr> transMgrProviderRef
+    )
+    {
+        super(transMgrProviderRef);
+        objPath = objPathRef;
+        dbDriver = dbDriverRef;
+        TransactionMap<RoleName, AccessControlEntry> txAcl = transObjFactoryRef.createTransactionPrimitiveMap(
+            backingMapRef,
+            null
+        );
+        acl = Collections.synchronizedMap(txAcl);
+
+        transObjs = Arrays.asList(txAcl);
     }
 
     /**
@@ -30,56 +67,59 @@ public final class AccessControlList
     public void requireAccess(AccessContext context, AccessType requested)
         throws AccessDeniedException
     {
-        SecurityLevel globalSecLevel = SecurityLevel.get();
-        switch (globalSecLevel)
+        synchronized (acl)
         {
-            case NO_SECURITY:
-                break;
-            case RBAC:
-                // fall-through
-            case MAC:
-                boolean allowFlag = false;
+            SecurityLevel globalSecLevel = SecurityLevel.get();
+            switch (globalSecLevel)
+            {
+                case NO_SECURITY:
+                    break;
+                case RBAC:
+                    // fall-through
+                case MAC:
+                    boolean allowFlag = false;
 
-                // Look for an entry for the subject's role in this access control list
-                AccessControlEntry entry = acl.get(context.subjectRole.name);
+                    // Look for an entry for the subject's role in this access control list
+                    AccessControlEntry entry = acl.get(context.subjectRole.name);
 
-                // If an entry was found, check whether the requested level of access
-                // is within the bounds of the level of access allowed by the
-                // access control entry.
-                // If no entry was found, access is denied.
-                if (entry != null)
-                {
-                    allowFlag = entry.access.hasAccess(requested);
-                }
+                    // If an entry was found, check whether the requested level of access
+                    // is within the bounds of the level of access allowed by the
+                    // access control entry.
+                    // If no entry was found, access is denied.
+                    if (entry != null)
+                    {
+                        allowFlag = entry.access.hasAccess(requested);
+                    }
 
-                if (!allowFlag)
-                {
-                    allowFlag |= hasAccessPrivilege(context, requested);
-                }
+                    if (!allowFlag)
+                    {
+                        allowFlag |= hasAccessPrivilege(context, requested);
+                    }
 
-                if (!allowFlag)
-                {
-                    throw new AccessDeniedException(
-                        "Access of type '" + requested + "' not allowed by the " +
-                        "access control list",
-                        // Description
-                        "Access to the protected object was denied",
-                        // Cause
-                        "The access control list for the protected object does not allow " +
-                        "access of type " + requested.name() + " by role " +
-                        context.subjectRole.name,
-                        // Correction
-                        "An entry that allows access must be added by an authorized role",
-                        // No error details
+                    if (!allowFlag)
+                    {
+                        throw new AccessDeniedException(
+                            "Access of type '" + requested + "' not allowed by the " +
+                                "access control list",
+                            // Description
+                            "Access to the protected object was denied",
+                            // Cause
+                            "The access control list for the protected object does not allow " +
+                                "access of type " + requested.name() + " by role " +
+                                context.subjectRole.name,
+                            // Correction
+                            "An entry that allows access must be added by an authorized role",
+                            // No error details
+                            null
+                        );
+                    }
+                    break;
+                default:
+                    throw new ImplementationError(
+                        "Missing case label for enum constant " + globalSecLevel.name(),
                         null
                     );
-                }
-                break;
-            default:
-                throw new ImplementationError(
-                    "Missing case label for enum constant " + globalSecLevel.name(),
-                    null
-                );
+            }
         }
     }
 
@@ -146,24 +186,57 @@ public final class AccessControlList
      */
     public AccessType getEntry(Role subjRole)
     {
+
         AccessType access = null;
-        AccessControlEntry entry = acl.get(subjRole.name);
-        if (entry != null)
+        synchronized (acl)
         {
-            access = entry.access;
+            AccessControlEntry entry = acl.get(subjRole.name);
+            if (entry != null)
+            {
+                access = entry.access;
+            }
         }
         return access;
     }
 
-    AccessControlEntry addEntry(Role entryRole, AccessType grantedAccess)
+    AccessControlEntry addEntry(Role entryRole, AccessType grantedAccess) throws DatabaseException
     {
-        AccessControlEntry entry = new AccessControlEntry(entryRole, grantedAccess);
-        return acl.put(entryRole.name, entry);
+        synchronized (acl)
+        {
+            AccessControlEntry entry = new AccessControlEntry(objPath, entryRole, grantedAccess);
+            AccessControlEntry oldEntry = acl.put(entryRole.name, entry);
+            if (oldEntry == null)
+            {
+                dbDriver.create(entry);
+            }
+            else
+            {
+                dbDriver.getAccessTypeDriver().update(entry, grantedAccess);
+            }
+            return oldEntry;
+        }
     }
 
-    AccessControlEntry delEntry(Role entryRole)
+    public void deleteAll() throws DatabaseException
     {
-        return acl.remove(entryRole.name);
+        synchronized (acl)
+        {
+            for (AccessControlEntry acEntry : acl.values())
+            {
+                dbDriver.delete(acEntry);
+            }
+            acl.clear();
+        }
+    }
+
+    AccessControlEntry delEntry(Role entryRole) throws DatabaseException
+    {
+        synchronized (acl)
+        {
+            AccessControlEntry acEntry = acl.remove(entryRole.name);
+            dbDriver.delete(acEntry);
+            return acEntry;
+        }
     }
 
     public Map<RoleName, AccessControlEntry> getEntries()

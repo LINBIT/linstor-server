@@ -1,14 +1,10 @@
 package com.linbit.linstor.security;
 
-import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtDatabaseDriver;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-
-import javax.inject.Provider;
-
-import org.junit.Before;
-import org.junit.Test;
 
 import static com.linbit.linstor.security.AccessType.CHANGE;
 import static com.linbit.linstor.security.AccessType.CONTROL;
@@ -22,6 +18,12 @@ import static com.linbit.linstor.security.Privilege.PRIV_OBJ_OWNER;
 import static com.linbit.linstor.security.Privilege.PRIV_OBJ_USE;
 import static com.linbit.linstor.security.Privilege.PRIV_OBJ_VIEW;
 import static com.linbit.linstor.security.Privilege.PRIV_SYS_ALL;
+
+import javax.inject.Provider;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
@@ -43,7 +45,8 @@ public class ObjectProtectionTest
     private SecurityType someOtherUserSecDomain;
     private TransactionObjectFactory transObjFactory;
     private Provider<TransactionMgr> transMgrProvider;
-    private ObjectProtectionDatabaseDriver objProtDbDriver;
+    private SecObjProtDatabaseDriver objProtDbDriver;
+    private SecObjProtAclDatabaseDriver objProtAclDbDriver;
 
     @Before
     public void setUp() throws Exception
@@ -70,12 +73,8 @@ public class ObjectProtectionTest
         TransactionMgr transMgr = new SatelliteTransactionMgr();
         transMgrProvider = () -> transMgr;
         transObjFactory = new TransactionObjectFactory(transMgrProvider);
-        objProtDbDriver = new EmptySecurityDbDriver.EmptyObjectProtectionDatabaseDriver(
-            rootCtx,
-            transMgrProvider,
-            transObjFactory,
-            new LinStorScope()
-        );
+        objProtDbDriver = new SatelliteSecObjProtDbDriver();
+        objProtAclDbDriver = new SatelliteSecObjProtAclDbDriver();
 
         SecurityLevel.set(rootCtx, SecurityLevel.MAC, null, null);
     }
@@ -84,7 +83,7 @@ public class ObjectProtectionTest
     public void testGetOwner() throws Exception
     {
         AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, privSysAll);
-        ObjectProtection objProt = new ObjectProtection(accCtx, null, null, transObjFactory, null);
+        ObjectProtection objProt = new ObjectProtection(accCtx, "test", null, null, transObjFactory, null);
 
         assertEquals(userRole, objProt.getOwner());
 
@@ -142,7 +141,8 @@ public class ObjectProtectionTest
         {
             // preparations
             AccessContext accCtx = iteration.userAccCtx;
-            AccessControlList acl = new AccessControlList();
+            AccessControlList acl = createACL("dummy");
+
             acl.addEntry(accCtx.subjectRole, iteration.objProtAclForUser);
             SecurityType secType = iteration.objProtSecType;
             AccessType secTypeAccessType = secType.queryAccess(accCtx);
@@ -203,7 +203,8 @@ public class ObjectProtectionTest
         {
             // preparations
             AccessContext accCtx = iteration.userAccCtx;
-            AccessControlList acl = new AccessControlList();
+            AccessControlList acl = createACL("dummy");
+
             acl.addEntry(accCtx.subjectRole, iteration.objProtAclForUser);
             SecurityType secType = iteration.objProtSecType;
             AccessType secTypeAccessType = secType.queryAccess(accCtx);
@@ -259,7 +260,14 @@ public class ObjectProtectionTest
     public void testGetCreator() throws Exception
     {
         AccessContext accCtx = new AccessContext(userId, userRole, userSecDomain, privSysAll);
-        ObjectProtection objProt = new ObjectProtection(accCtx, null, null, transObjFactory, null);
+        ObjectProtection objProt = new ObjectProtection(
+            accCtx,
+            "dummy",
+            createACL("dummy"),
+            objProtDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
 
         assertEquals(userId, objProt.getCreator());
 
@@ -276,7 +284,7 @@ public class ObjectProtectionTest
         {
             // preparations
             // do not use the acl from objProt as we are currently testing that class / instance
-            AccessControlList acl = new AccessControlList();
+            AccessControlList acl = createACL("dummy2");
             acl.addEntry(iteration.userAccCtx.subjectRole, iteration.objProtAclForUser);
             AccessContext accCtx = iteration.userAccCtx;
             AccessType expectedSecTypeAccessType = iteration.objProtSecType.queryAccess(accCtx);
@@ -316,6 +324,16 @@ public class ObjectProtectionTest
                 }
             }
         }
+    }
+
+    private AccessControlList createACL(String objPathRef)
+    {
+        return new AccessControlList(
+            objPathRef,
+            objProtAclDbDriver,
+            transObjFactory,
+            transMgrProvider
+        );
     }
 
     @Test
@@ -442,7 +460,8 @@ public class ObjectProtectionTest
 
             ObjectProtection objProt = new ObjectProtection(
                 objCtx,
-                null,
+                "dummy",
+                createACL("dummy"),
                 objProtDbDriver,
                 transObjFactory,
                 transMgrProvider

@@ -1,16 +1,21 @@
 package com.linbit.linstor.security;
 
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclDatabaseDriver;
+import com.linbit.linstor.transaction.DummyTxMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+
+import javax.inject.Provider;
 
 public class DummySecurityInitializer
 {
-    private static TransactionObjectFactory transObjFactory;
+    private static final String DUMMY_OBJ_PATH = "dummy";
+    private static final SecObjProtAclDatabaseDriver DUMMY_ACL_DRIVER = new SatelliteSecObjProtAclDbDriver();
 
-    static
-    {
-        transObjFactory = new TransactionObjectFactory(() -> null);
-    }
+    private static final TransactionMgr DUMMY_TX_MGR = new DummyTxMgr();
+    private static final Provider<TransactionMgr> TRANS_MGR_PROVIDER = () -> DUMMY_TX_MGR;
+    private static final TransactionObjectFactory TRANS_OBJ_FACTORY = new TransactionObjectFactory(TRANS_MGR_PROVIDER);
 
     public static AccessContext getSystemAccessContext()
     {
@@ -48,7 +53,19 @@ public class DummySecurityInitializer
 
     public static ObjectProtection getDummyObjectProtection(AccessContext accCtx)
     {
-        return new ObjectProtection(accCtx, null, null, transObjFactory, null);
+        return new ObjectProtection(
+            accCtx,
+            DUMMY_OBJ_PATH,
+            new AccessControlList(
+                DUMMY_OBJ_PATH,
+                DUMMY_ACL_DRIVER,
+                TRANS_OBJ_FACTORY,
+                TRANS_MGR_PROVIDER
+            ),
+            null,
+            TRANS_OBJ_FACTORY,
+            TRANS_MGR_PROVIDER
+        );
     }
 
     public static void setSecurityLevel(AccessContext accCtx, SecurityLevel newLevel)

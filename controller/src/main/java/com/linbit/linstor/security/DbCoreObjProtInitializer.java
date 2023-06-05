@@ -17,9 +17,9 @@ import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
-import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class DbCoreObjProtInitializer implements StartupInitializer
 {
@@ -38,6 +38,7 @@ public class DbCoreObjProtInitializer implements StartupInitializer
     private final ScheduleProtectionRepository scheduleProtectionRepository;
     private final ShutdownProtHolder shutdownProtHolder;
     private final TransactionMgrGenerator transactionMgrGenerator;
+    private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
     public DbCoreObjProtInitializer(
@@ -55,7 +56,8 @@ public class DbCoreObjProtInitializer implements StartupInitializer
         RemoteProtectionRepository remoteProtectionRepositoryRef,
         ScheduleProtectionRepository scheduleProtectionRepositoryRef,
         ShutdownProtHolder shutdownProtHolderRef,
-        TransactionMgrGenerator transactionMgrGeneratorRef
+        TransactionMgrGenerator transactionMgrGeneratorRef,
+        Provider<TransactionMgr> transMgrProviderRef
     )
     {
         initCtx = initCtxRef;
@@ -73,18 +75,16 @@ public class DbCoreObjProtInitializer implements StartupInitializer
         scheduleProtectionRepository = scheduleProtectionRepositoryRef;
         shutdownProtHolder = shutdownProtHolderRef;
         transactionMgrGenerator = transactionMgrGeneratorRef;
+        transMgrProvider = transMgrProviderRef;
     }
 
     @Override
     public void initialize()
         throws InitializationException
     {
-        TransactionMgr transMgr = null;
-        try (LinStorScope.ScopeAutoCloseable close = initScope.enter())
+        TransactionMgr transMgr = transMgrProvider.get();
+        try
         {
-            transMgr = transactionMgrGenerator.startTransaction();
-            TransactionMgrUtil.seedTransactionMgr(initScope, transMgr);
-
             // initializing ObjectProtections for nodeMap, rscDfnMap, storPoolMap and freeSpaceMgrMap
             nodesProtectionRepository.setObjectProtection(objectProtectionFactory.getInstance(
                 initCtx,
@@ -158,29 +158,18 @@ public class DbCoreObjProtInitializer implements StartupInitializer
         }
         catch (Exception exc)
         {
-            if (transMgr != null)
+            try
             {
-                try
-                {
-                    transMgr.rollback();
-                }
-                catch (TransactionException sqlExc)
-                {
-                    throw new InitializationException(
-                        "Rollback after object protection loading failed",
-                        sqlExc
-                    );
-                }
+                transMgr.rollback();
+            }
+            catch (TransactionException sqlExc)
+            {
+                throw new InitializationException(
+                    "Rollback after object protection loading failed",
+                    sqlExc
+                );
             }
             throw new InitializationException("Failed to load object protection definitions", exc);
         }
-        finally
-        {
-            if (transMgr != null)
-            {
-                transMgr.returnConnection();
-            }
-        }
     }
-
 }

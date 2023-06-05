@@ -22,7 +22,7 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmDfnLayerObject;
@@ -219,7 +219,7 @@ public abstract class AbsLayerRscDataDbDriver<
         DatabaseTable tableRef,
         Column layerRscIdColumnRef,
         DbEngine dbEngineRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef,
+        ObjectProtectionFactory objProtFactoryRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
         AbsLayerRscDfnDataDbDriver<RSC_DFN_DATA, RSC_DATA> rscDfnDriverRef,
         AbsLayerVlmDfnDataDbDriver<RSC_DFN_DATA, VLM_DFN_DATA> vlmDfnDriverRef,
@@ -228,7 +228,7 @@ public abstract class AbsLayerRscDataDbDriver<
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
     {
-        super(errorReporterRef, tableRef, dbEngineRef, objProtDriverRef);
+        super(dbCtxRef, errorReporterRef, tableRef, dbEngineRef, objProtFactoryRef);
         dbCtx = dbCtxRef;
         layerRscIdColumn = layerRscIdColumnRef;
         rscLayerIdDriver = rscLayerIdDriverRef;

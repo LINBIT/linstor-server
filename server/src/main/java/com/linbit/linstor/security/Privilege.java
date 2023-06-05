@@ -1,5 +1,8 @@
 package com.linbit.linstor.security;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Privileges
  *
@@ -51,5 +54,27 @@ public final class Privilege
     {
         id = numId;
         name = nameRef;
+    }
+
+    public static Privilege[] restore(long combinedMaskRef)
+    {
+        Privilege[] ret;
+        if (combinedMaskRef == PRIV_SYS_ALL.id)
+        {
+            ret = PRIVILEGE_LIST;
+        }
+        else
+        {
+            List<Privilege> list = new ArrayList<>();
+            for (Privilege priv : PRIVILEGE_LIST)
+            {
+                if ((combinedMaskRef & priv.id) == priv.id)
+                {
+                    list.add(priv);
+                }
+            }
+            ret = list.toArray(new Privilege[0]);
+        }
+        return ret;
     }
 }

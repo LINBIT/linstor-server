@@ -1,7 +1,8 @@
 package com.linbit.linstor.security;
 
-import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtDatabaseDriver;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -33,7 +34,8 @@ public class SecurityModelTest
     private SecurityType userType;
     private TransactionObjectFactory transObjFactory;
     private Provider<TransactionMgr> transMgrProvider;
-    private ObjectProtectionDatabaseDriver objProtDbDriver;
+    private SecObjProtDatabaseDriver objProtDbDriver;
+    private SecObjProtAclDatabaseDriver objProtAclDbDriver;
 
     @Before
     public void setUp() throws Exception
@@ -42,12 +44,8 @@ public class SecurityModelTest
         SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
         transMgrProvider = () -> transMgr;
         transObjFactory = new TransactionObjectFactory(transMgrProvider);
-        objProtDbDriver = new EmptySecurityDbDriver.EmptyObjectProtectionDatabaseDriver(
-            sysCtx,
-            transMgrProvider,
-            transObjFactory,
-            new LinStorScope()
-        );
+        objProtDbDriver = new SatelliteSecObjProtDbDriver();
+        objProtAclDbDriver = new SatelliteSecObjProtAclDbDriver();
         setSecurityLevel(SecurityLevel.MAC);
     }
 
@@ -670,7 +668,13 @@ public class SecurityModelTest
     {
         return new ObjectProtection(
             creatorCtx,
-            null,
+            "dummy",
+            new AccessControlList(
+                "dummy",
+                objProtAclDbDriver,
+                transObjFactory,
+                transMgrProvider
+            ),
             objProtDbDriver,
             transObjFactory,
             transMgrProvider

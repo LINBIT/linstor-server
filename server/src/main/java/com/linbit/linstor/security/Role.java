@@ -2,10 +2,7 @@ package com.linbit.linstor.security;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.ControllerDatabase;
-import com.linbit.linstor.dbdrivers.DatabaseException;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -39,6 +36,7 @@ public final class Role implements Comparable<Role>
         {
             SYSTEM_ROLE = new Role(new RoleName("SYSTEM"));
             PUBLIC_ROLE = new Role(new RoleName("PUBLIC"));
+            ensureDefaultsExist();
         }
         catch (InvalidNameException nameExc)
         {
@@ -55,7 +53,41 @@ public final class Role implements Comparable<Role>
         privileges = new PrivilegeSet();
     }
 
-    public static Role create(AccessContext accCtx, RoleName roleName)
+    Role(RoleName roleName, PrivilegeSet limitRef)
+    {
+        name = roleName;
+        privileges = new PrivilegeSet(limitRef);
+    }
+
+    static void ensureDefaultsExist()
+    {
+        Lock writeLock = GLOBAL_ROLE_MAP_LOCK.writeLock();
+
+        try
+        {
+            writeLock.lock();
+
+            if (!GLOBAL_ROLE_MAP.containsKey(SYSTEM_ROLE.name))
+            {
+                GLOBAL_ROLE_MAP.put(SYSTEM_ROLE.name, SYSTEM_ROLE);
+            }
+            if (!GLOBAL_ROLE_MAP.containsKey(PUBLIC_ROLE.name))
+            {
+                GLOBAL_ROLE_MAP.put(PUBLIC_ROLE.name, PUBLIC_ROLE);
+            }
+        }
+        finally
+        {
+            writeLock.unlock();
+        }
+    }
+
+    public static Role create(AccessContext accCtx, RoleName roleName) throws AccessDeniedException
+    {
+        return create(accCtx, roleName, null);
+    }
+
+    public static Role create(AccessContext accCtx, RoleName roleName, PrivilegeSet limitRef)
         throws AccessDeniedException
     {
         accCtx.privEffective.requirePrivileges(Privilege.PRIV_SYS_ALL);
@@ -69,7 +101,14 @@ public final class Role implements Comparable<Role>
             roleObj = GLOBAL_ROLE_MAP.get(roleName);
             if (roleObj == null)
             {
-                roleObj = new Role(roleName);
+                if (limitRef == null)
+                {
+                    roleObj = new Role(roleName);
+                }
+                else
+                {
+                    roleObj = new Role(roleName, limitRef);
+                }
                 GLOBAL_ROLE_MAP.put(roleName, roleObj);
             }
         }
@@ -129,37 +168,6 @@ public final class Role implements Comparable<Role>
             readLock.unlock();
         }
         return count;
-    }
-
-    static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws DatabaseException, InvalidNameException
-    {
-        Lock writeLock = GLOBAL_ROLE_MAP_LOCK.writeLock();
-
-        try
-        {
-            writeLock.lock();
-            GLOBAL_ROLE_MAP.clear();
-
-            GLOBAL_ROLE_MAP.put(SYSTEM_ROLE.name, SYSTEM_ROLE);
-            GLOBAL_ROLE_MAP.put(PUBLIC_ROLE.name, PUBLIC_ROLE);
-
-            List<String> loadData = secDb.loadRoles(ctrlDb);
-            for (String name : loadData)
-            {
-                RoleName rlName = new RoleName(name);
-                if (!rlName.equals(SYSTEM_ROLE.name) &&
-                    !rlName.equals(PUBLIC_ROLE.name))
-                {
-                    Role secRole = new Role(rlName);
-                    GLOBAL_ROLE_MAP.put(rlName, secRole);
-                }
-            }
-        }
-        finally
-        {
-            writeLock.unlock();
-        }
     }
 
     @Override

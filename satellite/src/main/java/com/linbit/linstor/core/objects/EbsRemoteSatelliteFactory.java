@@ -5,13 +5,12 @@ import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.DivergentUuidsException;
 import com.linbit.linstor.core.identifier.RemoteName;
-import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.EbsRemoteDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -81,7 +80,7 @@ public class EbsRemoteSatelliteFactory
                 );
                 remoteMap.put(remoteNameRef, ebsRemote);
             }
-            catch (AccessDeniedException | DatabaseException exc)
+            catch (DatabaseException exc)
             {
                 throw new ImplementationError(exc);
             }

@@ -13,7 +13,7 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscCtrlDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
@@ -45,7 +45,7 @@ public class LayerOpenflexRscDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef,
+        ObjectProtectionFactory objProtFactoryRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
         LayerOpenflexVlmDbDriver openflexVlmDbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -58,7 +58,7 @@ public class LayerOpenflexRscDbDriver
             null,
             null,
             dbEngineRef,
-            objProtDriverRef,
+            objProtFactoryRef,
             rscLayerIdDriverRef,
             null,
             null,

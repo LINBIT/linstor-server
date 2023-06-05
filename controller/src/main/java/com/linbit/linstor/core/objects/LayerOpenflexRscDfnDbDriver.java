@@ -17,7 +17,7 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -52,7 +52,7 @@ public class LayerOpenflexRscDfnDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef,
+        ObjectProtectionFactory objProtFactoryRef,
         @Named(NameShortener.OPENFLEX) NameShortener nameShortenerRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
@@ -63,7 +63,7 @@ public class LayerOpenflexRscDfnDbDriver
             errorReporterRef,
             GeneratedDatabaseTables.LAYER_OPENFLEX_RESOURCE_DEFINITIONS,
             dbEngineRef,
-            objProtDriverRef
+            objProtFactoryRef
         );
         nameShortener = nameShortenerRef;
         transObjFactory = transObjFactoryRef;

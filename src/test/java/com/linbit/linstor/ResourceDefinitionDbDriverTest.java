@@ -10,13 +10,13 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.TestFactory;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.SQLUtils;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtDatabaseDriver;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
@@ -63,7 +63,8 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
     private ResourceDefinition resDfn;
     @Inject
     private ResourceDefinitionDbDriver driver;
-    @Inject private ObjectProtectionDatabaseDriver objProtDriver;
+    @Inject
+    private SecObjProtDatabaseDriver objProtDriver;
 
     private ResourceGroup dfltRscGrp;
 
@@ -276,8 +277,9 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
             payload,
             dfltRscGrp
         );
-        objProtDriver.insertOp(rscDfnObjProt);
+        objProtDriver.create(rscDfnObjProt);
 
+        reloadSecurityObjects();
         Map<ResourceDefinition, ResourceDefinition.InitMaps> resourceDefDataList = driver.loadAll(
             Collections.singletonMap(dfltRscGrp.getName(), dfltRscGrp)
         );
@@ -293,7 +295,7 @@ public class ResourceDefinitionDbDriverTest extends GenericDbBase
     public void testAlreadyExists() throws Exception
     {
         driver.create(resDfn);
-        objProtDriver.insertOp(rscDfnObjProt);
+        objProtDriver.create(rscDfnObjProt);
         rscDfnMap.put(resName, resDfn);
 
         LayerPayload payload = new LayerPayload();

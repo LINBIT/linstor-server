@@ -103,7 +103,7 @@ public class TestFactory
         NodeName nodeNameRef,
         Node.Type initialTypeRef,
         long initialFlagsRef,
-        NodeGenericDbDriver dbDriverRef,
+        NodeDbDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<? extends TransactionMgr> transMgrProviderRef

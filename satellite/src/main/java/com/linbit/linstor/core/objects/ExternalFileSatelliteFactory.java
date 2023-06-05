@@ -8,7 +8,6 @@ import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -71,7 +70,7 @@ public class ExternalFileSatelliteFactory
                 );
                 externalFileMap.put(extFileNameRef, extFile);
             }
-            catch (AccessDeniedException | DatabaseException exc)
+            catch (DatabaseException exc)
             {
                 throw new ImplementationError(exc);
             }

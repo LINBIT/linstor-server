@@ -20,7 +20,7 @@ import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -71,12 +71,12 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
         @SystemContext AccessContext dbCtxRef,
         DbEngine dbEngine,
         Provider<TransactionMgr> transMgrProviderRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef,
+        ObjectProtectionFactory objProtFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef
     )
     {
-        super(errorReporterRef, GeneratedDatabaseTables.SCHEDULES, dbEngine, objProtDriverRef);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SCHEDULES, dbEngine, objProtFactoryRef);
         dbCtx = dbCtxRef;
         transMgrProvider = transMgrProviderRef;
         propsContainerFactory = propsContainerFactoryRef;
@@ -195,7 +195,7 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
         CronParser parser = new CronParser(CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX));
-        return new Pair<Schedule, InitMaps>(
+        return new Pair<>(
             new Schedule(
                 getObjectProtection(ObjectProtection.buildPath(scheduleName)),
                 raw.build(UUID, java.util.UUID::fromString),

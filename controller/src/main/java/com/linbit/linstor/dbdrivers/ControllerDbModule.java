@@ -48,12 +48,8 @@ import com.linbit.linstor.core.objects.remotes.EbsRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.LinstorRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.S3RemoteDbDriver;
 import com.linbit.linstor.dbcp.DbConnectionPool;
-import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
-import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.etcd.DbEtcd;
-import com.linbit.linstor.dbcp.etcd.DbEtcdInitializer;
 import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrd;
-import com.linbit.linstor.dbcp.k8s.crd.DbK8sCrdInitializer;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
@@ -105,6 +101,22 @@ import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ScheduleCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ScheduleDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecConfigCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecConfigDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecIdRoleCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecIdRoleDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecIdentityCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecIdentityDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecRoleCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecRoleDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecTypeCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecTypeDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecTypeRulesCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecTypeRulesDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionCtrlDatabaseDriver;
@@ -133,14 +145,14 @@ import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteCtrlDatabaseDrive
 import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.k8s.crd.K8sCrdEngine;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
-import com.linbit.linstor.security.DbAccessor;
-import com.linbit.linstor.security.DbEtcdPersistence;
-import com.linbit.linstor.security.DbK8sCrdPersistence;
-import com.linbit.linstor.security.DbSQLPersistence;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
-import com.linbit.linstor.security.ObjectProtectionEtcdDriver;
-import com.linbit.linstor.security.ObjectProtectionK8sCrdDriver;
-import com.linbit.linstor.security.ObjectProtectionSQLDbDriver;
+import com.linbit.linstor.security.SecConfigDbDriver;
+import com.linbit.linstor.security.SecIdRoleDbDriver;
+import com.linbit.linstor.security.SecIdentityDbDriver;
+import com.linbit.linstor.security.SecObjectProtectionAclDbDriver;
+import com.linbit.linstor.security.SecObjectProtectionDbDriver;
+import com.linbit.linstor.security.SecRoleDbDriver;
+import com.linbit.linstor.security.SecTypeDbDriver;
+import com.linbit.linstor.security.SecTypeRulesDbDriver;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import com.google.inject.AbstractModule;
@@ -260,17 +272,29 @@ public class ControllerDbModule extends AbstractModule
         bind(PropsDatabaseDriver.class).to(PropsDbDriver.class);
         bind(PropsCtrlDatabaseDriver.class).to(PropsDbDriver.class);
 
+        bind(SecConfigCtrlDatabaseDriver.class).to(SecConfigDbDriver.class);
+        bind(SecConfigDatabaseDriver.class).to(SecConfigDbDriver.class);
+        bind(SecIdentityCtrlDatabaseDriver.class).to(SecIdentityDbDriver.class);
+        bind(SecIdentityDatabaseDriver.class).to(SecIdentityDbDriver.class);
+        bind(SecIdRoleCtrlDatabaseDriver.class).to(SecIdRoleDbDriver.class);
+        bind(SecIdRoleDatabaseDriver.class).to(SecIdRoleDbDriver.class);
+        bind(SecObjProtAclCtrlDatabaseDriver.class).to(SecObjectProtectionAclDbDriver.class);
+        bind(SecObjProtAclDatabaseDriver.class).to(SecObjectProtectionAclDbDriver.class);
+        bind(SecObjProtCtrlDatabaseDriver.class).to(SecObjectProtectionDbDriver.class);
+        bind(SecObjProtDatabaseDriver.class).to(SecObjectProtectionDbDriver.class);
+        bind(SecRoleCtrlDatabaseDriver.class).to(SecRoleDbDriver.class);
+        bind(SecRoleDatabaseDriver.class).to(SecRoleDbDriver.class);
+        bind(SecTypeCtrlDatabaseDriver.class).to(SecTypeDbDriver.class);
+        bind(SecTypeDatabaseDriver.class).to(SecTypeDbDriver.class);
+        bind(SecTypeRulesCtrlDatabaseDriver.class).to(SecTypeRulesDbDriver.class);
+        bind(SecTypeRulesDatabaseDriver.class).to(SecTypeRulesDbDriver.class);
+
         switch (dbType)
         {
             case SQL:
                 bind(ControllerDatabase.class).to(DbConnectionPool.class);
                 bind(ControllerSQLDatabase.class).to(DbConnectionPool.class);
                 bind(DbEngine.class).to(SQLEngine.class);
-
-                bind(DbInitializer.class).to(DbConnectionPoolInitializer.class);
-                bind(DbAccessor.class).to(DbSQLPersistence.class);
-
-                bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionSQLDbDriver.class);
 
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
@@ -280,11 +304,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(ControllerETCDDatabase.class).to(DbEtcd.class);
                 bind(DbEngine.class).to(ETCDEngine.class);
 
-                bind(DbInitializer.class).to(DbEtcdInitializer.class);
-                bind(DbAccessor.class).to(DbEtcdPersistence.class);
-
-                bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionEtcdDriver.class);
-
                 bind(NodeCtrlDatabaseDriver.class).to(NodeETCDDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeETCDDriver.class);
                 break;
@@ -292,11 +311,6 @@ public class ControllerDbModule extends AbstractModule
                 bind(ControllerDatabase.class).to(DbK8sCrd.class);
                 bind(ControllerK8sCrdDatabase.class).to(DbK8sCrd.class);
                 bind(DbEngine.class).to(K8sCrdEngine.class);
-
-                bind(DbInitializer.class).to(DbK8sCrdInitializer.class);
-                bind(DbAccessor.class).to(DbK8sCrdPersistence.class);
-
-                bind(ObjectProtectionDatabaseDriver.class).to(ObjectProtectionK8sCrdDriver.class);
 
                 bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
                 bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);

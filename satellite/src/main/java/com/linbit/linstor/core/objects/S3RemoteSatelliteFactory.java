@@ -10,7 +10,6 @@ import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteDatabaseDriver;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -79,7 +78,7 @@ public class S3RemoteSatelliteFactory
                 );
                 remoteMap.put(remoteNameRef, s3remote);
             }
-            catch (AccessDeniedException | DatabaseException exc)
+            catch (DatabaseException exc)
             {
                 throw new ImplementationError(exc);
             }

@@ -1,15 +1,7 @@
 package com.linbit.linstor.propscon;
 
-import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.PropsDbDriver;
-import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.security.GenericDbBase;
-import com.linbit.linstor.security.Identity;
-import com.linbit.linstor.security.ObjectProtection;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
-import com.linbit.linstor.security.Role;
-import com.linbit.linstor.security.SecurityType;
 
 import javax.inject.Inject;
 
@@ -177,67 +169,6 @@ public class PropsConSQLDbDriverBase extends GenericDbBase
                 stmt.executeUpdate();
             }
             con.commit();
-        }
-    }
-
-    private static class NoopObjProtDriver implements ObjectProtectionDatabaseDriver
-    {
-
-        @Override
-        public void insertOp(ObjectProtection objProtRef) throws DatabaseException
-        {
-            // no-op
-        }
-
-        @Override
-        public void deleteOp(String objectPathRef) throws DatabaseException
-        {
-            // no-op
-        }
-
-        @Override
-        public void insertAcl(ObjectProtection parentRef, Role roleRef, AccessType grantedAccessRef)
-            throws DatabaseException
-        {
-            // no-op
-        }
-
-        @Override
-        public void updateAcl(ObjectProtection parentRef, Role roleRef, AccessType grantedAccessRef)
-            throws DatabaseException
-        {
-            // no-op
-        }
-
-        @Override
-        public void deleteAcl(ObjectProtection parentRef, Role roleRef) throws DatabaseException
-        {
-            // no-op
-        }
-
-        @Override
-        public ObjectProtection loadObjectProtection(String objectPathRef, boolean logWarnIfNotExistsRef)
-            throws DatabaseException
-        {
-            return null;
-        }
-
-        @Override
-        public SingleColumnDatabaseDriver<ObjectProtection, Identity> getIdentityDatabaseDrier()
-        {
-            return null;
-        }
-
-        @Override
-        public SingleColumnDatabaseDriver<ObjectProtection, Role> getRoleDatabaseDriver()
-        {
-            return null;
-        }
-
-        @Override
-        public SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver()
-        {
-            return null;
         }
     }
 }

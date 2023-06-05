@@ -1,19 +1,33 @@
 package com.linbit.linstor.security;
 
+import com.linbit.ImplementationError;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclDatabaseDriver;
+import com.linbit.linstor.transaction.DummyTxMgr;
+import com.linbit.linstor.transaction.TransactionObjectFactory;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+
 import static com.linbit.linstor.security.AccessType.CHANGE;
 import static com.linbit.linstor.security.AccessType.CONTROL;
 import static com.linbit.linstor.security.AccessType.USE;
 import static com.linbit.linstor.security.AccessType.VIEW;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
-import com.linbit.ImplementationError;
+import javax.inject.Provider;
 
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 public class AccessControlListTest
 {
+    private static final String DUMMY_OBJ_PATH = "dummy";
+    private static final SecObjProtAclDatabaseDriver DUMMY_ACL_DRIVER = new SatelliteSecObjProtAclDbDriver();
+
+    private static final TransactionMgr DUMMY_TX_MGR = new DummyTxMgr();
+    private static final Provider<TransactionMgr> TRANS_MGR_PROVIDER = () -> DUMMY_TX_MGR;
+    private static final TransactionObjectFactory TRANS_OBJ_FACTORY = new TransactionObjectFactory(TRANS_MGR_PROVIDER);
+
     private AccessContext sysCtx;
     private AccessContext rootCtx;
 
@@ -29,7 +43,7 @@ public class AccessControlListTest
             new Role(new RoleName("SYSTEM")),
             new SecurityType(new SecTypeName("SYSTEM")),
             new PrivilegeSet(Privilege.PRIV_SYS_ALL)
-            );
+        );
         rootCtx = sysCtx.clone();
         rootCtx.privEffective.enablePrivileges(Privilege.PRIVILEGE_LIST);
 
@@ -216,7 +230,12 @@ public class AccessControlListTest
             AccessContext ctx = new AccessContext(userId, userRole, userSecDomain, privLimit);
             ctx.privEffective.enablePrivileges(privLimit.toArray());
 
-            AccessControlList acl = new AccessControlList();
+            AccessControlList acl = new AccessControlList(
+                DUMMY_OBJ_PATH,
+                DUMMY_ACL_DRIVER,
+                TRANS_OBJ_FACTORY,
+                TRANS_MGR_PROVIDER
+            );
 
             iteration.accCtx = ctx;
             iteration.role = userRole;

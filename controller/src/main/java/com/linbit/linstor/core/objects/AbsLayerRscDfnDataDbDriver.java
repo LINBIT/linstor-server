@@ -9,7 +9,7 @@ import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.utils.Pair;
@@ -29,10 +29,10 @@ public abstract class AbsLayerRscDfnDataDbDriver<
         ErrorReporter errorReporterRef,
         DatabaseTable tableRef,
         DbEngine dbEngineRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef
+        ObjectProtectionFactory objProtFactoryRef
     )
     {
-        super(errorReporterRef, tableRef, dbEngineRef, objProtDriverRef);
+        super(dbCtxRef, errorReporterRef, tableRef, dbEngineRef, objProtFactoryRef);
         dbCtx = dbCtxRef;
     }
 

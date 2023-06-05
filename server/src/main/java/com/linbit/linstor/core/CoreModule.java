@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
@@ -76,6 +77,7 @@ public class CoreModule extends AbstractModule
         bind(ExternalFileMap.class).to(ExternalFilesMapImpl.class);
         bind(RemoteMap.class).to(RemoteMapImpl.class);
         bind(ScheduleMap.class).to(ScheduleMapImpl.class);
+        bind(ObjProtMap.class).to(ObjProtMapImpl.class);
 
         bind(PeerMap.class).toInstance(new PeerMapImpl());
 
@@ -148,6 +150,10 @@ public class CoreModule extends AbstractModule
     }
 
     public interface ScheduleMap extends Map<ScheduleName, Schedule>
+    {
+    }
+
+    public interface ObjProtMap extends Map<String /* objProtPath */, ObjectProtection>
     {
     }
 
@@ -302,6 +308,18 @@ public class CoreModule extends AbstractModule
     {
         @Inject
         public ScheduleMapImpl(Provider<TransactionMgr> transMgrProvider)
+        {
+            super(new TreeMap<>(), null, transMgrProvider);
+        }
+    }
+
+    @Singleton
+    public static class ObjProtMapImpl
+        extends TransactionMap<String /* objProtPath */, ObjectProtection>
+        implements ObjProtMap
+    {
+        @Inject
+        public ObjProtMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
             super(new TreeMap<>(), null, transMgrProvider);
         }

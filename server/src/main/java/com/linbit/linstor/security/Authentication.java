@@ -62,16 +62,9 @@ public final class Authentication
         GLOBAL_AUTH_REQUIRED.set(newPolicy);
     }
 
-    static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws DatabaseException
+    public static void setLoadedConfig(boolean authRequiredRef)
     {
-        GLOBAL_AUTH_REQUIRED.set(true);
-
-        boolean authRequired = secDb.loadAuthRequired(ctrlDb);
-        if (!authRequired)
-        {
-            GLOBAL_AUTH_REQUIRED.set(false);
-        }
+        GLOBAL_AUTH_REQUIRED.set(authRequiredRef);
     }
 
     public void createSignInEntry(

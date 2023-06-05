@@ -59,6 +59,7 @@ import com.linbit.linstor.dbcp.TestDbConnectionPoolLoader;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.DatabaseLoader;
 import com.linbit.linstor.dbdrivers.TestDbModule;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.layer.resource.AbsRscLayerHelper;
@@ -212,6 +213,20 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     protected CoreModule.ResourceDefinitionMap rscDfnMap;
     @Inject
     protected CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    @Inject
+    protected CoreModule.ObjProtMap objProtMap;
+    @Inject
+    protected CoreModule.ExternalFileMap extFileMap;
+    @Inject
+    protected CoreModule.KeyValueStoreMap kvsMap;
+    @Inject
+    protected CoreModule.RemoteMap remoteMap;
+    @Inject
+    protected CoreModule.ResourceGroupMap rscGrpMap;
+    @Inject
+    protected CoreModule.ResourceDefinitionMapExtName rscDfnExtNameMap;
+    @Inject
+    protected CoreModule.ScheduleMap scheduleMap;
 
     @Inject
     protected NodeRepository nodeRepository;
@@ -221,6 +236,11 @@ public abstract class GenericDbBase implements GenericDbTestConstants
     protected StorPoolDefinitionRepository storPoolDefinitionRepository;
     @Inject
     protected FreeSpaceMgrRepository freeSpaceMgrRepository;
+
+    @Inject
+    protected DatabaseLoader dbLoader;
+    @Inject
+    protected SecDatabaseLoader secDbLoader;
 
     @Inject
     protected ObjectProtectionFactory objectProtectionFactory;
@@ -305,12 +325,9 @@ public abstract class GenericDbBase implements GenericDbTestConstants
 
             dbConnPool.migrate(dbConnectionPoolLoader.getDbType());
 
-            DbSQLPersistence initializationSecureDbDriver = new DbSQLPersistence();
-
-            SecurityLevel.load(dbConnPool, initializationSecureDbDriver);
-            Identity.load(dbConnPool, initializationSecureDbDriver);
-            SecurityType.load(dbConnPool, initializationSecureDbDriver);
-            Role.load(dbConnPool, initializationSecureDbDriver);
+            Identity.ensureDefaultsExist();
+            SecurityType.ensureDefaultsExist();
+            Role.ensureDefaultsExist();
         }
 
         // every test class must explicitly enable security if they want to test.
@@ -364,7 +381,7 @@ public abstract class GenericDbBase implements GenericDbTestConstants
         // mock as we just gave guice to bind to. i.e. override with our local mock
         satelliteConnector = stltConnector;
 
-        injector.getInstance(DbCoreObjProtInitializer.class).initialize();
+        // injector.getInstance(DbCoreObjProtInitializer.class).initialize();
         injector.getInstance(DbDataInitializer.class).initialize();
 
         Mockito.when(layerRscIdPoolMock.autoAllocate()).then(ignoredContext -> layerRscIdAtomicId.getAndIncrement());
@@ -435,6 +452,24 @@ public abstract class GenericDbBase implements GenericDbTestConstants
                 close.close();
             }
         }
+    }
+
+    protected void reloadSecurityObjects() throws AccessDeniedException, InitializationException, DatabaseException
+    {
+        // nodesMap.clear();
+        // rscDfnMap.clear();
+        // storPoolDfnMap.clear();
+        // objProtMap.clear();
+        // extFileMap.clear();
+        // kvsMap.clear();
+        // remoteMap.clear();
+        // rscGrpMap.clear();
+        // rscDfnExtNameMap.clear();
+        // scheduleMap.clear();
+
+        secDbLoader.loadAll();
+        // dbLoader.loadSecurityObjects();
+        // dbLoader.loadCoreObjects();
     }
 
     protected Connection getConnection()

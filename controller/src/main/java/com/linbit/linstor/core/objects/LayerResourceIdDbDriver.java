@@ -5,6 +5,7 @@ import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -19,7 +20,7 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.AbsRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
@@ -58,12 +59,13 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
 
     @Inject
     public LayerResourceIdDbDriver(
+        @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef
+        ObjectProtectionFactory objProtFactoryRef
     )
     {
-        super(errorReporterRef, GeneratedDatabaseTables.LAYER_RESOURCE_IDS, dbEngineRef, objProtDriverRef);
+        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.LAYER_RESOURCE_IDS, dbEngineRef, objProtFactoryRef);
 
         setColumnSetter(LAYER_RESOURCE_ID, rlo -> rlo.getRscLayerId());
         setColumnSetter(LAYER_RESOURCE_KIND, rlo -> rlo.getLayerKind().name());

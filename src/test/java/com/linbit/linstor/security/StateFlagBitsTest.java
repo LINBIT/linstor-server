@@ -1,8 +1,9 @@
 package com.linbit.linstor.security;
 
 import com.linbit.InvalidNameException;
-import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecObjProtDatabaseDriver;
 import com.linbit.linstor.stateflags.Flags;
 import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -17,6 +18,7 @@ import static com.linbit.linstor.security.AccessType.VIEW;
 import static com.linbit.linstor.security.Privilege.PRIVILEGE_LIST;
 
 import javax.inject.Provider;
+
 import java.sql.SQLException;
 import java.util.Collections;
 
@@ -43,7 +45,8 @@ public class StateFlagBitsTest
     private SecurityType userSecDomain;
     private SecurityType someOtherUserSecDomain;
     private TransactionObjectFactory transObjFactory;
-    private ObjectProtectionDatabaseDriver objProtDbDriver;
+    private SecObjProtDatabaseDriver objProtDbDriver;
+    private SecObjProtAclDatabaseDriver objProtAclDbDriver;
 
     @Before
     public void setUp() throws InvalidNameException, AccessDeniedException, SQLException, DatabaseException
@@ -70,12 +73,8 @@ public class StateFlagBitsTest
         TransactionMgr transMgr = new SatelliteTransactionMgr();
         testTransMgrProvider = () -> transMgr;
         transObjFactory = new TransactionObjectFactory(testTransMgrProvider);
-        objProtDbDriver = new EmptySecurityDbDriver.EmptyObjectProtectionDatabaseDriver(
-            rootCtx,
-            testTransMgrProvider,
-            transObjFactory,
-            new LinStorScope()
-        );
+        objProtDbDriver = new SatelliteSecObjProtDbDriver();
+        objProtAclDbDriver = new SatelliteSecObjProtAclDbDriver();
 
         SecurityLevel.set(rootCtx, SecurityLevel.MAC, null, null);
     }
@@ -702,7 +701,13 @@ public class StateFlagBitsTest
         AccessContext objCtx = new AccessContext(someOtherUserId, someOtherRole, someOtherUserSecDomain, privSysAll);
         ObjectProtection objProt = new ObjectProtection(
             objCtx,
-            null,
+            "dummy",
+            new AccessControlList(
+                "dummy",
+                objProtAclDbDriver,
+                transObjFactory,
+                testTransMgrProvider
+            ),
             objProtDbDriver,
             transObjFactory,
             testTransMgrProvider

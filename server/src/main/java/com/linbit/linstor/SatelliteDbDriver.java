@@ -4,6 +4,8 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ServiceName;
 import com.linbit.linstor.dbdrivers.DatabaseDriver;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -33,7 +35,13 @@ public class SatelliteDbDriver implements DatabaseDriver
     }
 
     @Override
-    public void loadAll()
+    public void loadSecurityObjects() throws DatabaseException
+    {
+        // no-op
+    }
+
+    @Override
+    public void loadCoreObjects()
     {
         // no-op
     }

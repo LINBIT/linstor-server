@@ -75,6 +75,7 @@ public class DbDataInitializer implements StartupInitializer
     {
         TransactionMgr transMgr = null;
         Lock recfgWriteLock = reconfigurationLock.writeLock();
+        boolean locked = false;
 
         InitializationException initExc = null;
 
@@ -95,6 +96,7 @@ public class DbDataInitializer implements StartupInitializer
             // in read mode before locking any of the other system objects, locking the maps
             // for nodes, resource definition, storage pool definitions, etc. can be skipped.
             recfgWriteLock.lock();
+            locked = true;
 
             loadCoreObjects();
             initializeDisklessStorPoolDfn();
@@ -115,7 +117,10 @@ public class DbDataInitializer implements StartupInitializer
         }
         finally
         {
-            recfgWriteLock.unlock();
+            if (locked)
+            {
+                recfgWriteLock.unlock();
+            }
             if (transMgr != null)
             {
                 try
@@ -148,15 +153,20 @@ public class DbDataInitializer implements StartupInitializer
     }
 
     private void loadCoreObjects()
-        throws AccessDeniedException, DatabaseException
+        throws AccessDeniedException, DatabaseException, InitializationException
     {
+        errorReporter.logInfo("Security objects load from database is in progress");
+
+        databaseDriver.loadSecurityObjects();
+
+        errorReporter.logInfo("Security objects load from database completed");
         errorReporter.logInfo("Core objects load from database is in progress");
 
         nodeRepository.requireAccess(initCtx, AccessType.CONTROL);
         resourceDefinitionRepository.requireAccess(initCtx, AccessType.CONTROL);
         storPoolDefinitionRepository.requireAccess(initCtx, AccessType.CONTROL);
 
-        databaseDriver.loadAll();
+        databaseDriver.loadCoreObjects();
 
         errorReporter.logInfo("Core objects load from database completed");
     }

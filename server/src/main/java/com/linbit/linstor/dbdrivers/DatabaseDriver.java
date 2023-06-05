@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ServiceName;
+import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 
 /**
@@ -13,6 +14,8 @@ public interface DatabaseDriver
      */
     ServiceName getDefaultServiceInstanceName();
 
+    void loadSecurityObjects() throws DatabaseException, InitializationException;
+
     /**
      * Fetches all {@link com.linbit.linstor.core.objects.Node}s, {@link ResourceDefinition}s and
      * {@link com.linbit.linstor.core.objects.StorPoolDefinition}s from
@@ -22,5 +25,5 @@ public interface DatabaseDriver
      *
      * @throws DatabaseException
      */
-    void loadAll() throws DatabaseException;
+    void loadCoreObjects() throws DatabaseException;
 }

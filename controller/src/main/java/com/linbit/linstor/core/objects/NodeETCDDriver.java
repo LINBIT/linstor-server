@@ -9,7 +9,7 @@ import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.transaction.ControllerETCDTransactionMgr;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
@@ -46,7 +46,7 @@ public class NodeETCDDriver extends NodeDbDriver
         @SystemContext AccessContext dbCtxRef,
         ETCDEngine etcdEngineRef,
         Provider<TransactionMgrETCD> transMgrProviderRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef,
+        ObjectProtectionFactory objProtFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactoryRef
     )
@@ -56,7 +56,7 @@ public class NodeETCDDriver extends NodeDbDriver
             dbCtxRef,
             etcdEngineRef,
             transMgrProviderRef,
-            objProtDriverRef,
+            objProtFactoryRef,
             propsContainerFactoryRef,
             transObjFactoryRef
         );

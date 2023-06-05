@@ -7,6 +7,7 @@ import com.linbit.ServiceName;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
+import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.SystemContext;
@@ -88,6 +89,8 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.security.DbCoreObjProtInitializer;
+import com.linbit.linstor.security.SecDatabaseLoader;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -141,6 +144,8 @@ public class DatabaseLoader implements DatabaseDriver
     }
 
     private final AccessContext dbCtx;
+    private final SecDatabaseLoader securityDbLoader;
+    private final DbCoreObjProtInitializer dbCoreObjProtInitializer;
     private final PropsCtrlDatabaseDriver propsDriver;
     private final ResourceGroupCtrlDatabaseDriver rscGrpDriver;
     private final NodeCtrlDatabaseDriver nodeDriver;
@@ -188,6 +193,8 @@ public class DatabaseLoader implements DatabaseDriver
     @Inject
     public DatabaseLoader(
         @SystemContext AccessContext privCtx,
+        SecDatabaseLoader securityDbLoaderRef,
+        DbCoreObjProtInitializer dbCoreObjProtInitializerRef,
         PropsCtrlDatabaseDriver propsDriverRef,
         ResourceGroupCtrlDatabaseDriver rscGrpDriverRef,
         NodeCtrlDatabaseDriver nodeDriverRef,
@@ -233,6 +240,8 @@ public class DatabaseLoader implements DatabaseDriver
     )
     {
         dbCtx = privCtx;
+        securityDbLoader = securityDbLoaderRef;
+        dbCoreObjProtInitializer = dbCoreObjProtInitializerRef;
         propsDriver = propsDriverRef;
         rscGrpDriver = rscGrpDriverRef;
         nodeDriver = nodeDriverRef;
@@ -286,18 +295,24 @@ public class DatabaseLoader implements DatabaseDriver
             }
         }
 
-        // TODO: enable this check once all layers have proper drivers
-        // if (!layerDriversMapRef.isEmpty())
-        // {
-        // throw new ImplementationError(layerKindsWithoutDriver + " have no database drivers!");
-        // }
+        if (!layerKindsWithoutDriver.isEmpty())
+        {
+            throw new ImplementationError(layerKindsWithoutDriver + " have no database drivers!");
+        }
+    }
+
+    @Override
+    public void loadSecurityObjects() throws DatabaseException, InitializationException
+    {
+        securityDbLoader.loadAll();
+        dbCoreObjProtInitializer.initialize();
     }
 
     /**
      * This method should only be called with an locked reconfiguration write lock
      */
     @Override
-    public void loadAll() throws DatabaseException
+    public void loadCoreObjects() throws DatabaseException
     {
         try
         {
@@ -674,13 +689,17 @@ public class DatabaseLoader implements DatabaseDriver
         }
     }
 
-    private <NAME, DATA, IN_DATA extends DATA> TreeMap<NAME, DATA> mapByName(
+    public static <NAME, DATA, IN_DATA extends DATA> TreeMap<NAME, DATA> mapByName(
         Map<IN_DATA, ?> map,
         Function<IN_DATA, NAME> nameMapper
     )
     {
-        return map.keySet().stream().collect(
-            Collectors.toMap(nameMapper, Function.identity(), throwingMerger(), TreeMap::new));
+        TreeMap<NAME, DATA> ret = new TreeMap<>();
+        for (IN_DATA data : map.keySet())
+        {
+            ret.put(nameMapper.apply(data), data);
+        }
+        return ret;
     }
 
     private void loadLayerObects(

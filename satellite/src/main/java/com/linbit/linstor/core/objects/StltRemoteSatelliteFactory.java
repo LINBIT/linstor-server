@@ -10,7 +10,6 @@ import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
@@ -78,7 +77,7 @@ public class StltRemoteSatelliteFactory
                 );
                 remoteMap.put(remoteNameRef, stltRemote);
             }
-            catch (AccessDeniedException | DatabaseException exc)
+            catch (DatabaseException exc)
             {
                 throw new ImplementationError(exc);
             }

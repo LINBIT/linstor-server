@@ -24,7 +24,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
@@ -66,7 +66,7 @@ public class LayerDrbdRscDfnDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef,
+        ObjectProtectionFactory objProtFactoryRef,
         @Named(NumberPoolModule.TCP_PORT_POOL) DynamicNumberPool tcpPortPoolRef,
         TransactionObjectFactory transObjFactoryRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
@@ -77,7 +77,7 @@ public class LayerDrbdRscDfnDbDriver
             errorReporterRef,
             GeneratedDatabaseTables.LAYER_DRBD_RESOURCE_DEFINITIONS,
             dbEngineRef,
-            objProtDriverRef
+            objProtFactoryRef
         );
         tcpPortPool = tcpPortPoolRef;
         transObjFactory = transObjFactoryRef;

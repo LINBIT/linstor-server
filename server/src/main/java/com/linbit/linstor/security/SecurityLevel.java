@@ -64,18 +64,16 @@ public enum SecurityLevel
     }
 
     /**
-     * Loads the configured security level from the database.
+     * Sets the configured security level from the database.
      *
      * Runs upon initial startup and during reconfiguration
      *
-     * @param ctrlDb Reference to the controller database connection pool
-     * @param secDb Reference to the security database accessor
+     * @param secLvlValue
+     *
      * @throws DatabaseException if a database error occurs
      */
-    static void load(ControllerDatabase ctrlDb, DbAccessor secDb)
-        throws DatabaseException
+    static void setLoadedSecLevel(String secLvlValue)
     {
-        String secLvlValue = secDb.loadSecurityLevel(ctrlDb);
         if (secLvlValue != null)
         {
             if (NO_SECURITY.name().equals(secLvlValue))

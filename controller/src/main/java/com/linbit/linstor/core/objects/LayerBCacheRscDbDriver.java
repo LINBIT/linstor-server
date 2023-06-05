@@ -13,7 +13,7 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerBCacheRscCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -45,7 +45,7 @@ public class LayerBCacheRscDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef,
+        ObjectProtectionFactory objProtFactoryRef,
         LayerResourceIdDatabaseDriver rscLayerIdDriverRef,
         LayerBCacheVlmDbDriver layerBCacheVlmDbDriverRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -58,7 +58,7 @@ public class LayerBCacheRscDbDriver
             null,
             null,
             dbEngineRef,
-            objProtDriverRef,
+            objProtFactoryRef,
             rscLayerIdDriverRef,
             null,
             null,

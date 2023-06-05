@@ -22,7 +22,7 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
-import com.linbit.linstor.security.ObjectProtectionDatabaseDriver;
+import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmDfnData;
 import com.linbit.linstor.transaction.manager.TransactionMgrSQL;
@@ -46,7 +46,7 @@ public class LayerDrbdVlmDfnDbDriver
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         DbEngine dbEngineRef,
-        ObjectProtectionDatabaseDriver objProtDriverRef,
+        ObjectProtectionFactory objProtFactoryRef,
         @Named(NumberPoolModule.MINOR_NUMBER_POOL) DynamicNumberPool minorPoolRef,
         Provider<TransactionMgrSQL> transMgrProviderRef
     )
@@ -56,7 +56,7 @@ public class LayerDrbdVlmDfnDbDriver
             errorReporterRef,
             GeneratedDatabaseTables.LAYER_DRBD_VOLUME_DEFINITIONS,
             dbEngineRef,
-            objProtDriverRef
+            objProtFactoryRef
         );
         minorPool = minorPoolRef;
         transMgrProvider = transMgrProviderRef;
