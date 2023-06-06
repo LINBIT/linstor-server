@@ -150,7 +150,10 @@ public class DbCoreObjProtInitializer implements StartupInitializer
             );
 
             // Set CONTROL access for the SYSTEM role on shutdown
-            shutdownProt.addAclEntry(initCtx, initCtx.getRole(), AccessType.CONTROL);
+            if (!shutdownProt.getAcl().getEntry(initCtx).hasAccess(AccessType.CONTROL))
+            {
+                shutdownProt.addAclEntry(initCtx, initCtx.getRole(), AccessType.CONTROL);
+            }
 
             shutdownProtHolder.setShutdownProt(shutdownProt);
 
