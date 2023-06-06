@@ -1,7 +1,5 @@
 package com.linbit.linstor.core.devmgr;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.DeviceManager;
@@ -14,6 +12,9 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.PrivilegeSet;
 
 import javax.inject.Singleton;
+
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 
 public class DevMgrModule extends AbstractModule
 {
@@ -47,7 +48,7 @@ public class DevMgrModule extends AbstractModule
         AccessContext devMgrCtx = systemCtx.clone();
         PrivilegeSet devMgrPriv = devMgrCtx.getEffectivePrivs();
         devMgrPriv.disablePrivileges(Privilege.PRIV_SYS_ALL);
-        devMgrPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_USE);
+        devMgrPriv.enablePrivileges(Privilege.PRIV_MAC_OVRD, Privilege.PRIV_OBJ_CONTROL);
         return devMgrCtx;
     }
 }
