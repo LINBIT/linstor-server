@@ -29,6 +29,8 @@ public class SecObjectProtectionAclDbDriver extends
 {
     private final SingleColumnDatabaseDriver<AccessControlEntry, AccessType> accessTypeDriver;
 
+    private int loadedCount = 0;
+
     @Inject
     public SecObjectProtectionAclDbDriver(
         @SystemContext AccessContext dbCtxRef,
@@ -89,8 +91,15 @@ public class SecObjectProtectionAclDbDriver extends
                 rawRef.<Short, AccessType, IllegalArgumentException>buildParsed(ACCESS_TYPE, AccessType::get)
             )
         );
+        loadedCount++;
 
         return null;
+    }
+
+    @Override
+    protected int getLoadedCount(Map<AccessControlEntry, Void> ignoredEmptyMap)
+    {
+        return loadedCount;
     }
 
     @Override

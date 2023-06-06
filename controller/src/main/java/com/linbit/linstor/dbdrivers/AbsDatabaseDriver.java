@@ -134,8 +134,13 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
             // TODO improve exception-handling
             throw new DatabaseException("Failed to restore data", exc);
         }
-        errorReporter.logTrace("Loaded %d %ss", loadedObjectsMap.size(), table.getName());
+        errorReporter.logTrace("Loaded %4d %ss", getLoadedCount(loadedObjectsMap), table.getName());
         return loadedObjectsMap;
+    }
+
+    protected int getLoadedCount(Map<DATA, INIT_MAPS> loadedObjectsMapRef)
+    {
+        return loadedObjectsMapRef.size();
     }
 
     public void performSanityCheck()

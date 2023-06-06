@@ -87,6 +87,12 @@ public class PropsDbDriver extends AbsDatabaseDriver<PropsDbEntry, Void, Void> i
     }
 
     @Override
+    protected int getLoadedCount(Map<PropsDbEntry, Void> ignoredEmptyMap)
+    {
+        return cachedPropsConMap.size();
+    }
+
+    @Override
     public void clearCache()
     {
         cachedPropsConMap.clear();

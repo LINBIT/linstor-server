@@ -359,6 +359,14 @@ public abstract class AbsLayerRscDataDbDriver<
         return null;
     }
 
+    @Override
+    protected int getLoadedCount(
+        Map<RSC_DATA, Pair<Set<AbsRscLayerObject<?>>, Map<VolumeNumber, VLM_DATA>>> ignoredMapRef
+    )
+    {
+        return rscDataRawCache.size();
+    }
+
     /**
      * Actually create an instance from the cached database row
      */
