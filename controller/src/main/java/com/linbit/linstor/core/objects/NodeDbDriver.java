@@ -22,7 +22,6 @@ import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Nodes.NODE_DSP_NAME;
@@ -64,46 +63,6 @@ public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> i
         propsContainerFactory = propsContainerFactoryRef;
         transObjFactory = transObjFactoryRef;
 
-        initSetters(dbCtxRef);
-
-        flagsDriver = generateFlagDriver(NODE_FLAGS, Node.Flags.class);
-        nodeTypeDriver = generateSingleColumnDriver(
-            NODE_TYPE,
-            node -> node.getNodeType(dbCtxRef).toString(),
-            Node.Type::getFlagValue
-        );
-    }
-
-    /**
-     * Special constructor for {@link NodeETCDDriver}
-     */
-    NodeDbDriver(
-        ErrorReporter errorReporterRef,
-        AccessContext dbCtxRef,
-        ETCDEngine etcdEngineRef,
-        Provider<TransactionMgrETCD> transMgrProviderRef,
-        ObjectProtectionFactory objProtFactoryRef,
-        PropsContainerFactory propsContainerFactoryRef,
-        TransactionObjectFactory transObjFactoryRef
-    )
-    {
-        super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.NODES, etcdEngineRef, objProtFactoryRef);
-        transMgrProvider = transMgrProviderRef;
-        propsContainerFactory = propsContainerFactoryRef;
-        transObjFactory = transObjFactoryRef;
-
-        initSetters(dbCtxRef);
-
-        flagsDriver = generateFlagDriver(NODE_FLAGS, Node.Flags.class);
-        nodeTypeDriver = generateSingleColumnDriver(
-            NODE_TYPE,
-            node -> node.getNodeType(dbCtxRef).toString(),
-            Node.Type::getFlagValue
-        );
-    }
-
-    private void initSetters(AccessContext dbCtxRef)
-    {
         setColumnSetter(UUID, node -> node.getUuid().toString());
         setColumnSetter(NODE_NAME, node -> node.getName().value);
         setColumnSetter(NODE_DSP_NAME, node -> node.getName().displayValue);
@@ -121,7 +80,20 @@ public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> i
             default:
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
+
+        if (dbEngine instanceof ETCDEngine)
+        {
+            ((ETCDEngine) dbEngine).disableRecursiveDelete(GeneratedDatabaseTables.NODES);
+        }
+
+        flagsDriver = generateFlagDriver(NODE_FLAGS, Node.Flags.class);
+        nodeTypeDriver = generateSingleColumnDriver(
+            NODE_TYPE,
+            node -> node.getNodeType(dbCtxRef).toString(),
+            Node.Type::getFlagValue
+        );
     }
+
 
     @Override
     public StateFlagsPersistence<Node> getStateFlagPersistence()

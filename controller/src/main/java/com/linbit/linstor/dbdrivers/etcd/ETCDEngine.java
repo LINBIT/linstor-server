@@ -34,6 +34,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -48,6 +49,7 @@ import com.google.inject.Provider;
 public class ETCDEngine extends BaseEtcdDriver implements DbEngine
 {
     private final ErrorReporter errorReporter;
+    private final Set<DatabaseTable> disabledRecursiveDeleteDbTables;
 
     @Inject
     public ETCDEngine(
@@ -57,12 +59,18 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     {
         super(transMgrProviderRef);
         errorReporter = errorReporterRef;
+        disabledRecursiveDeleteDbTables = new HashSet<>();
     }
 
     @Override
     public DatabaseType getType()
     {
         return DatabaseType.ETCD;
+    }
+
+    public void disableRecursiveDelete(DatabaseTable dbTableRef)
+    {
+        disabledRecursiveDeleteDbTables.add(dbTableRef);
     }
 
     @Override
@@ -109,9 +117,19 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     {
         EtcdTransaction tx = transMgrProvider.get().getTransaction();
 
-        String key = getPk(setters, table, data);
-
-        tx.delete(key, true);
+        if (disabledRecursiveDeleteDbTables.contains(table))
+        {
+            String[] pks = getPrimaryKeys(table, data, setters);
+            for (Column col : table.values())
+            {
+                tx.delete(EtcdUtils.buildKey(col, pks), false);
+            }
+        }
+        else
+        {
+            String key = getPk(setters, table, data);
+            tx.delete(key, true);
+        }
         // sync will be called within transMgr.commit()
     }
 

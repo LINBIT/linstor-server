@@ -28,7 +28,6 @@ import com.linbit.linstor.core.objects.LayerWritecacheVlmDbDriver;
 import com.linbit.linstor.core.objects.NetInterfaceDbDriver;
 import com.linbit.linstor.core.objects.NodeConnectionDbDriver;
 import com.linbit.linstor.core.objects.NodeDbDriver;
-import com.linbit.linstor.core.objects.NodeETCDDriver;
 import com.linbit.linstor.core.objects.ResourceConnectionDbDriver;
 import com.linbit.linstor.core.objects.ResourceDbDriver;
 import com.linbit.linstor.core.objects.ResourceDefinitionDbDriver;
@@ -184,6 +183,8 @@ public class ControllerDbModule extends AbstractModule
     {
         bind(DatabaseDriver.class).to(DatabaseLoader.class);
 
+        bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
+        bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
         bind(ResourceDefinitionCtrlDatabaseDriver.class).to(ResourceDefinitionDbDriver.class);
         bind(ResourceDefinitionDatabaseDriver.class).to(ResourceDefinitionDbDriver.class);
         bind(ResourceGroupCtrlDatabaseDriver.class).to(ResourceGroupDbDriver.class);
@@ -317,8 +318,6 @@ public class ControllerDbModule extends AbstractModule
                 {
                 });
 
-                bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
-                bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
                 break;
             case ETCD:
                 bind(ControllerDatabase.class).to(DbEtcd.class);
@@ -332,8 +331,6 @@ public class ControllerDbModule extends AbstractModule
                 {
                 });
 
-                bind(NodeCtrlDatabaseDriver.class).to(NodeETCDDriver.class);
-                bind(NodeDatabaseDriver.class).to(NodeETCDDriver.class);
                 break;
             case K8S_CRD:
                 bind(ControllerDatabase.class).to(DbK8sCrd.class);
@@ -347,8 +344,6 @@ public class ControllerDbModule extends AbstractModule
                 {
                 });
 
-                bind(NodeCtrlDatabaseDriver.class).to(NodeDbDriver.class);
-                bind(NodeDatabaseDriver.class).to(NodeDbDriver.class);
                 break;
             default:
                 throw new RuntimeException("Unknown database type: " + dbType);
