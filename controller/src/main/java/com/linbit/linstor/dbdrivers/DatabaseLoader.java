@@ -728,7 +728,7 @@ public class DatabaseLoader implements DatabaseDriver
             driver.cacheAll(parentObjects);
         }
 
-        List<Resource> resourcesWithLayerData = loadLayerData(
+        Set<Resource> resourcesWithLayerData = loadLayerData(
             parentObjects,
             tmpStorPoolMapWithInitMapsRef,
             rli ->
@@ -740,7 +740,7 @@ public class DatabaseLoader implements DatabaseDriver
             }
         );
 
-        List<Snapshot> snapshotsWithLayerData = loadLayerData(
+        Set<Snapshot> snapshotsWithLayerData = loadLayerData(
             parentObjects,
             tmpStorPoolMapWithInitMapsRef,
             rli ->
@@ -828,7 +828,7 @@ public class DatabaseLoader implements DatabaseDriver
         );
     }
 
-    private <RSC extends AbsResource<RSC>> List<RSC> loadLayerData(
+    private <RSC extends AbsResource<RSC>> Set<RSC> loadLayerData(
         ParentObjects parentObjectsRef,
         Map<Pair<NodeName, StorPoolName>, Pair<StorPool, StorPool.InitMaps>> tmpStorPoolMapWithInitMapsRef,
         ExceptionThrowingFunction<AbsRscLayerObject<?>, RSC, AccessDeniedException> getter
@@ -838,11 +838,12 @@ public class DatabaseLoader implements DatabaseDriver
     {
         Set<Integer> parentIds = null;
         boolean loadNext = true;
-        Map<Integer, Pair<AbsRscLayerObject<RSC>, Set<AbsRscLayerObject<RSC>>>> rscLayerObjectChildren = new HashMap<>();
+        Map<Integer, Pair<AbsRscLayerObject<RSC>, Set<AbsRscLayerObject<RSC>>>> rscLayerObjectChildren;
+        rscLayerObjectChildren = new HashMap<>();
 
         List<AbsRscLayerObject<?>> allRLOPojoList = parentObjectsRef.getAllRloPojoList();
 
-        List<RSC> resourcesWithLayerData = new ArrayList<>();
+        Set<RSC> resourcesWithLayerData = new HashSet<>();
         while (loadNext)
         {
             // we need to load in a top-down fashion.
