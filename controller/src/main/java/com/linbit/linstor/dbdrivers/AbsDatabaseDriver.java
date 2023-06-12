@@ -331,37 +331,47 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
         {
             T ret;
             String etcdVal = (String) rawParameters.get(col.getName());
-            switch (col.getSqlType())
+            if (etcdVal == null)
             {
-                case Types.CHAR:
-                case Types.VARCHAR:
-                case Types.LONGVARBINARY:
-                    ret = (T) etcdVal;
-                    break;
-                case Types.BIT:
-                    ret = (T) ((Boolean) Boolean.parseBoolean(etcdVal));
-                    break;
-                case Types.TINYINT:
-                    ret = (T) ((Byte) Byte.parseByte(etcdVal));
-                    break;
-                case Types.SMALLINT:
-                    ret = (T) ((Short) Short.parseShort(etcdVal));
-                    break;
-                case Types.INTEGER:
-                    ret = (T) ((Integer) Integer.parseInt(etcdVal));
-                    break;
-                case Types.BIGINT:
-                    ret = (T) ((Long) Long.parseLong(etcdVal));
-                    break;
-                case Types.REAL:
-                case Types.FLOAT:
-                    ret = (T) ((Float) Float.parseFloat(etcdVal));
-                    break;
-                case Types.DOUBLE:
-                    ret = (T) ((Double) Double.parseDouble(etcdVal));
-                    break;
-                default:
-                    throw new ImplementationError("Unhandled SQL type: " + col.getSqlType());
+                ret = null;
+            }
+            else
+            {
+                switch (col.getSqlType())
+                {
+                    case Types.CHAR:
+                    case Types.VARCHAR:
+                    case Types.LONGVARBINARY:
+                        ret = (T) etcdVal;
+                        break;
+                    case Types.BIT:
+                        ret = (T) ((Boolean) Boolean.parseBoolean(etcdVal));
+                        break;
+                    case Types.TINYINT:
+                        ret = (T) ((Byte) Byte.parseByte(etcdVal));
+                        break;
+                    case Types.SMALLINT:
+                        ret = (T) ((Short) Short.parseShort(etcdVal));
+                        break;
+                    case Types.INTEGER:
+                        ret = (T) ((Integer) Integer.parseInt(etcdVal));
+                        break;
+                    case Types.BIGINT:
+                        ret = (T) ((Long) Long.parseLong(etcdVal));
+                        break;
+                    case Types.REAL:
+                    case Types.FLOAT:
+                        ret = (T) ((Float) Float.parseFloat(etcdVal));
+                        break;
+                    case Types.DOUBLE:
+                        ret = (T) ((Double) Double.parseDouble(etcdVal));
+                        break;
+                    case Types.BOOLEAN:
+                        ret = (T) ((Boolean) Boolean.parseBoolean(etcdVal));
+                        break;
+                    default:
+                        throw new ImplementationError("Unhandled SQL type: " + col.getSqlType());
+                }
             }
             return ret;
         }

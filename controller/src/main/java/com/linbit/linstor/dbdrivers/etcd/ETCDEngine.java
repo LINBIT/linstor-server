@@ -101,6 +101,10 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                 {
                     tx.put(key, Objects.toString(obj));
                 }
+                else
+                {
+                    tx.put(key, DUMMY_NULL_VALUE);
+                }
             }
         }
         // sync will be called within transMgr.commit()
@@ -168,7 +172,14 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                     {
                         throw new LinStorDBRuntimeException("Column was unexpectedly null. " + colKey);
                     }
-                    rawObjects.put(col.getName(), colData);
+                    if (DUMMY_NULL_VALUE.equals(colData))
+                    {
+                        rawObjects.put(col.getName(), null);
+                    }
+                    else
+                    {
+                        rawObjects.put(col.getName(), colData);
+                    }
                 }
             }
             Pair<DATA, INIT_MAPS> pair;

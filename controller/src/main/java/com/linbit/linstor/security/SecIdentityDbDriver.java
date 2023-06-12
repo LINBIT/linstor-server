@@ -150,8 +150,8 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<SecIdentityDbObj, Voi
         IdentityName idName = rawRef.build(IDENTITY_DSP_NAME, IdentityName::new);
         byte[] passHash;
         byte[] passSalt;
-        boolean enabled;
-        boolean locked;
+        boolean enabled = rawRef.getParsed(ID_ENABLED);
+        boolean locked = rawRef.getParsed(ID_LOCKED);
 
         switch (getDbType())
         {
@@ -159,14 +159,10 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<SecIdentityDbObj, Voi
             case K8S_CRD:
                 passHash = rawRef.get(PASS_HASH);
                 passSalt = rawRef.get(PASS_SALT);
-                enabled = rawRef.get(ID_ENABLED);
-                locked = rawRef.get(ID_LOCKED);
                 break;
             case ETCD:
                 passHash = rawRef.buildParsed(PASS_HASH, Base64::decode);
                 passSalt = rawRef.buildParsed(PASS_SALT, Base64::decode);
-                enabled = rawRef.buildParsed(ID_ENABLED, Boolean::parseBoolean);
-                locked = rawRef.buildParsed(ID_LOCKED, Boolean::parseBoolean);
                 break;
             default:
                 throw new ImplementationError("Unexpected Db type: " + getDbType());

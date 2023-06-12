@@ -84,20 +84,7 @@ public class SecTypeDbDriver extends AbsDatabaseDriver<SecurityType, SecTypeInit
         MdException, ExhaustedPoolException, ValueInUseException, RuntimeException, AccessDeniedException
     {
         final SecTypeName secTypeName = rawRef.build(TYPE_DSP_NAME, SecTypeName::new);
-        final boolean enabled;
-
-        switch (getDbType())
-        {
-            case SQL: // fall-through
-            case K8S_CRD:
-                enabled = rawRef.get(TYPE_ENABLED);
-                break;
-            case ETCD:
-                enabled = rawRef.buildParsed(TYPE_ENABLED, Boolean::parseBoolean);
-                break;
-            default:
-                throw new ImplementationError("Unexpected Db type: " + getDbType());
-        }
+        final boolean enabled = rawRef.getParsed(TYPE_ENABLED);
 
         return new Pair<>(
             SecurityType.create(dbCtx, secTypeName),

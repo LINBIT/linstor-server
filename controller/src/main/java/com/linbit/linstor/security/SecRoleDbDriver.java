@@ -109,19 +109,7 @@ public class SecRoleDbDriver extends AbsDatabaseDriver<Role, SecRoleInit, SecRol
             new PrivilegeSet(limit)
         );
 
-        final boolean roleEnabled;
-        switch (getDbType())
-        {
-            case SQL:
-            case K8S_CRD:
-                roleEnabled = rawRef.get(ROLE_ENABLED);
-                break;
-            case ETCD:
-                roleEnabled = rawRef.buildParsed(ROLE_ENABLED, Boolean::parseBoolean);
-                break;
-            default:
-                throw new ImplementationError("Unexpected Db type: " + getDbType());
-        }
+        final boolean roleEnabled = rawRef.getParsed(ROLE_ENABLED);
 
         return new Pair<>(
             role,
