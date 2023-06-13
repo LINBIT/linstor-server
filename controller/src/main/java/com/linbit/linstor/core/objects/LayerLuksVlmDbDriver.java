@@ -1,6 +1,5 @@
 package com.linbit.linstor.core.objects;
 
-import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.SystemContext;
@@ -27,8 +26,6 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-
-import java.util.function.Function;
 
 @Singleton
 public class LayerLuksVlmDbDriver
@@ -58,35 +55,16 @@ public class LayerLuksVlmDbDriver
 
         setColumnSetter(LayerLuksVolumes.LAYER_RESOURCE_ID, vlmData -> vlmData.getRscLayerObject().getRscLayerId());
         setColumnSetter(LayerLuksVolumes.VLM_NR, vlmData -> vlmData.getVlmNr().value);
+        setColumnSetter(
+            LayerLuksVolumes.ENCRYPTED_PASSWORD,
+            luksVlm -> Base64.encode(luksVlm.getEncryptedKey())
+        );
 
-        switch (getDbType())
-        {
-            case ETCD:
-                setColumnSetter(
-                    LayerLuksVolumes.ENCRYPTED_PASSWORD,
-                    luksVlm -> Base64.encode(luksVlm.getEncryptedKey())
-                );
-                encryptedPasswordDriver = generateSingleColumnDriver(
-                    LayerLuksVolumes.ENCRYPTED_PASSWORD,
-                    ignored -> MSG_DO_NOT_LOG,
-                    Base64::encode
-                );
-                break;
-            case SQL: // fall-through
-            case K8S_CRD:
-                setColumnSetter(
-                    LayerLuksVolumes.ENCRYPTED_PASSWORD,
-                    luksVlmData -> Base64.encode(luksVlmData.getEncryptedKey())
-                );
-                encryptedPasswordDriver = generateSingleColumnDriver(
-                    LayerLuksVolumes.ENCRYPTED_PASSWORD,
-                    ignored -> MSG_DO_NOT_LOG,
-                    Function.identity()
-                );
-                break;
-            default:
-                throw new ImplementationError("Unknown database type: " + getDbType());
-        }
+        encryptedPasswordDriver = generateSingleColumnDriver(
+            LayerLuksVolumes.ENCRYPTED_PASSWORD,
+            ignored -> MSG_DO_NOT_LOG,
+            Base64::encode
+        );
     }
 
     @Override
