@@ -334,7 +334,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         boolean changed = false;
         if (!secObjs.areAllSet())
         {
-            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_LUKS_MISSING_KEY, true, false, true);
+            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_LUKS_MISSING_KEY, true, false, false);
         }
         return changed;
     }
