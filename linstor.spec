@@ -19,12 +19,12 @@ URL: https://github.com/LINBIT/linstor-server
 Source0: http://pkg.linbit.com/downloads/linstor/linstor-server-%{FILE_VERSION}.tar.gz
 
 %if 0%{?suse_version} >= 1500
-BuildRequires: java-1_8_0-openjdk-headless java-1_8_0-openjdk-devel python
+BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python
 %else
     %if 0%{?rhel} > 8
-BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel python3
+BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python3
     %else
-BuildRequires: java-1.8.0-openjdk-headless java-1.8.0-openjdk-devel python2
+BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python2
     %endif
 %endif
 
@@ -70,7 +70,7 @@ cp %{_builddir}/%{NAME_VERS}/docs/linstor.toml-example %{buildroot}/%{_sysconfdi
 ### common
 %package common
 Summary: Common files shared between controller and satellite
-Requires: jre-headless
+Requires: jre-11-headless
 
 %description common
 Linstor shared components between linstor-controller and linstor-satellite
@@ -88,7 +88,7 @@ Linstor shared components between linstor-controller and linstor-satellite
 %package controller
 Summary: Linstor controller specific files
 Requires: linstor-common = %{version}
-Requires(post): jre-headless
+Requires(post): jre-11-headless
 
 %description controller
 Linstor controller manages linstor satellites and persistant data storage.

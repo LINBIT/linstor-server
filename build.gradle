@@ -7,7 +7,11 @@ apply plugin: 'application'
 apply plugin: 'checkstyle'
 apply plugin: 'jacoco'
 
-sourceCompatibility = 1.8
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
 
 checkstyleTest.enabled = false
 
@@ -36,7 +40,6 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'checkstyle'
     group 'com.linbit'
-    sourceCompatibility = 1.8
 
     repositories {
         mavenCentral()
