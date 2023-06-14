@@ -339,20 +339,25 @@ public class SQLEngine implements DbEngine
             {
                 Object data;
                 int colSqlType = column.getSqlType();
-                if (colSqlType == Types.BLOB)
+                switch (colSqlType)
                 {
-                    data = resultSet.getBytes(column.getName());
-                }
-                else
-                if (colSqlType == Types.VARCHAR || colSqlType == Types.CLOB)
-                {
-                    // includes TEXT type, but if TEXT is read with .getObject the
-                    // returned type is in h2 case org.h2.jdbc.JdbcClob instead of String
-                    data = resultSet.getString(column.getName());
-                }
-                else
-                {
-                    data = resultSet.getObject(column.getName());
+                    case Types.BLOB:
+                        data = resultSet.getBytes(column.getName());
+                        break;
+                    case Types.VARCHAR: // fall-through
+                    case Types.CLOB:
+                        // includes TEXT type, but if TEXT is read with .getObject the
+                        // returned type is in h2 case org.h2.jdbc.JdbcClob instead of String
+                        data = resultSet.getString(column.getName());
+                        break;
+                    case Types.SMALLINT:
+                        // some jdbc drivers (like mariadb / postgresql) would return an Integer here, which cannot be
+                        // casted later on to Short
+                        data = resultSet.getShort(column.getName());
+                        break;
+                    default:
+                        data = resultSet.getObject(column.getName());
+                        break;
                 }
                 if (resultSet.wasNull())
                 {
