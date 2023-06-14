@@ -2,7 +2,10 @@ package com.linbit.linstor.security;
 
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.ObjProtMap;
 import com.linbit.linstor.dbdrivers.AbsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.interfaces.SecObjProtAclDatabaseDriver;
@@ -41,11 +44,13 @@ public class SecObjectProtectionDbDriver extends
     private final SingleColumnDatabaseDriver<ObjectProtection, Role> roleDriver;
     private final SingleColumnDatabaseDriver<ObjectProtection, Identity> idDriver;
     private final SingleColumnDatabaseDriver<ObjectProtection, SecurityType> secTypeDriver;
+    private final ObjProtMap objProtMap;
 
     @Inject
     public SecObjectProtectionDbDriver(
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
+        CoreModule.ObjProtMap objProtMapRef,
         DbEngine dbEngineRef,
         SecObjProtAclDatabaseDriver objProtAclDriverRef,
         TransactionObjectFactory transObjFactoryRef,
@@ -54,6 +59,7 @@ public class SecObjectProtectionDbDriver extends
     {
         super(dbCtxRef, errorReporterRef, GeneratedDatabaseTables.SEC_OBJECT_PROTECTION, dbEngineRef, null);
         dbCtx = dbCtxRef;
+        objProtMap = objProtMapRef;
         objProtAclDriver = objProtAclDriverRef;
         transObjFactory = transObjFactoryRef;
         transMgrProvider = transMgrProviderRef;
@@ -108,6 +114,19 @@ public class SecObjectProtectionDbDriver extends
     public SingleColumnDatabaseDriver<ObjectProtection, SecurityType> getSecurityTypeDriver()
     {
         return secTypeDriver;
+    }
+
+    @Override
+    public void delete(ObjectProtection dataRef) throws DatabaseException
+    {
+        super.delete(dataRef);
+        // usually the entries in the corresponding maps should be deleted / cleaned up outside of the DB drivers.
+        // however, since the objProt is created from many places (nodes, resources, rscDfn, rscGrp, extFiles, kvs, ...)
+        // we make an exception and cleanup the objProtMap entry here
+        synchronized (objProtMap)
+        {
+            objProtMap.remove(dataRef.getObjectProtectionPath());
+        }
     }
 
     @Override
