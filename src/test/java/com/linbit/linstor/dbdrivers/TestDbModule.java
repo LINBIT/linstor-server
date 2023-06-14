@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.core.objects.ExternalFileDbDriver;
 import com.linbit.linstor.core.objects.KeyValueStoreDbDriver;
 import com.linbit.linstor.core.objects.LayerBCacheRscDbDriver;
@@ -42,6 +43,8 @@ import com.linbit.linstor.core.objects.VolumeGroupDbDriver;
 import com.linbit.linstor.core.objects.remotes.EbsRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.LinstorRemoteDbDriver;
 import com.linbit.linstor.core.objects.remotes.S3RemoteDbDriver;
+import com.linbit.linstor.dbcp.DbConnectionPoolInitializer;
+import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ExternalFileDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.KeyValueStoreCtrlDatabaseDriver;
@@ -94,6 +97,8 @@ import com.linbit.linstor.dbdrivers.interfaces.ScheduleCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.ScheduleDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecConfigCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecConfigDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecDefaultRoleCtrlDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecDefaultRoleDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdRoleCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdRoleDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdentityCtrlDatabaseDriver;
@@ -135,9 +140,10 @@ import com.linbit.linstor.dbdrivers.interfaces.remotes.LinstorRemoteDatabaseDriv
 import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.S3RemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
-import com.linbit.linstor.security.ObjectProtectionFactory;
-import com.linbit.linstor.security.ObjectProtectionStltFactory;
+import com.linbit.linstor.security.DbAccessor;
+import com.linbit.linstor.security.DbSQLPersistence;
 import com.linbit.linstor.security.SecConfigDbDriver;
+import com.linbit.linstor.security.SecDefaultRoleDbDriver;
 import com.linbit.linstor.security.SecIdRoleDbDriver;
 import com.linbit.linstor.security.SecIdentityDbDriver;
 import com.linbit.linstor.security.SecObjectProtectionAclDbDriver;
@@ -148,6 +154,7 @@ import com.linbit.linstor.security.SecTypeRulesDbDriver;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 
 public class TestDbModule extends AbstractModule
@@ -157,17 +164,10 @@ public class TestDbModule extends AbstractModule
     {
         bind(DbEngine.class).to(SQLEngine.class);
 
-        // bind(SecConfigDatabaseDriver.class).to(SatelliteSecConfigDbDriver.class);
-        // bind(SecIdentityDatabaseDriver.class).to(SatelliteSecIdentityDbDriver.class);
-        // bind(SecIdRoleDatabaseDriver.class).to(SatelliteSecIdRoleDbDriver.class);
-        // bind(SecObjProtAclDatabaseDriver.class).to(SatelliteSecObjProtAclDbDriver.class);
-        // bind(SecObjProtDatabaseDriver.class).to(SatelliteSecObjProtDbDriver.class);
-        // bind(SecRoleDatabaseDriver.class).to(SatelliteSecRoleDbDriver.class);
-        // bind(SecTypeDatabaseDriver.class).to(SatelliteSecTypeDbDriver.class);
-        // bind(SecTypeRulesDatabaseDriver.class).to(SatelliteSecTypeRulesDbDriver.class);
-
         bind(SecConfigCtrlDatabaseDriver.class).to(SecConfigDbDriver.class);
         bind(SecConfigDatabaseDriver.class).to(SecConfigDbDriver.class);
+        bind(SecDefaultRoleCtrlDatabaseDriver.class).to(SecDefaultRoleDbDriver.class);
+        bind(SecDefaultRoleDatabaseDriver.class).to(SecDefaultRoleDbDriver.class);
         bind(SecIdentityCtrlDatabaseDriver.class).to(SecIdentityDbDriver.class);
         bind(SecIdentityDatabaseDriver.class).to(SecIdentityDbDriver.class);
         bind(SecIdRoleCtrlDatabaseDriver.class).to(SecIdRoleDbDriver.class);
@@ -182,10 +182,6 @@ public class TestDbModule extends AbstractModule
         bind(SecTypeDatabaseDriver.class).to(SecTypeDbDriver.class);
         bind(SecTypeRulesCtrlDatabaseDriver.class).to(SecTypeRulesDbDriver.class);
         bind(SecTypeRulesDatabaseDriver.class).to(SecTypeRulesDbDriver.class);
-
-        // we need to override objProtFactory so that every requested objProt already exists without needing to change
-        // the "failIfNotExists" everywhere in production code
-        bind(ObjectProtectionFactory.class).to(ObjectProtectionStltFactory.class);
 
         bind(DatabaseDriver.class).to(DatabaseLoader.class);
         // bind(DatabaseDriver.class).to(TestDatabaseLoader.class);
@@ -296,5 +292,12 @@ public class TestDbModule extends AbstractModule
         bind(LayerBCacheRscCtrlDatabaseDriver.class).to(LayerBCacheRscDbDriver.class);
         bind(LayerBCacheRscDatabaseDriver.class).to(LayerBCacheRscDbDriver.class);
         bind(LayerBCacheVlmDatabaseDriver.class).to(LayerBCacheVlmDbDriver.class);
+
+        bind(DbInitializer.class).to(DbConnectionPoolInitializer.class);
+        bind(new TypeLiteral<DbAccessor<? extends ControllerDatabase>>()
+        {
+        }).to(new TypeLiteral<DbSQLPersistence>()
+        {
+        });
     }
 }
