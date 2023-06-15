@@ -11,6 +11,7 @@ import com.linbit.linstor.api.pojo.backups.BackupMetaDataPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.backupshipping.BackupShippingUtils;
 import com.linbit.linstor.core.BackupInfoManager;
+import com.linbit.linstor.core.BackupInfoManager.CleanupData;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -30,6 +31,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -53,6 +55,9 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.RestClient.RestOp;
 import com.linbit.linstor.storage.utils.RestHttpClient;
 import com.linbit.linstor.storage.utils.RestResponse;
+import com.linbit.linstor.tasks.StltRemoteCleanupTask;
+import com.linbit.linstor.tasks.TaskScheduleService;
+import com.linbit.linstor.tasks.TaskScheduleService.Task;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -114,6 +119,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     private final RemoteRepository remoteRepo;
     private final CtrlSecurityObjects ctrlSecObjs;
     private final CtrlBackupQueueInternalCallHandler queueHandler;
+    private final TaskScheduleService taskScheduleService;
 
     @Inject
     public CtrlBackupL2LSrcApiCallHandler(
@@ -131,7 +137,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         BackupInfoManager backupInfoMgrRef,
         CtrlSecurityObjects ctrlSecObjsRef,
         BackupShippingRestClient restClientRef,
-        CtrlBackupQueueInternalCallHandler queueHandlerRef
+        CtrlBackupQueueInternalCallHandler queueHandlerRef,
+        TaskScheduleService taskScheduleServiceRef
     )
     {
         sysCtx = sysCtxRef;
@@ -150,6 +157,7 @@ public class CtrlBackupL2LSrcApiCallHandler
 
         restClient = restClientRef;
         queueHandler = queueHandlerRef;
+        taskScheduleService = taskScheduleServiceRef;
     }
 
     /**
@@ -353,7 +361,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                                 .read(LockObj.NODES_MAP)
                                 .write(LockObj.RSC_DFN_MAP)
                                 .buildDeferred(),
-                            () -> createStltRemoteInTransaction(data)
+                            () -> createStltRemoteInTransaction(data, createSnapshot.objB.getNode())
                         )
                     );
             }
@@ -370,7 +378,7 @@ public class CtrlBackupL2LSrcApiCallHandler
      * 3) create the stlt-remote</br>
      * also calls updateSatellites
      */
-    public Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingData data)
+    public Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingData data, Node node)
     {
         StltRemote stltRemote = createStltRemote(
             stltRemoteFactory,
@@ -379,7 +387,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             data.srcRscName,
             data.srcBackupName,
             new TreeMap<>(),
-            data.linstorRemote.getName()
+            data.linstorRemote.getName(),
+            node
         );
 
         data.stltRemote = stltRemote;
@@ -408,7 +417,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         String rscNameRef,
         String snapshotNameRef,
         Map<String, Integer> snapShipPortsRef,
-        RemoteName linstorRemoteNameRef
+        RemoteName linstorRemoteNameRef,
+        Node nodeRef
     )
     {
         StltRemote stltRemote;
@@ -420,7 +430,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 RemoteName.createStltRemoteName(rscNameRef, snapshotNameRef, UUID.randomUUID()),
                 null,
                 snapShipPortsRef,
-                linstorRemoteNameRef
+                linstorRemoteNameRef,
+                nodeRef
             );
             remoteRepoRef.put(accCtxRef, stltRemote);
         }
@@ -576,6 +587,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                     }
 
                 }
+                backupInfoMgr.addCleanupData(data);
                 ctrlBackupCrtApiCallHandler.setIncrementalDependentProps(
                     snap.getSnapshotDefinition(),
                     prevSnapDfn,
@@ -639,8 +651,28 @@ public class CtrlBackupL2LSrcApiCallHandler
         return flux;
     }
 
+    public Flux<ApiCallRc> startQueueIfReady(StltRemote stltRemote, boolean allowNullReturn)
+    {
+        Flux<ApiCallRc> ret;
+        CleanupData data = backupInfoMgr.l2lShippingFinished(stltRemote);
+        if (data != null)
+        {
+            ret = startQueues(data.data, data.getTask());
+        }
+        else if (allowNullReturn)
+        {
+            ret = null;
+        }
+        else
+        {
+            ret = Flux.empty();
+        }
+        return ret;
+    }
+
     public Flux<ApiCallRc> startQueues(
-        BackupShippingData data
+        BackupShippingData data,
+        StltRemoteCleanupTask task
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -649,15 +681,28 @@ public class CtrlBackupL2LSrcApiCallHandler
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
                 .buildDeferred(),
-            () -> startQueuesInTransaction(data)
+            () -> startQueuesInTransaction(data, task)
         );
     }
 
     private Flux<ApiCallRc> startQueuesInTransaction(
-        BackupShippingData data
-    ) throws AccessDeniedException
+        BackupShippingData data,
+        StltRemoteCleanupTask task
+    ) throws AccessDeniedException, DatabaseException
     {
-        return queueHandler.handleBackupQueues(data.srcSnapshot.getSnapshotDefinition(), data.linstorRemote);
+        SnapshotDefinition snapDfn = null;
+        if (data.srcSnapshot != null && !data.srcSnapshot.isDeleted())
+        {
+            snapDfn = data.srcSnapshot.getSnapshotDefinition();
+            snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+        }
+        taskScheduleService.rescheduleAt(task, Task.END_TASK);
+        ctrlTransactionHelper.commit();
+        return queueHandler.handleBackupQueues(
+            snapDfn,
+            data.linstorRemote,
+            data.stltRemote
+        );
     }
 
     private Flux<ApiCallRc> unsetTakeSnapshotInTransaction(BackupShippingData dataRef)
@@ -1010,6 +1055,11 @@ public class CtrlBackupL2LSrcApiCallHandler
             downloadOnly = downloadOnlyRef;
             scheduleName = scheduleNameRef;
             allowIncremental = allowIncrementalRef;
+        }
+
+        public StltRemote getStltRemote()
+        {
+            return stltRemote;
         }
     }
 }

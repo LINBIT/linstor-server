@@ -15,6 +15,7 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.BackupInfoManager.QueueItem;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingRestClient;
@@ -27,6 +28,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
+import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.netcom.Peer;
@@ -37,6 +39,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.utils.ExceptionThrowingIterator;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -70,6 +73,7 @@ public class CtrlBackupQueueInternalCallHandler
     private final CtrlBackupCreateApiCallHandler backupCrtHandler;
     private final NodeRepository nodeRepo;
     private final SystemConfProtectionRepository sysCfgRepo;
+    private final CtrlBackupApiHelper backupHelper;
 
     @Inject
     public CtrlBackupQueueInternalCallHandler(
@@ -83,7 +87,8 @@ public class CtrlBackupQueueInternalCallHandler
         Provider<CtrlBackupL2LSrcApiCallHandler> backupL2LSrcHandlerRef,
         CtrlBackupCreateApiCallHandler backupCrtHandlerRef,
         NodeRepository nodeRepoRef,
-        SystemConfProtectionRepository sysCfgRepoRef
+        SystemConfProtectionRepository sysCfgRepoRef,
+        CtrlBackupApiHelper backupHelperRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -97,12 +102,14 @@ public class CtrlBackupQueueInternalCallHandler
         backupCrtHandler = backupCrtHandlerRef;
         nodeRepo = nodeRepoRef;
         sysCfgRepo = sysCfgRepoRef;
+        backupHelper = backupHelperRef;
 
     }
 
     public Flux<ApiCallRc> handleBackupQueues(
         SnapshotDefinition snapDfn,
-        AbsRemote remoteForSchedule
+        AbsRemote remoteForSchedule,
+        @Nullable StltRemote optStltRemote
     ) throws AccessDeniedException
     {
         Flux<ApiCallRc> flux = Flux.empty();
@@ -121,32 +128,52 @@ public class CtrlBackupQueueInternalCallHandler
          * shipment as well. Additionally this leads to a chance at filling newly added shipping slots up
          * sooner with the incremental backups getFollowUpSnaps provides.
          */
-        Map<QueueItem, TreeSet<Node>> followUpSnaps = backupInfoMgr.getFollowUpSnaps(
-            snapDfn,
-            remoteForSchedule
-        );
-
-        /*
-         * no flux-loop needed here, because neither the for-loops nor backupInfoMgr.getFollowUpSnaps remove
-         * queueItems from any queue
-         */
-        for (Entry<QueueItem, TreeSet<Node>> entry : followUpSnaps.entrySet())
+        if (snapDfn != null)
         {
-            QueueItem queueItem = entry.getKey();
-            for (Node currentNode : entry.getValue())
+            Map<QueueItem, TreeSet<Node>> followUpSnaps = backupInfoMgr.getFollowUpSnaps(
+                snapDfn,
+                remoteForSchedule
+            );
+
+            /*
+             * no flux-loop needed here, because neither the for-loops nor backupInfoMgr.getFollowUpSnaps remove
+             * queueItems from any queue
+             */
+            for (Entry<QueueItem, TreeSet<Node>> entry : followUpSnaps.entrySet())
             {
-                if (backupCrtHandler.getFreeShippingSlots(currentNode) > 0)
+                QueueItem queueItem = entry.getKey();
+                for (Node currentNode : entry.getValue())
                 {
-                    ExceptionThrowingIterator<QueueItem, AccessDeniedException> nextItem = new IteratorFromSingleItem(
-                        queueItem
-                    );
-                    flux = flux.concatWith(startQueuedShippings(currentNode, nextItem));
+                    if (backupCrtHandler.getFreeShippingSlots(currentNode) > 0)
+                    {
+                        ExceptionThrowingIterator<QueueItem, AccessDeniedException> next = new IteratorFromSingleItem(
+                            queueItem
+                        );
+                        flux = flux.concatWith(startQueuedShippings(currentNode, next));
+                    }
                 }
             }
         }
         // If the previous loop didn't fill all shipping slots of this node, start more shipments here
-        Node node = peerProvider.get().getNode();
-        if (backupCrtHandler.getFreeShippingSlots(node) > 0)
+
+        // TODO: do not delete stlt remote when src is done, instead start new task & save it in the stlt-remote. If dst
+        // tells us it's done, delete stlt-remote and task, then continue. If task triggers first, delete stlt-remote
+        // then and continue - error might still happen, but at this point there isn't really anything we can do.
+        // Although it would be possible to ask dst at this point what's taking it so long and then maybe wait a bit
+        // more...
+        Node node;
+        if (optStltRemote != null)
+        {
+            node = optStltRemote.getNode();
+            flux = flux.concatWith(backupHelper.cleanupStltRemote(optStltRemote));
+        }
+        else
+        {
+            node = peerProvider.get().getNode();
+        }
+        // no need to continue with starting queues if the node was deleted
+        boolean nodeDeleted = node.isDeleted() || node.getFlags().isSet(peerAccCtx.get(), Node.Flags.DELETE);
+        if (!nodeDeleted && backupCrtHandler.getFreeShippingSlots(node) > 0)
         {
             flux = flux.concatWith(
                 startMultipleQueuedShippings(
@@ -366,7 +393,9 @@ public class CtrlBackupQueueInternalCallHandler
                     nodeForShipping,
                     current.remote,
                     prevSnapDfn,
-                    new ApiCallRcImpl()
+                    new ApiCallRcImpl(),
+                    current.preferredNode,
+                    current.l2lData
                 );
             }
             catch (ApiAccessDeniedException exc)
@@ -464,12 +493,15 @@ public class CtrlBackupQueueInternalCallHandler
                 {
                     next.l2lData.srcSnapshot = next.snapDfn.getSnapshot(peerAccCtx.get(), l2lNodeForShipping.getName());
                     next.l2lData.srcNodeName = l2lNodeForShipping.getName().displayValue;
+                    final Node nodeForEffectivelyFinal = l2lNodeForShipping;
                     ret = backupCrtHandler.startShippingInTransaction(
                         next.snapDfn,
                         l2lNodeForShipping,
                         next.remote,
                         l2lPrevSnapDfn,
-                        new ApiCallRcImpl()
+                        new ApiCallRcImpl(),
+                        next.preferredNode,
+                        next.l2lData
                     )
                         .concatWith(
                             scopeRunner.fluxInTransactionalScope(
@@ -479,7 +511,7 @@ public class CtrlBackupQueueInternalCallHandler
                                     .write(LockObj.RSC_DFN_MAP)
                                     .buildDeferred(),
                                 () -> backupL2LSrcHandler.get()
-                                    .createStltRemoteInTransaction(next.l2lData)
+                                    .createStltRemoteInTransaction(next.l2lData, nodeForEffectivelyFinal)
                             )
                         );
                 }

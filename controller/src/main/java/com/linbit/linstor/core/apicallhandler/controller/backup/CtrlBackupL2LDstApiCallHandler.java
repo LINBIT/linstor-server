@@ -493,7 +493,8 @@ public class CtrlBackupL2LDstApiCallHandler
             data.dstRscName,
             snapName.displayValue,
             data.snapShipPorts,
-            srcRemote.getName()
+            srcRemote.getName(),
+            null // we are on dst, the node is only needed on src
         );
 
         data.snapName = snapName;

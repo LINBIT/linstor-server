@@ -48,6 +48,7 @@ public class StltRemoteSatelliteFactory
         AccessContext accCtx,
         UUID uuid,
         RemoteName remoteNameRef,
+        Node nodeRef,
         long initflags,
         String ipRef,
         Map<String, Integer> portsRef,
@@ -70,6 +71,7 @@ public class StltRemoteSatelliteFactory
                     portsRef,
                     useZstdRef,
                     null,
+                    nodeRef,
                     (StateFlagsPersistence<StltRemote>) noopFlagDriver,
                     transObjFactory,
                     transMgrProvider

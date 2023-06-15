@@ -24,6 +24,7 @@ import com.linbit.linstor.api.pojo.backups.LuksLayerMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmDfnMetaPojo;
 import com.linbit.linstor.api.pojo.backups.VlmMetaPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.backupshipping.S3MetafileNameInfo;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
@@ -1644,7 +1645,10 @@ public class CtrlBackupRestoreApiCallHandler
                                 data.srcStltRemoteName,
                                 data.srcL2LRemoteUrl
                             );
-                            backupShippingRestClient.sendBackupReceiveDoneRequest(request);
+                            flux = flux.concatWith(
+                                backupShippingRestClient.sendBackupReceiveDoneRequest(request)
+                                    .map(Json::jsonToApiCallRc)
+                            );
                         }
                         /*
                          * We need to update the stlts with the flag- & prop-changes before starting the restore

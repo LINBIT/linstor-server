@@ -17,9 +17,11 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.tasks.StltRemoteCleanupTask;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.BidirectionalMultiMap;
 
@@ -59,6 +61,7 @@ public class BackupInfoManager
      */
     // uses uploadQueues as sync-object
     private final TreeSet<QueueItem> prevNodeUndecidedQueue;
+    private final Map<StltRemote, CleanupData> cleanupDataMap;
     private final AccessContext sysCtx;
     private final ErrorReporter errorReporter;
 
@@ -79,6 +82,7 @@ public class BackupInfoManager
         l2lDstData = new HashMap<>();
         uploadQueues = new BidirectionalMultiMap<>();
         prevNodeUndecidedQueue = new TreeSet<>();
+        cleanupDataMap = new HashMap<>();
     }
 
     public boolean addAllRestoreEntries(
@@ -686,6 +690,8 @@ public class BackupInfoManager
             for (Entry<QueueItem, Set<Node>> entry : uploadQueues.entrySetInverted())
             {
                 QueueItem item = entry.getKey();
+                // TODO: for optimizing when snaps get started, the isDeleted check in this method is a good starting
+                // point, since those that trigger this check will never be started by a getFollowUpSnaps call.
                 if (
                     item.remote.equals(remote) && item.prevSnapDfn != null &&
                         !item.prevSnapDfn.isDeleted() && item.prevSnapDfn.equals(snapDfn)
@@ -695,6 +701,51 @@ public class BackupInfoManager
                 }
             }
             return ret;
+        }
+    }
+
+    public void addCleanupData(BackupShippingData data)
+    {
+        synchronized (cleanupDataMap)
+        {
+            cleanupDataMap.put(data.getStltRemote(), new CleanupData(data));
+        }
+    }
+
+    public void addTaskToCleanupData(StltRemote remote, StltRemoteCleanupTask task)
+    {
+        synchronized (cleanupDataMap)
+        {
+            CleanupData cleanupData = cleanupDataMap.get(remote);
+            if (cleanupData != null)
+            {
+                cleanupData.task = task;
+            }
+        }
+    }
+
+    /**
+     * Returns null if cleanup can not be started
+     */
+    public CleanupData l2lShippingFinished(StltRemote remote)
+    {
+        synchronized (cleanupDataMap)
+        {
+            CleanupData cleanupData = cleanupDataMap.get(remote);
+            if (cleanupData != null)
+            {
+                cleanupData.finishedCount++;
+                boolean startCleanup = cleanupData.finishedCount == 2;
+                if (startCleanup)
+                {
+                    cleanupDataMap.remove(remote);
+                }
+                else
+                {
+                    cleanupData = null;
+                }
+            }
+            return cleanupData;
         }
     }
 
@@ -856,5 +907,22 @@ public class BackupInfoManager
     public static class AbortL2LInfo
     {
         // no special data needed (for now?)
+    }
+
+    public static class CleanupData
+    {
+        public final BackupShippingData data;
+        private StltRemoteCleanupTask task;
+        private int finishedCount = 0;
+
+        private CleanupData(BackupShippingData dataRef)
+        {
+            data = dataRef;
+        }
+
+        public StltRemoteCleanupTask getTask()
+        {
+            return task;
+        }
     }
 }

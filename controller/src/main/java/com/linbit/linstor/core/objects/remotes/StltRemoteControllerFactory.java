@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects.remotes;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
@@ -48,7 +49,8 @@ public class StltRemoteControllerFactory
         RemoteName nameRef,
         String ipRef,
         Map<String, Integer> portsRef,
-        RemoteName linstorRemoteNameRef
+        RemoteName linstorRemoteNameRef,
+        Node nodeRef
     )
         throws AccessDeniedException, DatabaseException
     {
@@ -70,6 +72,7 @@ public class StltRemoteControllerFactory
             portsRef,
             null,
             linstorRemoteNameRef,
+            nodeRef,
             (StateFlagsPersistence<StltRemote>) stateFlagsDriver,
             transObjFactory,
             transMgrProvider

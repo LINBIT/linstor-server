@@ -308,7 +308,7 @@ public class CtrlBackupCreateApiCallHandler
             if (chosenNode != null)
             {
                 flux = flux.concatWith(
-                    startShipping(snapDfn, chosenNode, remote, prevSnapDfn, responses)
+                    startShipping(snapDfn, chosenNode, remote, prevSnapDfn, responses, nodeName, l2lData)
                 );
             }
             return new Pair<>(
@@ -335,7 +335,9 @@ public class CtrlBackupCreateApiCallHandler
         Node node,
         AbsRemote remote,
         SnapshotDefinition prevSnapDfn,
-        ApiCallRcImpl responses
+        ApiCallRcImpl responses,
+        @Nullable String optPrefNodeName,
+        @Nullable BackupShippingData optL2LData
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -344,7 +346,15 @@ public class CtrlBackupCreateApiCallHandler
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
                 .buildDeferred(),
-            () -> startShippingInTransaction(snapDfn, node, remote, prevSnapDfn, responses)
+            () -> startShippingInTransaction(
+                snapDfn,
+                node,
+                remote,
+                prevSnapDfn,
+                responses,
+                optPrefNodeName,
+                optL2LData
+            )
         );
     }
 
@@ -353,83 +363,109 @@ public class CtrlBackupCreateApiCallHandler
         Node node,
         AbsRemote remote,
         SnapshotDefinition prevSnapDfn,
-        ApiCallRcImpl responsesRef
+        ApiCallRcImpl responsesRef,
+        @Nullable String optPrefNodeName,
+        @Nullable BackupShippingData optL2LData
     )
     {
         try
         {
-            snapDfn.getFlags()
-                .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
-            if (remote instanceof S3Remote)
+            Flux<ApiCallRc> flux;
+            // doublecheck free shipping slots, if none are free, queue
+            if (getFreeShippingSlots(node) > 0)
             {
-                snapDfn.getProps(peerAccCtx.get())
-                    .setProp(
-                        InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remote.getName(),
-                        node.getName().displayValue,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
+                snapDfn.getFlags()
+                    .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING, SnapshotDefinition.Flags.BACKUP);
+                if (remote instanceof S3Remote)
+                {
+                    snapDfn.getProps(peerAccCtx.get())
+                        .setProp(
+                            InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remote.getName(),
+                            node.getName().displayValue,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
+                }
+                else if (remote instanceof LinstorRemote)
+                {
+                    snapDfn.getProps(peerAccCtx.get())
+                        .setProp(
+                            InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remote.getName() +
+                                "/" + snapDfn.getResourceName().displayValue,
+                            node.getName().displayValue,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
+                }
+                // now that it is decided that this node will do the shipping, see if any snapDfn can be moved to the
+                // normal queues
+                QueueItem item = backupInfoMgr.getItemFromPrevNodeUndecidedQueue(snapDfn, remote);
+                if (item != null)
+                {
+                    // return value is ignored since queueAnyways is set
+                    getNodeForBackupOrQueue(
+                        snapDfn.getResourceDefinition(),
+                        snapDfn,
+                        item.snapDfn,
+                        item.remote,
+                        item.preferredNode,
+                        responsesRef,
+                        true, // always queue to avoid simultaneous shippings of consecutive backups
+                        item.l2lData
+                    );
+                }
+
+                Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), node.getName());
+                if (remote instanceof S3Remote)
+                {
+                    // l2l does not need this to be set...
+                    snap.getFlags()
+                        .enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
+                    snap.setTakeSnapshot(peerAccCtx.get(), true);
+                    snap.getProps(peerAccCtx.get())
+                        .setProp(
+                            InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
+                            remote.getName().displayValue,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
+                }
+                if (prevSnapDfn != null)
+                {
+                    snap.getProps(peerAccCtx.get())
+                        .setProp(
+                            InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
+                            prevSnapDfn.getName().displayValue,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
+                }
+
+                ctrlTransactionHelper.commit();
+                flux = ctrlSatelliteUpdateCaller.updateSatellites(snapDfn, CtrlSatelliteUpdateCaller.notConnectedWarn())
+                    .transform(
+                        responses -> CtrlResponseUtils
+                            .combineResponses(responses, snapDfn.getResourceName(), "Started shipping of resource {1}")
+                    )
+                    .concatWith(
+                        snapshotCrtHandler.removeInProgressSnapshots(
+                            new CreateMultiSnapRequest(peerAccCtx.get(), snapDfn)
+                        )
                     );
             }
-            else if (remote instanceof LinstorRemote)
+            else
             {
-                snapDfn.getProps(peerAccCtx.get())
-                    .setProp(
-                        InternalApiConsts.KEY_BACKUP_SRC_NODE + "/" + remote.getName() +
-                            "/" + snapDfn.getResourceName().displayValue,
-                        node.getName().displayValue,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
-                    );
-            }
-            // now that it is decided that this node will do the shipping, see if any snapDfn can be moved to the normal
-            // queues
-            QueueItem item = backupInfoMgr.getItemFromPrevNodeUndecidedQueue(snapDfn, remote);
-            if (item != null)
-            {
-                // return value is ignored since queueAnyways is set
+                // we ignore any chance that the shipping could be started on a different node and instead queue
+                // anyways, for simplicity's sake
                 getNodeForBackupOrQueue(
                     snapDfn.getResourceDefinition(),
+                    prevSnapDfn,
                     snapDfn,
-                    item.snapDfn,
-                    item.remote,
-                    item.preferredNode,
+                    remote,
+                    optPrefNodeName,
                     responsesRef,
-                    true, // always queue to avoid simultaneous shippings of consecutive backups
-                    item.l2lData
+                    true, // queue anyways
+                    optL2LData
                 );
+                flux = Flux.empty();
             }
-
-            Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), node.getName());
-            if (remote instanceof S3Remote)
-            {
-                // l2l does not need this to be set...
-                snap.getFlags()
-                    .enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
-                snap.setTakeSnapshot(peerAccCtx.get(), true);
-                snap.getProps(peerAccCtx.get())
-                    .setProp(
-                        InternalApiConsts.KEY_BACKUP_TARGET_REMOTE,
-                        remote.getName().displayValue,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
-                    );
-            }
-            if (prevSnapDfn != null)
-            {
-                snap.getProps(peerAccCtx.get())
-                    .setProp(
-                        InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT,
-                        prevSnapDfn.getName().displayValue,
-                        ApiConsts.NAMESPC_BACKUP_SHIPPING
-                    );
-            }
-
-            ctrlTransactionHelper.commit();
-            return ctrlSatelliteUpdateCaller.updateSatellites(snapDfn, CtrlSatelliteUpdateCaller.notConnectedWarn())
-                .transform(
-                    responses -> CtrlResponseUtils
-                        .combineResponses(responses, snapDfn.getResourceName(), "Started shipping of resource {1}")
-                )
-                .concatWith(
-                    snapshotCrtHandler.removeInProgressSnapshots(new CreateMultiSnapRequest(peerAccCtx.get(), snapDfn))
-                );
+            return flux;
         }
         catch (AccessDeniedException exc)
         {
@@ -544,7 +580,9 @@ public class CtrlBackupCreateApiCallHandler
                             shipFromNode,
                             item.remote,
                             item.prevSnapDfn,
-                            responses
+                            responses,
+                            item.preferredNode,
+                            item.l2lData
                         )
                     );
                 }
@@ -675,7 +713,11 @@ public class CtrlBackupCreateApiCallHandler
                 SnapshotDefinition.Flags.SHIPPING,
                 SnapshotDefinition.Flags.BACKUP
             );
-            boolean isSource = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
+            /*
+             * check that this is not a backup receive - we can not check if BACKUP_SOURCE is set because in l2l-cases
+             * this flag gets set considerably later than the SHIPPING flag on the snapDfn
+             */
+            boolean isSource = snap.getFlags().isUnset(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
             if (isShipping && isSource)
             {
                 activeShippings++;

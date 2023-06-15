@@ -14,8 +14,8 @@ import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.EbsRemoteSatelliteFactory;
 import com.linbit.linstor.core.objects.S3RemoteSatelliteFactory;
 import com.linbit.linstor.core.objects.StltRemoteSatelliteFactory;
-import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -171,6 +171,7 @@ public class StltRemoteApiCallHandler
                 apiCtx,
                 stltRemotePojo.getUuid(),
                 new RemoteName(stltRemotePojo.getRemoteName(), true),
+                null, // stlt does not need the node
                 stltRemotePojo.getFlags(),
                 stltRemotePojo.getIp(),
                 stltRemotePojo.getPorts(),

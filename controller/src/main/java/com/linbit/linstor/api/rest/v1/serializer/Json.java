@@ -5,6 +5,8 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiCallRc.RcEntry;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
@@ -216,19 +218,35 @@ public class Json
 
     public static List<JsonGenTypes.ApiCallRc> apiCallRcToJson(ApiCallRc apiCallRc)
     {
-        return apiCallRc.getEntries().stream()
-            .map(apiCallRcEntry ->
-            {
-               JsonGenTypes.ApiCallRc jsonApiCallRc = new JsonGenTypes.ApiCallRc();
-              jsonApiCallRc.message = apiCallRcEntry.getMessage();
-              jsonApiCallRc.cause = apiCallRcEntry.getCause();
-              jsonApiCallRc.correction = apiCallRcEntry.getCorrection();
-              jsonApiCallRc.details = apiCallRcEntry.getDetails();
-              jsonApiCallRc.error_report_ids = new ArrayList<>(apiCallRcEntry.getErrorIds());
-              jsonApiCallRc.obj_refs = apiCallRcEntry.getObjRefs();
-              jsonApiCallRc.ret_code = apiCallRcEntry.getReturnCode();
-               return jsonApiCallRc;
-            }).collect(Collectors.toList());
+        List<JsonGenTypes.ApiCallRc> json = new ArrayList<>();
+        for (RcEntry apiCallRcEntry : apiCallRc.getEntries())
+        {
+            JsonGenTypes.ApiCallRc jsonApiCallRc = new JsonGenTypes.ApiCallRc();
+            jsonApiCallRc.message = apiCallRcEntry.getMessage();
+            jsonApiCallRc.cause = apiCallRcEntry.getCause();
+            jsonApiCallRc.correction = apiCallRcEntry.getCorrection();
+            jsonApiCallRc.details = apiCallRcEntry.getDetails();
+            jsonApiCallRc.error_report_ids = new ArrayList<>(apiCallRcEntry.getErrorIds());
+            jsonApiCallRc.obj_refs = apiCallRcEntry.getObjRefs();
+            jsonApiCallRc.ret_code = apiCallRcEntry.getReturnCode();
+            json.add(jsonApiCallRc);
+        }
+        return json;
+    }
+
+    public static ApiCallRcImpl jsonToApiCallRc(JsonGenTypes.ApiCallRc json)
+    {
+        ApiCallRcImpl ret = new ApiCallRcImpl();
+        ret.addEntry(
+            ApiCallRcImpl.entryBuilder(json.ret_code, json.message)
+                .addAllErrorIds(json.error_report_ids)
+                .putAllObjRefs(json.obj_refs)
+                .setCause(json.cause)
+                .setCorrection(json.correction)
+                .setDetails(json.details)
+                .build()
+        );
+        return ret;
     }
 
     public static JsonGenTypes.StoragePool storPoolApiToStoragePool(

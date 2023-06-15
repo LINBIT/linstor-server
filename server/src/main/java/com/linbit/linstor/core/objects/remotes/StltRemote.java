@@ -3,6 +3,7 @@ package com.linbit.linstor.core.objects.remotes;
 import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -43,6 +44,8 @@ public class StltRemote extends AbsRemote
     private final StateFlags<Flags> flags;
     // this remoteName references the complete cluster instead of only the stlt the shipping should go to
     private final RemoteName linstorRemoteName;
+    // a reference to the node the stltRemote is describing
+    private final Node node;
 
     public StltRemote(
         ObjectProtection objProtRef,
@@ -53,6 +56,7 @@ public class StltRemote extends AbsRemote
         Map<String, Integer> portRef,
         Boolean useZstdRef,
         RemoteName linstorRemoteNameRef,
+        Node nodeRef,
         StateFlagsPersistence<StltRemote> stateFlagsDriverRef,
         TransactionObjectFactory transObjFactory,
         Provider<? extends TransactionMgr> transMgrProvider
@@ -61,6 +65,7 @@ public class StltRemote extends AbsRemote
         super(objIdRef, transObjFactory, transMgrProvider, objProtRef, remoteNameRef);
         objProt = objProtRef;
         linstorRemoteName = linstorRemoteNameRef;
+        node = nodeRef;
 
         ip = transObjFactory.createTransactionSimpleObject(this, ipRef, null);
         ports = transObjFactory.createTransactionPrimitiveMap(portRef, null);
@@ -147,6 +152,12 @@ public class StltRemote extends AbsRemote
     {
         checkDeleted();
         return linstorRemoteName;
+    }
+
+    public Node getNode()
+    {
+        checkDeleted();
+        return node;
     }
 
     public String getIp(AccessContext accCtx) throws AccessDeniedException

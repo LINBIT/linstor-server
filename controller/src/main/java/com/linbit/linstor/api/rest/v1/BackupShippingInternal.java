@@ -11,6 +11,7 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LDstApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveDoneRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequestPrevSnap;
@@ -279,14 +280,14 @@ public class BackupShippingInternal
     )
     {
         Flux<ApiCallRc> responses;
-        BackupShippingReceiveRequest receiveRequest;
+        BackupShippingReceiveDoneRequest receiveRequest;
         try
         {
-            receiveRequest = objectMapper.readValue(jsonData, BackupShippingReceiveRequest.class);
+            receiveRequest = objectMapper.readValue(jsonData, BackupShippingReceiveDoneRequest.class);
             RemoteName linstorRemoteName = new RemoteName(receiveRequest.linstorRemoteName);
-            RemoteName stltRemoteName = new RemoteName(receiveRequest.srcStltRemoteName, true);
+            RemoteName stltRemoteName = new RemoteName(receiveRequest.stltRemoteName, true);
             BackupShippingData data = backupInfoMgr.removeL2LSrcData(linstorRemoteName, stltRemoteName);
-            responses = backupL2LSrcApiCallHandler.startQueues(data)
+            responses = backupL2LSrcApiCallHandler.startQueueIfReady(data.getStltRemote(), false)
                 .subscriberContext(
                     requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_RECEIVING_DONE, request)
                 );
