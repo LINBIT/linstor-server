@@ -121,18 +121,14 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     {
         EtcdTransaction tx = transMgrProvider.get().getTransaction();
 
-        if (disabledRecursiveDeleteDbTables.contains(table))
+        String[] pks = getPrimaryKeys(table, data, setters);
+        for (Column col : table.values())
         {
-            String[] pks = getPrimaryKeys(table, data, setters);
-            for (Column col : table.values())
-            {
-                tx.delete(EtcdUtils.buildKey(col, pks), false);
-            }
-        }
-        else
-        {
-            String key = getPk(setters, table, data);
-            tx.delete(key, true);
+            // do not use ranged delete since quite a few database tables can be effected by some "recreate" event (i.e.
+            // delete and create the same object in the same transaction).
+            // that causes "DELETE /key/*" as well as "PUT /key/column=..." events, which cannot be deduplicated
+            // properly, causing an ETCD exception
+            tx.delete(EtcdUtils.buildKey(col, pks));
         }
         // sync will be called within transMgr.commit()
     }
@@ -369,7 +365,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                 else
                 {
                     namespace(EtcdUtils.buildKey(col, getPrimaryKeys(col.getTable(), data, setters)))
-                        .delete(false);
+                        .delete();
                 }
             }
             catch (AccessDeniedException exc)

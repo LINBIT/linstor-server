@@ -107,9 +107,9 @@ public abstract class BaseEtcdDriver
             return this;
         }
 
-        public FluentLinstorTransaction delete(boolean recursive)
+        public FluentLinstorTransaction delete()
         {
-            tx.delete(currentBaseKey, recursive);
+            tx.delete(currentBaseKey);
             return this;
         }
 

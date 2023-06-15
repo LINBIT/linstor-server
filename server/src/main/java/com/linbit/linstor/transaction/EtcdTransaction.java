@@ -51,8 +51,14 @@ public class EtcdTransaction
         changedKeys.add(key);
     }
 
-    /*
-     * DELETE
+    public void delete(String key)
+    {
+        delete(key, false);
+    }
+
+    /**
+     * Deletes the given key.
+     * ONLY use the recursive parameter if you are absolutely sure that a recreate-event cannot occur
      */
     public void delete(String key, boolean recursive)
     {
