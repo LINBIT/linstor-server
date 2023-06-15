@@ -36,7 +36,6 @@ public class StltRemote extends AbsRemote
         // currently only a place holder for future maps
     }
 
-    private final ObjectProtection objProt;
     private final TransactionSimpleObject<StltRemote, String> ip;
     private final TransactionMap<String, Integer> ports;
     private final TransactionSimpleObject<StltRemote, Boolean> useZstd;
@@ -63,7 +62,6 @@ public class StltRemote extends AbsRemote
     )
     {
         super(objIdRef, transObjFactory, transMgrProvider, objProtRef, remoteNameRef);
-        objProt = objProtRef;
         linstorRemoteName = linstorRemoteNameRef;
         node = nodeRef;
 

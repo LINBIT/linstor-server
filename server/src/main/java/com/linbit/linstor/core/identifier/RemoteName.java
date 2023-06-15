@@ -9,8 +9,8 @@ import java.util.UUID;
 
 public class RemoteName extends GenericName
 {
-    private static final String FORMAT_STLT_REMOTE = ".stlt:%s_%s_%s"; // ".stlt:$rscName_$snapName_$UUID"
-    private static final String FORMAT_EBS_REMOTE = ".ebs:%s"; // ".ebs:$nodeName"
+    private static final String FORMAT_STLT_REMOTE = ".stlt;%s_%s_%s"; // ".stlt;$rscName_$snapName_$UUID"
+    private static final String FORMAT_EBS_REMOTE = ".ebs;%s"; // ".ebs;$nodeName"
 
     public RemoteName(String remoteNameRef) throws InvalidNameException
     {
