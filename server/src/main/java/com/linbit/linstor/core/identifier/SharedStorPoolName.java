@@ -9,7 +9,7 @@ import com.linbit.InvalidNameException;
  */
 public class SharedStorPoolName extends GenericName
 {
-    private static final String RESERVED_CONNECTOR = ":";
+    private static final String RESERVED_CONNECTOR = ";";
 
     public static final int MIN_LENGTH = 1;
     public static final int MAX_LENGTH = 48;
