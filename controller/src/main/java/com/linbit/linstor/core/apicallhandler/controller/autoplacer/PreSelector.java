@@ -17,9 +17,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.script.Bindings;
 import javax.script.Invocable;
-import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
@@ -34,10 +32,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
-
-import jdk.nashorn.api.scripting.ClassFilter;
-import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 
 @Singleton
 class PreSelector
@@ -74,6 +68,9 @@ class PreSelector
     {
         Collection<StorPoolWithScore> ret = ratingsRef;
 
+        // TODO Rework this with another interface to write custom preselector plugins
+        // jdk-17 removed the nashorn API
+
         if (scriptThread != null && scriptThread.isAlive())
         {
             errorReporter.logWarning(
@@ -89,93 +86,99 @@ class PreSelector
             );
             if (Files.exists(SCRIPT_BASE_PATH) && preselectorFileName != null)
             {
-                Path preselectorFile;
-                try (Stream<Path> fileList = Files.list(SCRIPT_BASE_PATH))
-                {
-                    preselectorFile = fileList.filter(
-                        path -> path.getFileName().toString().equals(preselectorFileName)
-                    ).findFirst().orElse(null);
-                }
-                catch (IOException exc)
-                {
-                    throw new ApiRcException(
-                        ApiCallRcImpl.simpleEntry(
-                            ApiConsts.FAIL_UNKNOWN_ERROR,
-                            String.format(
-                                "An IO exception occured when looking for the preselection file"
-                            )
-                        ),
-                        exc
-                    );
-                }
-
-                if (preselectorFile != null)
-                {
-                    long scriptAllowedRunTime = getAllowedRuntime(ctrlProps);
-
-                    Runnable scriptRunner = getScriptRunner(preselectorFile);
-
-                    List<StorPoolScriptPojo> scriptPojoList = convertStorPoolList(ratingsRef);
-
-                    Bindings bindings = cachedScriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
-                    bindings.clear(); // clear everything the previous run might have left over
-                    bindings.put("storage_pools", scriptPojoList);
-                    bindings.put("resource_name", rscDfnRef.getName().displayValue);
-
-                    scriptThread = new Thread(scriptRunner, "Autoplacer-Preselector-ScriptThread");
-                    scriptThread.start();
-                    long startScript = System.currentTimeMillis();
-                    try
-                    {
-                        scriptThread.join(scriptAllowedRunTime);
-                        errorReporter.logTrace(
-                            "Autoplacer.Preselector: Script finished in %dms",
-                            System.currentTimeMillis() - startScript
-                        );
-                    }
-                    catch (InterruptedException exc)
-                    {
-                        // ignored
-                    }
-
-                    if (scriptThread.isAlive())
-                    {
-                        throw new ApiRcException(
-                            ApiCallRcImpl.simpleEntry(
-                                ApiConsts.FAIL_PRE_SELECT_SCRIPT_DID_NOT_TERMINATE,
-                                String.format(
-                                    "Given script file '%s' executed but did not stop after %d ms. Skipping future pre-selection step.",
-                                    preselectorFile.toString(),
-                                    scriptAllowedRunTime
-                                )
-                            )
-                        );
-                    }
-                    scriptThread = null;
-
-                    ret = new ArrayList<>();
-                    for (StorPoolScriptPojo spPojo : scriptPojoList)
-                    {
-                        if (spPojo != null && spPojo.storPool != null)
-                        {
-                            errorReporter.logTrace(
-                                "Autoplacer.Preselector: StorPool '%s' on node '%s' with score %f",
-                                spPojo.storPool.getName().displayValue,
-                                spPojo.storPool.getNode().getName().displayValue,
-                                spPojo.score
-                            );
-                            // just make sure this entry was not created somehow by the script...
-                            ret.add(new StorPoolWithScore(spPojo.storPool, spPojo.score));
-                        }
-                    }
-                }
-                else
-                {
-                    errorReporter.logTrace(
-                        "Autoplacer.Preselector: Given script file '%s' not found. Skipping pre-selection step",
-                        SCRIPT_BASE_PATH + preselectorFileName
-                    );
-                }
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UNKNOWN_ERROR,
+                        "Autoplacer.Preselector: Currently not implemented."
+                    )
+                );
+//                Path preselectorFile;
+//                try (Stream<Path> fileList = Files.list(SCRIPT_BASE_PATH))
+//                {
+//                    preselectorFile = fileList.filter(
+//                        path -> path.getFileName().toString().equals(preselectorFileName)
+//                    ).findFirst().orElse(null);
+//                }
+//                catch (IOException exc)
+//                {
+//                    throw new ApiRcException(
+//                        ApiCallRcImpl.simpleEntry(
+//                            ApiConsts.FAIL_UNKNOWN_ERROR,
+//                            String.format(
+//                                "An IO exception occured when looking for the preselection file"
+//                            )
+//                        ),
+//                        exc
+//                    );
+//                }
+//
+//                if (preselectorFile != null)
+//                {
+//                    long scriptAllowedRunTime = getAllowedRuntime(ctrlProps);
+//
+//                    Runnable scriptRunner = getScriptRunner(preselectorFile);
+//
+//                    List<StorPoolScriptPojo> scriptPojoList = convertStorPoolList(ratingsRef);
+//
+//                    Bindings bindings = cachedScriptEngine.getBindings(ScriptContext.ENGINE_SCOPE);
+//                    bindings.clear(); // clear everything the previous run might have left over
+//                    bindings.put("storage_pools", scriptPojoList);
+//                    bindings.put("resource_name", rscDfnRef.getName().displayValue);
+//
+//                    scriptThread = new Thread(scriptRunner, "Autoplacer-Preselector-ScriptThread");
+//                    scriptThread.start();
+//                    long startScript = System.currentTimeMillis();
+//                    try
+//                    {
+//                        scriptThread.join(scriptAllowedRunTime);
+//                        errorReporter.logTrace(
+//                            "Autoplacer.Preselector: Script finished in %dms",
+//                            System.currentTimeMillis() - startScript
+//                        );
+//                    }
+//                    catch (InterruptedException exc)
+//                    {
+//                        // ignored
+//                    }
+//
+//                    if (scriptThread.isAlive())
+//                    {
+//                        throw new ApiRcException(
+//                            ApiCallRcImpl.simpleEntry(
+//                                ApiConsts.FAIL_PRE_SELECT_SCRIPT_DID_NOT_TERMINATE,
+//                                String.format(
+//                                    "Given script file '%s' executed but did not stop after %d ms. Skipping future pre-selection step.",
+//                                    preselectorFile.toString(),
+//                                    scriptAllowedRunTime
+//                                )
+//                            )
+//                        );
+//                    }
+//                    scriptThread = null;
+//
+//                    ret = new ArrayList<>();
+//                    for (StorPoolScriptPojo spPojo : scriptPojoList)
+//                    {
+//                        if (spPojo != null && spPojo.storPool != null)
+//                        {
+//                            errorReporter.logTrace(
+//                                "Autoplacer.Preselector: StorPool '%s' on node '%s' with score %f",
+//                                spPojo.storPool.getName().displayValue,
+//                                spPojo.storPool.getNode().getName().displayValue,
+//                                spPojo.score
+//                            );
+//                            // just make sure this entry was not created somehow by the script...
+//                            ret.add(new StorPoolWithScore(spPojo.storPool, spPojo.score));
+//                        }
+//                    }
+//                }
+//                else
+//                {
+//                    errorReporter.logTrace(
+//                        "Autoplacer.Preselector: Given script file '%s' not found. Skipping pre-selection step",
+//                        SCRIPT_BASE_PATH + preselectorFileName
+//                    );
+//                }
             }
             else
             {
@@ -278,16 +281,19 @@ class PreSelector
     @SuppressWarnings("restriction")
     private ScriptEngine initializeJSEngine()
     {
-        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
-        ClassFilter classFilter = new ClassFilter()
-        {
-            @Override
-            public boolean exposeToScripts(String arg0Ref)
-            {
-                return false;
-            }
-        };
-        return factory.getScriptEngine(classFilter);
+        // jdk-17 removed the nashorn API
+
+//        NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
+//        ClassFilter classFilter = new ClassFilter()
+//        {
+//            @Override
+//            public boolean exposeToScripts(String arg0Ref)
+//            {
+//                return false;
+//            }
+//        };
+//        return factory.getScriptEngine(classFilter);
+        return null;
     }
 
     /**
