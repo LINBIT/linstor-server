@@ -49,10 +49,10 @@ subprojects {
 
     dependencies {
         if (gradle.startParameter.isOffline()) {
-            compile fileTree(dir: "libs/compileClasspath")
-            runtime fileTree(dir: "libs/runtimeClasspath")
-            testCompile fileTree(dir: "libs/compileClasspath")
-            testRuntime fileTree(dir: "libs/runtimeClasspath")
+            implementation fileTree(dir: "libs/compileClasspath")
+            runtimeOnly fileTree(dir: "libs/runtimeClasspath")
+            testImplementation fileTree(dir: "libs/compileClasspath")
+            testRuntimeOnly fileTree(dir: "libs/runtimeClasspath")
         } else {
             implementation group: 'com.google.inject', name: 'guice', version: '5.0.1'
             implementation group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '5.0.1'
@@ -103,7 +103,7 @@ subprojects {
 }
 
 project(':server') {
-    apply plugin: 'application'
+    apply plugin: 'java-library'
 
     mainClassName = 'com.linbit.linstor.core.Satellite'
 
@@ -133,7 +133,7 @@ project(':server') {
         }
     }
     /////////////////////////// Version Info ///////////////////////////
-    task versionInfo() {
+    tasks.register('versionInfo') {
         String propsFile = "$projectDir/generated-resources/version-info.properties"
         outputs.file(propsFile)
 
@@ -144,8 +144,7 @@ project(':server') {
 
         if (!project.hasProperty('versionOverride')) {
             File gitFolder = file("$projectDir/../.git")
-            if (gitFolder.exists())
-            {
+            if (gitFolder.exists()) {
                 try {
                     def stdOut = new ByteArrayOutputStream()
                     def stdErr = new ByteArrayOutputStream()
@@ -175,7 +174,7 @@ project(':server') {
      * For package builds this task is run in the 'make debrelease' stage, the generated sources are bundled in the package
      * tarball, and it is then skipped when the package is finally built.
      */
-    task generateProto(type:Exec) {
+    tasks.register('generateProto', Exec) {
         doFirst {
             if (!protoc.exists()) {
                 throw new GradleException("'protoc' binary not found; run the task 'getProtoc' to download the binary")
@@ -188,21 +187,21 @@ project(':server') {
         outputs.dir(file("${projectDir}/generated-src"))
     }
 
-    task generateJava(type:Exec) {
+    tasks.register('generateJava', Exec) {
         commandLine 'make', '-C', '../linstor-common', 'java'
 
         inputs.files(fileTree("../linstor-common"))
         outputs.files(file("${projectDir}/generated-src/com/linbit/linstor/api/ApiConsts.java"),
-            "${projectDir}/generated-src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java"
+                "${projectDir}/generated-src/com/linbit/linstor/api/prop/GeneratedPropertyRules.java"
         )
         dependsOn generateProto
     }
 
-    task cleanProto(type:Exec) {
+    tasks.register('cleanProto', Exec) {
         commandLine 'make', '-C', "${projectDir}/proto", 'clean-proto'
     }
 
-    task cleanCommon(type:Exec) {
+    tasks.register('cleanCommon', Exec) {
         commandLine 'make', '-C', "../linstor-common", 'cleanjava'
     }
 
@@ -242,7 +241,7 @@ project(':satellite') {
     }
 
     startScripts.enabled = false
-    task SatelliteStartup(type: CreateStartScripts) {
+    tasks.register('SatelliteStartup', CreateStartScripts) {
         mainClassName = 'com.linbit.linstor.core.Satellite'
         applicationName = "Satellite"
         outputDir = new File(project.buildDir, 'satellite')
@@ -348,7 +347,7 @@ project(':controller') {
     }
 
     startScripts.enabled = false
-    task ControllerStartup(type: CreateStartScripts) {
+    tasks.register('ControllerStartup', CreateStartScripts) {
         mainClassName = 'com.linbit.linstor.core.Controller'
         applicationName = "Controller"
         outputDir = new File(project.buildDir, 'controller')
@@ -359,7 +358,7 @@ project(':controller') {
         }
     }
 
-    task LinstorConfigStartup(type: CreateStartScripts) {
+    tasks.register('LinstorConfigStartup', CreateStartScripts) {
         mainClassName = 'com.linbit.linstor.core.LinstorConfigTool'
         applicationName = "linstor-config"
         outputDir = new File(project.buildDir, 'linstorconfig')
@@ -493,34 +492,34 @@ distributions {
     }
 }
 
-task showMeCache {
+tasks.register('showMeCache') {
     doLast {
         configurations.runtimeClasspath.each { println it }
     }
 }
 
-task showMeTestCache {
+tasks.register('showMeTestCache') {
     doLast {
         configurations.testRuntimeClasspath.each { println it }
     }
 }
 
 /////////////////////////// Test commands ///////////////////////////
-task buildTestCommands(type:Exec) {
-  workingDir 'test-support'
+tasks.register('buildTestCommands', Exec) {
+    workingDir 'test-support'
 
-  commandLine 'make'
+    commandLine 'make'
 
-  //store the output instead of printing to the console:
-  standardOutput = new ByteArrayOutputStream()
+    //store the output instead of printing to the console:
+    standardOutput = new ByteArrayOutputStream()
 
-  //extension method buildTestCommands.output() can be used to obtain the output:
-  ext.output = {
-    return standardOutput.toString()
-  }
+    //extension method buildTestCommands.output() can be used to obtain the output:
+    ext.output = {
+        return standardOutput.toString()
+    }
 }
 
-task unzip(type: Copy) {
+tasks.register('unzip', Copy) {
     def zipFile = file("tools/protoc-" + protobufVersion + '-linux-x86_64.zip')
     def outputDir = file("tools/protoc-" + protobufVersion)
 
@@ -528,7 +527,7 @@ task unzip(type: Copy) {
     into outputDir
 }
 
-task downloadProtoc {
+tasks.register('downloadProtoc') {
     outputs.dir "tools"
     def protozip = new File("${projectDir}/tools/protoc-" + protobufVersion + '-linux-x86_64.zip')
     outputs.file protozip
@@ -539,27 +538,27 @@ task downloadProtoc {
             println "downloading protoc..."
             new URL('https://github.com/google/protobuf/releases/download/v'
                     + protobufVersion + '/protoc-' + protobufVersion + '-linux-x86_64.zip')
-                    .withInputStream { i -> protozip.withOutputStream { it << i}}
+                    .withInputStream { i -> protozip.withOutputStream { it << i } }
         }
     }
 }
 
-task getProtoc {
+tasks.register('getProtoc') {
     dependsOn downloadProtoc, unzip
 }
 
-task cleanTestCommands(type:Exec) {
-  workingDir 'test-support'
+tasks.register('cleanTestCommands', Exec) {
+    workingDir 'test-support'
 
-  commandLine 'make', 'clean'
+    commandLine 'make', 'clean'
 
-  //store the output instead of printing to the console:
-  standardOutput = new ByteArrayOutputStream()
+    //store the output instead of printing to the console:
+    standardOutput = new ByteArrayOutputStream()
 
-  //extension method buildTestCommands.output() can be used to obtain the output:
-  ext.output = {
-    return standardOutput.toString()
-  }
+    //extension method buildTestCommands.output() can be used to obtain the output:
+    ext.output = {
+        return standardOutput.toString()
+    }
 }
 
 compileTestJava {
@@ -571,7 +570,7 @@ clean {
 }
 
 /////////////////////////// Dependency resolution ///////////////////////////
-task resolveDependencies {
+tasks.register('resolveDependencies') {
     doLast {
         project.rootProject.allprojects.each { subProject ->
             subProject.buildscript.configurations.each { configuration ->
@@ -594,7 +593,7 @@ static void resolveConfiguration(configuration) {
     }
 }
 
-task deleteLibs(type: Delete) {
+tasks.register('deleteLibs', Delete) {
     doLast {
         subprojects.each { prj ->
             delete "${prj.name}/libs"
@@ -603,7 +602,8 @@ task deleteLibs(type: Delete) {
     }
 }
 
-task copyToLibs(dependsOn: 'deleteLibs') {
+tasks.register('copyToLibs') {
+    dependsOn 'deleteLibs'
     doLast {
         ['compileClasspath', 'runtimeClasspath'].each { scope ->
             copy {
@@ -617,8 +617,7 @@ task copyToLibs(dependsOn: 'deleteLibs') {
                 prj.configurations.getByName(scope).files.each { f ->
                     if (file("libs/" + f.getName()).exists()) {
                         ant.symlink(resource: "../../../libs/" + f.getName(), link: "${prj.name}/libs/${scope}/${f.getName()}")
-                    }
-                    else {
+                    } else {
                         copy {
                             from f
                             into "${prj.name}/libs/${scope}"
@@ -636,10 +635,10 @@ task copyToLibs(dependsOn: 'deleteLibs') {
 
 // this task is needed for RPM packaging
 // it creates a list of dependency jars needed for the server project
-task showServerRuntimeLibs() {
-        doLast {
-                project(':server').configurations.getByName('runtimeClasspath').files.each { f ->
-                        print('/usr/share/linstor-server/lib/' + f.getName().toString() + '\n')
-                }
+tasks.register('showServerRuntimeLibs') {
+    doLast {
+        project(':server').configurations.getByName('runtimeClasspath').files.each { f ->
+            print('/usr/share/linstor-server/lib/' + f.getName().toString() + '\n')
         }
+    }
 }
