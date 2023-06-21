@@ -48,7 +48,8 @@ if [ -f "%{_builddir}/%{NAME_VERS}/libs/server-st.jar" ]; then cp "%{_builddir}/
 if [ -f "%{_builddir}/%{NAME_VERS}/libs/controller-st.jar" ]; then cp "%{_builddir}/%{NAME_VERS}/libs/controller-st.jar" %{buildroot}/%{LS_PREFIX}/lib; fi
 if [ -f "%{_builddir}/%{NAME_VERS}/libs/satellite-st.jar" ]; then cp "%{_builddir}/%{NAME_VERS}/libs/satellite-st.jar" %{buildroot}/%{LS_PREFIX}/lib; fi
 rm %{buildroot}/%{LS_PREFIX}/lib/%{NAME_VERS}.jar
-cp -r %{_builddir}/%{NAME_VERS}/server/build/install/server/lib/conf %{buildroot}/%{LS_PREFIX}/lib
+mkdir -p %{buildroot}/%{LS_PREFIX}/lib/conf
+cp %{_builddir}/%{NAME_VERS}/server/logback.xml %{buildroot}/%{LS_PREFIX}/lib/conf
 mkdir -p %{buildroot}/%{LS_PREFIX}/bin
 cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/Controller %{buildroot}/%{LS_PREFIX}/bin
 cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/Satellite %{buildroot}/%{LS_PREFIX}/bin
