@@ -37,9 +37,11 @@ DEBVERSION = $(shell echo $(VERSION) | sed -e 's/-/~/g')
 	@echo server/jar.deps >> .filelist
 	@echo controller/jar.deps >> .filelist
 	@echo satellite/jar.deps >> .filelist
+	@echo jclcrypto/jar.deps >> .filelist
 	@echo server/libs >> .filelist
 	@echo controller/libs >> .filelist
 	@echo satellite/libs >> .filelist
+	@echo jclcrypto/libs >> .filelist
 	@echo gradlew >> .filelist
 	@echo gradle/wrapper/gradle-wrapper.jar >> .filelist
 	@echo gradle/wrapper/gradle-wrapper.properties >> .filelist
@@ -111,20 +113,25 @@ ifneq ("$(wildcard libs/server-st.jar)","")
 	echo "/usr/share/linstor-server/lib/server-st.jar" >> $@
 endif
 
-controller/jar.deps satellite/jar.deps: build.gradle copytolibs
+controller/jar.deps satellite/jar.deps jclcrypto/jar.deps: build.gradle copytolibs
 	./scripts/diffcopy.py -n ./controller/libs/runtimeClasspath ./server/libs/runtimeClasspath /usr/share/linstor-server/lib > controller/jar.deps
 	sed -i '/^|usr|share|linstor-server|lib|server-/d' controller/jar.deps
 	./scripts/diffcopy.py -n ./satellite/libs/runtimeClasspath ./server/libs/runtimeClasspath /usr/share/linstor-server/lib > satellite/jar.deps
 	sed -i '/^|usr|share|linstor-server|lib|server-/d' satellite/jar.deps
+	./scripts/diffcopy.py -n ./jclcrypto/libs/runtimeClasspath ./server/libs/runtimeClasspath /usr/share/linstor-server/lib > jclcrypto/jar.deps
+	sed -i '/^|usr|share|linstor-server|lib|server-/d' jclcrypto/jar.deps
 ifneq ("$(wildcard libs/controller-st.jar)","")
 	echo "/usr/share/linstor-server/lib/controller-st.jar" >> controller/jar.deps
 endif
 ifneq ("$(wildcard libs/satellite-st.jar)","")
 	echo "/usr/share/linstor-server/lib/satellite-st.jar" >> satellite/jar.deps
 endif
+ifneq ("$(wildcard libs/jclcrypto-st.jar)","")
+	echo "/usr/share/linstor-server/lib/jclcrypto-st.jar" >> jclcrypto/jar.deps
+endif
 
 
-tarball: check-all-committed check-submods versioninfo gen-java server/jar.deps controller/jar.deps satellite/jar.deps .filelist
+tarball: check-all-committed check-submods versioninfo gen-java server/jar.deps controller/jar.deps satellite/jar.deps jclcrypto/jar.deps .filelist
 	$(MAKE) tgz
 
 versioninfo:
