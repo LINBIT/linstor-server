@@ -38,6 +38,8 @@ override_dh_install:
 	cp $(CURDIR)/docs/linstor.toml-example $(CURDIR)/debian/linstor-controller/etc/linstor/
 	# diff and copy additional controller jars
 	rm $(CURDIR)/controller/build/install/controller/lib/jclcrypto*.jar $(CURDIR)/controller/build/install/controller/lib/server-*.jar # comes already in linstor-common
+	# for some reason install/lib/*.jars are 755
+	chmod 644 $(CURDIR)/controller/build/install/controller/lib/*.jar
 	$(CURDIR)/scripts/diffcopy.py $(CURDIR)/controller/build/install/controller/lib $(CURDIR)/server/libs/runtimeClasspath/ $(CURDIR)/debian/linstor-controller/$(LS_PREFIX)/lib
 	cp $(CURDIR)/scripts/postinstall.sh $(CURDIR)/debian/linstor-controller.postinst
 	# satellite
@@ -51,6 +53,8 @@ override_dh_install:
 	if [ -f "$(CURDIR)/libs/satellite-st.jar" ]; then cp "$(CURDIR)/libs/satellite-st.jar" $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib; fi
 	# diff and copy additional satellite jars
 	rm $(CURDIR)/satellite/build/install/satellite/lib/jclcrypto*.jar $(CURDIR)/satellite/build/install/satellite/lib/server-*.jar # comes already in linstor-common
+	# for some reason install/lib/*.jars are 755
+	chmod 644 $(CURDIR)/controller/build/install/controller/lib/*.jar
 	$(CURDIR)/scripts/diffcopy.py $(CURDIR)/satellite/build/install/satellite/lib $(CURDIR)/server/libs/runtimeClasspath/ $(CURDIR)/debian/linstor-satellite/$(LS_PREFIX)/lib
 	# dh_install
 	dh_install
