@@ -39,6 +39,15 @@ subprojects {
         options.release = 11
     }
 
+    dependencies {
+        if (gradle.startParameter.isOffline()) {
+            implementation fileTree(dir: "libs/compileClasspath")
+            runtimeOnly fileTree(dir: "libs/runtimeClasspath")
+            testImplementation fileTree(dir: "libs/compileClasspath")
+            testRuntimeOnly fileTree(dir: "libs/runtimeClasspath")
+        }
+    }
+
     repositories {
         mavenCentral()
 
@@ -46,66 +55,59 @@ subprojects {
             dirs 'libs/compileClasspath', 'libs/runtimeClasspath'
         }
     }
-
-    dependencies {
-        if (gradle.startParameter.isOffline()) {
-            implementation fileTree(dir: "libs/compileClasspath")
-            runtimeOnly fileTree(dir: "libs/runtimeClasspath")
-            testImplementation fileTree(dir: "libs/compileClasspath")
-            testRuntimeOnly fileTree(dir: "libs/runtimeClasspath")
-        } else {
-            implementation group: 'com.google.inject', name: 'guice', version: '5.0.1'
-            implementation group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '5.0.1'
-
-//            compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
-            compileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
-
-            implementation 'io.sentry:sentry:5.6.1'
-            implementation 'info.picocli:picocli:3.9.5'
-            implementation group: 'io.projectreactor', name: 'reactor-core', version: '3.3.12.RELEASE'
-            compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
-            implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-            implementation 'org.apache.httpcomponents:httpclient:4.5.13'
-            implementation 'javax.xml.bind:jaxb-api:2.3.0'   // needed as this package was deprecated in java 9 and removed in 11
-            implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
-            implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
-
-            implementation group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.7.0'
-            implementation group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
-            implementation group: 'com.h2database', name: 'h2', version: '1.4.197'
-
-            implementation platform('com.amazonaws:aws-java-sdk-bom:1.12.192')
-            implementation 'com.amazonaws:aws-java-sdk-s3'
-            implementation 'com.amazonaws:aws-java-sdk-ebs'
-            implementation 'com.amazonaws:aws-java-sdk-ec2'
-
-            implementation group: 'com.cronutils', name: 'cron-utils', version: cronVersion
-
-            // toml parsing library
-            implementation group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
-
-            // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
-            implementation group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.18'
-
-            implementation group: 'io.fabric8', name: 'kubernetes-client', version: '5.12.2'
-            constraints {
-                implementation('com.squareup.okhttp3:okhttp:4.10.0') {
-                    because('previous versions had a bug when validationg certificates against IPv6 addresses')
-                }
-                implementation('com.squareup.okhttp3:logging-interceptor:4.10.0') {
-                    because('previous versions had a bug when validationg certificates against IPv6 addresses')
-                }
-            }
-
-            testImplementation group: 'junit', name: 'junit', version: '4.+'
-        }
-    }
 }
 
 project(':server') {
     apply plugin: 'java-library'
 
-    mainClassName = 'com.linbit.linstor.core.Satellite'
+    dependencies {
+        if (!gradle.startParameter.isOffline()) {
+            api group: 'com.google.inject', name: 'guice', version: '5.0.1'
+            api group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '5.0.1'
+
+//            compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
+            compileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
+
+            api 'io.sentry:sentry:5.6.1'
+            api 'info.picocli:picocli:3.9.5'
+            api group: 'io.projectreactor', name: 'reactor-core', version: '3.3.12.RELEASE'
+            compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
+            api group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+            api 'org.apache.httpcomponents:httpclient:4.5.13'
+            api 'javax.xml.bind:jaxb-api:2.3.0'   // needed as this package was deprecated in java 9 and removed in 11
+            api 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
+            api 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
+
+            api group: 'org.apache.commons', name: 'commons-dbcp2', version: '2.7.0'
+            api group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
+            api group: 'com.h2database', name: 'h2', version: '1.4.197'
+
+            api platform('com.amazonaws:aws-java-sdk-bom:1.12.192')
+            api 'com.amazonaws:aws-java-sdk-s3'
+            api 'com.amazonaws:aws-java-sdk-ebs'
+            api 'com.amazonaws:aws-java-sdk-ec2'
+
+            api group: 'com.cronutils', name: 'cron-utils', version: cronVersion
+
+            // toml parsing library
+            api group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
+
+            // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
+            api group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.18'
+
+            api group: 'io.fabric8', name: 'kubernetes-client', version: '5.12.2'
+            constraints {
+                api('com.squareup.okhttp3:okhttp:4.10.0') {
+                    because('previous versions had a bug when validationg certificates against IPv6 addresses')
+                }
+                api('com.squareup.okhttp3:logging-interceptor:4.10.0') {
+                    because('previous versions had a bug when validationg certificates against IPv6 addresses')
+                }
+            }
+
+            testCompileOnly group: 'junit', name: 'junit', version: '4.+'
+        }
+    }
 
     sourceSets {
         main {
@@ -123,15 +125,6 @@ project(':server') {
         }
     }
 
-    distributions {
-        main {
-            contents {
-                from(logbackConfig) {
-                    into("lib/conf")
-                }
-            }
-        }
-    }
     /////////////////////////// Version Info ///////////////////////////
     tasks.register('versionInfo') {
         String propsFile = "$projectDir/generated-resources/version-info.properties"
@@ -222,6 +215,8 @@ project(':satellite') {
 
     dependencies {
         implementation project(':server'), project(':jclcrypto')
+
+        testImplementation group: 'junit', name: 'junit', version: '4.+'
     }
 
     sourceSets {
@@ -238,6 +233,10 @@ project(':satellite') {
                 srcDirs = ["src/test/java"]
             }
         }
+    }
+
+    installDist {
+        duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     }
 
     startScripts.enabled = false
@@ -344,6 +343,10 @@ project(':controller') {
                 srcDirs = ["src/test/java"]
             }
         }
+    }
+
+    installDist {
+        duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
     }
 
     startScripts.enabled = false
@@ -485,11 +488,15 @@ distributions {
             from(project(":controller").LinstorConfigStartup) {
                 into("bin")
             }
-            from(logbackConfig) {
+            from("server/" + logbackConfig) {
                 into("lib/conf")
             }
         }
     }
+}
+
+installDist {
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
 }
 
 tasks.register('showMeCache') {
