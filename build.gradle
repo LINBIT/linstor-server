@@ -241,7 +241,7 @@ project(':satellite') {
 
     startScripts.enabled = false
     tasks.register('SatelliteStartup', CreateStartScripts) {
-        mainClassName = 'com.linbit.linstor.core.Satellite'
+        mainClass = 'com.linbit.linstor.core.Satellite'
         applicationName = "Satellite"
         outputDir = new File(project.buildDir, 'satellite')
         classpath = files('conf') + files('*')
@@ -351,7 +351,7 @@ project(':controller') {
 
     startScripts.enabled = false
     tasks.register('ControllerStartup', CreateStartScripts) {
-        mainClassName = 'com.linbit.linstor.core.Controller'
+        mainClass = 'com.linbit.linstor.core.Controller'
         applicationName = "Controller"
         outputDir = new File(project.buildDir, 'controller')
         classpath = files('conf') + files('*')
@@ -362,7 +362,7 @@ project(':controller') {
     }
 
     tasks.register('LinstorConfigStartup', CreateStartScripts) {
-        mainClassName = 'com.linbit.linstor.core.LinstorConfigTool'
+        mainClass = 'com.linbit.linstor.core.LinstorConfigTool'
         applicationName = "linstor-config"
         outputDir = new File(project.buildDir, 'linstorconfig')
         classpath = files('*')
@@ -421,11 +421,11 @@ jacocoTestReport {
         onlyIf = {
             true
         }
-        doFirst {
-            executionData.setFrom(files(executionData.findAll {
-                it.exists()
-            }))
-        }
+//        doFirst {
+//            executionData.setFrom(files(executionData.findAll {
+//                it.exists()
+//            }))
+//        }
         afterEvaluate {
             excludedClassFilesForReport(classDirectories)
         }
