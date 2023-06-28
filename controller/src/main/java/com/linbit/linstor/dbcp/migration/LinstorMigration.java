@@ -74,4 +74,10 @@ public abstract class LinstorMigration extends AbsMigration implements JavaMigra
 
     protected abstract void migrate(Connection connection, DatabaseInfo.DbProduct dbProduct)
         throws Exception;
+
+    @Override
+    public boolean isStateScript()
+    {
+        return false;
+    }
 }

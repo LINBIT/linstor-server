@@ -235,7 +235,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
             .outOfOrder(true)
             // Pass the DB type to the migrations
             .placeholders(ImmutableMap.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, dbType))
-            .locations(LinstorMigration.class.getPackage().getName())
+            .locations(LinstorMigration.class.getPackage().getName().replaceAll("\\.", "/"))
             .ignoreFutureMigrations(false)
             .load();
     }

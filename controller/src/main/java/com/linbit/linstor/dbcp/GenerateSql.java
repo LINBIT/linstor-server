@@ -91,7 +91,7 @@ public class GenerateSql
             .outOfOrder(true)
             // Pass the DB type to the migrations
             .placeholders(ImmutableMap.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, "h2"))
-            .locations(LinstorMigration.class.getPackage().getName())
+            .locations(LinstorMigration.class.getPackage().getName().replaceAll("\\.", "/"))
             .load();
 
         flyway.baseline();
