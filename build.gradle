@@ -69,7 +69,7 @@ project(':server') {
             api group: 'com.google.protobuf', name: 'protobuf-java', version: '3.' + protobufVersion
 
             api 'io.sentry:sentry:5.6.1'
-            api 'info.picocli:picocli:3.9.5'
+            api 'info.picocli:picocli:4.7.4'
             api group: 'io.projectreactor', name: 'reactor-core', version: '3.3.12.RELEASE'
             compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
             api group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
