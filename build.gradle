@@ -9,7 +9,7 @@ apply plugin: 'jacoco'
 
 checkstyleTest.enabled = false
 
-def protobufVersion = '3.12.0'
+def protobufVersion = '23.3'
 def protoc = file("${projectDir}/tools/protoc-" + protobufVersion + '/bin/protoc')
 def logbackConfig = "logback.xml"
 def jvmOpts = ["-Xms32M"]
@@ -66,7 +66,7 @@ project(':server') {
             api group: 'com.google.inject.extensions', name: 'guice-assistedinject', version: '5.0.1'
 
 //            compileOnly group: 'com.google.protobuf', name: 'protobuf-javalite', version: protobufVersion
-            compileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
+            api group: 'com.google.protobuf', name: 'protobuf-java', version: '3.' + protobufVersion
 
             api 'io.sentry:sentry:5.6.1'
             api 'info.picocli:picocli:3.9.5'
@@ -93,7 +93,7 @@ project(':server') {
             api group: 'com.moandjiezana.toml', name: 'toml4j', version: '0.7.2'
 
             // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
-            api group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.18'
+            api group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.22'
 
             api group: 'io.fabric8', name: 'kubernetes-client', version: '5.12.2'
             constraints {
@@ -454,7 +454,7 @@ dependencies {
     implementation project(':server'), project(':controller'), project(':satellite'), project(':jclcrypto')
     testImplementation project(':server'), project(':controller'), project(':satellite'), project(':jclcrypto')
 
-    testCompileOnly group: 'com.google.protobuf', name: 'protobuf-java', version: protobufVersion
+    testImplementation group: 'com.google.protobuf', name: 'protobuf-java', version: '3.' + protobufVersion
 
     def powerMockVersion = '2.0.9'
     testImplementation group: 'junit', name: 'junit', version: '4.+'
