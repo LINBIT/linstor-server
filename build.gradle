@@ -82,7 +82,7 @@ project(':server') {
             api group: 'org.apache.commons', name: 'commons-pool2', version: '2.7.0'
             api group: 'com.h2database', name: 'h2', version: '1.4.197'
 
-            api platform('com.amazonaws:aws-java-sdk-bom:1.12.192')
+            api platform('com.amazonaws:aws-java-sdk-bom:1.12.496')
             api 'com.amazonaws:aws-java-sdk-s3'
             api 'com.amazonaws:aws-java-sdk-ebs'
             api 'com.amazonaws:aws-java-sdk-ec2'
