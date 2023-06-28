@@ -288,7 +288,7 @@ project(':controller').version = version
 project(':satellite').version = version
 project(':jclcrypto').version = version
 
-def jerseyVersion = '2.31'
+def jerseyVersion = '2.40'
 
 project(':controller') {
     apply plugin: 'application'
@@ -305,7 +305,7 @@ project(':controller') {
             testImplementation fileTree(dir: "libs/testImplementation")
         } else {
             // rest libs (grizzly http(s), jersey(rest))
-            implementation 'org.glassfish.grizzly:grizzly-http-server:2.4.4'
+            implementation 'org.glassfish.grizzly:grizzly-http-server:4.0.0'
             implementation 'org.glassfish.hk2:guice-bridge:2.6.1'
             implementation group: 'org.glassfish.jersey.inject', name: 'jersey-hk2', version: jerseyVersion
             implementation group: 'org.glassfish.jersey.containers', name: 'jersey-container-grizzly2-http', version: jerseyVersion
@@ -321,6 +321,7 @@ project(':controller') {
             implementation group: 'com.sun.xml.bind', name: 'jaxb-core', version: '2.2.11'
             implementation group: 'com.sun.xml.bind', name: 'jaxb-impl', version: '2.2.11'
             implementation group: 'javax.activation', name: 'activation', version: '1.1.1'
+            implementation group: 'javax.annotation', name: 'javax.annotation-api', version: '1.3.2'
 
             implementation group: 'org.flywaydb', name: 'flyway-core', version: '6.5.7'
 
