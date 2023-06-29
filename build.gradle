@@ -325,8 +325,8 @@ project(':controller') {
 
             implementation group: 'org.flywaydb', name: 'flyway-core', version: '7.15.0'
 
-            runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:2.6.0'
-            runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.12'
+            runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.1.4'
+            runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.5.4'
         }
     }
 
