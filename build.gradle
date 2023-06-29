@@ -313,8 +313,8 @@ project(':controller') {
             implementation group: 'org.glassfish.jersey.media', name: 'jersey-media-sse', version: jerseyVersion
 
             // prometheus client library
-            implementation group: 'io.prometheus', name: 'simpleclient_common', version: '0.9.0'
-            implementation group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.9.0'
+            implementation group: 'io.prometheus', name: 'simpleclient_common', version: '0.16.0'
+            implementation group: 'io.prometheus', name: 'simpleclient_hotspot', version: '0.16.0'
 
             // jdk 11 javax.xml dependency needed by jersey
             implementation group: 'javax.xml.bind', name: 'jaxb-api', version: '2.2.11'
