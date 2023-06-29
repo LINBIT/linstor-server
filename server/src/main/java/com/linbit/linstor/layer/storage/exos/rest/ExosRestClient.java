@@ -34,7 +34,6 @@ import com.linbit.linstor.utils.PropsUtils;
 import com.linbit.utils.Pair;
 
 import javax.annotation.Nullable;
-import javax.xml.bind.DatatypeConverter;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -50,6 +49,7 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 import com.fasterxml.jackson.core.JsonParseException;
+import com.google.common.io.BaseEncoding;
 
 public class ExosRestClient
 {
@@ -598,8 +598,7 @@ public class ExosRestClient
 
         SHA_256.reset();
         byte[] encodedhash = SHA_256.digest((username + "_" + password).getBytes(StandardCharsets.UTF_8));
-        String sha256 = DatatypeConverter.printHexBinary(encodedhash);
-        return sha256.toLowerCase(); // Exos expects login string lower-case
+        return BaseEncoding.base16().lowerCase().encode(encodedhash); // Exos expects login string lower-case
     }
 
     private Map<String, String> getHeaders(PriorityProps prioPropsRef, String ctrl)
