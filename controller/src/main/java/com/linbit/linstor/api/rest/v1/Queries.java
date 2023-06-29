@@ -60,7 +60,7 @@ public class Queries
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
             Mono<Response> flux = ctrlRscGrpApiCallHandler.queryAllSizeInfo(Json.queryAllSizeInfoReqToPojo(qasiReq))
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_QRY_ALL_SIZE_INFO, request))
+                .contextWrite(requestHelper.createContext(ApiConsts.API_QRY_ALL_SIZE_INFO, request))
                 .onErrorResume(
                     ApiRcException.class,
                     apiExc -> Flux.just(

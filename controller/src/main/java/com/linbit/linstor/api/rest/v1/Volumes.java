@@ -104,7 +104,7 @@ public class Volumes
         {
             Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
                     nodes, Collections.emptyList(), rscNames, Collections.emptyList())
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
 
             requestHelper.doFlux(
                 asyncResponse,
@@ -238,7 +238,7 @@ public class Volumes
             new HashSet<>(modifyData.delete_props),
             new HashSet<>(modifyData.delete_namespaces)
         )
-        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM, request));
+        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_VLM, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }

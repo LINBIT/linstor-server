@@ -156,7 +156,7 @@ public class BackgroundRunner
                 errorReporter.logDebug("Background operation " + runCfgRef.description + " end");
                 finished(runCfgRef);
             })
-            .subscriberContext(Context.of(runCfgRef.subscriberContext));
+            .contextWrite(Context.of(runCfgRef.subscriberContext));
     }
 
     /**

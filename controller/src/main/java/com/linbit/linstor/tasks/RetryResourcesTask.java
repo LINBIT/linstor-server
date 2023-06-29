@@ -166,7 +166,7 @@ public class RetryResourcesTask implements Task
                             .concatWith(nextStep)
                             .onErrorResume(ApiRcException.class, ignore -> Flux.empty())
                             .onErrorResume(PeerNotConnectedException.class, ignore -> Flux.empty())
-                            .subscriberContext(
+                            .contextWrite(
                                 Context.of(
                                     ApiModule.API_CALL_NAME,
                                     RSC_RETRY_API_NAME,

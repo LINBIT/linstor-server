@@ -25,7 +25,7 @@ public class ResponseSerializer
 
     public Flux<byte[]> transform(Publisher<ApiCallRc> responses)
     {
-        return Mono.subscriberContext()
+        return Mono.deferContextual(Mono::just)
             .flatMapMany(
                 subscriberContext -> Flux.from(responses).map(
                     response -> commonSerializer.answerBuilder(

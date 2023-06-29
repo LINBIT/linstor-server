@@ -140,7 +140,7 @@ public class Snapshots
                     rscName,
                     snapData.name
                 )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_SNAPSHOT, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_SNAPSHOT, request));
 
             requestHelper.doFlux(
                 asyncResponse,
@@ -164,7 +164,7 @@ public class Snapshots
     )
     {
         Flux<ApiCallRc> responses = ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(rscName, snapName, nodeNames)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_SNAPSHOT, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_SNAPSHOT, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(responses));
     }

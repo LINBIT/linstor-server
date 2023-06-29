@@ -135,7 +135,7 @@ public abstract class ApiTestBase extends GenericDbBase
         disklessStorPoolDfnProt.addAclEntry(SYS_CTX, accCtx.subjectRole, AccessType.CHANGE);
     }
 
-    protected Context subscriberContext()
+    protected Context contextWrite()
     {
         return Context.of(
             ApiModule.API_CALL_NAME, "TestApiCallName",

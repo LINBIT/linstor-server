@@ -119,7 +119,7 @@ public class Remotes
                 remoteJson.access_key,
                 remoteJson.secret_key,
                 remoteJson.use_path_style
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
@@ -151,7 +151,7 @@ public class Remotes
                 remoteJson.region,
                 remoteJson.access_key,
                 remoteJson.secret_key
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
@@ -201,7 +201,7 @@ public class Remotes
                 remoteJson.url,
                 remoteJson.passphrase,
                 remoteJson.cluster_id
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
@@ -231,7 +231,7 @@ public class Remotes
                 remoteJson.url,
                 remoteJson.passphrase,
                 remoteJson.cluster_id
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
@@ -283,7 +283,7 @@ public class Remotes
                 remoteJson.availability_zone,
                 remoteJson.access_key,
                 remoteJson.secret_key
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
@@ -315,7 +315,7 @@ public class Remotes
                 remoteJson.availability_zone,
                 remoteJson.access_key,
                 remoteJson.secret_key
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_SET_REMOTE, request)
             );
 
@@ -335,7 +335,7 @@ public class Remotes
     )
     {
         Flux<ApiCallRc> flux = remoteHandler.delete(remoteName)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_SET_REMOTE, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_SET_REMOTE, request));
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 }

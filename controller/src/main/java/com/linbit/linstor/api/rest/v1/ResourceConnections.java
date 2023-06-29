@@ -129,7 +129,7 @@ public class ResourceConnections
             new HashSet<>(rscConnModify.delete_props),
             new HashSet<>(rscConnModify.delete_namespaces)
         )
-        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_CONN, request));
+        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_CONN, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }

@@ -60,7 +60,7 @@ public class SnapshotRestoreResource
                 rscName,
                 snapName,
                 snapRestore.to_resource
-            ).subscriberContext(requestHelper.createContext(ApiConsts.API_RESTORE_SNAPSHOT, request));
+            ).contextWrite(requestHelper.createContext(ApiConsts.API_RESTORE_SNAPSHOT, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
         }

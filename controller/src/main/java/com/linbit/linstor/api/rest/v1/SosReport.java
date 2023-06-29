@@ -80,7 +80,7 @@ public class SosReport
 
         Mono<Response> flux = ctrlSosReportApiCallHandler
             .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
+            .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
             .flatMap(sosReport ->
             {
                 Response resp;
@@ -140,7 +140,7 @@ public class SosReport
 
         Mono<Response> flux = ctrlSosReportApiCallHandler
             .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
+            .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_SOS_REPORT, request))
             .flatMap(sosReport ->
             {
                 ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(

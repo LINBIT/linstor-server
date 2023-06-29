@@ -167,7 +167,7 @@ public class VolumeDefinitions
             List<VolumeDefinitionWtihCreationPayload> vlmList = new ArrayList<>();
             vlmList.add(new VlmDfnCreationWithPayload(vlmDfnData));
 
-            Flux<ApiCallRc> flux = ctrlApiCallHandler.createVlmDfns(rscName, vlmList).subscriberContext(
+            Flux<ApiCallRc> flux = ctrlApiCallHandler.createVlmDfns(rscName, vlmList).contextWrite(
                 requestHelper.createContext(ApiConsts.API_CRT_VLM_DFN, request)
             );
 
@@ -204,7 +204,7 @@ public class VolumeDefinitions
                 new HashSet<>(vlmDfnData.delete_props),
                 vlmDfnData.flags
             )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_VLM_DFN, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_VLM_DFN, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
         }
@@ -224,7 +224,7 @@ public class VolumeDefinitions
     )
     {
         Flux<ApiCallRc> flux = ctrlVlmDfnDeleteApiCallHandler.deleteVolumeDefinition(rscName, vlmNr)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_VLM_DFN, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_VLM_DFN, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }

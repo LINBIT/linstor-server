@@ -270,7 +270,7 @@ public class NodeApiTest extends ApiTestBase
                 netIfApis,
                 props
             )
-            .subscriberContext(subscriberContext())
+            .contextWrite(contextWrite())
             .toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }
@@ -387,7 +387,7 @@ public class NodeApiTest extends ApiTestBase
                 deletePropKeys,
                 deletePropNamespaces
             )
-            .subscriberContext(subscriberContext())
+            .contextWrite(contextWrite())
             .toStream().forEach(apiCallRc::addEntries);
             return apiCallRc;
         }

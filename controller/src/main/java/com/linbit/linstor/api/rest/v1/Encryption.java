@@ -65,7 +65,7 @@ public class Encryption
                 passPhraseCreate.new_passphrase,
                 null
             )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_CRYPT_PASS, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_CRYPT_PASS, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
         }
@@ -93,7 +93,7 @@ public class Encryption
                 passPhraseCreate.new_passphrase,
                 passPhraseCreate.old_passphrase
             )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_CRYPT_PASS, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_CRYPT_PASS, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
         }
@@ -116,7 +116,7 @@ public class Encryption
         {
             String passPhrase = objectMapper.readValue(jsonData, String.class);
             Flux<ApiCallRc> flux = ctrlConfApiCallHandler.enterPassphrase(passPhrase)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_ENTER_CRYPT_PASS, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_ENTER_CRYPT_PASS, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
         }

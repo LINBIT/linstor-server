@@ -213,7 +213,7 @@ public class ResourceDefinitions
             modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue(),
             modifyData.resource_group
         )
-        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request));
+        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
@@ -226,7 +226,7 @@ public class ResourceDefinitions
         @PathParam("rscName") String rscName)
     {
         Flux<ApiCallRc> flux = ctrlRscDfnDeleteApiCallHandler.deleteResourceDefinition(rscName)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_RSC_DFN, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_RSC_DFN, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
@@ -266,7 +266,7 @@ public class ResourceDefinitions
                 rscName,
                 URLDecoder.decode(path, StandardCharsets.UTF_8.displayName()),
                 true
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_DEPLOY_EXT_FILE, request)
             );
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
@@ -292,7 +292,7 @@ public class ResourceDefinitions
                 rscName,
                 URLDecoder.decode(path, StandardCharsets.UTF_8.displayName()),
                 false
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_UNDEPLOY_EXT_FILE, request)
             );
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
@@ -352,7 +352,7 @@ public class ResourceDefinitions
             requestData.external_name != null ? requestData.external_name.getBytes(StandardCharsets.UTF_8) : null,
             requestData.use_zfs_clone
         )
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_CLONE_RSCDFN, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_CLONE_RSCDFN, request));
 
         requestHelper.doFlux(asyncResponse, mapToCloneStarted(srcName, requestData.name, flux));
     }

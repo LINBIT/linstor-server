@@ -492,7 +492,7 @@ public class CtrlBackupCreateApiCallHandler
         {
             Flux<ApiCallRc> flux = deleteNodeQueueAndReQueueSnapsIfNeeded(peer.getNode());
             Thread thread = new Thread(() ->
-                flux.subscriberContext(
+                flux.contextWrite(
                     Context.of(
                         AccessContext.class,
                         peer.getAccessContext(),

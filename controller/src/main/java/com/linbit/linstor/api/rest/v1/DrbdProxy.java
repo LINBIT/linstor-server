@@ -79,7 +79,7 @@ public class DrbdProxy
                 nodeB,
                 rscName,
                 proxyEnable.port
-            ).subscriberContext(requestHelper.createContext(ApiConsts.API_ENABLE_DRBD_PROXY, request));
+            ).contextWrite(requestHelper.createContext(ApiConsts.API_ENABLE_DRBD_PROXY, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
         }
@@ -104,7 +104,7 @@ public class DrbdProxy
             nodeA,
             nodeB,
             rscName
-        ).subscriberContext(requestHelper.createContext(ApiConsts.API_DISABLE_DRBD_PROXY, request));
+        ).contextWrite(requestHelper.createContext(ApiConsts.API_DISABLE_DRBD_PROXY, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }

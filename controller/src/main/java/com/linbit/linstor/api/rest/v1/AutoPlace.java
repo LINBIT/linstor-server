@@ -64,7 +64,7 @@ public class AutoPlace
                 rscName,
                 new Json.AutoSelectFilterData(autoPlaceRequest.select_filter)
             )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_AUTO_PLACE_RSC, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_AUTO_PLACE_RSC, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
         }

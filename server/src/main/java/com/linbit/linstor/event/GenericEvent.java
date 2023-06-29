@@ -20,12 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 
 import reactor.core.publisher.ConnectableFlux;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
-import reactor.core.publisher.UnicastProcessor;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
@@ -38,7 +39,7 @@ public class GenericEvent<T> implements LinstorTriggerableEvent<T>
     private final Lock lock = new ReentrantLock();
 
     // Sinks where new values are pushed to
-    private final Map<ObjectIdentifier, FluxSink<T>> sinks = new HashMap<>();
+    private final Map<ObjectIdentifier, Sinks.Many<T>> sinks = new HashMap<>();
 
     // Streams which can be subscribed to
     private final Map<ObjectIdentifier, Flux<T>> streams = new HashMap<>();
@@ -113,11 +114,12 @@ public class GenericEvent<T> implements LinstorTriggerableEvent<T>
             );
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public void triggerEvent(ObjectIdentifier objectIdentifier, T value)
     {
         Flux<T> stream = null;
-        FluxSink<T> sink;
+        Sinks.Many<T> sink;
         Set<FluxSink<Tuple2<ObjectIdentifier, Flux<T>>>> waiterSet = null;
 
         lock.lock();
@@ -126,8 +128,8 @@ public class GenericEvent<T> implements LinstorTriggerableEvent<T>
             sink = sinks.get(objectIdentifier);
             if (sink == null)
             {
-                UnicastProcessor<T> processor = UnicastProcessor.create();
-                ConnectableFlux<T> publisher = processor.replay(1);
+                sink = Sinks.many().unicast().onBackpressureBuffer();
+                ConnectableFlux<T> publisher = sink.asFlux().replay(1);
                 publisher.connect();
 
                 // Publish events signals on the main scheduler to detach the execution from this thread,
@@ -143,7 +145,6 @@ public class GenericEvent<T> implements LinstorTriggerableEvent<T>
                     throw new ImplementationError(exc);
                 }
 
-                sink = processor.sink();
                 sinks.put(objectIdentifier, sink);
 
                 List<ObjectIdentifier> matchingWaitObjects = matchingObjects(objectIdentifier);
@@ -172,28 +173,31 @@ public class GenericEvent<T> implements LinstorTriggerableEvent<T>
             }
         }
 
-        sink.next(value);
+        while (sink.tryEmitNext(value) == Sinks.EmitResult.FAIL_NON_SERIALIZED)
+        {
+            LockSupport.parkNanos(10);
+        }
     }
 
     @Override
     public void closeStream(ObjectIdentifier objectIdentifier)
     {
-        FluxSink<T> sink = removeStream(objectIdentifier);
+        Sinks.Many<T> sink = removeStream(objectIdentifier);
 
         if (sink != null)
         {
-            sink.complete();
+            sink.tryEmitComplete();
         }
     }
 
     @Override
     public void closeStreamNoConnection(ObjectIdentifier objectIdentifier)
     {
-        FluxSink<T> sink = removeStream(objectIdentifier);
+        Sinks.Many<T> sink = removeStream(objectIdentifier);
 
         if (sink != null)
         {
-            sink.error(new PeerNotConnectedException());
+            sink.tryEmitError(new PeerNotConnectedException());
         }
     }
 
@@ -234,9 +238,9 @@ public class GenericEvent<T> implements LinstorTriggerableEvent<T>
         return objectIdentifiers;
     }
 
-    private FluxSink<T> removeStream(ObjectIdentifier objectIdentifier)
+    private Sinks.Many<T> removeStream(ObjectIdentifier objectIdentifier)
     {
-        FluxSink<T> sink;
+        Sinks.Many<T> sink;
 
         lock.lock();
         try

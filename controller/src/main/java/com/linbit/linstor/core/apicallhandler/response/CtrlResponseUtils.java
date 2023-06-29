@@ -128,7 +128,7 @@ public class CtrlResponseUtils
                             .onErrorResume(ApiRcException.class, error -> Flux.just(Signal.error(error)))
                     )
             )
-            .compose(signalFlux ->
+            .transformDeferred(signalFlux ->
                 {
                     List<ApiRcException> errors = Collections.synchronizedList(new ArrayList<>());
                     return signalFlux

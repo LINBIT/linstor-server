@@ -77,7 +77,7 @@ public class Actions
                 createSnapReqs.add(new SnapReq(snapReq.nodes, snapReq.resource_name, snapReq.name));
             }
             Flux<ApiCallRc> flux = snapCrtHandler.createSnapshot(new CreateMultiSnapRequest(createSnapReqs))
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_SNAPSHOT_MULTI, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_SNAPSHOT_MULTI, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
         }

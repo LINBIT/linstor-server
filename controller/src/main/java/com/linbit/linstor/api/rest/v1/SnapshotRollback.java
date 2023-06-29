@@ -42,7 +42,7 @@ public class SnapshotRollback
     )
     {
         Flux<ApiCallRc> flux = ctrlSnapshotRollbackApiCallHandler.rollbackSnapshot(rscName, snapName)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_ROLLBACK_SNAPSHOT, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_ROLLBACK_SNAPSHOT, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }

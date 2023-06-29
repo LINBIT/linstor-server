@@ -61,7 +61,7 @@ public class SnapshotShipping
                 snapShipData.to_node,
                 snapShipData.to_nic,
                 false
-            ).subscriberContext(requestHelper.createContext(ApiConsts.API_SHIP_SNAPSHOT, request));
+            ).contextWrite(requestHelper.createContext(ApiConsts.API_SHIP_SNAPSHOT, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
         }

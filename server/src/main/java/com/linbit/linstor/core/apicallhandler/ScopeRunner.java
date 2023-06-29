@@ -25,7 +25,7 @@ import com.google.inject.name.Names;
 import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.context.Context;
+import reactor.util.context.ContextView;
 
 @Singleton
 public class ScopeRunner
@@ -71,7 +71,7 @@ public class ScopeRunner
         boolean transactional
     )
     {
-        return Mono.subscriberContext()
+        return Mono.deferContextual(Mono::just)
             .flatMapMany(subscriberContext -> Mono
                 .fromCallable(() -> doInScope(subscriberContext, scopeDescription, lockGuard, callable, transactional))
                 .flatMapMany(Function.identity())
@@ -80,7 +80,7 @@ public class ScopeRunner
     }
 
     private <T> Flux<T> doInScope(
-        Context subscriberContext,
+        ContextView subscriberContext,
         String scopeDescription,
         LockGuard lockGuard,
         Callable<Flux<T>> callable,

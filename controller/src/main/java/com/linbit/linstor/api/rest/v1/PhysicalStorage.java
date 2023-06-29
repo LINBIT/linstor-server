@@ -73,7 +73,7 @@ public class PhysicalStorage
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
             Mono<Response> answer = physicalStorageApiCallHandler.listPhysicalStorage()
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
+                .contextWrite(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
                 .map(physicalStorageMap ->
                 {
                     Response resp;
@@ -116,7 +116,7 @@ public class PhysicalStorage
         RequestHelper.safeAsyncResponse(asyncResponse, () ->
         {
             Mono<Response> answer = physicalStorageApiCallHandler.getPhysicalStorage(nodeName)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
+                .contextWrite(requestHelper.createContext(ApiConsts.API_LST_PHYS_STOR, request))
                 .map(lsBlkEntries -> {
                     List<JsonGenTypes.PhysicalStorageNode> result = lsBlkEntries
                         .stream()
@@ -224,7 +224,7 @@ public class PhysicalStorage
                 createData.vdo_slab_size_kib,
                 createData.sed,
                 storPoolProps
-            ).subscriberContext(requestHelper.createContext(ApiConsts.API_CREATE_DEVICE_POOL, request));
+            ).contextWrite(requestHelper.createContext(ApiConsts.API_CREATE_DEVICE_POOL, request));
 
             if (createData.with_storage_pool != null)
             {
@@ -244,7 +244,7 @@ public class PhysicalStorage
                             deviceProviderKind,
                             poolName
                         )
-                    ).subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_STOR_POOL, request))
+                    ).contextWrite(requestHelper.createContext(ApiConsts.API_CRT_STOR_POOL, request))
                 );
             }
 

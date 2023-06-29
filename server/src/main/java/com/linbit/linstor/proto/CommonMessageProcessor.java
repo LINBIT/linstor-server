@@ -41,17 +41,17 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.slf4j.event.Level;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxProcessor;
-import reactor.core.publisher.FluxSink;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 import reactor.core.scheduler.Scheduler;
+import reactor.util.concurrent.Queues;
 import reactor.util.context.Context;
 
 /**
@@ -66,7 +66,7 @@ public class CommonMessageProcessor implements MessageProcessor
     private final ScopeRunner scopeRunner;
     private final CommonSerializer commonSerializer;
 
-    private final FluxSink<Runnable> workerPool;
+    private final Sinks.Many<Runnable> sink;
 
     private final Map<String, ApiEntry> apiCallMap;
 
@@ -104,21 +104,16 @@ public class CommonMessageProcessor implements MessageProcessor
         // letting the TCP buffer fill up.
         // Many messages from a single peer will still be queued in an unbounded
         // fashion as part of the message re-ordering.
-        FluxProcessor<Runnable, Runnable> processor = EmitterProcessor.create(queueSize);
-        workerPool = processor.sink();
-        processor
-            // minimal prefetch because we control queueing via queueSize
+        sink = Sinks.many().unicast().onBackpressureBuffer(Queues.<Runnable>unbounded(queueSize).get());
+        Flux<Runnable> workerPool = sink.asFlux();
+        workerPool
             .parallel(thrCount, 1)
-            // minimal prefetch for low latency
             .runOn(scheduler, 1)
             .doOnNext(Runnable::run)
             .subscribe(
-                ignored ->
-                {
+                ignored -> {
                     // do nothing
-                },
-                exc -> errorLog.reportError(exc, null, null, "Uncaught exception in parallel processor")
-            );
+                }, exc -> errorLog.reportError(exc, null, null, "Uncaught exception in sink"));
 
         apiCallMap = new TreeMap<>();
         for (Map.Entry<String, BaseApiCall> entry : apiCalls.entrySet())
@@ -149,6 +144,7 @@ public class CommonMessageProcessor implements MessageProcessor
      * May be called on any thread.
      * For each peer, messages should be delivered in the same order as in the incoming stream.
      */
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public void processMessage(final Message msg, final TcpConnector connector, final Peer peer)
     {
@@ -161,7 +157,20 @@ public class CommonMessageProcessor implements MessageProcessor
             {
                 case MessageTypes.DATA:
                     long peerSeq = peer.getNextIncomingMessageSeq();
-                    workerPool.next(() -> this.doProcessMessage(msg, connector, peer, peerSeq));
+
+                    // Since reactor 3.4.x, it doesn't busy loop anymore itself, but rather let that be done by
+                    // the library user see: https://github.com/reactor/reactor-core/issues/2049
+                    Sinks.EmitResult emitRes = sink.tryEmitNext(
+                        () -> this.doProcessMessage(msg, connector, peer, peerSeq));
+                    while (emitRes == Sinks.EmitResult.FAIL_NON_SERIALIZED)
+                    {
+                        LockSupport.parkNanos(10);
+                        emitRes = sink.tryEmitNext(() -> this.doProcessMessage(msg, connector, peer, peerSeq));
+                    }
+                    if (emitRes.isFailure())
+                    {
+                        errorLog.logError("Unable to emit processMessage");
+                    }
                     break;
                 case MessageTypes.PING:
                     peer.sendPong();
@@ -410,7 +419,7 @@ public class CommonMessageProcessor implements MessageProcessor
                         TransactionException.class,
                         exc -> handleTransactionException(exc, peer, apiCallId)
                     )
-                    .subscriberContext(Context.of(
+                    .contextWrite(Context.of(
                         ApiModule.API_CALL_NAME, apiCallName,
                         AccessContext.class, peerAccCtx,
                         Peer.class, peer,

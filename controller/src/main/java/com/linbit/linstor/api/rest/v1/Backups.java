@@ -119,7 +119,7 @@ public class Backups
             boolean incremental = data.incremental != null && data.incremental;
             responses = backupCrtApiCallHandler
                 .createBackup(data.rsc_name, data.snap_name, remoteName, data.node_name, null, incremental, false)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
@@ -158,7 +158,7 @@ public class Backups
                 remoteName,
                 data.passphrase,
                 data.download_only
-            ).subscriberContext(requestHelper.createContext(ApiConsts.API_RESTORE_BACKUP, request));
+            ).contextWrite(requestHelper.createContext(ApiConsts.API_RESTORE_BACKUP, request));
                 requestHelper.doFlux(asyncResponse,ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED));
         }
         catch (JsonProcessingException exc)
@@ -239,7 +239,7 @@ public class Backups
                 remoteName,
                 dryRun,
                 keepSnaps
-            ).subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
+            ).contextWrite(requestHelper.createContext(ApiConsts.API_DEL_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(
@@ -267,7 +267,7 @@ public class Backups
                 data.restore != null && data.restore,
                 data.create != null && data.create,
                 remoteName
-            ).subscriberContext(requestHelper.createContext(ApiConsts.API_ABORT_BACKUP, request));
+            ).contextWrite(requestHelper.createContext(ApiConsts.API_ABORT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(
@@ -336,7 +336,7 @@ public class Backups
                 data.allow_incremental,
                 false
             )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_SHIP_BACKUP, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_SHIP_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED)
@@ -386,7 +386,7 @@ public class Backups
                     data.node_name,
                     remoteName
                 )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_BACKUP_INFO, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_BACKUP_INFO, request));
             requestHelper.doFlux(asyncResponse, backupInfoPojoToResponse(backupInfoFlux, asyncResponse));
         }
         catch (JsonProcessingException exc)
@@ -411,7 +411,7 @@ public class Backups
             JsonGenTypes.BackupSchedule data = objectMapper.readValue(jsonData, JsonGenTypes.BackupSchedule.class);
             responses = scheduledBackupsApiCallHandler
                 .enableSchedule(data.rsc_name, data.grp_name, remoteName, scheduleName, data.node_name)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.OK)
@@ -439,7 +439,7 @@ public class Backups
             JsonGenTypes.BackupSchedule data = objectMapper.readValue(jsonData, JsonGenTypes.BackupSchedule.class);
             responses = scheduledBackupsApiCallHandler
                 .disableSchedule(data.rsc_name, data.grp_name, remoteName, scheduleName, data.node_name)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,
                 ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.OK)
@@ -465,7 +465,7 @@ public class Backups
         Flux<ApiCallRc> responses;
         responses = scheduledBackupsApiCallHandler
             .deleteSchedule(rscName, grpName, remoteName, scheduleName)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
         requestHelper.doFlux(
             asyncResponse,
             ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.OK)

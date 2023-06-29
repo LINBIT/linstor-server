@@ -117,7 +117,7 @@ public class ErrorReports
                 optSince,
                 optTo,
                 filterIds)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_REQ_ERROR_REPORTS, request))
+            .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_ERROR_REPORTS, request))
             .flatMap(reportSet -> Flux.just(reportSet.stream()))
             .flatMap(errorReportStream ->
             {
@@ -182,7 +182,7 @@ public class ErrorReports
             Date optTo = data.to != null ? new Date(data.to) : null;
             Flux<ApiCallRc> flux = ctrlErrorListApiCallHandler
                 .deleteErrorReports(optSince, optTo, data.nodes, data.exception, data.version, data.ids)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_ERROR_REPORTS, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_ERROR_REPORTS, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
         }
@@ -201,7 +201,7 @@ public class ErrorReports
     {
         Flux<ApiCallRc> flux = ctrlErrorListApiCallHandler.deleteErrorReports(
                 null, null, null, null, null, Collections.singletonList(reportId))
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_ERROR_REPORT, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_ERROR_REPORT, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }

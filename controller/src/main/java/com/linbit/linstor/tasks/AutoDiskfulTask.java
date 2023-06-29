@@ -381,7 +381,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                             Resource.DiskfulBy.AUTO_DISKFUL
                         )
                             .concatWith(removeExcessFlux(rsc))
-                            .subscriberContext(
+                            .contextWrite(
                                 Context.of(
                                     ApiModule.API_CALL_NAME,
                                     "Auto diskful task for " + CtrlRscApiCallHandler.getRscDescription(rsc),
@@ -447,7 +447,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
             retFlux = rscDeleteApiCallHandler.deleteResource(
                 excessRsc.getNode().getName().displayValue,
                 excessRsc.getResourceDefinition().getName().displayValue
-            ).subscriberContext(
+            ).contextWrite(
                 Context.of(
                     ApiModule.API_CALL_NAME,
                     "Deleting excess " + CtrlRscApiCallHandler.getRscDescription(excessRsc),

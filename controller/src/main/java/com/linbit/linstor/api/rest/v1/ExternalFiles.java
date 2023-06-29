@@ -135,7 +135,7 @@ public class ExternalFiles
             Flux<ApiCallRc> flux = extFilesHandler.set(
                 URLDecoder.decode(extFileName, StandardCharsets.UTF_8.displayName()),
                 Base64.decode(extFileJson.content)
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_SET_EXT_FILE, request)
             );
 
@@ -159,7 +159,7 @@ public class ExternalFiles
         {
             Flux<ApiCallRc> flux = extFilesHandler
                 .delete(URLDecoder.decode(extFileName, StandardCharsets.UTF_8.displayName()))
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_EXT_FILE, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_EXT_FILE, request));
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
         }
         catch (UnsupportedEncodingException exc)

@@ -36,6 +36,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
@@ -43,7 +44,7 @@ import java.util.function.Function;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
-import reactor.core.publisher.UnicastProcessor;
+import reactor.core.publisher.Sinks;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
@@ -87,9 +88,9 @@ public class TcpConnectorPeer implements Peer
 
     private final CommonSerializer commonSerializer;
 
-    private String peerId;
+    private final String peerId;
 
-    private TcpConnector connector;
+    private final TcpConnector connector;
 
     // Current inbound message
     protected Message msgIn;
@@ -126,8 +127,8 @@ public class TcpConnectorPeer implements Peer
     protected long lastPingSent = -1;
     private long lastPongReceived = -1;
 
-    protected Message internalPingMsg;
-    protected Message internalPongMsg;
+    protected final Message internalPingMsg;
+    protected final Message internalPongMsg;
 
     private final ReadWriteLock satelliteStateLock;
     private SatelliteState satelliteState;
@@ -143,12 +144,12 @@ public class TcpConnectorPeer implements Peer
     private int opInterest = OP_READ;
 
     private final AtomicLong nextIncomingMessageSeq = new AtomicLong();
-    private final FluxSink<Tuple2<Long, Publisher<?>>> incomingMessageSink;
+    private final Sinks.Many<Tuple2<Long, Publisher<?>>> incomingMessageSink;
 
-    private AtomicLong nextApiCallId = new AtomicLong(1);
-    private Map<Long, FluxSink<ByteArrayInputStream>> openRpcs = Collections.synchronizedMap(new TreeMap<>());
+    private final AtomicLong nextApiCallId = new AtomicLong(1);
+    private final Map<Long, FluxSink<ByteArrayInputStream>> openRpcs = Collections.synchronizedMap(new TreeMap<>());
 
-    private ExtToolsManager externalToolsManager = new ExtToolsManager();
+    private final ExtToolsManager externalToolsManager = new ExtToolsManager();
     private StltConfig stltConfig = new StltConfig();
 
     private final Map<String, Property> dynamicProperties = new HashMap<>();
@@ -195,9 +196,9 @@ public class TcpConnectorPeer implements Peer
 
         finishedMsgInQueue = new LinkedList<>();
 
-        UnicastProcessor<Tuple2<Long, Publisher<?>>> processor = UnicastProcessor.create();
-        incomingMessageSink = processor.sink();
-        processor
+        incomingMessageSink = Sinks.many().unicast().onBackpressureBuffer();
+        Flux<Tuple2<Long, Publisher<?>>> flux = incomingMessageSink.asFlux();
+        flux
             .transform(OrderingFlux::order)
             .flatMap(Function.identity(), Integer.MAX_VALUE)
             .subscribe(
@@ -382,10 +383,22 @@ public class TcpConnectorPeer implements Peer
         return nextIncomingMessageSeq.getAndIncrement();
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public void processInOrder(long peerSeq, Publisher<?> publisher)
     {
-        incomingMessageSink.next(Tuples.of(peerSeq, publisher));
+        // Since reactor 3.4.x, it doesn't busy loop anymore itself, but rather let that be done by
+        // the library user see: https://github.com/reactor/reactor-core/issues/2049
+        Sinks.EmitResult emitRes = incomingMessageSink.tryEmitNext(Tuples.of(peerSeq, publisher));
+        while (emitRes == Sinks.EmitResult.FAIL_NON_SERIALIZED)
+        {
+            LockSupport.parkNanos(10);
+            emitRes = incomingMessageSink.tryEmitNext(Tuples.of(peerSeq, publisher));
+        }
+        if (emitRes.isFailure())
+        {
+            errorReporter.logError("Unable to emit process");
+        }
     }
 
     @Override

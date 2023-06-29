@@ -81,7 +81,7 @@ public class Metrics
         {
             Flux<List<ErrorReport>> fluxErrorReports = ctrlErrorListApiCallHandler.listErrorReports(
                 Collections.emptySet(), false, null, null, Collections.emptySet())
-                .subscriberContext(requestHelper.createContext("metrics", request));
+                .contextWrite(requestHelper.createContext("metrics", request));
 
             try
             {

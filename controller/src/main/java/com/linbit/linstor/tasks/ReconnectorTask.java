@@ -168,7 +168,7 @@ public class ReconnectorTask implements Task
             if (!node.isDeleted())
             {
                 snapShipAbortHandler.abortAllShippingPrivileged(node, true)
-                    .subscriberContext(
+                    .contextWrite(
                         Context.of(
                             ApiModule.API_CALL_NAME,
                             "Abort currently shipped snapshots",
@@ -375,7 +375,7 @@ public class ReconnectorTask implements Task
         for (Pair<Flux<ApiCallRc>, Peer> pair : fluxList)
         {
             Peer peer = pair.objB;
-            pair.objA.subscriberContext(
+            pair.objA.contextWrite(
                 Context.of(
                     ApiModule.API_CALL_NAME,
                     "Recon:AutoEvicting",

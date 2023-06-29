@@ -61,7 +61,7 @@ public class QueryMaxVlmSize
         Mono<Response> flux = ctrlQueryMaxVlmSizeApiCallHandler.queryMaxVlmSize(
             new Json.AutoSelectFilterData(selectFilterData)
         )
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_QRY_MAX_VLM_SIZE, request))
+            .contextWrite(requestHelper.createContext(ApiConsts.API_QRY_MAX_VLM_SIZE, request))
             .flatMap(apiCallRcWith ->
             {
                 Response resp;

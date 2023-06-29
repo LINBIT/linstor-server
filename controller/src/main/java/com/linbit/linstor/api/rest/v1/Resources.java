@@ -203,7 +203,7 @@ public class Resources
                 rscWithPayloadApiList,
                 Resource.DiskfulBy.USER
             )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_CRT_RSC, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_RSC, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
         }
@@ -262,7 +262,7 @@ public class Resources
             new HashSet<>(modifyData.delete_props),
             new HashSet<>(modifyData.delete_namespaces)
         )
-        .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC, request));
+        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
@@ -277,7 +277,7 @@ public class Resources
     )
     {
         Flux<ApiCallRc> flux = ctrlRscDeleteApiCallHandler.deleteResource(nodeName, rscName)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_RSC, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_RSC, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
@@ -304,7 +304,7 @@ public class Resources
                     rscData.layer_list,
                     rscData.diskful
                 )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_MAKE_RSC_AVAIL, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_MAKE_RSC_AVAIL, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
         }
@@ -345,7 +345,7 @@ public class Resources
             true,
             null
         )
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
     }
@@ -390,7 +390,7 @@ public class Resources
                 false,
                 Resource.DiskfulBy.USER
             )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
         }
@@ -442,7 +442,7 @@ public class Resources
                 false,
                 Resource.DiskfulBy.USER
             )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_TOGGLE_DISK, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
         }
@@ -463,7 +463,7 @@ public class Resources
     {
         Flux<ApiCallRc> flux = ctrlRscActivateApiCallHandler
             .activateRsc(nodeName, rscName)
-            .subscriberContext(
+            .contextWrite(
                 requestHelper.createContext(ApiConsts.API_ACTIVATE_RSC, request)
             );
 
@@ -481,7 +481,7 @@ public class Resources
     {
         Flux<ApiCallRc> flux = ctrlRscActivateApiCallHandler
             .deactivateRsc(nodeName, rscName)
-            .subscriberContext(
+            .contextWrite(
                 requestHelper.createContext(ApiConsts.API_DEACTIVATE_RSC, request)
             );
 

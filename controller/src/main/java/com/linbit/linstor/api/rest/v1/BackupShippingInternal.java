@@ -89,7 +89,7 @@ public class BackupShippingInternal
                 data.srcSnapDfnUuids,
                 data.dstNodeName
             )
-                .subscriberContext(
+                .contextWrite(
                     requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
             );
         }
@@ -174,7 +174,7 @@ public class BackupShippingInternal
                 shipRequest.resetData,
                 shipRequest.dstBaseSnapName,
                 shipRequest.dstActualNodeName
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
             );
         }
@@ -244,7 +244,7 @@ public class BackupShippingInternal
             RemoteName stltRemoteName = new RemoteName(receiveRequest.srcStltRemoteName, true);
             BackupShippingData data = backupInfoMgr.getL2LSrcData(linstorRemoteName, stltRemoteName);
             responses = backupL2LSrcApiCallHandler.startShipping(receiveRequest, data)
-                .subscriberContext(
+                .contextWrite(
                     requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_START_RECEIVING, request)
                 );
         }
@@ -288,7 +288,7 @@ public class BackupShippingInternal
             RemoteName stltRemoteName = new RemoteName(receiveRequest.stltRemoteName, true);
             BackupShippingData data = backupInfoMgr.removeL2LSrcData(linstorRemoteName, stltRemoteName);
             responses = backupL2LSrcApiCallHandler.startQueueIfReady(data.getStltRemote(), false)
-                .subscriberContext(
+                .contextWrite(
                     requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_RECEIVING_DONE, request)
                 );
         }

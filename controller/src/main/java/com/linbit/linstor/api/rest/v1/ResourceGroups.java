@@ -218,7 +218,7 @@ public class ResourceGroups
             new HashSet<>(modifyData.delete_namespaces),
             modifyAutoSelectFilter
         )
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_RSC_GRP, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_GRP, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
@@ -270,7 +270,7 @@ public class ResourceGroups
                 rscGrpSpwn.partial,
                 rscGrpSpwn.definitions_only
             )
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_SPAWN_RSC_DFN, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_SPAWN_RSC_DFN, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
         }
@@ -291,7 +291,7 @@ public class ResourceGroups
         Mono<Response> flux = ctrlRscGrpApiCallHandler.queryMaxVlmSize(
             rscGrpName
         )
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_QRY_MAX_VLM_SIZE, request))
+            .contextWrite(requestHelper.createContext(ApiConsts.API_QRY_MAX_VLM_SIZE, request))
             .flatMap(apiCallRcWith ->
             {
                 Response resp;
@@ -348,7 +348,7 @@ public class ResourceGroups
         Mono<Response> flux = ctrlRscGrpApiCallHandler.querySizeInfo(
             Json.querySizeInfoReqToPojo(rscGrpName, qsiReq)
         )
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_QRY_SIZE_INFO, request))
+            .contextWrite(requestHelper.createContext(ApiConsts.API_QRY_SIZE_INFO, request))
             .onErrorResume(
                 ApiRcException.class,
                 apiExc -> Flux.just(
@@ -429,7 +429,7 @@ public class ResourceGroups
             AutoSelectFilterApi adjustAutoSelectFilter = selectFilterToApi(data.select_filter);
             Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler
                 .adjust(rscGrpName, adjustAutoSelectFilter)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_ADJUST_RSC_GRP, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_ADJUST_RSC_GRP, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
         }
@@ -463,7 +463,7 @@ public class ResourceGroups
             }
             AutoSelectFilterApi adjustAutoSelectFilter = selectFilterToApi(data.select_filter);
             Flux<ApiCallRc> flux = ctrlRscGrpApiCallHandler.adjustAll(adjustAutoSelectFilter)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_ADJUST_RSC_GRP, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_ADJUST_RSC_GRP, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
         }

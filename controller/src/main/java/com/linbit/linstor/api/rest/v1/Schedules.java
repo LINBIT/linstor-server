@@ -90,7 +90,7 @@ public class Schedules
                 scheduleJson.keep_remote,
                 scheduleJson.on_failure,
                 scheduleJson.max_retries
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_CRT_SCHEDULE, request)
             );
 
@@ -124,7 +124,7 @@ public class Schedules
                 scheduleJson.keep_remote,
                 scheduleJson.on_failure,
                 scheduleJson.max_retries
-            ).subscriberContext(
+            ).contextWrite(
                 requestHelper.createContext(ApiConsts.API_MOD_SCHEDULE, request)
             );
 
@@ -145,7 +145,7 @@ public class Schedules
     )
     {
         Flux<ApiCallRc> flux = scheduleHandler.delete(scheduleName)
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_DEL_SCHEDULE, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_SCHEDULE, request));
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 }

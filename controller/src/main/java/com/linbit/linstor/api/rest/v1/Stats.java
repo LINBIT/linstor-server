@@ -184,7 +184,7 @@ public class Stats
                 null,
                 null,
                 Collections.emptySet())
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_ERR_REPORT_STATS, request))
+            .contextWrite(requestHelper.createContext(ApiConsts.API_ERR_REPORT_STATS, request))
             .flatMap(reportSet -> Flux.just(reportSet.stream()))
             .flatMap(
                 errorReportStream ->

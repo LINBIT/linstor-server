@@ -122,7 +122,7 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
                         return Flux.empty();
                     }
                 ))
-            .subscriberContext(Context.of(
+            .contextWrite(Context.of(
                 ApiModule.API_CALL_NAME, "UpdateVolumeAllocations",
                 AccessContext.class, sysCtx))
             .subscribe();
@@ -133,7 +133,7 @@ public class UpdateSpaceInfoTask implements TaskScheduleService.Task
             Collections.emptyList(),
             false
         )
-            .subscriberContext(Context.of(
+            .contextWrite(Context.of(
                 ApiModule.API_CALL_NAME, "UpdateFreeSpaceInfo",
                 AccessContext.class, sysCtx))
             .subscribe();

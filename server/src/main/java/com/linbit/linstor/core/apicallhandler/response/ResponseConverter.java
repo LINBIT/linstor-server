@@ -88,7 +88,7 @@ public class ResponseConverter
 
     public Flux<ApiCallRc> reportingExceptions(ResponseContext context, Publisher<ApiCallRc> responses)
     {
-        return Mono.subscriberContext()
+        return Mono.deferContextual(Mono::just)
             .flatMapMany(subscriberContext ->
                 Flux.from(responses)
                     .map(apiCallRc -> addContextAll(apiCallRc, context, false))

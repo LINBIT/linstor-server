@@ -141,7 +141,7 @@ public class StoragePoolDefinitions
                 new HashSet<>(data.delete_props),
                 new HashSet<>(data.delete_namespaces)
             )
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL_DFN, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_STOR_POOL_DFN, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }

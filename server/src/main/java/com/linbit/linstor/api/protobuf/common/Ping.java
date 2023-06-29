@@ -36,7 +36,7 @@ public class Ping implements ApiCallReactive
     public Flux<byte[]> executeReactive(InputStream msgDataIn)
         throws IOException
     {
-        return Mono.subscriberContext()
+        return Mono.deferContextual(Mono::just)
             .flatMapMany(subscriberContext ->
                 Flux.just(commonSerializer.answerBuilder(
                     "Pong",

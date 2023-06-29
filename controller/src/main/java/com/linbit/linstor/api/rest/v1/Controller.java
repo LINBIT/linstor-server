@@ -124,7 +124,7 @@ public class Controller
                 properties.override_props,
                 new HashSet<>(properties.delete_props),
                 new HashSet<>(properties.delete_namespaces)
-            ).subscriberContext(requestHelper.createContext(ApiConsts.API_SET_CTRL_PROP, request));
+            ).contextWrite(requestHelper.createContext(ApiConsts.API_SET_CTRL_PROP, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.CREATED));
         }
@@ -144,7 +144,7 @@ public class Controller
     {
         Pair<String, String> keyPair = splitFullKey(key);
         Flux<ApiCallRc> flux = ctrlApiCallHandler.deleteCtrlCfgProp(keyPair.objA, keyPair.objB
-        ).subscriberContext(requestHelper.createContext(ApiConsts.API_SET_CTRL_PROP, request));
+        ).contextWrite(requestHelper.createContext(ApiConsts.API_SET_CTRL_PROP, request));
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
 
@@ -343,7 +343,7 @@ public class Controller
                 .readValue(jsonData, JsonGenTypes.ControllerConfig.class);
             ControllerConfigPojo conf = new ControllerConfigPojo(config);
             flux = ctrlApiCallHandler.setConfig(conf)
-                .subscriberContext(requestHelper.createContext(InternalApiConsts.API_MOD_CONFIG, request));
+                .contextWrite(requestHelper.createContext(InternalApiConsts.API_MOD_CONFIG, request));
 
         }
         catch (IOException ioExc)

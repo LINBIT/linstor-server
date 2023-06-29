@@ -107,7 +107,7 @@ public class NodeConnections
             new HashSet<>(nodeConnModify.delete_props),
             new HashSet<>(nodeConnModify.delete_namespaces)
         )
-            .subscriberContext(requestHelper.createContext(ApiConsts.API_MOD_NODE_CONN, request));
+            .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_NODE_CONN, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }

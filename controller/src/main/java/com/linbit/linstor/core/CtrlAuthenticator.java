@@ -70,7 +70,7 @@ public class CtrlAuthenticator
     public void sendAuthentication(Peer peer)
     {
         completeAuthentication(peer.getNode())
-            .subscriberContext(
+            .contextWrite(
                 Context.of(
                     ApiModule.API_CALL_NAME, InternalApiConsts.API_AUTH,
                     AccessContext.class, peer.getAccessContext(),

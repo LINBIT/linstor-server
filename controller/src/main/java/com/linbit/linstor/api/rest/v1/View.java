@@ -96,7 +96,7 @@ public class View
         {
             Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
                 nodesFilter, storagePoolsFilter, resourcesFilter, propFilters)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_LST_VLM, request));
 
             requestHelper.doFlux(
                 asyncResponse,
@@ -163,7 +163,7 @@ public class View
         {
             Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
                 .listStorPools(nodesFilter, storagePoolsFilter, propFilters, fromCache)
-                .subscriberContext(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_LST_STOR_POOL, request));
 
             requestHelper.doFlux(asyncResponse, storPoolListToResponse(flux, limit, offset));
         });
