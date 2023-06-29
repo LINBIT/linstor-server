@@ -36,8 +36,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.google.inject.Provider;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionList;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
+import io.fabric8.kubernetes.client.ConfigBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.ApiextensionsAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -119,20 +120,21 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
         if (dbVersion == 0)
         {
             errorReporter.logTrace("No database found. Creating migration resources.");
-            try (ApiextensionsAPIGroupDSL apiextensions = k8sDb.getClient().apiextensions())
+            // closable isn't used, as it closes the complete client connection
+            // and would render transction objects useless
+            // we close the client on shutdown anyway
+            ApiextensionsAPIGroupDSL apiextensions = k8sDb.getClient().apiextensions();
             {
                 NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, Resource<CustomResourceDefinition>> crdApi = apiextensions
                     .v1().customResourceDefinitions();
 
-                crdApi.createOrReplace(
-                    crdApi.load(DbK8sCrd.class.getResourceAsStream("/" + LinstorVersionCrd.getYamlLocation())).get()
-                );
+                Resource<CustomResourceDefinition> crd = crdApi.load(
+                    DbK8sCrd.class.getResourceAsStream("/" + LinstorVersionCrd.getYamlLocation()));
+                crd.serverSideApply();
 
-                crdApi.createOrReplace(
-                    crdApi.load(
-                        DbK8sCrd.class.getResourceAsStream("/" + RollbackCrd.getYamlLocation())
-                    ).get()
-                );
+                Resource<CustomResourceDefinition> rollback = crdApi.load(
+                    DbK8sCrd.class.getResourceAsStream("/" + RollbackCrd.getYamlLocation()));
+                rollback.serverSideApply();
             }
         }
 
@@ -295,8 +297,9 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
             throw new SystemServiceStartException("Not configured for kubernetes connection!", true);
         }
 
-        k8sClient = new DefaultKubernetesClient();
-        k8sClient.getConfiguration().setRequestRetryBackoffLimit(ctrlCfg.getK8sRequestRetries());
+        k8sClient = new KubernetesClientBuilder()
+            .withConfig(new ConfigBuilder().withRequestRetryBackoffLimit(ctrlCfg.getK8sRequestRetries()).build())
+            .build();
         k8sCachingClient = new HashMap<>();
         atomicStarted.set(true);
     }

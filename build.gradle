@@ -99,7 +99,7 @@ project(':server') {
             // this needs to be moved to the controller, once we have refactored our interfaces requiring this to be here
             api group: 'com.ibm.etcd', name: 'etcd-java', version: '0.0.22'
 
-            api group: 'io.fabric8', name: 'kubernetes-client', version: '5.12.2'
+            api group: 'io.fabric8', name: 'kubernetes-client', version: '6.7.2'
             constraints {
                 api('com.squareup.okhttp3:okhttp:4.10.0') {
                     because('previous versions had a bug when validationg certificates against IPv6 addresses')

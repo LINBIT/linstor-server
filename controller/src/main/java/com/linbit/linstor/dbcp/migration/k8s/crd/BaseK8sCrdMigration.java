@@ -202,10 +202,9 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
         NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, Resource<CustomResourceDefinition>> k8sApi = k8s
             .apiextensions().v1().customResourceDefinitions();
 
-        CustomResourceDefinition crd = k8sApi
-            .load(DbK8sCrd.class.getResourceAsStream(yamlLocation))
-            .get();
-        k8sApi.createOrReplace(crd);
+        Resource<CustomResourceDefinition> crd = k8sApi
+            .load(DbK8sCrd.class.getResourceAsStream(yamlLocation));
+        crd.forceConflicts().serverSideApply();
     }
 
     public void migrate(ControllerK8sCrdDatabase k8sDbRef) throws Exception
