@@ -73,7 +73,7 @@ project(':server') {
             api group: 'io.projectreactor', name: 'reactor-core', version: '3.3.12.RELEASE'
             compileOnly group: 'org.slf4j', name: 'slf4j-api', version: '1.7.30'
             api group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
-            api 'org.apache.httpcomponents:httpclient:4.5.13'
+            api 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
             api 'com.fasterxml.jackson.jr:jackson-jr-objects:2.11.+'
             api 'com.fasterxml.jackson.core:jackson-databind:2.11.+'
 

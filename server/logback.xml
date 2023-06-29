@@ -36,6 +36,7 @@
     </appender>
 
     <logger name="okhttp3" class="okhttp3.logging" level="OFF" />
+    <logger name="org.apache.http" level="INFO" />
     
     <logger name="cron" class="com.cronutils" level="INFO" />
 
