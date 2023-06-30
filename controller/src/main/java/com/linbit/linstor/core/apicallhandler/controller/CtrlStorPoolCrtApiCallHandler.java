@@ -229,6 +229,8 @@ public class CtrlStorPoolCrtApiCallHandler
                 case SPDK: // fall-through
                 case ZFS: // fall-through
                 case ZFS_THIN: // fall-through
+                case STORAGE_SPACES: // fall-through
+                case STORAGE_SPACES_THIN: // fall-through
                 default:
                     // no special checks
                     break;

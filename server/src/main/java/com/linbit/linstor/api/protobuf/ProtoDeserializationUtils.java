@@ -450,6 +450,7 @@ public class ProtoDeserializationUtils
                 tool = ExtTools.EBS_TARGET;
                 break;
             case STORAGE_SPACES:
+            case STORAGE_SPACES_THIN:
                 tool = ExtTools.STORAGE_SPACES;
                 break;
             case UNKNOWN: // fall-through

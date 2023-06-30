@@ -265,6 +265,8 @@ public class StorageLayer implements DeviceLayer
                 case SPDK:
                 case ZFS:
                 case ZFS_THIN:
+                case STORAGE_SPACES:
+                case STORAGE_SPACES_THIN:
                     throw new StorageException("Suspend / resume io is not supported for " + kind);
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                 default:

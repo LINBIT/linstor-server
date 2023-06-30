@@ -27,28 +27,6 @@ public class StorageSpacesData<RSC extends AbsResource<RSC>>
 {
     private transient String storagePoolFriendlyName;
 
-/*
-    public StorageSpacesData(
-        AbsVolume<RSC> vlmRef,
-        StorageRscData<RSC> rscDataRef,
-        StorPool storPoolRef,
-        StorageLayerDatabaseDriver dbDriverRef,
-        TransactionObjectFactory transObjFactory,
-        Provider<? extends TransactionMgr> transMgrProvider
-    )
-    {
-        super(
-            vlmRef,
-            rscDataRef,
-            storPoolRef,
-            dbDriverRef,
-            DeviceProviderKind.STORAGE_SPACES,
-            transObjFactory,
-            transMgrProvider
-        );
-    }
-*/
-
     public StorageSpacesData(
         AbsVolume<RSC> vlmRef,
         StorageRscData<RSC> rscDataRef,
