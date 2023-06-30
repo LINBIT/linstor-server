@@ -286,20 +286,11 @@ public class StltExtToolsChecker
             )
         );
 
-        if (extToolsInfo.isSupported())
-        {
-            errorReporter.logInfo(
-                "Checking support for %s: supported ",
-                ExtTools.STORAGE_SPACES.name()
-            );
-        }
-        else
-        {
-            errorReporter.logInfo(
-                "Checking support for %s: NOT supported ",
-                ExtTools.STORAGE_SPACES.name()
-            );
-        }
+        errorReporter.logTrace(
+            "Checking support for %s:%s supported ",
+            ExtTools.STORAGE_SPACES.name(),
+            extToolsInfo.isSupported() ? "" : "NOT"
+        );
         return extToolsInfo;
     }
 
