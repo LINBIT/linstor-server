@@ -283,7 +283,54 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        return new HashMap<String, Long>();
+        Map<String, Long> map = new HashMap<String, Long>();
+        OutputData res;
+
+        res = WmiHelper.run(extCmdFactory, new String[] {
+            "storage-pool",
+            "list-available"}
+        );
+        final String[] lines = new String(res.stdoutData).split("\n");
+        for (String line: lines)
+        {
+            final String[] data = line.trim().split("\t");
+
+            if (data.length != 3)
+            {
+                continue;
+            }
+            Long size;
+            Long allocatedSize;
+            String storPoolName = data[0];
+
+            try
+            {
+                size = StorageUtils.parseDecimalAsLong(data[1]);
+                allocatedSize = StorageUtils.parseDecimalAsLong(data[2]);
+            }
+            catch (NumberFormatException exc)
+            {
+                throw new StorageException("Unable to parse size of Storage pool " + data[0],
+                    "Size to parse: " + data[1] + " - " + data[2],
+                    null,
+                    null,
+                    "cmd",
+                    exc);
+            }
+            size = size / 1024;     /* LINSTOR computes in KiB not in bytes */
+            allocatedSize = allocatedSize / 1024;
+
+            if (map.putIfAbsent(storPoolName, size - allocatedSize) != null)
+            {
+                throw new StorageException("Storage Pool " + storPoolName + " exists more than once? Please fix that.",
+                    null,
+                    null,
+                    "cmd",
+                    null);
+            }
+        }
+
+        return map;
     }
 
     private Map<String, StorageSpacesInfo> getInfoFromWMIHelper(String pattern)
