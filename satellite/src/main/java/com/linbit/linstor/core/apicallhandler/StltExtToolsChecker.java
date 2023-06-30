@@ -123,8 +123,7 @@ public class StltExtToolsChecker
             getUdevadmInfo(),
             getLsscsiInfo(),
             getSasPhyInfo(),
-            getSasDeviceInfo(),
-            doesNotExist(ExtTools.STORAGE_SPACES, PLATFORM_WINDOWS)
+            getSasDeviceInfo()
         };
     }
 
@@ -134,28 +133,7 @@ public class StltExtToolsChecker
         {
             getDrbd9Info(),
             getDrbdUtilsInfo(),
-            getStorageSpacesInfo(),
-            doesNotExist(ExtTools.DRBD_PROXY, PLATFORM_LINUX),
-            doesNotExist(ExtTools.CRYPT_SETUP, PLATFORM_LINUX),
-            doesNotExist(ExtTools.LVM, PLATFORM_LINUX),
-            doesNotExist(ExtTools.LVM_THIN, PLATFORM_LINUX),
-            doesNotExist(ExtTools.THIN_SEND_RECV, PLATFORM_LINUX),
-            doesNotExist(ExtTools.ZFS_UTILS, PLATFORM_LINUX),
-            doesNotExist(ExtTools.ZFS_KMOD, PLATFORM_LINUX),
-            doesNotExist(ExtTools.NVME, PLATFORM_LINUX),
-            doesNotExist(ExtTools.SPDK, PLATFORM_LINUX),
-            doesNotExist(ExtTools.EBS_TARGET, PLATFORM_LINUX),
-            doesNotExist(ExtTools.EBS_INIT, PLATFORM_LINUX),
-            doesNotExist(ExtTools.DM_WRITECACHE, PLATFORM_LINUX),
-            doesNotExist(ExtTools.LOSETUP, PLATFORM_LINUX),
-            doesNotExist(ExtTools.ZSTD, PLATFORM_LINUX),
-            doesNotExist(ExtTools.SOCAT, PLATFORM_LINUX),
-            doesNotExist(ExtTools.UTIL_LINUX, PLATFORM_LINUX),
-            doesNotExist(ExtTools.UDEVADM, PLATFORM_LINUX),
-            doesNotExist(ExtTools.LSSCSI, PLATFORM_LINUX),
-            doesNotExist(ExtTools.SAS_PHY, PLATFORM_LINUX),
-            doesNotExist(ExtTools.SAS_DEVICE, PLATFORM_LINUX),
-            doesNotExist(ExtTools.BCACHE_TOOLS, PLATFORM_LINUX)
+            getStorageSpacesInfo()
         };
     }
 
@@ -186,6 +164,10 @@ public class StltExtToolsChecker
             {
                 extTools.put(info.getTool(), info);
             }
+            for (ExtTools tool : ExtTools.values())
+            {
+                extTools.putIfAbsent(tool, doesNotExist(tool));
+            }
 
             cache = Collections.unmodifiableMap(extTools);
         }
@@ -208,10 +190,10 @@ public class StltExtToolsChecker
         return supported;
     }
 
-    private ExtToolsInfo doesNotExist(ExtTools tool, String whereItExists)
+    private ExtToolsInfo doesNotExist(ExtTools tool)
     {
         List<String> reasons = new ArrayList<String>();
-        reasons.add(String.format("This tool does not exist on non-%s platforms.", whereItExists));
+        reasons.add(String.format("This tool does not exist on the %s platform.", Platform.isLinux() ? "Linux" : "Windows"));
 
         return new ExtToolsInfo(tool, false, null, null, null, reasons);
     }
