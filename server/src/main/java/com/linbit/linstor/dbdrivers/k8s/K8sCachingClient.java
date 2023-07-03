@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
-import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
@@ -59,26 +58,26 @@ public class K8sCachingClient<T extends HasMetadata, L extends KubernetesResourc
     }
 
     @Override
-    public List<StatusDetails> delete()
+    public boolean delete()
     {
-        List<StatusDetails> deleted = client.delete();
+        boolean deleted = client.delete();
         cache.clear();
         return deleted;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public List<StatusDetails> delete(T item)
+    public boolean delete(T item)
     {
-        List<StatusDetails> deleted = client.delete(item);
+        boolean deleted = client.delete(item);
         cache.remove(item.getMetadata().getName());
         return deleted;
     }
 
     @Override
-    public List<StatusDetails> delete(String name)
+    public boolean delete(String name)
     {
-        List<StatusDetails> deleted = client.withName(name).delete();
+        boolean deleted = client.withName(name).delete();
         cache.remove(name);
         return deleted;
     }

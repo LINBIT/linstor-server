@@ -2,8 +2,6 @@ package com.linbit.linstor.dbdrivers.k8s;
 
 import java.util.List;
 
-import io.fabric8.kubernetes.api.model.StatusDetails;
-
 /**
  * A slimmed down variant of {@link io.fabric8.kubernetes.client.dsl.MixedOperation}.
  *
@@ -39,7 +37,7 @@ public interface K8sResourceClient<T>
      *
      * @return True, if something was deleted.
      */
-    List<StatusDetails> delete();
+    boolean delete();
 
     /**
      * Delete the given item.
@@ -47,7 +45,7 @@ public interface K8sResourceClient<T>
      * @param item The item to delete.
      * @return True, if something was removed.
      */
-    List<StatusDetails> delete(T item);
+    boolean delete(T item);
 
     /**
      * Delete an item based on its name.
@@ -55,7 +53,7 @@ public interface K8sResourceClient<T>
      * @param name The name of the item to remove.
      * @return True, if something was removed.
      */
-    List<StatusDetails> delete(String name);
+    boolean delete(String name);
 
     /**
      * Upsert for k8s. Either replace the existing item, or create a new one.
