@@ -521,6 +521,8 @@ public class BackupFindUsableNodesTest extends ApiTestBase
             case REMOTE_SPDK:
             case SPDK:
             case ZFS_THIN:
+            case STORAGE_SPACES:
+            case STORAGE_SPACES_THIN:
             default:
                 throw new ImplementationError("not implemented in tests");
         }
