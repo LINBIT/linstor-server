@@ -1,7 +1,5 @@
 package com.linbit.linstor.dbdrivers.etcd;
 
-import static com.ibm.etcd.client.KeyUtils.bs;
-
 import com.linbit.linstor.dbcp.migration.UsedByMigration;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
@@ -21,6 +19,8 @@ import com.ibm.etcd.api.PutRequest;
 import com.ibm.etcd.api.RangeResponse;
 import com.ibm.etcd.client.kv.KvClient;
 import io.grpc.Deadline;
+
+import static com.ibm.etcd.client.KeyUtils.bs;
 
 public class EtcdUtils
 {
@@ -43,6 +43,15 @@ public class EtcdUtils
         String... pks
     )
     {
+        return buildKey(tableName, true, pks);
+    }
+
+    public static String buildKey(
+        String tableName,
+        boolean includeTrailingPathDelimiterRef,
+        String... pks
+    )
+    {
         StringBuilder sb = new StringBuilder();
         sb.append(linstorPrefix).append(tableName).append(PATH_DELIMITER);
         if (pks.length > 0)
@@ -56,7 +65,10 @@ public class EtcdUtils
                 sb.append(PK_DELIMITER);
             }
             sb.setLength(sb.length() - PK_DELIMITER.length()); // cut last PK_DELIMITER
-            sb.append(PATH_DELIMITER);
+            if (includeTrailingPathDelimiterRef)
+            {
+                sb.append(PATH_DELIMITER);
+            }
         }
         return sb.toString();
     }
@@ -66,7 +78,16 @@ public class EtcdUtils
         String... pks
     )
     {
-        return buildKey(table.getName(), pks);
+        return buildKey(table.getName(), true, pks);
+    }
+
+    public static String buildKey(
+        DatabaseTable table,
+        boolean includeTrailingPathDelimiterRef,
+        String... pks
+    )
+    {
+        return buildKey(table.getName(), includeTrailingPathDelimiterRef, pks);
     }
 
     public static String buildKeyStr(

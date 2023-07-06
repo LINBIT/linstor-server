@@ -636,7 +636,16 @@ public class SQLEngine implements DbEngine
                         stmtRef.setString(idxRef, (String) objRef);
                         break;
                     case Types.TIMESTAMP:
-                        stmtRef.setTimestamp(idxRef, new Timestamp((Long) objRef));
+                        Timestamp timestamp;
+                        if (objRef instanceof Timestamp)
+                        {
+                            timestamp = (Timestamp) objRef;
+                        }
+                        else
+                        {
+                            timestamp = new Timestamp((Long) objRef);
+                        }
+                        stmtRef.setTimestamp(idxRef, timestamp);
                         break;
                     default:
                         stmtRef.setObject(idxRef, objRef, sqlTypeRef);

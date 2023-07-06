@@ -59,9 +59,10 @@ public class DbConnectionPoolInitializer implements DbInitializer
             if (enableMigrationOnInit)
             {
                 dbConnPool.migrate(dbType, !ctrlCfg.isDbVersionCheckDisabled());
-            }
 
-            testDbConnection();
+                // testDbConnection requires a "LINSTOR" schema, which only exists after migration is done.
+                testDbConnection();
+            }
         }
         catch (Exception exc)
         {

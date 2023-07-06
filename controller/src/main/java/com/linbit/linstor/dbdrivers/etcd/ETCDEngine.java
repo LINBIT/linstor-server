@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbdrivers.etcd;
 
 import com.linbit.ExhaustedPoolException;
-import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
@@ -21,6 +20,7 @@ import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -28,6 +28,7 @@ import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.transaction.EtcdTransaction;
 import com.linbit.linstor.transaction.manager.TransactionMgrETCD;
+import com.linbit.utils.Base64;
 import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -35,6 +36,7 @@ import com.linbit.utils.StringUtils;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -226,7 +228,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                 {
                     throw new LinStorDBRuntimeException("Column was unexpectedly null. " + colKey);
                 }
-                if (DUMMY_NULL_VALUE.equals(colData))
+                if (DUMMY_NULL_VALUE.equals(colData) || colData == null)
                 {
                     rawObjects.put(col.getName(), null);
                 }
@@ -407,16 +409,77 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     }
 
     @Override
-    public void truncateAllData(List<DbExportPojoData.Table> orderedTablesListRef) throws DatabaseException
+    public void truncateAllData(List<DbExportPojoData.Table> tablesToTruncateRef) throws DatabaseException
     {
-        throw new ImplementationError("not implemented");
+        EtcdTransaction tx = transMgrProvider.get().getTransaction();
+        for (DbExportPojoData.Table tbl : tablesToTruncateRef)
+        {
+            TreeMap<String, String> allDataFromTbl = tx.get(EtcdUtils.buildKey(tbl.name, false), true);
+
+            // since we are using the same transaction for truncate and import, we should NOT use recursive = true here
+            // so that the deduplicator can do its job
+            for (String key : allDataFromTbl.keySet())
+            {
+                tx.delete(key, false);
+            }
+        }
     }
 
     @Override
     public void importData(DbExportPojoData.Table tableRef) throws DatabaseException
     {
-        throw new ImplementationError("not implemented");
+        List<DbExportPojoData.Column> pkCols = new ArrayList<>();
+        for (DbExportPojoData.Column column : tableRef.columnDescription)
+        {
+            if (column.isPrimaryKey)
+            {
+                pkCols.add(column);
+            }
+        }
+
+        EtcdTransaction tx = transMgrProvider.get().getTransaction();
+        for (LinstorSpec linstorSpec : tableRef.data)
+        {
+            String[] pks = new String[pkCols.size()];
+            int pkIdx = 0;
+            for (DbExportPojoData.Column column : pkCols)
+            {
+                pks[pkIdx++] = Objects.toString(linstorSpec.getByColumn(column.name));
+            }
+
+            boolean allColumnsPrimary = true;
+            for (DbExportPojoData.Column column : tableRef.columnDescription)
+            {
+                if (!column.isPrimaryKey)
+                {
+                    allColumnsPrimary = false;
+                    break;
+                }
+            }
+
+            for (DbExportPojoData.Column column : tableRef.columnDescription)
+            {
+                if (!column.isPrimaryKey || allColumnsPrimary)
+                {
+                    Object value = linstorSpec.getByColumn(column.name);
+                    if (value == null)
+                    {
+                        value = DUMMY_NULL_VALUE;
+                    }
+                    else if (column.sqlType == Types.BLOB)
+                    {
+                        value = Base64.encode((byte[]) value);
+                    }
+
+                    tx.put(
+                        EtcdUtils.buildKeyStr(tableRef.name, column.name, pks),
+                        Objects.toString(value)
+                    );
+                }
+            }
+        }
     }
+
 
     @Override
     public String getDbDump()

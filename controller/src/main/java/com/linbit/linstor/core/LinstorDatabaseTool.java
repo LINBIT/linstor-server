@@ -44,9 +44,6 @@ import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
-import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
-import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 import com.linbit.linstor.utils.NameShortenerModule;
 
 import java.lang.reflect.InvocationTargetException;
@@ -222,7 +219,6 @@ public class LinstorDatabaseTool
 
         LinStorScope scope = injector.getInstance(LinStorScope.class);
         DbInitializer dbInit = injector.getInstance(DbInitializer.class);
-        TransactionMgrGenerator transactionMgrGenerator = injector.getInstance(TransactionMgrGenerator.class);
 
         ModularCryptoProvider cryptoProvider = injector.getInstance(ModularCryptoProvider.class);
         AbsMigration.setModularCryptoProvider(cryptoProvider);
@@ -231,9 +227,6 @@ public class LinstorDatabaseTool
         {
             dbInit.setEnableMigrationOnInit(false);
             dbInit.initialize();
-
-            TransactionMgr txMgr = transactionMgrGenerator.startTransaction();
-            TransactionMgrUtil.seedTransactionMgr(scope, txMgr);
 
             injectorConsumer.accept(injector);
         }

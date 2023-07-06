@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
+import com.linbit.utils.Base64;
 import com.linbit.utils.ExceptionThrowingFunction;
 
 import java.io.IOException;
@@ -92,7 +93,11 @@ public class RawParameters
                 case Types.CHAR:
                 case Types.VARCHAR:
                 case Types.LONGVARBINARY:
+                case Types.CLOB:
                     ret = (T) etcdVal;
+                    break;
+                case Types.BLOB:
+                    ret = (T) Base64.decode(etcdVal);
                     break;
                 case Types.BIT:
                     ret = (T) ((Boolean) Boolean.parseBoolean(etcdVal));

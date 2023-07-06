@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -25,6 +26,8 @@ import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -72,8 +75,10 @@ public class DbExportImportHelper
     private final Provider<K8sCrdEngine> k8sEngineProvider;
     private final DbEtcd dbEtcd;
     private final DbK8sCrd dbK8s;
+    private final Provider<TransactionMgrGenerator> txMgrGenerator;
     private final Provider<TransactionMgr> txMgrProvider;
     private final CtrlConfig ctrlCfg;
+    private final LinStorScope linstorScope;
 
     @Inject
     public DbExportImportHelper(
@@ -86,7 +91,9 @@ public class DbExportImportHelper
         DbConnectionPool dbSqlRef,
         DbEtcd dbEtcdRef,
         DbK8sCrd dbK8sRef,
+        Provider<TransactionMgrGenerator> txMgrGeneratorRef,
         Provider<TransactionMgr> txMgrProviderRef,
+        LinStorScope linstorScopeRef,
         CtrlConfig ctrlCfgRef
     )
     {
@@ -100,13 +107,18 @@ public class DbExportImportHelper
         dbSql = dbSqlRef;
         dbEtcd = dbEtcdRef;
         dbK8s = dbK8sRef;
+        txMgrGenerator = txMgrGeneratorRef;
         txMgrProvider = txMgrProviderRef;
+        linstorScope = linstorScopeRef;
         ctrlCfg = ctrlCfgRef;
     }
 
     public void export(String fileNameRef)
     {
         List<DbExportPojoData.Table> tables = new ArrayList<>();
+
+        TransactionMgr txMgr = txMgrGenerator.get().startTransaction();
+        TransactionMgrUtil.seedTransactionMgr(linstorScope, txMgr);
 
         String dbConnectionUrl = ctrlCfg.getDbConnectionUrl();
         String exportedBy;
@@ -258,12 +270,17 @@ public class DbExportImportHelper
                     dbK8s.preImportMigrateToVersion(dbConnectionUrl, exportPojoData.k8sVersion);
                     break;
                 case SQL:
-                    dbSql.preImportMigrateToVersion(dbConnectionUrl, exportPojoData.sqlVersion);
+                    dbSql.preImportMigrateToVersion(
+                        DbConnectionPoolInitializer.getDbType(dbConnectionUrl),
+                        exportPojoData.sqlVersion
+                    );
                     break;
                 default:
                     throw new ImplementationError("Unknown database type: " + currentDbEngine.getType());
             }
 
+            TransactionMgr txMgr = txMgrGenerator.get().startTransaction();
+            TransactionMgrUtil.seedTransactionMgr(linstorScope, txMgr);
 
             // since we are importing ALL data (including the default entries that were created by migrations), we first
             // need to truncate the table (in reverse order due to referential integration)
