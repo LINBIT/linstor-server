@@ -28,6 +28,7 @@ public class PropsDbDriver extends AbsDatabaseDriver<PropsDbEntry, Void, Void> i
 {
     private final SingleColumnDatabaseDriver<PropsDbEntry, String> valueDriver;
     private final Map<String, Map<String, String>> cachedPropsConMap;
+    private int cachedLoadedPropsCount = 0;
 
     @Inject
     public PropsDbDriver(
@@ -72,6 +73,7 @@ public class PropsDbDriver extends AbsDatabaseDriver<PropsDbEntry, Void, Void> i
             .computeIfAbsent(instanceName.toUpperCase(), missingInstanceName -> new HashMap<>())
             .put(key, value);
 
+        cachedLoadedPropsCount++;
         return null;
     }
 
@@ -89,13 +91,16 @@ public class PropsDbDriver extends AbsDatabaseDriver<PropsDbEntry, Void, Void> i
     @Override
     protected int getLoadedCount(Map<PropsDbEntry, Void> ignoredEmptyMap)
     {
-        return cachedPropsConMap.size();
+        // do not return cachedPropsConMap.size() here, since that only returns the instance count, not the actual prop
+        // count
+        return cachedLoadedPropsCount;
     }
 
     @Override
     public void clearCache()
     {
         cachedPropsConMap.clear();
+        cachedLoadedPropsCount = 0;
     }
 
     @Override
