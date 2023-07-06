@@ -247,12 +247,15 @@ public class BCacheLayer implements DeviceLayer
     @Override
     public void managePostRootSuspend(AbsRscLayerObject<Resource> rscDataRef) throws StorageException
     {
-        for (VlmProviderObject<Resource> vlmData : rscDataRef.getVlmLayerObjects().values())
+        if (!rscDataRef.hasIgnoreReason())
         {
-            BCacheUtils.flush(
-                errorReporter,
-                ((BCacheVlmData<Resource>) vlmData).getIdentifier()
-            );
+            for (VlmProviderObject<Resource> vlmData : rscDataRef.getVlmLayerObjects().values())
+            {
+                BCacheUtils.flush(
+                    errorReporter,
+                    ((BCacheVlmData<Resource>) vlmData).getIdentifier()
+                );
+            }
         }
     }
 

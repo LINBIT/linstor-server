@@ -264,7 +264,10 @@ public class WritecacheLayer implements DeviceLayer
     @Override
     public void managePostRootSuspend(AbsRscLayerObject<Resource> rscDataRef) throws StorageException
     {
-        DmSetupUtils.flush(extCmdFactory, rscDataRef);
+        if (!rscDataRef.hasIgnoreReason())
+        {
+            DmSetupUtils.flush(extCmdFactory, rscDataRef);
+        }
     }
 
     @Override
