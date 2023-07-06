@@ -1,0 +1,219 @@
+package com.linbit.linstor.core;
+
+import com.linbit.GuiceConfigModule;
+import com.linbit.SystemServiceStartException;
+import com.linbit.drbd.md.MetaDataModule;
+import com.linbit.linstor.ControllerLinstorModule;
+import com.linbit.linstor.InitializationException;
+import com.linbit.linstor.LinStorModule;
+import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.ApiType;
+import com.linbit.linstor.api.BaseApiCall;
+import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.api.LinStorScope.ScopeAutoCloseable;
+import com.linbit.linstor.api.protobuf.ProtobufApiCall;
+import com.linbit.linstor.api.protobuf.ProtobufApiType;
+import com.linbit.linstor.core.apicallhandler.ApiCallHandlerModule;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandlerModule;
+import com.linbit.linstor.core.apicallhandler.controller.db.DbExportImportHelper;
+import com.linbit.linstor.core.cfg.CtrlConfig;
+import com.linbit.linstor.core.cfg.CtrlConfigModule;
+import com.linbit.linstor.dbcp.DbInitializer;
+import com.linbit.linstor.dbcp.migration.AbsMigration;
+import com.linbit.linstor.dbdrivers.ControllerDbModule;
+import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.debug.ControllerDebugModule;
+import com.linbit.linstor.debug.DebugModule;
+import com.linbit.linstor.event.EventModule;
+import com.linbit.linstor.event.handler.EventHandler;
+import com.linbit.linstor.event.handler.protobuf.controller.ConnectionStateEventHandler;
+import com.linbit.linstor.event.handler.protobuf.controller.ResourceStateEventHandler;
+import com.linbit.linstor.event.handler.protobuf.controller.VolumeDiskStateEventHandler;
+import com.linbit.linstor.event.serializer.EventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.ConnectionStateEventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
+import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
+import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.logging.LoggingModule;
+import com.linbit.linstor.logging.StdErrorReporter;
+import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
+import com.linbit.linstor.netcom.NetComModule;
+import com.linbit.linstor.numberpool.NumberPoolModule;
+import com.linbit.linstor.security.ControllerSecurityModule;
+import com.linbit.linstor.security.SecurityModule;
+import com.linbit.linstor.timer.CoreTimerModule;
+import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
+import com.linbit.linstor.utils.NameShortenerModule;
+
+import java.lang.reflect.InvocationTargetException;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Module;
+import picocli.CommandLine;
+
+public class LinstorDatabaseTool
+{
+    private static CommandLine commandLine;
+
+    @CommandLine.Command(
+        name = "linstor-db",
+        subcommands =
+        {
+            CmdExportDb.class,
+    })
+    private static class LinstorConfigCmd implements Callable<Object>
+    {
+        @Override
+        public Object call()
+        {
+            commandLine.usage(System.err);
+            return null;
+        }
+    }
+
+    @CommandLine.Command(
+        name = "export-db",
+        description = "Exports the given database to a given file"
+    )
+    private static class CmdExportDb implements Callable<Object>
+    {
+        @CommandLine.Option(
+            names =
+            {
+                "--cfg",
+                "--config",
+                "-c" },
+            description = "Path of the config file to use"
+        )
+        private String cfgPath = "./linstor.toml";
+
+        @CommandLine.Parameters(description = "Path to the exported database file")
+        private String dbExportPath;
+
+        @Override
+        public Object call() throws Exception
+        {
+            runDbExportImport(cfgPath, injector ->
+            {
+                DbExportImportHelper dbExportImporter = injector.getInstance(DbExportImportHelper.class);
+                ErrorReporter errorLog = injector.getInstance(ErrorReporter.class);
+                dbExportImporter.export(dbExportPath);
+                errorLog.logInfo("Export finished");
+            });
+
+            return null;
+        }
+    }
+
+    private static void runDbExportImport(String cfgPath, Consumer<Injector> injectorConsumer)
+        throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException,
+        SystemServiceStartException, InitializationException
+    {
+        CtrlConfig cfg = new CtrlConfig(
+            new String[]
+            {
+                "-c",
+                cfgPath
+            }
+        );
+
+        ErrorReporter errorLog = new StdErrorReporter(
+            "linstor-db",
+            Paths.get(cfg.getLogDirectory()),
+            cfg.isLogPrintStackTrace(),
+            "",
+            cfg.getLogLevel(),
+            cfg.getLogLevelLinstor(),
+            () -> null
+        );
+
+        DatabaseDriverInfo.DatabaseType dbType = Controller.checkDatabaseConfig(errorLog, cfg);
+        ApiType apiType = new ProtobufApiType();
+        ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
+
+        List<String> packageSuffixes = Arrays.asList("common", "controller", "internal");
+
+        List<Class<? extends BaseApiCall>> apiCalls = classPathLoader.loadClasses(
+            ProtobufApiType.class.getPackage().getName(),
+            packageSuffixes,
+            BaseApiCall.class,
+            ProtobufApiCall.class
+        );
+        List<Class<? extends EventSerializer>> eventSerializers = Arrays.asList(
+            ResourceStateEventSerializer.class,
+            VolumeDiskStateEventSerializer.class,
+            ConnectionStateEventSerializer.class
+        );
+        List<Class<? extends EventHandler>> eventHandlers = Arrays.asList(
+            ResourceStateEventHandler.class,
+            VolumeDiskStateEventHandler.class,
+            ConnectionStateEventHandler.class
+        );
+        final List<Module> injModList = new LinkedList<>(
+            Arrays.asList(
+                new GuiceConfigModule(),
+                new LoggingModule(errorLog),
+                new SecurityModule(),
+                new ControllerSecurityModule(),
+                new CtrlConfigModule(cfg),
+                new CoreTimerModule(),
+                new MetaDataModule(),
+                new ControllerLinstorModule(),
+                new LinStorModule(),
+                new CoreModule(),
+                new ControllerCoreModule(),
+                new ControllerSatelliteCommunicationModule(),
+                new ControllerDbModule(dbType),
+                new NetComModule(),
+                new NumberPoolModule(),
+                new ApiModule(apiType, apiCalls),
+                new ApiCallHandlerModule(),
+                new CtrlApiCallHandlerModule(),
+                new EventModule(eventSerializers, eventHandlers),
+                new DebugModule(),
+                new ControllerDebugModule(),
+                new ControllerTransactionMgrModule(dbType),
+                new NameShortenerModule()
+            )
+        );
+        final boolean haveFipsInit = LinStor.initializeFips(errorLog);
+
+        LinStor.loadModularCrypto(injModList, errorLog, haveFipsInit);
+
+        final Injector injector = Guice.createInjector(injModList);
+
+        LinStorScope scope = injector.getInstance(LinStorScope.class);
+        DbInitializer dbInit = injector.getInstance(DbInitializer.class);
+        TransactionMgrGenerator transactionMgrGenerator = injector.getInstance(TransactionMgrGenerator.class);
+
+        ModularCryptoProvider cryptoProvider = injector.getInstance(ModularCryptoProvider.class);
+        AbsMigration.setModularCryptoProvider(cryptoProvider);
+
+        try (ScopeAutoCloseable closableScope = scope.enter())
+        {
+            dbInit.initialize();
+
+            TransactionMgr txMgr = transactionMgrGenerator.startTransaction();
+            TransactionMgrUtil.seedTransactionMgr(scope, txMgr);
+
+            injectorConsumer.accept(injector);
+        }
+    }
+
+    public static void main(String[] args)
+    {
+        commandLine = new CommandLine(new LinstorConfigCmd());
+
+        commandLine.parseWithHandler(new CommandLine.RunLast(), args);
+    }
+}

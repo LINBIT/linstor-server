@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
@@ -165,7 +166,19 @@ import com.linbit.linstor.security.SecTypeDbDriver;
 import com.linbit.linstor.security.SecTypeRulesDbDriver;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
+import javax.inject.Singleton;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import com.google.inject.AbstractModule;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.Provides;
 import com.google.inject.TypeLiteral;
 import com.google.inject.multibindings.MapBinder;
 
@@ -304,11 +317,15 @@ public class ControllerDbModule extends AbstractModule
         bind(SecTypeRulesCtrlDatabaseDriver.class).to(SecTypeRulesDbDriver.class);
         bind(SecTypeRulesDatabaseDriver.class).to(SecTypeRulesDbDriver.class);
 
+        // all 3 are (indirectly) needed by the db-exporter. just make sure to not re-bind the same interface
+        // multiple times!
+        bind(ControllerSQLDatabase.class).to(DbConnectionPool.class);
+        bind(ControllerETCDDatabase.class).to(DbEtcd.class);
+        bind(ControllerK8sCrdDatabase.class).to(DbK8sCrd.class);
         switch (dbType)
         {
             case SQL:
                 bind(ControllerDatabase.class).to(DbConnectionPool.class);
-                bind(ControllerSQLDatabase.class).to(DbConnectionPool.class);
                 bind(DbEngine.class).to(SQLEngine.class);
 
                 bind(DbInitializer.class).to(DbConnectionPoolInitializer.class);
@@ -321,7 +338,6 @@ public class ControllerDbModule extends AbstractModule
                 break;
             case ETCD:
                 bind(ControllerDatabase.class).to(DbEtcd.class);
-                bind(ControllerETCDDatabase.class).to(DbEtcd.class);
                 bind(DbEngine.class).to(ETCDEngine.class);
 
                 bind(DbInitializer.class).to(DbEtcdInitializer.class);
@@ -334,7 +350,6 @@ public class ControllerDbModule extends AbstractModule
                 break;
             case K8S_CRD:
                 bind(ControllerDatabase.class).to(DbK8sCrd.class);
-                bind(ControllerK8sCrdDatabase.class).to(DbK8sCrd.class);
                 bind(DbEngine.class).to(K8sCrdEngine.class);
 
                 bind(DbInitializer.class).to(DbK8sCrdInitializer.class);
@@ -348,5 +363,49 @@ public class ControllerDbModule extends AbstractModule
             default:
                 throw new RuntimeException("Unknown database type: " + dbType);
         }
+    }
+
+    @Provides
+    @Singleton
+    public Map<DatabaseTable, AbsDatabaseDriver<?, ?, ?>> getAllDbDrivers(Injector injector)
+    {
+        Map<DatabaseTable, AbsDatabaseDriver<?, ?, ?>> alldbDrivers = new HashMap<>();
+        for (Key<?> key : injector.getAllBindings().keySet())
+        {
+            if (AbsDatabaseDriver.class.isAssignableFrom(key.getTypeLiteral().getRawType()))
+            {
+                AbsDatabaseDriver<?, ?, ?> absDbDriver = (AbsDatabaseDriver<?, ?, ?>) injector.getInstance(key);
+                alldbDrivers.put(absDbDriver.table, absDbDriver);
+            }
+        }
+
+        // sanity check
+        Set<DatabaseTable> ignoredDatabaseTables = new HashSet<>();
+        // we ignore SEC_ACCESS_TYPES since that db table only contains the 4 entries VIEW, USE, CHANGE and CONTROL
+        // which already exist as a java enum, so there is no need for a dedicated database driver for that
+        ignoredDatabaseTables.add(GeneratedDatabaseTables.SEC_ACCESS_TYPES);
+        // we also ignore tables for space tracking. if the drivers are present, good. If not, we can skip them.
+        ignoredDatabaseTables.add(GeneratedDatabaseTables.SATELLITES_CAPACITY);
+        ignoredDatabaseTables.add(GeneratedDatabaseTables.SPACE_HISTORY);
+        ignoredDatabaseTables.add(GeneratedDatabaseTables.TRACKING_DATE);
+
+        List<DatabaseTable> missingDrivers = new ArrayList<>();
+        for (DatabaseTable tbl : GeneratedDatabaseTables.ALL_TABLES)
+        {
+            if (!alldbDrivers.containsKey(tbl) && !ignoredDatabaseTables.contains(tbl))
+            {
+                missingDrivers.add(tbl);
+            }
+        }
+        if (!missingDrivers.isEmpty())
+        {
+            StringBuilder sb = new StringBuilder("The following database tables do not have a driver!");
+            for (DatabaseTable tbl : missingDrivers)
+            {
+                sb.append("\n ").append(tbl.getName());
+            }
+            throw new ImplementationError(sb.toString());
+        }
+        return alldbDrivers;
     }
 }
