@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbcp.migration.k8s.crd.K8sCrdMigration;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
+import com.linbit.utils.Pair;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -70,15 +72,20 @@ public final class DatabaseConstantsGenerator
     private StringBuilder mainBuilder = new StringBuilder();
     private int indentLevel = 0;
     private TreeMap<String, Table> tbls = new TreeMap<>();
+    private List<String> tblsOrder;
 
     public DatabaseConstantsGenerator(Connection conRef) throws SQLException
     {
-        tbls = extractTables(conRef, IGNORED_TABLES);
+        Pair<TreeMap<String, Table>, List<String>> pair = extractTables(conRef, IGNORED_TABLES);
+        tbls = pair.objA;
+        tblsOrder = pair.objB;
     }
 
-    public static TreeMap<String, Table> extractTables(Connection con, Set<String> ignoredTables) throws SQLException
+    public static Pair<TreeMap<String, Table>, List<String>> extractTables(Connection con, Set<String> ignoredTables)
+        throws SQLException
     {
         TreeMap<String, Table> tables = new TreeMap<>();
+        List<String> crossRefOrder = new ArrayList<>();
         try
             (
                 ResultSet metaTables = con.getMetaData().getTables(
@@ -86,14 +93,24 @@ public final class DatabaseConstantsGenerator
                     DB_SCHEMA,
                     null,
                     new String[]{TYPE_TABLE}
-                )
+                );
+                ResultSet crossRefs = con.prepareStatement(
+                    "SELECT PKTABLE_NAME, FKTABLE_NAME " +
+                        "FROM INFORMATION_SCHEMA.CROSS_REFERENCES " +
+                        "WHERE PKTABLE_SCHEMA = 'LINSTOR' "
+                ).executeQuery();
             )
         {
+            HashMap<String, Set<String>> references = new HashMap<>();
+            TreeSet<String> startingTables = new TreeSet<>();
+            references.put(null, startingTables);
+
             while (metaTables.next())
             {
                 String tblName = metaTables.getString("TABLE_NAME");
                 if (!ignoredTables.contains(tblName))
                 {
+                    startingTables.add(tblName);
                     Table tbl = new Table(tblName);
 
                     Set<String> primaryKeys = new TreeSet<>();
@@ -131,8 +148,44 @@ public final class DatabaseConstantsGenerator
                     tables.put(tbl.name, tbl);
                 }
             }
+
+            while (crossRefs.next())
+            {
+                String dstTableName = crossRefs.getString("PKTABLE_NAME");
+                String srcTableName = crossRefs.getString("FKTABLE_NAME");
+
+                references.computeIfAbsent(srcTableName, ignored -> new TreeSet<>()).add(dstTableName);
+                startingTables.remove(dstTableName);
+            }
+
+            buildCrossRefOrderRec(
+                crossRefOrder,
+                references,
+                startingTables,
+                new HashSet<>()
+            );
         }
-        return tables;
+        return new Pair<>(tables, crossRefOrder);
+    }
+
+    private static void buildCrossRefOrderRec(
+        List<String> outputListRef,
+        HashMap<String, Set<String>> referencesRef,
+        Set<String> nextToAppendRef,
+        HashSet<String> visitedSetRef
+    )
+    {
+        if (nextToAppendRef != null)
+        {
+            for (String next : nextToAppendRef)
+            {
+                if (visitedSetRef.add(next))
+                {
+                    buildCrossRefOrderRec(outputListRef, referencesRef, referencesRef.get(next), visitedSetRef);
+                    outputListRef.add(next);
+                }
+            }
+        }
     }
 
     public String renderSqlConsts(String pkgName, String clazzName)
@@ -193,8 +246,9 @@ public final class DatabaseConstantsGenerator
                 appendLine("ALL_TABLES = new DatabaseTable[] {");
                 try (IndentLevel allTablesInitIndent = new IndentLevel("", "", false, false))
                 {
-                    for (Table tbl : tbls.values())
+                    for (String tblStr : tblsOrder)
                     {
+                        Table tbl = tbls.get(tblStr);
                         appendLine("%s,", tbl.name);
                     }
                     cutLastAndAppend(2, "\n");
@@ -446,6 +500,7 @@ public final class DatabaseConstantsGenerator
             pkgName,
             // "java.io.Serializable",
             "com.linbit.ImplementationError",
+            "com.linbit.linstor.dbdrivers.RawParameters",
             "com.linbit.linstor.dbdrivers.DatabaseTable",
             "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
             "com.linbit.linstor.dbdrivers.GeneratedDatabaseTables",
@@ -542,7 +597,7 @@ public final class DatabaseConstantsGenerator
             appendLine(")");
             try (IndentLevel methodIndent = new IndentLevel())
             {
-                appendLine("switch(table.getName())");
+                appendLine("switch (table.getName())");
                 try (IndentLevel switchIndent = new IndentLevel())
                 {
                     for (Table tbl : tbls.values())
@@ -576,7 +631,7 @@ public final class DatabaseConstantsGenerator
             appendLine(")");
             try (IndentLevel methodIndent = new IndentLevel())
             {
-                appendLine("switch(table.getName())");
+                appendLine("switch (table.getName())");
                 try (IndentLevel switchIndent = new IndentLevel())
                 {
                     for (Table tbl : tbls.values())
@@ -597,12 +652,47 @@ public final class DatabaseConstantsGenerator
                 }
             }
 
+            // rawParamToSpec
+            appendEmptyLine();
+            appendLine("@SuppressWarnings(\"unchecked\")");
+            appendLine(
+                "public static LinstorSpec rawParamToSpec("
+            );
+            try (IndentLevel rawParamToSpecIndent = new IndentLevel("", "", false, false))
+            {
+                appendLine("DatabaseTable tableRef,");
+                appendLine("RawParameters rawDataMapRef");
+            }
+            appendLine(")");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("switch (tableRef.getName())");
+                try (IndentLevel switchIndent = new IndentLevel())
+                {
+                    for (Table tbl : tbls.values())
+                    {
+                        String tblNameCamelCase = toUpperCamelCase(tbl.name);
+                        appendLine("case \"%s\":", tbl.name);
+                        try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
+                        {
+                            appendLine("return %sSpec.fromRawParameters(rawDataMapRef);", tblNameCamelCase);
+                        }
+                    }
+                    appendLine("default:");
+                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine("// we are most likely iterating tables the current version does not know about.");
+                        appendLine("return null;");
+                    }
+                }
+            }
+
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
             appendLine("public static <SPEC extends LinstorSpec> LinstorCrd<SPEC> specToCrd(SPEC spec)");
             try (IndentLevel specToCrdMethod = new IndentLevel())
             {
-                appendLine("switch(spec.getDatabaseTable().getName())");
+                appendLine("switch (spec.getDatabaseTable().getName())");
                 try (IndentLevel switchIndent = new IndentLevel())
                 {
                     for (Table tbl : tbls.values())
@@ -639,7 +729,7 @@ public final class DatabaseConstantsGenerator
             }
             try (IndentLevel genericCreateMethod = new IndentLevel())
             {
-                appendLine("switch(table.getName())");
+                appendLine("switch (table.getName())");
                 try (IndentLevel switchIndent = new IndentLevel())
                 {
                     for (Table tbl : tbls.values())
@@ -686,7 +776,7 @@ public final class DatabaseConstantsGenerator
             appendLine("public static String databaseTableToYamlLocation(DatabaseTable dbTable)");
             try (IndentLevel methodIndent = new IndentLevel())
             {
-                appendLine("switch(dbTable.getName())");
+                appendLine("switch (dbTable.getName())");
                 try (IndentLevel switchIndent = new IndentLevel())
                 {
                     for (Table tbl : tbls.values())
@@ -710,7 +800,7 @@ public final class DatabaseConstantsGenerator
             appendLine("public static String databaseTableToYamlName(DatabaseTable dbTable)");
             try (IndentLevel methodIndent = new IndentLevel())
             {
-                appendLine("switch(dbTable.getName())");
+                appendLine("switch (dbTable.getName())");
                 try (IndentLevel switchIndent = new IndentLevel())
                 {
                     for (Table tbl : tbls.values())
@@ -984,6 +1074,37 @@ public final class DatabaseConstantsGenerator
                 );
                 ctorParameters.put(lowerCaseClmName, type);
             }
+
+            appendEmptyLine();
+            appendLine("@JsonIgnore");
+            appendLine(
+                "public static %s fromRawParameters(RawParameters rawParamsRef)",
+                specClassName
+            );
+            try (IndentLevel fromRawParamMethodIndent = new IndentLevel())
+            {
+                if (ctorParameters.isEmpty())
+                {
+                    appendLine("return new %s();", specClassName);
+                }
+                else
+                {
+                    appendLine("return new %s(", specClassName);
+                    try (IndentLevel columnsIndent = new IndentLevel("", "", false, false))
+                    {
+                        for (Column clm : tbl.columns)
+                        {
+                            appendLine(
+                                "rawParamsRef.getParsed(GeneratedDatabaseTables.%s.%s),",
+                                tblNameCamelCase,
+                                clm.name
+                            );
+                        }
+                        cutLastAndAppend(2, "\n");
+                    }
+                    appendLine(");");
+                }
+            }
             appendEmptyLine();
 
             // constructor
@@ -1066,7 +1187,7 @@ public final class DatabaseConstantsGenerator
             appendLine("public Object getByColumn(Column clm)");
             try (IndentLevel getByColumnMethodIndent = new IndentLevel())
             {
-                appendLine("switch(clm.getName())");
+                appendLine("switch (clm.getName())");
                 try (IndentLevel switchIndent = new IndentLevel())
                 {
                     for (Column clm : tbl.columns)

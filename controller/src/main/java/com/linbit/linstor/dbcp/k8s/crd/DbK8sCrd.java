@@ -166,6 +166,12 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
         }
     }
 
+    public int getCurrentVersion()
+    {
+        TreeMap<Integer, BaseK8sCrdMigration> migrations = buildMigrations();
+        return migrations.lastKey();
+    }
+
     @Override
     public boolean needsMigration(String dbType)
     {

@@ -12,8 +12,10 @@ import com.linbit.linstor.DatabaseInfo;
 import com.linbit.linstor.InitializationException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.core.ClassPathLoader;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbcp.migration.LinstorMigration;
+import com.linbit.linstor.dbcp.migration.Migration;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.SQLUtils;
@@ -37,8 +39,10 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.google.common.collect.ImmutableMap;
@@ -213,6 +217,29 @@ public class DbConnectionPool implements ControllerSQLDatabase
         }
 
         buildMigrations(dbType).migrate();
+    }
+
+    public String getCurrentVersion(String dbTypeRef)
+    {
+        // DO NOT use Flyway, since it requires an actual connection to the database, which might not be running if we
+        // are using ETCD or K8s
+
+        ClassPathLoader classPathLoader = new ClassPathLoader(errorLog);
+        List<Class<? extends LinstorMigration>> sqlMigrationClasses = classPathLoader.loadClasses(
+            LinstorMigration.class.getPackage().getName(),
+            Collections.singletonList(""),
+            LinstorMigration.class,
+            Migration.class
+        );
+
+        TreeSet<String> versions = new TreeSet<>();
+        for (Class<? extends LinstorMigration> migrationClass : sqlMigrationClasses)
+        {
+            Migration[] annotations = migrationClass.getAnnotationsByType(Migration.class);
+            versions.add(annotations[0].version());
+        }
+
+        return versions.last();
     }
 
     @Override

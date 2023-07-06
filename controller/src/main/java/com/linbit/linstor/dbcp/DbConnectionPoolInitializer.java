@@ -88,7 +88,7 @@ public class DbConnectionPoolInitializer implements DbInitializer
         return connectionUrl;
     }
 
-    private String getDbType(String connectionUrl)
+    public static String getDbType(String connectionUrl)
         throws InitializationException
     {
         String dbType;

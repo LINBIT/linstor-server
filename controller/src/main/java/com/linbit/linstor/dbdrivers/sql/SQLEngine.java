@@ -20,6 +20,7 @@ import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.dbdrivers.sql.dump.DbDump;
 import com.linbit.linstor.dbdrivers.sql.dump.SqlDump;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -40,7 +41,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -333,48 +336,12 @@ public class SQLEngine implements DbEngine
     {
         Column[] columns = table.values();
         Map<String, Object> objects = new TreeMap<>();
-        try
-        {
-            for (Column column : columns)
-            {
-                Object data;
-                int colSqlType = column.getSqlType();
-                switch (colSqlType)
-                {
-                    case Types.BLOB:
-                        data = resultSet.getBytes(column.getName());
-                        break;
-                    case Types.VARCHAR: // fall-through
-                    case Types.CLOB:
-                        // includes TEXT type, but if TEXT is read with .getObject the
-                        // returned type is in h2 case org.h2.jdbc.JdbcClob instead of String
-                        data = resultSet.getString(column.getName());
-                        break;
-                    case Types.SMALLINT:
-                        // some jdbc drivers (like mariadb / postgresql) would return an Integer here, which cannot be
-                        // casted later on to Short
-                        data = resultSet.getShort(column.getName());
-                        break;
-                    default:
-                        data = resultSet.getObject(column.getName());
-                        break;
-                }
-                if (resultSet.wasNull())
-                {
-                    data = null;
-                }
-                objects.put(column.getName(), data);
-            }
-        }
-        catch (SQLException exc)
-        {
-            throw new DatabaseException(exc);
-        }
+        RawParameters rawParams = buildRawParams(table, resultSet, columns, objects);
 
         Pair<DATA, INIT_MAPS> pair;
         try
         {
-            pair = dataLoader.loadImpl(new RawParameters(table, objects, DatabaseType.SQL), parents);
+            pair = dataLoader.loadImpl(rawParams, parents);
         }
         catch (LinStorDBRuntimeException exc)
         {
@@ -405,6 +372,108 @@ public class SQLEngine implements DbEngine
             );
         }
         return pair;
+    }
+
+    private RawParameters buildRawParams(
+        DatabaseTable table,
+        ResultSet resultSet,
+        Column[] columns,
+        Map<String, Object> objects
+    )
+        throws DatabaseException
+    {
+        try
+        {
+            for (Column column : columns)
+            {
+                Object data;
+                int colSqlType = column.getSqlType();
+                switch (colSqlType)
+                {
+                    case Types.BLOB:
+                        data = resultSet.getBytes(column.getName());
+                        break;
+                    case Types.VARCHAR: // fall-through
+                    case Types.CLOB:
+                        // includes TEXT type, but if TEXT is read with .getObject the
+                        // returned type is in h2 case org.h2.jdbc.JdbcClob instead of String
+                        data = resultSet.getString(column.getName());
+                        break;
+                    case Types.SMALLINT:
+                        // some jdbc drivers (like mariadb / postgresql) would return an Integer here, which cannot be
+                        // casted later on to Short
+                        data = resultSet.getShort(column.getName());
+                        break;
+                    case Types.TIMESTAMP:
+                        Timestamp timestamp = resultSet.getTimestamp(column.getName());
+                        data = timestamp != null ? timestamp.getTime() : null;
+                        break;
+                    default:
+                        data = resultSet.getObject(column.getName());
+                        break;
+                }
+                if (resultSet.wasNull())
+                {
+                    data = null;
+                }
+                objects.put(column.getName(), data);
+            }
+        }
+        catch (SQLException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+        return new RawParameters(table, objects, DatabaseType.SQL);
+    }
+
+    @Override
+    public List<RawParameters> export(DatabaseTable tableRef) throws DatabaseException
+    {
+        List<RawParameters> ret = new ArrayList<>();
+        try (PreparedStatement stmt = getConnection().prepareStatement(getSelectStatement(tableRef)))
+        {
+            try (ResultSet resultSet = stmt.executeQuery())
+            {
+                while (resultSet.next())
+                {
+                    ret.add(buildRawParams(
+                        tableRef,
+                        resultSet,
+                        tableRef.values(),
+                        new TreeMap<>()
+                    ));
+                }
+            }
+        }
+        catch (SQLException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+        return ret;
+    }
+
+    @Override
+    public void importData(DatabaseTable tableRef, List<LinstorSpec> dataListRef) throws DatabaseException
+    {
+        LinstorSpec currentSpec = null;
+        try (PreparedStatement stmt = getConnection().prepareStatement(getInsertStatement(tableRef)))
+        {
+            errorReporter.logTrace("Importing %d entries for table %s", dataListRef.size(), tableRef.getName());
+            for (LinstorSpec linstorSpec : dataListRef)
+            {
+                currentSpec = linstorSpec;
+                setValuesFromSpec(stmt, tableRef, linstorSpec);
+            }
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(
+                "Table: " + tableRef.getName() + ", entry: " + (currentSpec == null ?
+                    "<null>" :
+                    currentSpec.getLinstorKey()),
+                sqlExc
+            );
+        }
     }
 
     Connection getConnection()
@@ -458,62 +527,83 @@ public class SQLEngine implements DbEngine
             if (predicate.test(col))
             {
                 Object obj = setters.get(col).accept(data);
-                if (obj == null)
-                {
-                    if (col.isNullable())
-                    {
-                        switch (col.getSqlType())
-                        {
-                            case Types.BLOB:
-                                stmt.setBytes(idx, (byte[]) obj);
-                                break;
-                            default:
-                                stmt.setNull(idx, col.getSqlType());
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        throw new DatabaseException(
-                            "Cannot persist null object to not null database column.",
-                            null,
-                            null,
-                            null,
-                            "Table: " + table.getName() + ", Column: " + col.getName()
-                        );
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        switch (col.getSqlType())
-                        {
-                            case Types.BLOB:
-                                stmt.setBytes(idx, (byte[]) obj);
-                                break;
-                            case Types.CLOB:
-                                stmt.setString(idx, (String) obj);
-                                break;
-                            default:
-                                stmt.setObject(idx, obj, col.getSqlType());
-                                break;
-                        }
-                    }
-                    catch (Exception exc)
-                    {
-                        throw new LinStorDBRuntimeException(
-                            "Could not set object '" + obj.toString() + "' of type " + obj.getClass().getSimpleName() +
-                                " as SQL type: " + col.getSqlType() + " (" + JDBCType.valueOf(col.getSqlType()) +
-                                ") for column " + table.getName() + "." + col.getName(),
-                            exc
-                        );
-                    }
-                }
+                setSqlParam(stmt, idx, col, obj);
                 ++idx;
             }
         }
         return idx;
+    }
+
+    private void setSqlParam(PreparedStatement stmt, int idx, Column col, Object obj)
+        throws SQLException, DatabaseException
+    {
+        if (obj == null)
+        {
+            if (col.isNullable())
+            {
+                switch (col.getSqlType())
+                {
+                    case Types.BLOB:
+                        stmt.setBytes(idx, (byte[]) obj);
+                        break;
+                    default:
+                        stmt.setNull(idx, col.getSqlType());
+                        break;
+                }
+            }
+            else
+            {
+                throw new DatabaseException(
+                    "Cannot persist null object to not null database column.",
+                    null,
+                    null,
+                    null,
+                    "Table: " + col.getTable().getName() + ", Column: " + col.getName()
+                );
+            }
+        }
+        else
+        {
+            try
+            {
+                switch (col.getSqlType())
+                {
+                    case Types.BLOB:
+                        stmt.setBytes(idx, (byte[]) obj);
+                        break;
+                    case Types.CLOB:
+                        stmt.setString(idx, (String) obj);
+                        break;
+                    default:
+                        stmt.setObject(idx, obj, col.getSqlType());
+                        break;
+                }
+            }
+            catch (Exception exc)
+            {
+                throw new LinStorDBRuntimeException(
+                    "Could not set object '" + obj.toString() + "' of type " + obj.getClass().getSimpleName() +
+                        " as SQL type: " + col.getSqlType() + " (" + JDBCType.valueOf(col.getSqlType()) +
+                        ") for column " + col.getTable().getName() + "." + col.getName(),
+                    exc
+                );
+            }
+        }
+    }
+
+    private void setValuesFromSpec(
+        PreparedStatement stmtRef,
+        DatabaseTable tableRef,
+        LinstorSpec linstorSpecRef
+    )
+        throws DatabaseException, SQLException
+    {
+        int idx = 1;
+        for (Column col : tableRef.values())
+        {
+            setSqlParam(stmtRef, idx, col, linstorSpecRef.getByColumn(col));
+            idx++;
+        }
     }
 
     @Override

@@ -18,6 +18,7 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Nodes;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -27,6 +28,7 @@ import com.linbit.utils.ExceptionThrowingFunction;
 import com.linbit.utils.Pair;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -287,4 +289,8 @@ public interface DbEngine
     String getDbDump() throws DatabaseException;
 
     ApiCallRc backupDb(String backupPath) throws DatabaseException;
+
+    List<RawParameters> export(DatabaseTable tableRef) throws DatabaseException;
+
+    void importData(DatabaseTable dbTableRef, List<LinstorSpec> dataListRef) throws DatabaseException;
 }

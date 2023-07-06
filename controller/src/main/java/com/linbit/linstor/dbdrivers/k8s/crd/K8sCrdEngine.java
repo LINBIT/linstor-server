@@ -32,7 +32,9 @@ import com.linbit.utils.Pair;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Function;
@@ -276,6 +278,25 @@ public class K8sCrdEngine implements DbEngine
                 update(table, settersRef, parent, dataIdToString);
             }
         };
+    }
+
+    @Override
+    public List<RawParameters> export(DatabaseTable tableRef) throws DatabaseException
+    {
+        List<RawParameters> ret = new ArrayList<>();
+        K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
+        for (LinstorSpec linstorSpec : tx.getSpec(tableRef).values())
+        {
+            ret.add(new RawParameters(tableRef, linstorSpec.asRawParameters(), DatabaseType.K8S_CRD));
+        }
+
+        return ret;
+    }
+
+    @Override
+    public void importData(DatabaseTable dbTableRef, List<LinstorSpec> dataListRef) throws DatabaseException
+    {
+        throw new ImplementationError("not implemented");
     }
 
     @Override

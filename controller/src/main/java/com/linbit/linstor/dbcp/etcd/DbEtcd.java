@@ -141,6 +141,12 @@ public class DbEtcd implements ControllerETCDDatabase
         }
     }
 
+    public int getCurrentVersion()
+    {
+        TreeMap<Integer, BaseEtcdMigration> migrations = buildMigrations();
+        return migrations.lastKey();
+    }
+
     @Override
     public boolean needsMigration(String dbType) throws InitializationException
     {

@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers.k8s.crd;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
@@ -150,7 +151,7 @@ public class GenCrdV1_19_1
         DatabaseTable table
     )
     {
-        switch(table.getName())
+        switch (table.getName())
         {
             case "EBS_REMOTES":
                 return (Class<CRD>) EbsRemotes.class;
@@ -253,7 +254,7 @@ public class GenCrdV1_19_1
         DatabaseTable table
     )
     {
-        switch(table.getName())
+        switch (table.getName())
         {
             case "EBS_REMOTES":
                 return (Class<SPEC>) EbsRemotesSpec.class;
@@ -352,9 +353,113 @@ public class GenCrdV1_19_1
     }
 
     @SuppressWarnings("unchecked")
+    public static LinstorSpec rawParamToSpec(
+        DatabaseTable tableRef,
+        RawParameters rawDataMapRef
+    )
+    {
+        switch (tableRef.getName())
+        {
+            case "EBS_REMOTES":
+                return EbsRemotesSpec.fromRawParameters(rawDataMapRef);
+            case "FILES":
+                return FilesSpec.fromRawParameters(rawDataMapRef);
+            case "KEY_VALUE_STORE":
+                return KeyValueStoreSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_BCACHE_VOLUMES":
+                return LayerBcacheVolumesSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_CACHE_VOLUMES":
+                return LayerCacheVolumesSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_DRBD_RESOURCES":
+                return LayerDrbdResourcesSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_DRBD_RESOURCE_DEFINITIONS":
+                return LayerDrbdResourceDefinitionsSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_DRBD_VOLUMES":
+                return LayerDrbdVolumesSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_DRBD_VOLUME_DEFINITIONS":
+                return LayerDrbdVolumeDefinitionsSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_LUKS_VOLUMES":
+                return LayerLuksVolumesSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
+                return LayerOpenflexResourceDefinitionsSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_OPENFLEX_VOLUMES":
+                return LayerOpenflexVolumesSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_RESOURCE_IDS":
+                return LayerResourceIdsSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_STORAGE_VOLUMES":
+                return LayerStorageVolumesSpec.fromRawParameters(rawDataMapRef);
+            case "LAYER_WRITECACHE_VOLUMES":
+                return LayerWritecacheVolumesSpec.fromRawParameters(rawDataMapRef);
+            case "LINSTOR_REMOTES":
+                return LinstorRemotesSpec.fromRawParameters(rawDataMapRef);
+            case "NODES":
+                return NodesSpec.fromRawParameters(rawDataMapRef);
+            case "NODE_CONNECTIONS":
+                return NodeConnectionsSpec.fromRawParameters(rawDataMapRef);
+            case "NODE_NET_INTERFACES":
+                return NodeNetInterfacesSpec.fromRawParameters(rawDataMapRef);
+            case "NODE_STOR_POOL":
+                return NodeStorPoolSpec.fromRawParameters(rawDataMapRef);
+            case "PROPS_CONTAINERS":
+                return PropsContainersSpec.fromRawParameters(rawDataMapRef);
+            case "RESOURCES":
+                return ResourcesSpec.fromRawParameters(rawDataMapRef);
+            case "RESOURCE_CONNECTIONS":
+                return ResourceConnectionsSpec.fromRawParameters(rawDataMapRef);
+            case "RESOURCE_DEFINITIONS":
+                return ResourceDefinitionsSpec.fromRawParameters(rawDataMapRef);
+            case "RESOURCE_GROUPS":
+                return ResourceGroupsSpec.fromRawParameters(rawDataMapRef);
+            case "S3_REMOTES":
+                return S3RemotesSpec.fromRawParameters(rawDataMapRef);
+            case "SATELLITES_CAPACITY":
+                return SatellitesCapacitySpec.fromRawParameters(rawDataMapRef);
+            case "SCHEDULES":
+                return SchedulesSpec.fromRawParameters(rawDataMapRef);
+            case "SEC_ACCESS_TYPES":
+                return SecAccessTypesSpec.fromRawParameters(rawDataMapRef);
+            case "SEC_ACL_MAP":
+                return SecAclMapSpec.fromRawParameters(rawDataMapRef);
+            case "SEC_CONFIGURATION":
+                return SecConfigurationSpec.fromRawParameters(rawDataMapRef);
+            case "SEC_DFLT_ROLES":
+                return SecDfltRolesSpec.fromRawParameters(rawDataMapRef);
+            case "SEC_IDENTITIES":
+                return SecIdentitiesSpec.fromRawParameters(rawDataMapRef);
+            case "SEC_ID_ROLE_MAP":
+                return SecIdRoleMapSpec.fromRawParameters(rawDataMapRef);
+            case "SEC_OBJECT_PROTECTION":
+                return SecObjectProtectionSpec.fromRawParameters(rawDataMapRef);
+            case "SEC_ROLES":
+                return SecRolesSpec.fromRawParameters(rawDataMapRef);
+            case "SEC_TYPES":
+                return SecTypesSpec.fromRawParameters(rawDataMapRef);
+            case "SEC_TYPE_RULES":
+                return SecTypeRulesSpec.fromRawParameters(rawDataMapRef);
+            case "SPACE_HISTORY":
+                return SpaceHistorySpec.fromRawParameters(rawDataMapRef);
+            case "STOR_POOL_DEFINITIONS":
+                return StorPoolDefinitionsSpec.fromRawParameters(rawDataMapRef);
+            case "TRACKING_DATE":
+                return TrackingDateSpec.fromRawParameters(rawDataMapRef);
+            case "VOLUMES":
+                return VolumesSpec.fromRawParameters(rawDataMapRef);
+            case "VOLUME_CONNECTIONS":
+                return VolumeConnectionsSpec.fromRawParameters(rawDataMapRef);
+            case "VOLUME_DEFINITIONS":
+                return VolumeDefinitionsSpec.fromRawParameters(rawDataMapRef);
+            case "VOLUME_GROUPS":
+                return VolumeGroupsSpec.fromRawParameters(rawDataMapRef);
+            default:
+                // we are most likely iterating tables the current version does not know about.
+                return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     public static <SPEC extends LinstorSpec> LinstorCrd<SPEC> specToCrd(SPEC spec)
     {
-        switch(spec.getDatabaseTable().getName())
+        switch (spec.getDatabaseTable().getName())
         {
             case "EBS_REMOTES":
                 return (LinstorCrd<SPEC>) new EbsRemotes((EbsRemotesSpec) spec);
@@ -459,7 +564,7 @@ public class GenCrdV1_19_1
     )
         throws AccessDeniedException
     {
-        switch(table.getName())
+        switch (table.getName())
         {
             case "EBS_REMOTES":
             {
@@ -1018,7 +1123,7 @@ public class GenCrdV1_19_1
 
     public static String databaseTableToYamlLocation(DatabaseTable dbTable)
     {
-        switch(dbTable.getName())
+        switch (dbTable.getName())
         {
             case "EBS_REMOTES":
                 return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/EbsRemotes.yaml";
@@ -1118,7 +1223,7 @@ public class GenCrdV1_19_1
 
     public static String databaseTableToYamlName(DatabaseTable dbTable)
     {
-        switch(dbTable.getName())
+        switch (dbTable.getName())
         {
             case "EBS_REMOTES":
                 return "ebsremotes";
@@ -1278,6 +1383,22 @@ public class GenCrdV1_19_1
         @JsonProperty("access_key") public final byte[] accessKey;
         @JsonProperty("secret_key") public final byte[] secretKey;
 
+        @JsonIgnore
+        public static EbsRemotesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new EbsRemotesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.FLAGS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.URL),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.REGION),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.AVAILABILITY_ZONE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.ACCESS_KEY),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.EbsRemotes.SECRET_KEY)
+            );
+        }
+
         @JsonCreator
         public EbsRemotesSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -1328,7 +1449,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -1444,6 +1565,18 @@ public class GenCrdV1_19_1
         @JsonProperty("content") public final byte[] content;
         @JsonProperty("content_checksum") public final String contentChecksum;
 
+        @JsonIgnore
+        public static FilesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new FilesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Files.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Files.PATH),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Files.FLAGS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Files.CONTENT),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Files.CONTENT_CHECKSUM)
+            );
+        }
+
         @JsonCreator
         public FilesSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -1482,7 +1615,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -1584,6 +1717,16 @@ public class GenCrdV1_19_1
         @JsonProperty("kvs_name") public final String kvsName; // PK
         @JsonProperty("kvs_dsp_name") public final String kvsDspName;
 
+        @JsonIgnore
+        public static KeyValueStoreSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new KeyValueStoreSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.KeyValueStore.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.KeyValueStore.KVS_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.KeyValueStore.KVS_DSP_NAME)
+            );
+        }
+
         @JsonCreator
         public KeyValueStoreSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -1616,7 +1759,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -1720,6 +1863,18 @@ public class GenCrdV1_19_1
         @JsonProperty("pool_name") public final String poolName;
         @JsonProperty("dev_uuid") public final String devUuid;
 
+        @JsonIgnore
+        public static LayerBcacheVolumesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerBcacheVolumesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerBcacheVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerBcacheVolumes.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerBcacheVolumes.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerBcacheVolumes.POOL_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerBcacheVolumes.DEV_UUID)
+            );
+        }
+
         @JsonCreator
         public LayerBcacheVolumesSpec(
             @JsonProperty("layer_resource_id") int layerResourceIdRef,
@@ -1759,7 +1914,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1867,6 +2022,18 @@ public class GenCrdV1_19_1
         @JsonProperty("pool_name_cache") public final String poolNameCache;
         @JsonProperty("pool_name_meta") public final String poolNameMeta;
 
+        @JsonIgnore
+        public static LayerCacheVolumesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerCacheVolumesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerCacheVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerCacheVolumes.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerCacheVolumes.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_CACHE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_META)
+            );
+        }
+
         @JsonCreator
         public LayerCacheVolumesSpec(
             @JsonProperty("layer_resource_id") int layerResourceIdRef,
@@ -1906,7 +2073,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2017,6 +2184,19 @@ public class GenCrdV1_19_1
         @JsonProperty("flags") public final long flags;
         @JsonProperty("node_id") public final int nodeId;
 
+        @JsonIgnore
+        public static LayerDrbdResourcesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerDrbdResourcesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.LAYER_RESOURCE_ID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.PEER_SLOTS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.AL_STRIPES),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.AL_STRIPE_SIZE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.FLAGS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResources.NODE_ID)
+            );
+        }
+
         @JsonCreator
         public LayerDrbdResourcesSpec(
             @JsonProperty("layer_resource_id") int layerResourceIdRef,
@@ -2058,7 +2238,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2180,6 +2360,22 @@ public class GenCrdV1_19_1
         @JsonProperty("transport_type") public final String transportType;
         @JsonProperty("secret") public final String secret;
 
+        @JsonIgnore
+        public static LayerDrbdResourceDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerDrbdResourceDefinitionsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.RESOURCE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SNAPSHOT_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.PEER_SLOTS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.AL_STRIPES),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.AL_STRIPE_SIZE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TCP_PORT),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TRANSPORT_TYPE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SECRET)
+            );
+        }
+
         @JsonCreator
         public LayerDrbdResourceDefinitionsSpec(
             @JsonProperty("resource_name") String resourceNameRef,
@@ -2232,7 +2428,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2345,6 +2541,17 @@ public class GenCrdV1_19_1
         @JsonProperty("node_name") public final String nodeName;
         @JsonProperty("pool_name") public final String poolName;
 
+        @JsonIgnore
+        public static LayerDrbdVolumesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerDrbdVolumesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumes.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumes.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumes.POOL_NAME)
+            );
+        }
+
         @JsonCreator
         public LayerDrbdVolumesSpec(
             @JsonProperty("layer_resource_id") int layerResourceIdRef,
@@ -2381,7 +2588,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2487,6 +2694,18 @@ public class GenCrdV1_19_1
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
         @JsonProperty("vlm_minor_nr") public final Integer vlmMinorNr;
 
+        @JsonIgnore
+        public static LayerDrbdVolumeDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerDrbdVolumeDefinitionsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.RESOURCE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.RESOURCE_NAME_SUFFIX),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.SNAPSHOT_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_MINOR_NR)
+            );
+        }
+
         @JsonCreator
         public LayerDrbdVolumeDefinitionsSpec(
             @JsonProperty("resource_name") String resourceNameRef,
@@ -2528,7 +2747,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2630,6 +2849,16 @@ public class GenCrdV1_19_1
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
         @JsonProperty("encrypted_password") public final String encryptedPassword;
 
+        @JsonIgnore
+        public static LayerLuksVolumesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerLuksVolumesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerLuksVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerLuksVolumes.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerLuksVolumes.ENCRYPTED_PASSWORD)
+            );
+        }
+
         @JsonCreator
         public LayerLuksVolumesSpec(
             @JsonProperty("layer_resource_id") int layerResourceIdRef,
@@ -2663,7 +2892,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2764,6 +2993,17 @@ public class GenCrdV1_19_1
         @JsonProperty("resource_name_suffix") public final String resourceNameSuffix; // PK
         @JsonProperty("nqn") public final String nqn;
 
+        @JsonIgnore
+        public static LayerOpenflexResourceDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerOpenflexResourceDefinitionsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.SNAPSHOT_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME_SUFFIX),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.NQN)
+            );
+        }
+
         @JsonCreator
         public LayerOpenflexResourceDefinitionsSpec(
             @JsonProperty("resource_name") String resourceNameRef,
@@ -2800,7 +3040,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2903,6 +3143,17 @@ public class GenCrdV1_19_1
         @JsonProperty("node_name") public final String nodeName;
         @JsonProperty("pool_name") public final String poolName;
 
+        @JsonIgnore
+        public static LayerOpenflexVolumesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerOpenflexVolumesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexVolumes.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexVolumes.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexVolumes.POOL_NAME)
+            );
+        }
+
         @JsonCreator
         public LayerOpenflexVolumesSpec(
             @JsonProperty("layer_resource_id") int layerResourceIdRef,
@@ -2939,7 +3190,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3054,6 +3305,21 @@ public class GenCrdV1_19_1
         @JsonProperty("layer_resource_suffix") public final String layerResourceSuffix;
         @JsonProperty("layer_resource_suspended") public final boolean layerResourceSuspended;
 
+        @JsonIgnore
+        public static LayerResourceIdsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerResourceIdsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_ID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.RESOURCE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.SNAPSHOT_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_KIND),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_PARENT_ID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUFFIX),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUSPENDED)
+            );
+        }
+
         @JsonCreator
         public LayerResourceIdsSpec(
             @JsonProperty("layer_resource_id") int layerResourceIdRef,
@@ -3101,7 +3367,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3215,6 +3481,18 @@ public class GenCrdV1_19_1
         @JsonProperty("node_name") public final String nodeName;
         @JsonProperty("stor_pool_name") public final String storPoolName;
 
+        @JsonIgnore
+        public static LayerStorageVolumesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerStorageVolumesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerStorageVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerStorageVolumes.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerStorageVolumes.PROVIDER_KIND),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerStorageVolumes.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerStorageVolumes.STOR_POOL_NAME)
+            );
+        }
+
         @JsonCreator
         public LayerStorageVolumesSpec(
             @JsonProperty("layer_resource_id") int layerResourceIdRef,
@@ -3254,7 +3532,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3359,6 +3637,17 @@ public class GenCrdV1_19_1
         @JsonProperty("node_name") public final String nodeName;
         @JsonProperty("pool_name") public final String poolName;
 
+        @JsonIgnore
+        public static LayerWritecacheVolumesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LayerWritecacheVolumesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerWritecacheVolumes.LAYER_RESOURCE_ID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerWritecacheVolumes.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerWritecacheVolumes.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerWritecacheVolumes.POOL_NAME)
+            );
+        }
+
         @JsonCreator
         public LayerWritecacheVolumesSpec(
             @JsonProperty("layer_resource_id") int layerResourceIdRef,
@@ -3395,7 +3684,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3507,6 +3796,20 @@ public class GenCrdV1_19_1
         @JsonProperty("encrypted_passphrase") public final byte[] encryptedPassphrase;
         @JsonProperty("cluster_id") public final String clusterId;
 
+        @JsonIgnore
+        public static LinstorRemotesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new LinstorRemotesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.FLAGS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.URL),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.ENCRYPTED_PASSPHRASE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.LinstorRemotes.CLUSTER_ID)
+            );
+        }
+
         @JsonCreator
         public LinstorRemotesSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -3551,7 +3854,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -3663,6 +3966,18 @@ public class GenCrdV1_19_1
         @JsonProperty("node_flags") public final long nodeFlags;
         @JsonProperty("node_type") public final int nodeType;
 
+        @JsonIgnore
+        public static NodesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new NodesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Nodes.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Nodes.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Nodes.NODE_DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Nodes.NODE_FLAGS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Nodes.NODE_TYPE)
+            );
+        }
+
         @JsonCreator
         public NodesSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -3701,7 +4016,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -3803,6 +4118,16 @@ public class GenCrdV1_19_1
         @JsonProperty("node_name_src") public final String nodeNameSrc; // PK
         @JsonProperty("node_name_dst") public final String nodeNameDst; // PK
 
+        @JsonIgnore
+        public static NodeConnectionsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new NodeConnectionsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeConnections.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeConnections.NODE_NAME_SRC),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeConnections.NODE_NAME_DST)
+            );
+        }
+
         @JsonCreator
         public NodeConnectionsSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -3836,7 +4161,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -3946,6 +4271,20 @@ public class GenCrdV1_19_1
         @JsonProperty("stlt_conn_port") public final Short stltConnPort;
         @JsonProperty("stlt_conn_encr_type") public final String stltConnEncrType;
 
+        @JsonIgnore
+        public static NodeNetInterfacesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new NodeNetInterfacesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NET_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NET_DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.INET_ADDRESS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_PORT),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_ENCR_TYPE)
+            );
+        }
+
         @JsonCreator
         public NodeNetInterfacesSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -3991,7 +4330,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -4109,6 +4448,20 @@ public class GenCrdV1_19_1
         @JsonProperty("free_space_mgr_dsp_name") public final String freeSpaceMgrDspName;
         @JsonProperty("external_locking") public final boolean externalLocking;
 
+        @JsonIgnore
+        public static NodeStorPoolSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new NodeStorPoolSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.POOL_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.DRIVER_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.NodeStorPool.EXTERNAL_LOCKING)
+            );
+        }
+
         @JsonCreator
         public NodeStorPoolSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -4154,7 +4507,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -4260,6 +4613,16 @@ public class GenCrdV1_19_1
         @JsonProperty("prop_key") public final String propKey; // PK
         @JsonProperty("prop_value") public final String propValue;
 
+        @JsonIgnore
+        public static PropsContainersSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new PropsContainersSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.PropsContainers.PROPS_INSTANCE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.PropsContainers.PROP_KEY),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.PropsContainers.PROP_VALUE)
+            );
+        }
+
         @JsonCreator
         public PropsContainersSpec(
             @JsonProperty("props_instance") String propsInstanceRef,
@@ -4293,7 +4656,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "PROPS_INSTANCE":
                     return propsInstance;
@@ -4400,6 +4763,19 @@ public class GenCrdV1_19_1
         @JsonProperty("resource_flags") public final long resourceFlags;
         @JsonProperty("create_timestamp") public final Long createTimestamp;
 
+        @JsonIgnore
+        public static ResourcesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new ResourcesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.RESOURCE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.SNAPSHOT_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.RESOURCE_FLAGS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Resources.CREATE_TIMESTAMP)
+            );
+        }
+
         @JsonCreator
         public ResourcesSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -4443,7 +4819,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -4559,6 +4935,20 @@ public class GenCrdV1_19_1
         @JsonProperty("flags") public final long flags;
         @JsonProperty("tcp_port") public final Integer tcpPort;
 
+        @JsonIgnore
+        public static ResourceConnectionsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new ResourceConnectionsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.NODE_NAME_SRC),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.NODE_NAME_DST),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.RESOURCE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.SNAPSHOT_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.FLAGS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceConnections.TCP_PORT)
+            );
+        }
+
         @JsonCreator
         public ResourceConnectionsSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -4606,7 +4996,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -4733,6 +5123,23 @@ public class GenCrdV1_19_1
         @JsonProperty("resource_group_name") public final String resourceGroupName;
         @JsonProperty("parent_uuid") public final String parentUuid;
 
+        @JsonIgnore
+        public static ResourceDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new ResourceDefinitionsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_FLAGS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.LAYER_STACK),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_EXTERNAL_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_GROUP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceDefinitions.PARENT_UUID)
+            );
+        }
+
         @JsonCreator
         public ResourceDefinitionsSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -4787,7 +5194,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -4935,6 +5342,28 @@ public class GenCrdV1_19_1
         @JsonProperty("allowed_provider_list") public final String allowedProviderList;
         @JsonProperty("diskless_on_remaining") public final Boolean disklessOnRemaining;
 
+        @JsonIgnore
+        public static ResourceGroupsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new ResourceGroupsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.DESCRIPTION),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.LAYER_STACK),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.REPLICA_COUNT),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.NODE_NAME_LIST),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.POOL_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.POOL_NAME_DISKLESS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_REGEX),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_LIST),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_SAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_DIFFERENT),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.ALLOWED_PROVIDER_LIST),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.DISKLESS_ON_REMAINING)
+            );
+        }
+
         @JsonCreator
         public ResourceGroupsSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -5003,7 +5432,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -5143,6 +5572,22 @@ public class GenCrdV1_19_1
         @JsonProperty("access_key") public final byte[] accessKey;
         @JsonProperty("secret_key") public final byte[] secretKey;
 
+        @JsonIgnore
+        public static S3RemotesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new S3RemotesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.FLAGS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.ENDPOINT),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.BUCKET),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.REGION),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.ACCESS_KEY),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.S3Remotes.SECRET_KEY)
+            );
+        }
+
         @JsonCreator
         public S3RemotesSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -5193,7 +5638,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -5309,6 +5754,18 @@ public class GenCrdV1_19_1
         @JsonProperty("allocated") public final byte[] allocated;
         @JsonProperty("usable") public final byte[] usable;
 
+        @JsonIgnore
+        public static SatellitesCapacitySpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SatellitesCapacitySpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SatellitesCapacity.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SatellitesCapacity.CAPACITY),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SatellitesCapacity.FAIL_FLAG),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SatellitesCapacity.ALLOCATED),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SatellitesCapacity.USABLE)
+            );
+        }
+
         @JsonCreator
         public SatellitesCapacitySpec(
             @JsonProperty("node_name") String nodeNameRef,
@@ -5347,7 +5804,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "NODE_NAME":
                     return nodeName;
@@ -5470,6 +5927,23 @@ public class GenCrdV1_19_1
         @JsonProperty("on_failure") public final long onFailure;
         @JsonProperty("max_retries") public final Integer maxRetries;
 
+        @JsonIgnore
+        public static SchedulesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SchedulesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.FLAGS),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.FULL_CRON),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.INC_CRON),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.KEEP_LOCAL),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.KEEP_REMOTE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.ON_FAILURE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Schedules.MAX_RETRIES)
+            );
+        }
+
         @JsonCreator
         public SchedulesSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -5523,7 +5997,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -5632,6 +6106,15 @@ public class GenCrdV1_19_1
         @JsonProperty("access_type_name") public final String accessTypeName; // PK
         @JsonProperty("access_type_value") public final short accessTypeValue;
 
+        @JsonIgnore
+        public static SecAccessTypesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SecAccessTypesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_VALUE)
+            );
+        }
+
         @JsonCreator
         public SecAccessTypesSpec(
             @JsonProperty("access_type_name") String accessTypeNameRef,
@@ -5661,7 +6144,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "ACCESS_TYPE_NAME":
                     return accessTypeName;
@@ -5757,6 +6240,16 @@ public class GenCrdV1_19_1
         @JsonProperty("role_name") public final String roleName; // PK
         @JsonProperty("access_type") public final short accessType;
 
+        @JsonIgnore
+        public static SecAclMapSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SecAclMapSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecAclMap.OBJECT_PATH),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecAclMap.ROLE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecAclMap.ACCESS_TYPE)
+            );
+        }
+
         @JsonCreator
         public SecAclMapSpec(
             @JsonProperty("object_path") String objectPathRef,
@@ -5790,7 +6283,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "OBJECT_PATH":
                     return objectPath;
@@ -5888,6 +6381,16 @@ public class GenCrdV1_19_1
         @JsonProperty("entry_dsp_key") public final String entryDspKey;
         @JsonProperty("entry_value") public final String entryValue;
 
+        @JsonIgnore
+        public static SecConfigurationSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SecConfigurationSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecConfiguration.ENTRY_KEY),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecConfiguration.ENTRY_DSP_KEY),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecConfiguration.ENTRY_VALUE)
+            );
+        }
+
         @JsonCreator
         public SecConfigurationSpec(
             @JsonProperty("entry_key") String entryKeyRef,
@@ -5920,7 +6423,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "ENTRY_KEY":
                     return entryKey;
@@ -6015,6 +6518,15 @@ public class GenCrdV1_19_1
         @JsonProperty("identity_name") public final String identityName; // PK
         @JsonProperty("role_name") public final String roleName;
 
+        @JsonIgnore
+        public static SecDfltRolesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SecDfltRolesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecDfltRoles.IDENTITY_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecDfltRoles.ROLE_NAME)
+            );
+        }
+
         @JsonCreator
         public SecDfltRolesSpec(
             @JsonProperty("identity_name") String identityNameRef,
@@ -6044,7 +6556,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -6149,6 +6661,19 @@ public class GenCrdV1_19_1
         @JsonProperty("id_enabled") public final boolean idEnabled;
         @JsonProperty("id_locked") public final boolean idLocked;
 
+        @JsonIgnore
+        public static SecIdentitiesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SecIdentitiesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.IDENTITY_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.IDENTITY_DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.PASS_SALT),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.PASS_HASH),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.ID_ENABLED),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdentities.ID_LOCKED)
+            );
+        }
+
         @JsonCreator
         public SecIdentitiesSpec(
             @JsonProperty("identity_name") String identityNameRef,
@@ -6190,7 +6715,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -6291,6 +6816,15 @@ public class GenCrdV1_19_1
         @JsonProperty("identity_name") public final String identityName; // PK
         @JsonProperty("role_name") public final String roleName; // PK
 
+        @JsonIgnore
+        public static SecIdRoleMapSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SecIdRoleMapSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdRoleMap.IDENTITY_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecIdRoleMap.ROLE_NAME)
+            );
+        }
+
         @JsonCreator
         public SecIdRoleMapSpec(
             @JsonProperty("identity_name") String identityNameRef,
@@ -6321,7 +6855,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -6420,6 +6954,17 @@ public class GenCrdV1_19_1
         @JsonProperty("owner_role_name") public final String ownerRoleName;
         @JsonProperty("security_type_name") public final String securityTypeName;
 
+        @JsonIgnore
+        public static SecObjectProtectionSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SecObjectProtectionSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecObjectProtection.OBJECT_PATH),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecObjectProtection.CREATOR_IDENTITY_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecObjectProtection.OWNER_ROLE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecObjectProtection.SECURITY_TYPE_NAME)
+            );
+        }
+
         @JsonCreator
         public SecObjectProtectionSpec(
             @JsonProperty("object_path") String objectPathRef,
@@ -6455,7 +7000,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "OBJECT_PATH":
                     return objectPath;
@@ -6561,6 +7106,18 @@ public class GenCrdV1_19_1
         @JsonProperty("role_enabled") public final boolean roleEnabled;
         @JsonProperty("role_privileges") public final long rolePrivileges;
 
+        @JsonIgnore
+        public static SecRolesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SecRolesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecRoles.ROLE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecRoles.ROLE_DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecRoles.DOMAIN_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecRoles.ROLE_ENABLED),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecRoles.ROLE_PRIVILEGES)
+            );
+        }
+
         @JsonCreator
         public SecRolesSpec(
             @JsonProperty("role_name") String roleNameRef,
@@ -6599,7 +7156,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "ROLE_NAME":
                     return roleName;
@@ -6701,6 +7258,16 @@ public class GenCrdV1_19_1
         @JsonProperty("type_dsp_name") public final String typeDspName;
         @JsonProperty("type_enabled") public final boolean typeEnabled;
 
+        @JsonIgnore
+        public static SecTypesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SecTypesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypes.TYPE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypes.TYPE_DSP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypes.TYPE_ENABLED)
+            );
+        }
+
         @JsonCreator
         public SecTypesSpec(
             @JsonProperty("type_name") String typeNameRef,
@@ -6733,7 +7300,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "TYPE_NAME":
                     return typeName;
@@ -6831,6 +7398,16 @@ public class GenCrdV1_19_1
         @JsonProperty("type_name") public final String typeName; // PK
         @JsonProperty("access_type") public final short accessType;
 
+        @JsonIgnore
+        public static SecTypeRulesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SecTypeRulesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypeRules.DOMAIN_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypeRules.TYPE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SecTypeRules.ACCESS_TYPE)
+            );
+        }
+
         @JsonCreator
         public SecTypeRulesSpec(
             @JsonProperty("domain_name") String domainNameRef,
@@ -6864,7 +7441,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "DOMAIN_NAME":
                     return domainName;
@@ -6959,6 +7536,15 @@ public class GenCrdV1_19_1
         @JsonProperty("entry_date") public final Date entryDate; // PK
         @JsonProperty("capacity") public final byte[] capacity;
 
+        @JsonIgnore
+        public static SpaceHistorySpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new SpaceHistorySpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SpaceHistory.ENTRY_DATE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.SpaceHistory.CAPACITY)
+            );
+        }
+
         @JsonCreator
         public SpaceHistorySpec(
             @JsonProperty("entry_date") Date entryDateRef,
@@ -6988,7 +7574,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "ENTRY_DATE":
                     return entryDate;
@@ -7084,6 +7670,16 @@ public class GenCrdV1_19_1
         @JsonProperty("pool_name") public final String poolName; // PK
         @JsonProperty("pool_dsp_name") public final String poolDspName;
 
+        @JsonIgnore
+        public static StorPoolDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new StorPoolDefinitionsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.StorPoolDefinitions.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.StorPoolDefinitions.POOL_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.StorPoolDefinitions.POOL_DSP_NAME)
+            );
+        }
+
         @JsonCreator
         public StorPoolDefinitionsSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -7116,7 +7712,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -7209,6 +7805,14 @@ public class GenCrdV1_19_1
         // No PK found. Combining ALL columns for K8s key
         @JsonProperty("entry_date") public final Date entryDate;
 
+        @JsonIgnore
+        public static TrackingDateSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new TrackingDateSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.TrackingDate.ENTRY_DATE)
+            );
+        }
+
         @JsonCreator
         public TrackingDateSpec(
             @JsonProperty("entry_date") Date entryDateRef
@@ -7235,7 +7839,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "ENTRY_DATE":
                     return entryDate;
@@ -7338,6 +7942,19 @@ public class GenCrdV1_19_1
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
         @JsonProperty("vlm_flags") public final long vlmFlags;
 
+        @JsonIgnore
+        public static VolumesSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new VolumesSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.NODE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.RESOURCE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.SNAPSHOT_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.Volumes.VLM_FLAGS)
+            );
+        }
+
         @JsonCreator
         public VolumesSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -7382,7 +7999,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -7495,6 +8112,19 @@ public class GenCrdV1_19_1
         @JsonProperty("snapshot_name") public final String snapshotName; // PK
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
 
+        @JsonIgnore
+        public static VolumeConnectionsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new VolumeConnectionsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.NODE_NAME_SRC),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.NODE_NAME_DST),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.RESOURCE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.SNAPSHOT_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeConnections.VLM_NR)
+            );
+        }
+
         @JsonCreator
         public VolumeConnectionsSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -7540,7 +8170,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -7653,6 +8283,19 @@ public class GenCrdV1_19_1
         @JsonProperty("vlm_size") public final long vlmSize;
         @JsonProperty("vlm_flags") public final long vlmFlags;
 
+        @JsonIgnore
+        public static VolumeDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new VolumeDefinitionsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.RESOURCE_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.SNAPSHOT_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.VLM_SIZE),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeDefinitions.VLM_FLAGS)
+            );
+        }
+
         @JsonCreator
         public VolumeDefinitionsSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -7696,7 +8339,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;
@@ -7803,6 +8446,17 @@ public class GenCrdV1_19_1
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
         @JsonProperty("flags") public final long flags;
 
+        @JsonIgnore
+        public static VolumeGroupsSpec fromRawParameters(RawParameters rawParamsRef)
+        {
+            return new VolumeGroupsSpec(
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeGroups.UUID),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeGroups.RESOURCE_GROUP_NAME),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeGroups.VLM_NR),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.VolumeGroups.FLAGS)
+            );
+        }
+
         @JsonCreator
         public VolumeGroupsSpec(
             @JsonProperty("uuid") String uuidRef,
@@ -7839,7 +8493,7 @@ public class GenCrdV1_19_1
         @Override
         public Object getByColumn(Column clm)
         {
-            switch(clm.getName())
+            switch (clm.getName())
             {
                 case "UUID":
                     return uuid;

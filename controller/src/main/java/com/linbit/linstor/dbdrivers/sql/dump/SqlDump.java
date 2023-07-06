@@ -27,7 +27,7 @@ public class SqlDump
             TreeMap<String, Table> extractedTables = DatabaseConstantsGenerator.extractTables(
                 con,
                 Collections.emptySet()
-            );
+            ).objA;
             for (Table tbl : extractedTables.values())
             {
                 List<DataRow> dataList = new ArrayList<>();

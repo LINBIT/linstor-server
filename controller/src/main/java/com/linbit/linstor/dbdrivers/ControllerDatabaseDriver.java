@@ -1,10 +1,17 @@
 package com.linbit.linstor.dbdrivers;
 
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
+
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 public interface ControllerDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
 {
+    DatabaseTable getDbTable();
+
+    List<LinstorSpec> export() throws DatabaseException;
+
     /**
      * Loads all entries from the database
      *

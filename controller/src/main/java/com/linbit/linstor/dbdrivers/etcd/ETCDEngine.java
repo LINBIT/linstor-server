@@ -1,6 +1,7 @@
 package com.linbit.linstor.dbdrivers.etcd;
 
 import com.linbit.ExhaustedPoolException;
+import com.linbit.ImplementationError;
 import com.linbit.InvalidIpAddressException;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
@@ -19,6 +20,7 @@ import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -146,43 +148,17 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         final Column[] columns = table.values();
 
         Map<String, String> dataMap = new TreeMap<>(namespace(table).get(true));
+
         Set<String> composedPkList = EtcdUtils.getComposedPkList(dataMap);
         for (String composedPk : composedPkList)
         {
             Map<String, Object> rawObjects = new TreeMap<>();
-            String[] pks = EtcdUtils.splitPks(composedPk, false);
-
-            int pkIdx = 0;
-
-            for (Column col : columns)
-            {
-                if (col.isPk())
-                {
-                    rawObjects.put(col.getName(), pks[pkIdx++]);
-                }
-                else
-                {
-                    String colKey = EtcdUtils.buildKey(col, pks);
-                    String colData = dataMap.get(colKey);
-                    if (colData == null && !col.isNullable())
-                    {
-                        throw new LinStorDBRuntimeException("Column was unexpectedly null. " + colKey);
-                    }
-                    if (DUMMY_NULL_VALUE.equals(colData))
-                    {
-                        rawObjects.put(col.getName(), null);
-                    }
-                    else
-                    {
-                        rawObjects.put(col.getName(), colData);
-                    }
-                }
-            }
+            RawParameters rawParameters = buildRawParams(table, dataMap, composedPk, rawObjects);
             Pair<DATA, INIT_MAPS> pair;
             try
             {
                 pair = dataLoader.loadImpl(
-                    new RawParameters(table, rawObjects, DatabaseType.ETCD),
+                    rawParameters,
                     parents
                 );
             }
@@ -223,6 +199,44 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         }
 
         return loadedObjectsMap;
+    }
+
+    private RawParameters buildRawParams(
+        DatabaseTable table,
+        Map<String, String> dataMap,
+        String composedPk,
+        Map<String, Object> rawObjects
+    )
+    {
+        String[] pks = EtcdUtils.splitPks(composedPk, false);
+
+        int pkIdx = 0;
+
+        for (Column col : table.values())
+        {
+            if (col.isPk())
+            {
+                rawObjects.put(col.getName(), pks[pkIdx++]);
+            }
+            else
+            {
+                String colKey = EtcdUtils.buildKey(col, pks);
+                String colData = dataMap.get(colKey);
+                if (colData == null && !col.isNullable())
+                {
+                    throw new LinStorDBRuntimeException("Column was unexpectedly null. " + colKey);
+                }
+                if (DUMMY_NULL_VALUE.equals(colData))
+                {
+                    rawObjects.put(col.getName(), null);
+                }
+                else
+                {
+                    rawObjects.put(col.getName(), colData);
+                }
+            }
+        }
+        return new RawParameters(table, rawObjects, DatabaseType.ETCD);
     }
 
     private <DATA> String getPk(
@@ -374,6 +388,28 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
 
             }
         };
+    }
+
+    @Override
+    public List<RawParameters> export(DatabaseTable tableRef) throws DatabaseException
+    {
+        List<RawParameters> ret = new ArrayList<>();
+        Map<String, String> dataMap = new TreeMap<>(namespace(tableRef).get(true));
+
+        Set<String> composedPkList = EtcdUtils.getComposedPkList(dataMap);
+        for (String composedPk : composedPkList)
+        {
+            Map<String, Object> rawObjects = new TreeMap<>();
+            ret.add(buildRawParams(tableRef, dataMap, composedPk, rawObjects));
+        }
+
+        return ret;
+    }
+
+    @Override
+    public void importData(DatabaseTable dbTableRef, List<LinstorSpec> dataListRef) throws DatabaseException
+    {
+        throw new ImplementationError("not implemented");
     }
 
     @Override

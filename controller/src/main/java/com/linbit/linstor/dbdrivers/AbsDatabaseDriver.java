@@ -15,6 +15,8 @@ import com.linbit.linstor.dbdrivers.DbEngine.DataToString;
 import com.linbit.linstor.dbdrivers.interfaces.GenericDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
+import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -27,6 +29,7 @@ import com.linbit.utils.Pair;
 
 import javax.annotation.Nullable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +64,8 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
         @SystemContext AccessContext dbCtxRef,
         ErrorReporter errorReporterRef,
         @Nullable DatabaseTable tableRef,
-        DbEngine dbEngineRef, ObjectProtectionFactory objProtFactoryRef
+        DbEngine dbEngineRef,
+        ObjectProtectionFactory objProtFactoryRef
     )
     {
         errorReporter = errorReporterRef;
@@ -71,6 +75,27 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
         objProtFactory = objProtFactoryRef;
 
         setters = new HashMap<>();
+    }
+
+    @Override
+    public DatabaseTable getDbTable()
+    {
+        return table;
+    }
+
+    @Override
+    public List<LinstorSpec> export() throws DatabaseException
+    {
+        List<RawParameters> export = dbEngine.export(table);
+
+        List<LinstorSpec> specList = new ArrayList<>();
+        for (RawParameters rawParam : export)
+        {
+            LinstorSpec spec = GenCrdCurrent.rawParamToSpec(table, rawParam);
+            specList.add(spec);
+        }
+
+        return specList;
     }
 
     @Override
