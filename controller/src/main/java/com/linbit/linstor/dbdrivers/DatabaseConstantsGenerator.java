@@ -64,7 +64,10 @@ public final class DatabaseConstantsGenerator
     private static final Set<String> IGNORED_TABLES = Collections.singleton(
         "FLYWAY_SCHEMA_HISTORY"
     );
-    private static final String CRD_GROUP = "internal.linstor.linbit.com";
+
+    // If CRG_GROUP ever changes, make sure to check ALL occurrences.
+    // At least truncating old imported CRDs might still depend on this
+    public static final String CRD_GROUP = "internal.linstor.linbit.com";
 
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
 
@@ -593,7 +596,8 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
             appendLine(
-                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> Class<? extends LinstorCrd<SPEC>> databaseTableToCustomResourceClass("
+                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<CRD> " +
+                    "databaseTableToCustomResourceClass("
             );
             try (IndentLevel databaseTableToCrdIndent = new IndentLevel("", "", false, false))
             {
@@ -622,12 +626,42 @@ public final class DatabaseConstantsGenerator
                     }
                 }
             }
+            appendEmptyLine();
+            appendLine("@SuppressWarnings(\"unchecked\")");
+            appendLine(
+                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> " +
+                    "CRD specToCrd(SPEC spec)"
+            );
+            try (IndentLevel specToCrdMethod = new IndentLevel())
+            {
+                appendLine("switch (spec.getDatabaseTable().getName())");
+                try (IndentLevel switchIndent = new IndentLevel())
+                {
+                    for (Table tbl : tbls.values())
+                    {
+                        String tblNameCamelCase = toUpperCamelCase(tbl.name);
+                        String specClassName = tblNameCamelCase + "Spec";
+                        appendLine("case \"%s\":", tbl.name);
+                        try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
+                        {
+                            appendLine("return (CRD) new %s((%s) spec);", tblNameCamelCase, specClassName);
+                        }
+                    }
+                    appendLine("default:");
+                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
+                    {
+                        appendLine("// we are most likely iterating tables the current version does not know about.");
+                        appendLine("return null;");
+                    }
+                }
+            }
 
             // databaseTableToSpecClass
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
             appendLine(
-                "public static <SPEC extends LinstorSpec> Class<SPEC> databaseTableToSpecClass("
+                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<SPEC> " +
+                    "databaseTableToSpecClass("
             );
             try (IndentLevel databaseTableToCrdIndent = new IndentLevel("", "", false, false))
             {
@@ -661,7 +695,7 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
             appendLine(
-                "public static LinstorSpec rawParamToSpec("
+                "public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> SPEC rawParamToSpec("
             );
             try (IndentLevel rawParamToSpecIndent = new IndentLevel("", "", false, false))
             {
@@ -680,7 +714,7 @@ public final class DatabaseConstantsGenerator
                         appendLine("case \"%s\":", tbl.name);
                         try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
                         {
-                            appendLine("return %sSpec.fromRawParameters(rawDataMapRef);", tblNameCamelCase);
+                            appendLine("return (SPEC) %sSpec.fromRawParameters(rawDataMapRef);", tblNameCamelCase);
                         }
                     }
                     appendLine("default:");
@@ -694,33 +728,9 @@ public final class DatabaseConstantsGenerator
 
             appendEmptyLine();
             appendLine("@SuppressWarnings(\"unchecked\")");
-            appendLine("public static <SPEC extends LinstorSpec> LinstorCrd<SPEC> specToCrd(SPEC spec)");
-            try (IndentLevel specToCrdMethod = new IndentLevel())
-            {
-                appendLine("switch (spec.getDatabaseTable().getName())");
-                try (IndentLevel switchIndent = new IndentLevel())
-                {
-                    for (Table tbl : tbls.values())
-                    {
-                        String tblNameCamelCase = toUpperCamelCase(tbl.name);
-                        String specClassName = tblNameCamelCase + "Spec";
-                        appendLine("case \"%s\":", tbl.name);
-                        try (IndentLevel caseIndent = new IndentLevel("", "", false, false))
-                        {
-                            appendLine("return (LinstorCrd<SPEC>) new %s((%s) spec);", tblNameCamelCase, specClassName);
-                        }
-                    }
-                    appendLine("default:");
-                    try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
-                    {
-                        appendLine("// we are most likely iterating tables the current version does not know about.");
-                        appendLine("return null;");
-                    }
-                }
-            }
-
-            appendEmptyLine();
-            appendLine("public static <DATA> LinstorCrd<?> dataToCrd(");
+            appendLine(
+                "public static <DATA, CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> CRD dataToCrd("
+            );
             try (IndentLevel genericCreateMethodParams = new IndentLevel("", "", false, false))
             {
                 appendLine("DatabaseTable table,");
@@ -744,28 +754,23 @@ public final class DatabaseConstantsGenerator
                         appendLine("case \"%s\":", tbl.name);
                         try (IndentLevel caseIndent = new IndentLevel())
                         {
-                            appendLine("return new %s(", tblNameCamelCase);
-                            try (IndentLevel crArgIndent = new IndentLevel("", "", false, false))
+                            appendLine("return (CRD) new %s(", specClassName);
+                            try (IndentLevel specArgIndent = new IndentLevel("", "", false, false))
                             {
-                                appendLine("new %s(", specClassName);
-                                try (IndentLevel specArgIndent = new IndentLevel("", "", false, false))
+                                for (Column clm : tbl.columns)
                                 {
-                                    for (Column clm : tbl.columns)
-                                    {
-                                        appendLine(
-                                            "(%s) setters.get(%s.%s.%s).accept(data),",
-                                            getJavaType(clm),
-                                            DFLT_GEN_DB_TABLES_CLASS_NAME,
-                                            toUpperCamelCase(clm.tbl.name),
-                                            clm.name
-                                        );
-                                        // appendLine("(%s) setters.get(%s.%s).accept(data),", type, clmName);
-                                    }
-                                    cutLastAndAppend(2, "\n");
+                                    appendLine(
+                                        "(%s) setters.get(%s.%s.%s).accept(data),",
+                                        getJavaType(clm),
+                                        DFLT_GEN_DB_TABLES_CLASS_NAME,
+                                        toUpperCamelCase(clm.tbl.name),
+                                        clm.name
+                                    );
+                                    // appendLine("(%s) setters.get(%s.%s).accept(data),", type, clmName);
                                 }
-                                appendLine(")");
+                                cutLastAndAppend(2, "\n");
                             }
-                            appendLine(");");
+                            appendLine(").getCrd();");
                         }
                     }
                     appendLine("default:");
@@ -1031,7 +1036,13 @@ public final class DatabaseConstantsGenerator
             appendLine("tableName = \"%s\"", tbl.name);
         }
         appendLine("@JsonInclude(Include.NON_NULL)");
-        appendLine("public static class %s implements %s", specClassName, CRD_LINSTOR_SPEC_INTERFACE_NAME);
+        appendLine(
+            "public static class %s implements %s<%s, %s>",
+            specClassName,
+            CRD_LINSTOR_SPEC_INTERFACE_NAME,
+            tblNameCamelCase,
+            specClassName
+        );
         try (IndentLevel specClazzIndent = new IndentLevel())
         {
             appendLine("@JsonIgnore private static final long serialVersionUID = %dL;", random.nextLong());
@@ -1063,6 +1074,7 @@ public final class DatabaseConstantsGenerator
 
             appendEmptyLine();
             appendLine("@JsonIgnore private final String formattedPrimaryKey;");
+            appendLine("@JsonIgnore private %s parentCrd;", tblNameCamelCase);
 
             appendEmptyLine();
             if (!pkFound)
@@ -1176,6 +1188,20 @@ public final class DatabaseConstantsGenerator
                 }
             }
 
+            appendEmptyLine();
+            appendLine("@JsonIgnore");
+            appendLine("@Override");
+            appendLine("public %s getCrd()", tblNameCamelCase);
+            try (IndentLevel getCrdMethodIndent = new IndentLevel())
+            {
+                appendLine("if (parentCrd == null)");
+                try (IndentLevel ifNullIndent = new IndentLevel())
+                {
+                    appendLine("parentCrd = new %s(this);", tblNameCamelCase);
+                }
+
+                appendLine("return parentCrd;");
+            }
 
             appendEmptyLine();
             appendLine("@JsonIgnore");
@@ -1274,6 +1300,15 @@ public final class DatabaseConstantsGenerator
             {
                 appendLine("setMetadata(new ObjectMetaBuilder().withName(deriveKey(spec.getLinstorKey())).build());");
                 appendLine("setSpec(spec);");
+            }
+
+            appendEmptyLine();
+            appendLine("@Override");
+            appendLine("public void setSpec(%s specRef)", specClassName);
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("super.setSpec(specRef);");
+                appendLine("spec.parentCrd = this;");
             }
 
             appendEmptyLine();
@@ -1505,7 +1540,7 @@ public final class DatabaseConstantsGenerator
                 try (IndentLevel argumentIndent = new IndentLevel("", "", false, false))
                 {
                     appendLine("k8sDbRef,");
-                    appendLine("%s::databaseTableToCustomResourceClass,", versionedGenCrdClassName);
+                    appendLine("%s::,", versionedGenCrdClassName);
                     appendLine("%s.Rollback.class,", versionedGenCrdClassName);
                     appendLine("%s::newRollbackCrd,", versionedGenCrdClassName);
                     appendLine("%s::specToCrd", versionedGenCrdClassName);

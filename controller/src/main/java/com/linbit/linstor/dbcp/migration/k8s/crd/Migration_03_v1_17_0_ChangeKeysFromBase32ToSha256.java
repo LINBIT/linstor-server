@@ -30,14 +30,16 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
         );
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         // load data from database that needs to change
-        HashMap<DatabaseTable, HashMap<String, LinstorCrd<LinstorSpec>>> loadedData = new HashMap<>();
+        HashMap<DatabaseTable, HashMap<String, LinstorCrd<LinstorSpec<?, ?>>>> loadedData = new HashMap<>();
         for (DatabaseTable dbTable : GeneratedDatabaseTables.ALL_TABLES)
         {
-            HashMap<String, LinstorCrd<LinstorSpec>> crdMap = txFrom.getCrd(dbTable);
+            HashMap<String, LinstorCrd<LinstorSpec<?, ?>>> crdMap;
+            crdMap = (HashMap<String, LinstorCrd<LinstorSpec<?, ?>>>) txFrom.getCrd(dbTable);
             loadedData.put(dbTable, crdMap);
             /*
              * RollbackManager was BROKEN before this fix.
@@ -49,8 +51,8 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
              * although the RollbackManager is now (hopefully) fixed, it cannot create any rollback instance because the
              * old (1.15.0) data are missing critical deserialization-information.
              */
-            K8sResourceClient<LinstorCrd<LinstorSpec>> txFromClient = txFrom
-                .getClient(dbTable);
+            K8sResourceClient<LinstorCrd<LinstorSpec<?, ?>>> txFromClient;
+            txFromClient = (K8sResourceClient<LinstorCrd<LinstorSpec<?, ?>>>) txFrom.getClient(dbTable);
             if (txFromClient != null)
             {
                 /*
@@ -67,12 +69,12 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
 
         // write modified data to database
         ObjectMapper objMapper = new ObjectMapper();
-        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<LinstorSpec>>> oldEntries : loadedData.entrySet())
+        for (Entry<DatabaseTable, HashMap<String, LinstorCrd<LinstorSpec<?, ?>>>> oldEntries : loadedData.entrySet())
         {
             DatabaseTable dbTable = oldEntries.getKey();
-            Class<LinstorSpec> v1_17_0SpecClass = GenCrdV1_17_0.databaseTableToSpecClass(dbTable);
-            HashMap<String, LinstorCrd<LinstorSpec>> oldCrds = oldEntries.getValue();
-            for (LinstorCrd<LinstorSpec> oldCrd : oldCrds.values())
+            Class<LinstorSpec<?, ?>> v1_17_0SpecClass = GenCrdV1_17_0.databaseTableToSpecClass(dbTable);
+            HashMap<String, LinstorCrd<LinstorSpec<?, ?>>> oldCrds = oldEntries.getValue();
+            for (LinstorCrd<LinstorSpec<?, ?>> oldCrd : oldCrds.values())
             {
                 // to make sure to use the correct constructors, we simply render the old spec to json and
                 // let jackson parse that json into the new version/format
@@ -84,7 +86,10 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
 
                 // map.put("@c", v1_17_0SpecClass.getSimpleName());
 
-                LinstorSpec v1_17_0_spec = objMapper.readValue(objMapper.writeValueAsString(map), v1_17_0SpecClass);
+                LinstorSpec<?, ?> v1_17_0_spec = objMapper.readValue(
+                    objMapper.writeValueAsString(map),
+                    v1_17_0SpecClass
+                );
 
                 // Use create here, as we previously removed all values from the DB.
                 txTo.create(dbTable, GenCrdV1_17_0.specToCrd(v1_17_0_spec));

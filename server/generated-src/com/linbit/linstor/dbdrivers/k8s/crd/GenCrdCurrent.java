@@ -150,7 +150,7 @@ public class GenCrdCurrent
     }
 
     @SuppressWarnings("unchecked")
-    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> Class<? extends LinstorCrd<SPEC>> databaseTableToCustomResourceClass(
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<CRD> databaseTableToCustomResourceClass(
         DatabaseTable table
     )
     {
@@ -253,7 +253,108 @@ public class GenCrdCurrent
     }
 
     @SuppressWarnings("unchecked")
-    public static <SPEC extends LinstorSpec> Class<SPEC> databaseTableToSpecClass(
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> CRD specToCrd(SPEC spec)
+    {
+        switch (spec.getDatabaseTable().getName())
+        {
+            case "EBS_REMOTES":
+                return (CRD) new EbsRemotes((EbsRemotesSpec) spec);
+            case "FILES":
+                return (CRD) new Files((FilesSpec) spec);
+            case "KEY_VALUE_STORE":
+                return (CRD) new KeyValueStore((KeyValueStoreSpec) spec);
+            case "LAYER_BCACHE_VOLUMES":
+                return (CRD) new LayerBcacheVolumes((LayerBcacheVolumesSpec) spec);
+            case "LAYER_CACHE_VOLUMES":
+                return (CRD) new LayerCacheVolumes((LayerCacheVolumesSpec) spec);
+            case "LAYER_DRBD_RESOURCES":
+                return (CRD) new LayerDrbdResources((LayerDrbdResourcesSpec) spec);
+            case "LAYER_DRBD_RESOURCE_DEFINITIONS":
+                return (CRD) new LayerDrbdResourceDefinitions((LayerDrbdResourceDefinitionsSpec) spec);
+            case "LAYER_DRBD_VOLUMES":
+                return (CRD) new LayerDrbdVolumes((LayerDrbdVolumesSpec) spec);
+            case "LAYER_DRBD_VOLUME_DEFINITIONS":
+                return (CRD) new LayerDrbdVolumeDefinitions((LayerDrbdVolumeDefinitionsSpec) spec);
+            case "LAYER_LUKS_VOLUMES":
+                return (CRD) new LayerLuksVolumes((LayerLuksVolumesSpec) spec);
+            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
+                return (CRD) new LayerOpenflexResourceDefinitions((LayerOpenflexResourceDefinitionsSpec) spec);
+            case "LAYER_OPENFLEX_VOLUMES":
+                return (CRD) new LayerOpenflexVolumes((LayerOpenflexVolumesSpec) spec);
+            case "LAYER_RESOURCE_IDS":
+                return (CRD) new LayerResourceIds((LayerResourceIdsSpec) spec);
+            case "LAYER_STORAGE_VOLUMES":
+                return (CRD) new LayerStorageVolumes((LayerStorageVolumesSpec) spec);
+            case "LAYER_WRITECACHE_VOLUMES":
+                return (CRD) new LayerWritecacheVolumes((LayerWritecacheVolumesSpec) spec);
+            case "LINSTOR_REMOTES":
+                return (CRD) new LinstorRemotes((LinstorRemotesSpec) spec);
+            case "NODES":
+                return (CRD) new Nodes((NodesSpec) spec);
+            case "NODE_CONNECTIONS":
+                return (CRD) new NodeConnections((NodeConnectionsSpec) spec);
+            case "NODE_NET_INTERFACES":
+                return (CRD) new NodeNetInterfaces((NodeNetInterfacesSpec) spec);
+            case "NODE_STOR_POOL":
+                return (CRD) new NodeStorPool((NodeStorPoolSpec) spec);
+            case "PROPS_CONTAINERS":
+                return (CRD) new PropsContainers((PropsContainersSpec) spec);
+            case "RESOURCES":
+                return (CRD) new Resources((ResourcesSpec) spec);
+            case "RESOURCE_CONNECTIONS":
+                return (CRD) new ResourceConnections((ResourceConnectionsSpec) spec);
+            case "RESOURCE_DEFINITIONS":
+                return (CRD) new ResourceDefinitions((ResourceDefinitionsSpec) spec);
+            case "RESOURCE_GROUPS":
+                return (CRD) new ResourceGroups((ResourceGroupsSpec) spec);
+            case "S3_REMOTES":
+                return (CRD) new S3Remotes((S3RemotesSpec) spec);
+            case "SATELLITES_CAPACITY":
+                return (CRD) new SatellitesCapacity((SatellitesCapacitySpec) spec);
+            case "SCHEDULES":
+                return (CRD) new Schedules((SchedulesSpec) spec);
+            case "SEC_ACCESS_TYPES":
+                return (CRD) new SecAccessTypes((SecAccessTypesSpec) spec);
+            case "SEC_ACL_MAP":
+                return (CRD) new SecAclMap((SecAclMapSpec) spec);
+            case "SEC_CONFIGURATION":
+                return (CRD) new SecConfiguration((SecConfigurationSpec) spec);
+            case "SEC_DFLT_ROLES":
+                return (CRD) new SecDfltRoles((SecDfltRolesSpec) spec);
+            case "SEC_IDENTITIES":
+                return (CRD) new SecIdentities((SecIdentitiesSpec) spec);
+            case "SEC_ID_ROLE_MAP":
+                return (CRD) new SecIdRoleMap((SecIdRoleMapSpec) spec);
+            case "SEC_OBJECT_PROTECTION":
+                return (CRD) new SecObjectProtection((SecObjectProtectionSpec) spec);
+            case "SEC_ROLES":
+                return (CRD) new SecRoles((SecRolesSpec) spec);
+            case "SEC_TYPES":
+                return (CRD) new SecTypes((SecTypesSpec) spec);
+            case "SEC_TYPE_RULES":
+                return (CRD) new SecTypeRules((SecTypeRulesSpec) spec);
+            case "SPACE_HISTORY":
+                return (CRD) new SpaceHistory((SpaceHistorySpec) spec);
+            case "STOR_POOL_DEFINITIONS":
+                return (CRD) new StorPoolDefinitions((StorPoolDefinitionsSpec) spec);
+            case "TRACKING_DATE":
+                return (CRD) new TrackingDate((TrackingDateSpec) spec);
+            case "VOLUMES":
+                return (CRD) new Volumes((VolumesSpec) spec);
+            case "VOLUME_CONNECTIONS":
+                return (CRD) new VolumeConnections((VolumeConnectionsSpec) spec);
+            case "VOLUME_DEFINITIONS":
+                return (CRD) new VolumeDefinitions((VolumeDefinitionsSpec) spec);
+            case "VOLUME_GROUPS":
+                return (CRD) new VolumeGroups((VolumeGroupsSpec) spec);
+            default:
+                // we are most likely iterating tables the current version does not know about.
+                return null;
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<SPEC> databaseTableToSpecClass(
         DatabaseTable table
     )
     {
@@ -356,7 +457,7 @@ public class GenCrdCurrent
     }
 
     @SuppressWarnings("unchecked")
-    public static LinstorSpec rawParamToSpec(
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> SPEC rawParamToSpec(
         DatabaseTable tableRef,
         RawParameters rawDataMapRef
     )
@@ -364,95 +465,95 @@ public class GenCrdCurrent
         switch (tableRef.getName())
         {
             case "EBS_REMOTES":
-                return EbsRemotesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) EbsRemotesSpec.fromRawParameters(rawDataMapRef);
             case "FILES":
-                return FilesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) FilesSpec.fromRawParameters(rawDataMapRef);
             case "KEY_VALUE_STORE":
-                return KeyValueStoreSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) KeyValueStoreSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_BCACHE_VOLUMES":
-                return LayerBcacheVolumesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerBcacheVolumesSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_CACHE_VOLUMES":
-                return LayerCacheVolumesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerCacheVolumesSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_DRBD_RESOURCES":
-                return LayerDrbdResourcesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerDrbdResourcesSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_DRBD_RESOURCE_DEFINITIONS":
-                return LayerDrbdResourceDefinitionsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerDrbdResourceDefinitionsSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_DRBD_VOLUMES":
-                return LayerDrbdVolumesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerDrbdVolumesSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_DRBD_VOLUME_DEFINITIONS":
-                return LayerDrbdVolumeDefinitionsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerDrbdVolumeDefinitionsSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_LUKS_VOLUMES":
-                return LayerLuksVolumesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerLuksVolumesSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-                return LayerOpenflexResourceDefinitionsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerOpenflexResourceDefinitionsSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_OPENFLEX_VOLUMES":
-                return LayerOpenflexVolumesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerOpenflexVolumesSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_RESOURCE_IDS":
-                return LayerResourceIdsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerResourceIdsSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_STORAGE_VOLUMES":
-                return LayerStorageVolumesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerStorageVolumesSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_WRITECACHE_VOLUMES":
-                return LayerWritecacheVolumesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LayerWritecacheVolumesSpec.fromRawParameters(rawDataMapRef);
             case "LINSTOR_REMOTES":
-                return LinstorRemotesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) LinstorRemotesSpec.fromRawParameters(rawDataMapRef);
             case "NODES":
-                return NodesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) NodesSpec.fromRawParameters(rawDataMapRef);
             case "NODE_CONNECTIONS":
-                return NodeConnectionsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) NodeConnectionsSpec.fromRawParameters(rawDataMapRef);
             case "NODE_NET_INTERFACES":
-                return NodeNetInterfacesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) NodeNetInterfacesSpec.fromRawParameters(rawDataMapRef);
             case "NODE_STOR_POOL":
-                return NodeStorPoolSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) NodeStorPoolSpec.fromRawParameters(rawDataMapRef);
             case "PROPS_CONTAINERS":
-                return PropsContainersSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) PropsContainersSpec.fromRawParameters(rawDataMapRef);
             case "RESOURCES":
-                return ResourcesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) ResourcesSpec.fromRawParameters(rawDataMapRef);
             case "RESOURCE_CONNECTIONS":
-                return ResourceConnectionsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) ResourceConnectionsSpec.fromRawParameters(rawDataMapRef);
             case "RESOURCE_DEFINITIONS":
-                return ResourceDefinitionsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) ResourceDefinitionsSpec.fromRawParameters(rawDataMapRef);
             case "RESOURCE_GROUPS":
-                return ResourceGroupsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) ResourceGroupsSpec.fromRawParameters(rawDataMapRef);
             case "S3_REMOTES":
-                return S3RemotesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) S3RemotesSpec.fromRawParameters(rawDataMapRef);
             case "SATELLITES_CAPACITY":
-                return SatellitesCapacitySpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SatellitesCapacitySpec.fromRawParameters(rawDataMapRef);
             case "SCHEDULES":
-                return SchedulesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SchedulesSpec.fromRawParameters(rawDataMapRef);
             case "SEC_ACCESS_TYPES":
-                return SecAccessTypesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SecAccessTypesSpec.fromRawParameters(rawDataMapRef);
             case "SEC_ACL_MAP":
-                return SecAclMapSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SecAclMapSpec.fromRawParameters(rawDataMapRef);
             case "SEC_CONFIGURATION":
-                return SecConfigurationSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SecConfigurationSpec.fromRawParameters(rawDataMapRef);
             case "SEC_DFLT_ROLES":
-                return SecDfltRolesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SecDfltRolesSpec.fromRawParameters(rawDataMapRef);
             case "SEC_IDENTITIES":
-                return SecIdentitiesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SecIdentitiesSpec.fromRawParameters(rawDataMapRef);
             case "SEC_ID_ROLE_MAP":
-                return SecIdRoleMapSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SecIdRoleMapSpec.fromRawParameters(rawDataMapRef);
             case "SEC_OBJECT_PROTECTION":
-                return SecObjectProtectionSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SecObjectProtectionSpec.fromRawParameters(rawDataMapRef);
             case "SEC_ROLES":
-                return SecRolesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SecRolesSpec.fromRawParameters(rawDataMapRef);
             case "SEC_TYPES":
-                return SecTypesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SecTypesSpec.fromRawParameters(rawDataMapRef);
             case "SEC_TYPE_RULES":
-                return SecTypeRulesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SecTypeRulesSpec.fromRawParameters(rawDataMapRef);
             case "SPACE_HISTORY":
-                return SpaceHistorySpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) SpaceHistorySpec.fromRawParameters(rawDataMapRef);
             case "STOR_POOL_DEFINITIONS":
-                return StorPoolDefinitionsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) StorPoolDefinitionsSpec.fromRawParameters(rawDataMapRef);
             case "TRACKING_DATE":
-                return TrackingDateSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) TrackingDateSpec.fromRawParameters(rawDataMapRef);
             case "VOLUMES":
-                return VolumesSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) VolumesSpec.fromRawParameters(rawDataMapRef);
             case "VOLUME_CONNECTIONS":
-                return VolumeConnectionsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) VolumeConnectionsSpec.fromRawParameters(rawDataMapRef);
             case "VOLUME_DEFINITIONS":
-                return VolumeDefinitionsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) VolumeDefinitionsSpec.fromRawParameters(rawDataMapRef);
             case "VOLUME_GROUPS":
-                return VolumeGroupsSpec.fromRawParameters(rawDataMapRef);
+                return (SPEC) VolumeGroupsSpec.fromRawParameters(rawDataMapRef);
             default:
                 // we are most likely iterating tables the current version does not know about.
                 return null;
@@ -460,107 +561,7 @@ public class GenCrdCurrent
     }
 
     @SuppressWarnings("unchecked")
-    public static <SPEC extends LinstorSpec> LinstorCrd<SPEC> specToCrd(SPEC spec)
-    {
-        switch (spec.getDatabaseTable().getName())
-        {
-            case "EBS_REMOTES":
-                return (LinstorCrd<SPEC>) new EbsRemotes((EbsRemotesSpec) spec);
-            case "FILES":
-                return (LinstorCrd<SPEC>) new Files((FilesSpec) spec);
-            case "KEY_VALUE_STORE":
-                return (LinstorCrd<SPEC>) new KeyValueStore((KeyValueStoreSpec) spec);
-            case "LAYER_BCACHE_VOLUMES":
-                return (LinstorCrd<SPEC>) new LayerBcacheVolumes((LayerBcacheVolumesSpec) spec);
-            case "LAYER_CACHE_VOLUMES":
-                return (LinstorCrd<SPEC>) new LayerCacheVolumes((LayerCacheVolumesSpec) spec);
-            case "LAYER_DRBD_RESOURCES":
-                return (LinstorCrd<SPEC>) new LayerDrbdResources((LayerDrbdResourcesSpec) spec);
-            case "LAYER_DRBD_RESOURCE_DEFINITIONS":
-                return (LinstorCrd<SPEC>) new LayerDrbdResourceDefinitions((LayerDrbdResourceDefinitionsSpec) spec);
-            case "LAYER_DRBD_VOLUMES":
-                return (LinstorCrd<SPEC>) new LayerDrbdVolumes((LayerDrbdVolumesSpec) spec);
-            case "LAYER_DRBD_VOLUME_DEFINITIONS":
-                return (LinstorCrd<SPEC>) new LayerDrbdVolumeDefinitions((LayerDrbdVolumeDefinitionsSpec) spec);
-            case "LAYER_LUKS_VOLUMES":
-                return (LinstorCrd<SPEC>) new LayerLuksVolumes((LayerLuksVolumesSpec) spec);
-            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-                return (LinstorCrd<SPEC>) new LayerOpenflexResourceDefinitions((LayerOpenflexResourceDefinitionsSpec) spec);
-            case "LAYER_OPENFLEX_VOLUMES":
-                return (LinstorCrd<SPEC>) new LayerOpenflexVolumes((LayerOpenflexVolumesSpec) spec);
-            case "LAYER_RESOURCE_IDS":
-                return (LinstorCrd<SPEC>) new LayerResourceIds((LayerResourceIdsSpec) spec);
-            case "LAYER_STORAGE_VOLUMES":
-                return (LinstorCrd<SPEC>) new LayerStorageVolumes((LayerStorageVolumesSpec) spec);
-            case "LAYER_WRITECACHE_VOLUMES":
-                return (LinstorCrd<SPEC>) new LayerWritecacheVolumes((LayerWritecacheVolumesSpec) spec);
-            case "LINSTOR_REMOTES":
-                return (LinstorCrd<SPEC>) new LinstorRemotes((LinstorRemotesSpec) spec);
-            case "NODES":
-                return (LinstorCrd<SPEC>) new Nodes((NodesSpec) spec);
-            case "NODE_CONNECTIONS":
-                return (LinstorCrd<SPEC>) new NodeConnections((NodeConnectionsSpec) spec);
-            case "NODE_NET_INTERFACES":
-                return (LinstorCrd<SPEC>) new NodeNetInterfaces((NodeNetInterfacesSpec) spec);
-            case "NODE_STOR_POOL":
-                return (LinstorCrd<SPEC>) new NodeStorPool((NodeStorPoolSpec) spec);
-            case "PROPS_CONTAINERS":
-                return (LinstorCrd<SPEC>) new PropsContainers((PropsContainersSpec) spec);
-            case "RESOURCES":
-                return (LinstorCrd<SPEC>) new Resources((ResourcesSpec) spec);
-            case "RESOURCE_CONNECTIONS":
-                return (LinstorCrd<SPEC>) new ResourceConnections((ResourceConnectionsSpec) spec);
-            case "RESOURCE_DEFINITIONS":
-                return (LinstorCrd<SPEC>) new ResourceDefinitions((ResourceDefinitionsSpec) spec);
-            case "RESOURCE_GROUPS":
-                return (LinstorCrd<SPEC>) new ResourceGroups((ResourceGroupsSpec) spec);
-            case "S3_REMOTES":
-                return (LinstorCrd<SPEC>) new S3Remotes((S3RemotesSpec) spec);
-            case "SATELLITES_CAPACITY":
-                return (LinstorCrd<SPEC>) new SatellitesCapacity((SatellitesCapacitySpec) spec);
-            case "SCHEDULES":
-                return (LinstorCrd<SPEC>) new Schedules((SchedulesSpec) spec);
-            case "SEC_ACCESS_TYPES":
-                return (LinstorCrd<SPEC>) new SecAccessTypes((SecAccessTypesSpec) spec);
-            case "SEC_ACL_MAP":
-                return (LinstorCrd<SPEC>) new SecAclMap((SecAclMapSpec) spec);
-            case "SEC_CONFIGURATION":
-                return (LinstorCrd<SPEC>) new SecConfiguration((SecConfigurationSpec) spec);
-            case "SEC_DFLT_ROLES":
-                return (LinstorCrd<SPEC>) new SecDfltRoles((SecDfltRolesSpec) spec);
-            case "SEC_IDENTITIES":
-                return (LinstorCrd<SPEC>) new SecIdentities((SecIdentitiesSpec) spec);
-            case "SEC_ID_ROLE_MAP":
-                return (LinstorCrd<SPEC>) new SecIdRoleMap((SecIdRoleMapSpec) spec);
-            case "SEC_OBJECT_PROTECTION":
-                return (LinstorCrd<SPEC>) new SecObjectProtection((SecObjectProtectionSpec) spec);
-            case "SEC_ROLES":
-                return (LinstorCrd<SPEC>) new SecRoles((SecRolesSpec) spec);
-            case "SEC_TYPES":
-                return (LinstorCrd<SPEC>) new SecTypes((SecTypesSpec) spec);
-            case "SEC_TYPE_RULES":
-                return (LinstorCrd<SPEC>) new SecTypeRules((SecTypeRulesSpec) spec);
-            case "SPACE_HISTORY":
-                return (LinstorCrd<SPEC>) new SpaceHistory((SpaceHistorySpec) spec);
-            case "STOR_POOL_DEFINITIONS":
-                return (LinstorCrd<SPEC>) new StorPoolDefinitions((StorPoolDefinitionsSpec) spec);
-            case "TRACKING_DATE":
-                return (LinstorCrd<SPEC>) new TrackingDate((TrackingDateSpec) spec);
-            case "VOLUMES":
-                return (LinstorCrd<SPEC>) new Volumes((VolumesSpec) spec);
-            case "VOLUME_CONNECTIONS":
-                return (LinstorCrd<SPEC>) new VolumeConnections((VolumeConnectionsSpec) spec);
-            case "VOLUME_DEFINITIONS":
-                return (LinstorCrd<SPEC>) new VolumeDefinitions((VolumeDefinitionsSpec) spec);
-            case "VOLUME_GROUPS":
-                return (LinstorCrd<SPEC>) new VolumeGroups((VolumeGroupsSpec) spec);
-            default:
-                // we are most likely iterating tables the current version does not know about.
-                return null;
-        }
-    }
-
-    public static <DATA> LinstorCrd<?> dataToCrd(
+    public static <DATA, CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> CRD dataToCrd(
         DatabaseTable table,
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
         DATA data
@@ -571,552 +572,462 @@ public class GenCrdCurrent
         {
             case "EBS_REMOTES":
             {
-                return new EbsRemotes(
-                    new EbsRemotesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.EbsRemotes.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.EbsRemotes.NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.EbsRemotes.DSP_NAME).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.EbsRemotes.FLAGS).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.EbsRemotes.URL).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.EbsRemotes.REGION).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.EbsRemotes.AVAILABILITY_ZONE).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.EbsRemotes.ACCESS_KEY).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.EbsRemotes.SECRET_KEY).accept(data)
-                    )
-                );
+                return (CRD) new EbsRemotesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.EbsRemotes.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.EbsRemotes.NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.EbsRemotes.DSP_NAME).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.EbsRemotes.FLAGS).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.EbsRemotes.URL).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.EbsRemotes.REGION).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.EbsRemotes.AVAILABILITY_ZONE).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.EbsRemotes.ACCESS_KEY).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.EbsRemotes.SECRET_KEY).accept(data)
+                ).getCrd();
             }
             case "FILES":
             {
-                return new Files(
-                    new FilesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.Files.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Files.PATH).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.Files.FLAGS).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.Files.CONTENT).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Files.CONTENT_CHECKSUM).accept(data)
-                    )
-                );
+                return (CRD) new FilesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.Files.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Files.PATH).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.Files.FLAGS).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.Files.CONTENT).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Files.CONTENT_CHECKSUM).accept(data)
+                ).getCrd();
             }
             case "KEY_VALUE_STORE":
             {
-                return new KeyValueStore(
-                    new KeyValueStoreSpec(
-                        (String) setters.get(GeneratedDatabaseTables.KeyValueStore.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.KeyValueStore.KVS_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.KeyValueStore.KVS_DSP_NAME).accept(data)
-                    )
-                );
+                return (CRD) new KeyValueStoreSpec(
+                    (String) setters.get(GeneratedDatabaseTables.KeyValueStore.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.KeyValueStore.KVS_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.KeyValueStore.KVS_DSP_NAME).accept(data)
+                ).getCrd();
             }
             case "LAYER_BCACHE_VOLUMES":
             {
-                return new LayerBcacheVolumes(
-                    new LayerBcacheVolumesSpec(
-                        (int) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.LAYER_RESOURCE_ID).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.VLM_NR).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.POOL_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.DEV_UUID).accept(data)
-                    )
-                );
+                return (CRD) new LayerBcacheVolumesSpec(
+                    (int) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.LAYER_RESOURCE_ID).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.VLM_NR).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.POOL_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.DEV_UUID).accept(data)
+                ).getCrd();
             }
             case "LAYER_CACHE_VOLUMES":
             {
-                return new LayerCacheVolumes(
-                    new LayerCacheVolumesSpec(
-                        (int) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.LAYER_RESOURCE_ID).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.VLM_NR).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_CACHE).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_META).accept(data)
-                    )
-                );
+                return (CRD) new LayerCacheVolumesSpec(
+                    (int) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.LAYER_RESOURCE_ID).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.VLM_NR).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_CACHE).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_META).accept(data)
+                ).getCrd();
             }
             case "LAYER_DRBD_RESOURCES":
             {
-                return new LayerDrbdResources(
-                    new LayerDrbdResourcesSpec(
-                        (int) setters.get(GeneratedDatabaseTables.LayerDrbdResources.LAYER_RESOURCE_ID).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerDrbdResources.PEER_SLOTS).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerDrbdResources.AL_STRIPES).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.LayerDrbdResources.AL_STRIPE_SIZE).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.LayerDrbdResources.FLAGS).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerDrbdResources.NODE_ID).accept(data)
-                    )
-                );
+                return (CRD) new LayerDrbdResourcesSpec(
+                    (int) setters.get(GeneratedDatabaseTables.LayerDrbdResources.LAYER_RESOURCE_ID).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerDrbdResources.PEER_SLOTS).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerDrbdResources.AL_STRIPES).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.LayerDrbdResources.AL_STRIPE_SIZE).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.LayerDrbdResources.FLAGS).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerDrbdResources.NODE_ID).accept(data)
+                ).getCrd();
             }
             case "LAYER_DRBD_RESOURCE_DEFINITIONS":
             {
-                return new LayerDrbdResourceDefinitions(
-                    new LayerDrbdResourceDefinitionsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.RESOURCE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SNAPSHOT_NAME).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.PEER_SLOTS).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.AL_STRIPES).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.AL_STRIPE_SIZE).accept(data),
-                        (Integer) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TCP_PORT).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TRANSPORT_TYPE).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SECRET).accept(data)
-                    )
-                );
+                return (CRD) new LayerDrbdResourceDefinitionsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.RESOURCE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.RESOURCE_NAME_SUFFIX).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SNAPSHOT_NAME).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.PEER_SLOTS).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.AL_STRIPES).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.AL_STRIPE_SIZE).accept(data),
+                    (Integer) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TCP_PORT).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TRANSPORT_TYPE).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SECRET).accept(data)
+                ).getCrd();
             }
             case "LAYER_DRBD_VOLUMES":
             {
-                return new LayerDrbdVolumes(
-                    new LayerDrbdVolumesSpec(
-                        (int) setters.get(GeneratedDatabaseTables.LayerDrbdVolumes.LAYER_RESOURCE_ID).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerDrbdVolumes.VLM_NR).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumes.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumes.POOL_NAME).accept(data)
-                    )
-                );
+                return (CRD) new LayerDrbdVolumesSpec(
+                    (int) setters.get(GeneratedDatabaseTables.LayerDrbdVolumes.LAYER_RESOURCE_ID).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerDrbdVolumes.VLM_NR).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumes.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumes.POOL_NAME).accept(data)
+                ).getCrd();
             }
             case "LAYER_DRBD_VOLUME_DEFINITIONS":
             {
-                return new LayerDrbdVolumeDefinitions(
-                    new LayerDrbdVolumeDefinitionsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.RESOURCE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.RESOURCE_NAME_SUFFIX).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.SNAPSHOT_NAME).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_NR).accept(data),
-                        (Integer) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_MINOR_NR).accept(data)
-                    )
-                );
+                return (CRD) new LayerDrbdVolumeDefinitionsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.RESOURCE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.RESOURCE_NAME_SUFFIX).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.SNAPSHOT_NAME).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_NR).accept(data),
+                    (Integer) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_MINOR_NR).accept(data)
+                ).getCrd();
             }
             case "LAYER_LUKS_VOLUMES":
             {
-                return new LayerLuksVolumes(
-                    new LayerLuksVolumesSpec(
-                        (int) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.LAYER_RESOURCE_ID).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.VLM_NR).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.ENCRYPTED_PASSWORD).accept(data)
-                    )
-                );
+                return (CRD) new LayerLuksVolumesSpec(
+                    (int) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.LAYER_RESOURCE_ID).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.VLM_NR).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.ENCRYPTED_PASSWORD).accept(data)
+                ).getCrd();
             }
             case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
             {
-                return new LayerOpenflexResourceDefinitions(
-                    new LayerOpenflexResourceDefinitionsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.SNAPSHOT_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME_SUFFIX).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.NQN).accept(data)
-                    )
-                );
+                return (CRD) new LayerOpenflexResourceDefinitionsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.SNAPSHOT_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME_SUFFIX).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.NQN).accept(data)
+                ).getCrd();
             }
             case "LAYER_OPENFLEX_VOLUMES":
             {
-                return new LayerOpenflexVolumes(
-                    new LayerOpenflexVolumesSpec(
-                        (int) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.LAYER_RESOURCE_ID).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.VLM_NR).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.POOL_NAME).accept(data)
-                    )
-                );
+                return (CRD) new LayerOpenflexVolumesSpec(
+                    (int) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.LAYER_RESOURCE_ID).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.VLM_NR).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.POOL_NAME).accept(data)
+                ).getCrd();
             }
             case "LAYER_RESOURCE_IDS":
             {
-                return new LayerResourceIds(
-                    new LayerResourceIdsSpec(
-                        (int) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_ID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.RESOURCE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.SNAPSHOT_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_KIND).accept(data),
-                        (Integer) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_PARENT_ID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUFFIX).accept(data),
-                        (boolean) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUSPENDED).accept(data)
-                    )
-                );
+                return (CRD) new LayerResourceIdsSpec(
+                    (int) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_ID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.RESOURCE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.SNAPSHOT_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_KIND).accept(data),
+                    (Integer) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_PARENT_ID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUFFIX).accept(data),
+                    (boolean) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUSPENDED).accept(data)
+                ).getCrd();
             }
             case "LAYER_STORAGE_VOLUMES":
             {
-                return new LayerStorageVolumes(
-                    new LayerStorageVolumesSpec(
-                        (int) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.LAYER_RESOURCE_ID).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.VLM_NR).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.PROVIDER_KIND).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.STOR_POOL_NAME).accept(data)
-                    )
-                );
+                return (CRD) new LayerStorageVolumesSpec(
+                    (int) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.LAYER_RESOURCE_ID).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.VLM_NR).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.PROVIDER_KIND).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.STOR_POOL_NAME).accept(data)
+                ).getCrd();
             }
             case "LAYER_WRITECACHE_VOLUMES":
             {
-                return new LayerWritecacheVolumes(
-                    new LayerWritecacheVolumesSpec(
-                        (int) setters.get(GeneratedDatabaseTables.LayerWritecacheVolumes.LAYER_RESOURCE_ID).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.LayerWritecacheVolumes.VLM_NR).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerWritecacheVolumes.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LayerWritecacheVolumes.POOL_NAME).accept(data)
-                    )
-                );
+                return (CRD) new LayerWritecacheVolumesSpec(
+                    (int) setters.get(GeneratedDatabaseTables.LayerWritecacheVolumes.LAYER_RESOURCE_ID).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.LayerWritecacheVolumes.VLM_NR).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerWritecacheVolumes.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LayerWritecacheVolumes.POOL_NAME).accept(data)
+                ).getCrd();
             }
             case "LINSTOR_REMOTES":
             {
-                return new LinstorRemotes(
-                    new LinstorRemotesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.DSP_NAME).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.LinstorRemotes.FLAGS).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.URL).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.LinstorRemotes.ENCRYPTED_PASSPHRASE).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.CLUSTER_ID).accept(data)
-                    )
-                );
+                return (CRD) new LinstorRemotesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.DSP_NAME).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.LinstorRemotes.FLAGS).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.URL).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.LinstorRemotes.ENCRYPTED_PASSPHRASE).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.CLUSTER_ID).accept(data)
+                ).getCrd();
             }
             case "NODES":
             {
-                return new Nodes(
-                    new NodesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.Nodes.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Nodes.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Nodes.NODE_DSP_NAME).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.Nodes.NODE_FLAGS).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.Nodes.NODE_TYPE).accept(data)
-                    )
-                );
+                return (CRD) new NodesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.Nodes.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Nodes.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Nodes.NODE_DSP_NAME).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.Nodes.NODE_FLAGS).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.Nodes.NODE_TYPE).accept(data)
+                ).getCrd();
             }
             case "NODE_CONNECTIONS":
             {
-                return new NodeConnections(
-                    new NodeConnectionsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.NodeConnections.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeConnections.NODE_NAME_SRC).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeConnections.NODE_NAME_DST).accept(data)
-                    )
-                );
+                return (CRD) new NodeConnectionsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.NodeConnections.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeConnections.NODE_NAME_SRC).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeConnections.NODE_NAME_DST).accept(data)
+                ).getCrd();
             }
             case "NODE_NET_INTERFACES":
             {
-                return new NodeNetInterfaces(
-                    new NodeNetInterfacesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NET_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NET_DSP_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.INET_ADDRESS).accept(data),
-                        (Short) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_PORT).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_ENCR_TYPE).accept(data)
-                    )
-                );
+                return (CRD) new NodeNetInterfacesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NET_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.NODE_NET_DSP_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.INET_ADDRESS).accept(data),
+                    (Short) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_PORT).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_ENCR_TYPE).accept(data)
+                ).getCrd();
             }
             case "NODE_STOR_POOL":
             {
-                return new NodeStorPool(
-                    new NodeStorPoolSpec(
-                        (String) setters.get(GeneratedDatabaseTables.NodeStorPool.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeStorPool.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeStorPool.POOL_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeStorPool.DRIVER_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_DSP_NAME).accept(data),
-                        (boolean) setters.get(GeneratedDatabaseTables.NodeStorPool.EXTERNAL_LOCKING).accept(data)
-                    )
-                );
+                return (CRD) new NodeStorPoolSpec(
+                    (String) setters.get(GeneratedDatabaseTables.NodeStorPool.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeStorPool.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeStorPool.POOL_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeStorPool.DRIVER_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_DSP_NAME).accept(data),
+                    (boolean) setters.get(GeneratedDatabaseTables.NodeStorPool.EXTERNAL_LOCKING).accept(data)
+                ).getCrd();
             }
             case "PROPS_CONTAINERS":
             {
-                return new PropsContainers(
-                    new PropsContainersSpec(
-                        (String) setters.get(GeneratedDatabaseTables.PropsContainers.PROPS_INSTANCE).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.PropsContainers.PROP_KEY).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.PropsContainers.PROP_VALUE).accept(data)
-                    )
-                );
+                return (CRD) new PropsContainersSpec(
+                    (String) setters.get(GeneratedDatabaseTables.PropsContainers.PROPS_INSTANCE).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.PropsContainers.PROP_KEY).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.PropsContainers.PROP_VALUE).accept(data)
+                ).getCrd();
             }
             case "RESOURCES":
             {
-                return new Resources(
-                    new ResourcesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.Resources.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Resources.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Resources.RESOURCE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Resources.SNAPSHOT_NAME).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.Resources.RESOURCE_FLAGS).accept(data),
-                        (Long) setters.get(GeneratedDatabaseTables.Resources.CREATE_TIMESTAMP).accept(data)
-                    )
-                );
+                return (CRD) new ResourcesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.Resources.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Resources.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Resources.RESOURCE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Resources.SNAPSHOT_NAME).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.Resources.RESOURCE_FLAGS).accept(data),
+                    (Long) setters.get(GeneratedDatabaseTables.Resources.CREATE_TIMESTAMP).accept(data)
+                ).getCrd();
             }
             case "RESOURCE_CONNECTIONS":
             {
-                return new ResourceConnections(
-                    new ResourceConnectionsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.ResourceConnections.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceConnections.NODE_NAME_SRC).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceConnections.NODE_NAME_DST).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceConnections.RESOURCE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceConnections.SNAPSHOT_NAME).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.ResourceConnections.FLAGS).accept(data),
-                        (Integer) setters.get(GeneratedDatabaseTables.ResourceConnections.TCP_PORT).accept(data)
-                    )
-                );
+                return (CRD) new ResourceConnectionsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.ResourceConnections.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceConnections.NODE_NAME_SRC).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceConnections.NODE_NAME_DST).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceConnections.RESOURCE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceConnections.SNAPSHOT_NAME).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.ResourceConnections.FLAGS).accept(data),
+                    (Integer) setters.get(GeneratedDatabaseTables.ResourceConnections.TCP_PORT).accept(data)
+                ).getCrd();
             }
             case "RESOURCE_DEFINITIONS":
             {
-                return new ResourceDefinitions(
-                    new ResourceDefinitionsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_DSP_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_DSP_NAME).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_FLAGS).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.LAYER_STACK).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_EXTERNAL_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_GROUP_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.PARENT_UUID).accept(data)
-                    )
-                );
+                return (CRD) new ResourceDefinitionsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_DSP_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.SNAPSHOT_DSP_NAME).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_FLAGS).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.LAYER_STACK).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_EXTERNAL_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_GROUP_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.PARENT_UUID).accept(data)
+                ).getCrd();
             }
             case "RESOURCE_GROUPS":
             {
-                return new ResourceGroups(
-                    new ResourceGroupsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_DSP_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.DESCRIPTION).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.LAYER_STACK).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.ResourceGroups.REPLICA_COUNT).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.NODE_NAME_LIST).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.POOL_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.POOL_NAME_DISKLESS).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_REGEX).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_LIST).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_SAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_DIFFERENT).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.ResourceGroups.ALLOWED_PROVIDER_LIST).accept(data),
-                        (Boolean) setters.get(GeneratedDatabaseTables.ResourceGroups.DISKLESS_ON_REMAINING).accept(data)
-                    )
-                );
+                return (CRD) new ResourceGroupsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_DSP_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.DESCRIPTION).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.LAYER_STACK).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.ResourceGroups.REPLICA_COUNT).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.NODE_NAME_LIST).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.POOL_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.POOL_NAME_DISKLESS).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_REGEX).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_LIST).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_SAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_DIFFERENT).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.ResourceGroups.ALLOWED_PROVIDER_LIST).accept(data),
+                    (Boolean) setters.get(GeneratedDatabaseTables.ResourceGroups.DISKLESS_ON_REMAINING).accept(data)
+                ).getCrd();
             }
             case "S3_REMOTES":
             {
-                return new S3Remotes(
-                    new S3RemotesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.S3Remotes.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.S3Remotes.NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.S3Remotes.DSP_NAME).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.S3Remotes.FLAGS).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.S3Remotes.ENDPOINT).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.S3Remotes.BUCKET).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.S3Remotes.REGION).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.S3Remotes.ACCESS_KEY).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.S3Remotes.SECRET_KEY).accept(data)
-                    )
-                );
+                return (CRD) new S3RemotesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.S3Remotes.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.S3Remotes.NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.S3Remotes.DSP_NAME).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.S3Remotes.FLAGS).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.S3Remotes.ENDPOINT).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.S3Remotes.BUCKET).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.S3Remotes.REGION).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.S3Remotes.ACCESS_KEY).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.S3Remotes.SECRET_KEY).accept(data)
+                ).getCrd();
             }
             case "SATELLITES_CAPACITY":
             {
-                return new SatellitesCapacity(
-                    new SatellitesCapacitySpec(
-                        (String) setters.get(GeneratedDatabaseTables.SatellitesCapacity.NODE_NAME).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.SatellitesCapacity.CAPACITY).accept(data),
-                        (boolean) setters.get(GeneratedDatabaseTables.SatellitesCapacity.FAIL_FLAG).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.SatellitesCapacity.ALLOCATED).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.SatellitesCapacity.USABLE).accept(data)
-                    )
-                );
+                return (CRD) new SatellitesCapacitySpec(
+                    (String) setters.get(GeneratedDatabaseTables.SatellitesCapacity.NODE_NAME).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.SatellitesCapacity.CAPACITY).accept(data),
+                    (boolean) setters.get(GeneratedDatabaseTables.SatellitesCapacity.FAIL_FLAG).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.SatellitesCapacity.ALLOCATED).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.SatellitesCapacity.USABLE).accept(data)
+                ).getCrd();
             }
             case "SCHEDULES":
             {
-                return new Schedules(
-                    new SchedulesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.Schedules.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Schedules.NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Schedules.DSP_NAME).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.Schedules.FLAGS).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Schedules.FULL_CRON).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Schedules.INC_CRON).accept(data),
-                        (Integer) setters.get(GeneratedDatabaseTables.Schedules.KEEP_LOCAL).accept(data),
-                        (Integer) setters.get(GeneratedDatabaseTables.Schedules.KEEP_REMOTE).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.Schedules.ON_FAILURE).accept(data),
-                        (Integer) setters.get(GeneratedDatabaseTables.Schedules.MAX_RETRIES).accept(data)
-                    )
-                );
+                return (CRD) new SchedulesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.Schedules.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Schedules.NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Schedules.DSP_NAME).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.Schedules.FLAGS).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Schedules.FULL_CRON).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Schedules.INC_CRON).accept(data),
+                    (Integer) setters.get(GeneratedDatabaseTables.Schedules.KEEP_LOCAL).accept(data),
+                    (Integer) setters.get(GeneratedDatabaseTables.Schedules.KEEP_REMOTE).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.Schedules.ON_FAILURE).accept(data),
+                    (Integer) setters.get(GeneratedDatabaseTables.Schedules.MAX_RETRIES).accept(data)
+                ).getCrd();
             }
             case "SEC_ACCESS_TYPES":
             {
-                return new SecAccessTypes(
-                    new SecAccessTypesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_NAME).accept(data),
-                        (short) setters.get(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_VALUE).accept(data)
-                    )
-                );
+                return (CRD) new SecAccessTypesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_NAME).accept(data),
+                    (short) setters.get(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_VALUE).accept(data)
+                ).getCrd();
             }
             case "SEC_ACL_MAP":
             {
-                return new SecAclMap(
-                    new SecAclMapSpec(
-                        (String) setters.get(GeneratedDatabaseTables.SecAclMap.OBJECT_PATH).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecAclMap.ROLE_NAME).accept(data),
-                        (short) setters.get(GeneratedDatabaseTables.SecAclMap.ACCESS_TYPE).accept(data)
-                    )
-                );
+                return (CRD) new SecAclMapSpec(
+                    (String) setters.get(GeneratedDatabaseTables.SecAclMap.OBJECT_PATH).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecAclMap.ROLE_NAME).accept(data),
+                    (short) setters.get(GeneratedDatabaseTables.SecAclMap.ACCESS_TYPE).accept(data)
+                ).getCrd();
             }
             case "SEC_CONFIGURATION":
             {
-                return new SecConfiguration(
-                    new SecConfigurationSpec(
-                        (String) setters.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_KEY).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_DSP_KEY).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_VALUE).accept(data)
-                    )
-                );
+                return (CRD) new SecConfigurationSpec(
+                    (String) setters.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_KEY).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_DSP_KEY).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_VALUE).accept(data)
+                ).getCrd();
             }
             case "SEC_DFLT_ROLES":
             {
-                return new SecDfltRoles(
-                    new SecDfltRolesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.SecDfltRoles.IDENTITY_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecDfltRoles.ROLE_NAME).accept(data)
-                    )
-                );
+                return (CRD) new SecDfltRolesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.SecDfltRoles.IDENTITY_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecDfltRoles.ROLE_NAME).accept(data)
+                ).getCrd();
             }
             case "SEC_IDENTITIES":
             {
-                return new SecIdentities(
-                    new SecIdentitiesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.SecIdentities.IDENTITY_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecIdentities.IDENTITY_DSP_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecIdentities.PASS_SALT).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecIdentities.PASS_HASH).accept(data),
-                        (boolean) setters.get(GeneratedDatabaseTables.SecIdentities.ID_ENABLED).accept(data),
-                        (boolean) setters.get(GeneratedDatabaseTables.SecIdentities.ID_LOCKED).accept(data)
-                    )
-                );
+                return (CRD) new SecIdentitiesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.SecIdentities.IDENTITY_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecIdentities.IDENTITY_DSP_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecIdentities.PASS_SALT).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecIdentities.PASS_HASH).accept(data),
+                    (boolean) setters.get(GeneratedDatabaseTables.SecIdentities.ID_ENABLED).accept(data),
+                    (boolean) setters.get(GeneratedDatabaseTables.SecIdentities.ID_LOCKED).accept(data)
+                ).getCrd();
             }
             case "SEC_ID_ROLE_MAP":
             {
-                return new SecIdRoleMap(
-                    new SecIdRoleMapSpec(
-                        (String) setters.get(GeneratedDatabaseTables.SecIdRoleMap.IDENTITY_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecIdRoleMap.ROLE_NAME).accept(data)
-                    )
-                );
+                return (CRD) new SecIdRoleMapSpec(
+                    (String) setters.get(GeneratedDatabaseTables.SecIdRoleMap.IDENTITY_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecIdRoleMap.ROLE_NAME).accept(data)
+                ).getCrd();
             }
             case "SEC_OBJECT_PROTECTION":
             {
-                return new SecObjectProtection(
-                    new SecObjectProtectionSpec(
-                        (String) setters.get(GeneratedDatabaseTables.SecObjectProtection.OBJECT_PATH).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecObjectProtection.CREATOR_IDENTITY_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecObjectProtection.OWNER_ROLE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecObjectProtection.SECURITY_TYPE_NAME).accept(data)
-                    )
-                );
+                return (CRD) new SecObjectProtectionSpec(
+                    (String) setters.get(GeneratedDatabaseTables.SecObjectProtection.OBJECT_PATH).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecObjectProtection.CREATOR_IDENTITY_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecObjectProtection.OWNER_ROLE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecObjectProtection.SECURITY_TYPE_NAME).accept(data)
+                ).getCrd();
             }
             case "SEC_ROLES":
             {
-                return new SecRoles(
-                    new SecRolesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.SecRoles.ROLE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecRoles.ROLE_DSP_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecRoles.DOMAIN_NAME).accept(data),
-                        (boolean) setters.get(GeneratedDatabaseTables.SecRoles.ROLE_ENABLED).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.SecRoles.ROLE_PRIVILEGES).accept(data)
-                    )
-                );
+                return (CRD) new SecRolesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.SecRoles.ROLE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecRoles.ROLE_DSP_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecRoles.DOMAIN_NAME).accept(data),
+                    (boolean) setters.get(GeneratedDatabaseTables.SecRoles.ROLE_ENABLED).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.SecRoles.ROLE_PRIVILEGES).accept(data)
+                ).getCrd();
             }
             case "SEC_TYPES":
             {
-                return new SecTypes(
-                    new SecTypesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.SecTypes.TYPE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecTypes.TYPE_DSP_NAME).accept(data),
-                        (boolean) setters.get(GeneratedDatabaseTables.SecTypes.TYPE_ENABLED).accept(data)
-                    )
-                );
+                return (CRD) new SecTypesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.SecTypes.TYPE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecTypes.TYPE_DSP_NAME).accept(data),
+                    (boolean) setters.get(GeneratedDatabaseTables.SecTypes.TYPE_ENABLED).accept(data)
+                ).getCrd();
             }
             case "SEC_TYPE_RULES":
             {
-                return new SecTypeRules(
-                    new SecTypeRulesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.SecTypeRules.DOMAIN_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.SecTypeRules.TYPE_NAME).accept(data),
-                        (short) setters.get(GeneratedDatabaseTables.SecTypeRules.ACCESS_TYPE).accept(data)
-                    )
-                );
+                return (CRD) new SecTypeRulesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.SecTypeRules.DOMAIN_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.SecTypeRules.TYPE_NAME).accept(data),
+                    (short) setters.get(GeneratedDatabaseTables.SecTypeRules.ACCESS_TYPE).accept(data)
+                ).getCrd();
             }
             case "SPACE_HISTORY":
             {
-                return new SpaceHistory(
-                    new SpaceHistorySpec(
-                        (Date) setters.get(GeneratedDatabaseTables.SpaceHistory.ENTRY_DATE).accept(data),
-                        (byte[]) setters.get(GeneratedDatabaseTables.SpaceHistory.CAPACITY).accept(data)
-                    )
-                );
+                return (CRD) new SpaceHistorySpec(
+                    (Date) setters.get(GeneratedDatabaseTables.SpaceHistory.ENTRY_DATE).accept(data),
+                    (byte[]) setters.get(GeneratedDatabaseTables.SpaceHistory.CAPACITY).accept(data)
+                ).getCrd();
             }
             case "STOR_POOL_DEFINITIONS":
             {
-                return new StorPoolDefinitions(
-                    new StorPoolDefinitionsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.StorPoolDefinitions.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.StorPoolDefinitions.POOL_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.StorPoolDefinitions.POOL_DSP_NAME).accept(data)
-                    )
-                );
+                return (CRD) new StorPoolDefinitionsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.StorPoolDefinitions.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.StorPoolDefinitions.POOL_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.StorPoolDefinitions.POOL_DSP_NAME).accept(data)
+                ).getCrd();
             }
             case "TRACKING_DATE":
             {
-                return new TrackingDate(
-                    new TrackingDateSpec(
-                        (Date) setters.get(GeneratedDatabaseTables.TrackingDate.ENTRY_DATE).accept(data)
-                    )
-                );
+                return (CRD) new TrackingDateSpec(
+                    (Date) setters.get(GeneratedDatabaseTables.TrackingDate.ENTRY_DATE).accept(data)
+                ).getCrd();
             }
             case "VOLUMES":
             {
-                return new Volumes(
-                    new VolumesSpec(
-                        (String) setters.get(GeneratedDatabaseTables.Volumes.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Volumes.NODE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Volumes.RESOURCE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.Volumes.SNAPSHOT_NAME).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.Volumes.VLM_NR).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.Volumes.VLM_FLAGS).accept(data)
-                    )
-                );
+                return (CRD) new VolumesSpec(
+                    (String) setters.get(GeneratedDatabaseTables.Volumes.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Volumes.NODE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Volumes.RESOURCE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.Volumes.SNAPSHOT_NAME).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.Volumes.VLM_NR).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.Volumes.VLM_FLAGS).accept(data)
+                ).getCrd();
             }
             case "VOLUME_CONNECTIONS":
             {
-                return new VolumeConnections(
-                    new VolumeConnectionsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.VolumeConnections.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.VolumeConnections.NODE_NAME_SRC).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.VolumeConnections.NODE_NAME_DST).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.VolumeConnections.RESOURCE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.VolumeConnections.SNAPSHOT_NAME).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.VolumeConnections.VLM_NR).accept(data)
-                    )
-                );
+                return (CRD) new VolumeConnectionsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.VolumeConnections.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.VolumeConnections.NODE_NAME_SRC).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.VolumeConnections.NODE_NAME_DST).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.VolumeConnections.RESOURCE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.VolumeConnections.SNAPSHOT_NAME).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.VolumeConnections.VLM_NR).accept(data)
+                ).getCrd();
             }
             case "VOLUME_DEFINITIONS":
             {
-                return new VolumeDefinitions(
-                    new VolumeDefinitionsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.VolumeDefinitions.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.VolumeDefinitions.RESOURCE_NAME).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.VolumeDefinitions.SNAPSHOT_NAME).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_NR).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_SIZE).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_FLAGS).accept(data)
-                    )
-                );
+                return (CRD) new VolumeDefinitionsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.VolumeDefinitions.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.VolumeDefinitions.RESOURCE_NAME).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.VolumeDefinitions.SNAPSHOT_NAME).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_NR).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_SIZE).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_FLAGS).accept(data)
+                ).getCrd();
             }
             case "VOLUME_GROUPS":
             {
-                return new VolumeGroups(
-                    new VolumeGroupsSpec(
-                        (String) setters.get(GeneratedDatabaseTables.VolumeGroups.UUID).accept(data),
-                        (String) setters.get(GeneratedDatabaseTables.VolumeGroups.RESOURCE_GROUP_NAME).accept(data),
-                        (int) setters.get(GeneratedDatabaseTables.VolumeGroups.VLM_NR).accept(data),
-                        (long) setters.get(GeneratedDatabaseTables.VolumeGroups.FLAGS).accept(data)
-                    )
-                );
+                return (CRD) new VolumeGroupsSpec(
+                    (String) setters.get(GeneratedDatabaseTables.VolumeGroups.UUID).accept(data),
+                    (String) setters.get(GeneratedDatabaseTables.VolumeGroups.RESOURCE_GROUP_NAME).accept(data),
+                    (int) setters.get(GeneratedDatabaseTables.VolumeGroups.VLM_NR).accept(data),
+                    (long) setters.get(GeneratedDatabaseTables.VolumeGroups.FLAGS).accept(data)
+                ).getCrd();
             }
             default:
                 // we are most likely iterating tables the current version does not know about.
@@ -1372,12 +1283,13 @@ public class GenCrdCurrent
         tableName = "EBS_REMOTES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class EbsRemotesSpec implements LinstorSpec
+    public static class EbsRemotesSpec implements LinstorSpec<EbsRemotes, EbsRemotesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 6754194544892091305L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private EbsRemotes parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("name") public final String name; // PK
@@ -1432,6 +1344,17 @@ public class GenCrdCurrent
                 EbsRemotesSpec.PK_FORMAT,
                 name
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public EbsRemotes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new EbsRemotes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -1517,6 +1440,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(EbsRemotesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -1561,12 +1491,13 @@ public class GenCrdCurrent
         tableName = "FILES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class FilesSpec implements LinstorSpec
+    public static class FilesSpec implements LinstorSpec<Files, FilesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 7199399309023805942L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private Files parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("path") public final String path; // PK
@@ -1605,6 +1536,17 @@ public class GenCrdCurrent
                 FilesSpec.PK_FORMAT,
                 path
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public Files getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new Files(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -1678,6 +1620,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(FilesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -1718,12 +1667,13 @@ public class GenCrdCurrent
         tableName = "KEY_VALUE_STORE"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class KeyValueStoreSpec implements LinstorSpec
+    public static class KeyValueStoreSpec implements LinstorSpec<KeyValueStore, KeyValueStoreSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -8621993315113862570L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private KeyValueStore parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("kvs_name") public final String kvsName; // PK
@@ -1754,6 +1704,17 @@ public class GenCrdCurrent
                 KeyValueStoreSpec.PK_FORMAT,
                 kvsName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public KeyValueStore getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new KeyValueStore(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -1821,6 +1782,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(KeyValueStoreSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -1865,12 +1833,13 @@ public class GenCrdCurrent
         tableName = "LAYER_BCACHE_VOLUMES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerBcacheVolumesSpec implements LinstorSpec
+    public static class LayerBcacheVolumesSpec implements LinstorSpec<LayerBcacheVolumes, LayerBcacheVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -7374485150035984167L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerBcacheVolumes parentCrd;
 
         @JsonProperty("layer_resource_id") public final int layerResourceId; // PK
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
@@ -1910,6 +1879,17 @@ public class GenCrdCurrent
                 layerResourceId,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerBcacheVolumes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerBcacheVolumes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -1983,6 +1963,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerBcacheVolumesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -2027,12 +2014,13 @@ public class GenCrdCurrent
         tableName = "LAYER_CACHE_VOLUMES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerCacheVolumesSpec implements LinstorSpec
+    public static class LayerCacheVolumesSpec implements LinstorSpec<LayerCacheVolumes, LayerCacheVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -5736491652032388553L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerCacheVolumes parentCrd;
 
         @JsonProperty("layer_resource_id") public final int layerResourceId; // PK
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
@@ -2072,6 +2060,17 @@ public class GenCrdCurrent
                 layerResourceId,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerCacheVolumes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerCacheVolumes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -2145,6 +2144,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerCacheVolumesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -2191,12 +2197,13 @@ public class GenCrdCurrent
         tableName = "LAYER_DRBD_RESOURCES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerDrbdResourcesSpec implements LinstorSpec
+    public static class LayerDrbdResourcesSpec implements LinstorSpec<LayerDrbdResources, LayerDrbdResourcesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 1049541184939447591L;
         @JsonIgnore private static final String PK_FORMAT = "%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerDrbdResources parentCrd;
 
         @JsonProperty("layer_resource_id") public final int layerResourceId; // PK
         @JsonProperty("peer_slots") public final int peerSlots;
@@ -2239,6 +2246,17 @@ public class GenCrdCurrent
                 LayerDrbdResourcesSpec.PK_FORMAT,
                 layerResourceId
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerDrbdResources getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerDrbdResources(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -2315,6 +2333,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerDrbdResourcesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -2367,12 +2392,13 @@ public class GenCrdCurrent
         tableName = "LAYER_DRBD_RESOURCE_DEFINITIONS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerDrbdResourceDefinitionsSpec implements LinstorSpec
+    public static class LayerDrbdResourceDefinitionsSpec implements LinstorSpec<LayerDrbdResourceDefinitions, LayerDrbdResourceDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 9175273669688005872L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerDrbdResourceDefinitions parentCrd;
 
         @JsonProperty("resource_name") public final String resourceName; // PK
         @JsonProperty("resource_name_suffix") public final String resourceNameSuffix; // PK
@@ -2429,6 +2455,17 @@ public class GenCrdCurrent
                 resourceNameSuffix,
                 snapshotName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerDrbdResourceDefinitions getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerDrbdResourceDefinitions(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -2514,6 +2551,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerDrbdResourceDefinitionsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -2556,12 +2600,13 @@ public class GenCrdCurrent
         tableName = "LAYER_DRBD_VOLUMES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerDrbdVolumesSpec implements LinstorSpec
+    public static class LayerDrbdVolumesSpec implements LinstorSpec<LayerDrbdVolumes, LayerDrbdVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -5244558218335923905L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerDrbdVolumes parentCrd;
 
         @JsonProperty("layer_resource_id") public final int layerResourceId; // PK
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
@@ -2597,6 +2642,17 @@ public class GenCrdCurrent
                 layerResourceId,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerDrbdVolumes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerDrbdVolumes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -2667,6 +2723,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerDrbdVolumesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -2711,12 +2774,13 @@ public class GenCrdCurrent
         tableName = "LAYER_DRBD_VOLUME_DEFINITIONS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerDrbdVolumeDefinitionsSpec implements LinstorSpec
+    public static class LayerDrbdVolumeDefinitionsSpec implements LinstorSpec<LayerDrbdVolumeDefinitions, LayerDrbdVolumeDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -9080332676584962245L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerDrbdVolumeDefinitions parentCrd;
 
         @JsonProperty("resource_name") public final String resourceName; // PK
         @JsonProperty("resource_name_suffix") public final String resourceNameSuffix; // PK
@@ -2758,6 +2822,17 @@ public class GenCrdCurrent
                 snapshotName,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerDrbdVolumeDefinitions getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerDrbdVolumeDefinitions(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -2831,6 +2906,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerDrbdVolumeDefinitionsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -2871,12 +2953,13 @@ public class GenCrdCurrent
         tableName = "LAYER_LUKS_VOLUMES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerLuksVolumesSpec implements LinstorSpec
+    public static class LayerLuksVolumesSpec implements LinstorSpec<LayerLuksVolumes, LayerLuksVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -9171492256375007273L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerLuksVolumes parentCrd;
 
         @JsonProperty("layer_resource_id") public final int layerResourceId; // PK
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
@@ -2908,6 +2991,17 @@ public class GenCrdCurrent
                 layerResourceId,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerLuksVolumes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerLuksVolumes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -2975,6 +3069,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerLuksVolumesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -3017,12 +3118,13 @@ public class GenCrdCurrent
         tableName = "LAYER_OPENFLEX_RESOURCE_DEFINITIONS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerOpenflexResourceDefinitionsSpec implements LinstorSpec
+    public static class LayerOpenflexResourceDefinitionsSpec implements LinstorSpec<LayerOpenflexResourceDefinitions, LayerOpenflexResourceDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -4056161086860513434L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerOpenflexResourceDefinitions parentCrd;
 
         @JsonProperty("resource_name") public final String resourceName; // PK
         @JsonProperty("snapshot_name") public final String snapshotName;
@@ -3058,6 +3160,17 @@ public class GenCrdCurrent
                 resourceName,
                 resourceNameSuffix
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerOpenflexResourceDefinitions getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerOpenflexResourceDefinitions(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -3128,6 +3241,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerOpenflexResourceDefinitionsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -3170,12 +3290,13 @@ public class GenCrdCurrent
         tableName = "LAYER_OPENFLEX_VOLUMES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerOpenflexVolumesSpec implements LinstorSpec
+    public static class LayerOpenflexVolumesSpec implements LinstorSpec<LayerOpenflexVolumes, LayerOpenflexVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 7088237482501837428L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerOpenflexVolumes parentCrd;
 
         @JsonProperty("layer_resource_id") public final int layerResourceId; // PK
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
@@ -3211,6 +3332,17 @@ public class GenCrdCurrent
                 layerResourceId,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerOpenflexVolumes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerOpenflexVolumes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -3281,6 +3413,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerOpenflexVolumesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -3331,12 +3470,13 @@ public class GenCrdCurrent
         tableName = "LAYER_RESOURCE_IDS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerResourceIdsSpec implements LinstorSpec
+    public static class LayerResourceIdsSpec implements LinstorSpec<LayerResourceIds, LayerResourceIdsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 1870443559839359954L;
         @JsonIgnore private static final String PK_FORMAT = "%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerResourceIds parentCrd;
 
         @JsonProperty("layer_resource_id") public final int layerResourceId; // PK
         @JsonProperty("node_name") public final String nodeName;
@@ -3387,6 +3527,17 @@ public class GenCrdCurrent
                 LayerResourceIdsSpec.PK_FORMAT,
                 layerResourceId
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerResourceIds getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerResourceIds(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -3469,6 +3620,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerResourceIdsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -3513,12 +3671,13 @@ public class GenCrdCurrent
         tableName = "LAYER_STORAGE_VOLUMES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerStorageVolumesSpec implements LinstorSpec
+    public static class LayerStorageVolumesSpec implements LinstorSpec<LayerStorageVolumes, LayerStorageVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 7818431198846203890L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerStorageVolumes parentCrd;
 
         @JsonProperty("layer_resource_id") public final int layerResourceId; // PK
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
@@ -3558,6 +3717,17 @@ public class GenCrdCurrent
                 layerResourceId,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerStorageVolumes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerStorageVolumes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -3631,6 +3801,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerStorageVolumesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -3673,12 +3850,13 @@ public class GenCrdCurrent
         tableName = "LAYER_WRITECACHE_VOLUMES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LayerWritecacheVolumesSpec implements LinstorSpec
+    public static class LayerWritecacheVolumesSpec implements LinstorSpec<LayerWritecacheVolumes, LayerWritecacheVolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 7667576167879117173L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LayerWritecacheVolumes parentCrd;
 
         @JsonProperty("layer_resource_id") public final int layerResourceId; // PK
         @JsonProperty("vlm_nr") public final int vlmNr; // PK
@@ -3714,6 +3892,17 @@ public class GenCrdCurrent
                 layerResourceId,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LayerWritecacheVolumes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LayerWritecacheVolumes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -3784,6 +3973,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LayerWritecacheVolumesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -3832,12 +4028,13 @@ public class GenCrdCurrent
         tableName = "LINSTOR_REMOTES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class LinstorRemotesSpec implements LinstorSpec
+    public static class LinstorRemotesSpec implements LinstorSpec<LinstorRemotes, LinstorRemotesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -3103962557539556606L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private LinstorRemotes parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("name") public final String name; // PK
@@ -3884,6 +4081,17 @@ public class GenCrdCurrent
                 LinstorRemotesSpec.PK_FORMAT,
                 name
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public LinstorRemotes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new LinstorRemotes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -3963,6 +4171,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(LinstorRemotesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -4007,12 +4222,13 @@ public class GenCrdCurrent
         tableName = "NODES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class NodesSpec implements LinstorSpec
+    public static class NodesSpec implements LinstorSpec<Nodes, NodesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -2578843140506529191L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private Nodes parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("node_name") public final String nodeName; // PK
@@ -4051,6 +4267,17 @@ public class GenCrdCurrent
                 NodesSpec.PK_FORMAT,
                 nodeName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public Nodes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new Nodes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -4124,6 +4351,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(NodesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -4164,12 +4398,13 @@ public class GenCrdCurrent
         tableName = "NODE_CONNECTIONS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class NodeConnectionsSpec implements LinstorSpec
+    public static class NodeConnectionsSpec implements LinstorSpec<NodeConnections, NodeConnectionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -1475333507510339417L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private NodeConnections parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("node_name_src") public final String nodeNameSrc; // PK
@@ -4201,6 +4436,17 @@ public class GenCrdCurrent
                 nodeNameSrc,
                 nodeNameDst
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public NodeConnections getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new NodeConnections(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -4268,6 +4514,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(NodeConnectionsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -4316,12 +4569,13 @@ public class GenCrdCurrent
         tableName = "NODE_NET_INTERFACES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class NodeNetInterfacesSpec implements LinstorSpec
+    public static class NodeNetInterfacesSpec implements LinstorSpec<NodeNetInterfaces, NodeNetInterfacesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 1951554369333185563L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private NodeNetInterfaces parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("node_name") public final String nodeName; // PK
@@ -4369,6 +4623,17 @@ public class GenCrdCurrent
                 nodeName,
                 nodeNetName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public NodeNetInterfaces getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new NodeNetInterfaces(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -4448,6 +4713,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(NodeNetInterfacesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -4496,12 +4768,13 @@ public class GenCrdCurrent
         tableName = "NODE_STOR_POOL"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class NodeStorPoolSpec implements LinstorSpec
+    public static class NodeStorPoolSpec implements LinstorSpec<NodeStorPool, NodeStorPoolSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -3170713175272333640L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private NodeStorPool parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("node_name") public final String nodeName; // PK
@@ -4549,6 +4822,17 @@ public class GenCrdCurrent
                 nodeName,
                 poolName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public NodeStorPool getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new NodeStorPool(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -4628,6 +4912,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(NodeStorPoolSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -4668,12 +4959,13 @@ public class GenCrdCurrent
         tableName = "PROPS_CONTAINERS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class PropsContainersSpec implements LinstorSpec
+    public static class PropsContainersSpec implements LinstorSpec<PropsContainers, PropsContainersSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -8554260445867360659L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private PropsContainers parentCrd;
 
         @JsonProperty("props_instance") public final String propsInstance; // PK
         @JsonProperty("prop_key") public final String propKey; // PK
@@ -4705,6 +4997,17 @@ public class GenCrdCurrent
                 propsInstance,
                 propKey
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public PropsContainers getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new PropsContainers(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -4772,6 +5075,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(PropsContainersSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -4818,12 +5128,13 @@ public class GenCrdCurrent
         tableName = "RESOURCES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class ResourcesSpec implements LinstorSpec
+    public static class ResourcesSpec implements LinstorSpec<Resources, ResourcesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -2611989798885866910L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private Resources parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("node_name") public final String nodeName; // PK
@@ -4868,6 +5179,17 @@ public class GenCrdCurrent
                 resourceName,
                 snapshotName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public Resources getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new Resources(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -4944,6 +5266,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(ResourcesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -4992,12 +5321,13 @@ public class GenCrdCurrent
         tableName = "RESOURCE_CONNECTIONS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class ResourceConnectionsSpec implements LinstorSpec
+    public static class ResourceConnectionsSpec implements LinstorSpec<ResourceConnections, ResourceConnectionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 3150476221501626772L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private ResourceConnections parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("node_name_src") public final String nodeNameSrc; // PK
@@ -5047,6 +5377,17 @@ public class GenCrdCurrent
                 resourceName,
                 snapshotName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public ResourceConnections getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new ResourceConnections(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -5126,6 +5467,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(ResourceConnectionsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -5180,12 +5528,13 @@ public class GenCrdCurrent
         tableName = "RESOURCE_DEFINITIONS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class ResourceDefinitionsSpec implements LinstorSpec
+    public static class ResourceDefinitionsSpec implements LinstorSpec<ResourceDefinitions, ResourceDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 5004118833193135779L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private ResourceDefinitions parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("resource_name") public final String resourceName; // PK
@@ -5245,6 +5594,17 @@ public class GenCrdCurrent
                 resourceName,
                 snapshotName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public ResourceDefinitions getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new ResourceDefinitions(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -5333,6 +5693,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(ResourceDefinitionsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -5397,12 +5764,13 @@ public class GenCrdCurrent
         tableName = "RESOURCE_GROUPS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class ResourceGroupsSpec implements LinstorSpec
+    public static class ResourceGroupsSpec implements LinstorSpec<ResourceGroups, ResourceGroupsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 2426113688462931178L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private ResourceGroups parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("resource_group_name") public final String resourceGroupName; // PK
@@ -5481,6 +5849,17 @@ public class GenCrdCurrent
                 ResourceGroupsSpec.PK_FORMAT,
                 resourceGroupName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public ResourceGroups getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new ResourceGroups(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -5584,6 +5963,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(ResourceGroupsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -5636,12 +6022,13 @@ public class GenCrdCurrent
         tableName = "S3_REMOTES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class S3RemotesSpec implements LinstorSpec
+    public static class S3RemotesSpec implements LinstorSpec<S3Remotes, S3RemotesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 7907983812300141264L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private S3Remotes parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("name") public final String name; // PK
@@ -5696,6 +6083,17 @@ public class GenCrdCurrent
                 S3RemotesSpec.PK_FORMAT,
                 name
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public S3Remotes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new S3Remotes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -5781,6 +6179,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(S3RemotesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -5825,12 +6230,13 @@ public class GenCrdCurrent
         tableName = "SATELLITES_CAPACITY"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SatellitesCapacitySpec implements LinstorSpec
+    public static class SatellitesCapacitySpec implements LinstorSpec<SatellitesCapacity, SatellitesCapacitySpec>
     {
         @JsonIgnore private static final long serialVersionUID = -2024180648021451427L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SatellitesCapacity parentCrd;
 
         @JsonProperty("node_name") public final String nodeName; // PK
         @JsonProperty("capacity") public final byte[] capacity;
@@ -5869,6 +6275,17 @@ public class GenCrdCurrent
                 SatellitesCapacitySpec.PK_FORMAT,
                 nodeName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SatellitesCapacity getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SatellitesCapacity(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -5942,6 +6359,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SatellitesCapacitySpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -5996,12 +6420,13 @@ public class GenCrdCurrent
         tableName = "SCHEDULES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SchedulesSpec implements LinstorSpec
+    public static class SchedulesSpec implements LinstorSpec<Schedules, SchedulesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 4553342707261102352L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private Schedules parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("name") public final String name; // PK
@@ -6060,6 +6485,17 @@ public class GenCrdCurrent
                 SchedulesSpec.PK_FORMAT,
                 name
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public Schedules getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new Schedules(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -6148,6 +6584,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SchedulesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -6186,12 +6629,13 @@ public class GenCrdCurrent
         tableName = "SEC_ACCESS_TYPES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SecAccessTypesSpec implements LinstorSpec
+    public static class SecAccessTypesSpec implements LinstorSpec<SecAccessTypes, SecAccessTypesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 9025324241958089710L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SecAccessTypes parentCrd;
 
         @JsonProperty("access_type_name") public final String accessTypeName; // PK
         @JsonProperty("access_type_value") public final short accessTypeValue;
@@ -6218,6 +6662,17 @@ public class GenCrdCurrent
                 SecAccessTypesSpec.PK_FORMAT,
                 accessTypeName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SecAccessTypes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SecAccessTypes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -6282,6 +6737,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SecAccessTypesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -6322,12 +6784,13 @@ public class GenCrdCurrent
         tableName = "SEC_ACL_MAP"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SecAclMapSpec implements LinstorSpec
+    public static class SecAclMapSpec implements LinstorSpec<SecAclMap, SecAclMapSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 383451690366840030L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SecAclMap parentCrd;
 
         @JsonProperty("object_path") public final String objectPath; // PK
         @JsonProperty("role_name") public final String roleName; // PK
@@ -6359,6 +6822,17 @@ public class GenCrdCurrent
                 objectPath,
                 roleName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SecAclMap getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SecAclMap(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -6426,6 +6900,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SecAclMapSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -6466,12 +6947,13 @@ public class GenCrdCurrent
         tableName = "SEC_CONFIGURATION"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SecConfigurationSpec implements LinstorSpec
+    public static class SecConfigurationSpec implements LinstorSpec<SecConfiguration, SecConfigurationSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 7834360002702203956L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SecConfiguration parentCrd;
 
         @JsonProperty("entry_key") public final String entryKey; // PK
         @JsonProperty("entry_dsp_key") public final String entryDspKey;
@@ -6502,6 +6984,17 @@ public class GenCrdCurrent
                 SecConfigurationSpec.PK_FORMAT,
                 entryKey
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SecConfiguration getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SecConfiguration(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -6569,6 +7062,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SecConfigurationSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -6607,12 +7107,13 @@ public class GenCrdCurrent
         tableName = "SEC_DFLT_ROLES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SecDfltRolesSpec implements LinstorSpec
+    public static class SecDfltRolesSpec implements LinstorSpec<SecDfltRoles, SecDfltRolesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -3355679465730928246L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SecDfltRoles parentCrd;
 
         @JsonProperty("identity_name") public final String identityName; // PK
         @JsonProperty("role_name") public final String roleName;
@@ -6639,6 +7140,17 @@ public class GenCrdCurrent
                 SecDfltRolesSpec.PK_FORMAT,
                 identityName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SecDfltRoles getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SecDfltRoles(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -6703,6 +7215,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SecDfltRolesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -6749,12 +7268,13 @@ public class GenCrdCurrent
         tableName = "SEC_IDENTITIES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SecIdentitiesSpec implements LinstorSpec
+    public static class SecIdentitiesSpec implements LinstorSpec<SecIdentities, SecIdentitiesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -1735186325101511978L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SecIdentities parentCrd;
 
         @JsonProperty("identity_name") public final String identityName; // PK
         @JsonProperty("identity_dsp_name") public final String identityDspName;
@@ -6797,6 +7317,17 @@ public class GenCrdCurrent
                 SecIdentitiesSpec.PK_FORMAT,
                 identityName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SecIdentities getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SecIdentities(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -6873,6 +7404,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SecIdentitiesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -6911,12 +7449,13 @@ public class GenCrdCurrent
         tableName = "SEC_ID_ROLE_MAP"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SecIdRoleMapSpec implements LinstorSpec
+    public static class SecIdRoleMapSpec implements LinstorSpec<SecIdRoleMap, SecIdRoleMapSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -3633327844531623751L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SecIdRoleMap parentCrd;
 
         @JsonProperty("identity_name") public final String identityName; // PK
         @JsonProperty("role_name") public final String roleName; // PK
@@ -6944,6 +7483,17 @@ public class GenCrdCurrent
                 identityName,
                 roleName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SecIdRoleMap getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SecIdRoleMap(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -7008,6 +7558,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SecIdRoleMapSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -7050,12 +7607,13 @@ public class GenCrdCurrent
         tableName = "SEC_OBJECT_PROTECTION"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SecObjectProtectionSpec implements LinstorSpec
+    public static class SecObjectProtectionSpec implements LinstorSpec<SecObjectProtection, SecObjectProtectionSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -4447550137533758443L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SecObjectProtection parentCrd;
 
         @JsonProperty("object_path") public final String objectPath; // PK
         @JsonProperty("creator_identity_name") public final String creatorIdentityName;
@@ -7090,6 +7648,17 @@ public class GenCrdCurrent
                 SecObjectProtectionSpec.PK_FORMAT,
                 objectPath
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SecObjectProtection getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SecObjectProtection(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -7160,6 +7729,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SecObjectProtectionSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -7204,12 +7780,13 @@ public class GenCrdCurrent
         tableName = "SEC_ROLES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SecRolesSpec implements LinstorSpec
+    public static class SecRolesSpec implements LinstorSpec<SecRoles, SecRolesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 918930211648178401L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SecRoles parentCrd;
 
         @JsonProperty("role_name") public final String roleName; // PK
         @JsonProperty("role_dsp_name") public final String roleDspName;
@@ -7248,6 +7825,17 @@ public class GenCrdCurrent
                 SecRolesSpec.PK_FORMAT,
                 roleName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SecRoles getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SecRoles(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -7321,6 +7909,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SecRolesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -7361,12 +7956,13 @@ public class GenCrdCurrent
         tableName = "SEC_TYPES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SecTypesSpec implements LinstorSpec
+    public static class SecTypesSpec implements LinstorSpec<SecTypes, SecTypesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 6073724709793651263L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SecTypes parentCrd;
 
         @JsonProperty("type_name") public final String typeName; // PK
         @JsonProperty("type_dsp_name") public final String typeDspName;
@@ -7397,6 +7993,17 @@ public class GenCrdCurrent
                 SecTypesSpec.PK_FORMAT,
                 typeName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SecTypes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SecTypes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -7464,6 +8071,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SecTypesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -7504,12 +8118,13 @@ public class GenCrdCurrent
         tableName = "SEC_TYPE_RULES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SecTypeRulesSpec implements LinstorSpec
+    public static class SecTypeRulesSpec implements LinstorSpec<SecTypeRules, SecTypeRulesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -6822362700507118642L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SecTypeRules parentCrd;
 
         @JsonProperty("domain_name") public final String domainName; // PK
         @JsonProperty("type_name") public final String typeName; // PK
@@ -7541,6 +8156,17 @@ public class GenCrdCurrent
                 domainName,
                 typeName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SecTypeRules getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SecTypeRules(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -7608,6 +8234,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SecTypeRulesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -7646,12 +8279,13 @@ public class GenCrdCurrent
         tableName = "SPACE_HISTORY"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class SpaceHistorySpec implements LinstorSpec
+    public static class SpaceHistorySpec implements LinstorSpec<SpaceHistory, SpaceHistorySpec>
     {
         @JsonIgnore private static final long serialVersionUID = 6621865834150591549L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private SpaceHistory parentCrd;
 
         @JsonProperty("entry_date") public final Date entryDate; // PK
         @JsonProperty("capacity") public final byte[] capacity;
@@ -7678,6 +8312,17 @@ public class GenCrdCurrent
                 SpaceHistorySpec.PK_FORMAT,
                 RFC3339.format(entryDate)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public SpaceHistory getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new SpaceHistory(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -7742,6 +8387,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(SpaceHistorySpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -7782,12 +8434,13 @@ public class GenCrdCurrent
         tableName = "STOR_POOL_DEFINITIONS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class StorPoolDefinitionsSpec implements LinstorSpec
+    public static class StorPoolDefinitionsSpec implements LinstorSpec<StorPoolDefinitions, StorPoolDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 369242125905771808L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private StorPoolDefinitions parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("pool_name") public final String poolName; // PK
@@ -7818,6 +8471,17 @@ public class GenCrdCurrent
                 StorPoolDefinitionsSpec.PK_FORMAT,
                 poolName
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public StorPoolDefinitions getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new StorPoolDefinitions(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -7885,6 +8549,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(StorPoolDefinitionsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -7921,12 +8592,13 @@ public class GenCrdCurrent
         tableName = "TRACKING_DATE"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class TrackingDateSpec implements LinstorSpec
+    public static class TrackingDateSpec implements LinstorSpec<TrackingDate, TrackingDateSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -750428328824732666L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private TrackingDate parentCrd;
 
         // No PK found. Combining ALL columns for K8s key
         @JsonProperty("entry_date") public final Date entryDate;
@@ -7950,6 +8622,17 @@ public class GenCrdCurrent
                 TrackingDateSpec.PK_FORMAT,
                 RFC3339.format(entryDate)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public TrackingDate getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new TrackingDate(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -8011,6 +8694,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(TrackingDateSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -8057,12 +8747,13 @@ public class GenCrdCurrent
         tableName = "VOLUMES"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class VolumesSpec implements LinstorSpec
+    public static class VolumesSpec implements LinstorSpec<Volumes, VolumesSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 2946077211196100810L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private Volumes parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("node_name") public final String nodeName; // PK
@@ -8108,6 +8799,17 @@ public class GenCrdCurrent
                 snapshotName,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public Volumes getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new Volumes(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -8184,6 +8886,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(VolumesSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -8230,12 +8939,13 @@ public class GenCrdCurrent
         tableName = "VOLUME_CONNECTIONS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class VolumeConnectionsSpec implements LinstorSpec
+    public static class VolumeConnectionsSpec implements LinstorSpec<VolumeConnections, VolumeConnectionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 8930790622440617257L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private VolumeConnections parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("node_name_src") public final String nodeNameSrc; // PK
@@ -8282,6 +8992,17 @@ public class GenCrdCurrent
                 snapshotName,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public VolumeConnections getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new VolumeConnections(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -8358,6 +9079,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(VolumeConnectionsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -8404,12 +9132,13 @@ public class GenCrdCurrent
         tableName = "VOLUME_DEFINITIONS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class VolumeDefinitionsSpec implements LinstorSpec
+    public static class VolumeDefinitionsSpec implements LinstorSpec<VolumeDefinitions, VolumeDefinitionsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = -3258336213792011883L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private VolumeDefinitions parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("resource_name") public final String resourceName; // PK
@@ -8454,6 +9183,17 @@ public class GenCrdCurrent
                 snapshotName,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public VolumeDefinitions getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new VolumeDefinitions(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -8530,6 +9270,13 @@ public class GenCrdCurrent
         }
 
         @Override
+        public void setSpec(VolumeDefinitionsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
+        }
+
+        @Override
         public void setMetadata(ObjectMeta metadataRef)
         {
             super.setMetadata(metadataRef);
@@ -8572,12 +9319,13 @@ public class GenCrdCurrent
         tableName = "VOLUME_GROUPS"
     )
     @JsonInclude(Include.NON_NULL)
-    public static class VolumeGroupsSpec implements LinstorSpec
+    public static class VolumeGroupsSpec implements LinstorSpec<VolumeGroups, VolumeGroupsSpec>
     {
         @JsonIgnore private static final long serialVersionUID = 5883629178053450568L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
+        @JsonIgnore private VolumeGroups parentCrd;
 
         @JsonProperty("uuid") public final String uuid;
         @JsonProperty("resource_group_name") public final String resourceGroupName; // PK
@@ -8613,6 +9361,17 @@ public class GenCrdCurrent
                 resourceGroupName,
                 vlmNr
             );
+        }
+
+        @JsonIgnore
+        @Override
+        public VolumeGroups getCrd()
+        {
+            if (parentCrd == null)
+            {
+                parentCrd = new VolumeGroups(this);
+            }
+            return parentCrd;
         }
 
         @JsonIgnore
@@ -8680,6 +9439,13 @@ public class GenCrdCurrent
         {
             setMetadata(new ObjectMetaBuilder().withName(deriveKey(spec.getLinstorKey())).build());
             setSpec(spec);
+        }
+
+        @Override
+        public void setSpec(VolumeGroupsSpec specRef)
+        {
+            super.setSpec(specRef);
+            spec.parentCrd = this;
         }
 
         @Override

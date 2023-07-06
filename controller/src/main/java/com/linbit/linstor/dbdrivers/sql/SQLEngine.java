@@ -499,11 +499,11 @@ public class SQLEngine implements DbEngine
     @Override
     public void importData(DbExportPojoData.Table tableRef) throws DatabaseException
     {
-        LinstorSpec currentSpec = null;
+        LinstorSpec<?, ?> currentSpec = null;
 
         try (PreparedStatement stmt = getConnection().prepareStatement(getInsertStatement(tableRef)))
         {
-            for (LinstorSpec linstorSpec : tableRef.data)
+            for (LinstorSpec<?, ?> linstorSpec : tableRef.data)
             {
                 currentSpec = linstorSpec;
                 setValuesFromSpec(stmt, tableRef, linstorSpec);
@@ -667,7 +667,7 @@ public class SQLEngine implements DbEngine
     private void setValuesFromSpec(
         PreparedStatement stmtRef,
         DbExportPojoData.Table tableRef,
-        LinstorSpec linstorSpecRef
+        LinstorSpec<?, ?> linstorSpecRef
     )
         throws DatabaseException, SQLException
     {

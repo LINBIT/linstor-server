@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 
-public class RollbackSpec implements LinstorSpec
+public class RollbackSpec implements LinstorSpec<RollbackCrd, RollbackSpec>
 {
     @JsonIgnore
     private static final long serialVersionUID = -4327494414912303196L;
@@ -33,10 +33,19 @@ public class RollbackSpec implements LinstorSpec
     @JsonProperty("delete_map")
     public final HashMap<String, HashSet<String>> deleteMap;
 
+    RollbackCrd parentCrd;
+
     public RollbackSpec()
     {
         rollbackMap = new HashMap<>();
         deleteMap = new HashMap<>();
+    }
+
+    @JsonIgnore
+    @Override
+    public RollbackCrd getCrd()
+    {
+        return parentCrd;
     }
 
     @JsonCreator

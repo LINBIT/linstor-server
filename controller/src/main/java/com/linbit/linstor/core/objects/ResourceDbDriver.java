@@ -143,7 +143,7 @@ public class ResourceDbDriver extends
         {
             NodeName nodeName = new NodeName(raw.get(NODE_NAME));
             ResourceName rscName = new ResourceName(raw.get(RESOURCE_NAME));
-            Date createTimestamp = null;
+            Long createTimestamp = null;
             Map<Resource.ResourceKey, ResourceConnection> rscConMap = new TreeMap<>();
             Map<VolumeNumber, Volume> vlmMap = new TreeMap<>();
 
@@ -155,20 +155,13 @@ public class ResourceDbDriver extends
                     final String strCreateTimestamp = raw.get(CREATE_TIMESTAMP);
                     if (strCreateTimestamp != null)
                     {
-                        createTimestamp = new Date(Long.parseLong(strCreateTimestamp));
+                        createTimestamp = Long.parseLong(strCreateTimestamp);
                     }
                     break;
                 case SQL:
-                    flags = raw.get(RESOURCE_FLAGS);
-                    createTimestamp = raw.get(CREATE_TIMESTAMP);
-                    break;
                 case K8S_CRD:
                     flags = raw.get(RESOURCE_FLAGS);
-                    Long timestamp = raw.get(CREATE_TIMESTAMP);
-                    if (timestamp != null)
-                    {
-                        createTimestamp = new Date(timestamp);
-                    }
+                    createTimestamp = raw.get(CREATE_TIMESTAMP);
                     break;
                 default:
                     throw new ImplementationError("Unknown database type: " + getDbType());
@@ -187,7 +180,7 @@ public class ResourceDbDriver extends
                     transMgrProvider,
                     rscConMap,
                     vlmMap,
-                    createTimestamp
+                    createTimestamp == null ? null : new Date(createTimestamp)
                 ),
                 new InitMapImpl(rscConMap, vlmMap)
             );

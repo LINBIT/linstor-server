@@ -184,8 +184,15 @@ public class DbExportImportHelper
                 // information
                 if (dbDriver != null)
                 {
-                    List<LinstorSpec> pojoList = dbDriver.export();
-                    tables.add(new DbExportPojoData.Table(table.getName(), clmDescrList, pojoList));
+                    List<LinstorSpec<?, ?>> pojoList = dbDriver.export();
+                    tables.add(
+                        new DbExportPojoData.Table(
+                            table.getName(),
+                            clmDescrList,
+                            pojoList,
+                            null // we do not need this information when serializing
+                        )
+                    );
                 }
             }
         }

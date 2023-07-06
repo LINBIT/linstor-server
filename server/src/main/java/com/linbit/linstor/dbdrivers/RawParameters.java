@@ -100,6 +100,7 @@ public class RawParameters
                     ret = (T) Base64.decode(etcdVal);
                     break;
                 case Types.BIT:
+                case Types.BOOLEAN:
                     ret = (T) ((Boolean) Boolean.parseBoolean(etcdVal));
                     break;
                 case Types.TINYINT:
@@ -121,9 +122,6 @@ public class RawParameters
                     break;
                 case Types.DOUBLE:
                     ret = (T) ((Double) Double.parseDouble(etcdVal));
-                    break;
-                case Types.BOOLEAN:
-                    ret = (T) ((Boolean) Boolean.parseBoolean(etcdVal));
                     break;
                 default:
                     throw new ImplementationError("Unhandled SQL type: " + col.getSqlType());

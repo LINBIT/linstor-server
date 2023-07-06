@@ -10,7 +10,7 @@ public interface ControllerDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
 {
     DatabaseTable getDbTable();
 
-    List<LinstorSpec> export() throws DatabaseException;
+    List<LinstorSpec<?, ?>> export() throws DatabaseException;
 
     /**
      * Loads all entries from the database

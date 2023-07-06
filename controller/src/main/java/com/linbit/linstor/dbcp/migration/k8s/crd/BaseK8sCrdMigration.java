@@ -121,8 +121,8 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             }
         }
 
-        Function<DatabaseTable, Class<? extends LinstorCrd<? extends LinstorSpec>>> tableMap = upgradeToTxMgrContext
-            .getDbTableToCrdClass();
+        Function<DatabaseTable, Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>>> tableMap;
+        tableMap = upgradeToTxMgrContext.getDbTableToCrdClass();
 
         long maxWaitUntil = System.currentTimeMillis() + 30 * 1_000; // 30 seconds
         long sleep = maxWaitUntil - System.currentTimeMillis();
@@ -133,7 +133,7 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             {
                 for (DatabaseTable table: tablesToUpdate)
                 {
-                    Class<? extends LinstorCrd<? extends LinstorSpec>> clazz = tableMap.apply(table);
+                    Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>> clazz = tableMap.apply(table);
                     if (clazz != null)
                     {
                         /*

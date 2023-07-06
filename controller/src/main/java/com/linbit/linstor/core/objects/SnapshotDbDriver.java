@@ -153,7 +153,7 @@ public class SnapshotDbDriver extends
         }
         else
         {
-            Date createTimestamp = null;
+            Long createTimestamp = null;
             final Map<VolumeNumber, SnapshotVolume> snapshotVlmMap = new TreeMap<>();
 
             final long flags;
@@ -165,20 +165,13 @@ public class SnapshotDbDriver extends
                     final String strCreateTimestamp = raw.get(CREATE_TIMESTAMP);
                     if (strCreateTimestamp != null)
                     {
-                        createTimestamp = new Date(Long.parseLong(strCreateTimestamp));
+                        createTimestamp = Long.parseLong(strCreateTimestamp);
                     }
                     break;
                 case SQL:
-                    flags = raw.get(RESOURCE_FLAGS);
-                    createTimestamp = raw.get(CREATE_TIMESTAMP);
-                    break;
                 case K8S_CRD:
                     flags = raw.get(RESOURCE_FLAGS);
-                    Long timestamp = raw.get(CREATE_TIMESTAMP);
-                    if (timestamp != null)
-                    {
-                        createTimestamp = new Date(timestamp);
-                    }
+                    createTimestamp = raw.get(CREATE_TIMESTAMP);
                     break;
                 default:
                     throw new ImplementationError("Unknown database type: " + getDbType());
@@ -200,7 +193,7 @@ public class SnapshotDbDriver extends
                     transObjFactory,
                     transMgrProvider,
                     snapshotVlmMap,
-                    createTimestamp
+                    createTimestamp == null ? null : new Date(createTimestamp)
                 ),
                 new InitMapsImpl(snapshotVlmMap)
             );

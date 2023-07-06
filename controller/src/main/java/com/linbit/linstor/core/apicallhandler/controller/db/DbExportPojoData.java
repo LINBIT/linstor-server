@@ -1,10 +1,12 @@
 package com.linbit.linstor.core.apicallhandler.controller.db;
 
+import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class DbExportPojoData extends DbExportPojoMeta
@@ -38,24 +40,33 @@ public class DbExportPojoData extends DbExportPojoMeta
 
     public static class Table
     {
-        @JsonProperty("name")
-        public final String name;
-        @JsonProperty("column_description")
-        public final List<Column> columnDescription;
-        @JsonProperty("data")
-        public final List<LinstorSpec> data;
+        public static final String JSON_CLM_NAME = "name";
+        public static final String JSON_CLM_CLM_DESCR = "column_description";
+        public static final String JSON_CLM_DATA = "data";
 
-        @JsonCreator
+        @JsonProperty(JSON_CLM_NAME)
+        public final String name;
+        @JsonProperty(JSON_CLM_CLM_DESCR)
+        public final List<Column> columnDescription;
+        @JsonProperty(JSON_CLM_DATA)
+        public final List<LinstorSpec<?, ?>> data;
+
+        @JsonIgnore
+        public final Class<? extends LinstorCrd<?>> crdClass;
+
+        // no JsonCreator annotation, since we need a custom deserializer to also inject the correct crdClass
+        // which cannot be properly deserialized by Jackson
         public Table(
-            @JsonProperty("name") String nameRef,
-            @JsonProperty("column_description") List<Column> columnDescriptionRef,
-            @JsonProperty("data") List<LinstorSpec> dataRef
+            String nameRef,
+            List<Column> columnDescriptionRef,
+            List<LinstorSpec<?, ?>> dataRef,
+            Class<? extends LinstorCrd<?>> crdClassRef
         )
         {
-            super();
             name = nameRef;
             columnDescription = columnDescriptionRef;
             data = dataRef;
+            crdClass = crdClassRef;
         }
     }
 

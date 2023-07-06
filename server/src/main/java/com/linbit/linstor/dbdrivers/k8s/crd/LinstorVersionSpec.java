@@ -9,16 +9,25 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class LinstorVersionSpec implements LinstorSpec
+public class LinstorVersionSpec implements LinstorSpec<LinstorVersionCrd, LinstorVersionSpec>
 {
     @JsonIgnore private static final long serialVersionUID = 5539207148044018793L;
 
     @JsonProperty("version") public final int version;
 
+    LinstorVersionCrd parentCrd;
+
     @JsonCreator
     public LinstorVersionSpec(@JsonProperty("version") int versionRef)
     {
         version = versionRef;
+    }
+
+    @Override
+    @JsonIgnore
+    public LinstorVersionCrd getCrd()
+    {
+        return parentCrd;
     }
 
     @JsonIgnore

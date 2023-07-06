@@ -85,7 +85,7 @@ public class K8sCrdTransaction
     }
 
     @SuppressWarnings("unchecked")
-    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> K8sResourceClient<CRD> getClient(
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> K8sResourceClient<CRD> getClient(
         DatabaseTable dbTable
     )
     {
@@ -95,15 +95,18 @@ public class K8sCrdTransaction
             return null;
         }
 
-        return (K8sResourceClient<CRD>)supplier.get();
+        return (K8sResourceClient<CRD>) supplier.get();
     }
 
-    public void upsert(
+    @SuppressWarnings("unchecked")
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> void upsert(
         DatabaseTable dbTable,
         LinstorCrd<?> k8sRsc
     )
     {
-        LinstorCrd<LinstorSpec> existingCrd = getClient(dbTable).get(k8sRsc.getK8sKey());
+        LinstorCrd<LinstorSpec<CRD, SPEC>> existingCrd = (LinstorCrd<LinstorSpec<CRD, SPEC>>) getClient(dbTable).get(
+            k8sRsc.getK8sKey()
+        );
         createOrReplace(dbTable, k8sRsc, existingCrd == null);
     }
 
@@ -219,12 +222,14 @@ public class K8sCrdTransaction
         return removed;
     }
 
-    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, SPEC> getSpec(DatabaseTable dbTable)
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> HashMap<String, SPEC> getSpec(
+        DatabaseTable dbTable
+    )
     {
         return this.<CRD, SPEC>getSpec(dbTable, ignored -> true);
     }
 
-    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, SPEC> getSpec(
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> HashMap<String, SPEC> getSpec(
         DatabaseTable dbTable,
         Predicate<CRD> matcher
     )
@@ -246,7 +251,7 @@ public class K8sCrdTransaction
         return ret;
     }
 
-    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> SPEC getSpec(
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> SPEC getSpec(
         DatabaseTable dbTable,
         Predicate<CRD> matcher,
         boolean failIfNullRef,
@@ -274,12 +279,14 @@ public class K8sCrdTransaction
         return ret;
     }
 
-    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, CRD> getCrd(DatabaseTable dbTable)
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> HashMap<String, CRD> getCrd(
+        DatabaseTable dbTable
+    )
     {
         return this.<CRD, SPEC>getCrd(dbTable, ignored -> true);
     }
 
-    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> HashMap<String, CRD> getCrd(
+    public <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> HashMap<String, CRD> getCrd(
         DatabaseTable dbTable,
         Predicate<CRD> matcher
     )
@@ -311,7 +318,7 @@ public class K8sCrdTransaction
     }
 
     @SuppressWarnings("unchecked")
-    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> ArrayList<CRD> updateK8sList(
+    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> ArrayList<CRD> updateK8sList(
         List<CRD> list,
         DatabaseTable dbTable
     )

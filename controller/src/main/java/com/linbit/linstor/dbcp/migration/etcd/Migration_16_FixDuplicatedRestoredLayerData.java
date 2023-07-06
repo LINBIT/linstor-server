@@ -54,7 +54,11 @@ public class Migration_16_FixDuplicatedRestoredLayerData extends BaseEtcdMigrati
                         lriKey.rscName = entry.getValue();
                         break;
                     case SNAPSHOT_NAME:
-                        lriKey.snapName = entry.getValue();
+                        String snap = entry.getValue();
+                        if (snap != null && !snap.isEmpty())
+                        {
+                            lriKey.snapName = snap;
+                        }
                         break;
                     case KIND:
                         lriKey.kind = entry.getValue();
@@ -114,6 +118,12 @@ public class Migration_16_FixDuplicatedRestoredLayerData extends BaseEtcdMigrati
                         break;
                     case "WRITECACHE":
                         tablesToClean.add("LAYER_WRITECACHE_VOLUMES");
+                        break;
+                    case "BCACHE":
+                        tablesToClean.add("LAYER_BCACHE_VOLUMES");
+                        break;
+                    case "NVME":
+                        // noop
                         break;
                     default:
                         throw new ImplementationError("Unknown kind: " + lriKey.kind);

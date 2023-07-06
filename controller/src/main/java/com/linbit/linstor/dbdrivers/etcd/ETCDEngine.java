@@ -438,7 +438,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         }
 
         EtcdTransaction tx = transMgrProvider.get().getTransaction();
-        for (LinstorSpec linstorSpec : tableRef.data)
+        for (LinstorSpec<?, ?> linstorSpec : tableRef.data)
         {
             String[] pks = new String[pkCols.size()];
             int pkIdx = 0;

@@ -26,6 +26,7 @@ public class ControllerK8sCrdRollbackMgr
      *
      * @return
      */
+    @SuppressWarnings("unchecked")
     public static void createRollbackEntry(K8sCrdTransaction currentTransactionRef)
         throws DatabaseException
     {
@@ -46,8 +47,8 @@ public class ControllerK8sCrdRollbackMgr
         for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToReplace.entrySet())
         {
             DatabaseTable dbTable = entry.getKey();
-            K8sResourceClient<LinstorCrd<LinstorSpec>> client = currentTransactionRef
-                .getClient(dbTable);
+            K8sResourceClient<LinstorCrd<LinstorSpec<?, ?>>> client;
+            client = (K8sResourceClient<LinstorCrd<LinstorSpec<?, ?>>>) currentTransactionRef.getClient(dbTable);
 
             for (Entry<String, LinstorCrd<?>> rsc : entry.getValue().entrySet())
             {
@@ -72,8 +73,8 @@ public class ControllerK8sCrdRollbackMgr
         for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToDelete.entrySet())
         {
             DatabaseTable dbTable = entry.getKey();
-            K8sResourceClient<LinstorCrd<LinstorSpec>> client = currentTransactionRef
-                .getClient(dbTable);
+            K8sResourceClient<LinstorCrd<LinstorSpec<?, ?>>> client;
+            client = (K8sResourceClient<LinstorCrd<LinstorSpec<?, ?>>>) currentTransactionRef.getClient(dbTable);
 
             for (Entry<String, LinstorCrd<?>> rsc : entry.getValue().entrySet())
             {
@@ -124,7 +125,7 @@ public class ControllerK8sCrdRollbackMgr
         }
     }
 
-    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void rollback(
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> void rollback(
         K8sCrdTransaction currentTransactionRef
     )
     {
@@ -155,7 +156,7 @@ public class ControllerK8sCrdRollbackMgr
         cleanup(currentTransactionRef);
     }
 
-    private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void delete(
+    private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> void delete(
         K8sCrdTransaction currentTransaction,
         DatabaseTable dbTable,
         HashSet<String> keysToDelete
@@ -170,13 +171,13 @@ public class ControllerK8sCrdRollbackMgr
     }
 
     @SuppressWarnings("unchecked")
-    private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void restoreData(
+    private static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> void restoreData(
         K8sCrdTransaction currentTransaction,
         DatabaseTable dbTable,
         Collection<GenericKubernetesResource> valuesToRestore
     )
     {
-        K8sResourceClient<LinstorCrd<SPEC>> client = currentTransaction
+        K8sResourceClient<LinstorCrd<SPEC>> client = (K8sResourceClient<LinstorCrd<SPEC>>) currentTransaction
             .getClient(dbTable);
         Object typeErasure = client;
         K8sResourceClient<GenericKubernetesResource> gkrClient = (K8sResourceClient<GenericKubernetesResource>) typeErasure;

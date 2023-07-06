@@ -23,19 +23,23 @@ public class Migration_04_v1_17_0_SpaceTrackingV2 extends BaseK8sCrdMigration
         );
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
-        HashMap<String, LinstorCrd<LinstorSpec>> crdMap = txFrom.getCrd(GeneratedDatabaseTables.SPACE_HISTORY);
-        for (LinstorCrd<LinstorSpec> value : crdMap.values())
+        HashMap<String, LinstorCrd<LinstorSpec<?, ?>>> crdMap;
+        crdMap = (HashMap<String, LinstorCrd<LinstorSpec<?, ?>>>) txFrom.getCrd(GeneratedDatabaseTables.SPACE_HISTORY);
+        for (LinstorCrd<LinstorSpec<?, ?>> value : crdMap.values())
         {
             txTo.delete(GeneratedDatabaseTables.SPACE_HISTORY, value);
         }
 
         crdMap.clear();
 
-        crdMap = txTo.getCrd(GeneratedDatabaseTables.SATELLITES_CAPACITY);
-        for (LinstorCrd<LinstorSpec> value : crdMap.values())
+        crdMap = (HashMap<String, LinstorCrd<LinstorSpec<?, ?>>>) txTo.getCrd(
+            GeneratedDatabaseTables.SATELLITES_CAPACITY
+        );
+        for (LinstorCrd<LinstorSpec<?, ?>> value : crdMap.values())
         {
             txTo.delete(GeneratedDatabaseTables.SATELLITES_CAPACITY, value);
         }

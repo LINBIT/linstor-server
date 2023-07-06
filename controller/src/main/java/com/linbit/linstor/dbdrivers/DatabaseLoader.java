@@ -770,7 +770,6 @@ public class DatabaseLoader implements DatabaseDriver
          */
         for (ControllerLayerRscDatabaseDriver driver : layerDriversMap.values())
         {
-
             driver.loadAllLayerVlmData();
         }
 

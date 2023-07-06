@@ -84,14 +84,14 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     }
 
     @Override
-    public List<LinstorSpec> export() throws DatabaseException
+    public List<LinstorSpec<?, ?>> export() throws DatabaseException
     {
         List<RawParameters> export = dbEngine.export(table);
 
-        List<LinstorSpec> specList = new ArrayList<>();
+        List<LinstorSpec<?, ?>> specList = new ArrayList<>();
         for (RawParameters rawParam : export)
         {
-            LinstorSpec spec = GenCrdCurrent.rawParamToSpec(table, rawParam);
+            LinstorSpec<?, ?> spec = GenCrdCurrent.rawParamToSpec(table, rawParam);
             specList.add(spec);
         }
 

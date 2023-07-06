@@ -7,6 +7,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
+import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -43,6 +44,8 @@ import java.util.function.Function;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Provider;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
 
 @Singleton
 public class K8sCrdEngine implements DbEngine
@@ -50,12 +53,18 @@ public class K8sCrdEngine implements DbEngine
     private final ObjectMapper objectMapper;
     private final ErrorReporter errorReporter;
     private final Provider<TransactionMgrK8sCrd> transMgrProvider;
+    private final Provider<ControllerK8sCrdDatabase> ctrlK8sCrdDbProvider;
 
     @Inject
-    public K8sCrdEngine(ErrorReporter errorReporterRef, Provider<TransactionMgrK8sCrd> transMgrProviderRef)
+    public K8sCrdEngine(
+        ErrorReporter errorReporterRef,
+        Provider<TransactionMgrK8sCrd> transMgrProviderRef,
+        Provider<ControllerK8sCrdDatabase> ctrlK8sCrdDbProviderRef
+    )
     {
         errorReporter = errorReporterRef;
         transMgrProvider = transMgrProviderRef;
+        ctrlK8sCrdDbProvider = ctrlK8sCrdDbProviderRef;
         objectMapper = new ObjectMapper();
     }
 
@@ -176,7 +185,7 @@ public class K8sCrdEngine implements DbEngine
         Map<DATA, INIT_MAPS> loadedObjectsMap = new TreeMap<>();
 
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        for (LinstorSpec linstorSpec : tx.getSpec(table).values())
+        for (LinstorSpec<?, ?> linstorSpec : tx.getSpec(table).values())
         {
             Pair<DATA, INIT_MAPS> pair;
             try
@@ -286,7 +295,7 @@ public class K8sCrdEngine implements DbEngine
     {
         List<RawParameters> ret = new ArrayList<>();
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        for (LinstorSpec linstorSpec : tx.getSpec(tableRef).values())
+        for (LinstorSpec<?, ?> linstorSpec : tx.getSpec(tableRef).values())
         {
             ret.add(new RawParameters(tableRef, linstorSpec.asRawParameters(), DatabaseType.K8S_CRD));
         }
@@ -297,23 +306,47 @@ public class K8sCrdEngine implements DbEngine
     @Override
     public void truncateAllData(List<DbExportPojoData.Table> orderedTablesListRef) throws DatabaseException
     {
-        throw new ImplementationError("not implemented");
+        // tx based accesses to k8s are strongly bound to the current database tables, but right now we need to access
+        // tables that might no longer exist, but are given to us as parameter here
+
+        // Therefore we need to bypass the cached k8sClients and create our own.
+        KubernetesClient k8sClient = ctrlK8sCrdDbProvider.get().getClient();
+        for (DbExportPojoData.Table tbl : orderedTablesListRef)
+        {
+            k8sClient.resources(tbl.crdClass).delete();
+        }
     }
 
     @Override
     public void importData(DbExportPojoData.Table tableRef) throws DatabaseException
     {
-        throw new ImplementationError("not implemented");
+        importDataGenericsHelper(tableRef);
     }
 
+    @SuppressWarnings("unchecked")
+    private <CRD extends LinstorCrd<?>> void importDataGenericsHelper(DbExportPojoData.Table tableRef)
+    {
+        // tx based accesses to k8s are strongly bound to the current database tables, but right now we need to access
+        // tables that might no longer exist, but are given to us as parameter here
+
+        // Therefore we need to bypass the cached k8sClients and create our own.
+        KubernetesClient k8sClient = ctrlK8sCrdDbProvider.get().getClient();
+        MixedOperation<CRD, ?, ?> rscClient = k8sClient.resources((Class<CRD>) tableRef.crdClass);
+        for (LinstorSpec<?, ?> spec : tableRef.data)
+        {
+            rscClient.create((CRD) spec.getCrd());
+        }
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
     public String getDbDump() throws DatabaseException
     {
         K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
-        Map<String, Collection<LinstorSpec>> dump = new TreeMap<>();
+        Map<String, Collection<LinstorSpec<?, ?>>> dump = new TreeMap<>();
         for (DatabaseTable table : GeneratedDatabaseTables.ALL_TABLES)
         {
-            dump.put(table.getName(), tx.getSpec(table).values());
+            dump.put(table.getName(), (Collection<LinstorSpec<?, ?>>) tx.getSpec(table).values());
         }
         try
         {

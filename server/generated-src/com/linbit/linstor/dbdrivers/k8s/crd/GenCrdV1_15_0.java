@@ -39,7 +39,7 @@ public class GenCrdV1_15_0
     }
 
     @SuppressWarnings("unchecked")
-    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> Class<? extends LinstorCrd<SPEC>> databaseTableToCustomResourceClass(
+    public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> Class<? extends LinstorCrd<SPEC>> databaseTableToCustomResourceClass(
         DatabaseTable table
     )
     {
@@ -991,6 +991,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class FilesSpec implements LinstorSpec
     {
@@ -1039,6 +1040,14 @@ public class GenCrdV1_15_0
                 (byte[]) setters.get(GeneratedDatabaseTables.Files.CONTENT).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.Files.CONTENT_CHECKSUM).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -1138,6 +1147,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class KeyValueStoreSpec implements LinstorSpec
     {
@@ -1178,6 +1188,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.KeyValueStore.KVS_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.KeyValueStore.KVS_DSP_NAME).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -1275,6 +1293,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerBcacheVolumesSpec implements LinstorSpec
     {
@@ -1324,6 +1343,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.POOL_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.LayerBcacheVolumes.DEV_UUID).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -1427,6 +1454,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerCacheVolumesSpec implements LinstorSpec
     {
@@ -1476,6 +1504,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_CACHE).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.LayerCacheVolumes.POOL_NAME_META).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -1581,6 +1617,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdResourcesSpec implements LinstorSpec
     {
@@ -1633,6 +1670,14 @@ public class GenCrdV1_15_0
                 (long) setters.get(GeneratedDatabaseTables.LayerDrbdResources.FLAGS).accept(data),
                 (int) setters.get(GeneratedDatabaseTables.LayerDrbdResources.NODE_ID).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -1747,6 +1792,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdResourceDefinitionsSpec implements LinstorSpec
     {
@@ -1813,6 +1859,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.TRANSPORT_TYPE).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.LayerDrbdResourceDefinitions.SECRET).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -1926,6 +1980,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdVolumesSpec implements LinstorSpec
     {
@@ -1971,6 +2026,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumes.NODE_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.LayerDrbdVolumes.POOL_NAME).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -2071,6 +2134,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdVolumeDefinitionsSpec implements LinstorSpec
     {
@@ -2122,6 +2186,14 @@ public class GenCrdV1_15_0
                 (int) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_NR).accept(data),
                 (Integer) setters.get(GeneratedDatabaseTables.LayerDrbdVolumeDefinitions.VLM_MINOR_NR).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -2221,6 +2293,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerLuksVolumesSpec implements LinstorSpec
     {
@@ -2262,6 +2335,14 @@ public class GenCrdV1_15_0
                 (int) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.VLM_NR).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.ENCRYPTED_PASSWORD).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -2357,6 +2438,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerOpenflexResourceDefinitionsSpec implements LinstorSpec
     {
@@ -2402,6 +2484,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME_SUFFIX).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.NQN).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -2500,6 +2590,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerOpenflexVolumesSpec implements LinstorSpec
     {
@@ -2545,6 +2636,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.NODE_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.POOL_NAME).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -2651,6 +2750,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerResourceIdsSpec implements LinstorSpec
     {
@@ -2711,6 +2811,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUFFIX).accept(data),
                 (boolean) setters.get(GeneratedDatabaseTables.LayerResourceIds.LAYER_RESOURCE_SUSPENDED).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -2823,6 +2931,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerStorageVolumesSpec implements LinstorSpec
     {
@@ -2872,6 +2981,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.NODE_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.LayerStorageVolumes.STOR_POOL_NAME).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -2973,6 +3090,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LayerWritecacheVolumesSpec implements LinstorSpec
     {
@@ -3018,6 +3136,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.LayerWritecacheVolumes.NODE_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.LayerWritecacheVolumes.POOL_NAME).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -3122,6 +3248,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class LinstorRemotesSpec implements LinstorSpec
     {
@@ -3178,6 +3305,14 @@ public class GenCrdV1_15_0
                 (byte[]) setters.get(GeneratedDatabaseTables.LinstorRemotes.ENCRYPTED_PASSPHRASE).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.LinstorRemotes.CLUSTER_ID).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -3287,6 +3422,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class NodesSpec implements LinstorSpec
     {
@@ -3335,6 +3471,14 @@ public class GenCrdV1_15_0
                 (long) setters.get(GeneratedDatabaseTables.Nodes.NODE_FLAGS).accept(data),
                 (int) setters.get(GeneratedDatabaseTables.Nodes.NODE_TYPE).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -3434,6 +3578,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class NodeConnectionsSpec implements LinstorSpec
     {
@@ -3475,6 +3620,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.NodeConnections.NODE_NAME_SRC).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.NodeConnections.NODE_NAME_DST).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -3576,6 +3729,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class NodeNetInterfacesSpec implements LinstorSpec
     {
@@ -3633,6 +3787,14 @@ public class GenCrdV1_15_0
                 (Short) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_PORT).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.NodeNetInterfaces.STLT_CONN_ENCR_TYPE).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -3746,6 +3908,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class NodeStorPoolSpec implements LinstorSpec
     {
@@ -3803,6 +3966,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.NodeStorPool.FREE_SPACE_MGR_DSP_NAME).accept(data),
                 (boolean) setters.get(GeneratedDatabaseTables.NodeStorPool.EXTERNAL_LOCKING).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -3908,6 +4079,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class PropsContainersSpec implements LinstorSpec
     {
@@ -3949,6 +4121,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.PropsContainers.PROP_KEY).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.PropsContainers.PROP_VALUE).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -4048,6 +4228,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class ResourcesSpec implements LinstorSpec
     {
@@ -4102,6 +4283,14 @@ public class GenCrdV1_15_0
                 (long) setters.get(GeneratedDatabaseTables.Resources.RESOURCE_FLAGS).accept(data),
                 (Long) setters.get(GeneratedDatabaseTables.Resources.CREATE_TIMESTAMP).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -4212,6 +4401,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class ResourceConnectionsSpec implements LinstorSpec
     {
@@ -4271,6 +4461,14 @@ public class GenCrdV1_15_0
                 (long) setters.get(GeneratedDatabaseTables.ResourceConnections.FLAGS).accept(data),
                 (Integer) setters.get(GeneratedDatabaseTables.ResourceConnections.TCP_PORT).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -4390,6 +4588,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class ResourceDefinitionsSpec implements LinstorSpec
     {
@@ -4459,6 +4658,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.RESOURCE_GROUP_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.ResourceDefinitions.PARENT_UUID).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -4597,6 +4804,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class ResourceGroupsSpec implements LinstorSpec
     {
@@ -4685,6 +4893,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.ResourceGroups.ALLOWED_PROVIDER_LIST).accept(data),
                 (Boolean) setters.get(GeneratedDatabaseTables.ResourceGroups.DISKLESS_ON_REMAINING).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -4826,6 +5042,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class S3RemotesSpec implements LinstorSpec
     {
@@ -4890,6 +5107,14 @@ public class GenCrdV1_15_0
                 (byte[]) setters.get(GeneratedDatabaseTables.S3Remotes.ACCESS_KEY).accept(data),
                 (byte[]) setters.get(GeneratedDatabaseTables.S3Remotes.SECRET_KEY).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -5001,6 +5226,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SatellitesCapacitySpec implements LinstorSpec
     {
@@ -5041,6 +5267,14 @@ public class GenCrdV1_15_0
                 (byte[]) setters.get(GeneratedDatabaseTables.SatellitesCapacity.CAPACITY).accept(data),
                 (boolean) setters.get(GeneratedDatabaseTables.SatellitesCapacity.FAIL_FLAG).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -5132,6 +5366,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SecAccessTypesSpec implements LinstorSpec
     {
@@ -5168,6 +5403,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_NAME).accept(data),
                 (short) setters.get(GeneratedDatabaseTables.SecAccessTypes.ACCESS_TYPE_VALUE).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -5258,6 +5501,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SecAclMapSpec implements LinstorSpec
     {
@@ -5299,6 +5543,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.SecAclMap.ROLE_NAME).accept(data),
                 (short) setters.get(GeneratedDatabaseTables.SecAclMap.ACCESS_TYPE).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -5392,6 +5644,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SecConfigurationSpec implements LinstorSpec
     {
@@ -5432,6 +5685,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_DSP_KEY).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.SecConfiguration.ENTRY_VALUE).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -5523,6 +5784,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SecDfltRolesSpec implements LinstorSpec
     {
@@ -5559,6 +5821,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.SecDfltRoles.IDENTITY_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.SecDfltRoles.ROLE_NAME).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -5655,6 +5925,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SecIdentitiesSpec implements LinstorSpec
     {
@@ -5707,6 +5978,14 @@ public class GenCrdV1_15_0
                 (boolean) setters.get(GeneratedDatabaseTables.SecIdentities.ID_ENABLED).accept(data),
                 (boolean) setters.get(GeneratedDatabaseTables.SecIdentities.ID_LOCKED).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -5807,6 +6086,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SecIdRoleMapSpec implements LinstorSpec
     {
@@ -5844,6 +6124,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.SecIdRoleMap.IDENTITY_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.SecIdRoleMap.ROLE_NAME).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -5936,6 +6224,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SecObjectProtectionSpec implements LinstorSpec
     {
@@ -5980,6 +6269,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.SecObjectProtection.OWNER_ROLE_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.SecObjectProtection.SECURITY_TYPE_NAME).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -6080,6 +6377,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SecRolesSpec implements LinstorSpec
     {
@@ -6128,6 +6426,14 @@ public class GenCrdV1_15_0
                 (boolean) setters.get(GeneratedDatabaseTables.SecRoles.ROLE_ENABLED).accept(data),
                 (long) setters.get(GeneratedDatabaseTables.SecRoles.ROLE_PRIVILEGES).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -6227,6 +6533,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SecTypesSpec implements LinstorSpec
     {
@@ -6267,6 +6574,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.SecTypes.TYPE_DSP_NAME).accept(data),
                 (boolean) setters.get(GeneratedDatabaseTables.SecTypes.TYPE_ENABLED).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -6360,6 +6675,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SecTypeRulesSpec implements LinstorSpec
     {
@@ -6401,6 +6717,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.SecTypeRules.TYPE_NAME).accept(data),
                 (short) setters.get(GeneratedDatabaseTables.SecTypeRules.ACCESS_TYPE).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -6492,6 +6816,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class SpaceHistorySpec implements LinstorSpec
     {
@@ -6528,6 +6853,14 @@ public class GenCrdV1_15_0
                 (Date) setters.get(GeneratedDatabaseTables.SpaceHistory.ENTRY_DATE).accept(data),
                 (byte[]) setters.get(GeneratedDatabaseTables.SpaceHistory.CAPACITY).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -6618,6 +6951,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class StorPoolDefinitionsSpec implements LinstorSpec
     {
@@ -6658,6 +6992,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.StorPoolDefinitions.POOL_NAME).accept(data),
                 (String) setters.get(GeneratedDatabaseTables.StorPoolDefinitions.POOL_DSP_NAME).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -6747,6 +7089,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class TrackingDateSpec implements LinstorSpec
     {
@@ -6780,6 +7123,14 @@ public class GenCrdV1_15_0
             return new TrackingDateSpec(
                 (Date) setters.get(GeneratedDatabaseTables.TrackingDate.ENTRY_DATE).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -6873,6 +7224,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class VolumesSpec implements LinstorSpec
     {
@@ -6928,6 +7280,14 @@ public class GenCrdV1_15_0
                 (int) setters.get(GeneratedDatabaseTables.Volumes.VLM_NR).accept(data),
                 (long) setters.get(GeneratedDatabaseTables.Volumes.VLM_FLAGS).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -7036,6 +7396,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class VolumeConnectionsSpec implements LinstorSpec
     {
@@ -7092,6 +7453,14 @@ public class GenCrdV1_15_0
                 (String) setters.get(GeneratedDatabaseTables.VolumeConnections.SNAPSHOT_NAME).accept(data),
                 (int) setters.get(GeneratedDatabaseTables.VolumeConnections.VLM_NR).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -7200,6 +7569,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class VolumeDefinitionsSpec implements LinstorSpec
     {
@@ -7254,6 +7624,14 @@ public class GenCrdV1_15_0
                 (long) setters.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_SIZE).accept(data),
                 (long) setters.get(GeneratedDatabaseTables.VolumeDefinitions.VLM_FLAGS).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore
@@ -7358,6 +7736,7 @@ public class GenCrdV1_15_0
         );
     }
 
+    @SuppressWarnings("rawtypes")
     @JsonInclude(Include.NON_NULL)
     public static class VolumeGroupsSpec implements LinstorSpec
     {
@@ -7403,6 +7782,14 @@ public class GenCrdV1_15_0
                 (int) setters.get(GeneratedDatabaseTables.VolumeGroups.VLM_NR).accept(data),
                 (long) setters.get(GeneratedDatabaseTables.VolumeGroups.FLAGS).accept(data)
             );
+        }
+
+        @JsonIgnore
+        @Override
+        @SuppressWarnings("rawtypes")
+        public LinstorCrd getCrd()
+        {
+            throw new ImplementationError("Pre 1_19_1 does not support this method");
         }
 
         @JsonIgnore

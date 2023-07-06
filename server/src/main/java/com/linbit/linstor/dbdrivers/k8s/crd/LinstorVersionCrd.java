@@ -15,7 +15,9 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Plural(LinstorVersionCrd.LINSTOR_CRD_NAME)
 @Singular(LinstorVersionCrd.LINSTOR_CRD_NAME)
 @Kind(LinstorVersionCrd.LINSTOR_CRD_KIND)
-public class LinstorVersionCrd extends CustomResource<LinstorVersionSpec, Void> implements LinstorCrd<LinstorVersionSpec>
+public class LinstorVersionCrd
+    extends CustomResource<LinstorVersionSpec, Void>
+    implements LinstorCrd<LinstorVersionSpec>
 {
     private static final long serialVersionUID = -8682837877370152832L;
 
@@ -36,6 +38,7 @@ public class LinstorVersionCrd extends CustomResource<LinstorVersionSpec, Void> 
     {
         setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
         setSpec(spec);
+        spec.parentCrd = this;
     }
 
     @Override

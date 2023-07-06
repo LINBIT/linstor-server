@@ -35,6 +35,7 @@ public class RollbackCrd extends CustomResource<RollbackSpec, Void> implements L
     {
         setMetadata(new ObjectMetaBuilder().withName(spec.getLinstorKey()).build());
         setSpec(spec);
+        spec.parentCrd = this;
     }
 
     @Override

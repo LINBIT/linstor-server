@@ -67,12 +67,12 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
         k8sClient = controllerK8sCrdDatabaseRef.getClient();
 
         crdClientLut = new HashMap<>();
-        Function<DatabaseTable, Class<? extends LinstorCrd<? extends LinstorSpec>>> dbTableToCrdClass = ctx
+        Function<DatabaseTable, Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>>> dbTableToCrdClass = ctx
             .getDbTableToCrdClass();
         crdVersion = ctx.getCrdVersion();
         for (DatabaseTable tbl : GeneratedDatabaseTables.ALL_TABLES)
         {
-            Class<? extends LinstorCrd<? extends LinstorSpec>> clazz = dbTableToCrdClass.apply(tbl);
+            Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>> clazz = dbTableToCrdClass.apply(tbl);
             if (clazz != null)
             {
                 /*
@@ -184,7 +184,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     }
 
     @SuppressWarnings("unchecked")
-    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void create(
+    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> void create(
         DatabaseTable dbTableRef,
         HashMap<String, LinstorCrd<?>> changedCrds
     )
@@ -198,7 +198,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     }
 
     @SuppressWarnings("unchecked")
-    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void replace(
+    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> void replace(
         DatabaseTable dbTableRef,
         HashMap<String, LinstorCrd<?>> changedCrds
     )
@@ -212,7 +212,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     }
 
     @SuppressWarnings("unchecked")
-    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec> void delete(
+    private <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> void delete(
         DatabaseTable dbTableRef,
         HashMap<String, LinstorCrd<?>> createdCrds
     )

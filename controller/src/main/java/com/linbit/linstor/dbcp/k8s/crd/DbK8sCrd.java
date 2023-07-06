@@ -59,7 +59,7 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
 
     private KubernetesClient k8sClient;
 
-    private HashMap<Class<? extends LinstorCrd<? extends LinstorSpec>>, K8sResourceClient<?>> k8sCachingClient;
+    private HashMap<Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>>, K8sResourceClient<?>> k8sCachingClient;
 
     static
     {
@@ -142,8 +142,8 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
             // we close the client on shutdown anyway
             ApiextensionsAPIGroupDSL apiextensions = k8sDb.getClient().apiextensions();
             {
-                NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, Resource<CustomResourceDefinition>> crdApi = apiextensions
-                    .v1().customResourceDefinitions();
+                NonNamespaceOperation<CustomResourceDefinition, CustomResourceDefinitionList, Resource<CustomResourceDefinition>> crdApi;
+                crdApi = apiextensions.v1().customResourceDefinitions();
 
                 Resource<CustomResourceDefinition> crd = crdApi.load(
                     DbK8sCrd.class.getResourceAsStream("/" + LinstorVersionCrd.getYamlLocation()));
@@ -372,7 +372,7 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     }
 
     @Override
-    public K8sResourceClient<?> getCachingClient(Class<? extends LinstorCrd<? extends LinstorSpec>> clazz)
+    public K8sResourceClient<?> getCachingClient(Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>> clazz)
     {
         return k8sCachingClient.computeIfAbsent(clazz, c -> new K8sCachingClient<>(k8sClient.resources(c)));
     }
