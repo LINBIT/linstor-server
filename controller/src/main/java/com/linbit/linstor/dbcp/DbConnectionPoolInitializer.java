@@ -24,6 +24,8 @@ public class DbConnectionPoolInitializer implements DbInitializer
     private final DbConnectionPool dbConnPool;
     private final CtrlConfig ctrlCfg;
 
+    private boolean enableMigrationOnInit = true;
+
     @Inject
     public DbConnectionPoolInitializer(
         ErrorReporter errorLogRef,
@@ -38,6 +40,12 @@ public class DbConnectionPoolInitializer implements DbInitializer
     }
 
     @Override
+    public void setEnableMigrationOnInit(boolean enableRef)
+    {
+        enableMigrationOnInit = enableRef;
+    }
+
+    @Override
     public void initialize() throws InitializationException, SystemServiceStartException
     {
         errorLog.logInfo("Initializing the database connection pool");
@@ -48,7 +56,10 @@ public class DbConnectionPoolInitializer implements DbInitializer
             String dbType = getDbType(connectionUrl);
 
             dbConnPool.initializeDataSource(connectionUrl);
-            dbConnPool.migrate(dbType, !ctrlCfg.isDbVersionCheckDisabled());
+            if (enableMigrationOnInit)
+            {
+                dbConnPool.migrate(dbType, !ctrlCfg.isDbVersionCheckDisabled());
+            }
 
             testDbConnection();
         }

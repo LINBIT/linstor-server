@@ -178,20 +178,37 @@ public class ExtToolsInfo
         }
 
         /**
-         * Returns true if the version of "this" object is greater or equal to the parameter.
          * <p>
-         * null-values on either side also fulfill "greater or equal"
+         * Returns true if the version of "this" object is greater or equal to the parameter.
+         * </p>
+         * <p>
+         * null-values on either side also fulfill "greater or equal".
+         * </p>
+         * <p>
+         * By default, the "additionalInfo" field is not compared. This can be changed with the parameter
+         * </p>
          */
-        public boolean greaterOrEqual(Version vsn)
+        public boolean greaterOrEqual(Version vsnRef)
+        {
+            return greaterOrEqual(vsnRef, false);
+        }
+
+        public boolean greaterOrEqual(Version vsnRef, boolean compareAdditionalInfoRef)
         {
             // DO NOT rely on compareTo method, because of different handling of null values
-            int cmp = (major == null || vsn.major == null) ? 1 : Integer.compare(major, vsn.major);
+            int cmp = (major == null || vsnRef.major == null) ? 1 : Integer.compare(major, vsnRef.major);
             if (cmp == 0)
             {
-                cmp = minor == null || vsn.minor == null ? 1 : Integer.compare(minor, vsn.minor);
+                cmp = minor == null || vsnRef.minor == null ? 1 : Integer.compare(minor, vsnRef.minor);
                 if (cmp == 0)
                 {
-                    cmp = patch == null | vsn.patch == null ? 1 : Integer.compare(patch, vsn.patch);
+                    cmp = patch == null || vsnRef.patch == null ? 1 : Integer.compare(patch, vsnRef.patch);
+                    if (cmp == 0 && compareAdditionalInfoRef)
+                    {
+                        cmp = additionalInfo == null || vsnRef.additionalInfo == null ?
+                            1 :
+                            additionalInfo.compareTo(vsnRef.additionalInfo);
+                    }
                 }
             }
             return cmp >= 0;

@@ -22,6 +22,7 @@ import com.linbit.linstor.dbcp.DbInitializer;
 import com.linbit.linstor.dbcp.migration.AbsMigration;
 import com.linbit.linstor.dbdrivers.ControllerDbModule;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
+import com.linbit.linstor.dbdrivers.etcd.EtcdUtils;
 import com.linbit.linstor.debug.ControllerDebugModule;
 import com.linbit.linstor.debug.DebugModule;
 import com.linbit.linstor.event.EventModule;
@@ -70,6 +71,7 @@ public class LinstorDatabaseTool
         subcommands =
         {
             CmdExportDb.class,
+            CmdImportDb.class,
     })
     private static class LinstorConfigCmd implements Callable<Object>
     {
@@ -87,15 +89,10 @@ public class LinstorDatabaseTool
     )
     private static class CmdExportDb implements Callable<Object>
     {
-        @CommandLine.Option(
-            names =
-            {
-                "--cfg",
-                "--config",
-                "-c" },
-            description = "Path of the config file to use"
+        @CommandLine.Option(names = {"-c", "--config-directory"},
+            description = "Configuration directory for the controller"
         )
-        private String cfgPath = "./linstor.toml";
+        private String configurationDirectory = "./";
 
         @CommandLine.Parameters(description = "Path to the exported database file")
         private String dbExportPath;
@@ -103,12 +100,42 @@ public class LinstorDatabaseTool
         @Override
         public Object call() throws Exception
         {
-            runDbExportImport(cfgPath, injector ->
+            runDbExportImport(configurationDirectory, injector ->
             {
                 DbExportImportHelper dbExportImporter = injector.getInstance(DbExportImportHelper.class);
                 ErrorReporter errorLog = injector.getInstance(ErrorReporter.class);
                 dbExportImporter.export(dbExportPath);
                 errorLog.logInfo("Export finished");
+            });
+
+            return null;
+        }
+    }
+
+    @CommandLine.Command(
+        name = "import-db",
+        description = "Imports a previously exported linstor database-dump to the database" +
+            "given by the configured linstor.toml"
+    )
+    private static class CmdImportDb implements Callable<Object>
+    {
+        @CommandLine.Option(names = { "-c", "--config-directory" },
+            description = "Configuration directory for the controller"
+        )
+        private String configurationDirectory = "./";
+
+        @CommandLine.Parameters(description = "Path to the exported database file")
+        private String dbExportPath;
+
+        @Override
+        public Object call() throws Exception
+        {
+            runDbExportImport(configurationDirectory, injector ->
+            {
+                DbExportImportHelper dbExportImporter = injector.getInstance(DbExportImportHelper.class);
+                ErrorReporter errorLog = injector.getInstance(ErrorReporter.class);
+                dbExportImporter.importDb(dbExportPath);
+                errorLog.logInfo("Import finished");
             });
 
             return null;
@@ -126,6 +153,7 @@ public class LinstorDatabaseTool
                 cfgPath
             }
         );
+        EtcdUtils.linstorPrefix = cfg.getEtcdPrefix().endsWith("/") ? cfg.getEtcdPrefix() : cfg.getEtcdPrefix() + '/';
 
         ErrorReporter errorLog = new StdErrorReporter(
             "linstor-db",
@@ -201,6 +229,7 @@ public class LinstorDatabaseTool
 
         try (ScopeAutoCloseable closableScope = scope.enter())
         {
+            dbInit.setEnableMigrationOnInit(false);
             dbInit.initialize();
 
             TransactionMgr txMgr = transactionMgrGenerator.startTransaction();

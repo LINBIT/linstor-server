@@ -55,6 +55,7 @@ import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.configuration.Configuration;
+import org.flywaydb.core.api.configuration.FluentConfiguration;
 
 /**
  * JDBC pool
@@ -219,7 +220,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
         buildMigrations(dbType).migrate();
     }
 
-    public String getCurrentVersion(String dbTypeRef)
+    public String getCurrentVersion()
     {
         // DO NOT use Flyway, since it requires an actual connection to the database, which might not be running if we
         // are using ETCD or K8s
@@ -243,6 +244,12 @@ public class DbConnectionPool implements ControllerSQLDatabase
     }
 
     @Override
+    public void preImportMigrateToVersion(String dbTypeRef, Object versionRef) throws DatabaseException
+    {
+        getFlywayConfig(dbTypeRef).target((String) versionRef).load().migrate();
+    }
+
+    @Override
     public boolean needsMigration(String dbType)
     {
         int pending = buildMigrations(dbType)
@@ -254,6 +261,11 @@ public class DbConnectionPool implements ControllerSQLDatabase
 
     private Flyway buildMigrations(String dbType)
     {
+        return getFlywayConfig(dbType).load();
+    }
+
+    private FluentConfiguration getFlywayConfig(String dbType)
+    {
         return Flyway.configure()
             .schemas(DATABASE_SCHEMA_NAME)
             .dataSource(dataSource)
@@ -263,8 +275,7 @@ public class DbConnectionPool implements ControllerSQLDatabase
             // Pass the DB type to the migrations
             .placeholders(ImmutableMap.of(LinstorMigration.PLACEHOLDER_KEY_DB_TYPE, dbType))
             .locations(LinstorMigration.class.getPackage().getName().replaceAll("\\.", "/"))
-            .ignoreFutureMigrations(false)
-            .load();
+            .ignoreFutureMigrations(false);
     }
 
     private void checkMinVersion() throws InitializationException

@@ -547,6 +547,11 @@ public final class DatabaseConstantsGenerator
         );
         appendEmptyLine();
 
+        appendLine("@GenCrd(");
+        try (IndentLevel annotIndent = new IndentLevel("", ")", false, true))
+        {
+            appendLine("dataVersion = \"%s\"", asYamlVersionString(currentVersionRef));
+        }
         appendLine("public class %s", clazzName);
         try (IndentLevel clazzIndent = new IndentLevel())
         {
@@ -1020,6 +1025,11 @@ public final class DatabaseConstantsGenerator
          * Spec class
          */
         appendEmptyLine();
+        appendLine("@LinstorData(");
+        try (IndentLevel specClazzIndent = new IndentLevel("", ")", false, true))
+        {
+            appendLine("tableName = \"%s\"", tbl.name);
+        }
         appendLine("@JsonInclude(Include.NON_NULL)");
         appendLine("public static class %s implements %s", specClassName, CRD_LINSTOR_SPEC_INTERFACE_NAME);
         try (IndentLevel specClazzIndent = new IndentLevel())
@@ -1184,10 +1194,10 @@ public final class DatabaseConstantsGenerator
             appendEmptyLine();
             appendLine("@JsonIgnore");
             appendLine("@Override");
-            appendLine("public Object getByColumn(Column clm)");
+            appendLine("public Object getByColumn(String clmNameStr)");
             try (IndentLevel getByColumnMethodIndent = new IndentLevel())
             {
-                appendLine("switch (clm.getName())");
+                appendLine("switch (clmNameStr)");
                 try (IndentLevel switchIndent = new IndentLevel())
                 {
                     for (Column clm : tbl.columns)
@@ -1202,7 +1212,9 @@ public final class DatabaseConstantsGenerator
                     try (IndentLevel defaultCaseIndent = new IndentLevel("", "", false, false))
                     {
                         appendLine(
-                            "throw new ImplementationError(\"Unknown database column. Table: \" + clm.getTable().getName() + \", Column: \" + clm.getName());"
+                            "throw new ImplementationError(\"Unknown database column. " +
+                                "Table: %s, Column: \" + clmNameStr);",
+                            tbl.name
                         );
                     }
                 }

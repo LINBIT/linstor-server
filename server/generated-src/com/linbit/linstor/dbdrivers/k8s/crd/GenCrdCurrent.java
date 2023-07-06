@@ -38,6 +38,9 @@ import io.fabric8.kubernetes.model.annotation.Plural;
 import io.fabric8.kubernetes.model.annotation.Singular;
 import io.fabric8.kubernetes.model.annotation.Version;
 
+@GenCrd(
+    dataVersion = "v1-19-1"
+)
 public class GenCrdCurrent
 {
     public static final String VERSION = "v1-19-1";
@@ -1365,6 +1368,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "EBS_REMOTES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class EbsRemotesSpec implements LinstorSpec
     {
@@ -1447,9 +1453,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -1470,7 +1476,7 @@ public class GenCrdCurrent
                 case "SECRET_KEY":
                     return secretKey;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: EBS_REMOTES, Column: " + clmNameStr);
             }
         }
 
@@ -1551,6 +1557,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "FILES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class FilesSpec implements LinstorSpec
     {
@@ -1613,9 +1622,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -1628,7 +1637,7 @@ public class GenCrdCurrent
                 case "CONTENT_CHECKSUM":
                     return contentChecksum;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: FILES, Column: " + clmNameStr);
             }
         }
 
@@ -1705,6 +1714,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "KEY_VALUE_STORE"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class KeyValueStoreSpec implements LinstorSpec
     {
@@ -1757,9 +1769,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -1768,7 +1780,7 @@ public class GenCrdCurrent
                 case "KVS_DSP_NAME":
                     return kvsDspName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: KEY_VALUE_STORE, Column: " + clmNameStr);
             }
         }
 
@@ -1849,6 +1861,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_BCACHE_VOLUMES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerBcacheVolumesSpec implements LinstorSpec
     {
@@ -1912,9 +1927,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1927,7 +1942,7 @@ public class GenCrdCurrent
                 case "DEV_UUID":
                     return devUuid;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_BCACHE_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -2008,6 +2023,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_CACHE_VOLUMES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerCacheVolumesSpec implements LinstorSpec
     {
@@ -2071,9 +2089,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2086,7 +2104,7 @@ public class GenCrdCurrent
                 case "POOL_NAME_META":
                     return poolNameMeta;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_CACHE_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -2169,6 +2187,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_DRBD_RESOURCES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdResourcesSpec implements LinstorSpec
     {
@@ -2236,9 +2257,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2253,7 +2274,7 @@ public class GenCrdCurrent
                 case "NODE_ID":
                     return nodeId;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_DRBD_RESOURCES, Column: " + clmNameStr);
             }
         }
 
@@ -2342,6 +2363,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_DRBD_RESOURCE_DEFINITIONS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdResourceDefinitionsSpec implements LinstorSpec
     {
@@ -2426,9 +2450,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2449,7 +2473,7 @@ public class GenCrdCurrent
                 case "SECRET":
                     return secret;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_DRBD_RESOURCE_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -2528,6 +2552,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_DRBD_VOLUMES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdVolumesSpec implements LinstorSpec
     {
@@ -2586,9 +2613,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2599,7 +2626,7 @@ public class GenCrdCurrent
                 case "POOL_NAME":
                     return poolName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_DRBD_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -2680,6 +2707,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_DRBD_VOLUME_DEFINITIONS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdVolumeDefinitionsSpec implements LinstorSpec
     {
@@ -2745,9 +2775,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2760,7 +2790,7 @@ public class GenCrdCurrent
                 case "VLM_MINOR_NR":
                     return vlmMinorNr;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_DRBD_VOLUME_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -2837,6 +2867,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_LUKS_VOLUMES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerLuksVolumesSpec implements LinstorSpec
     {
@@ -2890,9 +2923,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2901,7 +2934,7 @@ public class GenCrdCurrent
                 case "ENCRYPTED_PASSWORD":
                     return encryptedPassword;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_LUKS_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -2980,6 +3013,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_OPENFLEX_RESOURCE_DEFINITIONS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerOpenflexResourceDefinitionsSpec implements LinstorSpec
     {
@@ -3038,9 +3074,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -3051,7 +3087,7 @@ public class GenCrdCurrent
                 case "NQN":
                     return nqn;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_OPENFLEX_RESOURCE_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -3130,6 +3166,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_OPENFLEX_VOLUMES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerOpenflexVolumesSpec implements LinstorSpec
     {
@@ -3188,9 +3227,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3201,7 +3240,7 @@ public class GenCrdCurrent
                 case "POOL_NAME":
                     return poolName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_OPENFLEX_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -3288,6 +3327,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_RESOURCE_IDS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerResourceIdsSpec implements LinstorSpec
     {
@@ -3365,9 +3407,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3386,7 +3428,7 @@ public class GenCrdCurrent
                 case "LAYER_RESOURCE_SUSPENDED":
                     return layerResourceSuspended;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_RESOURCE_IDS, Column: " + clmNameStr);
             }
         }
 
@@ -3467,6 +3509,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_STORAGE_VOLUMES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerStorageVolumesSpec implements LinstorSpec
     {
@@ -3530,9 +3575,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3545,7 +3590,7 @@ public class GenCrdCurrent
                 case "STOR_POOL_NAME":
                     return storPoolName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_STORAGE_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -3624,6 +3669,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LAYER_WRITECACHE_VOLUMES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LayerWritecacheVolumesSpec implements LinstorSpec
     {
@@ -3682,9 +3730,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3695,7 +3743,7 @@ public class GenCrdCurrent
                 case "POOL_NAME":
                     return poolName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_WRITECACHE_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -3780,6 +3828,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "LINSTOR_REMOTES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class LinstorRemotesSpec implements LinstorSpec
     {
@@ -3852,9 +3903,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3871,7 +3922,7 @@ public class GenCrdCurrent
                 case "CLUSTER_ID":
                     return clusterId;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LINSTOR_REMOTES, Column: " + clmNameStr);
             }
         }
 
@@ -3952,6 +4003,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "NODES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class NodesSpec implements LinstorSpec
     {
@@ -4014,9 +4068,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4029,7 +4083,7 @@ public class GenCrdCurrent
                 case "NODE_TYPE":
                     return nodeType;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: NODES, Column: " + clmNameStr);
             }
         }
 
@@ -4106,6 +4160,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "NODE_CONNECTIONS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class NodeConnectionsSpec implements LinstorSpec
     {
@@ -4159,9 +4216,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4170,7 +4227,7 @@ public class GenCrdCurrent
                 case "NODE_NAME_DST":
                     return nodeNameDst;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: NODE_CONNECTIONS, Column: " + clmNameStr);
             }
         }
 
@@ -4255,6 +4312,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "NODE_NET_INTERFACES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class NodeNetInterfacesSpec implements LinstorSpec
     {
@@ -4328,9 +4388,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4347,7 +4407,7 @@ public class GenCrdCurrent
                 case "STLT_CONN_ENCR_TYPE":
                     return stltConnEncrType;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: NODE_NET_INTERFACES, Column: " + clmNameStr);
             }
         }
 
@@ -4432,6 +4492,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "NODE_STOR_POOL"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class NodeStorPoolSpec implements LinstorSpec
     {
@@ -4505,9 +4568,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4524,7 +4587,7 @@ public class GenCrdCurrent
                 case "EXTERNAL_LOCKING":
                     return externalLocking;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: NODE_STOR_POOL, Column: " + clmNameStr);
             }
         }
 
@@ -4601,6 +4664,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "PROPS_CONTAINERS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class PropsContainersSpec implements LinstorSpec
     {
@@ -4654,9 +4720,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "PROPS_INSTANCE":
                     return propsInstance;
@@ -4665,7 +4731,7 @@ public class GenCrdCurrent
                 case "PROP_VALUE":
                     return propValue;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: PROPS_CONTAINERS, Column: " + clmNameStr);
             }
         }
 
@@ -4748,6 +4814,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "RESOURCES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class ResourcesSpec implements LinstorSpec
     {
@@ -4817,9 +4886,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4834,7 +4903,7 @@ public class GenCrdCurrent
                 case "CREATE_TIMESTAMP":
                     return createTimestamp;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: RESOURCES, Column: " + clmNameStr);
             }
         }
 
@@ -4919,6 +4988,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "RESOURCE_CONNECTIONS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class ResourceConnectionsSpec implements LinstorSpec
     {
@@ -4994,9 +5066,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -5013,7 +5085,7 @@ public class GenCrdCurrent
                 case "TCP_PORT":
                     return tcpPort;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: RESOURCE_CONNECTIONS, Column: " + clmNameStr);
             }
         }
 
@@ -5104,6 +5176,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "RESOURCE_DEFINITIONS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class ResourceDefinitionsSpec implements LinstorSpec
     {
@@ -5192,9 +5267,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -5217,7 +5292,7 @@ public class GenCrdCurrent
                 case "PARENT_UUID":
                     return parentUuid;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: RESOURCE_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -5318,6 +5393,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "RESOURCE_GROUPS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class ResourceGroupsSpec implements LinstorSpec
     {
@@ -5430,9 +5508,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -5465,7 +5543,7 @@ public class GenCrdCurrent
                 case "DISKLESS_ON_REMAINING":
                     return disklessOnRemaining;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: RESOURCE_GROUPS, Column: " + clmNameStr);
             }
         }
 
@@ -5554,6 +5632,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "S3_REMOTES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class S3RemotesSpec implements LinstorSpec
     {
@@ -5636,9 +5717,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -5659,7 +5740,7 @@ public class GenCrdCurrent
                 case "SECRET_KEY":
                     return secretKey;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: S3_REMOTES, Column: " + clmNameStr);
             }
         }
 
@@ -5740,6 +5821,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SATELLITES_CAPACITY"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SatellitesCapacitySpec implements LinstorSpec
     {
@@ -5802,9 +5886,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "NODE_NAME":
                     return nodeName;
@@ -5817,7 +5901,7 @@ public class GenCrdCurrent
                 case "USABLE":
                     return usable;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SATELLITES_CAPACITY, Column: " + clmNameStr);
             }
         }
 
@@ -5908,6 +5992,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SCHEDULES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SchedulesSpec implements LinstorSpec
     {
@@ -5995,9 +6082,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -6020,7 +6107,7 @@ public class GenCrdCurrent
                 case "MAX_RETRIES":
                     return maxRetries;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SCHEDULES, Column: " + clmNameStr);
             }
         }
 
@@ -6095,6 +6182,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SEC_ACCESS_TYPES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SecAccessTypesSpec implements LinstorSpec
     {
@@ -6142,16 +6232,16 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "ACCESS_TYPE_NAME":
                     return accessTypeName;
                 case "ACCESS_TYPE_VALUE":
                     return accessTypeValue;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_ACCESS_TYPES, Column: " + clmNameStr);
             }
         }
 
@@ -6228,6 +6318,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SEC_ACL_MAP"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SecAclMapSpec implements LinstorSpec
     {
@@ -6281,9 +6374,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "OBJECT_PATH":
                     return objectPath;
@@ -6292,7 +6385,7 @@ public class GenCrdCurrent
                 case "ACCESS_TYPE":
                     return accessType;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_ACL_MAP, Column: " + clmNameStr);
             }
         }
 
@@ -6369,6 +6462,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SEC_CONFIGURATION"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SecConfigurationSpec implements LinstorSpec
     {
@@ -6421,9 +6517,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "ENTRY_KEY":
                     return entryKey;
@@ -6432,7 +6528,7 @@ public class GenCrdCurrent
                 case "ENTRY_VALUE":
                     return entryValue;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_CONFIGURATION, Column: " + clmNameStr);
             }
         }
 
@@ -6507,6 +6603,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SEC_DFLT_ROLES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SecDfltRolesSpec implements LinstorSpec
     {
@@ -6554,16 +6653,16 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
                 case "ROLE_NAME":
                     return roleName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_DFLT_ROLES, Column: " + clmNameStr);
             }
         }
 
@@ -6646,6 +6745,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SEC_IDENTITIES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SecIdentitiesSpec implements LinstorSpec
     {
@@ -6713,9 +6815,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -6730,7 +6832,7 @@ public class GenCrdCurrent
                 case "ID_LOCKED":
                     return idLocked;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_IDENTITIES, Column: " + clmNameStr);
             }
         }
 
@@ -6805,6 +6907,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SEC_ID_ROLE_MAP"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SecIdRoleMapSpec implements LinstorSpec
     {
@@ -6853,16 +6958,16 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
                 case "ROLE_NAME":
                     return roleName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_ID_ROLE_MAP, Column: " + clmNameStr);
             }
         }
 
@@ -6941,6 +7046,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SEC_OBJECT_PROTECTION"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SecObjectProtectionSpec implements LinstorSpec
     {
@@ -6998,9 +7106,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "OBJECT_PATH":
                     return objectPath;
@@ -7011,7 +7119,7 @@ public class GenCrdCurrent
                 case "SECURITY_TYPE_NAME":
                     return securityTypeName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_OBJECT_PROTECTION, Column: " + clmNameStr);
             }
         }
 
@@ -7092,6 +7200,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SEC_ROLES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SecRolesSpec implements LinstorSpec
     {
@@ -7154,9 +7265,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "ROLE_NAME":
                     return roleName;
@@ -7169,7 +7280,7 @@ public class GenCrdCurrent
                 case "ROLE_PRIVILEGES":
                     return rolePrivileges;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_ROLES, Column: " + clmNameStr);
             }
         }
 
@@ -7246,6 +7357,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SEC_TYPES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SecTypesSpec implements LinstorSpec
     {
@@ -7298,9 +7412,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "TYPE_NAME":
                     return typeName;
@@ -7309,7 +7423,7 @@ public class GenCrdCurrent
                 case "TYPE_ENABLED":
                     return typeEnabled;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_TYPES, Column: " + clmNameStr);
             }
         }
 
@@ -7386,6 +7500,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SEC_TYPE_RULES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SecTypeRulesSpec implements LinstorSpec
     {
@@ -7439,9 +7556,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "DOMAIN_NAME":
                     return domainName;
@@ -7450,7 +7567,7 @@ public class GenCrdCurrent
                 case "ACCESS_TYPE":
                     return accessType;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_TYPE_RULES, Column: " + clmNameStr);
             }
         }
 
@@ -7525,6 +7642,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "SPACE_HISTORY"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class SpaceHistorySpec implements LinstorSpec
     {
@@ -7572,16 +7692,16 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "ENTRY_DATE":
                     return entryDate;
                 case "CAPACITY":
                     return capacity;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SPACE_HISTORY, Column: " + clmNameStr);
             }
         }
 
@@ -7658,6 +7778,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "STOR_POOL_DEFINITIONS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class StorPoolDefinitionsSpec implements LinstorSpec
     {
@@ -7710,9 +7833,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7721,7 +7844,7 @@ public class GenCrdCurrent
                 case "POOL_DSP_NAME":
                     return poolDspName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: STOR_POOL_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -7794,6 +7917,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "TRACKING_DATE"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class TrackingDateSpec implements LinstorSpec
     {
@@ -7837,14 +7963,14 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "ENTRY_DATE":
                     return entryDate;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: TRACKING_DATE, Column: " + clmNameStr);
             }
         }
 
@@ -7927,6 +8053,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "VOLUMES"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class VolumesSpec implements LinstorSpec
     {
@@ -7997,9 +8126,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -8014,7 +8143,7 @@ public class GenCrdCurrent
                 case "VLM_FLAGS":
                     return vlmFlags;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -8097,6 +8226,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "VOLUME_CONNECTIONS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class VolumeConnectionsSpec implements LinstorSpec
     {
@@ -8168,9 +8300,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -8185,7 +8317,7 @@ public class GenCrdCurrent
                 case "VLM_NR":
                     return vlmNr;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: VOLUME_CONNECTIONS, Column: " + clmNameStr);
             }
         }
 
@@ -8268,6 +8400,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "VOLUME_DEFINITIONS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class VolumeDefinitionsSpec implements LinstorSpec
     {
@@ -8337,9 +8472,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -8354,7 +8489,7 @@ public class GenCrdCurrent
                 case "VLM_FLAGS":
                     return vlmFlags;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: VOLUME_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -8433,6 +8568,9 @@ public class GenCrdCurrent
         );
     }
 
+    @LinstorData(
+        tableName = "VOLUME_GROUPS"
+    )
     @JsonInclude(Include.NON_NULL)
     public static class VolumeGroupsSpec implements LinstorSpec
     {
@@ -8491,9 +8629,9 @@ public class GenCrdCurrent
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch (clm.getName())
+            switch (clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -8504,7 +8642,7 @@ public class GenCrdCurrent
                 case "FLAGS":
                     return flags;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: VOLUME_GROUPS, Column: " + clmNameStr);
             }
         }
 

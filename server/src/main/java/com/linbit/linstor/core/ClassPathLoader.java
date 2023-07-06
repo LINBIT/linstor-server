@@ -8,6 +8,7 @@ import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.google.common.reflect.ClassPath;
@@ -72,11 +73,20 @@ public class ClassPathLoader
         List<Class<? extends T>> classes = Collections.emptyList();
         try
         {
+            Function<Class<?>, Class<? extends T>> clsMapper;
+            if (requiredClass != null)
+            {
+                clsMapper = clazz -> ClassPathLoader.<T>asClass(requiredClass, clazz);
+            }
+            else
+            {
+                clsMapper = clazz -> (Class<? extends T>) clazz;
+            }
             classes = ClassPath.from(ClassPathLoader.class.getClassLoader())
                 .getTopLevelClasses(pkgName)
                 .stream()
                 .map(ClassPath.ClassInfo::load)
-                .map(clazz -> ClassPathLoader.<T>asClass(requiredClass, clazz))
+                .map(clsMapper)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         }

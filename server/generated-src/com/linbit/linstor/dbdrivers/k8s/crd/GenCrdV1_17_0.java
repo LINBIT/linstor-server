@@ -1245,9 +1245,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -1260,7 +1260,7 @@ public class GenCrdV1_17_0
                 case "CONTENT_CHECKSUM":
                     return contentChecksum;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: FILES, Column: " + clmNameStr);
             }
         }
 
@@ -1379,9 +1379,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -1390,7 +1390,7 @@ public class GenCrdV1_17_0
                 case "KVS_DSP_NAME":
                     return kvsDspName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: KEY_VALUE_STORE, Column: " + clmNameStr);
             }
         }
 
@@ -1522,9 +1522,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1537,7 +1537,7 @@ public class GenCrdV1_17_0
                 case "DEV_UUID":
                     return devUuid;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_BCACHE_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -1669,9 +1669,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1684,7 +1684,7 @@ public class GenCrdV1_17_0
                 case "POOL_NAME_META":
                     return poolNameMeta;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_CACHE_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -1821,9 +1821,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -1838,7 +1838,7 @@ public class GenCrdV1_17_0
                 case "NODE_ID":
                     return nodeId;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_DRBD_RESOURCES, Column: " + clmNameStr);
             }
         }
 
@@ -1995,9 +1995,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2018,7 +2018,7 @@ public class GenCrdV1_17_0
                 case "SECRET":
                     return secret;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_DRBD_RESOURCE_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -2144,9 +2144,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2157,7 +2157,7 @@ public class GenCrdV1_17_0
                 case "POOL_NAME":
                     return poolName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_DRBD_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -2291,9 +2291,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2306,7 +2306,7 @@ public class GenCrdV1_17_0
                 case "VLM_MINOR_NR":
                     return vlmMinorNr;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_DRBD_VOLUME_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -2426,9 +2426,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2437,7 +2437,7 @@ public class GenCrdV1_17_0
                 case "ENCRYPTED_PASSWORD":
                     return encryptedPassword;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_LUKS_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -2563,9 +2563,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "RESOURCE_NAME":
                     return resourceName;
@@ -2576,7 +2576,7 @@ public class GenCrdV1_17_0
                 case "NQN":
                     return nqn;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_OPENFLEX_RESOURCE_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -2702,9 +2702,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2715,7 +2715,7 @@ public class GenCrdV1_17_0
                 case "POOL_NAME":
                     return poolName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_OPENFLEX_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -2864,9 +2864,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -2885,7 +2885,7 @@ public class GenCrdV1_17_0
                 case "LAYER_RESOURCE_SUSPENDED":
                     return layerResourceSuspended;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_RESOURCE_IDS, Column: " + clmNameStr);
             }
         }
 
@@ -3017,9 +3017,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3032,7 +3032,7 @@ public class GenCrdV1_17_0
                 case "STOR_POOL_NAME":
                     return storPoolName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_STORAGE_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -3158,9 +3158,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "LAYER_RESOURCE_ID":
                     return layerResourceId;
@@ -3171,7 +3171,7 @@ public class GenCrdV1_17_0
                 case "POOL_NAME":
                     return poolName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LAYER_WRITECACHE_VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -3314,9 +3314,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3333,7 +3333,7 @@ public class GenCrdV1_17_0
                 case "CLUSTER_ID":
                     return clusterId;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: LINSTOR_REMOTES, Column: " + clmNameStr);
             }
         }
 
@@ -3464,9 +3464,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3479,7 +3479,7 @@ public class GenCrdV1_17_0
                 case "NODE_TYPE":
                     return nodeType;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: NODES, Column: " + clmNameStr);
             }
         }
 
@@ -3599,9 +3599,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3610,7 +3610,7 @@ public class GenCrdV1_17_0
                 case "NODE_NAME_DST":
                     return nodeNameDst;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: NODE_CONNECTIONS, Column: " + clmNameStr);
             }
         }
 
@@ -3754,9 +3754,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3773,7 +3773,7 @@ public class GenCrdV1_17_0
                 case "STLT_CONN_ENCR_TYPE":
                     return stltConnEncrType;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: NODE_NET_INTERFACES, Column: " + clmNameStr);
             }
         }
 
@@ -3917,9 +3917,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -3936,7 +3936,7 @@ public class GenCrdV1_17_0
                 case "EXTERNAL_LOCKING":
                     return externalLocking;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: NODE_STOR_POOL, Column: " + clmNameStr);
             }
         }
 
@@ -4056,9 +4056,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "PROPS_INSTANCE":
                     return propsInstance;
@@ -4067,7 +4067,7 @@ public class GenCrdV1_17_0
                 case "PROP_VALUE":
                     return propValue;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: PROPS_CONTAINERS, Column: " + clmNameStr);
             }
         }
 
@@ -4206,9 +4206,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4223,7 +4223,7 @@ public class GenCrdV1_17_0
                 case "CREATE_TIMESTAMP":
                     return createTimestamp;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: RESOURCES, Column: " + clmNameStr);
             }
         }
 
@@ -4369,9 +4369,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4388,7 +4388,7 @@ public class GenCrdV1_17_0
                 case "TCP_PORT":
                     return tcpPort;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: RESOURCE_CONNECTIONS, Column: " + clmNameStr);
             }
         }
 
@@ -4550,9 +4550,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4575,7 +4575,7 @@ public class GenCrdV1_17_0
                 case "PARENT_UUID":
                     return parentUuid;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: RESOURCE_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -4766,9 +4766,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4801,7 +4801,7 @@ public class GenCrdV1_17_0
                 case "DISKLESS_ON_REMAINING":
                     return disklessOnRemaining;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: RESOURCE_GROUPS, Column: " + clmNameStr);
             }
         }
 
@@ -4956,9 +4956,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -4979,7 +4979,7 @@ public class GenCrdV1_17_0
                 case "SECRET_KEY":
                     return secretKey;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: S3_REMOTES, Column: " + clmNameStr);
             }
         }
 
@@ -5110,9 +5110,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "NODE_NAME":
                     return nodeName;
@@ -5125,7 +5125,7 @@ public class GenCrdV1_17_0
                 case "USABLE":
                     return usable;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SATELLITES_CAPACITY, Column: " + clmNameStr);
             }
         }
 
@@ -5238,16 +5238,16 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "ACCESS_TYPE_NAME":
                     return accessTypeName;
                 case "ACCESS_TYPE_VALUE":
                     return accessTypeValue;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_ACCESS_TYPES, Column: " + clmNameStr);
             }
         }
 
@@ -5367,9 +5367,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "OBJECT_PATH":
                     return objectPath;
@@ -5378,7 +5378,7 @@ public class GenCrdV1_17_0
                 case "ACCESS_TYPE":
                     return accessType;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_ACL_MAP, Column: " + clmNameStr);
             }
         }
 
@@ -5497,9 +5497,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "ENTRY_KEY":
                     return entryKey;
@@ -5508,7 +5508,7 @@ public class GenCrdV1_17_0
                 case "ENTRY_VALUE":
                     return entryValue;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_CONFIGURATION, Column: " + clmNameStr);
             }
         }
 
@@ -5621,16 +5621,16 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
                 case "ROLE_NAME":
                     return roleName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_DFLT_ROLES, Column: " + clmNameStr);
             }
         }
 
@@ -5767,9 +5767,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
@@ -5784,7 +5784,7 @@ public class GenCrdV1_17_0
                 case "ID_LOCKED":
                     return idLocked;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_IDENTITIES, Column: " + clmNameStr);
             }
         }
 
@@ -5898,16 +5898,16 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "IDENTITY_NAME":
                     return identityName;
                 case "ROLE_NAME":
                     return roleName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_ID_ROLE_MAP, Column: " + clmNameStr);
             }
         }
 
@@ -6032,9 +6032,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "OBJECT_PATH":
                     return objectPath;
@@ -6045,7 +6045,7 @@ public class GenCrdV1_17_0
                 case "SECURITY_TYPE_NAME":
                     return securityTypeName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_OBJECT_PROTECTION, Column: " + clmNameStr);
             }
         }
 
@@ -6176,9 +6176,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "ROLE_NAME":
                     return roleName;
@@ -6191,7 +6191,7 @@ public class GenCrdV1_17_0
                 case "ROLE_PRIVILEGES":
                     return rolePrivileges;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_ROLES, Column: " + clmNameStr);
             }
         }
 
@@ -6310,9 +6310,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "TYPE_NAME":
                     return typeName;
@@ -6321,7 +6321,7 @@ public class GenCrdV1_17_0
                 case "TYPE_ENABLED":
                     return typeEnabled;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_TYPES, Column: " + clmNameStr);
             }
         }
 
@@ -6441,9 +6441,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "DOMAIN_NAME":
                     return domainName;
@@ -6452,7 +6452,7 @@ public class GenCrdV1_17_0
                 case "ACCESS_TYPE":
                     return accessType;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SEC_TYPE_RULES, Column: " + clmNameStr);
             }
         }
 
@@ -6565,16 +6565,16 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "ENTRY_DATE":
                     return entryDate;
                 case "CAPACITY":
                     return capacity;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: SPACE_HISTORY, Column: " + clmNameStr);
             }
         }
 
@@ -6693,9 +6693,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -6704,7 +6704,7 @@ public class GenCrdV1_17_0
                 case "POOL_DSP_NAME":
                     return poolDspName;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: STOR_POOL_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -6812,14 +6812,14 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "ENTRY_DATE":
                     return entryDate;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: TRACKING_DATE, Column: " + clmNameStr);
             }
         }
 
@@ -6959,9 +6959,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -6976,7 +6976,7 @@ public class GenCrdV1_17_0
                 case "VLM_FLAGS":
                     return vlmFlags;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: VOLUMES, Column: " + clmNameStr);
             }
         }
 
@@ -7117,9 +7117,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7134,7 +7134,7 @@ public class GenCrdV1_17_0
                 case "VLM_NR":
                     return vlmNr;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: VOLUME_CONNECTIONS, Column: " + clmNameStr);
             }
         }
 
@@ -7273,9 +7273,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7290,7 +7290,7 @@ public class GenCrdV1_17_0
                 case "VLM_FLAGS":
                     return vlmFlags;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: VOLUME_DEFINITIONS, Column: " + clmNameStr);
             }
         }
 
@@ -7416,9 +7416,9 @@ public class GenCrdV1_17_0
 
         @JsonIgnore
         @Override
-        public Object getByColumn(Column clm)
+        public Object getByColumn(String clmNameStr)
         {
-            switch(clm.getName())
+            switch(clmNameStr)
             {
                 case "UUID":
                     return uuid;
@@ -7429,7 +7429,7 @@ public class GenCrdV1_17_0
                 case "FLAGS":
                     return flags;
                 default:
-                    throw new ImplementationError("Unknown database column. Table: " + clm.getTable().getName() + ", Column: " + clm.getName());
+                    throw new ImplementationError("Unknown database column. Table: VOLUME_GROUPS, Column: " + clmNameStr);
             }
         }
 

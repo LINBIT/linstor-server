@@ -10,6 +10,7 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.db.DbExportPojoData;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -40,6 +41,7 @@ import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -170,23 +172,46 @@ public class SQLEngine implements DbEngine
         String sql = insertStatements.get(table);
         if (sql == null)
         {
-            StringBuilder values = new StringBuilder();
-            StringBuilder sqlBuilder = new StringBuilder();
-            sqlBuilder.append("INSERT INTO ").append(table.getName()).append(" (");
+            List<String> clmNamesList = new ArrayList<>();
             for (Column col : table.values())
             {
-                sqlBuilder.append(col.getName()).append(DELIMITER_LIST);
-                values.append(DELIMITER_VALUES);
+                clmNamesList.add(col.getName());
             }
-            sqlBuilder.setLength(sqlBuilder.length() - DELIMITER_LIST.length());
-            values.setLength(values.length() - DELIMITER_LIST.length());
 
-            sqlBuilder.append(") VALUES(").append(values).append(")");
-
-            sql = sqlBuilder.toString();
+            sql = getInsertStatement(table.getName(), clmNamesList);
             insertStatements.put(table, sql);
         }
         return sql;
+    }
+
+    private String getInsertStatement(DbExportPojoData.Table tableRef)
+    {
+        // no need for cache
+        List<String> clmNamesList = new ArrayList<>();
+        for (DbExportPojoData.Column col : tableRef.columnDescription)
+        {
+            clmNamesList.add(col.name);
+        }
+
+        return getInsertStatement(tableRef.name, clmNamesList);
+    }
+
+    private String getInsertStatement(String tblNameRef, List<String> clmNamesListRef)
+    {
+        StringBuilder values = new StringBuilder();
+        StringBuilder sqlBuilder = new StringBuilder();
+        sqlBuilder.append("INSERT INTO ").append(tblNameRef).append(" (");
+        for (String col : clmNamesListRef)
+        {
+            sqlBuilder.append(col).append(DELIMITER_LIST);
+            values.append(DELIMITER_VALUES);
+        }
+        sqlBuilder.setLength(sqlBuilder.length() - DELIMITER_LIST.length());
+        values.setLength(values.length() - DELIMITER_LIST.length());
+
+        sqlBuilder.append(") VALUES(").append(values).append(")");
+
+        return sqlBuilder.toString();
     }
 
     @Override
@@ -453,22 +478,42 @@ public class SQLEngine implements DbEngine
     }
 
     @Override
-    public void importData(DatabaseTable tableRef, List<LinstorSpec> dataListRef) throws DatabaseException
+    public void truncateAllData(List<DbExportPojoData.Table> orderedTablesListRef) throws DatabaseException
+    {
+        for (DbExportPojoData.Table tbl : orderedTablesListRef)
+        {
+            try (PreparedStatement stmt = getConnection().prepareStatement("DELETE FROM " + tbl.name))
+            {
+                stmt.executeUpdate();
+            }
+            catch (SQLException sqlExc)
+            {
+                throw new DatabaseException(
+                    "Could not delete all default values before importing data to table: " + tbl.name,
+                    sqlExc
+                );
+            }
+        }
+    }
+
+    @Override
+    public void importData(DbExportPojoData.Table tableRef) throws DatabaseException
     {
         LinstorSpec currentSpec = null;
+
         try (PreparedStatement stmt = getConnection().prepareStatement(getInsertStatement(tableRef)))
         {
-            errorReporter.logTrace("Importing %d entries for table %s", dataListRef.size(), tableRef.getName());
-            for (LinstorSpec linstorSpec : dataListRef)
+            for (LinstorSpec linstorSpec : tableRef.data)
             {
                 currentSpec = linstorSpec;
                 setValuesFromSpec(stmt, tableRef, linstorSpec);
+                stmt.executeUpdate();
             }
         }
         catch (SQLException sqlExc)
         {
             throw new DatabaseException(
-                "Table: " + tableRef.getName() + ", entry: " + (currentSpec == null ?
+                "Table: " + tableRef.name + ", entry: " + (currentSpec == null ?
                     "<null>" :
                     currentSpec.getLinstorKey()),
                 sqlExc
@@ -527,27 +572,43 @@ public class SQLEngine implements DbEngine
             if (predicate.test(col))
             {
                 Object obj = setters.get(col).accept(data);
-                setSqlParam(stmt, idx, col, obj);
+                setSqlParam(
+                    stmt,
+                    idx,
+                    col.isNullable(),
+                    col.getSqlType(),
+                    obj,
+                    table.getName(),
+                    col.getName()
+                );
                 ++idx;
             }
         }
         return idx;
     }
 
-    private void setSqlParam(PreparedStatement stmt, int idx, Column col, Object obj)
+    private void setSqlParam(
+        PreparedStatement stmtRef,
+        int idxRef,
+        boolean nullableRef,
+        int sqlTypeRef,
+        Object objRef,
+        String tblNameRef,
+        String clmNameRef
+    )
         throws SQLException, DatabaseException
     {
-        if (obj == null)
+        if (objRef == null)
         {
-            if (col.isNullable())
+            if (nullableRef)
             {
-                switch (col.getSqlType())
+                switch (sqlTypeRef)
                 {
                     case Types.BLOB:
-                        stmt.setBytes(idx, (byte[]) obj);
+                        stmtRef.setBytes(idxRef, (byte[]) objRef);
                         break;
                     default:
-                        stmt.setNull(idx, col.getSqlType());
+                        stmtRef.setNull(idxRef, sqlTypeRef);
                         break;
                 }
             }
@@ -558,7 +619,7 @@ public class SQLEngine implements DbEngine
                     null,
                     null,
                     null,
-                    "Table: " + col.getTable().getName() + ", Column: " + col.getName()
+                    "Table: " + tblNameRef + ", Column: " + clmNameRef
                 );
             }
         }
@@ -566,25 +627,28 @@ public class SQLEngine implements DbEngine
         {
             try
             {
-                switch (col.getSqlType())
+                switch (sqlTypeRef)
                 {
                     case Types.BLOB:
-                        stmt.setBytes(idx, (byte[]) obj);
+                        stmtRef.setBytes(idxRef, (byte[]) objRef);
                         break;
                     case Types.CLOB:
-                        stmt.setString(idx, (String) obj);
+                        stmtRef.setString(idxRef, (String) objRef);
+                        break;
+                    case Types.TIMESTAMP:
+                        stmtRef.setTimestamp(idxRef, new Timestamp((Long) objRef));
                         break;
                     default:
-                        stmt.setObject(idx, obj, col.getSqlType());
+                        stmtRef.setObject(idxRef, objRef, sqlTypeRef);
                         break;
                 }
             }
             catch (Exception exc)
             {
                 throw new LinStorDBRuntimeException(
-                    "Could not set object '" + obj.toString() + "' of type " + obj.getClass().getSimpleName() +
-                        " as SQL type: " + col.getSqlType() + " (" + JDBCType.valueOf(col.getSqlType()) +
-                        ") for column " + col.getTable().getName() + "." + col.getName(),
+                    "Could not set object '" + objRef.toString() + "' of type " + objRef.getClass().getSimpleName() +
+                        " as SQL type: " + sqlTypeRef + " (" + JDBCType.valueOf(sqlTypeRef) +
+                        ") for column " + tblNameRef + "." + clmNameRef,
                     exc
                 );
             }
@@ -593,15 +657,23 @@ public class SQLEngine implements DbEngine
 
     private void setValuesFromSpec(
         PreparedStatement stmtRef,
-        DatabaseTable tableRef,
+        DbExportPojoData.Table tableRef,
         LinstorSpec linstorSpecRef
     )
         throws DatabaseException, SQLException
     {
         int idx = 1;
-        for (Column col : tableRef.values())
+        for (DbExportPojoData.Column col : tableRef.columnDescription)
         {
-            setSqlParam(stmtRef, idx, col, linstorSpecRef.getByColumn(col));
+            setSqlParam(
+                stmtRef,
+                idx,
+                col.isNullable,
+                col.sqlType,
+                linstorSpecRef.getByColumn(col.name),
+                tableRef.name,
+                col.name
+            );
             idx++;
         }
     }

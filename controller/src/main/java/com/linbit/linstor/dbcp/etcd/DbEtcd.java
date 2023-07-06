@@ -103,7 +103,25 @@ public class DbEtcd implements ControllerETCDDatabase
     }
 
     @Override
+    public void preImportMigrateToVersion(String dbTypeRef, Object versionRef) throws DatabaseException
+    {
+        try
+        {
+            migrateToVersion(dbTypeRef, (int) versionRef);
+        }
+        catch (InitializationException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
     public void migrate(String dbType) throws InitializationException
+    {
+        migrateToVersion(dbType, MIGRATE_TO_MAX_VERSION);
+    }
+
+    private void migrateToVersion(String dbType, int targetVersionRef) throws InitializationException
     {
         ControllerETCDTransactionMgr etcdTxMgr = txMgrGenerator.startTransaction();
         etcdTxMgr.rollbackIfNeeded();
@@ -114,7 +132,16 @@ public class DbEtcd implements ControllerETCDDatabase
 
         try
         {
-            int highestKey = migrations.lastKey();
+            int highestKey;
+            if (targetVersionRef == MIGRATE_TO_MAX_VERSION)
+            {
+                highestKey = migrations.lastKey();
+            }
+            else
+            {
+                highestKey = targetVersionRef;
+            }
+
             while (dbVersion <= highestKey)
             {
                 BaseEtcdMigration migration = migrations.get(dbVersion);

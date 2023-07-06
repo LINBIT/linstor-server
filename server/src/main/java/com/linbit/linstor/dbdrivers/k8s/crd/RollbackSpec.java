@@ -2,7 +2,6 @@ package com.linbit.linstor.dbdrivers.k8s.crd;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
-import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -134,7 +133,7 @@ public class RollbackSpec implements LinstorSpec
 
     @Override
     @JsonIgnore
-    public Object getByColumn(Column clmRef)
+    public Object getByColumn(String clmNameStrRef)
     {
         throw new ImplementationError("Method not supported by Rollback");
     }

@@ -11,6 +11,7 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.db.DbExportPojoData;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
@@ -262,7 +263,7 @@ public class K8sCrdEngine implements DbEngine
     {
         final DatabaseTable table = colRef.getTable();
         // k8s cannot update single "columns" just the whole object. Map all drivers to a simple object-update
-        return new CollectionDatabaseDriver<DATA, LIST_TYPE>()
+        return new CollectionDatabaseDriver<>()
         {
             @Override
             public void insert(DATA parent, LIST_TYPE ignored, Collection<LIST_TYPE> ignoredBackingCollection)
@@ -294,7 +295,13 @@ public class K8sCrdEngine implements DbEngine
     }
 
     @Override
-    public void importData(DatabaseTable dbTableRef, List<LinstorSpec> dataListRef) throws DatabaseException
+    public void truncateAllData(List<DbExportPojoData.Table> orderedTablesListRef) throws DatabaseException
+    {
+        throw new ImplementationError("not implemented");
+    }
+
+    @Override
+    public void importData(DbExportPojoData.Table tableRef) throws DatabaseException
     {
         throw new ImplementationError("not implemented");
     }

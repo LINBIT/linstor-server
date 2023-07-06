@@ -105,9 +105,26 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
             throw new ImplementationError(systemServiceStartExc);
         }
     }
+    @Override
+    public void preImportMigrateToVersion(String dbTypeRef, Object versionRef) throws DatabaseException
+    {
+        try
+        {
+            migrate(dbTypeRef, (int) versionRef);
+        }
+        catch (InitializationException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+    }
 
     @Override
     public void migrate(String dbTypeRef) throws InitializationException
+    {
+        migrate(dbTypeRef, MIGRATE_TO_MAX_VERSION);
+    }
+
+    private void migrate(String dbTypeRef, int targetVersionRef) throws InitializationException
     {
         ControllerK8sCrdTransactionMgr currentTx = k8sTxGenerator.startTransaction();
         currentTx.rollbackIfNeeded();
@@ -140,7 +157,16 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
 
         try
         {
-            int highestKey = migrations.lastKey();
+            int highestKey;
+            if (targetVersionRef == MIGRATE_TO_MAX_VERSION)
+            {
+                highestKey = migrations.lastKey();
+            }
+            else
+            {
+                highestKey = targetVersionRef;
+            }
+
             while (dbVersion <= highestKey)
             {
                 BaseK8sCrdMigration migration = migrations.get(dbVersion);
@@ -181,7 +207,6 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
 
         return dbVersion <= migrations.lastKey();
     }
-
 
     private int dbVersion(ControllerK8sCrdTransactionMgr tx)
     {

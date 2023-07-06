@@ -17,6 +17,8 @@ public class DbEtcdInitializer implements DbInitializer
     private final DbEtcd dbEtcd;
     private final CtrlConfig ctrlCfg;
 
+    private boolean enableMigrationOnInit = true;
+
     @Inject
     public DbEtcdInitializer(
         ErrorReporter errorLogRef,
@@ -27,6 +29,13 @@ public class DbEtcdInitializer implements DbInitializer
         errorLog = errorLogRef;
         dbEtcd = (DbEtcd) dbEtcdRef;
         ctrlCfg = ctrlCfgRef;
+    }
+
+
+    @Override
+    public void setEnableMigrationOnInit(boolean enableRef)
+    {
+        enableMigrationOnInit = enableRef;
     }
 
     @Override
@@ -40,7 +49,10 @@ public class DbEtcdInitializer implements DbInitializer
             errorLog.logInfo("etcd connection URL is \"%s\"", etcdConnectionUrl);
             dbEtcd.initializeDataSource(etcdConnectionUrl);
 
-            dbEtcd.migrate("etcd");
+            if (enableMigrationOnInit)
+            {
+                dbEtcd.migrate("etcd");
+            }
         }
         catch (Exception exc)
         {

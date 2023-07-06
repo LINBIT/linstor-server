@@ -18,6 +18,8 @@ public class DbK8sCrdInitializer implements DbInitializer
     private final DbK8sCrd dbK8sCrd;
     private final CtrlConfig ctrlCfg;
 
+    private boolean enableMigrationOnInit = true;
+
     @Inject
     public DbK8sCrdInitializer(
         ErrorReporter errorLogRef,
@@ -31,6 +33,12 @@ public class DbK8sCrdInitializer implements DbInitializer
     }
 
     @Override
+    public void setEnableMigrationOnInit(boolean enableRef)
+    {
+        enableMigrationOnInit = enableRef;
+    }
+
+    @Override
     public void initialize() throws InitializationException, SystemServiceStartException
     {
         errorLog.logInfo("Initializing the k8s crd database connector");
@@ -41,7 +49,10 @@ public class DbK8sCrdInitializer implements DbInitializer
             errorLog.logInfo("Kubernetes-CRD connection URL is \"%s\"", crdConnectionUrl);
             dbK8sCrd.initializeDataSource(crdConnectionUrl);
 
-            dbK8sCrd.migrate("k8s");
+            if (enableMigrationOnInit)
+            {
+                dbK8sCrd.migrate("k8s");
+            }
         }
         catch (Exception exc)
         {

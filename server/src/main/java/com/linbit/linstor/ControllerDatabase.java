@@ -11,6 +11,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 public interface ControllerDatabase extends SystemService
 {
     int DEFAULT_TIMEOUT = 60000;
+    int MIGRATE_TO_MAX_VERSION = -2;
 
     void setTimeout(int timeout);
 
@@ -20,6 +21,11 @@ public interface ControllerDatabase extends SystemService
     boolean needsMigration(String dbType) throws InitializationException;
 
     void migrate(String dbType) throws InitializationException;
+
+    /**
+     * Version is an object since ETCD and K8s do have int values, but SQL operates with String versions.
+     */
+    void preImportMigrateToVersion(String dbType, Object version) throws DatabaseException;
 
     /**
      * Close all DB connections the calling thread had not closed yet.

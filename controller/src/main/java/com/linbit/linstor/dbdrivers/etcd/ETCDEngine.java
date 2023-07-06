@@ -11,6 +11,7 @@ import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.db.DbExportPojoData;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo.DatabaseType;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseLoader;
@@ -20,7 +21,6 @@ import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -407,7 +407,13 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     }
 
     @Override
-    public void importData(DatabaseTable dbTableRef, List<LinstorSpec> dataListRef) throws DatabaseException
+    public void truncateAllData(List<DbExportPojoData.Table> orderedTablesListRef) throws DatabaseException
+    {
+        throw new ImplementationError("not implemented");
+    }
+
+    @Override
+    public void importData(DbExportPojoData.Table tableRef) throws DatabaseException
     {
         throw new ImplementationError("not implemented");
     }

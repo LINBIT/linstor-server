@@ -8,6 +8,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.LUKSVolume;
+import com.linbit.linstor.core.apicallhandler.controller.db.DbExportPojoData;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -18,7 +19,6 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Nodes;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.Flags;
@@ -292,5 +292,7 @@ public interface DbEngine
 
     List<RawParameters> export(DatabaseTable tableRef) throws DatabaseException;
 
-    void importData(DatabaseTable dbTableRef, List<LinstorSpec> dataListRef) throws DatabaseException;
+    void truncateAllData(List<DbExportPojoData.Table> orderedTablesListRef) throws DatabaseException;
+
+    void importData(DbExportPojoData.Table dbExportTableRef) throws DatabaseException;
 }
