@@ -327,7 +327,7 @@ public class ScheduleBackupService implements SystemService
      * Use this method if an automated shipping just finished and the rscDfn needs to be re-scheduled
      * This method assumes that currently there is no task for this rscDfn-schedule-remote triplet and will therefore
      * create a new task.
-     * DO NOT set lastStartTime to a negative number - if this seems neccessary for any reason, use addNewTask(...)
+     * DO NOT set lastStartTime to a negative number - if this seems necessary for any reason, use addNewTask(...)
      * instead
      *
      * @param rscDfn
@@ -350,7 +350,9 @@ public class ScheduleBackupService implements SystemService
     ) throws AccessDeniedException
     {
         if (
-            running && schedule != null && remote != null && rscDfn != null && rscDfn.getNotDeletedDiskfulCount(accCtx) > 0
+            running &&
+                schedule != null && remote != null && rscDfn != null &&
+                rscDfn.getNotDeletedDiskfulCount(accCtx) > 0
         )
         {
             boolean isNew = true;
@@ -382,8 +384,8 @@ public class ScheduleBackupService implements SystemService
                     );
                     // key for prefNode is {remoteName}/{scheduleName}/KEY_SCHEDULE_PREF_NODE
                     prefNode = prioProps.getProp(
-                        remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
-                            + Props.PATH_SEPARATOR + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                        remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue +
+                            Props.PATH_SEPARATOR + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
                         InternalApiConsts.NAMESPC_SCHEDULE
                     );
                 }
@@ -455,7 +457,7 @@ public class ScheduleBackupService implements SystemService
                 }
             }
         }
-        // maybe add else if (running) ...
+        // maybe add else if running ...
     }
 
     public ScheduledShippingConfig getConfig(ResourceDefinition rscDfn, AbsRemote remote, Schedule schedule)
@@ -532,7 +534,8 @@ public class ScheduleBackupService implements SystemService
                         if (maxRetries <= conf.retryCt)
                         {
                             errorReporter.logWarning(
-                                "Shipping of resource %s to remote %s has already been retried %d time(s). Retry attempts stopped.",
+                                "Shipping of resource %s to remote %s has already been retried %d time(s)." +
+                                    " Retry attempts stopped.",
                                 conf.rscDfn.getName().displayValue,
                                 conf.remote.getName().displayValue,
                                 conf.retryCt
@@ -544,7 +547,8 @@ public class ScheduleBackupService implements SystemService
                         {
                             conf.retryCt++;
                             errorReporter.logWarning(
-                                "Shipping of resource %s to remote %s will be retried for the %d. time. Max retries: %d",
+                                "Shipping of resource %s to remote %s will be retried for the %d. time." +
+                                    " Max retries: %d",
                                 conf.rscDfn.getName().displayValue,
                                 conf.remote.getName().displayValue,
                                 conf.retryCt,
@@ -679,7 +683,11 @@ public class ScheduleBackupService implements SystemService
     {
         synchronized (syncObj)
         {
-            removeFromAll(rscDfnLookupMap.get(rscDfnRef));
+            /*
+             * we need to get the set for removeFromAll() from the activeShippings set, since it is the only place where
+             * all active schedule-configs can be found
+             */
+            removeFromAll(getAllFilteredActiveShippings(rscDfnRef.getName().displayValue, null, null));
         }
     }
 
@@ -688,7 +696,8 @@ public class ScheduleBackupService implements SystemService
     {
         synchronized (syncObj)
         {
-            removeFromAll(scheduleLookupMap.get(scheduleRef));
+            // see comment of removeTasks(rscDfn)
+            removeFromAll(getAllFilteredActiveShippings(null, null, scheduleRef.getName().displayValue));
             removeAllRelatedProps(null, scheduleRef.getName().displayValue, accCtx);
         }
     }
@@ -698,7 +707,8 @@ public class ScheduleBackupService implements SystemService
     {
         synchronized (syncObj)
         {
-            removeFromAll(remoteLookupMap.get(remoteRef));
+            // see comment of removeTasks(rscDfn)
+            removeFromAll(getAllFilteredActiveShippings(null, remoteRef.getName().displayValue, null));
             removeAllRelatedProps(remoteRef.getName().displayValue, null, accCtx);
         }
     }
@@ -731,7 +741,7 @@ public class ScheduleBackupService implements SystemService
                         {
                             if (config.equals(conf))
                             {
-                                taskScheduleService.rescheduleAt(config.task, NOT_STARTED_YET);
+                                taskScheduleService.rescheduleAt(config.task, Task.END_TASK);
                             }
                         }
                     }
