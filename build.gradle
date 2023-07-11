@@ -377,6 +377,17 @@ project(':controller') {
         }
     }
 
+    tasks.register('LinstorDbToolStartup', CreateStartScripts) {
+        mainClass = 'com.linbit.linstor.core.LinstorDatabaseTool'
+        applicationName = "linstor-database"
+        outputDir = new File(project.buildDir, 'linstordb')
+        classpath = files('*')
+        defaultJvmOpts = jvmOpts
+        doLast {
+            delete windowsScript
+        }
+    }
+
     distributions {
         main {
             contents {
@@ -384,6 +395,9 @@ project(':controller') {
                     into("bin")
                 }
                 from(LinstorConfigStartup) {
+                    into("bin")
+                }
+                from(LinstorDbToolStartup) {
                     into("bin")
                 }
             }
@@ -491,6 +505,9 @@ distributions {
                 into("bin")
             }
             from(project(":controller").LinstorConfigStartup) {
+                into("bin")
+            }
+            from(project(":controller").LinstorDbToolStartup) {
                 into("bin")
             }
             from("server/" + logbackConfig) {
