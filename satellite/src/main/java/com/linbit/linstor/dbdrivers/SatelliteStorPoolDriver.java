@@ -1,30 +1,18 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
-import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteStorPoolDriver implements StorPoolDatabaseDriver
+@Singleton
+public class SatelliteStorPoolDriver
+    extends AbsSatelliteDbDriver<StorPool>
+    implements StorPoolDatabaseDriver
 {
-    private final AccessContext dbCtx;
-
     @Inject
-    public SatelliteStorPoolDriver(@SystemContext AccessContext dbCtxRef)
-    {
-        dbCtx = dbCtxRef;
-    }
-
-    @Override
-    public void create(StorPool storPool)
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(StorPool data)
+    public SatelliteStorPoolDriver()
     {
         // no-op
     }

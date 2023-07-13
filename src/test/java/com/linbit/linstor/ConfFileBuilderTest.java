@@ -27,6 +27,7 @@ import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdRscDbDriver;
 import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdRscDfnDbDriver;
 import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdVlmDbDriver;
 import com.linbit.linstor.dbdrivers.SatelliteLayerDrbdVlmDfnDbDriver;
+import com.linbit.linstor.dbdrivers.SatelliteLayerResourceIdDriver;
 import com.linbit.linstor.dbdrivers.SatelliteLayerStorageRscDbDriver;
 import com.linbit.linstor.dbdrivers.SatelliteLayerStorageVlmDbDriver;
 import com.linbit.linstor.dbdrivers.SatellitePropDriver;
@@ -99,12 +100,25 @@ import static org.mockito.Mockito.when;
 @SuppressWarnings("checkstyle:magicnumber")
 public class ConfFileBuilderTest
 {
-    private static final LayerDrbdRscDfnDatabaseDriver LAYER_DRBD_RSC_DFN_NO_OP_DRIVER = new SatelliteLayerDrbdRscDfnDbDriver();
-    private static final LayerDrbdVlmDfnDatabaseDriver LAYER_DRBD_VLM_DFN_NO_OP_DRIVER = new SatelliteLayerDrbdVlmDfnDbDriver();
-    private static final LayerDrbdRscDatabaseDriver LAYER_DRBD_RSC_NO_OP_DRIVER = new SatelliteLayerDrbdRscDbDriver();
-    private static final LayerDrbdVlmDatabaseDriver LAYER_DRBD_VLM_NO_OP_DRIVER = new SatelliteLayerDrbdVlmDbDriver();
-    private static final LayerStorageRscDatabaseDriver LAYER_STORAGE_RSC_NO_OP_DRIVER = new SatelliteLayerStorageRscDbDriver();
-    private static final LayerStorageVlmDatabaseDriver LAYER_STORAGE_VLM_NO_OP_DRIVER = new SatelliteLayerStorageVlmDbDriver();
+    private static final LayerDrbdRscDfnDatabaseDriver LAYER_DRBD_RSC_DFN_NO_OP_DRIVER;
+    private static final LayerDrbdVlmDfnDatabaseDriver LAYER_DRBD_VLM_DFN_NO_OP_DRIVER;
+    private static final LayerDrbdRscDatabaseDriver LAYER_DRBD_RSC_NO_OP_DRIVER;
+    private static final LayerDrbdVlmDatabaseDriver LAYER_DRBD_VLM_NO_OP_DRIVER;
+    private static final LayerStorageRscDatabaseDriver LAYER_STORAGE_RSC_NO_OP_DRIVER;
+    private static final LayerStorageVlmDatabaseDriver LAYER_STORAGE_VLM_NO_OP_DRIVER;
+
+    static
+    {
+        LAYER_DRBD_RSC_DFN_NO_OP_DRIVER = new SatelliteLayerDrbdRscDfnDbDriver();
+        LAYER_DRBD_VLM_DFN_NO_OP_DRIVER = new SatelliteLayerDrbdVlmDfnDbDriver();
+
+        SatelliteLayerResourceIdDriver dummyLRIDriver = new SatelliteLayerResourceIdDriver();
+
+        LAYER_DRBD_RSC_NO_OP_DRIVER = new SatelliteLayerDrbdRscDbDriver(dummyLRIDriver);
+        LAYER_DRBD_VLM_NO_OP_DRIVER = new SatelliteLayerDrbdVlmDbDriver(dummyLRIDriver);
+        LAYER_STORAGE_RSC_NO_OP_DRIVER = new SatelliteLayerStorageRscDbDriver(dummyLRIDriver);
+        LAYER_STORAGE_VLM_NO_OP_DRIVER = new SatelliteLayerStorageVlmDbDriver(dummyLRIDriver);
+    }
 
     private ErrorReporter errorReporter;
     private AccessContext accessContext;
@@ -752,7 +766,7 @@ public class ConfFileBuilderTest
     @SafeVarargs
     private final <T> Answer<Iterator<T>> makeIteratorAnswer(final T... ts)
     {
-        return new Answer<Iterator<T>>()
+        return new Answer<>()
         {
             @Override
             public Iterator<T> answer(final InvocationOnMock invocation)
@@ -765,7 +779,7 @@ public class ConfFileBuilderTest
     @SafeVarargs
     private final <T> Answer<Stream<T>> makeStreamAnswer(final T... ts)
     {
-        return new Answer<Stream<T>>()
+        return new Answer<>()
         {
             @Override
             public Stream<T> answer(InvocationOnMock invocation)

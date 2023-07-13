@@ -1,15 +1,17 @@
 package com.linbit.linstor.security;
 
-import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.SatelliteSingleColDriver;
+import com.linbit.linstor.dbdrivers.AbsSatelliteDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecIdentityDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.SecIdentityDatabaseDriver.SecIdentityDbObj;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class SatelliteSecIdentityDbDriver implements SecIdentityDatabaseDriver
+public class SatelliteSecIdentityDbDriver
+    extends AbsSatelliteDbDriver<SecIdentityDbObj>
+    implements SecIdentityDatabaseDriver
 {
     private final SingleColumnDatabaseDriver<SecIdentityDbObj, byte[]> noopPassHashDriver;
     private final SingleColumnDatabaseDriver<SecIdentityDbObj, byte[]> noopPassSaltDriver;
@@ -19,22 +21,10 @@ public class SatelliteSecIdentityDbDriver implements SecIdentityDatabaseDriver
     @Inject
     public SatelliteSecIdentityDbDriver()
     {
-        noopPassHashDriver = new SatelliteSingleColDriver<>();
-        noopPassSaltDriver = new SatelliteSingleColDriver<>();
-        noopIdEnabledDriver = new SatelliteSingleColDriver<>();
-        noopIdLockedDriver = new SatelliteSingleColDriver<>();
-    }
-
-    @Override
-    public void create(SecIdentityDbObj dataRef) throws DatabaseException
-    {
-        // noop
-    }
-
-    @Override
-    public void delete(SecIdentityDbObj dataRef) throws DatabaseException
-    {
-        // noop
+        noopPassHashDriver = getNoopColumnDriver();
+        noopPassSaltDriver = getNoopColumnDriver();
+        noopIdEnabledDriver = getNoopColumnDriver();
+        noopIdLockedDriver = getNoopColumnDriver();
     }
 
     @Override

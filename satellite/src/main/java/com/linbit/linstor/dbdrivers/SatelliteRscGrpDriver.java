@@ -4,7 +4,6 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.noop.NoOpCollectionDatabaseDriver;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
@@ -12,109 +11,109 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class SatelliteRscGrpDriver implements ResourceGroupDatabaseDriver
+public class SatelliteRscGrpDriver
+    extends AbsSatelliteDbDriver<ResourceGroup>
+    implements ResourceGroupDatabaseDriver
 {
-    private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
-    private final CollectionDatabaseDriver<?, ?> noopColDriver = new NoOpCollectionDatabaseDriver<>();
+    private final SingleColumnDatabaseDriver<ResourceGroup, String> descriptionDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, DeviceLayerKind> layerStackDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, Integer> replicaCountDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> nodeNameDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> storPoolNameDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> storPoolDisklessNameDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscListDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscRegexDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnSameListDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnDifferentDriver;
+    private final CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> allowedProviderListDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, Boolean> disklessOnRemainingDriver;
 
     @Inject
     public SatelliteRscGrpDriver()
     {
+        descriptionDriver = getNoopColumnDriver();
+        layerStackDriver = getNoopCollectionDriver();
+        replicaCountDriver = getNoopColumnDriver();
+        nodeNameDriver = getNoopCollectionDriver();
+        storPoolNameDriver = getNoopCollectionDriver();
+        storPoolDisklessNameDriver = getNoopCollectionDriver();
+        doNotPlaceWithRscListDriver = getNoopCollectionDriver();
+        doNotPlaceWithRscRegexDriver = getNoopColumnDriver();
+        replicasOnSameListDriver = getNoopCollectionDriver();
+        replicasOnDifferentDriver = getNoopCollectionDriver();
+        allowedProviderListDriver = getNoopCollectionDriver();
+        disklessOnRemainingDriver = getNoopColumnDriver();
     }
 
-    @Override
-    public void create(ResourceGroup rscGrpRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(ResourceGroup rscGrpRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<ResourceGroup, String> getDescriptionDriver()
     {
-        return (SingleColumnDatabaseDriver<ResourceGroup, String>) noopSingleColDriver;
+        return descriptionDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CollectionDatabaseDriver<ResourceGroup, DeviceLayerKind> getLayerStackDriver()
     {
-        return (CollectionDatabaseDriver<ResourceGroup, DeviceLayerKind>) noopColDriver;
+        return layerStackDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<ResourceGroup, Integer> getReplicaCountDriver()
     {
-        return (SingleColumnDatabaseDriver<ResourceGroup, Integer>) noopSingleColDriver;
+        return replicaCountDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CollectionDatabaseDriver<ResourceGroup, String> getNodeNameDriver()
     {
-        return (CollectionDatabaseDriver<ResourceGroup, String>) noopColDriver;
+        return nodeNameDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CollectionDatabaseDriver<ResourceGroup, String> getStorPoolNameDriver()
     {
-        return (CollectionDatabaseDriver<ResourceGroup, String>) noopColDriver;
+        return storPoolNameDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CollectionDatabaseDriver<ResourceGroup, String> getStorPoolDisklessNameDriver()
     {
-        return (CollectionDatabaseDriver<ResourceGroup, String>) noopColDriver;
+        return storPoolDisklessNameDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CollectionDatabaseDriver<ResourceGroup, String> getDoNotPlaceWithRscListDriver()
     {
-        return (CollectionDatabaseDriver<ResourceGroup, String>) noopColDriver;
+        return doNotPlaceWithRscListDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<ResourceGroup, String> getDoNotPlaceWithRscRegexDriver()
     {
-        return (SingleColumnDatabaseDriver<ResourceGroup, String>) noopSingleColDriver;
+        return doNotPlaceWithRscRegexDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CollectionDatabaseDriver<ResourceGroup, String> getReplicasOnSameListDriver()
     {
-        return (CollectionDatabaseDriver<ResourceGroup, String>) noopColDriver;
+        return replicasOnSameListDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CollectionDatabaseDriver<ResourceGroup, String> getReplicasOnDifferentDriver()
     {
-        return (CollectionDatabaseDriver<ResourceGroup, String>) noopColDriver;
+        return replicasOnDifferentDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> getAllowedProviderListDriver()
     {
-        return (CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind>) noopColDriver;
+        return allowedProviderListDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<ResourceGroup, Boolean> getDisklessOnRemainingDriver()
     {
-        return (SingleColumnDatabaseDriver<ResourceGroup, Boolean>) noopSingleColDriver;
+        return disklessOnRemainingDriver;
     }
 }

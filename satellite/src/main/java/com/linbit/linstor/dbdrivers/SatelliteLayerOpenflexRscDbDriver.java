@@ -5,26 +5,19 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteLayerOpenflexRscDbDriver implements LayerOpenflexRscDatabaseDriver
+@Singleton
+public class SatelliteLayerOpenflexRscDbDriver
+    extends AbsSatelliteDbDriver<OpenflexRscData<?>>
+    implements LayerOpenflexRscDatabaseDriver
 {
-    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver;
 
     @Inject
-    public SatelliteLayerOpenflexRscDbDriver()
+    public SatelliteLayerOpenflexRscDbDriver(SatelliteLayerResourceIdDriver stltLayerRscIdDriverRef)
     {
-    }
-
-    @Override
-    public void create(OpenflexRscData<?> openflexRscDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(OpenflexRscData<?> openflexRscDataRef) throws DatabaseException
-    {
-        // no-op
+        noopResourceLayerIdDriver = stltLayerRscIdDriverRef;
     }
 
     @Override
@@ -33,4 +26,3 @@ public class SatelliteLayerOpenflexRscDbDriver implements LayerOpenflexRscDataba
         return noopResourceLayerIdDriver;
     }
 }
-

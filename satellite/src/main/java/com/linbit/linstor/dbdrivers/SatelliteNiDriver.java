@@ -1,57 +1,47 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.NetInterface.EncryptionType;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.interfaces.NetInterfaceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.security.AccessContext;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteNiDriver implements NetInterfaceDatabaseDriver
+@Singleton
+public class SatelliteNiDriver
+    extends AbsSatelliteDbDriver<NetInterface>
+    implements NetInterfaceDatabaseDriver
 {
-    private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
-    private final AccessContext dbCtx;
+    private final SingleColumnDatabaseDriver<NetInterface, LsIpAddress> netIfAddrDriver;
+    private final SingleColumnDatabaseDriver<NetInterface, EncryptionType> stltConnEncrTypeDriver;
+    private final SingleColumnDatabaseDriver<NetInterface, TcpPortNumber> stltConnPortDriver;
 
     @Inject
-    public SatelliteNiDriver(@SystemContext AccessContext dbCtxRef)
+    public SatelliteNiDriver()
     {
-        dbCtx = dbCtxRef;
+        netIfAddrDriver = getNoopColumnDriver();
+        stltConnEncrTypeDriver = getNoopColumnDriver();
+        stltConnPortDriver = getNoopColumnDriver();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<NetInterface, LsIpAddress> getNetInterfaceAddressDriver()
     {
-        return (SingleColumnDatabaseDriver<NetInterface, LsIpAddress>) singleColDriver;
+        return netIfAddrDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<NetInterface, EncryptionType> getStltConnEncrTypeDriver()
     {
-        return (SingleColumnDatabaseDriver<NetInterface, EncryptionType>) singleColDriver;
+        return stltConnEncrTypeDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<NetInterface, TcpPortNumber> getStltConnPortDriver()
     {
-        return (SingleColumnDatabaseDriver<NetInterface, TcpPortNumber>) singleColDriver;
-    }
-
-    @Override
-    public void create(NetInterface netInterface)
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(NetInterface data)
-    {
-        // no-op
+        return stltConnPortDriver;
     }
 }

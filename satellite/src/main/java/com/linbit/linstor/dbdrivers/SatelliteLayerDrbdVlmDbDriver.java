@@ -7,27 +7,21 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteLayerDrbdVlmDbDriver implements LayerDrbdVlmDatabaseDriver
+@Singleton
+public class SatelliteLayerDrbdVlmDbDriver
+    extends AbsSatelliteDbDriver<DrbdVlmData<?>>
+    implements LayerDrbdVlmDatabaseDriver
 {
-    private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
-    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
+    private final SingleColumnDatabaseDriver<DrbdVlmData<?>, StorPool> extStorPoolDriver;
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver;
 
     @Inject
-    public SatelliteLayerDrbdVlmDbDriver()
+    public SatelliteLayerDrbdVlmDbDriver(SatelliteLayerResourceIdDriver stltLayerRscIdDriverRef)
     {
-    }
-
-    @Override
-    public void create(DrbdVlmData<?> drbdVlmDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(DrbdVlmData<?> drbdVlmDataRef) throws DatabaseException
-    {
-        // no-op
+        noopResourceLayerIdDriver = stltLayerRscIdDriverRef;
+        extStorPoolDriver = getNoopColumnDriver();
     }
 
     @Override
@@ -39,8 +33,7 @@ public class SatelliteLayerDrbdVlmDbDriver implements LayerDrbdVlmDatabaseDriver
     @Override
     public SingleColumnDatabaseDriver<DrbdVlmData<?>, StorPool> getExtStorPoolDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdVlmData<?>, StorPool>) noopSingleColDriver;
+        return extStorPoolDriver;
     }
 
 }
-

@@ -5,33 +5,25 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteLayerOpenflexRscDfnDbDriver implements LayerOpenflexRscDfnDatabaseDriver
+
+@Singleton
+public class SatelliteLayerOpenflexRscDfnDbDriver
+    extends AbsSatelliteDbDriver<OpenflexRscDfnData<?>>
+    implements LayerOpenflexRscDfnDatabaseDriver
 {
-    private final SingleColumnDatabaseDriver<OpenflexRscDfnData<?>, String> noopNqnDriver;
+    private final SingleColumnDatabaseDriver<OpenflexRscDfnData<?>, String> nqnDriver;
 
     @Inject
     public SatelliteLayerOpenflexRscDfnDbDriver()
     {
-        noopNqnDriver = new SatelliteSingleColDriver<>();
-    }
-
-    @Override
-    public void create(OpenflexRscDfnData<?> openflexRscDfnDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(OpenflexRscDfnData<?> openflexRscDfnDataRef) throws DatabaseException
-    {
-        // no-op
+        nqnDriver = getNoopColumnDriver();
     }
 
     @Override
     public SingleColumnDatabaseDriver<OpenflexRscDfnData<?>, String> getNqnDriver() throws DatabaseException
     {
-        return noopNqnDriver;
+        return nqnDriver;
     }
 }
-

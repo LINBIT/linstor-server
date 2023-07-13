@@ -6,34 +6,28 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteLayerLuksVlmDriver implements LayerLuksVlmDatabaseDriver
+
+@Singleton
+public class SatelliteLayerLuksVlmDriver
+    extends AbsSatelliteDbDriver<LuksVlmData<?>>
+    implements LayerLuksVlmDatabaseDriver
 {
-    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
-    private final SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]> noopPwDriver = new SatelliteSingleColDriver<>();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver;
+    private final SingleColumnDatabaseDriver<LuksVlmData<?>, byte[]> noopPwDriver;
 
     @Inject
-    public SatelliteLayerLuksVlmDriver()
+    public SatelliteLayerLuksVlmDriver(SatelliteLayerResourceIdDriver stltLayerRscIdDriverRef)
     {
+        noopResourceLayerIdDriver = stltLayerRscIdDriverRef;
+        noopPwDriver = getNoopColumnDriver();
     }
 
     @Override
     public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return noopResourceLayerIdDriver;
-    }
-
-    @Override
-    public void create(LuksVlmData<?> dataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(LuksVlmData<?> dataRef) throws DatabaseException
-    {
-        // no-op
-
     }
 
     @Override

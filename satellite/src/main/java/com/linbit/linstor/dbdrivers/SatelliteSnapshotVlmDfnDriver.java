@@ -3,32 +3,24 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteSnapshotVlmDfnDriver implements SnapshotVolumeDefinitionDatabaseDriver
+@Singleton
+public class SatelliteSnapshotVlmDfnDriver
+    extends AbsSatelliteDbDriver<SnapshotVolumeDefinition>
+    implements SnapshotVolumeDefinitionDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
-    private final SingleColumnDatabaseDriver<SnapshotVolumeDefinition, Long> volumeSizeDriver =
-        new SatelliteSingleColDriver<>();
+    private final StateFlagsPersistence<SnapshotVolumeDefinition> stateFlagsDriver;
+    private final SingleColumnDatabaseDriver<SnapshotVolumeDefinition, Long> volumeSizeDriver;
 
     @Inject
     public SatelliteSnapshotVlmDfnDriver()
     {
-    }
-
-    @Override
-    public void create(SnapshotVolumeDefinition snapshotVlmDfn)
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(SnapshotVolumeDefinition snapshotVlmDfn)
-    {
-        // no-op
+        stateFlagsDriver = getNoopFlagDriver();
+        volumeSizeDriver = getNoopColumnDriver();
     }
 
     @Override
@@ -40,6 +32,6 @@ public class SatelliteSnapshotVlmDfnDriver implements SnapshotVolumeDefinitionDa
     @Override
     public StateFlagsPersistence<SnapshotVolumeDefinition> getStateFlagsPersistence()
     {
-        return (StateFlagsPersistence<SnapshotVolumeDefinition>) stateFlagsDriver;
+        return stateFlagsDriver;
     }
 }

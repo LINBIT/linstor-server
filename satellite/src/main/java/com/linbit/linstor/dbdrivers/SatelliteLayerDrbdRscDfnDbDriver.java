@@ -7,54 +7,47 @@ import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteLayerDrbdRscDfnDbDriver implements LayerDrbdRscDfnDatabaseDriver
+@Singleton
+public class SatelliteLayerDrbdRscDfnDbDriver
+    extends AbsSatelliteDbDriver<DrbdRscDfnData<?>> implements LayerDrbdRscDfnDatabaseDriver
 {
-    private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
+    private final SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TcpPortNumber> tcpPortDriver;
+    private final SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TransportType> transportTypeDriver;
+    private final SingleColumnDatabaseDriver<DrbdRscDfnData<?>, String> secretDriver;
+    private final SingleColumnDatabaseDriver<DrbdRscDfnData<?>, Short> peerSlotsDriver;
 
     @Inject
     public SatelliteLayerDrbdRscDfnDbDriver()
     {
+        tcpPortDriver = getNoopColumnDriver();
+        transportTypeDriver = getNoopColumnDriver();
+        secretDriver = getNoopColumnDriver();
+        peerSlotsDriver = getNoopColumnDriver();
     }
 
-    @Override
-    public void create(DrbdRscDfnData<?> drbdRscDfnDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(DrbdRscDfnData<?> drbdRscDfnDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TcpPortNumber> getTcpPortDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TcpPortNumber>) noopSingleColDriver;
+        return tcpPortDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TransportType> getTransportTypeDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData<?>, TransportType>) noopSingleColDriver;
+        return transportTypeDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<DrbdRscDfnData<?>, String> getRscDfnSecretDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData<?>, String>) noopSingleColDriver;
+        return secretDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<DrbdRscDfnData<?>, Short> getPeerSlotsDriver()
     {
-        return (SingleColumnDatabaseDriver<DrbdRscDfnData<?>, Short>) noopSingleColDriver;
+        return peerSlotsDriver;
     }
 }
-

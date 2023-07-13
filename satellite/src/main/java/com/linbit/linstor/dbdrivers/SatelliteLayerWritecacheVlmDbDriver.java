@@ -5,26 +5,19 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerWritecacheVlmDatabaseDriver;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteLayerWritecacheVlmDbDriver implements LayerWritecacheVlmDatabaseDriver
+@Singleton
+public class SatelliteLayerWritecacheVlmDbDriver
+    extends AbsSatelliteDbDriver<WritecacheVlmData<?>>
+    implements LayerWritecacheVlmDatabaseDriver
 {
-    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver;
 
     @Inject
-    public SatelliteLayerWritecacheVlmDbDriver()
+    public SatelliteLayerWritecacheVlmDbDriver(SatelliteLayerResourceIdDriver stltLayerRscIdDriverRef)
     {
-    }
-
-    @Override
-    public void create(WritecacheVlmData<?> writecacheVlmDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(WritecacheVlmData<?> writecacheVlmDataRef) throws DatabaseException
-    {
-        // no-op
+        noopResourceLayerIdDriver = stltLayerRscIdDriverRef;
     }
 
     @Override
@@ -33,4 +26,3 @@ public class SatelliteLayerWritecacheVlmDbDriver implements LayerWritecacheVlmDa
         return noopResourceLayerIdDriver;
     }
 }
-

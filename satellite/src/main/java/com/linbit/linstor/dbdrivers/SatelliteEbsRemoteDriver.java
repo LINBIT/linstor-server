@@ -3,73 +3,69 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.dbdrivers.interfaces.remotes.EbsRemoteDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.net.URL;
 
-public class SatelliteEbsRemoteDriver implements EbsRemoteDatabaseDriver
+@Singleton
+public class SatelliteEbsRemoteDriver
+    extends AbsSatelliteDbDriver<EbsRemote>
+    implements EbsRemoteDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
-    private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
+    private final SingleColumnDatabaseDriver<EbsRemote, URL> urlDriver;
+    private final SingleColumnDatabaseDriver<EbsRemote, String> availabilityZoneDriver;
+    private final SingleColumnDatabaseDriver<EbsRemote, String> regionDriver;
+    private final SingleColumnDatabaseDriver<EbsRemote, byte[]> encryptedAccessKeyDriver;
+    private final SingleColumnDatabaseDriver<EbsRemote, byte[]> encryptedSecretKeyDriver;
+    private final StateFlagsPersistence<EbsRemote> stateFlagsDriver;
 
     @Inject
     public SatelliteEbsRemoteDriver()
     {
-    }
-
-    @Override
-    public void create(EbsRemote remoteRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(EbsRemote remoteRef) throws DatabaseException
-    {
-        // no-op
+        stateFlagsDriver = getNoopFlagDriver();
+        urlDriver = getNoopColumnDriver();
+        availabilityZoneDriver = getNoopColumnDriver();
+        regionDriver = getNoopColumnDriver();
+        encryptedAccessKeyDriver = getNoopColumnDriver();
+        encryptedSecretKeyDriver = getNoopColumnDriver();
     }
 
     @Override
     public SingleColumnDatabaseDriver<EbsRemote, URL> getUrlDriver()
     {
-        return (SingleColumnDatabaseDriver<EbsRemote, URL>) singleColDriver;
+        return urlDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<EbsRemote, String> getAvailabilityZoneDriver()
     {
-        return (SingleColumnDatabaseDriver<EbsRemote, String>) singleColDriver;
+        return availabilityZoneDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<EbsRemote, String> getRegionDriver()
     {
-        return (SingleColumnDatabaseDriver<EbsRemote, String>) singleColDriver;
+        return regionDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<EbsRemote, byte[]> getEncryptedAccessKeyDriver()
     {
-        return (SingleColumnDatabaseDriver<EbsRemote, byte[]>) singleColDriver;
+        return encryptedAccessKeyDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<EbsRemote, byte[]> getEncryptedSecretKeyDriver()
     {
-        return (SingleColumnDatabaseDriver<EbsRemote, byte[]>) singleColDriver;
+        return encryptedSecretKeyDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public StateFlagsPersistence<EbsRemote> getStateFlagsPersistence()
     {
-        return (StateFlagsPersistence<EbsRemote>) stateFlagsDriver;
+        return stateFlagsDriver;
     }
 }

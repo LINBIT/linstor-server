@@ -1,43 +1,28 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDefinitionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteSnapshotDfnDriver implements SnapshotDefinitionDatabaseDriver
+@Singleton
+public class SatelliteSnapshotDfnDriver
+    extends AbsSatelliteDbDriver<SnapshotDefinition>
+    implements SnapshotDefinitionDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
-    private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
-    private final AccessContext dbCtx;
+    private final StateFlagsPersistence<SnapshotDefinition> stateFlagsDriver;
 
     @Inject
-    public SatelliteSnapshotDfnDriver(@SystemContext AccessContext dbCtxRef)
+    public SatelliteSnapshotDfnDriver()
     {
-        dbCtx = dbCtxRef;
+        stateFlagsDriver = getNoopFlagDriver();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public StateFlagsPersistence<SnapshotDefinition> getStateFlagsPersistence()
     {
-        return (StateFlagsPersistence<SnapshotDefinition>) stateFlagsDriver;
-    }
-
-    @Override
-    public void create(SnapshotDefinition snapshotDefinition)
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(SnapshotDefinition snapshotDefinition)
-    {
-        // no-op
+        return stateFlagsDriver;
     }
 }

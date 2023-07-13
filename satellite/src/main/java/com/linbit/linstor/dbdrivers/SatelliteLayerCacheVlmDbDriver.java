@@ -5,26 +5,19 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.storage.data.adapter.cache.CacheVlmData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteLayerCacheVlmDbDriver implements LayerCacheVlmDatabaseDriver
+@Singleton
+public class SatelliteLayerCacheVlmDbDriver
+    extends AbsSatelliteDbDriver<CacheVlmData<?>>
+    implements LayerCacheVlmDatabaseDriver
 {
-    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver;
 
     @Inject
-    public SatelliteLayerCacheVlmDbDriver()
+    public SatelliteLayerCacheVlmDbDriver(SatelliteLayerResourceIdDriver stltLayerRscIdDriverRef)
     {
-    }
-
-    @Override
-    public void create(CacheVlmData<?> cacheVlmDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(CacheVlmData<?> cacheVlmDataRef) throws DatabaseException
-    {
-        // no-op
+        noopResourceLayerIdDriver = stltLayerRscIdDriverRef;
     }
 
     @Override
@@ -33,4 +26,3 @@ public class SatelliteLayerCacheVlmDbDriver implements LayerCacheVlmDatabaseDriv
         return noopResourceLayerIdDriver;
     }
 }
-

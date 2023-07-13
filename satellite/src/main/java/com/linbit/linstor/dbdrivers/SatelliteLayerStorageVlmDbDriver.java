@@ -1,39 +1,28 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteLayerStorageVlmDbDriver implements LayerStorageVlmDatabaseDriver
+@Singleton
+public class SatelliteLayerStorageVlmDbDriver
+    extends AbsSatelliteDbDriver<VlmProviderObject<?>>
+    implements LayerStorageVlmDatabaseDriver
 {
-    private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
-
-    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver;
     private final SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool> noopStorPoolDriver;
 
-    @SuppressWarnings("unchecked")
     @Inject
-    public SatelliteLayerStorageVlmDbDriver()
+    public SatelliteLayerStorageVlmDbDriver(SatelliteLayerResourceIdDriver stltLayerRscIdDriverRef)
     {
-        noopStorPoolDriver = (SingleColumnDatabaseDriver<VlmProviderObject<?>, StorPool>) noopSingleColDriver;
+        noopResourceLayerIdDriver = stltLayerRscIdDriverRef;
+        noopStorPoolDriver = getNoopColumnDriver();
     }
-
-    @Override
-    public void create(VlmProviderObject<?> vlmDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(VlmProviderObject<?> vlmDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
 
     @Override
     public LayerResourceIdDatabaseDriver getIdDriver()
@@ -47,4 +36,3 @@ public class SatelliteLayerStorageVlmDbDriver implements LayerStorageVlmDatabase
         return noopStorPoolDriver;
     }
 }
-

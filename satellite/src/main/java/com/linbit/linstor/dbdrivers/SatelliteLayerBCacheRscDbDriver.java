@@ -5,26 +5,19 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheRscData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteLayerBCacheRscDbDriver implements LayerBCacheRscDatabaseDriver
+@Singleton
+public class SatelliteLayerBCacheRscDbDriver
+    extends AbsSatelliteDbDriver<BCacheRscData<?>>
+    implements LayerBCacheRscDatabaseDriver
 {
-    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver;
 
     @Inject
-    public SatelliteLayerBCacheRscDbDriver()
+    public SatelliteLayerBCacheRscDbDriver(SatelliteLayerResourceIdDriver stltLayerRscIdDriverRef)
     {
-    }
-
-    @Override
-    public void create(BCacheRscData<?> bcacheRscDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(BCacheRscData<?> bcacheRscDataRef) throws DatabaseException
-    {
-        // no-op
+        noopResourceLayerIdDriver = stltLayerRscIdDriverRef;
     }
 
     @Override

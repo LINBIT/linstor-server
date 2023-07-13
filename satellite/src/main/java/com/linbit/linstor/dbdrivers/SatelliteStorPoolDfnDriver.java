@@ -1,29 +1,18 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDefinitionDatabaseDriver;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteStorPoolDfnDriver implements StorPoolDefinitionDatabaseDriver
+@Singleton
+public class SatelliteStorPoolDfnDriver
+    extends AbsSatelliteDbDriver<StorPoolDefinition>
+    implements StorPoolDefinitionDatabaseDriver
 {
-    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
-
     @Inject
-    public SatelliteStorPoolDfnDriver(CoreModule.StorPoolDefinitionMap storPoolDfnMapRef)
-    {
-        storPoolDfnMap = storPoolDfnMapRef;
-    }
-
-    @Override
-    public void create(StorPoolDefinition storPoolDefinition)
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(StorPoolDefinition data)
+    public SatelliteStorPoolDfnDriver()
     {
         // no-op
     }

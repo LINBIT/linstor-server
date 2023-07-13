@@ -11,40 +11,33 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class SatelliteLayerResourceIdDriver implements LayerResourceIdDatabaseDriver
+public class SatelliteLayerResourceIdDriver
+    extends AbsSatelliteDbDriver<AbsRscLayerObject<?>>
+    implements LayerResourceIdDatabaseDriver
 {
-    private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
+    private final SingleColumnDatabaseDriver<?, ?> parentDriver;
+    private final SingleColumnDatabaseDriver<?, ?> suspendedDriver;
 
     @Inject
     public SatelliteLayerResourceIdDriver()
     {
-    }
-
-    @Override
-    public void delete(AbsRscLayerObject<?> rscLayerObjectRef)
-    {
-        // no-op
-    }
-
-    @Override
-    public void create(AbsRscLayerObject<?> dataRef) throws DatabaseException
-    {
-        // no-op
+        parentDriver = getNoopColumnDriver();
+        suspendedDriver = getNoopColumnDriver();
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public<
-        RSC extends AbsResource<RSC>,
-        T extends VlmProviderObject<RSC>>
+    public <RSC extends AbsResource<RSC>, T extends VlmProviderObject<RSC>>
     SingleColumnDatabaseDriver<AbsRscData<RSC, T>, AbsRscLayerObject<RSC>> getParentDriver()
     {
-        return (SingleColumnDatabaseDriver<AbsRscData<RSC, T>, AbsRscLayerObject<RSC>>) noopSingleColDriver;
+        return (SingleColumnDatabaseDriver<AbsRscData<RSC, T>, AbsRscLayerObject<RSC>>) parentDriver;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>> SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean> getSuspendDriver()
+    public <RSC extends AbsResource<RSC>, VLM_TYPE extends VlmProviderObject<RSC>>
+    SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean> getSuspendDriver()
     {
-        return (SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean>) noopSingleColDriver;
+        return (SingleColumnDatabaseDriver<AbsRscData<RSC, VLM_TYPE>, Boolean>) suspendedDriver;
     }
 }

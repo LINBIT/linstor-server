@@ -6,25 +6,16 @@ import com.linbit.linstor.storage.data.adapter.cache.CacheRscData;
 
 import javax.inject.Inject;
 
-public class SatelliteLayerCacheRscDbDriver implements LayerCacheRscDatabaseDriver
+public class SatelliteLayerCacheRscDbDriver
+    extends AbsSatelliteDbDriver<CacheRscData<?>>
+    implements LayerCacheRscDatabaseDriver
 {
-    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver;
 
     @Inject
-    public SatelliteLayerCacheRscDbDriver()
+    public SatelliteLayerCacheRscDbDriver(SatelliteLayerResourceIdDriver stltLayerRscIdDriverRef)
     {
-    }
-
-    @Override
-    public void create(CacheRscData<?> cacheRscDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(CacheRscData<?> cacheRscDataRef) throws DatabaseException
-    {
-        // no-op
+        noopResourceLayerIdDriver = stltLayerRscIdDriverRef;
     }
 
     @Override
@@ -33,4 +24,3 @@ public class SatelliteLayerCacheRscDbDriver implements LayerCacheRscDatabaseDriv
         return noopResourceLayerIdDriver;
     }
 }
-

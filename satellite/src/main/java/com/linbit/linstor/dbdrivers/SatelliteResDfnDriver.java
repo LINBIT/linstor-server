@@ -1,61 +1,48 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDefinitionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.noop.NoOpCollectionDatabaseDriver;
-import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteResDfnDriver implements ResourceDefinitionDatabaseDriver
+@Singleton
+public class SatelliteResDfnDriver
+    extends AbsSatelliteDbDriver<ResourceDefinition>
+    implements ResourceDefinitionDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
-    private final CollectionDatabaseDriver<?, ?> noOpColDriver = new NoOpCollectionDatabaseDriver<>();
-    private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
-    private final CoreModule.ResourceDefinitionMap resDfnMap;
+    private final StateFlagsPersistence<ResourceDefinition> stateFlagsDriver;
+    private final CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> layerStackDriver;
+    private final SingleColumnDatabaseDriver<ResourceDefinition, ResourceGroup> rscGrpDriver;
 
     @Inject
-    public SatelliteResDfnDriver(CoreModule.ResourceDefinitionMap resDfnMapRef)
+    public SatelliteResDfnDriver()
     {
-        resDfnMap = resDfnMapRef;
+        stateFlagsDriver = getNoopFlagDriver();
+        layerStackDriver = getNoopCollectionDriver();
+        rscGrpDriver = getNoopColumnDriver();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public StateFlagsPersistence<ResourceDefinition> getStateFlagsPersistence()
     {
-        return (StateFlagsPersistence<ResourceDefinition>) stateFlagsDriver;
+        return stateFlagsDriver;
     }
 
-    @Override
-    public void create(ResourceDefinition resDfn)
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(ResourceDefinition data)
-    {
-        // no-op
-    }
-
-    @SuppressWarnings("unchecked")
     @Override
     public CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind> getLayerStackDriver()
     {
-        return (CollectionDatabaseDriver<ResourceDefinition, DeviceLayerKind>) noOpColDriver;
+        return layerStackDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<ResourceDefinition, ResourceGroup> getRscGrpDriver()
     {
-        return (SingleColumnDatabaseDriver<ResourceDefinition, ResourceGroup>) noopSingleColDriver;
+        return rscGrpDriver;
     }
 }

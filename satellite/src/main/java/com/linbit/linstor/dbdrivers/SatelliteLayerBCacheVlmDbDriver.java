@@ -6,30 +6,23 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.storage.data.adapter.bcache.BCacheVlmData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.util.UUID;
 
-public class SatelliteLayerBCacheVlmDbDriver implements LayerBCacheVlmDatabaseDriver
+@Singleton
+public class SatelliteLayerBCacheVlmDbDriver
+    extends AbsSatelliteDbDriver<BCacheVlmData<?>>
+    implements LayerBCacheVlmDatabaseDriver
 {
     private final SingleColumnDatabaseDriver<BCacheVlmData<?>, UUID> noopDeviceUuidDriver;
-    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver;
 
     @Inject
-    public SatelliteLayerBCacheVlmDbDriver()
+    public SatelliteLayerBCacheVlmDbDriver(SatelliteLayerResourceIdDriver stltLayerRscIdDriverRef)
     {
-        noopDeviceUuidDriver = new SatelliteSingleColDriver<>();
-    }
-
-    @Override
-    public void create(BCacheVlmData<?> bcacheVlmDataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(BCacheVlmData<?> bcacheVlmDataRef) throws DatabaseException
-    {
-        // no-op
+        noopResourceLayerIdDriver = stltLayerRscIdDriverRef;
+        noopDeviceUuidDriver = getNoopColumnDriver();
     }
 
     @Override
@@ -44,4 +37,3 @@ public class SatelliteLayerBCacheVlmDbDriver implements LayerBCacheVlmDatabaseDr
         return noopDeviceUuidDriver;
     }
 }
-

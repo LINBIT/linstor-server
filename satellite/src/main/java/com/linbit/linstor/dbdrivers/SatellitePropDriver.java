@@ -1,33 +1,26 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver.PropsDbEntry;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.util.Collections;
 import java.util.Map;
 
-public class SatellitePropDriver implements PropsDatabaseDriver
+@Singleton
+public class SatellitePropDriver
+    extends AbsSatelliteDbDriver<PropsDbEntry>
+    implements PropsDatabaseDriver
 {
-    private final SingleColumnDatabaseDriver<PropsDbEntry, String> singleColDriver = new SatelliteSingleColDriver<>();
+    private final SingleColumnDatabaseDriver<PropsDbEntry, String> valueDriver;
 
     @Inject
     public SatellitePropDriver()
     {
-        // no-op
-    }
-
-    @Override
-    public void create(PropsDbEntry dataRef) throws DatabaseException
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(PropsDbEntry dataRef) throws DatabaseException
-    {
-        // no-op
+        valueDriver = getNoopColumnDriver();
     }
 
     @Override
@@ -39,6 +32,6 @@ public class SatellitePropDriver implements PropsDatabaseDriver
     @Override
     public SingleColumnDatabaseDriver<PropsDbEntry, String> getValueDriver()
     {
-        return singleColDriver;
+        return valueDriver;
     }
 }

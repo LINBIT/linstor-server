@@ -1,7 +1,6 @@
 package com.linbit.linstor.security;
 
-import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.dbdrivers.SatelliteSingleColDriver;
+import com.linbit.linstor.dbdrivers.AbsSatelliteDbDriver;
 import com.linbit.linstor.dbdrivers.interfaces.SecRoleDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 
@@ -9,26 +8,18 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 
 @Singleton
-public class SatelliteSecRoleDbDriver implements SecRoleDatabaseDriver
+public class SatelliteSecRoleDbDriver
+    extends AbsSatelliteDbDriver<Role>
+    implements SecRoleDatabaseDriver
 {
-    private final SingleColumnDatabaseDriver<Role, SecurityType> noopDomainDriver = new SatelliteSingleColDriver<>();
-    private final SingleColumnDatabaseDriver<Role, Boolean> noopRoleEnabled = new SatelliteSingleColDriver<>();
+    private final SingleColumnDatabaseDriver<Role, SecurityType> noopDomainDriver;
+    private final SingleColumnDatabaseDriver<Role, Boolean> noopRoleEnabled;
 
     @Inject
     public SatelliteSecRoleDbDriver()
     {
-    }
-
-    @Override
-    public void create(Role dataRef) throws DatabaseException
-    {
-        // noop
-    }
-
-    @Override
-    public void delete(Role dataRef) throws DatabaseException
-    {
-        // noop
+        noopDomainDriver = getNoopColumnDriver();
+        noopRoleEnabled = getNoopColumnDriver();
     }
 
     @Override

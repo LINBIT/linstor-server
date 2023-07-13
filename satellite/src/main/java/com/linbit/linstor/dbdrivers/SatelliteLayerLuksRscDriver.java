@@ -5,31 +5,24 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteLayerLuksRscDriver implements LayerLuksRscDatabaseDriver
+@Singleton
+public class SatelliteLayerLuksRscDriver
+    extends AbsSatelliteDbDriver<LuksRscData<?>>
+    implements LayerLuksRscDatabaseDriver
 {
-    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver = new SatelliteLayerResourceIdDriver();
+    private final LayerResourceIdDatabaseDriver noopResourceLayerIdDriver;
 
     @Inject
-    public SatelliteLayerLuksRscDriver()
+    public SatelliteLayerLuksRscDriver(SatelliteLayerResourceIdDriver stltLayerRscIdDriverRef)
     {
+        noopResourceLayerIdDriver = stltLayerRscIdDriverRef;
     }
 
     @Override
     public LayerResourceIdDatabaseDriver getIdDriver()
     {
         return noopResourceLayerIdDriver;
-    }
-
-    @Override
-    public void create(LuksRscData<?> luksRscDataRef)
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(LuksRscData<?> luksRscDataRef)
-    {
-        // no-op
     }
 }

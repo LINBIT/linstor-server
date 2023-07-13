@@ -1,52 +1,40 @@
 package com.linbit.linstor.dbdrivers;
 
-import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
-import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
 import java.util.Date;
 
-public class SatelliteResDriver implements ResourceDatabaseDriver
+@Singleton
+public class SatelliteResDriver
+    extends AbsSatelliteDbDriver<AbsResource<Resource>>
+    implements ResourceDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
-    private final SingleColumnDatabaseDriver<?, ?> noopSingleColDriver = new SatelliteSingleColDriver<>();
-    private final AccessContext dbCtx;
+    private final StateFlagsPersistence<AbsResource<Resource>> stateFlagsDriver;
+    private final SingleColumnDatabaseDriver<AbsResource<Resource>, Date> createTimeDriver;
 
     @Inject
-    public SatelliteResDriver(@SystemContext AccessContext dbCtxRef)
+    public SatelliteResDriver()
     {
-        dbCtx = dbCtxRef;
+        stateFlagsDriver = getNoopFlagDriver();
+        createTimeDriver = getNoopColumnDriver();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public StateFlagsPersistence<AbsResource<Resource>> getStateFlagPersistence()
     {
-        return (StateFlagsPersistence<AbsResource<Resource>>) stateFlagsDriver;
-    }
-
-    @Override
-    public void create(AbsResource<Resource> res)
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(AbsResource<Resource> resource)
-    {
-        // no-op
+        return stateFlagsDriver;
     }
 
     @Override
     public SingleColumnDatabaseDriver<AbsResource<Resource>, Date> getCreateTimeDriver()
     {
-        return (SingleColumnDatabaseDriver<AbsResource<Resource>, Date>) noopSingleColDriver;
+        return createTimeDriver;
     }
 }

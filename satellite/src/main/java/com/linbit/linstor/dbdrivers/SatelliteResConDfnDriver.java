@@ -4,44 +4,35 @@ import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceConnectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
-public class SatelliteResConDfnDriver implements ResourceConnectionDatabaseDriver
+@Singleton
+public class SatelliteResConDfnDriver
+    extends AbsSatelliteDbDriver<ResourceConnection>
+    implements ResourceConnectionDatabaseDriver
 {
-    private final StateFlagsPersistence<?> stateFlagsDriver = new NoOpFlagDriver();
-    private final SingleColumnDatabaseDriver<?, ?> singleColDriver = new SatelliteSingleColDriver<>();
+    private final StateFlagsPersistence<ResourceConnection> stateFlagsDriver;
+    private final SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> portDriver;
 
     @Inject
     public SatelliteResConDfnDriver()
     {
+        stateFlagsDriver = getNoopFlagDriver();
+        portDriver = getNoopColumnDriver();
     }
 
-    @Override
-    public void create(ResourceConnection conDfnData)
-    {
-        // no-op
-    }
-
-    @Override
-    public void delete(ResourceConnection data)
-    {
-        // no-op
-    }
-
-    @SuppressWarnings("unchecked")
     @Override
     public StateFlagsPersistence<ResourceConnection> getStateFlagPersistence()
     {
-        return (StateFlagsPersistence<ResourceConnection>) stateFlagsDriver;
+        return stateFlagsDriver;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber> getPortDriver()
     {
-        return (SingleColumnDatabaseDriver<ResourceConnection, TcpPortNumber>) singleColDriver;
+        return portDriver;
     }
 }
