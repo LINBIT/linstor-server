@@ -119,15 +119,25 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     {
         try
         {
+            // some drivers simply do not have a table (like LayerStorageRscDbDriver)
             if (table != null)
             {
-                // some drivers simply do not have a table (like LayerStorageRscDbDriver)
                 dbEngine.delete(setters, dataRef, table, this::getId);
             }
         }
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError("Database driver does not have enough privileges");
+        }
+    }
+
+    @Override
+    public void truncate() throws DatabaseException
+    {
+        // some drivers simply do not have a table (like LayerStorageRscDbDriver)
+        if (table != null)
+        {
+            dbEngine.truncate(table);
         }
     }
 

@@ -138,6 +138,22 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     }
 
     @Override
+    public void truncate(DatabaseTable tableRef) throws DatabaseException
+    {
+        EtcdTransaction tx = transMgrProvider.get().getTransaction();
+
+        // do not use ranged delete since quite a few database tables can be effected by some "recreate" event (i.e.
+        // delete and create the same object in the same transaction).
+        // that causes "DELETE /key/*" as well as "PUT /key/column=..." events, which cannot be deduplicated
+        // properly, causing an ETCD exception
+        Map<String, String> dataMap = new TreeMap<>(namespace(tableRef).get(true));
+        for (String etcdKey : dataMap.keySet())
+        {
+            tx.delete(etcdKey);
+        }
+    }
+
+    @Override
     public <DATA, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
         DatabaseTable table,
         LOAD_ALL parents,

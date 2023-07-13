@@ -31,6 +31,12 @@ public abstract class AbsSatelliteDbDriver<DATA> implements GenericDatabaseDrive
         // no-op
     }
 
+    @Override
+    public void truncate() throws DatabaseException
+    {
+        // no-op
+    }
+
     @SuppressWarnings("unchecked")
     protected <PARENT, COL_VALUE> SingleColumnDatabaseDriver<PARENT, COL_VALUE> getNoopColumnDriver()
     {

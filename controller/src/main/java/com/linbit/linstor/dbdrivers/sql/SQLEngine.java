@@ -64,6 +64,7 @@ public class SQLEngine implements DbEngine
     private final HashMap<DatabaseTable, String> selectStatements;
     private final HashMap<DatabaseTable, String> insertStatements;
     private final HashMap<DatabaseTable, String> deleteStatements;
+    private final HashMap<DatabaseTable, String> truncateStatements;
     private final CtrlConfig ctrlCfg;
 
     @Inject
@@ -80,6 +81,7 @@ public class SQLEngine implements DbEngine
         selectStatements = new HashMap<>();
         insertStatements = new HashMap<>();
         deleteStatements = new HashMap<>();
+        truncateStatements = new HashMap<>();
     }
 
     @Override
@@ -261,6 +263,36 @@ public class SQLEngine implements DbEngine
 
             sql = sqlBuilder.toString();
             deleteStatements.put(table, sql);
+        }
+        return sql;
+    }
+
+    @Override
+    public void truncate(DatabaseTable table) throws DatabaseException
+    {
+        try (PreparedStatement stmt = getConnection().prepareStatement(getTruncateStatement(table)))
+        {
+            errorReporter.logTrace("Truncating table %s", table.getName());
+
+            stmt.executeUpdate();
+
+            errorReporter.logTrace("Table %s truncated", table.getName());
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
+    }
+
+    private String getTruncateStatement(DatabaseTable table)
+    {
+        String sql = truncateStatements.get(table);
+        if (sql == null)
+        {
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("DELETE FROM ").append(table.getName());
+            sql = sqlBuilder.toString();
+            truncateStatements.put(table, sql);
         }
         return sql;
     }

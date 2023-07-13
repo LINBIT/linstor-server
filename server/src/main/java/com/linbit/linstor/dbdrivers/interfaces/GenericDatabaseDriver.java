@@ -19,4 +19,11 @@ public interface GenericDatabaseDriver<DATA>
      * @throws DatabaseException
      */
     void delete(DATA data) throws DatabaseException;
+
+    /**
+     * Removes all data from the current database table
+     *
+     * @throws DatabaseException
+     */
+    void truncate() throws DatabaseException;
 }

@@ -174,6 +174,16 @@ public class K8sCrdEngine implements DbEngine
     }
 
     @Override
+    public void truncate(DatabaseTable tableRef) throws DatabaseException
+    {
+        K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
+        for (LinstorSpec<?, ?> linstorSpec : tx.getSpec(tableRef).values())
+        {
+            tx.delete(tableRef, linstorSpec.getCrd());
+        }
+    }
+
+    @Override
     public <DATA, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
         DatabaseTable table,
         LOAD_ALL parents,

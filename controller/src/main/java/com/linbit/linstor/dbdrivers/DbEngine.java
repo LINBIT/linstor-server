@@ -250,6 +250,16 @@ public interface DbEngine
         throws DatabaseException, AccessDeniedException;
 
     /**
+     * Deletes all data objects from the given database table.
+     *
+     * @param table
+     *     The {@link Table} from which should be truncated / cleared.
+     *
+     * @throws DatabaseException
+     */
+    void truncate(DatabaseTable table) throws DatabaseException;
+
+    /**
      * Loads all objects from the given database. It is required that all parent-objects
      * are already loaded (i.e. loading all {@link Resource}s requires that all {@link Node}s and
      * {@link ResourceDefinition}s are fully loaded)
@@ -292,6 +302,15 @@ public interface DbEngine
 
     List<RawParameters> export(DatabaseTable tableRef) throws DatabaseException;
 
+    /**
+     * Unlike the {@link #truncate(DatabaseTable)} method, this method is not linked to the current
+     * {@link DatabaseTable} instances and can therefore also truncate tables that existed in previous versions but no
+     * longer exist in the current {@link GeneratedDatabaseTables} class.
+     *
+     * @param orderedTablesListRef
+     *
+     * @throws DatabaseException
+     */
     void truncateAllData(List<DbExportPojoData.Table> orderedTablesListRef) throws DatabaseException;
 
     void importData(DbExportPojoData.Table dbExportTableRef) throws DatabaseException;
