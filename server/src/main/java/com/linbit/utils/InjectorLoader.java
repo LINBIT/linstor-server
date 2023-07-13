@@ -1,12 +1,14 @@
 package com.linbit.utils;
 
-import com.google.inject.Module;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.dbdrivers.DatabaseDriverInfo;
 import com.linbit.linstor.logging.ErrorReporter;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+
+import com.google.inject.Module;
 
 public class InjectorLoader
 {
@@ -33,12 +35,10 @@ public class InjectorLoader
         try
         {
             Class<?> injClass = Class.forName(className);
-            boolean constrWithDbType = false;
             Constructor<?> injModuleConstr;
             try
             {
                 injModuleConstr = injClass.getDeclaredConstructor(DatabaseDriverInfo.DatabaseType.class);
-                constrWithDbType = true;
             }
             catch (NoSuchMethodException constrExc)
             {
