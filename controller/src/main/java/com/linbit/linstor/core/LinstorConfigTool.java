@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
+import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.ControllerETCDDatabase;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.InternalApiConsts;
@@ -25,6 +26,7 @@ import com.linbit.linstor.logging.StderrErrorReporter;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.transaction.ControllerETCDTransactionMgrGenerator;
 import com.linbit.linstor.transaction.ControllerK8sCrdTransactionMgrGenerator;
+import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CMDLINE_ERROR;
 import static com.linbit.linstor.InternalApiConsts.EXIT_CODE_CONFIG_PARSE_ERROR;
@@ -329,36 +331,41 @@ public class LinstorConfigTool
         {
             CtrlConfig cfg = new CtrlConfig(args);
             ErrorReporter reporter = new StderrErrorReporter("linstor-config");
-            DbInitializer initializer = dbInitializerFromConfig(reporter, cfg);
+            Pair<DbInitializer, ControllerDatabase> databasePair = dbFromConfig(reporter, cfg);
 
-            initializer.initialize();
+            databasePair.objA.initialize();
+            databasePair.objB.shutdown();
             return null;
         }
     }
 
     @CommandLine.Command(name = "all-migrations-applied", description = "checks whether the database needs migrating")
-    private static class CmdAllMigrationsApplied implements Callable<Object>
+    private static class CmdAllMigrationsApplied implements Callable<Integer>
     {
         @CommandLine.Unmatched()
         private String[] args = new String[0];
 
         @Override
-        public Object call() throws Exception
+        public Integer call() throws Exception
         {
             CtrlConfig cfg = new CtrlConfig(args);
             ErrorReporter reporter = new StderrErrorReporter("linstor-config");
-            DbInitializer initializer = dbInitializerFromConfig(reporter, cfg);
+            Pair<DbInitializer, ControllerDatabase> databasePair = dbFromConfig(reporter, cfg);
 
-            if (initializer.needsMigration())
+            int result = 0;
+            if (databasePair.objA.needsMigration())
             {
                 System.out.println("needs migration");
+                result = 1;
                 System.exit(1);
             }
             else
             {
                 System.out.println("no migration needed");
             }
-            return null;
+            databasePair.objB.shutdown();
+
+            return result;
         }
     }
 
@@ -424,7 +431,7 @@ public class LinstorConfigTool
     }
 
 
-    private static DbInitializer dbInitializerFromConfig(ErrorReporter reporter, CtrlConfig cfg) throws Exception
+    private static Pair<DbInitializer, ControllerDatabase> dbFromConfig(ErrorReporter reporter, CtrlConfig cfg) throws Exception
     {
         DatabaseDriverInfo.DatabaseType dbType = Controller.checkDatabaseConfig(reporter, cfg);
         List<Module> injModList = new ArrayList<>(Arrays.asList(
@@ -442,12 +449,14 @@ public class LinstorConfigTool
 
         // We load our DBInitializer manually here, as using dependency injection is complicated :/
         DbInitializer initializer = null;
+        ControllerDatabase database = null;
         switch (dbType)
         {
             case SQL:
+                database = new DbConnectionPool(cfg, reporter);
                 initializer = new DbConnectionPoolInitializer(
                     reporter,
-                    new DbConnectionPool(cfg, reporter),
+                    database,
                     cfg
                 );
                 break;
@@ -470,9 +479,10 @@ public class LinstorConfigTool
                     }
                 };
 
+                database = etcdInitializerProvider.get();
                 initializer = new DbEtcdInitializer(
                     reporter,
-                    etcdInitializerProvider.get(),
+                    database,
                     cfg
                 );
                 break;
@@ -492,11 +502,12 @@ public class LinstorConfigTool
                     }
                 };
 
-                initializer = new DbK8sCrdInitializer(reporter, k8sCrdProvider.get(), cfg);
+                database = k8sCrdProvider.get();
+                initializer = new DbK8sCrdInitializer(reporter, database, cfg);
                 break;
             default:
                 throw new ImplementationError(String.format("Unrecognized database type '%s'", dbType));
         }
-        return initializer;
+        return new Pair<>(initializer, database);
     }
 }
