@@ -334,31 +334,81 @@ public class ConfFileBuilder
                     try (Section connectionSection = new Section())
                     {
                         List<Pair<NetInterface, NetInterface>> pathsList = new ArrayList<>();
+                        NodeConnection nodeConn = localRsc.getNode().getNodeConnection(accCtx, peerRsc.getNode());
                         ResourceConnection rscConn = localRsc.getAbsResourceConnection(accCtx, peerRsc);
-                        NodeConnection nodeConn;
                         Optional<Props> paths = Optional.empty();
+
+                        PriorityProps prioPropsConn = rscConn != null ?
+                            new PriorityProps()
+                                .addProps(
+                                    rscConn.getProps(accCtx),
+                                    String.format(
+                                        "Resource connection(%s <-> %s)",
+                                        rscConn.getSourceResource(accCtx),
+                                        rscConn.getTargetResource(accCtx)
+                                    )
+                                ) :
+                            new PriorityProps();
+
+                        if (nodeConn != null)
+                        {
+                            prioPropsConn = prioPropsConn.addProps(
+                                nodeConn.getProps(accCtx),
+                                String.format(
+                                    "Node connection(%s <-> %s)",
+                                    nodeConn.getSourceNode(accCtx),
+                                    nodeConn.getTargetNode(accCtx)
+                                )
+                            );
+                        }
+
+                        if (prioPropsConn.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_NET_OPTIONS))
+                        {
+                            appendLine("");
+                            appendLine("net");
+                            try (Section ignore = new Section())
+                            {
+                                appendConflictingDrbdOptions(
+                                    LinStorObject.CONTROLLER,
+                                    ApiConsts.NAMESPC_DRBD_NET_OPTIONS,
+                                    prioPropsConn,
+                                    peerRscAutoRules,
+                                    true
+                                );
+                            }
+                        }
 
                         if (rscConn != null)
                         {
                             // get paths from resource connection...
-                            paths = rscConn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_CONNECTION_PATHS);
-
                             Props rscConnProps = rscConn.getProps(accCtx);
-                            if (rscConnProps.getNamespace(ApiConsts.NAMESPC_DRBD_NET_OPTIONS).isPresent())
-                            {
-                                appendLine("");
-                                appendLine("net");
-                                try (Section ignore = new Section())
-                                {
-                                    appendDrbdOptions(
-                                        LinStorObject.CONTROLLER,
-                                        rscConnProps,
-                                        ApiConsts.NAMESPC_DRBD_NET_OPTIONS
-                                    );
-                                }
-                            }
+                            paths = rscConnProps.getNamespace(ApiConsts.NAMESPC_CONNECTION_PATHS);
 
-                            if (rscConnProps.getNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS).isPresent())
+                            PriorityProps prioRscConnProps = new PriorityProps()
+                                .addProps(
+                                    rscConnProps,
+                                    String.format(
+                                        "Resource connection(%s <-> %s)",
+                                        rscConn.getSourceResource(accCtx),
+                                        rscConn.getTargetResource(accCtx)
+                                    )
+                                )
+                                .addProps(
+                                    rscDfnProps,
+                                    String.format(
+                                        "Resource definition (%s)",
+                                        rscDfn.getName()
+                                    )
+                                )
+                                .addProps(
+                                    rscGrpProps,
+                                    String.format(
+                                        "Resource group (%s)",
+                                        rscGrp.getName()
+                                    )
+                                );
+
+                            if (prioRscConnProps.anyPropsHasNamespace(ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS))
                             {
                                 appendLine("");
                                 appendLine("disk");
@@ -367,29 +417,7 @@ public class ConfFileBuilder
                                     appendConflictingDrbdOptions(
                                         LinStorObject.CONTROLLER,
                                         ApiConsts.NAMESPC_DRBD_PEER_DEVICE_OPTIONS,
-                                        new PriorityProps()
-                                            .addProps(
-                                                rscConnProps,
-                                                String.format(
-                                                    "Resource connection(%s <-> %s)",
-                                                    rscConn.getSourceResource(accCtx),
-                                                    rscConn.getTargetResource(accCtx)
-                                                )
-                                            )
-                                            .addProps(
-                                                rscDfnProps,
-                                                String.format(
-                                                    "Resource definition (%s)",
-                                                    rscDfn.getName()
-                                                )
-                                            )
-                                            .addProps(
-                                                rscGrpProps,
-                                                String.format(
-                                                    "Resource group (%s)",
-                                                    rscGrp.getName()
-                                                )
-                                            ),
+                                        prioRscConnProps,
                                         peerRscAutoRules,
                                         true
                                     );
@@ -420,8 +448,6 @@ public class ConfFileBuilder
                         // ...or fall back to node connection
                         if (!paths.isPresent())
                         {
-                            nodeConn = localRsc.getNode().getNodeConnection(accCtx, peerRsc.getNode());
-
                             if (nodeConn != null)
                             {
                                 paths = nodeConn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_CONNECTION_PATHS);
