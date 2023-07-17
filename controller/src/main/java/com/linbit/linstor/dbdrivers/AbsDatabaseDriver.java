@@ -115,6 +115,22 @@ public abstract class AbsDatabaseDriver<DATA, INIT_MAPS, LOAD_ALL>
     }
 
     @Override
+    public void upsert(DATA dataRef) throws DatabaseException
+    {
+        if (table != null)
+        {
+            try
+            {
+                dbEngine.upsert(setters, dataRef, table, this::getId);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError("Database driver does not have enough privileges");
+            }
+        }
+    }
+
+    @Override
     public void delete(DATA dataRef) throws DatabaseException
     {
         try

@@ -26,6 +26,12 @@ public abstract class AbsSatelliteDbDriver<DATA> implements GenericDatabaseDrive
     }
 
     @Override
+    public void upsert(DATA dataRef) throws DatabaseException
+    {
+        // no-op
+    }
+
+    @Override
     public void delete(DATA dataRef) throws DatabaseException
     {
         // no-op

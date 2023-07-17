@@ -221,6 +221,35 @@ public interface DbEngine
         throws DatabaseException, AccessDeniedException;
 
     /**
+     * Update or inserts (creates) the given DATA object
+     *
+     * @param <DATA>
+     *     The Linstor-object, i.e. {@link Node}, {@link Resource}, {@link ResourceDefinition}, ...
+     * @param settersRef
+     *     This map contains accessors for all columns of the given {@link Table}.<br/>
+     *     The {@link ExceptionThrowingFunction} receives the DATA object, and has to return a
+     *     value of correct type for the given {@link Column}. <br />
+     *     For example, {@link Nodes#NODE_FLAGS} has to have an {@link ExceptionThrowingFunction}
+     *     that gets a {@link Node} which returns a long value from {@link StateFlags#getFlagsBits}
+     * @param dataRef
+     *     The actual data which should be upserted
+     * @param table
+     *     The {@link Table} in which the given <code>dataRef</code> should be upserted.
+     * @param dataToString
+     *     Converts the DATA to a String (only for logging)
+     *
+     * @throws DatabaseException
+     * @throws AccessDeniedException
+     */
+    <DATA> void upsert(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
+        DATA dataRef,
+        DatabaseTable tableRef,
+        DataToString<DATA> dataToString
+    )
+        throws DatabaseException, AccessDeniedException;
+
+    /**
      * Deletes the given data object from the database.
      *
      * @param <DATA>
@@ -238,6 +267,7 @@ public interface DbEngine
      *     The {@link Table} from which the given <code>dataRef</code> should be deleted.
      * @param dataToString
      *     Converts the DATA to a String (only for logging)
+     *
      * @throws DatabaseException
      * @throws AccessDeniedException
      */

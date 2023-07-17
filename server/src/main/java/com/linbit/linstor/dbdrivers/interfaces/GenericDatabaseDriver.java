@@ -13,9 +13,18 @@ public interface GenericDatabaseDriver<DATA>
     void create(DATA data) throws DatabaseException;
 
     /**
+     * Updates or creates the given DATA object.
+     *
+     * @param dataRef
+     * @throws DatabaseException
+     */
+    void upsert(DATA dataRef) throws DatabaseException;
+
+    /**
      * Removes the given DATA from the database
      *
      * @param data
+     *
      * @throws DatabaseException
      */
     void delete(DATA data) throws DatabaseException;

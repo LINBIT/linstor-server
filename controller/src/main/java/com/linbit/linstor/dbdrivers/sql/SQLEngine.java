@@ -55,14 +55,18 @@ import java.util.function.Predicate;
 public class SQLEngine implements DbEngine
 {
     private static final String DELIMITER_AND = "AND ";
+    private static final String DELIMITER_COMMA = ", ";
     private static final String DELIMITER_EQUALS_AND = " = ? " + DELIMITER_AND;
+    private static final String DELIMITER_EQUALS_COMMA = " = ? " + DELIMITER_COMMA;
     private static final String DELIMITER_LIST = ", ";
     private static final String DELIMITER_VALUES = "?" + DELIMITER_LIST;
 
     private final ErrorReporter errorReporter;
     private final Provider<TransactionMgrSQL> transMgrProvider;
-    private final HashMap<DatabaseTable, String> selectStatements;
+    private final HashMap<DatabaseTable, String> selectAllStatements;
+    private final HashMap<DatabaseTable, String> selectSingleStatements;
     private final HashMap<DatabaseTable, String> insertStatements;
+    private final HashMap<DatabaseTable, String> updateSingleStatements;
     private final HashMap<DatabaseTable, String> deleteStatements;
     private final HashMap<DatabaseTable, String> truncateStatements;
     private final CtrlConfig ctrlCfg;
@@ -78,8 +82,10 @@ public class SQLEngine implements DbEngine
         transMgrProvider = transMgrProviderRef;
         ctrlCfg = ctrlCfgRef;
 
-        selectStatements = new HashMap<>();
+        selectAllStatements = new HashMap<>();
+        selectSingleStatements = new HashMap<>();
         insertStatements = new HashMap<>();
+        updateSingleStatements = new HashMap<>();
         deleteStatements = new HashMap<>();
         truncateStatements = new HashMap<>();
     }
@@ -129,19 +135,13 @@ public class SQLEngine implements DbEngine
     )
         throws DatabaseException
     {
-        try (PreparedStatement stmt = getConnection().prepareStatement(getInsertStatement(table)))
+        try
         {
             errorReporter.logTrace("Creating %s %s", table.getName(), dataToString.toString(data));
 
-            setValues(setters, stmt, 1, table, ignored -> true, data);
-
-            stmt.executeUpdate();
+            insertImpl(setters, data, table);
 
             errorReporter.logTrace("%s created %s", table.getName(), dataToString.toString(data));
-        }
-        catch (SQLException sqlExc)
-        {
-            throw new DatabaseException(sqlExc);
         }
         catch (AccessDeniedException exc)
         {
@@ -149,9 +149,28 @@ public class SQLEngine implements DbEngine
         }
     }
 
-    private String getSelectStatement(DatabaseTable table)
+    private <DATA> void insertImpl(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        DATA data,
+        DatabaseTable table
+    )
+        throws DatabaseException, AccessDeniedException
     {
-        String sql = selectStatements.get(table);
+        try (PreparedStatement stmt = getConnection().prepareStatement(getInsertStatement(table)))
+        {
+            setValues(setters, stmt, 1, table, ignored -> true, data);
+
+            stmt.executeUpdate();
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
+    }
+
+    private String getSelectAllStatement(DatabaseTable table)
+    {
+        String sql = selectAllStatements.get(table);
         if (sql == null)
         {
             StringBuilder sqlBuilder = new StringBuilder();
@@ -164,7 +183,7 @@ public class SQLEngine implements DbEngine
             sqlBuilder.append(" FROM ").append(table.getName());
 
             sql = sqlBuilder.toString();
-            selectStatements.put(table, sql);
+            selectAllStatements.put(table, sql);
         }
         return sql;
     }
@@ -214,6 +233,118 @@ public class SQLEngine implements DbEngine
         sqlBuilder.append(") VALUES(").append(values).append(")");
 
         return sqlBuilder.toString();
+    }
+
+    @Override
+    public <DATA> void upsert(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
+        DATA dataRef,
+        DatabaseTable tableRef,
+        DataToString<DATA> dataToStringRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        try (PreparedStatement upsertStmt = getConnection().prepareStatement(getSelectSingleStatement(tableRef)))
+        {
+            errorReporter.logTrace("Upserting %s %s", tableRef.getName(), dataToStringRef.toString(dataRef));
+
+            setPrimaryValues(settersRef, upsertStmt, 1, tableRef, dataRef);
+            ResultSet resultSet = upsertStmt.executeQuery();
+            if (resultSet.next())
+            {
+                errorReporter.logTrace(
+                    "Entry exists. Updating %s %s",
+                    tableRef.getName(),
+                    dataToStringRef.toString(dataRef)
+                );
+                try (
+                    PreparedStatement updateStmt = getConnection().prepareStatement(getUpdateSingleStatement(tableRef)))
+                {
+                    /*
+                     * UPDATE <table> SET $NON-PK1 = ?, ... WHERE $PK1 = ? AND ...
+                     */
+                    int idx = setValues(settersRef, updateStmt, 1, tableRef, clm -> !clm.isPk(), dataRef);
+                    setPrimaryValues(settersRef, updateStmt, idx, tableRef, dataRef);
+
+                    updateStmt.executeUpdate();
+                }
+            }
+            else
+            {
+                errorReporter.logTrace(
+                    "Entry did not exist. Inserting %s %s",
+                    tableRef.getName(),
+                    dataToStringRef.toString(dataRef)
+                );
+                insertImpl(settersRef, dataRef, tableRef);
+            }
+            errorReporter.logTrace("%s upserted %s", tableRef.getName(), dataToStringRef.toString(dataRef));
+        }
+        catch (SQLException sqlExc)
+        {
+            throw new DatabaseException(sqlExc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            DatabaseLoader.handleAccessDeniedException(exc);
+        }
+    }
+
+    private String getSelectSingleStatement(DatabaseTable table)
+    {
+        String sql = selectSingleStatements.get(table);
+        if (sql == null)
+        {
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append(getSelectAllStatement(table));
+            sqlBuilder.append(" WHERE ");
+
+            for (Column col : table.values())
+            {
+                if (col.isPk())
+                {
+                    sqlBuilder.append(col.getName()).append(DELIMITER_EQUALS_AND);
+                }
+            }
+            sqlBuilder.setLength(sqlBuilder.length() - DELIMITER_AND.length());
+
+            sql = sqlBuilder.toString();
+            selectSingleStatements.put(table, sql);
+        }
+        return sql;
+    }
+
+    private String getUpdateSingleStatement(DatabaseTable table)
+    {
+        String sql = updateSingleStatements.get(table);
+        if (sql == null)
+        {
+            StringBuilder sqlBuilder = new StringBuilder();
+            sqlBuilder.append("UPDATE ");
+            sqlBuilder.append(table.getName());
+            sqlBuilder.append(" SET ");
+            for (Column col : table.values())
+            {
+                if (!col.isPk())
+                {
+                    sqlBuilder.append(col.getName()).append(DELIMITER_EQUALS_COMMA);
+                }
+            }
+            sqlBuilder.setLength(sqlBuilder.length() - DELIMITER_COMMA.length());
+            sqlBuilder.append(" WHERE ");
+            for (Column col : table.values())
+            {
+                if (col.isPk())
+                {
+                    sqlBuilder.append(col.getName()).append(DELIMITER_EQUALS_AND);
+                }
+            }
+            sqlBuilder.setLength(sqlBuilder.length() - DELIMITER_AND.length());
+
+            sql = sqlBuilder.toString();
+            updateSingleStatements.put(table, sql);
+        }
+        return sql;
     }
 
     @Override
@@ -357,7 +488,7 @@ public class SQLEngine implements DbEngine
         throws DatabaseException, AccessDeniedException, MdException
     {
         Map<DATA, INIT_MAPS> loadedObjectsMap = new TreeMap<>();
-        try (PreparedStatement stmt = getConnection().prepareStatement(getSelectStatement(table)))
+        try (PreparedStatement stmt = getConnection().prepareStatement(getSelectAllStatement(table)))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {
@@ -487,7 +618,7 @@ public class SQLEngine implements DbEngine
     public List<RawParameters> export(DatabaseTable tableRef) throws DatabaseException
     {
         List<RawParameters> ret = new ArrayList<>();
-        try (PreparedStatement stmt = getConnection().prepareStatement(getSelectStatement(tableRef)))
+        try (PreparedStatement stmt = getConnection().prepareStatement(getSelectAllStatement(tableRef)))
         {
             try (ResultSet resultSet = stmt.executeQuery())
             {

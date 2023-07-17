@@ -115,6 +115,19 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     }
 
     @Override
+    public <DATA> void upsert(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
+        DATA dataRef,
+        DatabaseTable tableRef,
+        DataToString<DATA> dataToStringRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        // ETCD does not distinguish between update or insert / create.
+        create(settersRef, dataRef, tableRef, dataToStringRef);
+    }
+
+    @Override
     public <DATA> void delete(
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
         DATA data,

@@ -143,6 +143,40 @@ public class K8sCrdEngine implements DbEngine
     }
 
     @Override
+    public <DATA> void upsert(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
+        DATA dataRef,
+        DatabaseTable tableRef,
+        DataToString<DATA> dataToStringRef
+    )
+        throws DatabaseException, AccessDeniedException
+    {
+        try
+        {
+            K8sCrdTransaction tx = transMgrProvider.get().getTransaction();
+            LinstorCrd<?> crd = GenCrdCurrent.dataToCrd(tableRef, settersRef, dataRef);
+            errorReporter.logTrace(
+                "Upserting %s %s: %n%s",
+                tableRef.getName(),
+                dataToStringRef.toString(dataRef),
+                objectMapper.writeValueAsString(crd)
+            );
+
+            // although tx.getclient is a cached client, the cache should be filled on startup.
+            boolean isNew = tx.getClient(tableRef).get(crd.getK8sKey()) == null;
+            tx.createOrReplace(tableRef, crd, isNew);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new DatabaseException(exc);
+        }
+    }
+
+    @Override
     public <DATA> void delete(
         Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
         DATA data,
