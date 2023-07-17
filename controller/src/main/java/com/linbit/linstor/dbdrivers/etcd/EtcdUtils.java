@@ -171,11 +171,20 @@ public class EtcdUtils
         Set<String> ret = new TreeSet<>();
         for (String key : tableRowRef.keySet())
         {
-            ret.add(extractPrimaryKey(key));
+            String extractedPk = extractPrimaryKey(key);
+            if (extractedPk != null)
+            {
+                ret.add(extractedPk);
+            }
         }
         return ret;
     }
 
+    /**
+     * Returns the composed primary key, or null if there is no primary key. Note, an ETCD key like
+     * "/LINSTOR/$table//$column" can still return an empty string as PK.
+     * Only ETCD keys like "/LINSTOR/$table/$column" will return null (note "//" vs "/" between the table and column)
+     */
     public static String extractPrimaryKey(String key)
     {
         // key is something like
@@ -184,40 +193,52 @@ public class EtcdUtils
         int composedKeyStartIdx = key.indexOf(PATH_DELIMITER, tableStartIdx + 1);
         int composedKeyEndIdx = key.lastIndexOf(PATH_DELIMITER);
 
-        return key.substring(composedKeyStartIdx + 1, composedKeyEndIdx);
+        String ret;
+        if (composedKeyStartIdx == composedKeyEndIdx)
+        {
+            ret = null;
+        }
+        else
+        {
+            ret = key.substring(composedKeyStartIdx + 1, composedKeyEndIdx);
+        }
+        return ret;
     }
 
     public static String[] splitPks(String composedPkRef, boolean emptyStringAsNull)
     {
-        // DO NOT USE String.split(":") as it will NOT include null pks
         List<String> pks = new ArrayList<>();
-        int startIdx = 0;
-        int endIdx;
-        do
+        if (composedPkRef != null)
         {
-            endIdx = composedPkRef.indexOf(PK_DELIMITER, startIdx);
-            if (endIdx != -1)
+            int startIdx = 0;
+            int endIdx;
+            // DO NOT USE String.split(":") as it will NOT include null pks
+            do
             {
-                if (startIdx == endIdx)
+                endIdx = composedPkRef.indexOf(PK_DELIMITER, startIdx);
+                if (endIdx != -1)
                 {
-                    if (emptyStringAsNull)
+                    if (startIdx == endIdx)
                     {
-                        pks.add(null);
+                        if (emptyStringAsNull)
+                        {
+                            pks.add(null);
+                        }
+                        else
+                        {
+                            pks.add("");
+                        }
                     }
                     else
                     {
-                        pks.add("");
+                        pks.add(composedPkRef.substring(startIdx, endIdx));
                     }
+                    startIdx = endIdx + PK_DELIMITER.length();
                 }
-                else
-                {
-                    pks.add(composedPkRef.substring(startIdx, endIdx));
-                }
-                startIdx = endIdx + PK_DELIMITER.length();
             }
+            while (endIdx != -1);
+            pks.add(composedPkRef.substring(startIdx)); // add pk after last ":"
         }
-        while (endIdx != -1);
-        pks.add(composedPkRef.substring(startIdx)); // add pk after last ":"
 
         String[] pkArr = new String[pks.size()];
         pks.toArray(pkArr);
