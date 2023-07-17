@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.sql.JDBCType;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -115,6 +116,9 @@ public class RawParameters
                 case Types.BIGINT:
                 case Types.TIMESTAMP:
                     ret = (T) ((Long) Long.parseLong(etcdVal));
+                    break;
+                case Types.DATE:
+                    ret = (T) (new Date(Long.parseLong(etcdVal)));
                     break;
                 case Types.REAL:
                 case Types.FLOAT:

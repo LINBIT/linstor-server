@@ -810,6 +810,18 @@ public class SQLEngine implements DbEngine
                         }
                         stmtRef.setTimestamp(idxRef, timestamp);
                         break;
+                    case Types.DATE:
+                        long dateTimestamp;
+                        if (objRef instanceof java.util.Date)
+                        {
+                            dateTimestamp = ((java.util.Date) objRef).getTime();
+                        }
+                        else
+                        {
+                            dateTimestamp = (Long) objRef;
+                        }
+                        stmtRef.setDate(idxRef, new java.sql.Date(dateTimestamp));
+                        break;
                     default:
                         stmtRef.setObject(idxRef, objRef, sqlTypeRef);
                         break;
