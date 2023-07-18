@@ -3,19 +3,17 @@ package com.linbit.linstor.api.rest.v1.utils;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import reactor.core.publisher.Flux;
@@ -27,65 +25,14 @@ public class ApiCallRcRestUtils
     private static final long MAX_NOT_FOUND = 399;
     private static final long MIN_ACC_DENIED = ApiConsts.FAIL_ACC_DENIED_NODE & ~ApiConsts.MASK_ERROR;
     private static final long MAX_ACC_DENIED = 499;
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class ApiCallData
-    {
-
-        public long ret_code;
-        public String message;
-        public String cause;
-        public String correction;
-        public String details;
-        public Set<String> error_report_ids;
-        public Map<String, String> obj_refs;
-
-        ApiCallData()
-        {
-        }
-
-        ApiCallData(
-            long retCodeRef,
-            String messageRef,
-            String causeRef,
-            String correctionRef,
-            String detailsRef,
-            Map<String, String> objRefs,
-            Set<String> errIds
-            )
-        {
-            ret_code = retCodeRef;
-            message = messageRef;
-            cause = causeRef;
-            correction = correctionRef;
-            details = detailsRef;
-            obj_refs = objRefs;
-            error_report_ids = errIds;
-        }
-    }
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static String toJSON(ApiCallRc apiCallRc)
     {
-        ObjectMapper objectMapper = new ObjectMapper();
-        ArrayList<ApiCallData> jsonData = new ArrayList<>();
-
-        for (ApiCallRc.RcEntry rc : apiCallRc.getEntries())
-        {
-            jsonData.add(new ApiCallData(
-                rc.getReturnCode(),
-                rc.getMessage(),
-                rc.getCause(),
-                rc.getCorrection(),
-                rc.getDetails(),
-                rc.getObjRefs(),
-                rc.getErrorIds()
-            ));
-        }
-
         String ret = null;
         try
         {
-            ret = objectMapper.writeValueAsString(jsonData);
+            ret = OBJECT_MAPPER.writeValueAsString(Json.apiCallRcToJson(apiCallRc));
         }
         catch (JsonProcessingException exc)
         {
