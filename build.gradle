@@ -548,12 +548,19 @@ tasks.register('buildTestCommands', Exec) {
     }
 }
 
-tasks.register('unzip', Copy) {
+tasks.register('unzipProtoc', Copy) {
+    dependsOn(downloadProtoc)
+
     def zipFile = file("tools/protoc-" + protobufVersion + '-linux-x86_64.zip')
     def outputDir = file("tools/protoc-" + protobufVersion)
 
     from zipTree(zipFile)
     into outputDir
+    eachFile {
+        if (it.relativePath.getFile(destinationDir).exists()) {
+            it.exclude()
+        }
+    }
 }
 
 tasks.register('downloadProtoc') {
@@ -573,7 +580,7 @@ tasks.register('downloadProtoc') {
 }
 
 tasks.register('getProtoc') {
-    dependsOn downloadProtoc, unzip
+    dependsOn downloadProtoc, unzipProtoc
 }
 
 tasks.register('cleanTestCommands', Exec) {
