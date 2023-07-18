@@ -9,7 +9,12 @@ public class S3MetafileNameInfo
 {
     private static final Pattern META_FILE_PATTERN = Pattern.compile(
         "^(?<rscName>[a-zA-Z0-9_-]{2,48})_(?<backupId>back_[0-9]{8}_[0-9]{6})" +
-            "(?<s3Suffix>:?.+?)?(?<snapName>\\^.*)?\\.meta$"
+            // in case of "<backupid>^<snapName>" we want to prioritize this combination instead of matching
+            // "^<snapName>" as s3Suffix and leaving the snapName empty.
+
+            // please note that "(?:|...)" behaves differently than "(...)?" since the former prioritizes the empty
+            // group whereas the latter prioritizes a filled group
+            "(?:|(?<s3Suffix>:?.+?))(?<snapName>\\^.*)?\\.meta$"
     );
 
     public final String rscName;
@@ -76,5 +81,4 @@ public class S3MetafileNameInfo
         }
         return result;
     }
-
 }
