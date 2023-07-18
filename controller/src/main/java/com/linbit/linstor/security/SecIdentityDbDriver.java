@@ -156,7 +156,11 @@ public class SecIdentityDbDriver extends AbsDatabaseDriver<SecIdentityDbObj, Voi
 
         switch (getDbType())
         {
-            case SQL: // fall-through
+            case SQL:
+                // since the SqlEngine stores CHAR as String, we also need to load them as String
+                passHash = rawRef.<String, byte[], AccessDeniedException>build(PASS_HASH, str -> str.getBytes());
+                passSalt = rawRef.<String, byte[], AccessDeniedException>build(PASS_SALT, str -> str.getBytes());
+                break;
             case K8S_CRD:
                 passHash = rawRef.get(PASS_HASH);
                 passSalt = rawRef.get(PASS_SALT);
