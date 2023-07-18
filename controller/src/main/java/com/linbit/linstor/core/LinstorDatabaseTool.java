@@ -45,6 +45,7 @@ import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.ControllerTransactionMgrModule;
 import com.linbit.linstor.utils.NameShortenerModule;
+import com.linbit.utils.InjectorLoader;
 
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Paths;
@@ -214,6 +215,7 @@ public class LinstorDatabaseTool
         final boolean haveFipsInit = LinStor.initializeFips(errorLog);
 
         LinStor.loadModularCrypto(injModList, errorLog, haveFipsInit);
+        InjectorLoader.dynLoadInjModule(Controller.SPC_TRK_MODULE_NAME, injModList, errorLog, dbType);
 
         final Injector injector = Guice.createInjector(injModList);
 
