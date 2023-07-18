@@ -35,13 +35,16 @@ stages:
 .upload_nexus:
   script:
 # build spacetracking
-    - git fetch --unshallow origin NOMERGE-SpaceTracking
-    - git checkout NOMERGE-SpaceTracking
-    - git reset --hard origin/NOMERGE-SpaceTracking
-    - git checkout $CI_COMMIT_SHORT_SHA
-    - git clone --recursive . linstor-spacetracking
+    - |
+      ST_BRANCH="master"
+      if git ls-remote git@gitlab.linbit:linstor/linstor-server-spacetracking.git | grep refs/heads/${CI_COMMIT_REF_NAME} ; then
+        ST_BRANCH=${CI_COMMIT_REF_NAME}
+      fi
+    - echo "Using ST-Branch ${ST_BRANCH}"
+    - git clone --single-branch --branch ${ST_BRANCH} --recursive https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.at.linbit.com/linstor/linstor-server-spacetracking.git linstor-spacetracking
     - cd linstor-spacetracking
-    - git checkout NOMERGE-SpaceTracking
+    - git remote add linstor https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.at.linbit.com/linstor/linstor-server.git
+    - git fetch linstor
     - git config --global user.email "fake@example.com"
     - git config --global user.name "Faker"
     - git rebase $CI_COMMIT_SHORT_SHA
