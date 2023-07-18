@@ -725,7 +725,7 @@ public class CtrlBackupApiCallHandler
                 try
                 {
                     S3VolumeNameInfo info = new S3VolumeNameInfo(s3key);
-                    if (snapNameRef != null && !snapNameRef.isEmpty() && snapNameRef.equalsIgnoreCase(info.snapName))
+                    if (snapNameRef != null && !snapNameRef.isEmpty() && !snapNameRef.equalsIgnoreCase(info.snapName))
                     {
                         // Doesn't match the requested snapshot name, skip it.
                         continue;
