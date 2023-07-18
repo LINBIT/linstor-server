@@ -101,6 +101,7 @@ import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
 import java.nio.charset.StandardCharsets;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -229,6 +230,7 @@ public class Json
             jsonApiCallRc.error_report_ids = new ArrayList<>(apiCallRcEntry.getErrorIds());
             jsonApiCallRc.obj_refs = apiCallRcEntry.getObjRefs();
             jsonApiCallRc.ret_code = apiCallRcEntry.getReturnCode();
+            jsonApiCallRc.created_at = apiCallRcEntry.getDateTime().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
             json.add(jsonApiCallRc);
         }
         return json;

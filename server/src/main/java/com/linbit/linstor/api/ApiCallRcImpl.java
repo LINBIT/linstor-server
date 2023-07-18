@@ -2,6 +2,10 @@ package com.linbit.linstor.api;
 
 import com.linbit.linstor.LinStorException;
 
+import java.io.IOException;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -14,6 +18,15 @@ import java.util.TreeSet;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 public class ApiCallRcImpl implements ApiCallRc
 {
@@ -139,6 +152,28 @@ public class ApiCallRcImpl implements ApiCallRc
         return entryBuilder(returnCode, message).setCause(cause).build();
     }
 
+    static class ZonedDTToString extends JsonSerializer<ZonedDateTime>
+    {
+        @Override
+        public void serialize(ZonedDateTime tmpDt,
+                              JsonGenerator jsonGenerator,
+                              SerializerProvider serializerProvider)
+            throws IOException
+        {
+            jsonGenerator.writeObject(tmpDt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        }
+    }
+
+    static class StringToZonedDT extends JsonDeserializer<ZonedDateTime>
+    {
+        @Override
+        public ZonedDateTime deserialize(JsonParser jsonParser, DeserializationContext ctxt) throws IOException
+        {
+            String isoDate = jsonParser.readValueAs(String.class);
+            return ZonedDateTime.parse(isoDate, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        }
+    }
+
     public static class ApiCallRcEntry implements ApiCallRc.RcEntry
     {
         private long returnCode = 0;
@@ -149,6 +184,104 @@ public class ApiCallRcImpl implements ApiCallRc
         private String details;
         private Set<String> errorIds = new TreeSet<>();
         private boolean skipErrorReport = false;
+        @JsonProperty("dateTime")
+        private final ZonedDateTime createdAt;
+
+        private static final Map<Long, LinstorObj> POSSIBLE_OBJS = Map.ofEntries(
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_SCHEDULE, LinstorObj.SCHEDULE),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_EXT_FILES, LinstorObj.EXT_FILES),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_PHYSICAL_DEVICE, LinstorObj.PHYSICAL_DEVICE),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_VLM_GRP, LinstorObj.VLM_GRP),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_RSC_GRP, LinstorObj.RSC_GRP),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_KVS, LinstorObj.KVS),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_NODE, LinstorObj.NODE),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_RSC_DFN, LinstorObj.RSC_DFN),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_RSC, LinstorObj.RSC),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_VLM_DFN, LinstorObj.VLM_DFN),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_VLM, LinstorObj.VLM),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_NODE_CONN, LinstorObj.NODE_CONN),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_RSC_CONN, LinstorObj.RSC_CONN),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_VLM_CONN, LinstorObj.VLM_CONN),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_NET_IF, LinstorObj.NET_IF),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_STOR_POOL_DFN, LinstorObj.STOR_POOL_DFN),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_STOR_POOL, LinstorObj.STOR_POOL),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_CTRL_CONF, LinstorObj.CTRL_CONF),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_SNAPSHOT, LinstorObj.SNAPSHOT),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_BACKUP, LinstorObj.BACKUP),
+            new AbstractMap.SimpleEntry<>(ApiConsts.MASK_REMOTE, LinstorObj.REMOTE)
+        );
+
+        public ApiCallRcEntry()
+        {
+            createdAt = ZonedDateTime.now();
+        }
+
+        @Override
+        @JsonSerialize(using = ZonedDTToString.class)
+        @JsonDeserialize(using = StringToZonedDT.class)
+        public ZonedDateTime getDateTime()
+        {
+            return createdAt;
+        }
+
+        @Override
+        @JsonIgnore
+        public Severity getSeverity()
+        {
+            Severity sev = Severity.INFO;
+            if ((returnCode & ApiConsts.MASK_BITS_TYPE) == ApiConsts.MASK_ERROR)
+            {
+                sev = Severity.ERROR;
+            }
+            else if ((returnCode & ApiConsts.MASK_BITS_TYPE) == ApiConsts.MASK_WARN)
+            {
+                sev = Severity.WARNING;
+            }
+
+            return sev;
+        }
+
+        @Override
+        @JsonIgnore
+        public Action getAction()
+        {
+            Action action = Action.UNKNOWN;
+            if ((returnCode & ApiConsts.MASK_BITS_OP) == ApiConsts.MASK_CRT)
+            {
+                action = Action.CREATE;
+            }
+            else if ((returnCode & ApiConsts.MASK_BITS_OP) == ApiConsts.MASK_MOD)
+            {
+                action = Action.MODIFY;
+            }
+            else if ((returnCode & ApiConsts.MASK_BITS_OP) == ApiConsts.MASK_DEL)
+            {
+                action = Action.DELETE;
+            }
+            return action;
+        }
+
+        @Override
+        @JsonIgnore
+        public Set<LinstorObj> getObjects()
+        {
+            Set<LinstorObj> objs = new HashSet<>();
+            for (var entries : POSSIBLE_OBJS.entrySet())
+            {
+                if ((returnCode & ApiConsts.MASK_BITS_OBJ) == entries.getKey())
+                {
+                    objs.add(entries.getValue());
+                }
+            }
+            return objs;
+        }
+
+        @Override
+        @JsonIgnore
+        public long getErrorCode()
+        {
+            return returnCode & ApiConsts.MASK_BITS_CODE;
+        }
 
         public ApiCallRcEntry setReturnCode(long returnCodeRef)
         {
@@ -279,7 +412,7 @@ public class ApiCallRcImpl implements ApiCallRc
             ApiRcUtils.appendReadableRetCode(sb, returnCode);
 
             return "ApiCallRcEntry{" +
-                "returnCode=" + sb.toString() +
+                "returnCode=" + sb +
                 ", objRefs=" + objRefs +
                 ", message='" + message + '\'' +
                 ", cause='" + cause + '\'' +
@@ -287,6 +420,7 @@ public class ApiCallRcImpl implements ApiCallRc
                 ", details='" + details + '\'' +
                 ", errorIds=" + errorIds +
                 ", skipErrorReport=" + skipErrorReport +
+                ", dt=" + createdAt +
                 '}';
         }
     }
@@ -304,9 +438,9 @@ public class ApiCallRcImpl implements ApiCallRc
         private String details;
         private boolean skipErrorReport = false;
 
-        private Map<String, String> objRefs = new TreeMap<>();
+        private final Map<String, String> objRefs = new TreeMap<>();
 
-        private Set<String> errorIds = new TreeSet<>();
+        private final Set<String> errorIds = new TreeSet<>();
 
         private EntryBuilder(long returnCodeRef, String messageRef)
         {

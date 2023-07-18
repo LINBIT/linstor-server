@@ -6375,6 +6375,9 @@ components:
           description: Map of objection that have been involved by the operation.
           additionalProperties:
             type: string
+        created_at:
+          type: string
+          format: date-time
     ApiCallRcList:
       type: array
       items:

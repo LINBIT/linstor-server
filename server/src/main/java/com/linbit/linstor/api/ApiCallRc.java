@@ -2,6 +2,7 @@ package com.linbit.linstor.api;
 
 import com.linbit.linstor.api.ApiCallRcImpl.ApiCallRcEntry;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -16,6 +17,43 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 @JsonDeserialize(as = ApiCallRcImpl.class)
 public interface ApiCallRc
 {
+    enum Severity {
+        INFO,
+        WARNING,
+        ERROR,
+    }
+
+    enum LinstorObj
+    {
+        SCHEDULE,
+        EXT_FILES,
+        PHYSICAL_DEVICE,
+        VLM_GRP,
+        RSC_GRP,
+        KVS,
+        NODE,
+        RSC_DFN,
+        VLM_DFN,
+        RSC,
+        VLM,
+        NODE_CONN,
+        RSC_CONN,
+        VLM_CONN,
+        NET_IF,
+        STOR_POOL_DFN,
+        STOR_POOL,
+        CTRL_CONF,
+        SNAPSHOT,
+        BACKUP,
+        REMOTE,
+    }
+
+    enum Action {
+        CREATE,
+        MODIFY,
+        DELETE,
+        UNKNOWN,
+    }
 
     // List of return codes
     List<RcEntry> getEntries();
@@ -47,6 +85,14 @@ public interface ApiCallRc
          * Numeric return code describing the result of an operation
          */
         long getReturnCode();
+
+        Severity getSeverity();
+
+        Action getAction();
+
+        Set<LinstorObj> getObjects();
+
+        long getErrorCode();
 
         /**
          * Object references describing which object the return code refers to.
@@ -84,8 +130,13 @@ public interface ApiCallRc
         String getDetails();
 
         /**
+         * @return Date the apicallrc was created
+         */
+        ZonedDateTime getDateTime();
+
+        /**
          * Error ids linked to this apicallrc.
-         * @return List of error ids
+         * @return Set of error ids
          */
         Set<String> getErrorIds();
 

@@ -45,6 +45,7 @@ public class JsonGenTypes
          * Map of objection that have been involved by the operation.
          */
         public Map<String, String> obj_refs = Collections.emptyMap();
+        public String created_at;
     }
 
 //    @JsonInclude(JsonInclude.Include.NON_EMPTY)
