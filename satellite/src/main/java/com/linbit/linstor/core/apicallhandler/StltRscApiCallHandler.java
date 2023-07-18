@@ -689,7 +689,7 @@ class StltRscApiCallHandler
                 .append(rscKey.getNodeName().displayValue)
                 .append("'.");
 
-            errorReporter.logInfo(msgBuilder.toString());
+            errorReporter.logDebug(msgBuilder.toString());
         }
     }
 

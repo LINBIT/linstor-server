@@ -186,7 +186,7 @@ public class RequestHelper
 
         checkLDAPAuth(peer, request.getAuthorization());
 
-        errorReporter.logDebug("REST access api '%s' from '%s'", apiCall, peer.toString());
+        errorReporter.logInfo("REST/API %s/%s", peer.toString(), apiCall);
         return  Context.of(
             ApiModule.API_CALL_NAME, apiCall,
             AccessContext.class, peer.getAccessContext(),

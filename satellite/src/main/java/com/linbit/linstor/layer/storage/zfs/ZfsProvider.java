@@ -305,9 +305,14 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         {
             long origSize = volumeSize;
             volumeSize = ((volumeSize / extentSize) + 1) * extentSize;
+            final String device = vlmDataRef.getDevicePath() == null ?
+                vlmDataRef.getRscLayerObject().getSuffixedResourceName() + "/" + vlmDataRef.getVlmNr().value :
+                vlmDataRef.getDevicePath();
+
             errorReporter.logInfo(
                 String.format(
-                    "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
+                    "Aligning %s size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
+                    device,
                     origSize,
                     volumeSize,
                     extentSize

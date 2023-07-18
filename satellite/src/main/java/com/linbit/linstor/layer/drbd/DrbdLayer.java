@@ -2,6 +2,8 @@ package com.linbit.linstor.layer.drbd;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
+import com.linbit.Platform;
+import com.linbit.PlatformStlt;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.drbd.md.AlStripesException;
 import com.linbit.drbd.md.MaxAlSizeException;
@@ -66,8 +68,6 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
-import com.linbit.Platform;
-import com.linbit.PlatformStlt;
 import com.linbit.utils.AccessUtils;
 
 import javax.inject.Inject;
@@ -401,7 +401,7 @@ public class DrbdLayer implements DeviceLayer
              *  - rollback snapshot
              *  - start drbd
              */
-            deleteDrbd(drbdRscData);
+            deleteDrbd(drbdRscData, apiCallRc);
             if (processChild(drbdRscData, snapshotList, apiCallRc))
             {
                 adjustDrbd(drbdRscData, snapshotList, apiCallRc, true);
@@ -420,8 +420,7 @@ public class DrbdLayer implements DeviceLayer
                     rscFlags.isSet(workerCtx, Resource.Flags.INACTIVE)
             )
             {
-                deleteDrbd(drbdRscData);
-                addDeletedMsg(drbdRscData, apiCallRc);
+                deleteDrbd(drbdRscData, apiCallRc);
 
                 processChild(drbdRscData, snapshotList, apiCallRc);
 
@@ -447,26 +446,31 @@ public class DrbdLayer implements DeviceLayer
 
     private void addDeletedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
     {
+        final String msg = "Resource '" +  drbdRscData.getSuffixedResourceName() + "' [DRBD] deleted.";
         apiCallRc.addEntry(
             ApiCallRcImpl.simpleEntry(
                 ApiConsts.MASK_RSC | ApiConsts.DELETED,
-                "Resource '" +  drbdRscData.getSuffixedResourceName() + "' [DRBD] deleted."
+                msg
             )
         );
+        errorReporter.logInfo(msg);
     }
 
     private void addAdjustedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
     {
+        final String msg = "Resource '" +  drbdRscData.getSuffixedResourceName() + "' [DRBD] adjusted.";
         apiCallRc.addEntry(
             ApiCallRcImpl.simpleEntry(
                 ApiConsts.MASK_RSC | ApiConsts.MODIFIED,
-                "Resource '" +  drbdRscData.getSuffixedResourceName() + "' [DRBD] adjusted."
+                msg
             )
         );
+        errorReporter.logInfo(msg);
     }
 
     private void addAbortedMsg(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc)
     {
+        final String msg = "Resource '" + drbdRscData.getSuffixedResourceName() + "' [DRBD] not adjusted ";
         apiCallRc.addEntry(
             ApiCallRcImpl.simpleEntry(
                 ApiConsts.MASK_RSC,
@@ -475,6 +479,7 @@ public class DrbdLayer implements DeviceLayer
                 "This happened most likely because the layer below did not provide a device to work with."
             )
         );
+        errorReporter.logError(msg);
     }
 
     private boolean processChild(
@@ -529,8 +534,8 @@ public class DrbdLayer implements DeviceLayer
      * @throws DatabaseException
      * @throws AccessDeniedException
      */
-    private void deleteDrbd(DrbdRscData<Resource> drbdRscData) throws StorageException, AccessDeniedException,
-        DatabaseException
+    private void deleteDrbd(DrbdRscData<Resource> drbdRscData, ApiCallRcImpl apiCallRc) throws
+        StorageException, AccessDeniedException, DatabaseException
     {
         String suffixedRscName = drbdRscData.getSuffixedResourceName();
         try
@@ -564,6 +569,7 @@ public class DrbdLayer implements DeviceLayer
                     // in case we want to undelete this resource... but the metadata got already wiped
                     drbdVlmData.setCheckMetaData(true);
                 }
+                addDeletedMsg(drbdRscData, apiCallRc);
             }
         }
         catch (ExtCmdFailedException cmdExc)

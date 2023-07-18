@@ -1276,80 +1276,76 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         String rscName = vlmData.getRscLayerObject().getSuffixedResourceName();
         int vlmNr = vlmData.getVlmNr().value;
+        final String msg = String.format(
+            "Volume number %d of resource '%s' [%s] created",
+            vlmNr,
+            rscName,
+            typeDescr
+        );
         apiCallRc.addEntry(
-            ApiCallRcImpl.entryBuilder(
-                ApiConsts.MASK_VLM | ApiConsts.CREATED,
-                String.format(
-                    "Volume number %d of resource '%s' [%s] created",
-                    vlmNr,
-                    rscName,
-                    typeDescr
-                )
-            )
+            ApiCallRcImpl.entryBuilder(ApiConsts.MASK_VLM | ApiConsts.CREATED, msg)
             .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
             .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
             .build()
         );
+        errorReporter.logInfo(msg);
     }
 
     private void addResizedMsg(LAYER_DATA vlmData, ApiCallRcImpl apiCallRc)
     {
         String rscName = vlmData.getRscLayerObject().getSuffixedResourceName();
         int vlmNr = vlmData.getVlmNr().value;
+        final String msg = String.format(
+            "Volume number %d of resource '%s' [%s] resized",
+            vlmNr,
+            rscName,
+            typeDescr
+        );
         apiCallRc.addEntry(
-            ApiCallRcImpl.entryBuilder(
-                ApiConsts.MASK_VLM | ApiConsts.MODIFIED,
-                String.format(
-                    "Volume number %d of resource '%s' [%s] resized",
-                    vlmNr,
-                    rscName,
-                    typeDescr
-                )
-            )
+            ApiCallRcImpl.entryBuilder(ApiConsts.MASK_VLM | ApiConsts.MODIFIED, msg)
             .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
             .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
             .build()
         );
+        errorReporter.logInfo(msg);
     }
 
     private void addDeletedMsg(LAYER_DATA vlmData, ApiCallRcImpl apiCallRc)
     {
         String rscName = vlmData.getRscLayerObject().getSuffixedResourceName();
         int vlmNr = vlmData.getVlmNr().value;
+        final String msg = String.format(
+            "Volume number %d of resource '%s' [%s] deleted",
+            vlmNr,
+            rscName,
+            typeDescr
+        );
         apiCallRc.addEntry(
-            ApiCallRcImpl.entryBuilder(
-                ApiConsts.MASK_VLM | ApiConsts.DELETED,
-                String.format(
-                    "Volume number %d of resource '%s' [%s] deleted",
-                    vlmNr,
-                    rscName,
-                    typeDescr
-                )
-            )
+            ApiCallRcImpl.entryBuilder(ApiConsts.MASK_VLM | ApiConsts.DELETED, msg)
             .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
             .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
             .build()
         );
+        errorReporter.logInfo(msg);
     }
 
     private void addDeactivatedMsg(LAYER_DATA vlmData, ApiCallRcImpl apiCallRc)
     {
         String rscName = vlmData.getRscLayerObject().getSuffixedResourceName();
         int vlmNr = vlmData.getVlmNr().value;
+        final String msg =                 String.format(
+            "Volume number %d of resource '%s' [%s] deactivated",
+            vlmNr,
+            rscName,
+            typeDescr
+        );
         apiCallRc.addEntry(
-            ApiCallRcImpl.entryBuilder(
-                ApiConsts.MASK_VLM | ApiConsts.MODIFIED,
-                String.format(
-                    "Volume number %d of resource '%s' [%s] deactivated",
-                    vlmNr,
-                    rscName,
-                    typeDescr
-                )
-            )
+            ApiCallRcImpl.entryBuilder(ApiConsts.MASK_VLM | ApiConsts.MODIFIED, msg)
             .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
             .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
             .build()
         );
+        errorReporter.logInfo(msg);
     }
 
     private void addSnapCreatedMsg(LAYER_SNAP_DATA snapVlmData, ApiCallRcImpl apiCallRc)
@@ -1358,23 +1354,21 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         String snapName = snap.getSnapshotName().displayValue;
         String rscName = snap.getResourceName().displayValue;
         int vlmNr = snapVlmData.getVlmNr().value;
-
+        final String msg = String.format(
+            "Snapshot [%s] with name '%s' of resource '%s', volume number %d created.",
+            typeDescr,
+            snapName,
+            rscName,
+            vlmNr
+        );
         apiCallRc.addEntry(
-            ApiCallRcImpl.entryBuilder(
-                ApiConsts.MASK_SNAPSHOT | ApiConsts.CREATED,
-                String.format(
-                    "Snapshot [%s] with name '%s' of resource '%s', volume number %d created.",
-                    typeDescr,
-                    snapName,
-                    rscName,
-                    vlmNr
-                )
-            )
+            ApiCallRcImpl.entryBuilder(ApiConsts.MASK_SNAPSHOT | ApiConsts.CREATED, msg)
             .putObjRef(ApiConsts.KEY_SNAPSHOT, snapName)
             .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
             .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
             .build()
         );
+        errorReporter.logInfo(msg);
     }
 
     private void addSnapDeletedMsg(LAYER_SNAP_DATA snapVlmData, ApiCallRcImpl apiCallRc)
@@ -1544,9 +1538,13 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             // round up to the next extent
             long origSize = volumeSize;
             volumeSize = ((volumeSize / extentSize) + 1) * extentSize;
+            final String device = vlmData.getDevicePath() == null ?
+                vlmData.getRscLayerObject().getSuffixedResourceName() + "/" + vlmData.getVlmNr().value :
+                vlmData.getDevicePath();
             errorReporter.logInfo(
                 String.format(
-                    "Aligning size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
+                    "Aligning %s size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
+                    device,
                     origSize,
                     volumeSize,
                     extentSize
