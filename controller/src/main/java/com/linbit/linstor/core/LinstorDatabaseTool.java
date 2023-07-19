@@ -65,7 +65,7 @@ public class LinstorDatabaseTool
     private static CommandLine commandLine;
 
     @CommandLine.Command(
-        name = "linstor-db",
+        name = "linstor-database",
         subcommands =
         {
             CmdExportDb.class,
