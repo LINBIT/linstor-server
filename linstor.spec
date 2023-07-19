@@ -54,6 +54,7 @@ mkdir -p %{buildroot}/%{LS_PREFIX}/bin
 cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/Controller %{buildroot}/%{LS_PREFIX}/bin
 cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/Satellite %{buildroot}/%{LS_PREFIX}/bin
 cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/linstor-config %{buildroot}/%{LS_PREFIX}/bin
+cp -r %{_builddir}/%{NAME_VERS}/build/install/linstor-server/bin/linstor-database %{buildroot}/%{LS_PREFIX}/bin
 cp -r %{_builddir}/%{NAME_VERS}/scripts/postinstall.sh %{buildroot}/%{LS_PREFIX}/bin/controller.postinst.sh
 mkdir -p %{buildroot}/%{_unitdir}
 cp -r %{_builddir}/%{NAME_VERS}/scripts/linstor-controller.service %{buildroot}/%{_unitdir}
@@ -102,6 +103,7 @@ Linstor controller manages linstor satellites and persistant data storage.
 %dir %{LS_PREFIX}/bin
 %{LS_PREFIX}/bin/Controller
 %{LS_PREFIX}/bin/linstor-config
+%{LS_PREFIX}/bin/linstor-database
 %{LS_PREFIX}/bin/controller.postinst.sh
 %{_unitdir}/linstor-controller.service
 %{FIREWALLD_SERVICES}/linstor-controller.xml
