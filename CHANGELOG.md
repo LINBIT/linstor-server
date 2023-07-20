@@ -10,8 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
- - Added queues for backup shipping
- - Allow drbd-option properties for node-connections
+- Added support for Microsoft Windows (storagespaces)
+- Added queues for backup shipping
+- Added linstor-database tool to migrate from/to different database types
+- Allow drbd-option properties for node-connections
+- Added support for java-17
+
+### Changed
+
+- Update of nearly all 3rd party libraries
+- Minimal required java version is now java-11
+- Improved suspend-io "downtime" for snapshots 
+- Improved default INFO logging level
 
 ### Fixed
 
@@ -19,6 +29,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Resync-After: Update entries after vlm definition delete
 - Resync-After: Ignore diskless resources
 - Enforce s3-remotes for backup create and linstor-remotes for backup ship
+- Allow node-connection drbd options
+- Several fixes in backup-shipping
+- Storpools can only be deleted without snapshots in addition to without volumes
+- Evacuating nodes no longer create snapshots
+- Resources can not be created within a resource-definition that is currently restoring a backup
 
 ## [1.23.0] - 2023-05-23
 
