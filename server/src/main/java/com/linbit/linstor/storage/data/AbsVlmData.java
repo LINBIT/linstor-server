@@ -20,7 +20,7 @@ import java.util.Objects;
 
 public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends AbsRscLayerObject<RSC>> extends
     BaseTransactionObject
-    implements Comparable<AbsVlmData<RSC, RSC_DATA>>, VlmProviderObject<RSC>
+    implements VlmProviderObject<RSC>
 {
     // unmodifiable data, once initialized
     protected final AbsVolume<RSC> vlm;
@@ -162,10 +162,10 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
     }
 
     @Override
-    public int compareTo(AbsVlmData<RSC, RSC_DATA> other)
+    public int compareTo(VlmProviderObject<RSC> other)
     {
         int compareTo = 0;
-        AbsVolume<RSC> otherVolume = other.vlm;
+        AbsVolume<RSC> otherVolume = other.getVolume();
         if (vlm instanceof Volume && otherVolume instanceof Volume)
         {
             compareTo = ((Volume) vlm).compareTo((Volume) otherVolume);
@@ -202,7 +202,7 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
         }
         if (compareTo == 0)
         {
-            compareTo = rscData.getRscLayerId() - other.rscData.getRscLayerId();
+            compareTo = rscData.getRscLayerId() - other.getRscLayerObject().getRscLayerId();
         }
         return compareTo;
     }

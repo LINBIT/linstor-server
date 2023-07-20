@@ -32,7 +32,7 @@ import java.util.Set;
 
 public class DrbdRscData<RSC extends AbsResource<RSC>>
     extends AbsRscData<RSC, DrbdVlmData<RSC>>
-    implements DrbdRscObject<RSC>, Comparable<DrbdRscData<RSC>>
+    implements DrbdRscObject<RSC>
 {
     // unmodifiable data, once initialized
     private final DrbdRscDfnData<RSC> drbdRscDfnData;
@@ -325,11 +325,5 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             mayPromote,
             ignoreReason.get()
         );
-    }
-
-    @Override
-    public int compareTo(DrbdRscData<RSC> other)
-    {
-        return Integer.compare(rscLayerId, other.rscLayerId);
     }
 }

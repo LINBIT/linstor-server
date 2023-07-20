@@ -14,7 +14,7 @@ import java.util.Objects;
  */
 public interface PropsDatabaseDriver extends GenericDatabaseDriver<PropsDbEntry>
 {
-    final class PropsDbEntry
+    final class PropsDbEntry implements Comparable<PropsDbEntry>
     {
         public final String propsInstance;
         public final String propKey;
@@ -25,6 +25,17 @@ public interface PropsDatabaseDriver extends GenericDatabaseDriver<PropsDbEntry>
             propsInstance = propsInstanceRef;
             propKey = propKeyRef;
             propValue = propValueRef;
+        }
+
+        @Override
+        public int compareTo(PropsDbEntry oRef)
+        {
+            int cmp = propsInstance.compareTo(oRef.propsInstance);
+            if (cmp == 0)
+            {
+                cmp = propKey.compareTo(oRef.propKey);
+            }
+            return cmp;
         }
 
         @Override

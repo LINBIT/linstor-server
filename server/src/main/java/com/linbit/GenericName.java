@@ -71,5 +71,35 @@ public abstract class GenericName implements Comparable<GenericName>
         return displayValue;
     }
 
-
+    /**
+     * sorts in this order:
+     * "a", "b", null
+     */
+    public static <NAME extends GenericName> int compareToNullable(NAME nameRef, NAME name2Ref)
+    {
+        int cmp;
+        if (nameRef != null)
+        {
+            if (name2Ref != null)
+            {
+                cmp = nameRef.compareTo(name2Ref);
+            }
+            else
+            {
+                cmp = -1;
+            }
+        }
+        else
+        {
+            if (name2Ref != null)
+            {
+                cmp = 1;
+            }
+            else
+            {
+                cmp = 0;
+            }
+        }
+        return cmp;
+    }
 }

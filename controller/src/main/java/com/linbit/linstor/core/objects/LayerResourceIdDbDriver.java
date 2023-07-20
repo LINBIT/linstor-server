@@ -272,7 +272,7 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
     }
 
     private static class ParentResourceLayerIdLoadingPojo
-        implements AbsRscLayerObject<Resource>, Comparable<ParentResourceLayerIdLoadingPojo>
+        implements AbsRscLayerObject<Resource>
     {
         private final int rscLayerId;
 
@@ -306,12 +306,6 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
             }
             ParentResourceLayerIdLoadingPojo other = (ParentResourceLayerIdLoadingPojo) obj;
             return rscLayerId == other.rscLayerId;
-        }
-
-        @Override
-        public int compareTo(ParentResourceLayerIdLoadingPojo other)
-        {
-            return Integer.compare(rscLayerId, other.rscLayerId);
         }
 
         @Override

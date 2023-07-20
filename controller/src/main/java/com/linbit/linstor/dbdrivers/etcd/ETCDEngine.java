@@ -167,7 +167,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
     }
 
     @Override
-    public <DATA, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
+    public <DATA extends Comparable<? super DATA>, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
         DatabaseTable table,
         LOAD_ALL parents,
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoader

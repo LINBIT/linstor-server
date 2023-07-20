@@ -28,7 +28,7 @@ import java.util.Objects;
 
 public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
     extends BaseTransactionObject
-    implements DrbdVlmDfnObject, Comparable<DrbdVlmDfnData<RSC>>
+    implements DrbdVlmDfnObject
 {
     public static final int SNAPSHOT_MINOR = -1;
 
@@ -185,41 +185,5 @@ public class DrbdVlmDfnData<RSC extends AbsResource<RSC>>
                 Objects.equals(vlmNr, other.vlmNr);
         }
         return ret;
-    }
-
-    @Override
-    public int compareTo(DrbdVlmDfnData<RSC> oRef)
-    {
-        int cmp = rscName.compareTo(oRef.rscName);
-        if (cmp == 0)
-        {
-            if (snapName != null)
-            {
-                if (oRef.snapName == null)
-                {
-                    cmp = -1;
-                }
-                else
-                {
-                    cmp = snapName.compareTo(oRef.snapName);
-                }
-            }
-            else
-            {
-                if (oRef.snapName != null)
-                {
-                    cmp = 1;
-                }
-            }
-            if (cmp == 0)
-            {
-                cmp = vlmNr.compareTo(oRef.vlmNr);
-                if (cmp == 0)
-                {
-                    cmp = resourceNameSuffix.compareTo(oRef.resourceNameSuffix);
-                }
-            }
-        }
-        return cmp;
     }
 }

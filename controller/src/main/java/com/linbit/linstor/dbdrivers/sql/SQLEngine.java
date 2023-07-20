@@ -480,7 +480,7 @@ public class SQLEngine implements DbEngine
     }
 
     @Override
-    public <DATA, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
+    public <DATA extends Comparable<? super DATA>, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
         DatabaseTable table,
         LOAD_ALL parentsRef,
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoaderRef

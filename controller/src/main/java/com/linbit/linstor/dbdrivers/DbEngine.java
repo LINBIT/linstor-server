@@ -318,7 +318,7 @@ public interface DbEngine
      * @throws ValueOutOfRangeException
      * @throws MdException
      */
-    <DATA, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
+    <DATA extends Comparable<? super DATA>, INIT_MAPS, LOAD_ALL> Map<DATA, INIT_MAPS> loadAll(
         DatabaseTable table,
         LOAD_ALL parents,
         DataLoader<DATA, INIT_MAPS, LOAD_ALL> dataLoaderRef

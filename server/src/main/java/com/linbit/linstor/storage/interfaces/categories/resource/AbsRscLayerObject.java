@@ -24,7 +24,7 @@ import java.util.stream.Stream;
  * @author Gabor Hernadi &lt;gabor.hernadi@linbit.com&gt;
  */
 public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
-    extends LayerObject
+    extends LayerObject, Comparable<AbsRscLayerObject<?>>
 {
     int getRscLayerId();
 
@@ -154,5 +154,11 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
     default <T extends VlmProviderObject<RSC>> T getVlmProviderObject(VolumeNumber volumeNumber)
     {
         return (T) getVlmLayerObjects().get(volumeNumber);
+    }
+
+    @Override
+    default int compareTo(AbsRscLayerObject<?> oRef)
+    {
+        return Integer.compare(getRscLayerId(), oRef.getRscLayerId());
     }
 }

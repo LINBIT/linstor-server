@@ -7,6 +7,7 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessContext;
@@ -27,7 +28,7 @@ import java.util.List;
  * this interface does not have {@link VlmLayerObject#getDataDevice()} and
  * {@link LayerObject#getChildren()} methods
  */
-public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerObject
+public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerObject, Comparable<VlmProviderObject<RSC>>
 {
     long UNINITIALIZED_SIZE = -1;
     enum Size
@@ -131,7 +132,23 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
         ResourceName rscName = volume.getResourceDefinition().getName();
         String rscNameSuffix = getRscLayerObject().getResourceNameSuffix();
         VolumeNumber volNr = getVlmNr();
-        return "vlm: " + nodeName.value + "/" + rscName.value + rscNameSuffix + "/" + volNr.value;
+        String key;
+        if (getVolume().getAbsResource() instanceof Snapshot)
+        {
+            String snapName = ((Snapshot) getVolume().getAbsResource()).getSnapshotName().value;
+            key = "snapVlm: " + nodeName.value + "/" + rscName.value + rscNameSuffix + "/" + volNr.value + "_" +
+                snapName;
+        }
+        else
+        {
+            key = "vlm: " + nodeName.value + "/" + rscName.value + rscNameSuffix + "/" + volNr.value;
+        }
+        return key;
     }
 
+    @Override
+    default int compareTo(VlmProviderObject<RSC> oRef)
+    {
+        return getVolumeKey().compareTo(oRef.getVolumeKey());
+    }
 }
