@@ -26,6 +26,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
@@ -141,6 +142,24 @@ public class CtrlBackupApiHelper
             );
         }
         return (S3Remote) remote;
+    }
+
+    /**
+     * Get the remote with the given name only if it is a l2l-remote
+     */
+    LinstorRemote getL2LRemote(String remoteName) throws AccessDeniedException, InvalidNameException
+    {
+        AbsRemote remote = getRemote(remoteName);
+        if (!(remote instanceof LinstorRemote))
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_REMOTE_NAME | ApiConsts.MASK_BACKUP,
+                    "The remote " + remoteName + " is not a linstor remote."
+                )
+            );
+        }
+        return (LinstorRemote) remote;
     }
 
     /**

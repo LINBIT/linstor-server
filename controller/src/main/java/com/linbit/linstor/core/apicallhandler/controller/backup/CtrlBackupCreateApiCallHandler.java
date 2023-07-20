@@ -232,16 +232,13 @@ public class CtrlBackupCreateApiCallHandler
                 // check if encryption is possible
                 backupHelper.getLocalMasterKey();
 
-                remote = backupHelper.getRemote(remoteName);
+                remote = backupHelper.getS3Remote(remoteName);
                 prevSnapDfn = getIncrementalBase(rscDfn, remote, allowIncremental, false);
             }
             else if (remoteTypeRef.equals(RemoteType.LINSTOR))
             {
-                remote = backupHelper.getRemote(remoteName);
-                if (remote instanceof LinstorRemote)
-                {
-                    prevSnapDfn = getIncrementalBaseL2L(rscDfn, prevSnapDfnUuid, allowIncremental);
-                }
+                remote = backupHelper.getL2LRemote(remoteName);
+                prevSnapDfn = getIncrementalBaseL2L(rscDfn, prevSnapDfnUuid, allowIncremental);
             }
 
             SnapshotDefinition snapDfn = snapCrtHelper

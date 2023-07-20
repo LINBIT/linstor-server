@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed UID-mismatch when creating rollback entries in K8s/CRD
 - Resync-After: Update entries after vlm definition delete
 - Resync-After: Ignore diskless resources
+- Enforce s3-remotes for backup create and linstor-remotes for backup ship
 
 ## [1.23.0] - 2023-05-23
 
