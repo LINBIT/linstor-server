@@ -1,3 +1,183 @@
+linstor-server (1.24.0~rc.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * QASI: Added openapi entry
+  * Rg,sp: Wait satellite responses
+  * K8s: Fix rollback-replace
+  * LINSTOR For Windows: Added ETCD and K8s migrations
+  * Writecache,suspend: Send flush_on_suspend before suspending
+  * SuspendMgr: Add new suspend-io manager class
+  * IgnoreReasons: Fix recursion
+  * Stlt,allocatedSize: Ignore intentionally non existent devices
+  * RscLayerHelper: Add predicate for setting ignoreReason
+  * Clone: skip cloning of unnecessary devices
+  * Luks,ignoreReason: Do not skip self when key missing
+  * RscReady: Fix expected online node ids
+  * DB,Layer: Added abstract base class for LayerDbDrivers
+  * Db,LayerRscId: Reworked driver
+  * DB,Drbd: Reworked DRBD layers
+  * Db,Storage: Reworked storage db drivers
+  * Db,Luks: Reworked LUKS layer
+  * Db,Nvme: Reworked Nvme layer
+  * Db,Openflex: Reworked OpenFlex Layer
+  * Db,Writecache: Reworked Writecache Layer
+  * Db,Cache: Reworked Cache Layer
+  * Db,BCache: Reworked BCache Layer
+  * Sp,d: Add rscSuffix to error message
+  * LayerData,cmpTo: Allow comparing rsc with snap
+  * DBLoader: Fix loading vlmData
+  * Db,Props: Reworked PropsDbDriver
+  * Db: moved persistance classes
+  * SecDb: Reworked security database drivers
+  * SecDb: Reworked DbAccessor
+  * AbsDbDriver: change getLoadedCount
+  * StltObjProtFactory: return singleton instance
+  * ObjProtInit: Only addAclEntry if needed
+  * NodeDb: Merged ETCD special delete into generic DbDriver
+  * DbLoader: use Set instead of List while loading
+  * EtcdEngine: Improve type handling
+  * Db,luks: Changed encryptedPassword format in SQL
+  * ETCD,Lri: Add missing snap names
+  * ETCD,K8s,PropInstance: Upper cased instance name
+  * Tests: Fixing unit tests
+  * ObjProt: Remove entry from objProtMap on delete
+  * SQL: special case SMALLINT to return short instead of integer
+  * ETCD: Disable ranged delete requests
+  * ETCD,StltRemote: Changed delimiter
+  * Db: Fix FSM name
+  * DB: Extracted RawParameters class
+  * DB: Added basic export support
+  * DbExporter: Added dedicated tool
+  * PropsDb: Fixed getLoadedCount method
+  * Layer,ignoreReason: Only run postRootSuspend if layer is not ignored
+  * SQL: Added import db support
+  * ETCD: Added import db support
+  * K8s,Crd: Added import db support
+  * DbExport: Generate scripts with gradle
+  * K8s,Crd: Added migration for snapshot name
+  * Stlt,Db: Introduced AbsSatelliteDriver
+  * Db: Add truncate method
+  * Db: Add upsert method
+  * SpaceTracking: Migrate and update structure
+  * ETCD,export: Add export support for no-PK-tables
+  * Db: Add handler for DATE datatype
+  * SpaceTracking: ApiCall must start a transaction
+  * DbExport: Add dynamic loader for space tracking
+  * S3: Fix s3Key parsing
+  * S3: Fix snapshot filtering
+  * SecIdDriver: Fix incorrect loading
+  * SSL: Fix missing enum case
+
+  [ Rene Peinthor ]
+  * gradle-wrapper: use latest stable 6.x version
+  * gradle: use java-11 for building and expect gradle 6.8.3
+  * gradle: do not force to run with jdk-11
+  * preselector: remove usage of jdk.nashorn.api
+  * gradle: remove jvm GC freeratio options
+  * gitlab-ci: add debian-bookworm to ci builds
+  * gradle: syntax updates and task configuration avoidance
+  * make: fix missing jclcrypto jar.deps logic
+  * packaging: update linstor-common source lib paths
+  * gradle: move deps into server project
+  * debian: gradle install jars are 755, chmod them to 644
+  * gradle: switch to 7.3.3
+  * gradle: update protobuf
+  * gradle: guice 5.1.0 update
+  * gradle: update picocli
+  * gradle: update com.amazonaws:aws-java-sdk-bom platform
+  * gradle: update REST libaries (grizzly, jersey)
+  * gradle: update to flyway 7.15.0
+  * gradle: update mariadb and postgresql connectors
+  * gradle: use latest prometheus simpleclient
+  * gradle: remove javax.xml.bind dependency
+  * gradle: update apache httpclient
+  * gradle: update logback and slf4j
+  * gradle: update kubernetes-client
+  * gradle: project-reactor latest PATCH version
+  * resp-api: increase version for next release
+  * Revert "gradle: update kubernetes-client"
+  * gradle: update project-reactor to current release
+  * gradle: update kubernetes-client to 6.7.2
+  * vlmdfn/delete: update resync-after properties
+  * resync-after: ignore diskless pools
+  * linstor-common: allow node-conn drbd options
+  * conffilebuilder: node-conn props were never used for connections
+  * Improve default INFO logging
+  * linstordbtool: correclty name command
+  * pkging: include linstor-database tool
+  * update changelog
+
+  [ Johanna Kucera ]
+  * BackupShipping: put NODE_IDS_TO_RESET on snapDfn instead of snap
+  * Resource: merge getDefinition() and getResourceDefinition()
+  * BackupShipping: also reset nodeIds of external metadata
+  * Layer: prevent NPE when copying .meta
+  * BackupShipping: change process of choosing node for shipping
+  * BackupShipping: l2l shipping rework
+  * BackupShipping: do not allow rsc-creation in restoring rscDfn
+  * Snapshots: prevent creating a snap during evacuation
+  * BackupShipping: rename S3Consts to BackupConsts
+  * BackupShipping: create BackupNodeFinder
+  * BackupShipping: make shippingSent more readable
+  * BackupShipping: clear queues on delete
+  * BackupShipping: clear shipping queue in other cases
+  * Utils: add BidirectionalMultiMap
+  * BackupShipping: use BidirectionalMultiMap instead of two seperate Maps
+  * BackupShipping: add new method because checkstyle
+  * BackupShipping: small bugfixes
+  * Node: prevent storpool delete if it still has snaps
+  * BackupShipping: prevent NPE
+  * BackupShipping: only abort the snapDfn, not the full node
+  * BackupShipping: prevent NPE
+  * BackupShipping: prevent choosing nodes with 0 free shipping slots
+  * BackupShipping: make shippingReceived more readable
+  * BackupShipping: prevent supplier from removing too many items
+  * BackupShipping: make queues work with l2l-shipping
+  * BackupShipping: limit luks to one node
+  * BackupShipping: add QueueList
+  * BackupShipping: make inc shippings work with queue
+  * BackupShipping: remove redundant parameters
+  * BackupShipping: add additional node-finder test
+  * BackupShipping: tell user if dstNodeName was invalid
+  * BackupShipping: ensure clearing a node queue works correctly
+  * BackupShipping: improve flux-loops
+  * BackupShipping: include vlmNr in threadname
+  * BackupShipping: do not send abort twice
+  * BackupShipping: prevent endless flux loop
+  * BackupShipping: refactor shippingSent into new class
+  * BackupShipping: refactor handleShippingQueue into new class
+  * BackupShipping: move all queue methods into same class
+  * BackupShipping: add new receiveDoneRequest to l2l-shipping
+  * BackupShipping: add task to cleanup StltRemote
+  * BackupShipping: prevent access to deleted Schedule
+  * BackupShipping: enforce correct remotes for different backup cmds
+
+  [ Johannes Thoma ]
+  * LINSTOR For Windows: make tgz also when we are a submodule
+  * LINSTOR For Windows: Bump virter and vmshed versions
+  * LINSTOR For Windows: Helper class to run LINSTOR Wmi Helper
+  * LINSTOR For Windows: Platform helper classes
+  * LINSTOR For Windows: Open and Close Windows Firewall ports as needed.
+  * LINSTOR For Windows: Handle Windows path names
+  * LINSTOR For Windows: Check for available Windows tools.
+  * LINSTOR For Windows: wipefs is a no-op on Windows
+  * LINSTOR For Windows: Make reading DRBD metadata work on Windows.
+  * LINSTOR For Windows: Get Hostname using hostname utility.
+  * LINSTOR For Windows: extra check for null in udev handler
+  * LINSTOR For Windows: update sysfs settings only on Linux
+  * LINSTOR For Windows: Extra long timeout for drbdadm
+  * LINSTOR For Windows: special case verify-alg and cram-hmac-alg settings
+  * LINSTOR For Windows: StorageSpaces and StorageSpacesThin providers
+  * LINSTOR For Windows: getFreeSpacesImpl implementation.
+  * LINSTOR For Windows: Add non-existing tools implicitly.
+  * LINSTOR For Windows: Reworked a diagnostic message
+  * LINSTOR For Windows: Added some missing switch labels.
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * config-tool: ensure DB shutdown after migration checks
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 20 Jul 2023 09:35:12 +0000
+
 linstor-server (1.23.0-1) experimental; urgency=medium
 
   [ Moritz "WanzenBug" Wanzenböck ]

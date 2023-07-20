@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.20.0
       - Added GET /v1/view/backup/queue
       - Added SnapQueue, NodeQueue, and BackupQueues objects
     * 1.19.0
