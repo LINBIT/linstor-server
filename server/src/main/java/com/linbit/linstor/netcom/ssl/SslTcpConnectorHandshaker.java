@@ -1,10 +1,12 @@
 package com.linbit.linstor.netcom.ssl;
 
+import com.linbit.ImplementationError;
+
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -107,6 +109,8 @@ public class SslTcpConnectorHandshaker
                 {
                     switch (handshakeStatus)
                     {
+                        case NEED_UNWRAP_AGAIN:
+                            throw new ImplementationError("This should never happen");
                         case NEED_UNWRAP:
                             {
                                 int read = socketChannel.read(peerNetData);
@@ -287,6 +291,8 @@ public class SslTcpConnectorHandshaker
                     case NEED_TASK:
                         // should never happen - while loop before should cover this case
                         break;
+                    case NEED_UNWRAP_AGAIN:
+                        throw new ImplementationError("This should never happen");
                     case NEED_UNWRAP:
                         peer.setOpInterest(SelectionKey.OP_READ);
                         break;
