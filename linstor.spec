@@ -73,6 +73,8 @@ cp %{_builddir}/%{NAME_VERS}/docs/linstor.toml-example %{buildroot}/%{_sysconfdi
 %package common
 Summary: Common files shared between controller and satellite
 Requires: jre-11-headless
+# This should really be included in the jre-headless dependencies, but it isn't.
+Requires: tzdata-java
 
 %description common
 Linstor shared components between linstor-controller and linstor-satellite
