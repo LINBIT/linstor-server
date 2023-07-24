@@ -1,3 +1,15 @@
+linstor-server (1.24.0~rc.2-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * SpaceTracking: Make AggregateCapacityInfo comparable
+  * Db: Force DATA to implement comparable
+
+  [ Rene Peinthor ]
+  * gradle: fix getprotoc fail if it is already installed
+  * gitlab-ci: fetch spacetracking from a separate repo with branch ref
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 24 Jul 2023 07:48:35 +0000
+
 linstor-server (1.24.0~rc.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
