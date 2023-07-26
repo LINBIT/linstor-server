@@ -25,8 +25,8 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
-import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.layer.storage.WipeHandler;
+import com.linbit.linstor.layer.storage.utils.DeviceUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -43,6 +43,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -56,6 +57,8 @@ import java.util.UUID;
 
 public class BCacheLayer implements DeviceLayer
 {
+    private static final String SUSPEND_IO_NOT_SUPPORTED_ERR_MSG = "Suspending / Resuming IO for BCache resources is not supported";
+
     private static final int WAIT_TIMEOUT_AFTER_ATTACH_MILLIS = 500;
     private static final long WAIT_FOR_BCACHE_TIMEOUT_MS = 100;
     private static final long WAIT_FOR_BCACHE_RETRY_COUNT = 20;
@@ -232,45 +235,30 @@ public class BCacheLayer implements DeviceLayer
     @Override
     public boolean isSuspendIoSupported()
     {
-        return true;
+        return false;
     }
 
     @Override
     public void suspendIo(AbsRscLayerObject<Resource> rscDataRef)
         throws ExtCmdFailedException, StorageException
     {
-        DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, true, null);
-        managePostRootSuspend(rscDataRef); // also flush our data after suspending
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
     }
 
     @Override
     public void resumeIo(AbsRscLayerObject<Resource> rscDataRef)
         throws ExtCmdFailedException, StorageException
     {
-        DmSetupUtils.suspendIo(errorReporter, extCmdFactory, rscDataRef, false, null);
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
     }
 
     @Override
     public void updateSuspendState(AbsRscLayerObject<Resource> rscDataRef)
-        throws DatabaseException, ExtCmdFailedException
+        throws DatabaseException, ExtCmdFailedException, StorageException
     {
-        rscDataRef.setIsSuspended(DmSetupUtils.isSuspended(extCmdFactory, rscDataRef));
+        throw new StorageException(SUSPEND_IO_NOT_SUPPORTED_ERR_MSG);
     }
 
-    @Override
-    public void managePostRootSuspend(AbsRscLayerObject<Resource> rscDataRef) throws StorageException
-    {
-        if (!rscDataRef.hasIgnoreReason())
-        {
-            for (VlmProviderObject<Resource> vlmData : rscDataRef.getVlmLayerObjects().values())
-            {
-                BCacheUtils.flush(
-                    errorReporter,
-                    ((BCacheVlmData<Resource>) vlmData).getIdentifier()
-                );
-            }
-        }
-    }
 
     @Override
     public void process(
