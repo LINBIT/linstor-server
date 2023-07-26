@@ -2,6 +2,8 @@ package com.linbit.linstor.layer.bcache;
 
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
+import com.linbit.fsevent.FileSystemWatch;
+import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -54,6 +56,7 @@ import java.util.UUID;
 
 public class BCacheLayer implements DeviceLayer
 {
+    private static final int WAIT_TIMEOUT_AFTER_ATTACH_MILLIS = 500;
     private static final long WAIT_FOR_BCACHE_TIMEOUT_MS = 100;
     private static final long WAIT_FOR_BCACHE_RETRY_COUNT = 20;
 
@@ -69,6 +72,7 @@ public class BCacheLayer implements DeviceLayer
     private final StltConfigAccessor stltConfAccessor;
     private final WipeHandler wipeHandler;
     private final SysFsHandler sysFsHandler;
+    private final FileSystemWatch fsWatch;
 
     private Props localNodeProps;
 
@@ -90,6 +94,15 @@ public class BCacheLayer implements DeviceLayer
         stltConfAccessor = stltConfAccessorRef;
         wipeHandler = wipeHandlerRef;
         sysFsHandler = sysFsHandlerRef;
+
+        try
+        {
+            fsWatch = new FileSystemWatch(errorReporter);
+        }
+        catch (IOException exc)
+        {
+            throw new LinStorRuntimeException("Unable to create FileSystemWatch", exc);
+        }
     }
 
     @Override
@@ -454,6 +467,12 @@ public class BCacheLayer implements DeviceLayer
                                 BCacheUtils.getBackingId(extCmdFactory, backingDev)
                             );
                             BCacheUtils.attach(errorReporter, cacheUuid, identifier);
+                            DeviceUtils.waitUntilDeviceVisible(
+                                buildDevicePath(identifier),
+                                WAIT_TIMEOUT_AFTER_ATTACH_MILLIS,
+                                errorReporter,
+                                fsWatch
+                            );
                         }
 
                         // identifier = getIdentifier(cacheUuid);
