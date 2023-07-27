@@ -9,7 +9,6 @@ import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.ScheduleName;
-import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -40,7 +39,6 @@ public final class ObjectProtection extends BaseTransactionObject implements Com
     private static final String PATH_RESOURCE_GROUPS         = "/resourcegroups/";
     private static final String PATH_NODES                   = "/nodes/";
     private static final String PATH_STOR_POOL_DEFINITIONS   = "/storpooldefinitions/";
-    private static final String PATH_FREE_SPACE_MGRS         = "/freespacemgrs/";
     private static final String PATH_KVS                     = "/keyvaluestores/";
     private static final String PATH_EXT_FILES               = "/extfiles/";
     private static final String PATH_REMOTE = "/remote/";
@@ -423,17 +421,6 @@ public final class ObjectProtection extends BaseTransactionObject implements Com
     public static String buildPath(KeyValueStoreName kvsName)
     {
         return PATH_KVS + kvsName.value;
-    }
-
-    /**
-     * ObjProt-Path for FreeSpaceMgrs
-     *
-     * @param sharedStorPoolName
-     * @return
-     */
-    public static String buildPath(SharedStorPoolName sharedStorPoolName)
-    {
-        return PATH_FREE_SPACE_MGRS + sharedStorPoolName.value;
     }
 
     /**
