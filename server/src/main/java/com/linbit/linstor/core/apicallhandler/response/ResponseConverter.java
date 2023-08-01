@@ -57,7 +57,7 @@ public class ResponseConverter
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
 
-        for (ApiCallRc.RcEntry entry : exceptionToResponse(peer, context, exc).getEntries())
+        for (ApiCallRc.RcEntry entry : exceptionToResponse(peer, context, exc))
         {
             ApiCallRcImpl.EntryBuilder builder = ApiCallRcImpl.entryBuilder(entry, null, null);
             if (entry.skipErrorReport())
@@ -112,7 +112,7 @@ public class ResponseConverter
             {
                 ApiCallRc sourceApiCallRc = apiRcException.getApiCallRc();
 
-                for (ApiCallRc.RcEntry sourceEntry : sourceApiCallRc.getEntries())
+                for (ApiCallRc.RcEntry sourceEntry : sourceApiCallRc)
                 {
                     StringJoiner causeJoiner = new StringJoiner("\n");
 
@@ -230,7 +230,7 @@ public class ResponseConverter
     public ApiCallRcImpl addContextAll(ApiCallRc responses, ResponseContext context, boolean appendDetail)
     {
         ApiCallRcImpl contextualResponses = new ApiCallRcImpl();
-        for (ApiCallRc.RcEntry entry : responses.getEntries())
+        for (ApiCallRc.RcEntry entry : responses)
         {
             contextualResponses.addEntry(addContext(entry, context, appendDetail));
         }

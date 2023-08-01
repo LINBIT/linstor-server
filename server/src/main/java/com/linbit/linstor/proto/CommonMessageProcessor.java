@@ -674,7 +674,7 @@ public class CommonMessageProcessor implements MessageProcessor
     {
         ApiCallRc apiCallRc = exc.getApiCallRc();
         return commonSerializer.answerBuilder(ApiConsts.API_REPLY, apiCallId)
-            .apiCallRcSeries(new ApiCallRcImpl(apiCallRc.getEntries().stream()
+            .apiCallRcSeries(new ApiCallRcImpl(apiCallRc.stream()
                 .map(rcEntry ->
                     ApiCallRcImpl.entryBuilder(rcEntry, null, null)
                         .addErrorId(errorId)

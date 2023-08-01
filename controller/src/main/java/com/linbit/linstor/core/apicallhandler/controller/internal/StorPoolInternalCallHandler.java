@@ -224,7 +224,7 @@ public class StorPoolInternalCallHandler
                 catch (ApiRcException exc)
                 {
                     ApiCallRc apiCallRc = exc.getApiCallRc();
-                    for (ApiCallRc.RcEntry entry : apiCallRc.getEntries())
+                    for (ApiCallRc.RcEntry entry : apiCallRc)
                     {
                         errorReporter.reportError(
                             exc.getCause() != null ? exc.getCause() : exc,

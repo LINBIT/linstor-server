@@ -119,7 +119,7 @@ public class BackupShippingTask implements TaskScheduleService.Task
                     .setSubscriptionConsumers(
                         apiCallRc ->
                         {
-                            for (ApiCallRc.RcEntry rc : apiCallRc.getEntries())
+                            for (ApiCallRc.RcEntry rc : apiCallRc)
                             {
                                 if ((ApiConsts.MASK_ERROR & rc.getReturnCode()) == ApiConsts.MASK_ERROR)
                                 {

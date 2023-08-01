@@ -992,7 +992,7 @@ public class CtrlSnapshotCrtApiCallHandler
     private static boolean isFailNotConnected(CtrlResponseUtils.DelayedApiRcException exception)
     {
         return exception.getErrors().stream().flatMap(
-            apiRcException -> apiRcException.getApiCallRc().getEntries().stream()
+            apiRcException -> apiRcException.getApiCallRc().stream()
         ).anyMatch(rcEntry -> rcEntry.getReturnCode() == ApiConsts.FAIL_NOT_CONNECTED);
     }
 

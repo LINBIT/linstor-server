@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
 @JsonDeserialize(as = ApiCallRcImpl.class)
-public interface ApiCallRc
+public interface ApiCallRc extends List<ApiCallRc.RcEntry>
 {
     enum Severity {
         INFO,
@@ -55,11 +55,6 @@ public interface ApiCallRc
         UNKNOWN,
     }
 
-    // List of return codes
-    List<RcEntry> getEntries();
-
-    boolean isEmpty();
-
     /**
      * Checks if any of the rcEntries is an error.
      * @return true if ApiCallRc has error entries.
@@ -72,7 +67,7 @@ public interface ApiCallRc
      */
     default boolean allSkipErrorReport()
     {
-        return getEntries().stream().filter(RcEntry::isError).allMatch(RcEntry::skipErrorReport);
+        return stream().filter(RcEntry::isError).allMatch(RcEntry::skipErrorReport);
     }
 
     /**
@@ -96,7 +91,7 @@ public interface ApiCallRc
 
         /**
          * Object references describing which object the return code refers to.
-         *
+
          * The key specifies WHAT the object is, and the value specifies
          * WHICH one of a list of objects is referenced.
          * E.g., for a Resource that has been assigned to a node,

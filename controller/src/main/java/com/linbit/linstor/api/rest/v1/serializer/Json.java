@@ -220,7 +220,7 @@ public class Json
     public static List<JsonGenTypes.ApiCallRc> apiCallRcToJson(ApiCallRc apiCallRc)
     {
         List<JsonGenTypes.ApiCallRc> json = new ArrayList<>();
-        for (RcEntry apiCallRcEntry : apiCallRc.getEntries())
+        for (RcEntry apiCallRcEntry : apiCallRc)
         {
             JsonGenTypes.ApiCallRc jsonApiCallRc = new JsonGenTypes.ApiCallRc();
             jsonApiCallRc.message = apiCallRcEntry.getMessage();

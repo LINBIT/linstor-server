@@ -294,7 +294,7 @@ public class BackgroundRunner
                 errorReporter.logError(
                     "Error response from background operation %s: %s",
                     operationDescription,
-                    apiCallResponses.getEntries()
+                    apiCallResponses
                         .stream()
                         .map(ApiCallRc.RcEntry::getMessage)
                         .collect(Collectors.joining("; "))

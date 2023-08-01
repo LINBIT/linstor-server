@@ -35,7 +35,7 @@ public class ApiRcException extends ApiException implements ErrorContextSupplier
     public ApiRcException(ApiCallRc apiCallRcRef, Throwable throwable, boolean hasContextRef)
     {
         super(
-            apiCallRcRef.getEntries().stream()
+            apiCallRcRef.stream()
                 .map(ApiCallRc.RcEntry::getMessage)
                 .collect(Collectors.joining("; ")),
             throwable
@@ -60,7 +60,7 @@ public class ApiRcException extends ApiException implements ErrorContextSupplier
         StringBuilder sb = new StringBuilder("ApiRcException entries: ");
         int entryNr = 1;
 
-        for (RcEntry entry : getApiCallRc().getEntries())
+        for (RcEntry entry : getApiCallRc())
         {
             sb.append("Nr: " + entryNr);
             if (entry.getMessage() != null)

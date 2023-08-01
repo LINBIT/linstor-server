@@ -702,7 +702,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
 
         // Don't start the operation if any of the required nodes are offline
-        if (!offlineWarnings.getEntries().isEmpty())
+        if (!offlineWarnings.isEmpty())
         {
             responses = Flux.just(offlineWarnings);
         }

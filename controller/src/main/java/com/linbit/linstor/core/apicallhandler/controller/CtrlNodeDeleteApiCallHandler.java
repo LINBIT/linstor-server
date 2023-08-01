@@ -340,7 +340,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
     private ApiCallRc removeOfflineWarnings(ApiCallRc apiCallRc)
     {
         return new ApiCallRcImpl(
-            apiCallRc.getEntries().stream()
+            apiCallRc.stream()
                 .filter(rcEntry -> rcEntry.getReturnCode() != ApiConsts.WARN_NOT_CONNECTED)
                 .collect(toList())
         );

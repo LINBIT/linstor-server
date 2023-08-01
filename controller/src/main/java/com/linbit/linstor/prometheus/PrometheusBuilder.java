@@ -326,7 +326,7 @@ public class PrometheusBuilder
             for (StorPoolApi storPoolApi : storagePoolList)
             {
                 tf.writeSample(storagePoolExport(storPoolApi),
-                    storPoolApi.getReports().getEntries().stream()
+                    storPoolApi.getReports().stream()
                         .filter(ApiCallRc.RcEntry::isError).count()
                 );
             }

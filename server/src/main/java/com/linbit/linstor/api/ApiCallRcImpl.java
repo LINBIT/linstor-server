@@ -1,6 +1,9 @@
 package com.linbit.linstor.api;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
+
+import javax.annotation.Nonnull;
 
 import java.io.IOException;
 import java.time.ZonedDateTime;
@@ -8,13 +11,18 @@ import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.Spliterator;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.UnaryOperator;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -65,20 +73,7 @@ public class ApiCallRcImpl implements ApiCallRc
 
     public void addEntries(ApiCallRc apiCallRc)
     {
-        entries.addAll(apiCallRc.getEntries());
-    }
-
-    @Override
-    public List<RcEntry> getEntries()
-    {
-        return entries;
-    }
-
-    @Override
-    @JsonIgnore
-    public boolean isEmpty()
-    {
-        return entries.isEmpty();
+        entries.addAll(apiCallRc);
     }
 
     @Override
@@ -566,5 +561,168 @@ public class ApiCallRcImpl implements ApiCallRc
             ret.addEntry(copyAndPrefixMessage(prefix, rcEntry));
         }
         return ret;
+    }
+
+    @Override
+    public int size()
+    {
+        return entries.size();
+    }
+
+    @Override
+    @JsonIgnore
+    public boolean isEmpty()
+    {
+        return entries.isEmpty();
+    }
+
+    @Override
+    public void replaceAll(UnaryOperator<RcEntry> operator)
+    {
+        throw new ImplementationError("ApiCallRc replaceAll not allowed");
+    }
+
+    @Override
+    public void sort(Comparator<? super RcEntry> comp)
+    {
+        throw new ImplementationError("ApiCallRc sort not allowed");
+    }
+
+    @Override
+    public Spliterator<RcEntry> spliterator()
+    {
+        return entries.spliterator();
+    }
+
+    @Override
+    public boolean contains(Object obj)
+    {
+        return entries.contains(obj);
+    }
+
+    @Override
+    public Iterator<RcEntry> iterator()
+    {
+        return entries.iterator();
+    }
+
+    @Override
+    public Object[] toArray()
+    {
+        return entries.toArray();
+    }
+
+    @Override
+    public <T> T[] toArray(@Nonnull T[] ts)
+    {
+        return entries.toArray(ts);
+    }
+
+    @Override
+    public boolean add(RcEntry rcEntry)
+    {
+        return entries.add(rcEntry);
+    }
+
+    @Override
+    public boolean remove(Object obj)
+    {
+        // return entries.remove(o);
+        throw new ImplementationError("ApiCallRc remove not allowed");
+    }
+
+    @Override
+    public boolean containsAll(@Nonnull Collection<?> collection)
+    {
+        return new HashSet<>(entries).containsAll(collection);
+    }
+
+    @Override
+    public boolean addAll(@Nonnull Collection<? extends RcEntry> collection)
+    {
+        return entries.addAll(collection);
+    }
+
+    @Override
+    public boolean addAll(int index, @Nonnull Collection<? extends RcEntry> collection)
+    {
+        return entries.addAll(index, collection);
+    }
+
+    @Override
+    public boolean removeAll(@Nonnull Collection<?> collection)
+    {
+        // return entries.removeAll(collection);
+        throw new ImplementationError("ApiCallRc removeAll not allowed");
+    }
+
+    @Override
+    public boolean retainAll(@Nonnull Collection<?> collection)
+    {
+        // return entries.retainAll(collection);
+        throw new ImplementationError("ApiCallRc retainAll not allowed");
+    }
+
+    @Override
+    public void clear()
+    {
+        // entries.clear();
+        throw new ImplementationError("ApiCallRc retainAll not allowed");
+    }
+
+    @Override
+    public RcEntry get(int index)
+    {
+        return entries.get(index);
+    }
+
+    @Override
+    public RcEntry set(int index, RcEntry rcEntry)
+    {
+        // return entries.set(index, rcEntry);
+        throw new ImplementationError("ApiCallRc set not allowed");
+    }
+
+    @Override
+    public void add(int index, RcEntry rcEntry)
+    {
+        entries.add(index, rcEntry);
+    }
+
+    @Override
+    public RcEntry remove(int index)
+    {
+        // return entries.remove(index);
+        throw new ImplementationError("ApiCallRc remove not allowed");
+    }
+
+    @Override
+    public int indexOf(Object obj)
+    {
+        return entries.indexOf(obj);
+    }
+
+    @Override
+    public int lastIndexOf(Object obj)
+    {
+        return entries.lastIndexOf(obj);
+    }
+
+    @Override
+    public ListIterator<RcEntry> listIterator()
+    {
+        return entries.listIterator();
+    }
+
+    @Override
+    public ListIterator<RcEntry> listIterator(int index)
+    {
+        return entries.listIterator(index);
+    }
+
+    @Override
+    public List<RcEntry> subList(int fromIndex, int toIndex)
+    {
+        return entries.subList(fromIndex, toIndex);
     }
 }

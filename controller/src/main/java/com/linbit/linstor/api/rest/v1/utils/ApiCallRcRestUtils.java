@@ -10,6 +10,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -47,7 +48,7 @@ public class ApiCallRcRestUtils
         Response.Status status = successStatus;
         HashMap<String, String> header = new HashMap<>();
 
-        for (ApiCallRc.RcEntry rc : apiCallRc.getEntries())
+        for (ApiCallRc.RcEntry rc : apiCallRc)
         {
             if ((ApiConsts.MASK_ERROR & rc.getReturnCode()) == ApiConsts.MASK_ERROR)
             {
@@ -116,7 +117,7 @@ public class ApiCallRcRestUtils
             .map(apiCallRcList ->
                 ApiCallRcRestUtils.toResponse(
                     new ApiCallRcImpl(apiCallRcList.stream().flatMap(
-                        apiCallRc -> apiCallRc.getEntries().stream()
+                        Collection::stream
                     ).collect(Collectors.toList())),
                     status
                 )

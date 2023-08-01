@@ -198,17 +198,17 @@ public abstract class ApiTestBase extends GenericDbBase
 
     protected RcEntry checkedGet(ApiCallRc rc, int idx)
     {
-        assertThat(rc.getEntries().size()).isGreaterThanOrEqualTo(idx + 1);
+        assertThat(rc.size()).isGreaterThanOrEqualTo(idx + 1);
 
-        return rc.getEntries().get(idx);
+        return rc.get(idx);
     }
 
     protected RcEntry checkedGet(ApiCallRc rc, int idx, int expectedSize)
     {
         assertThat(expectedSize).isGreaterThan(idx);
-        assertThat(rc.getEntries()).hasSize(expectedSize);
+        assertThat(rc).hasSize(expectedSize);
 
-        return rc.getEntries().get(idx);
+        return rc.get(idx);
     }
 
     protected void evaluateTest(AbsApiCallTester currentCall) throws Exception
@@ -229,12 +229,11 @@ public abstract class ApiTestBase extends GenericDbBase
         if (checkReturnCodes)
         {
             List<Long> expectedRetCodes = currentCall.retCodes;
-            List<RcEntry> actualRetCodes = rc.getEntries();
 
-            assertThat(actualRetCodes).hasSameSizeAs(expectedRetCodes);
+            assertThat(rc).hasSameSizeAs(expectedRetCodes);
             for (int idx = 0; idx < expectedRetCodes.size(); idx++)
             {
-                expectRc(idx, expectedRetCodes.get(idx), actualRetCodes.get(idx));
+                expectRc(idx, expectedRetCodes.get(idx), rc.get(idx));
             }
         }
 

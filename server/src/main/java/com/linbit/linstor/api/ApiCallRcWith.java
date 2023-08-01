@@ -17,7 +17,7 @@ public class ApiCallRcWith<T>
 
     public boolean hasApiCallRc()
     {
-        return apiCallRc != null && !apiCallRc.getEntries().isEmpty();
+        return apiCallRc != null && !apiCallRc.isEmpty();
     }
 
     public ApiCallRc getApiCallRc()

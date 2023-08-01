@@ -248,7 +248,7 @@ public class ApiRcUtils
 
     public static boolean isError(ApiCallRc apiCallRc)
     {
-        return apiCallRc.getEntries().stream().anyMatch(ApiRcUtils::entryIsError);
+        return apiCallRc.stream().anyMatch(ApiRcUtils::entryIsError);
     }
 
     private static boolean entryIsError(ApiCallRc.RcEntry rcEntry)

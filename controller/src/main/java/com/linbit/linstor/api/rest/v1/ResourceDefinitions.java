@@ -38,6 +38,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -312,9 +313,7 @@ public class ResourceDefinitions
                 {
                     Response.ResponseBuilder builder = Response.status(Response.Status.CREATED);
                     ApiCallRcImpl flatApiCallRc = new ApiCallRcImpl(
-                        apiCallRcList.stream().flatMap(
-                            apiCallRc -> apiCallRc.getEntries().stream()
-                        ).collect(Collectors.toList())
+                        apiCallRcList.stream().flatMap(Collection::stream).collect(Collectors.toList())
                     );
                     try
                     {

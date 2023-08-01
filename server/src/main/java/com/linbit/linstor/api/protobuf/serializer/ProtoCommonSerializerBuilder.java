@@ -1457,7 +1457,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     {
         List<ApiCallResponseOuterClass.ApiCallResponse> list = new ArrayList<>();
 
-        for (ApiCallRc.RcEntry apiCallEntry : apiCallRc.getEntries())
+        for (ApiCallRc.RcEntry apiCallEntry : apiCallRc)
         {
             ApiCallResponseOuterClass.ApiCallResponse.Builder msgApiCallResponseBuilder =
                 ApiCallResponseOuterClass.ApiCallResponse.newBuilder();

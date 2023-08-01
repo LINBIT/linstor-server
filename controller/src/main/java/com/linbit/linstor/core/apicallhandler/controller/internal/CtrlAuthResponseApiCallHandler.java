@@ -256,7 +256,7 @@ public class CtrlAuthResponseApiCallHandler
 
             peer.setConnectionStatus(ApiConsts.ConnectionStatus.AUTHENTICATION_ERROR);
 
-            for (RcEntry entry : apiCallResponse.getEntries())
+            for (RcEntry entry : apiCallResponse)
             {
                 errorReporter.logError("Satellite authentication error: " + entry.getCause());
             }

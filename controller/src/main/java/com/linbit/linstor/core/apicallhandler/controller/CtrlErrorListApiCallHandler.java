@@ -175,7 +175,7 @@ public class CtrlErrorListApiCallHandler
             ByteArrayInputStream dataIn = deleteAnswer.getT2();
 
             ApiCallRc nodeApis = ProtoDeserializationUtils.parseApiCallAnswerMsg(dataIn, nodeName.displayValue + ": ");
-            nodeApis.getEntries().forEach(entry -> entry.getObjRefs().put(ApiConsts.KEY_NODE, nodeName.displayValue));
+            nodeApis.forEach(entry -> entry.getObjRefs().put(ApiConsts.KEY_NODE, nodeName.displayValue));
             apiCallRc.addEntries(nodeApis);
         }
         if (apiCallRc.isEmpty())
