@@ -412,7 +412,7 @@ public class ReconnectorTask implements Task
                 {
                     // already after current connection, set new connection
                     errorReporter.logDebug(
-                        "Setting new active satellite connection: '" +
+                        "Setting new active satellite connection on " + node.getName().displayValue + " '" +
                             netInterface.getName() + "' " +
                             netInterface.getAddress(config.peer.getAccessContext()).getAddress()
                     );
