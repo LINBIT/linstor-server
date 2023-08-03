@@ -76,7 +76,7 @@ public class Schedule extends AbsCoreObj<Schedule> implements ProtectedObject
         keepLocal = transObjFactory.createTransactionSimpleObject(this, keepLocalRef, driver.getKeepLocalDriver());
         keepRemote = transObjFactory.createTransactionSimpleObject(this, keepRemoteRef, driver.getKeepRemoteDriver());
         onFailure = transObjFactory.createTransactionSimpleObject(this, onFailureRef, driver.getOnFailureDriver());
-        maxRetries = transObjFactory.createTransactionSimpleObject(this, maxRetriesRef, driver.getKeepRemoteDriver());
+        maxRetries = transObjFactory.createTransactionSimpleObject(this, maxRetriesRef, driver.getMaxRetriesDriver());
 
         flags = transObjFactory
             .createStateFlagsImpl(objProt, this, Flags.class, driver.getStateFlagsPersistence(), initialFlags);
