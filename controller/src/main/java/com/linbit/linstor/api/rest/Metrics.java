@@ -1,6 +1,5 @@
 package com.linbit.linstor.api.rest;
 
-import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.api.rest.v1.RequestHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlErrorListApiCallHandler;
@@ -23,9 +22,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.glassfish.grizzly.http.server.Request;
@@ -86,17 +87,23 @@ public class Metrics
             try
             {
                 long start = System.currentTimeMillis();
-                errorReportsTmp = fluxErrorReports.next().block(Duration.ofSeconds(BLOCK_TIMEOUT));
+                errorReportsTmp = fluxErrorReports
+                    .timeout(Duration.ofSeconds(BLOCK_TIMEOUT)).next().block();
                 errorReporter.logTrace("Metric/ListErrorReports: %dms", System.currentTimeMillis() - start);
             }
-            catch (RuntimeException timeoutExc)
+            catch (RuntimeException runtimeExc)
             {
-                errorReporter.reportError(
-                    new LinStorRuntimeException(
-                        String.format("Gathering error reports took longer than %d seconds", BLOCK_TIMEOUT),
-                        timeoutExc
-                    )
-                );
+                if (runtimeExc.getCause() instanceof TimeoutException)
+                {
+                    errorReporter.logWarning(
+                        String.format("Timeout: Gathering error reports took longer than %d seconds: %s",
+                            BLOCK_TIMEOUT,
+                            runtimeExc));
+                }
+                else
+                {
+                    errorReporter.reportError(runtimeExc);
+                }
             }
         }
 

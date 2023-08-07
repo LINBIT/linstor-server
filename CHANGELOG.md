@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Remove java.xml.bind dependency, that didn't work with java-17
 - BCache suspend is not supported and wait for device to be created
 - Schedules: use correct DB driver for maxretries field
+- /metrics: error-report fetching exceptions always handled as timeouts
 
 ## [1.24.0-rc.2] - 2023-07-24
 
