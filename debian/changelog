@@ -1,3 +1,27 @@
+linstor-server (1.24.0-1) experimental; urgency=medium
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * pkg: add tzdata-java dependencies for RPMs
+
+  [ Gabor Hernadi ]
+  * ObjProt: Delete FSM key builder
+  * Db: Restore invisible KVS
+  * Db: Cleanup orphaned ACLs
+  * BCache: Wait for bcache device to be created
+  * BCache: Disable suspend-support
+  * Reconnect: Add node name to log message
+  * Schedule: Use correct maxRetry driver
+  * Drbd: Fix incorrect peer-slots cast
+
+  [ Rene Peinthor ]
+  * gradle: remove javax.xml.bind dependencies
+  * changelog: update for 1.24.0
+  * metrics: fix checkstyle
+  * metrics: error-report fetching exceptions always handled as timeouts
+  * volume: Fix NPE on getApiData if vlmProvider is null
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 07 Aug 2023 11:50:26 +0000
+
 linstor-server (1.24.0~rc.2-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]

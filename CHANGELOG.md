@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.24.0] - 2023-08-07
+
 ### Fixed
 
 - Restore invisible key-value stores, after an old broken migration
