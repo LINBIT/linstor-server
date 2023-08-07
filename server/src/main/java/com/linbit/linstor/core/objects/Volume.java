@@ -427,12 +427,12 @@ public class Volume extends AbsVolume<Resource>
                         vlmProvider.asPojo(accCtx)
                     )
                 );
-            }
 
-            // deprecated - only for compatibility with old versions
-            if (compatStorPool == null && rscLayerObject.getResourceNameSuffix().isEmpty())
-            {
-                compatStorPool = vlmProvider.getStorPool();
+                // deprecated - only for compatibility with old versions
+                if (compatStorPool == null && rscLayerObject.getResourceNameSuffix().isEmpty())
+                {
+                    compatStorPool = vlmProvider.getStorPool();
+                }
             }
 
             rscLayersToExpand.addAll(rscLayerObject.getChildren());
