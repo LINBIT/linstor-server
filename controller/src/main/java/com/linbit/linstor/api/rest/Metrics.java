@@ -42,8 +42,8 @@ public class Metrics
     private final CtrlErrorListApiCallHandler ctrlErrorListApiCallHandler;
     private final PrometheusBuilder prometheusBuilder;
 
-    private static final AtomicLong scrape_requests = new AtomicLong();
     private static final int BLOCK_TIMEOUT = 10;
+    private static final AtomicLong SCRAPE_REQUESTS = new AtomicLong();
 
     @Inject
     public Metrics(
@@ -73,8 +73,8 @@ public class Metrics
         @DefaultValue("true") @QueryParam("error_reports") boolean withErrorReports
     )
     {
-        scrape_requests.incrementAndGet();
-        long scrape_start = System.currentTimeMillis();
+        SCRAPE_REQUESTS.incrementAndGet();
+        long scrapeStart = System.currentTimeMillis();
 
         List<ErrorReport> errorReportsTmp = null;
         if (withErrorReports)
@@ -124,8 +124,8 @@ public class Metrics
                     rl,
                     storagePoolList,
                     errorReports,
-                    scrape_requests.getAndIncrement(),
-                    scrape_start
+                    SCRAPE_REQUESTS.getAndIncrement(),
+                    scrapeStart
                 );
 
                 return Response.status(Response.Status.OK).entity(promText).build();
