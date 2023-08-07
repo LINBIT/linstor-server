@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - BCache suspend is not supported and wait for device to be created
 - Schedules: use correct DB driver for maxretries field
 - /metrics: error-report fetching exceptions always handled as timeouts
+- RscDfn, peer-slots: fix incorrect cast of peer-slots when modifying resource definitions
 
 ## [1.24.0-rc.2] - 2023-07-24
 

@@ -139,7 +139,7 @@ public class LayerDrbdRscDfnDbDriver
         peerSlotsDriver = generateSingleColumnDriver(
             LayerDrbdResourceDefinitions.PEER_SLOTS,
             drbdRscDfnData -> "" + drbdRscDfnData.getPeerSlots(),
-            int.class::cast
+            Short::intValue
         );
     }
 
