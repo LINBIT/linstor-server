@@ -80,6 +80,8 @@ def resolve_type_str(schema_lookup: OrderedDict, field_obj: OrderedDict):
             t = schema_name
     elif "oneOf" in field_obj:
         t = "Object"
+    elif "allOf" in field_obj:
+        t = "object"  # will resolve to schema_name
     else:
         raise RuntimeError("Unknown type for " + str(field_obj))
     return t
