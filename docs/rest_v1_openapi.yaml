@@ -7665,6 +7665,9 @@ components:
         request_retries:
           type: integer
           format: int32
+        max_rollback_entries:
+          type: integer
+          format: int32
     ControllerConfigHttp:
       type: object
       properties:

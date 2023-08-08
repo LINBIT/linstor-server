@@ -1,18 +1,17 @@
 package com.linbit.linstor.dbdrivers.k8s.crd;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 
-public class RollbackSpec implements LinstorSpec<RollbackCrd, RollbackSpec>
+public class RollbackSpec implements Serializable
 {
     @JsonIgnore
     private static final long serialVersionUID = -4327494414912303196L;
@@ -33,19 +32,10 @@ public class RollbackSpec implements LinstorSpec<RollbackCrd, RollbackSpec>
     @JsonProperty("delete_map")
     public final HashMap<String, HashSet<String>> deleteMap;
 
-    RollbackCrd parentCrd;
-
     public RollbackSpec()
     {
         rollbackMap = new HashMap<>();
         deleteMap = new HashMap<>();
-    }
-
-    @JsonIgnore
-    @Override
-    public RollbackCrd getCrd()
-    {
-        return parentCrd;
     }
 
     @JsonCreator
@@ -124,33 +114,5 @@ public class RollbackSpec implements LinstorSpec<RollbackCrd, RollbackSpec>
         HashMap<String, GenericKubernetesResource> rbMap = rollbackMap.get(dbTableStr);
         HashSet<String> delSet = deleteMap.get(dbTableStr);
         return (rbMap != null && rbMap.containsKey(specKey)) || (delSet != null && delSet.contains(specKey));
-    }
-
-    @JsonIgnore
-    @Override
-    public String getLinstorKey()
-    {
-        return "rollback";
-    }
-
-    @Override
-    @JsonIgnore
-    public Map<String, Object> asRawParameters()
-    {
-        throw new ImplementationError("Method not supported by Rollback");
-    }
-
-    @Override
-    @JsonIgnore
-    public Object getByColumn(String clmNameStrRef)
-    {
-        throw new ImplementationError("Method not supported by Rollback");
-    }
-
-    @Override
-    @JsonIgnore
-    public DatabaseTable getDatabaseTable()
-    {
-        throw new ImplementationError("Method not supported by Rollback");
     }
 }

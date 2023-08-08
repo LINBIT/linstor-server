@@ -40,6 +40,8 @@ public class CtrlConfig extends LinstorConfig
      */
     private int k8sRequestRetries = 3;
 
+    private int k8sMaxRollbackEntries = 100;
+
     /*
      * Logging
      */
@@ -246,6 +248,14 @@ public class CtrlConfig extends LinstorConfig
         if (k8sRequestRetriesRef != null)
         {
             k8sRequestRetries = k8sRequestRetriesRef;
+        }
+    }
+
+    public void setK8sMaxRollbackEntries(final Integer k8sMaxRollbackEntriesRef)
+    {
+        if (k8sMaxRollbackEntriesRef != null)
+        {
+            k8sMaxRollbackEntries = k8sMaxRollbackEntriesRef;
         }
     }
 
@@ -467,6 +477,11 @@ public class CtrlConfig extends LinstorConfig
     public int getK8sRequestRetries()
     {
         return k8sRequestRetries;
+    }
+
+    public int getK8sMaxRollbackEntries()
+    {
+        return k8sMaxRollbackEntries;
     }
 
     public String getLogRestAccessLogPath()

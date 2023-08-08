@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map.Entry;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
@@ -20,27 +21,23 @@ import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 public class ControllerK8sCrdRollbackMgr
 {
     /**
-     * Prepare (and store) data which we can rollback to if the next transaction fails to commit
+     * Prepare (and store) data which we can roll back to if the next transaction fails to commit
      *
-     * @param currentTransactionRef
-     *
-     * @return
+     * @param currentTransactionRef The current transaction.
+     * @param maxRollbackEntries The maximum number of entries in a single rollback instance.
      */
     @SuppressWarnings("unchecked")
-    public static void createRollbackEntry(K8sCrdTransaction currentTransactionRef)
+    public static void createRollbackEntry(K8sCrdTransaction currentTransactionRef, int maxRollbackEntries)
         throws DatabaseException
     {
-        RollbackSpec rollbackSpec = new RollbackSpec();
-        RollbackCrd rollbackCrd = new RollbackCrd(rollbackSpec);
-        int numberOfUpdates = 0;
+        RollbackGenerator rollbackGen = new RollbackGenerator(maxRollbackEntries);
 
         for (Entry<DatabaseTable, HashMap<String, LinstorCrd<?>>> entry : currentTransactionRef.rscsToCreate.entrySet())
         {
             DatabaseTable dbTable = entry.getKey();
             for (String rscKey : entry.getValue().keySet())
             {
-                numberOfUpdates++;
-                rollbackSpec.created(dbTable, rscKey);
+                rollbackGen.created(dbTable, rscKey);
             }
         }
 
@@ -52,7 +49,6 @@ public class ControllerK8sCrdRollbackMgr
 
             for (Entry<String, LinstorCrd<?>> rsc : entry.getValue().entrySet())
             {
-                numberOfUpdates++;
                 LinstorCrd<?> updatedRsc = rsc.getValue();
 
                 LinstorCrd<?> resource = client.get(updatedRsc.getK8sKey());
@@ -66,7 +62,7 @@ public class ControllerK8sCrdRollbackMgr
                 // a) replace the thing we expect.
                 // b) we can replace it in a single request.
                 rsc.getValue().getMetadata().setResourceVersion(resource.getMetadata().getResourceVersion());
-                rollbackSpec.updatedOrDeleted(dbTable, resource);
+                rollbackGen.updatedOrDeleted(dbTable, resource);
             }
         }
 
@@ -78,7 +74,6 @@ public class ControllerK8sCrdRollbackMgr
 
             for (Entry<String, LinstorCrd<?>> rsc : entry.getValue().entrySet())
             {
-                numberOfUpdates++;
                 LinstorCrd<?> deletedRsc = rsc.getValue();
 
                 LinstorCrd<?> resource = client.get(deletedRsc.getK8sKey());
@@ -90,38 +85,34 @@ public class ControllerK8sCrdRollbackMgr
                 }
                 // Set the resource version so that we delete the thing we expect.
                 rsc.getValue().getMetadata().setResourceVersion(resource.getMetadata().getResourceVersion());
-                rollbackSpec.updatedOrDeleted(dbTable, resource);
+                rollbackGen.updatedOrDeleted(dbTable, resource);
             }
         }
 
         // We only create a rollback resource if it is actually required, i.e. if we need to create/modify/delete more
         // than one resource in this transaction. Single object updates happen atomically, no need for rollback there.
-        if (numberOfUpdates > 1)
+        if (rollbackGen.getTotalUpdates() > 1)
         {
-            RollbackCrd oldRollback = currentTransactionRef.getRollback();
-            if (oldRollback != null)
+            List<RollbackCrd> rollbacks = rollbackGen.build();
+            for (RollbackCrd crd : rollbacks)
             {
                 // There might be an old rollback in some scenarios involving propsContainers
                 // In that case our new rollback will also rollback all the old stuff, so it is
                 // safe to replace
-                rollbackCrd.getMetadata().setResourceVersion(oldRollback.getMetadata().getResourceVersion());
-                RollbackCrd applied = currentTransactionRef.getRollbackClient().replace(rollbackCrd);
-                currentTransactionRef.setRollback(applied);
+                currentTransactionRef.getRollbackClient().resource(crd).createOrReplace();
             }
-            else
-            {
-                RollbackCrd applied = currentTransactionRef.getRollbackClient().create(rollbackCrd);
-                currentTransactionRef.setRollback(applied);
-            }
+
+            currentTransactionRef.setRollbacks(rollbacks);
         }
     }
 
     public static void cleanup(K8sCrdTransaction transactionToClean)
     {
-        RollbackCrd rollback = transactionToClean.getRollback();
+        List<RollbackCrd> rollback = transactionToClean.getRollbacks();
         if (rollback != null)
         {
-            transactionToClean.getRollbackClient().delete(rollback);
+            // Delete all rollbacks
+            transactionToClean.getRollbackClient().delete();
         }
     }
 
@@ -129,27 +120,30 @@ public class ControllerK8sCrdRollbackMgr
         K8sCrdTransaction currentTransactionRef
     )
     {
-        RollbackCrd rollback = currentTransactionRef.getRollback();
-        if (rollback != null)
+        List<RollbackCrd> rollbacks = currentTransactionRef.getRollbacks();
+        if (rollbacks != null)
         {
-            for (Entry<String, HashSet<String>> entry : rollback.getSpec().getDeleteMap().entrySet())
+            for (RollbackCrd rollback : rollbacks)
             {
-                DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
-                HashSet<String> keysToDelete = entry.getValue();
-                delete(currentTransactionRef, dbTable, keysToDelete);
-            }
+                for (Entry<String, HashSet<String>> entry : rollback.getSpec().getDeleteMap().entrySet())
+                {
+                    DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
+                    HashSet<String> keysToDelete = entry.getValue();
+                    delete(currentTransactionRef, dbTable, keysToDelete);
+                }
 
-            for (Entry<String, ? extends HashMap<String, GenericKubernetesResource>> entry : rollback.getSpec()
-                .getRollbackMap().entrySet())
-            {
-                DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
-                ArrayList<GenericKubernetesResource> gkrList = new ArrayList<>(entry.getValue().values());
+                for (Entry<String, ? extends HashMap<String, GenericKubernetesResource>> entry : rollback.getSpec()
+                    .getRollbackMap().entrySet())
+                {
+                    DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
+                    ArrayList<GenericKubernetesResource> gkrList = new ArrayList<>(entry.getValue().values());
 
-                restoreData(
-                    currentTransactionRef,
-                    dbTable,
-                    gkrList
-                );
+                    restoreData(
+                        currentTransactionRef,
+                        dbTable,
+                        gkrList
+                    );
+                }
             }
         }
 
@@ -187,6 +181,70 @@ public class ControllerK8sCrdRollbackMgr
             gkr.getMetadata().setResourceVersion("");
             gkr.getMetadata().setUid(null);
             gkrClient.createOrReplace(gkr);
+        }
+    }
+
+    public static class RollbackGenerator
+    {
+        private int maxRollbackEntries;
+
+        private RollbackCrd currentRollback;
+        private final List<RollbackCrd> rollbacks = new ArrayList<>();
+        private int currentUpdates;
+
+        private int totalUpdates;
+
+        public RollbackGenerator(int maxRollbackEntriesRef)
+        {
+            maxRollbackEntries = maxRollbackEntriesRef;
+        }
+
+        public <SPEC extends LinstorSpec> void updatedOrDeleted(DatabaseTable table, LinstorCrd<SPEC> item)
+        {
+            ensureInvariants();
+            currentUpdates++;
+            totalUpdates++;
+            currentRollback.getSpec().updatedOrDeleted(table, item);
+        }
+
+        public void created(DatabaseTable table, String key)
+        {
+            ensureInvariants();
+            currentUpdates++;
+            totalUpdates++;
+            currentRollback.getSpec().created(table, key);
+        }
+
+        private void ensureInvariants()
+        {
+            if (currentUpdates == maxRollbackEntries)
+            {
+                rollbacks.add(currentRollback);
+                currentUpdates = 0;
+                currentRollback = null;
+            }
+
+            if (currentRollback == null)
+            {
+                currentRollback = new RollbackCrd(String.format("rollback-%d", rollbacks.size()), new RollbackSpec());
+            }
+        }
+
+        public List<RollbackCrd> build()
+        {
+            if (currentUpdates > 0)
+            {
+                rollbacks.add(currentRollback);
+                currentUpdates = 0;
+                currentRollback = new RollbackCrd(String.format("rollback-%d", rollbacks.size()), new RollbackSpec());
+            }
+
+            return rollbacks;
+        }
+
+        public int getTotalUpdates()
+        {
+            return totalUpdates;
         }
     }
 }

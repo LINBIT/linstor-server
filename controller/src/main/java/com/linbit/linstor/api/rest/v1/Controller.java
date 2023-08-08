@@ -247,6 +247,7 @@ public class Controller
 
         controllerConfig.db.k8s = new JsonGenTypes.ControllerConfigDbK8s();
         controllerConfig.db.k8s.request_retries = ctrlCfg.getK8sRequestRetries();
+        controllerConfig.db.k8s.max_rollback_entries = ctrlCfg.getK8sMaxRollbackEntries();
 
         controllerConfig.debug = new JsonGenTypes.ControllerConfigDebug();
         controllerConfig.debug.console_enabled = ctrlCfg.isDebugConsoleEnabled();

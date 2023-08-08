@@ -161,10 +161,12 @@ public class CtrlTomlConfig
     static class K8s
     {
         private Integer request_retries;
+        private Integer max_rollback_entries;
 
         public void applyTo(CtrlConfig cfg)
         {
             cfg.setK8sRequestRetries(request_retries);
+            cfg.setK8sMaxRollbackEntries(max_rollback_entries);
         }
     }
 

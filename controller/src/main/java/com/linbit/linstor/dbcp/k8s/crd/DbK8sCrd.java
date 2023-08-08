@@ -378,6 +378,12 @@ public class DbK8sCrd implements ControllerK8sCrdDatabase
     }
 
     @Override
+    public int getMaxRollbackEntries()
+    {
+        return ctrlCfg.getK8sMaxRollbackEntries();
+    }
+
+    @Override
     public void clearCache()
     {
         k8sCachingClient.clear();

@@ -947,6 +947,7 @@ public class JsonGenTypes
     public static class ControllerConfigDbK8s
     {
         public Integer request_retries;
+        public Integer max_rollback_entries;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

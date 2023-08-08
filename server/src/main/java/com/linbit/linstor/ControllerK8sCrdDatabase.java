@@ -12,5 +12,7 @@ public interface ControllerK8sCrdDatabase extends ControllerDatabase
 
     K8sResourceClient<?> getCachingClient(Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>> clazz);
 
+    int getMaxRollbackEntries();
+
     void clearCache();
 }

@@ -1,6 +1,5 @@
 package com.linbit.linstor.transaction;
 
-import com.linbit.ImplementationError;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
@@ -149,7 +148,8 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
              */
             try
             {
-                ControllerK8sCrdRollbackMgr.createRollbackEntry(currentTransaction);
+                ControllerK8sCrdRollbackMgr.createRollbackEntry(
+                    currentTransaction, controllerK8sCrdDatabase.getMaxRollbackEntries());
             }
             catch (DatabaseException exc)
             {
@@ -244,16 +244,10 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     {
         try
         {
-            KubernetesResourceList<RollbackCrd> rollbacks = currentTransaction.getRollbackClient().list();
-            int nrRollbacks = rollbacks.getItems().size();
-            if (nrRollbacks > 1)
+            List<RollbackCrd> rollbacks = currentTransaction.getRollbackClient().list().getItems();
+            if (!rollbacks.isEmpty())
             {
-                throw new ImplementationError("Found more than 1 rollback in database");
-            }
-
-            if (nrRollbacks == 1)
-            {
-                currentTransaction.setRollback(rollbacks.getItems().get(0));
+                currentTransaction.setRollbacks(rollbacks);
 
                 rollback();
             }
