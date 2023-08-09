@@ -38,6 +38,7 @@ import javax.inject.Singleton;
 
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -494,7 +495,12 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
             int pkIdx = 0;
             for (DbExportPojoData.Column column : pkCols)
             {
-                pks[pkIdx++] = Objects.toString(linstorSpec.getByColumn(column.name));
+                Object value = linstorSpec.getByColumn(column.name);
+                if (value instanceof Date)
+                {
+                    value = ((Date) value).getTime(); // ETCD should store all dates as long
+                }
+                pks[pkIdx++] = Objects.toString(value);
             }
 
             boolean allColumnsPrimary = true;
@@ -519,6 +525,10 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                     else if (column.sqlType == Types.BLOB)
                     {
                         value = Base64.encode((byte[]) value);
+                    }
+                    else if (column.sqlType == Types.DATE)
+                    {
+                        value = ((Date) value).getTime();
                     }
 
                     tx.put(
