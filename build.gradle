@@ -252,6 +252,9 @@ project(':satellite') {
         defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
+            if (project(':server').hasProperty("java11")) {
+                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=/usr/lib/jvm/jre-11/bin/java")
+            }
         }
     }
 
@@ -359,6 +362,9 @@ project(':controller') {
         defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
+            if (project(':server').hasProperty("java11")) {
+                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=/usr/lib/jvm/jre-11/bin/java")
+            }
         }
     }
 
@@ -370,6 +376,9 @@ project(':controller') {
         defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
+            if (project(':server').hasProperty("java11")) {
+                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=/usr/lib/jvm/jre-11/bin/java")
+            }
         }
     }
 
@@ -381,6 +390,9 @@ project(':controller') {
         defaultJvmOpts = jvmOpts
         doLast {
             delete windowsScript
+            if (project(':server').hasProperty("java11")) {
+                unixScript.text = unixScript.text.replaceFirst("JAVACMD=\"?java\"?", "JAVACMD=/usr/lib/jvm/jre-11/bin/java")
+            }
         }
     }
 
