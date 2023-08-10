@@ -1,3 +1,16 @@
+linstor-server (1.24.1-1) experimental; urgency=medium
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * K8s,Crd: limit number of entries in rollback resource
+
+  [ Rene Peinthor ]
+  * gradle: on rhel based systems force to use java-11 jre
+
+  [ Gabor Hernadi ]
+  * ETCD,import: Convert Date to long
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 10 Aug 2023 09:12:41 +0000
+
 linstor-server (1.24.0-1) experimental; urgency=medium
 
   [ Moritz "WanzenBug" Wanzenböck ]

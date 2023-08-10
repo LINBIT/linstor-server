@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.24.1] - 2023-08-10
+
+### Fixed
+
+- K8s,Crd: limit number of entries in rollback resource
+- gradle: on rhel based systems force to use java-11 jre
+- ETCD,import: Convert Date to long
+
 ## [1.24.0] - 2023-08-07
 
 ### Fixed
