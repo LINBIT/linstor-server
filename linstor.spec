@@ -4,7 +4,7 @@ Release: 1%{?dist}
 Summary: LINSTOR SDS
 BuildArch: noarch
 %define GRADLE_TASKS installdist
-%define GRADLE_FLAGS --offline --gradle-user-home /tmp --no-daemon -Pjava11=true --exclude-task generateJava
+%define GRADLE_FLAGS --offline --gradle-user-home /tmp --no-daemon --exclude-task generateJava
 %define LS_PREFIX /usr/share/linstor-server
 %define FIREWALLD_SERVICES /usr/lib/firewalld/services
 %define FILE_VERSION %(echo %{version} | sed -e 's/~/\-/')
@@ -20,7 +20,9 @@ Source0: http://pkg.linbit.com/downloads/linstor/linstor-server-%{FILE_VERSION}.
 
 %if 0%{?suse_version} >= 1500
 BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python
+%define GRADLE_J11_PATH -Pjava11=lib64
 %else
+%define GRADLE_J11_PATH -Pjava11=lib
     %if 0%{?rhel} > 8
 BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python3
     %else
@@ -38,7 +40,7 @@ TODO.
 
 %build
 rm -rf ./build/install
-gradle %{GRADLE_TASKS} %{GRADLE_FLAGS}
+gradle %{GRADLE_TASKS} %{GRADLE_FLAGS} %{GRADLE_J11_PATH}
 for p in server satellite controller jclcrypto; do echo "%{LS_PREFIX}/.$p" >> "%{_builddir}/%{NAME_VERS}/$p/jar.deps"; done
 
 %install
@@ -73,7 +75,7 @@ cp %{_builddir}/%{NAME_VERS}/docs/linstor.toml-example %{buildroot}/%{_sysconfdi
 %package common
 Summary: Common files shared between controller and satellite
 Requires: jre-11-headless
-# This should really be included in the jre-headless dependencies, but it isn't.
+## This should really be included in the jre-headless dependencies, but it isn't.
 Requires: tzdata-java
 
 %description common
