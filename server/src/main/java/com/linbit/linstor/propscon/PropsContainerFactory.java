@@ -45,7 +45,7 @@ public class PropsContainerFactory
         PropsContainer container;
         try
         {
-            container = new PropsContainer(null, null, dbDriver, transMgrProvider);
+            container = new PropsContainer(null, null, instanceName, dbDriver, transMgrProvider);
         }
         catch (InvalidKeyException keyExc)
         {
@@ -56,7 +56,6 @@ public class PropsContainerFactory
                 keyExc
             );
         }
-        container.instanceName = instanceName;
 
         return container;
     }

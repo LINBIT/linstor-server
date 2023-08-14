@@ -25,7 +25,7 @@ public class ReadOnlyProps implements Props
         try
         {
             EMPTY_RO_PROP = new ReadOnlyProps(
-                new PropsContainer(null, null, null, null)
+                new PropsContainer(null, null, null, null, null)
             );
         }
         catch (InvalidKeyException exc)

@@ -94,11 +94,12 @@ public class PropsContainer extends AbsTransactionObject implements Props
     protected Provider<TransactionMgr> transMgrProvider;
     private Map<String, String> cachedPropMap;
 
-    protected String instanceName;
+    private final String instanceName;
 
     PropsContainer(
         String key,
         PropsContainer parent,
+        String instanceNameRef,
         PropsDatabaseDriver dbDriverRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -132,6 +133,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             parentContainer = parent;
             cachedPropMap = null;
         }
+        instanceName = instanceNameRef;
         propMap = new TreeMap<>();
         containerMap = new TreeMap<>();
 
@@ -790,10 +792,10 @@ public class PropsContainer extends AbsTransactionObject implements Props
         return pathComponents;
     }
 
-    @SuppressWarnings("unused") // for the throw of DatabaseException - which is needed by SerialPropsContainer
     private PropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException
     {
-        return new PropsContainer(key, con, dbDriver, transMgrProvider);
+        // subContainer do not need an instance name since they use the instance name of their parent container
+        return new PropsContainer(key, con, null, dbDriver, transMgrProvider);
     }
 
     private PropsContainer getRoot()
