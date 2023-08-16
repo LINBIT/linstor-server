@@ -7,7 +7,17 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CoreModule.ExternalFileMap;
+import com.linbit.linstor.core.CoreModule.KeyValueStoreMap;
+import com.linbit.linstor.core.CoreModule.NodesMap;
+import com.linbit.linstor.core.CoreModule.RemoteMap;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMapExtName;
+import com.linbit.linstor.core.CoreModule.ResourceGroupMap;
+import com.linbit.linstor.core.CoreModule.ScheduleMap;
+import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.DeviceManager;
+import com.linbit.linstor.core.StltExternalFileHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -58,6 +68,16 @@ public class StltApiCallHandlerUtils
     private final DeviceProviderMapper deviceProviderMapper;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<DeviceManager> devMgr;
+    private final ExternalFileMap extFilesMap;
+    private final StltExternalFileHandler stltExtFileHandler;
+    private final KeyValueStoreMap kvsMap;
+    private final NodesMap nodesMap;
+    private final RemoteMap remoteMap;
+    private final ResourceDefinitionMap rscDfnMap;
+    private final ResourceDefinitionMapExtName rscDfnExtNameMap;
+    private final ResourceGroupMap rscGrpMap;
+    private final ScheduleMap scheduleMap;
+    private final StorPoolDefinitionMap storPoolDfnMap;
 
     @Inject
     public StltApiCallHandlerUtils(
@@ -67,6 +87,16 @@ public class StltApiCallHandlerUtils
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        CoreModule.ExternalFileMap extFilesMapRef,
+        StltExternalFileHandler stltExtFileHandlerRef,
+        CoreModule.KeyValueStoreMap kvsMapRef,
+        CoreModule.NodesMap nodesMapRef,
+        CoreModule.RemoteMap remoteMapRef,
+        CoreModule.ResourceDefinitionMap rscDfnMapRef,
+        CoreModule.ResourceDefinitionMapExtName rscDfnExtNameMapRef,
+        CoreModule.ResourceGroupMap rscGrpMapRef,
+        CoreModule.ScheduleMap scheduleMapRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         StorageLayer storageLayerRef,
         DeviceProviderMapper deviceProviderMapperRef,
         LockGuardFactory lockGuardFactoryRef,
@@ -79,6 +109,16 @@ public class StltApiCallHandlerUtils
         nodesMapLock = nodesMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
+        extFilesMap = extFilesMapRef;
+        stltExtFileHandler = stltExtFileHandlerRef;
+        kvsMap = kvsMapRef;
+        nodesMap = nodesMapRef;
+        remoteMap = remoteMapRef;
+        rscDfnMap = rscDfnMapRef;
+        rscDfnExtNameMap = rscDfnExtNameMapRef;
+        rscGrpMap = rscGrpMapRef;
+        scheduleMap = scheduleMapRef;
+        storPoolDfnMap = storPoolDfnMapRef;
         storageLayer = storageLayerRef;
         deviceProviderMapper = deviceProviderMapperRef;
         lockGuardFactory = lockGuardFactoryRef;
@@ -283,5 +323,22 @@ public class StltApiCallHandlerUtils
         throws StorageException
     {
         return devMgr.get().getSpaceInfo(storPool, update);
+    }
+
+    /**
+     * This method assumes reconfiguration writelock is taken
+     */
+    public void clearCoreMaps()
+    {
+        extFilesMap.clear();
+        stltExtFileHandler.clear(); // also clear internal cache
+        kvsMap.clear();
+        nodesMap.clear();
+        remoteMap.clear();
+        rscDfnMap.clear();
+        rscDfnExtNameMap.clear();
+        rscGrpMap.clear();
+        scheduleMap.clear();
+        storPoolDfnMap.clear();
     }
 }

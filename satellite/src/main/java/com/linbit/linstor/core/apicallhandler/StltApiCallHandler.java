@@ -1,9 +1,7 @@
 package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
-import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ChildProcessHandler;
-import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -18,7 +16,6 @@ import com.linbit.linstor.api.pojo.S3RemotePojo;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
-import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.api.prop.WhitelistPropsReconfigurator;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.core.ApplicationLifecycleManager;
@@ -26,7 +23,6 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.DeviceManager;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.StltExternalFileHandler;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.UpdateMonitor;
 import com.linbit.linstor.core.apicallhandler.StltStorPoolApiCallHandler.ChangedData;
@@ -111,8 +107,6 @@ public class StltApiCallHandler
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
-    private final CoreModule.ExternalFileMap extFileMap;
-    private final CoreModule.RemoteMap remoteMap;
 
     private final TreeMap<Long, ApplyData> dataToApply;
 
@@ -123,17 +117,13 @@ public class StltApiCallHandler
     private final EventBroker eventBroker;
     private final DeviceProviderMapper deviceProviderMapper;
 
-    private final ExtCmdFactory extCmdFactory;
-
     private WhitelistPropsReconfigurator whiteListPropsReconfigurator;
-    private WhitelistProps whitelistProps;
 
     private final Provider<Long> apiCallId;
     private DrbdStateTracker drbdStateTracker;
     private DrbdEventPublisher drbdEventPublisher;
-    private DrbdVersion drbdVersion;
     private final BackupShippingMgr backupShippingMgr;
-    private final StltExternalFileHandler stltExtFileHandler;
+    private final StltApiCallHandlerUtils stltApiCallHandlerUtils;
 
     @Inject
     public StltApiCallHandler(
@@ -163,22 +153,17 @@ public class StltApiCallHandler
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
-        CoreModule.ExternalFileMap extFileMapRef,
-        CoreModule.RemoteMap remoteMapRef,
         Provider<TransactionMgr> transMgrProviderRef,
         StltSecurityObjects stltSecObjRef,
         StltCryptApiCallHelper vlmDfnHandlerRef,
         EventBroker eventBrokerRef,
-        WhitelistProps whiteListPropsRef,
         WhitelistPropsReconfigurator whiteListPropsReconfiguratorRef,
         @Named(ApiModule.API_CALL_ID) Provider<Long> apiCallIdRef,
         DrbdStateTracker drbdStateTrackerRef,
         DrbdEventPublisher drbdEventPublisherRef,
         DeviceProviderMapper deviceProviderMapperRef,
-        DrbdVersion drbdVersionRef,
-        ExtCmdFactory extCmdFactoryRef,
         BackupShippingMgr backupShippingMgrRef,
-        StltExternalFileHandler stltExtFileHandlerRef
+        StltApiCallHandlerUtils stltApiCallHandlerUtilsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -206,23 +191,18 @@ public class StltApiCallHandler
         nodesMap = nodesMapRef;
         rscDfnMap = rscDfnMapRef;
         storPoolDfnMap = storPoolDfnMapRef;
-        extFileMap = extFileMapRef;
-        remoteMap = remoteMapRef;
         transMgrProvider = transMgrProviderRef;
         stltSecObj = stltSecObjRef;
         vlmDfnHandler = vlmDfnHandlerRef;
         stltConf = satellitePropsRef;
         eventBroker = eventBrokerRef;
-        whitelistProps = whiteListPropsRef;
         whiteListPropsReconfigurator = whiteListPropsReconfiguratorRef;
         apiCallId = apiCallIdRef;
         drbdStateTracker = drbdStateTrackerRef;
         drbdEventPublisher = drbdEventPublisherRef;
         deviceProviderMapper = deviceProviderMapperRef;
-        drbdVersion = drbdVersionRef;
-        extCmdFactory = extCmdFactoryRef;
         backupShippingMgr = backupShippingMgrRef;
-        stltExtFileHandler = stltExtFileHandlerRef;
+        stltApiCallHandlerUtils = stltApiCallHandlerUtilsRef;
 
         dataToApply = new TreeMap<>();
     }
@@ -325,13 +305,7 @@ public class StltApiCallHandler
             {
                 // only apply this fullSync if it is newer than the last one
 
-                // clear all data
-                nodesMap.clear();
-                rscDfnMap.clear();
-                storPoolDfnMap.clear();
-                extFileMap.clear();
-                stltExtFileHandler.clear(); // also clear internal cache
-                remoteMap.clear();
+                stltApiCallHandlerUtils.clearCoreMaps();
 
                 for (NodePojo node : nodes)
                 {

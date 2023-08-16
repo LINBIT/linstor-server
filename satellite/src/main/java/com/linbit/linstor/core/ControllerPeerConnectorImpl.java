@@ -5,10 +5,10 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeSatelliteFactory;
-import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -29,8 +29,6 @@ import java.util.concurrent.locks.ReadWriteLock;
 public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 {
     private final CoreModule.NodesMap nodesMap;
-    private final CoreModule.ResourceDefinitionMap rscDfnMap;
-    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
 
     private final ReadWriteLock reconfigurationLock;
     private final ReadWriteLock nodesMapLock;
@@ -51,28 +49,25 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 
     // The currently connected controller peer (can be null)
     private Peer controllerPeer;
+    private final Provider<StltApiCallHandlerUtils> stltApiCallHandlerUtils;
 
     @Inject
     public ControllerPeerConnectorImpl(
         CoreModule.NodesMap nodesMapRef,
-        CoreModule.ResourceDefinitionMap rscDfnMapRef,
-        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext sysCtxRef,
-        StorPoolDefinitionSatelliteFactory storPoolDefinitionFactoryRef,
         NodeSatelliteFactory nodeFactoryRef,
         Provider<TransactionMgr> transMgrProviderRef,
         CommonSerializer commonSerializerRef,
-        StltConnTracker stltConnTracker
+        StltConnTracker stltConnTracker,
+        Provider<StltApiCallHandlerUtils> stltApiCallHandlerUtilsProviderRef
     )
     {
         nodesMap = nodesMapRef;
-        rscDfnMap = rscDfnMapRef;
-        storPoolDfnMap = storPoolDfnMapRef;
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
@@ -82,6 +77,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         nodeFactory = nodeFactoryRef;
         transMgrProvider = transMgrProviderRef;
         commonSerializer = commonSerializerRef;
+        stltApiCallHandlerUtils = stltApiCallHandlerUtilsProviderRef;
 
         // if we lose the connection to the current controller, we should set our ctrlPeer to null
         // otherwise, once the controller reconnects, we send our "old" controller an "OtherController"
@@ -149,10 +145,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
                     new Node.Flags[] {}
                 );
 
-                nodesMap.clear();
-                rscDfnMap.clear();
-                storPoolDfnMap.clear();
-                // TODO: make sure everything is cleared
+                stltApiCallHandlerUtils.get().clearCoreMaps();
 
                 nodesMap.put(localNode.getName(), localNode);
                 setControllerPeerToCurrentLocalNode();
