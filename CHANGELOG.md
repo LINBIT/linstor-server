@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fix "attempt to replace active transMgr" due to unclean core-maps
+- Reassigning resource-definition to new resource-group had no effect on satellite
 
 ## [1.24.1] - 2023-08-10
 

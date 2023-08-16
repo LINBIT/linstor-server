@@ -22,6 +22,7 @@ import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -233,7 +234,6 @@ class StltRscApiCallHandler
                 rscRawData.getRscDfnApi().getResourceGroup()
             );
 
-            Resource localRsc = null;
             if (rscDfn == null)
             {
                 errorReporter.logTrace("creating new rscDfn '%s'", rscName);
@@ -248,6 +248,27 @@ class StltRscApiCallHandler
                 checkUuid(rscDfn, rscRawData);
                 rscDfnToRegister = rscDfn;
             }
+
+            ResourceGroup oldRscGrp = rscDfn.getResourceGroup();
+            if (!oldRscGrp.equals(rscGrp))
+            {
+                // setRscGrp also calls oldRscGrp.remove(rscDfn); newRscGrp.add(rscDfn)
+                rscDfn.setResourceGroup(apiCtx, rscGrp);
+                ResourceGroupName oldRscGrpName = oldRscGrp.getName();
+                errorReporter.logInfo(
+                    "rscDfn '%s' moved from rscGrp '%s' to '%s'",
+                    rscName,
+                    oldRscGrpName.displayValue,
+                    rscGrp.getName().displayValue
+                );
+                if (oldRscGrp.getRscDfns(apiCtx).isEmpty())
+                {
+                    errorReporter.logTrace("deleting no longer used rscGrp '%s'", oldRscGrpName.displayValue);
+                    oldRscGrp.delete(apiCtx);
+                    rscGrpMap.remove(oldRscGrpName);
+                }
+            }
+
             Props rscDfnProps = rscDfn.getProps(apiCtx);
             rscDfnProps.map().putAll(rscRawData.getRscDfnProps());
             rscDfnProps.keySet().retainAll(rscRawData.getRscDfnProps().keySet());
@@ -309,6 +330,7 @@ class StltRscApiCallHandler
             final Set<Resource.ResourceKey> createdRscSet = new TreeSet<>();
             final Set<Resource.ResourceKey> updatedRscSet = new TreeSet<>();
             Iterator<Resource> rscIterator = rscDfn.iterateResource(apiCtx);
+            Resource localRsc = null;
             if (!rscIterator.hasNext())
             {
                 // our rscDfn is empty
