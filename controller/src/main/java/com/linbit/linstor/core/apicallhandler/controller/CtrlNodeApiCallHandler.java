@@ -1477,7 +1477,12 @@ public class CtrlNodeApiCallHandler
 
                             flux = flux.concatWith(Flux.concat(autoHelperCtx.additionalFluxList))
                                 .concatWith(
-                                    this.ctrlSatelliteUpdateCaller.updateSatellites(res, Flux.empty()).transform(
+                                    this.ctrlSatelliteUpdateCaller.updateSatellites(
+                                        res.getResourceDefinition(),
+                                        CtrlSatelliteUpdateCaller.notConnectedWarn(),
+                                        Flux.empty()
+                                    )
+                                        .transform(
                                         responses -> CtrlResponseUtils.combineResponses(
                                             responses,
                                             res.getResourceDefinition().getName(),
