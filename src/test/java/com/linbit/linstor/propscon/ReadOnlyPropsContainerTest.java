@@ -1,21 +1,10 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.dbdrivers.SatellitePropDriver;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_AMOUNT;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_KEY;
@@ -29,6 +18,19 @@ import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateEntries;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateKeys;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateValues;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.glue;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -58,7 +60,7 @@ public class ReadOnlyPropsContainerTest
         transactionMgr = new SatelliteTransactionMgr();
 
         propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver(), () -> transactionMgr);
-        writableProp = propsContainerFactory.getInstance(TEST_INSTANCE_NAME);
+        writableProp = propsContainerFactory.getInstance(TEST_INSTANCE_NAME, null, LinStorObject.CONTROLLER);
         roProp = new ReadOnlyProps(writableProp);
 
         fillProps(writableProp, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
@@ -990,7 +992,11 @@ public class ReadOnlyPropsContainerTest
         clone.remove(FIRST_KEY + "0");
         assertFalse(roMap.equals(clone));
 
-        PropsContainer container = propsContainerFactory.getInstance(TEST_INSTANCE_NAME);
+        PropsContainer container = propsContainerFactory.getInstance(
+            TEST_INSTANCE_NAME,
+            null,
+            LinStorObject.CONTROLLER
+        );
         fillProps(container, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         assertTrue(roMap.equals(container.map()));
     }

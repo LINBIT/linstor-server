@@ -9,6 +9,7 @@ import com.linbit.drbd.md.MetaData;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.api.interfaces.VlmDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.VlmDfnPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -119,9 +120,12 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
             volSize,
             dbDriver.getVolumeSizeDriver()
         );
+        vlmDfnKey = new Key(this);
 
         vlmDfnProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(resDfnRef.getName(), volumeNr)
+            PropsContainer.buildPath(resDfnRef.getName(), volumeNr),
+            toStringImpl(),
+            LinStorObject.VOLUME_DEFINITION
         );
 
         layerStorage = transObjFactory.createTransactionMap(layerDataMapRef, null);
@@ -148,7 +152,6 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
             cryptKey
         );
 
-        vlmDfnKey = new Key(this);
     }
 
     public void recheckVolumeSize(AccessContext accCtxRef)

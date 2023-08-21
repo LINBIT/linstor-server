@@ -6,6 +6,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiConsts.ConnectionStatus;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.NetInterfaceApi;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -182,7 +183,9 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
         storPoolMap = transObjFactory.createTransactionMap(storPoolMapRef, null);
 
         nodeProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(nameRef)
+            PropsContainer.buildPath(nameRef),
+            toStringImpl(),
+            LinStorObject.NODE
         );
         nodeConnections = transObjFactory.createTransactionMap(nodeConnMapRef, null);
 

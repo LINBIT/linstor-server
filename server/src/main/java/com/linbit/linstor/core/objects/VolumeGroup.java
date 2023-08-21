@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.api.pojo.VlmGrpPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -61,6 +62,7 @@ public class VolumeGroup extends AbsCoreObj<VolumeGroup> implements ProtectedObj
         rscGrp = rscGrpRef;
 
         dbDriver = dbDriverRef;
+        vlmGrpKey = new Key(this);
 
         flags = transObjFactoryRef.createStateFlagsImpl(
             rscGrpRef.getObjProt(),
@@ -71,7 +73,9 @@ public class VolumeGroup extends AbsCoreObj<VolumeGroup> implements ProtectedObj
         );
 
         vlmGrpProps = propsContainerFactoryRef.getInstance(
-            PropsContainer.buildPath(rscGrp.getName(), vlmNr)
+            PropsContainer.buildPath(rscGrp.getName(), vlmNr),
+            toStringImpl(),
+            LinStorObject.VOLUME_GROUP
         );
 
         transObjs = Arrays.asList(
@@ -81,7 +85,6 @@ public class VolumeGroup extends AbsCoreObj<VolumeGroup> implements ProtectedObj
             deleted
         );
 
-        vlmGrpKey = new Key(this);
     }
 
     @Override

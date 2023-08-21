@@ -3,6 +3,7 @@ package com.linbit.linstor.utils;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -252,7 +253,8 @@ public class NameShortenerTest
         ResourceName resName = new ResourceName(rscNameRef);
         Mockito.when(mockedRscDfn.getName()).thenReturn(resName);
         String propsPath = PropsContainer.buildPath(resName);
-        Mockito.when(mockedRscDfn.getProps(Mockito.any())).thenReturn(propsContainerFactory.create(propsPath));
+        Mockito.when(mockedRscDfn.getProps(Mockito.any()))
+            .thenReturn(propsContainerFactory.create(propsPath, null, LinStorObject.RESOURCE_DEFINITION));
         return mockedRscDfn;
     }
 
@@ -263,7 +265,8 @@ public class NameShortenerTest
         VolumeNumber vlmNr = new VolumeNumber(vlmNrInt);
         Mockito.when(mockedVlmDfn.getVolumeNumber()).thenReturn(vlmNr);
         String propsPath = PropsContainer.buildPath(rscDfnRef.getName(), vlmNr);
-        Mockito.when(mockedVlmDfn.getProps(Mockito.any())).thenReturn(propsContainerFactory.create(propsPath));
+        Mockito.when(mockedVlmDfn.getProps(Mockito.any()))
+            .thenReturn(propsContainerFactory.create(propsPath, null, LinStorObject.VOLUME_DEFINITION));
         Mockito.when(rscDfnRef.getVolumeDfnCount(Mockito.any())).thenReturn(1);
         Mockito.when(rscDfnRef.getVolumeDfn(Mockito.any(), Mockito.eq(vlmNr))).thenReturn(mockedVlmDfn);
         return mockedVlmDfn;

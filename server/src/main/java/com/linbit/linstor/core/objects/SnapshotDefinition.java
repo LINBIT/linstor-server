@@ -5,6 +5,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.SnapshotDfnListItemPojo;
 import com.linbit.linstor.api.pojo.SnapshotDfnPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.SnapshotApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
@@ -108,8 +109,12 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         snapshotName = snapshotNameRef;
         dbDriver = dbDriverRef;
 
+        snapDfnKey = new Key(this);
+
         snapshotDfnProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(resourceDfn.getName(), snapshotName)
+            PropsContainer.buildPath(resourceDfn.getName(), snapshotName),
+            toStringImpl(),
+            LinStorObject.SNAPSHOT_DEFINITION
         );
 
         flags = transObjFactory.createStateFlagsImpl(
@@ -143,7 +148,6 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
             deleted,
             inCreation
         );
-        snapDfnKey = new Key(this);
     }
 
     @Override

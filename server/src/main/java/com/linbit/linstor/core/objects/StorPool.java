@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -106,9 +107,12 @@ public class StorPool extends AbsCoreObj<StorPool>
         externalLocking = externalLockingRef;
         vlmProviderMap = transObjFactory.createTransactionMap(volumeMapRef, null);
         snapVlmProviderMap = transObjFactory.createTransactionMap(snapshotVolumeMapRef, null);
+        storPoolKey = new Key(this);
 
         props = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(storPoolDef.getName(), node.getName())
+            PropsContainer.buildPath(storPoolDef.getName(), node.getName()),
+            toStringImpl(),
+            LinStorObject.STORAGEPOOL
         );
 
         final boolean isFileProviderKind = providerKindRef == DeviceProviderKind.FILE ||
@@ -132,7 +136,6 @@ public class StorPool extends AbsCoreObj<StorPool>
             freeSpaceTracker
         );
         activateTransMgr();
-        storPoolKey = new Key(this);
     }
 
     public StorPoolName getName()

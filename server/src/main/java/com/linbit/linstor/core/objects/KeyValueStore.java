@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.api.pojo.KeyValueStorePojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.KvsApi;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -53,7 +54,9 @@ public class KeyValueStore extends AbsCoreObj<KeyValueStore> implements Protecte
         driver = driverRef;
 
         props = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(kvsNameRef)
+            PropsContainer.buildPath(kvsNameRef),
+            toStringImpl(),
+            LinStorObject.KVS
         );
 
         transObjs = Arrays.asList(

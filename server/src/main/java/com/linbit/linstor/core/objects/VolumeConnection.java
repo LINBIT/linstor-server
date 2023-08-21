@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -59,13 +60,16 @@ public class VolumeConnection extends AbsCoreObj<VolumeConnection>
 
         NodeName sourceNodeName = sourceVolumeRef.getAbsResource().getNode().getName();
         NodeName targetNodeName = targetVolumeRef.getAbsResource().getNode().getName();
+        vlmConKey = new Key(this);
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 sourceNodeName,
                 targetNodeName,
                 sourceVolumeRef.getResourceDefinition().getName(),
                 sourceVolumeRef.getVolumeDefinition().getVolumeNumber()
-            )
+            ),
+            toStringImpl(),
+            LinStorObject.VOLUME_CONN
         );
 
         transObjs = Arrays.asList(
@@ -74,7 +78,6 @@ public class VolumeConnection extends AbsCoreObj<VolumeConnection>
             props,
             deleted
         );
-        vlmConKey = new Key(this);
     }
 
     public static VolumeConnection createWithSorting(

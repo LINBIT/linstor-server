@@ -4,6 +4,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.RscDfnLayerDataApi;
 import com.linbit.linstor.api.pojo.RscDfnPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -136,7 +137,9 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         rscGrp = transObjFactory.createTransactionSimpleObject(this, rscGrpRef, dbDriver.getRscGrpDriver());
 
         rscDfnProps = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(resName)
+            PropsContainer.buildPath(resName),
+            toStringImpl(),
+            LinStorObject.RESOURCE_DEFINITION
         );
         flags = transObjFactory.createStateFlagsImpl(
             objProt,
@@ -642,7 +645,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
     @Override
     public String toStringImpl()
     {
-        return "Rsc: '" + resourceName + "'";
+        return "RscDfn: '" + resourceName + "'";
     }
 
     @Override

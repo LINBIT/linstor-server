@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.api.pojo.StorPoolDfnPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -64,7 +65,9 @@ public class StorPoolDefinition extends AbsCoreObj<StorPoolDefinition> implement
         storPools = transObjFactory.createTransactionMap(storPoolsMapRef, null);
 
         props = propsContainerFactory.getInstance(
-            PropsContainer.buildPath(nameRef)
+            PropsContainer.buildPath(nameRef),
+            toStringImpl(),
+            LinStorObject.STORAGEPOOL_DEFINITION
         );
 
         transObjs = Arrays.<TransactionObject>asList(

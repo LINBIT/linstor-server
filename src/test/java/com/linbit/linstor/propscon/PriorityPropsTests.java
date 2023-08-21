@@ -1,6 +1,7 @@
 package com.linbit.linstor.propscon;
 
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.security.GenericDbBase;
 
 import java.util.Map;
@@ -24,9 +25,9 @@ public class PriorityPropsTests extends GenericDbBase
     {
         super.setUpAndEnterScope();
 
-        prop1 = propsContainerFactory.getInstance("testInstanceName1");
-        prop2 = propsContainerFactory.getInstance("testInstanceName2");
-        prop3 = propsContainerFactory.getInstance("testInstanceName3");
+        prop1 = propsContainerFactory.getInstance("testInstanceName1", null, LinStorObject.CONTROLLER);
+        prop2 = propsContainerFactory.getInstance("testInstanceName2", null, LinStorObject.CONTROLLER);
+        prop3 = propsContainerFactory.getInstance("testInstanceName3", null, LinStorObject.CONTROLLER);
 
         prop1.setProp("/a/1", "1");
         prop1.setProp("/b/1", "2");

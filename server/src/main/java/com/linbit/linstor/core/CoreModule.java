@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -57,8 +58,6 @@ public class CoreModule extends AbstractModule
     public static final String REMOTE_MAP_LOCK = "remoteMapLock";
     public static final String SCHEDULE_MAP_LOCK = "scheduleMapLock";
 
-    private static final String DB_SATELLITE_PROPSCON_INSTANCE_NAME = "STLTCFG";
-
     @Override
     protected void configure()
     {
@@ -110,7 +109,11 @@ public class CoreModule extends AbstractModule
     @Named(LinStor.SATELLITE_PROPS)
     public Props createSatellitePropsContainer(PropsContainerFactory propsContainerFactory)
     {
-        return propsContainerFactory.create(DB_SATELLITE_PROPSCON_INSTANCE_NAME);
+        return propsContainerFactory.create(
+            LinStorObject.SATELLITE.path,
+            LinStorObject.CONTROLLER.toString(), // use ctrl because for the user there is no difference
+            LinStorObject.SATELLITE
+        );
     }
 
     public interface NodesMap extends Map<NodeName, Node>

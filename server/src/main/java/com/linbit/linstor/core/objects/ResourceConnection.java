@@ -6,6 +6,7 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.api.pojo.RscConnPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -108,7 +109,9 @@ public class ResourceConnection extends AbsCoreObj<ResourceConnection>
                 connectionKey.getSourceNodeName(),
                 connectionKey.getTargetNodeName(),
                 sourceResourceRef.getResourceDefinition().getName()
-            )
+            ),
+            toStringImpl(),
+            LinStorObject.RSC_CONN
         );
 
         flags = transObjFactory.createStateFlagsImpl(

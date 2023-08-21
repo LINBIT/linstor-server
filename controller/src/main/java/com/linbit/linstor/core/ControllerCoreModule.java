@@ -1,9 +1,6 @@
 package com.linbit.linstor.core;
 
-import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
-import com.google.inject.name.Names;
-
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.propscon.Props;
@@ -19,9 +16,12 @@ import javax.inject.Singleton;
 import java.util.Map;
 import java.util.TreeMap;
 
+import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.name.Names;
+
 public class ControllerCoreModule extends AbstractModule
 {
-    private static final String DB_CONTROLLER_PROPSCON_INSTANCE_NAME = "/CTRLCFG";
 
     @Override
     protected void configure()
@@ -37,7 +37,11 @@ public class ControllerCoreModule extends AbstractModule
     @Named(LinStor.CONTROLLER_PROPS)
     public Props createControllerPropsContainer(PropsContainerFactory propsContainerFactory)
     {
-        return propsContainerFactory.create(DB_CONTROLLER_PROPSCON_INSTANCE_NAME);
+        return propsContainerFactory.create(
+            LinStorObject.CONTROLLER.path,
+            LinStorObject.CONTROLLER.toString(),
+            LinStorObject.CONTROLLER
+        );
     }
 
     public interface FreeSpaceMgrMap extends Map<SharedStorPoolName, FreeSpaceMgr>

@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.VlmPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -47,6 +48,8 @@ public class Volume extends AbsVolume<Resource>
     {
         Map<Key, VolumeConnection> getVolumeConnections();
     }
+
+    private static final String TO_STRING_FORMAT = "Node: '%s', Rsc: '%s', VlmNr: '%s'";
 
     // Reference to the resource definition that defines the resource this volume belongs to
     private final ResourceDefinition resourceDfn;
@@ -92,7 +95,14 @@ public class Volume extends AbsVolume<Resource>
                     rscRef.getNode().getName(),
                     rscRef.getResourceDefinition().getName(),
                     vlmDfnRef.getVolumeNumber()
-                )
+                ),
+                String.format(
+                    TO_STRING_FORMAT,
+                    rscRef.getNode().getName(),
+                    rscRef.getResourceDefinition().getName(),
+                    vlmDfnRef.getVolumeNumber()
+                ),
+                LinStorObject.VOLUME
             ),
             transObjFactory,
             transMgrProviderRef
@@ -333,9 +343,7 @@ public class Volume extends AbsVolume<Resource>
     @Override
     public String toStringImpl()
     {
-        return "Node: '" + vlmKey.nodeName + "', " +
-            "Rsc: '" + vlmKey.resourceName + "', " +
-            "VlmNr: '" + vlmKey.volumeNumber + "'";
+        return String.format(TO_STRING_FORMAT, vlmKey.nodeName, vlmKey.resourceName, vlmKey.volumeNumber);
     }
 
     @Override

@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.api.pojo.NodePojo;
 import com.linbit.linstor.api.pojo.NodePojo.NodeConnPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeConnectionDatabaseDriver;
@@ -58,12 +59,15 @@ public class NodeConnection extends AbsCoreObj<NodeConnection>
         dbDriver = dbDriverRef;
         sourceNode = node1;
         targetNode = node2;
+        nodeConnKey = new Key(this);
 
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 sourceNode.getName(),
                 targetNode.getName()
-            )
+            ),
+            toStringImpl(),
+            LinStorObject.NODE_CONN
         );
 
         transObjs = Arrays.asList(
@@ -72,7 +76,6 @@ public class NodeConnection extends AbsCoreObj<NodeConnection>
             props,
             deleted
         );
-        nodeConnKey = new Key(this);
     }
 
     public static NodeConnection createWithSorting(

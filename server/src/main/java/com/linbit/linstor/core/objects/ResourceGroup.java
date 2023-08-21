@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
@@ -99,7 +100,9 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         );
 
         rscDfnGrpProps = propsContainerFactoryRef.getInstance(
-            PropsContainer.buildPath(rscGrpNameRef)
+            PropsContainer.buildPath(rscGrpNameRef),
+            toStringImpl(),
+            LinStorObject.RESOURCE_GROUP
         );
         vlmMap = transObjFactory.createTransactionMap(vlmGrpMapRef, null);
 

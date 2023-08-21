@@ -4,6 +4,7 @@ import com.linbit.ErrorCheck;
 import com.linbit.ImplementationError;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorDBRuntimeException;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.identifier.KeyValueStoreName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
@@ -55,24 +56,6 @@ import java.util.stream.Collectors;
  */
 public class PropsContainer extends AbsTransactionObject implements Props
 {
-    private static final String PATH_STOR_POOL                = "/storPoolConf/";
-    private static final String PATH_STOR_POOL_DFN            = "/storPoolDfnConf/";
-    private static final String PATH_NODES                    = "/nodes/";
-    private static final String PATH_RESOURCE_DEFINITIONS     = "/resourcedefinitions/";
-    private static final String PATH_RESOURCE_GROUPS          = "/resourcegroups/";
-    private static final String PATH_RESOURCES                = "/resources/";
-    private static final String PATH_VOLUME_DEFINITIONS       = "/volumedefinitions/";
-    private static final String PATH_VOLUME_GROUPS            = "/volumegroups/";
-    private static final String PATH_VOLUMES                  = "/volumes/";
-    private static final String PATH_NODE_CON_DEFINITIONS     = "/conDfn/nodes/";
-    private static final String PATH_RESOURCE_CON_DEFINITIONS = "/conDfn/resources/";
-    private static final String PATH_VOLUME_CON_DEFINITIONS   = "/conDfn/volume/";
-    private static final String PATH_SNAPSHOTS = "/snapshots/";
-    // private static final String PATH_SNAPSHOT_VOLUMES = "/snapshotvolumes/";
-    private static final String PATH_SNAPSHOT_DEFINITIONS     = "/snapshotdefinitions/";
-    private static final String PATH_SNAPSHOT_VOLUME_DEFINITIONS = "/snapshotvolumedefinitions/";
-    private static final String PATH_KVS                      = "/keyvaluestores/";
-
     public static final int PATH_MAX_LENGTH = 256;
 
     private PropsContainer rootContainer;
@@ -95,11 +78,15 @@ public class PropsContainer extends AbsTransactionObject implements Props
     private Map<String, String> cachedPropMap;
 
     private final String instanceName;
+    private final String description;
+    private final LinStorObject type;
 
     PropsContainer(
         String key,
         PropsContainer parent,
         String instanceNameRef,
+        String descriptionRef,
+        LinStorObject typeRef,
         PropsDatabaseDriver dbDriverRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -134,6 +121,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
             cachedPropMap = null;
         }
         instanceName = instanceNameRef;
+        description = descriptionRef;
+        type = typeRef;
         propMap = new TreeMap<>();
         containerMap = new TreeMap<>();
 
@@ -795,7 +784,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
     private PropsContainer createSubContainer(String key, PropsContainer con) throws InvalidKeyException
     {
         // subContainer do not need an instance name since they use the instance name of their parent container
-        return new PropsContainer(key, con, null, dbDriver, transMgrProvider);
+        return new PropsContainer(key, con, null, con.description, con.type, dbDriver, transMgrProvider);
     }
 
     private PropsContainer getRoot()
@@ -2197,7 +2186,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(StorPoolName storPoolName, NodeName nodeName)
     {
-        return PATH_STOR_POOL + nodeName.value +
+        return LinStorObject.STORAGEPOOL.path + nodeName.value +
                 PATH_SEPARATOR + storPoolName.value;
     }
 
@@ -2206,7 +2195,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(StorPoolName storPoolName)
     {
-        return PATH_STOR_POOL_DFN + storPoolName.value;
+        return LinStorObject.STORAGEPOOL_DEFINITION.path + storPoolName.value;
     }
 
     /**
@@ -2214,7 +2203,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(NodeName nodeName)
     {
-        return PATH_NODES + nodeName.value;
+        return LinStorObject.NODE.path + nodeName.value;
     }
 
     /**
@@ -2222,7 +2211,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(ResourceName resName)
     {
-        return PATH_RESOURCE_DEFINITIONS + resName.value;
+        return LinStorObject.RESOURCE_DEFINITION.path + resName.value;
     }
 
     /**
@@ -2230,7 +2219,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(ResourceGroupName resDfnGrpName)
     {
-        return PATH_RESOURCE_GROUPS + resDfnGrpName.value;
+        return LinStorObject.RESOURCE_GROUP.path + resDfnGrpName.value;
     }
 
     /**
@@ -2238,7 +2227,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(NodeName nodeName, ResourceName resName)
     {
-        return PATH_RESOURCES + nodeName.value +
+        return LinStorObject.RESOURCE.path + nodeName.value +
                 PATH_SEPARATOR + resName.value;
     }
 
@@ -2247,16 +2236,16 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(ResourceName resName, VolumeNumber volNr)
     {
-        return PATH_VOLUME_DEFINITIONS + resName.value +
+        return LinStorObject.VOLUME_DEFINITION.path + resName.value +
                 PATH_SEPARATOR + volNr.value;
     }
 
     /**
-     * PropsCon-path for VolumeDefinitionGroupData
+     * PropsCon-path for VolumeGroup
      */
     public static String buildPath(ResourceGroupName resGrpName, VolumeNumber volNr)
     {
-        return PATH_VOLUME_GROUPS + resGrpName.value +
+        return LinStorObject.VOLUME_GROUP.path + resGrpName.value +
             PATH_SEPARATOR + volNr.value;
     }
 
@@ -2265,7 +2254,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(NodeName nodeName, ResourceName resName, VolumeNumber volNr)
     {
-        return PATH_VOLUMES + nodeName.value +
+        return LinStorObject.VOLUME.path + nodeName.value +
                 PATH_SEPARATOR + resName.value +
                 PATH_SEPARATOR + volNr.value;
     }
@@ -2275,7 +2264,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(NodeName sourceName, NodeName targetName)
     {
-        return PATH_NODE_CON_DEFINITIONS + sourceName.value +
+        return LinStorObject.NODE_CONN.path + sourceName.value +
                 PATH_SEPARATOR + targetName.value;
     }
 
@@ -2284,7 +2273,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(NodeName sourceName, NodeName targetName, ResourceName resName)
     {
-        return PATH_RESOURCE_CON_DEFINITIONS + sourceName.value +
+        return LinStorObject.RSC_CONN.path + sourceName.value +
                 PATH_SEPARATOR + targetName.value +
                 PATH_SEPARATOR + resName.value;
     }
@@ -2299,7 +2288,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
             VolumeNumber volNr
     )
     {
-        return PATH_VOLUME_CON_DEFINITIONS + sourceName.value +
+        return LinStorObject.VOLUME_CONN.path + sourceName.value +
                 PATH_SEPARATOR + targetName.value +
                 PATH_SEPARATOR + resName.value +
                 PATH_SEPARATOR + volNr.value;
@@ -2310,7 +2299,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(NodeName nodeName, ResourceName rscName, SnapshotName snapName)
     {
-        return PATH_SNAPSHOTS + nodeName.value +
+        return LinStorObject.SNAPSHOT.path + nodeName.value +
             PATH_SEPARATOR + rscName.value +
             PATH_SEPARATOR + snapName.value;
     }
@@ -2320,7 +2309,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(NodeName nodeName, ResourceName rscName, SnapshotName snapName, VolumeNumber vlmNr)
     {
-        return PATH_SNAPSHOTS + nodeName.value +
+        return LinStorObject.SNAPSHOT_VOLUME.path + nodeName.value +
             PATH_SEPARATOR + rscName.value +
             PATH_SEPARATOR + snapName.value +
             PATH_SEPARATOR + vlmNr.value;
@@ -2331,7 +2320,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(ResourceName resName, SnapshotName snapshotName)
     {
-        return PATH_SNAPSHOT_DEFINITIONS + resName.value +
+        return LinStorObject.SNAPSHOT_DEFINITION.path + resName.value +
                 PATH_SEPARATOR + snapshotName.value;
     }
 
@@ -2340,14 +2329,14 @@ public class PropsContainer extends AbsTransactionObject implements Props
      */
     public static String buildPath(ResourceName resName, SnapshotName snapshotName, VolumeNumber volNr)
     {
-        return PATH_SNAPSHOT_VOLUME_DEFINITIONS + resName.value +
+        return LinStorObject.SNAPSHOT_VOLUME_DEFINITION.path + resName.value +
                 PATH_SEPARATOR + snapshotName.value +
                 PATH_SEPARATOR + volNr.value;
     }
 
     public static String buildPath(KeyValueStoreName kvsName)
     {
-        return PATH_KVS + kvsName.value;
+        return LinStorObject.KVS.path + kvsName.value;
     }
 
     @Override

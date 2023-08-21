@@ -3,6 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.pojo.SnapshotVlmPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -29,6 +30,7 @@ import java.util.stream.Stream;
 
 public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement SnapshotVolumeConnections
 {
+    private static final String TO_STRING_FORMAT = "Node: '%s', Resource: '%s', Snapshot: '%s', VlmNr: '%s'";
     private final SnapshotVolumeDefinition snapshotVolumeDefinition;
 
     private final SnapshotVolumeDatabaseDriver dbDriver;
@@ -58,7 +60,15 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
                     snapshotRef.getResourceName(),
                     snapshotRef.getSnapshotName(),
                     snapshotVolumeDefinitionRef.getVolumeNumber()
-                )
+                ),
+                String.format(
+                    TO_STRING_FORMAT,
+                    snapshotRef.getNodeName(),
+                    snapshotRef.getResourceName(),
+                    snapshotRef.getSnapshotName(),
+                    snapshotVolumeDefinitionRef.getVolumeNumber()
+                ),
+                LinStorObject.SNAPSHOT_VOLUME
             ),
             transObjFactory,
             transMgrProviderRef
@@ -120,8 +130,13 @@ public class SnapshotVolume extends AbsVolume<Snapshot> // TODO implement Snapsh
     @Override
     public String toStringImpl()
     {
-        return "Resource: '" + snapVlmKey.rscName + "', Node: '" + snapVlmKey.nodeName + "', Snapshot: '" +
-            snapVlmKey.snapName + "', VlmNr: '" + snapVlmKey.vlmNr + "'";
+        return String.format(
+            TO_STRING_FORMAT,
+            snapVlmKey.nodeName,
+            snapVlmKey.rscName,
+            snapVlmKey.snapName,
+            snapVlmKey.vlmNr
+        );
     }
 
     @Override

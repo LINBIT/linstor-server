@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
@@ -50,6 +51,8 @@ public class Resource extends AbsResource<Resource>
         Map<VolumeNumber, Volume> getVlmMap();
     }
 
+    private static final String TO_STRING_FORMAT = "Node: '%s', Rsc: '%s'";
+
     // Reference to the resource definition
     private final ResourceDefinition resourceDfn;
 
@@ -94,7 +97,9 @@ public class Resource extends AbsResource<Resource>
                 PropsContainer.buildPath(
                     nodeRef.getName(),
                     resDfnRef.getName()
-                )
+                ),
+                String.format(TO_STRING_FORMAT, nodeRef.getName(), resDfnRef.getName()),
+                LinStorObject.RESOURCE
             ),
             transMgrProviderRef,
             transObjFactory,
@@ -448,8 +453,7 @@ public class Resource extends AbsResource<Resource>
     @Override
     public String toStringImpl()
     {
-        return "Node: '" + rscKey.nodeName + "', " +
-            "Rsc: '" + rscKey.resourceName + "'";
+        return String.format(TO_STRING_FORMAT, rscKey.nodeName, rscKey.resourceName);
     }
 
     public static String getStringId(Resource rsc)

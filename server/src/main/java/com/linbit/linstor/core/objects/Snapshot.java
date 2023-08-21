@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.pojo.SnapshotPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.SnapshotApi;
 import com.linbit.linstor.core.apis.SnapshotVolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -45,6 +46,8 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
         Map<VolumeNumber, SnapshotVolume> getSnapshotVlmMap();
     }
 
+    private static final String TO_STRING_FORMAT = "Node: '%s', Rsc: '%s', Snapshot: '%s'";
+
     private final SnapshotDefinition snapshotDfn;
 
     private final SnapshotDatabaseDriver dbDriver;
@@ -84,7 +87,14 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
                     nodeRef.getName(),
                     snapshotDfnRef.getResourceName(),
                     snapshotDfnRef.getName()
-                )
+                ),
+                String.format(
+                    TO_STRING_FORMAT,
+                    nodeRef.getName(),
+                    snapshotDfnRef.getResourceName(),
+                    snapshotDfnRef.getName()
+                ),
+                LinStorObject.SNAPSHOT
             ),
             transMgrProviderRef,
             transObjFactory,
@@ -271,8 +281,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
     @Override
     public String toStringImpl()
     {
-        return "Node: '" + snapKey.nodeName + "', Rsc: '" + snapKey.resourceName + "', Snapshot: '" +
-            snapKey.snapshotName + "'";
+        return String.format(TO_STRING_FORMAT, snapKey.nodeName, snapKey.resourceName, snapKey.snapshotName);
     }
 
     @Override

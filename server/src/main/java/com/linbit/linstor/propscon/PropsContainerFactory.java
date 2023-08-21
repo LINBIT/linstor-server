@@ -1,6 +1,7 @@
 package com.linbit.linstor.propscon;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.PropsDatabaseDriver;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -24,9 +25,10 @@ public class PropsContainerFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public PropsContainer getInstance(String instanceName) throws DatabaseException
+    public PropsContainer getInstance(String instanceName, String description, LinStorObject type)
+        throws DatabaseException
     {
-        PropsContainer container = create(instanceName);
+        PropsContainer container = create(instanceName, description, type);
 
         try
         {
@@ -40,12 +42,12 @@ public class PropsContainerFactory
         return container;
     }
 
-    public PropsContainer create(String instanceName)
+    public PropsContainer create(String instanceName, String description, LinStorObject type)
     {
         PropsContainer container;
         try
         {
-            container = new PropsContainer(null, null, instanceName, dbDriver, transMgrProvider);
+            container = new PropsContainer(null, null, instanceName, description, type, dbDriver, transMgrProvider);
         }
         catch (InvalidKeyException keyExc)
         {

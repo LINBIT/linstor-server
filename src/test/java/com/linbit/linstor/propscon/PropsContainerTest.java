@@ -1,5 +1,6 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.security.GenericDbBase;
 
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.FIRST_AMOUNT;
@@ -51,7 +52,7 @@ public class PropsContainerTest extends GenericDbBase
     {
         super.setUpAndEnterScope();
 
-        root = propsContainerFactory.getInstance(TEST_INSTANCE_NAME);
+        root = propsContainerFactory.getInstance(TEST_INSTANCE_NAME, null, LinStorObject.CONTROLLER);
 
         fillProps(root, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 
@@ -1754,7 +1755,11 @@ public class PropsContainerTest extends GenericDbBase
         clone.remove(FIRST_KEY + "0");
         assertFalse(rootMap.equals(clone));
 
-        PropsContainer container = propsContainerFactory.getInstance("dummyTestInstance");
+        PropsContainer container = propsContainerFactory.getInstance(
+            "dummyTestInstance",
+            null,
+            LinStorObject.CONTROLLER
+        );
         fillProps(container, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
         assertTrue(rootMap.equals(container.map()));
     }

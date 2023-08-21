@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.drbd.md.MdException;
 import com.linbit.linstor.api.pojo.SnapshotVlmDfnPojo;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.apis.SnapshotVolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -91,13 +92,16 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
         snapshotDfn = snapshotDfnRef;
         vlmNr = vlmNrRef;
         dbDriver = dbDriverRef;
+        snapVlmDfnKey = new Key(this);
 
         snapshotVlmDfnProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(
                 snapshotDfnRef.getResourceName(),
                 snapshotDfnRef.getName(),
                 vlmNrRef
-            )
+            ),
+            toStringImpl(),
+            LinStorObject.SNAPSHOT_VOLUME_DEFINITION
         );
 
         flags = transObjFactory.createStateFlagsImpl(
@@ -124,7 +128,6 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
             snapshotVlmMap,
             deleted
         );
-        snapVlmDfnKey = new Key(this);
     }
 
     public SnapshotDefinition getSnapshotDefinition()

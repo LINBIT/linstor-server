@@ -3,6 +3,7 @@ package com.linbit.linstor;
 import com.linbit.ImplementationError;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.api.prop.WhitelistProps;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -131,7 +132,8 @@ public class ConfFileBuilderTest
     private ConfFileBuilder confFileBuilder;
     private ResourceConnection rscConn;
     private NodeConnection nodeConn;
-    private PropsContainer props;
+    private PropsContainer rscConnProps;
+    private PropsContainer nodeConnProps;
     private Provider<TransactionMgr> transMgrProvider;
     private TransactionObjectFactory transObjFactory;
 
@@ -159,7 +161,8 @@ public class ConfFileBuilderTest
         transObjFactory = new TransactionObjectFactory(transMgrProvider);
         PropsContainerFactory propsContainerFactory = new PropsContainerFactory(
                 new SatellitePropDriver(), transMgrProvider);
-        props = propsContainerFactory.getInstance("TESTINSTANCE");
+        rscConnProps = propsContainerFactory.getInstance("TESTINSTANCE", null, LinStorObject.RSC_CONN);
+        nodeConnProps = propsContainerFactory.getInstance("TESTINSTANCE", null, LinStorObject.NODE_CONN);
 
         mockedTcpPool = Mockito.mock(DynamicNumberPool.class);
         mockedMinorPool = Mockito.mock(DynamicNumberPool.class);
@@ -175,14 +178,14 @@ public class ConfFileBuilderTest
         when(peerRscData.getAbsResource().getNode().getNodeConnection(
                 accessContext, localRscData.getAbsResource().getNode()))
             .thenReturn(nodeConn);
-        when(rscConn.getProps(accessContext)).thenReturn(props);
-        when(nodeConn.getProps(accessContext)).thenReturn(props);
+        when(rscConn.getProps(accessContext)).thenReturn(rscConnProps);
+        when(nodeConn.getProps(accessContext)).thenReturn(nodeConnProps);
         when(localRscData.getAbsResource().getAbsResourceConnection(accessContext, peerRscData.getAbsResource()))
             .thenReturn(rscConn);
         when(peerRscData.getAbsResource().getAbsResourceConnection(accessContext, localRscData.getAbsResource()))
             .thenReturn(rscConn);
 
-        stltProps = propsContainerFactory.getInstance("STLT_CFG");
+        stltProps = propsContainerFactory.getInstance("STLT_CFG", null, LinStorObject.SATELLITE);
         drbdVersion = new DrbdVersion(new CoreTimerImpl(), new EmptyErrorReporter());
     }
 
@@ -191,10 +194,14 @@ public class ConfFileBuilderTest
     {
         assertThat(nodeNames.length == 2).isTrue();
         assertThat(nicNames.length == 4).isTrue();
-        props.setProp("1/" + nodeNames[0], nicNames[0], "Paths");
-        props.setProp("1/" + nodeNames[1], nicNames[1], "Paths");
-        props.setProp("2/" + nodeNames[0], nicNames[2], "Paths");
-        props.setProp("2/" + nodeNames[1], nicNames[3], "Paths");
+        rscConnProps.setProp("1/" + nodeNames[0], nicNames[0], "Paths");
+        rscConnProps.setProp("1/" + nodeNames[1], nicNames[1], "Paths");
+        rscConnProps.setProp("2/" + nodeNames[0], nicNames[2], "Paths");
+        rscConnProps.setProp("2/" + nodeNames[1], nicNames[3], "Paths");
+        nodeConnProps.setProp("1/" + nodeNames[0], nicNames[0], "Paths");
+        nodeConnProps.setProp("1/" + nodeNames[1], nicNames[1], "Paths");
+        nodeConnProps.setProp("2/" + nodeNames[0], nicNames[2], "Paths");
+        nodeConnProps.setProp("2/" + nodeNames[1], nicNames[3], "Paths");
     }
 
     @Test(expected = ImplementationError.class)
