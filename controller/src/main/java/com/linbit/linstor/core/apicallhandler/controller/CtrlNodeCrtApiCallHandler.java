@@ -25,8 +25,8 @@ import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -323,7 +323,7 @@ public class CtrlNodeCrtApiCallHandler
         }
         else
         {
-            node.setOfflinePeer(apiCtx);
+            node.setOfflinePeer(errorReporter, apiCtx);
             flux = Flux.empty();
         }
         return flux;

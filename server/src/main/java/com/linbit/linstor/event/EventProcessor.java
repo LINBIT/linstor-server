@@ -179,9 +179,13 @@ public class EventProcessor
         EventIdentifier eventIdentifier
     )
     {
-        try (LinStorScope.ScopeAutoCloseable close = linstorScope.enter())
+        boolean inScope = linstorScope.isEntered();
+        try (LinStorScope.ScopeAutoCloseable close = inScope ? null : linstorScope.enter())
         {
-            linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
+            if (!inScope)
+            {
+                linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
+            }
             eventHandler.get().execute(
                 InternalApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION, eventIdentifier, null);
         }

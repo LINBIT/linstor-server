@@ -506,9 +506,17 @@ public class StltApiCallHandler
     private void createWatchForPeer()
     {
         Peer controllerPeer = controllerPeerConnector.getControllerPeer();
-        eventBroker.createWatch(controllerPeer, new Watch(
-            UUID.randomUUID(), controllerPeer.getId(), 0, EventIdentifier.global(null)
+        if (controllerPeer != null)
+        {
+            eventBroker.createWatch(
+                controllerPeer,
+                new Watch(
+                    UUID.randomUUID(),
+                    controllerPeer.getId(),
+                    0,
+                    EventIdentifier.global(null)
         ));
+        }
     }
 
     public void applyControllerChanges(

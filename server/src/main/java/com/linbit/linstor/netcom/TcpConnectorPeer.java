@@ -523,7 +523,7 @@ public class TcpConnectorPeer implements Peer
             Set<FluxSink<ByteArrayInputStream>> copyOpenRpcsSet = new HashSet<>(openRpcs.values());
             for (FluxSink<ByteArrayInputStream> rpcSink : copyOpenRpcsSet)
             {
-                rpcSink.error(new PeerNotConnectedException());
+                rpcSink.error(new PeerClosingConnectionException());
             }
             openRpcs.clear(); // basically no-op, more for documentation purpose
         }

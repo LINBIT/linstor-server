@@ -13,6 +13,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerController;
 import com.linbit.linstor.netcom.PeerOffline;
@@ -479,7 +480,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
         }
     }
 
-    public void setOfflinePeer(AccessContext accCtx)
+    public void setOfflinePeer(ErrorReporter errorReporterRef, AccessContext accCtx)
         throws AccessDeniedException
     {
         checkDeleted();
@@ -502,11 +503,11 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
                     }
                 }
             }
-            peer = new PeerController(nodeNameStr, this, isLocal);
+            peer = new PeerController(errorReporterRef, nodeNameStr, this, isLocal);
         }
         else
         {
-            peer = new PeerOffline(nodeNameStr, this);
+            peer = new PeerOffline(errorReporterRef, nodeNameStr, this);
         }
     }
 

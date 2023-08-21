@@ -11,6 +11,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeSatelliteFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerOffline;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
@@ -47,7 +48,8 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     // Local NodeName received from the currently active controller
     private NodeName localNodeName;
 
-    // The currently connected controller peer (can be null)
+    // The currently connected controller peer
+    private final PeerOffline offlineCtrlPeer;
     private Peer controllerPeer;
     private final Provider<StltApiCallHandlerUtils> stltApiCallHandlerUtils;
 
@@ -79,6 +81,9 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         commonSerializer = commonSerializerRef;
         stltApiCallHandlerUtils = stltApiCallHandlerUtilsProviderRef;
 
+        offlineCtrlPeer = new PeerOffline(errorReporterRef, "controller", null);
+        controllerPeer = offlineCtrlPeer;
+
         // if we lose the connection to the current controller, we should set our ctrlPeer to null
         // otherwise, once the controller reconnects, we send our "old" controller an "OtherController"
         // message.
@@ -86,7 +91,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         {
             if (isCtrl)
             {
-                controllerPeer = null;
+                controllerPeer = offlineCtrlPeer;
             }
         });
     }

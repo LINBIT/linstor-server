@@ -2,6 +2,7 @@ package com.linbit.linstor.tasks;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
@@ -52,6 +53,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 
+import com.google.inject.Key;
 import reactor.core.publisher.Flux;
 import reactor.util.context.Context;
 
@@ -297,6 +299,7 @@ public class ReconnectorTask implements Task
                             LinStorScope.ScopeAutoCloseable close = reconnScope.enter()
                         )
                         {
+                            reconnScope.seed(Key.get(AccessContext.class, PeerContext.class), apiCtx);
                             // another check needed to detect race conditions (someone could have called node.delete()
                             // while we were waiting for the lock)
                             if (!node.isDeleted())

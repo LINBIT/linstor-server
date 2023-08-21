@@ -9,6 +9,8 @@ package com.linbit.linstor.api;
 
 import com.linbit.linstor.annotation.ErrorReporterContext;
 
+import javax.inject.Singleton;
+
 import java.lang.annotation.Annotation;
 import java.util.Map;
 
@@ -35,10 +37,11 @@ import static com.google.common.base.Preconditions.checkState;
  *       .in(ApiCallScoped.class);
  * </code></pre>
  */
+@Singleton
 public class LinStorScope implements Scope
 {
     private static final Provider<Object> SEEDED_KEY_PROVIDER =
-        new Provider<Object>()
+        new Provider<>()
         {
             @Override
             public Object get()
@@ -79,7 +82,7 @@ public class LinStorScope implements Scope
     @Override
     public <T> Provider<T> scope(final Key<T> key, final Provider<T> unscoped)
     {
-        return new Provider<T>()
+        return new Provider<>()
         {
             @SuppressWarnings("unchecked")
             @Override
@@ -143,5 +146,10 @@ public class LinStorScope implements Scope
     {
         @Override
         void close();
+    }
+
+    public boolean isEntered()
+    {
+        return values.get() != null;
     }
 }

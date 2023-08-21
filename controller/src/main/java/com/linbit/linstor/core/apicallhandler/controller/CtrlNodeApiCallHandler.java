@@ -624,22 +624,9 @@ public class CtrlNodeApiCallHandler
 
                 if (!node.getFlags().isSet(apiCtx, Node.Flags.EVICTED))
                 {
+                    node.getPeer(apiCtx).closeConnection(false);
                     waitForConnectFlux = waitForConnectFlux
                         .concatWith(ctrlNodeCrtApiCallHandlerProvider.get().connectNow(context, node));
-
-                    // the close connection has to run in its own thread
-                    // otherwise we will get re-entering scope problems (Error report)
-                    scheduler.schedule(() ->
-                    {
-                        try
-                        {
-                            node.getPeer(apiCtx).closeConnection(true);
-                        }
-                        catch (Exception | ImplementationError ignored)
-                        {
-                        }
-                    }
-                    );
                     reconNodes.add(nodeStr);
                 }
                 else

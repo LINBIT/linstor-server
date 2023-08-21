@@ -135,7 +135,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
             }
             else
             {
-                node.setOfflinePeer(accCtx);
+                node.setOfflinePeer(errorReporter, accCtx);
                 errorReporter.logDebug(
                     "Not connecting to " + nodeType.name() + " node: '" + node.getName().getDisplayName() + "'"
                 );

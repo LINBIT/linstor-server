@@ -2,15 +2,15 @@ package com.linbit.linstor.netcom;
 
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.logging.ErrorReporter;
 
 public class PeerController extends PeerOffline
 {
-
     private final ApiConsts.ConnectionStatus status;
 
-    public PeerController(String peerIdRef, Node nodeRef, boolean local)
+    public PeerController(ErrorReporter errorReporterRef, String peerIdRef, Node nodeRef, boolean local)
     {
-        super(peerIdRef, nodeRef);
+        super(errorReporterRef, peerIdRef, nodeRef);
         if (local)
         {
             status = ApiConsts.ConnectionStatus.ONLINE;

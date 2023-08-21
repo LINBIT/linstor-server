@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.Property;
 import com.linbit.linstor.core.cfg.StltConfig;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -29,6 +30,7 @@ public class PeerOffline implements Peer
     private final Node node;
     static ServiceName serviceName;
 
+    private final ErrorReporter errorReporter;
     private final ReadWriteLock satelliteStateLock;
     private SatelliteState satelliteState;
     private final ExtToolsManager extToolMgr;
@@ -45,10 +47,12 @@ public class PeerOffline implements Peer
     }
 
     public PeerOffline(
+        ErrorReporter errorReporterRef,
         String peerIdRef,
         Node nodeRef
     )
     {
+        errorReporter = errorReporterRef;
         peerId = peerIdRef;
         node = nodeRef;
         satelliteStateLock = new ReentrantReadWriteLock(true);
@@ -106,6 +110,7 @@ public class PeerOffline implements Peer
     @Override
     public boolean sendMessage(Message msg) throws IllegalMessageStateException
     {
+        errorReporter.logTrace("Skipping message since this is an instance of PeerOffline");
         return false;
     }
 

@@ -5,6 +5,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -23,6 +24,7 @@ import java.util.UUID;
 @Singleton
 public class NodeControllerFactory
 {
+    private final ErrorReporter errorReporter;
     private final NodeDatabaseDriver dbDriver;
     private final ObjectProtectionFactory objectProtectionFactory;
     private final PropsContainerFactory propsContainerFactory;
@@ -32,6 +34,7 @@ public class NodeControllerFactory
 
     @Inject
     public NodeControllerFactory(
+        ErrorReporter errorReporterRef,
         NodeDatabaseDriver dbDriverRef,
         ObjectProtectionFactory objectProtectionFactoryRef,
         PropsContainerFactory propsContainerFactoryRef,
@@ -40,6 +43,7 @@ public class NodeControllerFactory
         NodeRepository nodeRepositoryRef
     )
     {
+        errorReporter = errorReporterRef;
         dbDriver = dbDriverRef;
         objectProtectionFactory = objectProtectionFactoryRef;
         propsContainerFactory = propsContainerFactoryRef;
@@ -79,7 +83,7 @@ public class NodeControllerFactory
             transMgrProvider
         );
         dbDriver.create(node);
-        node.setOfflinePeer(accCtx);
+        node.setOfflinePeer(errorReporter, accCtx);
 
         return node;
     }
