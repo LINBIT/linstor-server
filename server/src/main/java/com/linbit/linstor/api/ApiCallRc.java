@@ -29,6 +29,15 @@ public interface ApiCallRc
     boolean hasErrors();
 
     /**
+     * Returns if all RcEntries skip error report.
+     * @return true if all skip error report.
+     */
+    default boolean allSkipErrorReport()
+    {
+        return getEntries().stream().filter(RcEntry::isError).allMatch(RcEntry::skipErrorReport);
+    }
+
+    /**
      * Return code entry
      */
     @JsonDeserialize(as = ApiCallRcEntry.class)

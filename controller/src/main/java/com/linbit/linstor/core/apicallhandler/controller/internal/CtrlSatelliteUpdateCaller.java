@@ -439,7 +439,8 @@ public class CtrlSatelliteUpdateCaller
     {
         return nodeName -> Flux.error(new ApiRcException(ApiCallRcImpl.simpleEntry(
             ApiConsts.FAIL_NOT_CONNECTED,
-            "No connection to satellite '" + nodeName + "'"
+            "No connection to satellite '" + nodeName + "'",
+            true
         )));
     }
 

@@ -14,6 +14,7 @@ import com.linbit.linstor.api.ApiModule;
 import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -300,6 +301,26 @@ public class RequestHelper
             .onErrorResume(ApiRcException.class,
                 apiExc -> Mono.just(
                     ApiCallRcRestUtils.toResponse(apiExc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR)))
+            .onErrorResume(CtrlResponseUtils.DelayedApiRcException.class,
+                delExc -> {
+                    ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+                    for (var exc : delExc.getErrors())
+                    {
+                        if (exc.getApiCallRc().allSkipErrorReport())
+                        {
+                            apiCallRc.addEntry(
+                                ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage()));
+                        }
+                        else
+                        {
+                            String errId = errorReporter.reportError(exc);
+                            apiCallRc.addEntry(
+                                ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage())
+                                    .addErrorId(errId));
+                        }
+                    }
+                    return Mono.just(ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.INTERNAL_SERVER_ERROR));
+                })
             .subscribe(
                 asyncResponse::resume,
                 exc ->
