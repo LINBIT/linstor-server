@@ -121,7 +121,7 @@ public class CreateMultiSnapRequest
                     );
 
                     descrBuilder.append(snapDfnDescr).append(", ");
-                    joinedRscNamesBuilder.append(snapDfn.getName().displayValue).append(", ");
+                    joinedRscNamesBuilder.append(snapDfn.getResourceName().displayValue).append(", ");
                 }
             }
         }

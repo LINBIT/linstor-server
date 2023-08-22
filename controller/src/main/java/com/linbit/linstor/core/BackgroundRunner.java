@@ -1,5 +1,6 @@
 package com.linbit.linstor.core;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiModule;
@@ -21,13 +22,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxSink;
 import reactor.util.context.Context;
 
 @Singleton
@@ -101,26 +102,26 @@ public class BackgroundRunner
             else
             {
                 queue(runCfgRef);
-                ret = Flux.defer(() ->
+
+                Flux<Boolean> finishedFlux = Flux.create(fluxSink -> runCfgRef.delayFluxSink = fluxSink);
+
+                ret = finishedFlux.concatMap(keepGoing ->
                 {
-                    Flux<T> flux;
-                    try
+                    Flux<T> innerRet;
+                    if (Boolean.TRUE.equals(keepGoing))
                     {
-                        runCfgRef.flux = runCfgRef.deferedFluxBlockingQueue.take();
-                        flux = prepareFlux(runCfgRef);
+                        runCfgRef.flux = runCfgRef.fluxSupplier.get().log();
+                        innerRet = prepareFlux(runCfgRef);
                     }
-                    catch (InterruptedException exc)
+                    else
                     {
-                        exc.printStackTrace();
-                        errorReporter.reportError(
-                            exc,
-                            accCtx,
-                            null,
-                            "Exception occurred during " + runCfgRef.description
+                        innerRet = Flux.error(
+                            // this is more a placeholder than anything else.
+                            // currently 'false' cannot be added into this flux's corresponding fluxSink, only 'true'
+                            new ImplementationError("Aborting pending background tasks")
                         );
-                        flux = Flux.empty();
                     }
-                    return flux;
+                    return innerRet;
                 });
             }
         }
@@ -162,7 +163,7 @@ public class BackgroundRunner
     /**
      * Assumes that runQueuesByNode lock is taken
      *
-     * This method assumes that the given Flux is already subscribed to, but is waiting in the artifically created
+     * This method assumes that the given Flux is already subscribed to, but is waiting in the artificially created
      * Flux.defer() method.
      * All this method has to do is to put the actual Flux into the supplier of the artificial Flux.defer() and let the
      * already subscribed Flux continue.
@@ -322,8 +323,7 @@ public class BackgroundRunner
         private @Nullable Consumer<T> subscriptionConsumer = null;
         private @Nullable Consumer<Throwable> subscriptionErrorConsumer = null;
 
-        private @Nullable ArrayBlockingQueue<Flux<T>> deferedFluxBlockingQueue;
-
+        private @Nullable FluxSink<Boolean> delayFluxSink;
 
         /*
          * Usually used by foreground tasks
@@ -345,15 +345,6 @@ public class BackgroundRunner
             background = backgroundRef;
 
             initializeSubscriberContext(descriptionRef, accCtxRef);
-
-            if (!backgroundRef)
-            {
-                deferedFluxBlockingQueue = new ArrayBlockingQueue<>(1);
-            }
-            else
-            {
-                deferedFluxBlockingQueue = null;
-            }
         }
 
         /*
@@ -390,15 +381,6 @@ public class BackgroundRunner
             nodesToLock = nodesToLockRef;
 
             initializeSubscriberContext(descriptionRef, accCtxRef);
-
-            if (!backgroundRef)
-            {
-                deferedFluxBlockingQueue = new ArrayBlockingQueue<>(1);
-            }
-            else
-            {
-                deferedFluxBlockingQueue = null;
-            }
         }
 
         private void initializeSubscriberContext(String descriptionRef, AccessContext accCtxRef)
@@ -409,7 +391,8 @@ public class BackgroundRunner
 
         private void runDeferredFlux()
         {
-            deferedFluxBlockingQueue.add(fluxSupplier.get());
+            delayFluxSink.next(true);
+            delayFluxSink.complete();
         }
 
         public RunConfig<T> putSubscriberContext(Object key, Object value)

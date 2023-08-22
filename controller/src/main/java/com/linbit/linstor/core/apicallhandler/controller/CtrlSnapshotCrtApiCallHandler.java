@@ -45,6 +45,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.makeSnapshotContext;
@@ -60,6 +61,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
@@ -442,31 +444,10 @@ public class CtrlSnapshotCrtApiCallHandler
             }
         }
 
-        Flux<ApiCallRc> satelliteUpdateResponses;
-        if (!runInBackgroundRef)
+        // we create a supplier to avoid code-duplication.
+        Supplier<Flux<ApiCallRc>> fluxSupplier = () ->
         {
-            satelliteUpdateResponses = backgroundRunner.syncWithBackgroundFluxes(
-                new RunConfig<>(
-                    0,
-                    "Syncing with background tasks for " + reqRef.getDescription(),
-                    () -> ctrlSatelliteUpdateCaller
-                        .updateSatellites(reqRef, notConnectedError())
-                        .transform(
-                            updateResponses -> CtrlResponseUtils.combineResponses(
-                                updateResponses,
-                                reqRef.getJoinedRscNames(),
-                                "Suspended IO of {1} on {0} for snapshot"
-                            )
-                        ),
-                    apiCtx,
-                    nodeNamesToLock,
-                    false
-                )
-            );
-        }
-        else
-        {
-            satelliteUpdateResponses = ctrlSatelliteUpdateCaller
+            Flux<ApiCallRc> flux = ctrlSatelliteUpdateCaller
                 .updateSatellites(reqRef, notConnectedError())
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
@@ -475,13 +456,38 @@ public class CtrlSnapshotCrtApiCallHandler
                         "Suspended IO of {1} on {0} for snapshot"
                     )
                 );
-        }
-        Flux<ApiCallRc> flux = satelliteUpdateResponses
-            .concatWith(takeSnapshot(reqRef))
-            .onErrorResume(exception -> abortSnapshot(reqRef, exception));
-        for (Class<E> clazz : suppressErrorClasses)
+            flux = flux.concatWith(takeSnapshot(reqRef))
+                .onErrorResume(exception -> abortSnapshot(reqRef, exception));
+            for (Class<E> clazz : suppressErrorClasses)
+            {
+                flux = flux.onErrorResume(clazz, ignored -> Flux.empty());
+            }
+            return flux;
+        };
+
+        Flux<ApiCallRc> flux;
+        if (!runInBackgroundRef)
         {
-            flux = flux.onErrorResume(clazz, ignored -> Flux.empty());
+            flux = backgroundRunner.syncWithBackgroundFluxes(
+                new RunConfig<>(
+                    0,
+                    "Syncing with background tasks for " + reqRef.getDescription(),
+                    () -> scopeRunner.fluxInTransactionalScope(
+                        "Running queued snapshot",
+                        lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
+                        // we still need to wrap the supplier in a new transactionalScope since otherwise the supplied
+                        // flux will be executed without the scope.
+                        fluxSupplier::get
+                    ),
+                    apiCtx,
+                    nodeNamesToLock,
+                    false
+                )
+            );
+        }
+        else
+        {
+            flux = fluxSupplier.get();
         }
         return flux;
     }
