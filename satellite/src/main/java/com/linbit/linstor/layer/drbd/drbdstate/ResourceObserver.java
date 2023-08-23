@@ -127,7 +127,7 @@ public interface ResourceObserver
      */
     default void diskStateChanged(
         DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
-        DrbdVolume.DiskState previous, DrbdVolume.DiskState current
+        DiskState previous, DiskState current
     )
     {
         // Do nothing
@@ -148,7 +148,7 @@ public interface ResourceObserver
      */
     default void replicationStateChanged(
         DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
-        DrbdVolume.ReplState previous, DrbdVolume.ReplState current
+        ReplState previous, ReplState current
     )
     {
         // Do nothing

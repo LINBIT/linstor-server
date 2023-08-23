@@ -101,7 +101,7 @@ public class DrbdStateTrackerTest
         resObs.expect(DrbdStateTracker.OBS_REPL);
         // Should trigger the ResourceObserver
         // FIXME: dummy DrbdResource, DrbdVolume, DrbdConnection instances?
-        mux.replicationStateChanged(null, null, null, DrbdVolume.ReplState.OFF, DrbdVolume.ReplState.SYNC_SOURCE);
+        mux.replicationStateChanged(null, null, null, ReplState.OFF, ReplState.SYNC_SOURCE);
         resObs.assertTriggered();
 
         tracker.removeObserver(resObs);
@@ -323,7 +323,7 @@ public class DrbdStateTrackerTest
         @Override
         public void diskStateChanged(
             DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
-            DrbdVolume.DiskState previous, DrbdVolume.DiskState current
+            DiskState previous, DiskState current
         )
         {
             checkExpected(DrbdStateTracker.OBS_DISK);
@@ -332,7 +332,7 @@ public class DrbdStateTrackerTest
         @Override
         public void replicationStateChanged(
             DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
-            DrbdVolume.ReplState previous, DrbdVolume.ReplState current
+            ReplState previous, ReplState current
         )
         {
             checkExpected(DrbdStateTracker.OBS_REPL);

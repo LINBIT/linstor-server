@@ -190,8 +190,8 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         DrbdResource resource,
         DrbdConnection connection,
         DrbdVolume volume,
-        DrbdVolume.DiskState previous,
-        DrbdVolume.DiskState current
+        DiskState previous,
+        DiskState current
     )
     {
         if (resource.isKnownByLinstor())
@@ -209,8 +209,8 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
         DrbdResource resource,
         DrbdConnection connection,
         DrbdVolume volume,
-        DrbdVolume.ReplState previous,
-        DrbdVolume.ReplState current
+        ReplState previous,
+        ReplState current
     )
     {
         if (resource.isKnownByLinstor())
@@ -253,7 +253,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
             connectedToPeers(volumesMap),
             drbdResource.getRole() == DrbdResource.Role.PRIMARY,
             volumesMap.values().stream().map(DrbdVolume::getDiskState)
-                .allMatch(DrbdVolume.DiskState.UP_TO_DATE::equals),
+                .allMatch(DiskState.UP_TO_DATE::equals),
             drbdResource.getPromotionScore(),
             drbdResource.mayPromote()
         );
@@ -263,7 +263,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     {
         boolean accessUpToDateData;
 
-        if (volume.getDiskState() == DrbdVolume.DiskState.UP_TO_DATE)
+        if (volume.getDiskState() == DiskState.UP_TO_DATE)
         {
             accessUpToDateData = true;
         }
@@ -301,7 +301,7 @@ public class DrbdEventPublisher implements SystemService, ResourceObserver
     private boolean peerVolumeUpToDate(DrbdConnection connection, VolumeNumber volumeNumber)
     {
         DrbdVolume peerVolume = connection.getVolume(volumeNumber);
-        return peerVolume != null && peerVolume.getDiskState() == DrbdVolume.DiskState.UP_TO_DATE;
+        return peerVolume != null && peerVolume.getDiskState() == DiskState.UP_TO_DATE;
     }
 
     @Override

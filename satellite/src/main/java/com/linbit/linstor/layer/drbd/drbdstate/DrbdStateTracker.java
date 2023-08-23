@@ -372,7 +372,7 @@ public class DrbdStateTracker
         @Override
         public void diskStateChanged(
             DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
-            DrbdVolume.DiskState previous, DrbdVolume.DiskState current
+            DiskState previous, DiskState current
         )
         {
             for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_DISK_SLOT))
@@ -384,7 +384,7 @@ public class DrbdStateTracker
         @Override
         public void replicationStateChanged(
             DrbdResource resource, DrbdConnection connection, DrbdVolume volume,
-            DrbdVolume.ReplState previous, DrbdVolume.ReplState current
+            ReplState previous, ReplState current
         )
         {
             for (ResourceObserver obs : syncCopy(DrbdStateTracker.OBS_REPL_SLOT))
