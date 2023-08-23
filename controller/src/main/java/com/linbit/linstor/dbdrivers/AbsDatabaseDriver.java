@@ -45,9 +45,9 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
     protected static final String MSG_DO_NOT_LOG = "do not log";
 
     protected static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
-    private AccessContext dbCtx;
+    protected final AccessContext dbCtx;
 
-    private final ErrorReporter errorReporter;
+    protected final ErrorReporter errorReporter;
     /**
      * The database table to read from and write to.
      * Can be null as some linstor objects (especially layer-related) are skipping "inherited" tables. That means they

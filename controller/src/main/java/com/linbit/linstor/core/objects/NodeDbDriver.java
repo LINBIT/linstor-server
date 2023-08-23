@@ -18,6 +18,7 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.security.ObjectProtectionFactory;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
@@ -116,7 +117,7 @@ public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> i
 
     @Override
     protected Pair<Node, Node.InitMaps> load(RawParameters raw, Void ignored)
-        throws DatabaseException, InvalidNameException
+        throws DatabaseException, InvalidNameException, AccessDeniedException
     {
         final Map<ResourceName, Resource> rscMap = new TreeMap<>();
         final Map<SnapshotDefinition.Key, Snapshot> snapshotMap = new TreeMap<>();
@@ -145,23 +146,26 @@ public class NodeDbDriver extends AbsDatabaseDriver<Node, Node.InitMaps, Void> i
                 throw new ImplementationError("Unknown database type: " + getDbType());
         }
 
+        Node node = new Node(
+            raw.build(UUID, java.util.UUID::fromString),
+            getObjectProtection(ObjectProtection.buildPath(nodeName)),
+            nodeName,
+            nodeType,
+            flags,
+            this,
+            propsContainerFactory,
+            transObjFactory,
+            transMgrProvider,
+            rscMap,
+            snapshotMap,
+            netIfMap,
+            storPoolMap,
+            nodeConnMap
+        );
+        node.setOfflinePeer(errorReporter, dbCtx);
+
         return new Pair<>(
-            new Node(
-                raw.build(UUID, java.util.UUID::fromString),
-                getObjectProtection(ObjectProtection.buildPath(nodeName)),
-                nodeName,
-                nodeType,
-                flags,
-                this,
-                propsContainerFactory,
-                transObjFactory,
-                transMgrProvider,
-                rscMap,
-                snapshotMap,
-                netIfMap,
-                storPoolMap,
-                nodeConnMap
-            ),
+            node,
             new InitMapsImpl(
                 rscMap,
                 snapshotMap,
