@@ -152,4 +152,15 @@ public class LinStorScope implements Scope
     {
         return values.get() != null;
     }
+
+    public <T> boolean isSeeded(Key<T> key)
+    {
+        boolean ret = false;
+        Map<Key<?>, Object> scopedObjectMap = getScopedObjectMap(key);
+        if (scopedObjectMap != null)
+        {
+            ret = scopedObjectMap.containsKey(key);
+        }
+        return ret;
+    }
 }

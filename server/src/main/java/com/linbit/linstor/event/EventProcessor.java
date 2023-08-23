@@ -16,6 +16,10 @@ import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.transaction.TransactionException;
+import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
+import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 
@@ -50,6 +54,8 @@ public class EventProcessor
     private final ReentrantLock eventHandlingLock;
 
     private final EventStreamStore incomingEventStreamStore;
+    private final Provider<TransactionMgr> transMgrProvider;
+    private final TransactionMgrGenerator transactionMgrGenerator;
 
     @Inject
     public EventProcessor(
@@ -58,7 +64,9 @@ public class EventProcessor
         Map<String, Provider<EventHandler>> eventHandlersRef,
         LockGuardFactory lockGuardFactoryRef,
         Provider<Peer> peerProviderRef,
-        LinStorScope linstorScopeRef
+        LinStorScope linstorScopeRef,
+        Provider<TransactionMgr> transMgrProviderRef,
+        TransactionMgrGenerator transactionMgrGeneratorRef
     )
     {
         errorReporter = errorReporterRef;
@@ -67,6 +75,8 @@ public class EventProcessor
         peerProvider = peerProviderRef;
         linstorScope = linstorScopeRef;
         sysCtx = sysCtxRef;
+        transMgrProvider = transMgrProviderRef;
+        transactionMgrGenerator = transactionMgrGeneratorRef;
 
         eventHandlingLock = new ReentrantLock();
         incomingEventStreamStore = new EventStreamStoreImpl();
@@ -157,6 +167,7 @@ public class EventProcessor
                         incomingEventStreamStore.removeEventStream(eventIdentifier);
                     }
                 }
+                commit(transMgrProvider.get());
             }
             catch (InvalidNameException | ValueOutOfRangeException exc)
             {
@@ -179,20 +190,83 @@ public class EventProcessor
         EventIdentifier eventIdentifier
     )
     {
+        TransactionMgr transMgr = null;
         boolean inScope = linstorScope.isEntered();
         try (LinStorScope.ScopeAutoCloseable close = inScope ? null : linstorScope.enter())
         {
+            boolean seedTxMgr;
             if (!inScope)
             {
                 linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
+                seedTxMgr = true;
+            }
+            else
+            {
+                if (linstorScope.isSeeded(Key.get(TransactionMgr.class)))
+                {
+                    transMgr = transMgrProvider.get();
+                    seedTxMgr = false;
+                }
+                else
+                {
+                    seedTxMgr = true;
+                }
+            }
+            if (seedTxMgr)
+            {
+                transMgr = transactionMgrGenerator.startTransaction();
+                TransactionMgrUtil.seedTransactionMgr(linstorScope, transMgr);
             }
             eventHandler.get().execute(
                 InternalApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION, eventIdentifier, null);
+
+            commit(transMgr);
         }
         catch (Exception exc)
         {
             errorReporter.reportError(exc, null, null,
                 "Event handler for " + eventIdentifier + " failed on connection closed");
+        }
+        finally
+        {
+            rollbackIfNeededAndCloseConn(transMgr);
+        }
+    }
+
+    private void commit(TransactionMgr transMgr)
+    {
+        if (transMgr != null && transMgr.isDirty())
+        {
+            try
+            {
+                transMgr.commit();
+            }
+            catch (TransactionException sqlExc)
+            {
+                errorReporter.reportError(sqlExc);
+                rollbackIfNeededAndCloseConn(transMgr);
+            }
+        }
+    }
+
+    private void rollbackIfNeededAndCloseConn(TransactionMgr transMgr)
+    {
+        if (transMgr != null)
+        {
+            if (transMgr.isDirty())
+            {
+                try
+                {
+                    transMgr.rollback();
+                }
+                catch (TransactionException exc)
+                {
+                    errorReporter.reportError(exc);
+                    // TODO: needs a better panic-shutdown to prevent DB corruption
+                    System.exit(1);
+                }
+            }
+            transMgr.returnConnection();
         }
     }
 }

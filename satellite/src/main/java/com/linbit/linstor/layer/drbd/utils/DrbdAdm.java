@@ -1,21 +1,29 @@
 package com.linbit.linstor.layer.drbd.utils;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.Platform;
 import com.linbit.extproc.ChildProcessHandler.TimeoutType;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
+import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.types.MinorNumber;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.layer.storage.utils.Commands.RetryHandler;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
-import com.linbit.Platform;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -43,15 +51,25 @@ public class DrbdAdm
     public static final int WAIT_CONNECT_RES_TIME = 10;
 
     private final ExtCmdFactory extCmdFactory;
+    private final AccessContext sysCtx;
+    private final StltConfigAccessor stltCfgAccessor;
 
     @Inject
-    public DrbdAdm(ExtCmdFactory extCmdFactoryRef)
+    public DrbdAdm(
+        ExtCmdFactory extCmdFactoryRef,
+        @SystemContext AccessContext sysCtxRef,
+        StltConfigAccessor stltCfgAccessorRef
+    )
     {
         extCmdFactory = extCmdFactoryRef;
+        sysCtx = sysCtxRef;
+        stltCfgAccessor = stltCfgAccessorRef;
     }
 
     /**
      * Adjusts a resource
+     *
+     * @throws AccessDeniedException
      */
     public void adjust(
         DrbdRscData<Resource> drbdRscData,
@@ -59,7 +77,7 @@ public class DrbdAdm
         boolean skipDisk,
         boolean discard
     )
-        throws ExtCmdFailedException
+        throws ExtCmdFailedException, AccessDeniedException
     {
         List<String> command = new ArrayList<>();
         command.addAll(Arrays.asList(DRBDADM_UTIL, "-vvv", "adjust"));
@@ -76,7 +94,22 @@ public class DrbdAdm
         {
             command.add("--skip-net");
         }
-        if (skipDisk)
+        Resource rsc = drbdRscData.getAbsResource();
+        PriorityProps prioProps = new PriorityProps(rsc.getProps(sysCtx));
+        for (StorPool storPool : LayerVlmUtils.getStorPools(rsc, sysCtx))
+        {
+            prioProps.addProps(storPool.getProps(sysCtx));
+        }
+        prioProps.addProps(
+            rsc.getNode().getProps(sysCtx),
+            rsc.getResourceDefinition().getProps(sysCtx),
+            stltCfgAccessor.getReadonlyProps()
+        );
+
+        if (
+            skipDisk || ApiConsts.VAL_TRUE
+                .equals(prioProps.getProp(ApiConsts.KEY_DRBD_SKIP_DISK, ApiConsts.NAMESPC_DRBD_OPTIONS))
+        )
         {
             command.add("--skip-disk");
         }
@@ -219,8 +252,11 @@ public class DrbdAdm
 
     /**
      * Connects a resource to its peer resuorces on other hosts
+     *
+     * @throws AccessDeniedException
      */
-    public void connect(DrbdRscData<Resource> drbdRscData, boolean discard) throws ExtCmdFailedException
+    public void connect(DrbdRscData<Resource> drbdRscData, boolean discard) throws ExtCmdFailedException,
+        AccessDeniedException
     {
         adjust(drbdRscData, false, true, discard);
     }
@@ -237,8 +273,9 @@ public class DrbdAdm
      * Attaches a volume to its disk
      *
      * @throws ExtCmdFailedException
+     * @throws AccessDeniedException
      */
-    public void attach(DrbdVlmData<Resource> drbdVlmData) throws ExtCmdFailedException
+    public void attach(DrbdVlmData<Resource> drbdVlmData) throws ExtCmdFailedException, AccessDeniedException
     {
         adjust(drbdVlmData.getRscLayerObject(), true, false, false);
     }
