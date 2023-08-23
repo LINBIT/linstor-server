@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added automated addition of --skip-disk to drbdadm adjust when a disk failure is detected
+
 ### Changed
 
 - Improved checks for "OtherController" response

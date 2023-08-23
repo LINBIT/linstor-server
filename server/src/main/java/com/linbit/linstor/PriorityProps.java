@@ -1,5 +1,6 @@
 package com.linbit.linstor;
 
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.VolumeConnection;
@@ -22,6 +23,7 @@ import java.util.TreeMap;
 public class PriorityProps
 {
     public static final String FALLBACKMAP_NAME = "Fallback";
+    public static final String DEFAULT_DESCR = "default value";
 
     private final List<Pair<Props, String>> propList = new ArrayList<>();
     private final HashMap<String, String> fallbackMap = new HashMap<>();
@@ -55,22 +57,28 @@ public class PriorityProps
      */
     public PriorityProps(Props... props)
     {
-        for (Props prop : props)
-        {
-            addProps(prop);
-        }
+        addProps(props);
     }
 
-    public PriorityProps addProps(Props prop)
+    public PriorityProps addProps(Props... props)
     {
-        if (prop != null)
+        for (Props prop : props)
         {
-            propList.add(new Pair<>(prop, ""));
+            addProps(prop, "");
         }
         return this;
     }
 
     public PriorityProps addProps(Props props, String descr)
+    {
+        if (props != null)
+        {
+            propList.add(new Pair<>(props, descr));
+        }
+        return this;
+    }
+
+    public PriorityProps addProps(Props props, String descr, String type)
     {
         if (props != null)
         {
@@ -206,11 +214,21 @@ public class PriorityProps
             {
                 if (ret == null)
                 {
-                    ret = new MultiResult(value, pair.objB);
+                    ret = new MultiResult(
+                        value,
+                        pair.objB,
+                        pair.objA.getDescription(),
+                        pair.objA.getType()
+                    );
                 }
                 else
                 {
-                    ret.addResult(value, pair.objB);
+                    ret.addResult(
+                        value,
+                        pair.objB,
+                        pair.objA.getDescription(),
+                        pair.objA.getType()
+                    );
                 }
             }
         }
@@ -220,11 +238,11 @@ public class PriorityProps
         {
             if (ret == null)
             {
-                ret = new MultiResult(value, FALLBACKMAP_NAME);
+                ret = new MultiResult(value, FALLBACKMAP_NAME, DEFAULT_DESCR, null);
             }
             else
             {
-                ret.addResult(value, FALLBACKMAP_NAME);
+                ret.addResult(value, FALLBACKMAP_NAME, DEFAULT_DESCR, null);
             }
         }
 
@@ -253,12 +271,22 @@ public class PriorityProps
                     MultiResult result = ret.get(key);
                     if (result == null)
                     {
-                        result = new MultiResult(entry.getValue(), propWithDescr.objB);
+                        result = new MultiResult(
+                            entry.getValue(),
+                            propWithDescr.objB,
+                            propWithDescr.objA.getDescription(),
+                            propWithDescr.objA.getType()
+                        );
                         ret.put(key, result);
                     }
                     else
                     {
-                        result.addResult(entry.getValue(), propWithDescr.objB);
+                        result.addResult(
+                            entry.getValue(),
+                            propWithDescr.objB,
+                            propWithDescr.objA.getDescription(),
+                            propWithDescr.objA.getType()
+                        );
                     }
                 }
             }
@@ -272,12 +300,12 @@ public class PriorityProps
                 MultiResult result = ret.get(key);
                 if (result == null)
                 {
-                    result = new MultiResult(entry.getValue(), FALLBACKMAP_NAME);
+                    result = new MultiResult(entry.getValue(), FALLBACKMAP_NAME, DEFAULT_DESCR, null);
                     ret.put(key, result);
                 }
                 else
                 {
-                    result.addResult(entry.getValue(), FALLBACKMAP_NAME);
+                    result.addResult(entry.getValue(), FALLBACKMAP_NAME, DEFAULT_DESCR, null);
                 }
             }
         }
@@ -290,15 +318,15 @@ public class PriorityProps
         public final List<ValueWithDescription> conflictingList;
         private final List<ValueWithDescription> modifiableList = new ArrayList<>();
 
-        public MultiResult(String valueRef, String propDescr)
+        public MultiResult(String valueRef, String propDescr, String objDescr, LinStorObject objType)
         {
-            first = new ValueWithDescription(valueRef, propDescr);
+            first = new ValueWithDescription(valueRef, propDescr, objDescr, objType);
             conflictingList = Collections.unmodifiableList(modifiableList);
         }
 
-        private void addResult(String valueRef, String propDescr)
+        private void addResult(String valueRef, String propDescr, String objDescr, LinStorObject objType)
         {
-            modifiableList.add(new ValueWithDescription(valueRef, propDescr));
+            modifiableList.add(new ValueWithDescription(valueRef, propDescr, objDescr, objType));
         }
     }
 
@@ -306,11 +334,20 @@ public class PriorityProps
     {
         public final String value;
         public final String propsDescription;
+        public final String objDescription;
+        public final LinStorObject objType;
 
-        private ValueWithDescription(String valueRef, String propsDescriptionRef)
+        private ValueWithDescription(
+            String valueRef,
+            String propsDescriptionRef,
+            String objDescrRef,
+            LinStorObject objTypeRef
+        )
         {
             value = valueRef;
             propsDescription = propsDescriptionRef;
+            objDescription = objDescrRef;
+            objType = objTypeRef;
         }
     }
 }

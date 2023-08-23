@@ -5,12 +5,14 @@ import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
 import com.linbit.linstor.event.handler.EventHandler;
 import com.linbit.linstor.event.handler.SatelliteStateHelper;
+import com.linbit.linstor.event.handler.StateSequenceDetector;
 import com.linbit.linstor.event.handler.protobuf.ProtobufEventHandler;
 import com.linbit.linstor.proto.eventdata.EventVlmDiskStateOuterClass;
 import com.linbit.linstor.satellitestate.SatelliteVolumeState;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -22,15 +24,18 @@ public class VolumeDiskStateEventHandler implements EventHandler
 {
     private final SatelliteStateHelper satelliteStateHelper;
     private final VolumeDiskStateEvent volumeDiskStateEvent;
+    private final StateSequenceDetector stateSequenceDetector;
 
     @Inject
     public VolumeDiskStateEventHandler(
         SatelliteStateHelper satelliteStateHelperRef,
-        VolumeDiskStateEvent volumeDiskStateEventRef
+        VolumeDiskStateEvent volumeDiskStateEventRef,
+        StateSequenceDetector stateSequenceDetectorRef
     )
     {
         satelliteStateHelper = satelliteStateHelperRef;
         volumeDiskStateEvent = volumeDiskStateEventRef;
+        stateSequenceDetector = stateSequenceDetectorRef;
     }
 
     @Override
@@ -49,7 +54,11 @@ public class VolumeDiskStateEventHandler implements EventHandler
                 satelliteState -> satelliteState.setOnVolume(
                     eventIdentifier.getResourceName(),
                     eventIdentifier.getVolumeNumber(),
-                    SatelliteVolumeState::setDiskState,
+                    (vlmState, nextStateStr) -> stateSequenceDetector.processAndSetDiskState(
+                        eventIdentifier,
+                        vlmState,
+                        nextStateStr
+                    ),
                     eventVlmDiskState.getDiskState()
                 )
             );

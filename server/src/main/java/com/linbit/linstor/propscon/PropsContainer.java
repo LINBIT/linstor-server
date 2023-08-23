@@ -207,6 +207,16 @@ public class PropsContainer extends AbsTransactionObject implements Props
         return itemCount == 0;
     }
 
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public LinStorObject getType()
+    {
+        return type;
+    }
+
     /**
      * Returns the property if found.
      *

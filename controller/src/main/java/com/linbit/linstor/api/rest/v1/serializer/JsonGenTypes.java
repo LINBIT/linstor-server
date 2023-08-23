@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.20.1";
+    public static final String REST_API_VERSION = "1.20.2";
 
     /**
      * Common api reply structure
@@ -124,6 +124,26 @@ public class JsonGenTypes
 //     */
 //    @JsonInclude(JsonInclude.Include.NON_EMPTY)
 //    public static class Properties
+//    {
+//    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class PropertyWithDescription
+    {
+        public String type;
+        public String value;
+        public String descr;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class EffectivePropertiesMapValue
+        extends PropertyWithDescription
+    {
+        public List<PropertyWithDescription> other = Collections.emptyList();
+    }
+
+//    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+//    public static class EffectivePropertiesMap
 //    {
 //    }
 
@@ -432,6 +452,7 @@ public class JsonGenTypes
         public String name;
         public String node_name;
         public Map<String, String> props = Collections.emptyMap();
+        public Map<String, EffectivePropertiesMapValue> effective_props = Collections.emptyMap();
         public List<String> flags = Collections.emptyList();
         public ResourceLayer layer_object;
         public ResourceState state;

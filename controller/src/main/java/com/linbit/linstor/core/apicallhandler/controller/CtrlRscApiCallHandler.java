@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.RscConnPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
@@ -76,6 +77,7 @@ public class CtrlRscApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
+    private final StltConfigAccessor stltCfgAccessor;
 
     @Inject
     public CtrlRscApiCallHandler(
@@ -91,7 +93,8 @@ public class CtrlRscApiCallHandler
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        StltConfigAccessor stltCfgAccessorRef
     )
     {
         errorReporter = errorReporterRef;
@@ -107,6 +110,7 @@ public class CtrlRscApiCallHandler
         peerAccCtx = peerAccCtxRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
+        stltCfgAccessor = stltCfgAccessorRef;
     }
 
     public Flux<ApiCallRc> modify(
@@ -248,7 +252,14 @@ public class CtrlRscApiCallHandler
                                 upperFilterNodes.contains(rsc.getNode().getName().value))
                             .collect(toList()))
                         {
-                            rscList.addResource(rsc.getApiData(peerAccCtx.get(), null, null));
+                            rscList.addResource(
+                                rsc.getApiData(
+                                    peerAccCtx.get(),
+                                    null,
+                                    null,
+                                    rsc.getEffectiveProps(apiCtx, stltCfgAccessor)
+                                )
+                            );
                             // fullSyncId and updateId null, as they are not going to be serialized anyways
                         }
                     }

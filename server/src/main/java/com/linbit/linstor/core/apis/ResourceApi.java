@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apis;
 
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
+import com.linbit.linstor.api.pojo.EffectivePropertiesPojo;
 
 import java.util.Date;
 import java.util.List;
@@ -20,4 +21,5 @@ public interface ResourceApi
     long getFlags();
     List<? extends VolumeApi> getVlmList();
     RscLayerDataApi getLayerData();
+    EffectivePropertiesPojo getEffectivePropsPojo();
 }

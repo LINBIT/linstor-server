@@ -887,6 +887,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                             null,
                             null,
                             null,
+                            null,
                             null
                         ),
                         LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get()).stream()

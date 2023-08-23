@@ -1,5 +1,6 @@
 package com.linbit.linstor.propscon;
 
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionObject;
@@ -20,6 +21,8 @@ public interface Props extends TransactionObject, Iterable<Map.Entry<String, Str
 {
     String PATH_SEPARATOR = "/";
 
+    String getDescription();
+    LinStorObject getType();
     String getProp(String key)
         throws InvalidKeyException;
     String getPropWithDefault(String key, String defaultValue) throws InvalidKeyException;

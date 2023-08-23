@@ -1,6 +1,7 @@
 package com.linbit.linstor.propscon;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
@@ -355,5 +356,17 @@ public class ReadOnlyProps implements Props
                 "Attempt to modify an object through read-only iterator"
             );
         }
+    }
+
+    @Override
+    public String getDescription()
+    {
+        return propsMap.getDescription();
+    }
+
+    @Override
+    public LinStorObject getType()
+    {
+        return propsMap.getType();
     }
 }

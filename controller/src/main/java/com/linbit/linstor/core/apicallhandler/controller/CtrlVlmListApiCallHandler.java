@@ -2,7 +2,9 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.pojo.EffectivePropertiesPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
@@ -38,6 +40,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -60,6 +63,7 @@ public class CtrlVlmListApiCallHandler
     private final NodeRepository nodeRepository;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
+    private final StltConfigAccessor stltCfgAccessor;
 
     @Inject
     public CtrlVlmListApiCallHandler(
@@ -69,7 +73,8 @@ public class CtrlVlmListApiCallHandler
         ResourceDefinitionRepository resourceDefinitionRepositoryRef,
         NodeRepository nodeRepositoryRef,
         LockGuardFactory lockGuardFactoryRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        StltConfigAccessor stltCfgAccessorRef
     )
     {
         errorReporter = errorReporterRef;
@@ -79,6 +84,7 @@ public class CtrlVlmListApiCallHandler
         nodeRepository = nodeRepositoryRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
+        stltCfgAccessor = stltCfgAccessorRef;
     }
 
     public Flux<ResourceList> listVlms(
@@ -198,6 +204,11 @@ public class CtrlVlmListApiCallHandler
 
                                 if (!volumes.isEmpty())
                                 {
+                                    EffectivePropertiesPojo propsPojo = rsc.getEffectiveProps(
+                                        peerAccCtx.get(),
+                                        stltCfgAccessor
+                                    );
+
                                     RscPojo filteredRscVlms = new RscPojo(
                                         rscDfn.getName().getDisplayName(),
                                         rsc.getNode().getName().getDisplayName(),
@@ -212,7 +223,8 @@ public class CtrlVlmListApiCallHandler
                                         null,
                                         null,
                                         rsc.getLayerData(peerAccCtx.get()).asPojo(peerAccCtx.get()),
-                                        rsc.getCreateTimestamp().orElse(null)
+                                        rsc.getCreateTimestamp().orElse(null),
+                                        propsPojo
                                     );
                                     rscList.addResource(filteredRscVlms);
                                 }

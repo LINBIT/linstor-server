@@ -17,6 +17,9 @@ import com.linbit.linstor.api.pojo.BCacheRscPojo;
 import com.linbit.linstor.api.pojo.CacheRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.EbsRemotePojo;
+import com.linbit.linstor.api.pojo.EffectivePropertiesPojo;
+import com.linbit.linstor.api.pojo.EffectivePropertiesPojo.EffectivePropertyPojo;
+import com.linbit.linstor.api.pojo.EffectivePropertiesPojo.PropPojo;
 import com.linbit.linstor.api.pojo.ExosConnectionMapPojo;
 import com.linbit.linstor.api.pojo.ExosDefaultsPojo;
 import com.linbit.linstor.api.pojo.ExosEnclosureEventPojo;
@@ -572,6 +575,7 @@ public class Json
         rsc.props = rscApi.getProps();
         rsc.layer_object = apiToResourceLayer(rscApi.getLayerData());
         rsc.uuid = rscApi.getUuid().toString();
+        rsc.effective_props = apiToEffectiveProps(rscApi.getEffectivePropsPojo());
         rscApi.getCreateTimestamp().ifPresent(d -> rsc.create_timestamp = d.getTime());
 
         rsc.shared_name = getSharedName(rscApi);
@@ -645,6 +649,40 @@ public class Json
         {
         }
         return rsc;
+    }
+
+    private static Map<String, JsonGenTypes.EffectivePropertiesMapValue> apiToEffectiveProps(
+        EffectivePropertiesPojo pojo
+    )
+    {
+        Map<String, JsonGenTypes.EffectivePropertiesMapValue> jsonMap;
+        if (pojo != null)
+        {
+            jsonMap = new TreeMap<>();
+            for (Entry<String, EffectivePropertyPojo> pojoEntry : pojo.properties.entrySet())
+            {
+                JsonGenTypes.EffectivePropertiesMapValue jsonValue = new JsonGenTypes.EffectivePropertiesMapValue();
+                EffectivePropertyPojo pojoValue = pojoEntry.getValue();
+                jsonValue.descr = pojoValue.active.descr;
+                jsonValue.type = pojoValue.active.type;
+                jsonValue.value = pojoValue.active.value;
+                jsonValue.other = new ArrayList<>();
+                for (PropPojo pojoProp : pojoValue.other)
+                {
+                    JsonGenTypes.PropertyWithDescription jsonProp = new JsonGenTypes.PropertyWithDescription();
+                    jsonProp.descr = pojoProp.descr;
+                    jsonProp.type = pojoProp.type;
+                    jsonProp.value = pojoProp.value;
+                    jsonValue.other.add(jsonProp);
+                }
+                jsonMap.put(pojoEntry.getKey(), jsonValue);
+            }
+        }
+        else
+        {
+            jsonMap = null;
+        }
+        return jsonMap;
     }
 
     private static String getSharedName(ResourceApi rscApiRef)

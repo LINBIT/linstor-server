@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased
+      - Added EffectivePropertiesMap, EffectivePropertiesMapValue and PropertyWithDescription objects
     * 1.20.1
       - Added max_rollback_entries to ControllerConfigDbK8s
     * 1.20.0
@@ -207,7 +209,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.20.1
+  version: 1.20.2
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -6520,6 +6522,31 @@ components:
       description: A string to string property map.
       additionalProperties:
         type: string
+    PropertyWithDescription:
+      type: object
+      required:
+        - type
+        - value
+      properties:
+        type:
+          type: string
+        value:
+          type: string
+        descr:
+          type: string
+    EffectivePropertiesMapValue:
+      allOf:
+        - $ref: '#/components/schemas/PropertyWithDescription'
+        - type: object
+          properties:
+            other:
+              type: array
+              items:
+                $ref: '#/components/schemas/PropertyWithDescription'
+    EffectivePropertiesMap:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/EffectivePropertiesMapValue'
     ProviderKind:
       type: string
       enum:
@@ -6960,6 +6987,8 @@ components:
           example: nodeA
         props:
           $ref: '#/components/schemas/Properties'
+        effective_props:
+          $ref: '#/components/schemas/EffectivePropertiesMap'
         flags:
           type: array
           items:

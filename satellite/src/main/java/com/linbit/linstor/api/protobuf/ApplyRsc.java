@@ -131,6 +131,7 @@ public class ApplyRsc implements ApiCall
             fullSyncId,
             updateId,
             rscLayerData,
+            null,
             null
         );
     }

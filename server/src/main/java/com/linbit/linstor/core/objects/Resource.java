@@ -1,8 +1,13 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.ErrorCheck;
+import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.PriorityProps.MultiResult;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.pojo.EffectivePropertiesPojo;
 import com.linbit.linstor.api.pojo.RscPojo;
 import com.linbit.linstor.api.prop.LinStorObject;
+import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceConnectionApi;
 import com.linbit.linstor.core.apis.VolumeApi;
@@ -22,7 +27,9 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -370,7 +377,12 @@ public class Resource extends AbsResource<Resource>
         return isDrbdDiskless(accCtx) || isNvmeInitiator(accCtx);
     }
 
-    public ResourceApi getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
+    public ResourceApi getApiData(
+        AccessContext accCtx,
+        Long fullSyncId,
+        Long updateId,
+        @Nullable EffectivePropertiesPojo effectiveProps
+    )
         throws AccessDeniedException
     {
         checkDeleted();
@@ -399,8 +411,37 @@ public class Resource extends AbsResource<Resource>
             fullSyncId,
             updateId,
             getLayerData(accCtx).asPojo(accCtx),
-            getCreateTimestamp().orElse(null)
+            getCreateTimestamp().orElse(null),
+            effectiveProps
         );
+    }
+
+    public EffectivePropertiesPojo getEffectiveProps(
+        AccessContext accCtx,
+        StltConfigAccessor stltCfgAccessor
+    ) throws AccessDeniedException
+    {
+        // get prio-props
+        PriorityProps prioProps = new PriorityProps(getProps(accCtx));
+        for (StorPool storPool : LayerVlmUtils.getStorPools(this, accCtx))
+        {
+            prioProps.addProps(storPool.getProps(accCtx));
+        }
+        prioProps.addProps(
+            getNode().getProps(accCtx),
+            getResourceDefinition().getProps(accCtx),
+            stltCfgAccessor.getReadonlyProps()
+        );
+        // get conflicting map
+        Map<String, MultiResult> conflictingProps = prioProps.renderConflictingMap(
+            ApiConsts.NAMESPC_DRBD_OPTIONS,
+            true
+        );
+        // remove all props from result that do not use this prioProps-structure
+        List<String> applicablePropsKeys = Arrays.asList("DrbdOptions/SkipDisk");
+        conflictingProps.keySet().retainAll(applicablePropsKeys);
+        // turn into pojo
+        return EffectivePropertiesPojo.build(conflictingProps);
     }
 
     /**

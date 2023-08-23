@@ -272,7 +272,7 @@ public class ResourceStateEventHandler implements EventHandler
                     drbdRscData.setPromotionScore(promotionScore);
                     if (!Objects.equals(drbdRscData.mayPromote(), mayPromote))
                     {
-                        eventDrbdHandlerBridge.triggerMayPromote(rsc.getApiData(apiCtx, null, null), mayPromote);
+                        eventDrbdHandlerBridge.triggerMayPromote(rsc.getApiData(apiCtx, null, null, null), mayPromote);
                     }
                     drbdRscData.setMayPromote(mayPromote);
                 }
