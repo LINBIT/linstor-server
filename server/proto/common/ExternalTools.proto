@@ -24,7 +24,7 @@ message ExternalToolsInfo
         LOSETUP = 11;
         ZSTD = 13;
         SOCAT = 14;
-        UTIL_LINUX = 15;
+        COREUTILS_LINUX = 15;
         UDEVADM = 16;
         LSSCSI = 17;
         SAS_PHY = 18;

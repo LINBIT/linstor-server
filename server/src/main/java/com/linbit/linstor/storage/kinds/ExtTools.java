@@ -13,7 +13,7 @@ public enum ExtTools
     LOSETUP,
     ZSTD,
     SOCAT,
-    UTIL_LINUX,
+    COREUTILS_LINUX,
     UDEVADM,
     LSSCSI, SAS_PHY, SAS_DEVICE,
     BCACHE_TOOLS,

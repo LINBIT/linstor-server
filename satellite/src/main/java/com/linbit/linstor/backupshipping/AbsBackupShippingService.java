@@ -216,8 +216,8 @@ public abstract class AbsBackupShippingService implements SystemService
                 cmdRef,
                 new String[]
                 {
-                    "setsid",
-                    "-w",
+                    "timeout",
+                    "0",
                     "bash",
                     "-c",
                     getCommandSending(
@@ -279,8 +279,8 @@ public abstract class AbsBackupShippingService implements SystemService
                 cmdRef,
                 new String[]
                 {
-                    "setsid",
-                    "-w",
+                    "timeout",
+                    "0",
                     "bash",
                     "-c",
                     getCommandReceiving(cmdRef, remote, snapVlmData)
@@ -765,8 +765,8 @@ public abstract class AbsBackupShippingService implements SystemService
                 {
                     final String lineTrimmed = line.trim(); // ps prints a trailing space
                     String pid = lineTrimmed.substring(0, lineTrimmed.indexOf(" "));
-                    extCmdFactory.create().exec("pkill", "-9", "--parent", pid);
-                    // extCmdFactory.create().exec("kill", pid);
+                    // extCmdFactory.create().exec("pkill", "-9", "--parent", pid);
+                    extCmdFactory.create().exec("kill", pid);
                 }
                 Thread.sleep(500); // wait a bit so not just the process is killed but also the socket is closed
             }

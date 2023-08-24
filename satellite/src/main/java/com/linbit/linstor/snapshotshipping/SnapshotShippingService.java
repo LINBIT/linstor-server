@@ -157,7 +157,8 @@ public class SnapshotShippingService implements SystemService
             snapshotShippingReceivingCommandRef,
             new String[]
             {
-                "setsid", "-w",
+                "timeout",
+                "0",
                 "bash", "-c",
                 String.format(CMD_FORMAT_RECEIVING, port, snapshotShippingReceivingCommandRef)
             },
@@ -185,7 +186,8 @@ public class SnapshotShippingService implements SystemService
             snapshotShippingSendingCommandRef,
             new String[]
             {
-                "setsid", "-w",
+                "timeout",
+                "0",
                 "bash", "-c",
                 String.format(
                     CMD_FORMAT_SENDING,

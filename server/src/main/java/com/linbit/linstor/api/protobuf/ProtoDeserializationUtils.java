@@ -428,8 +428,8 @@ public class ProtoDeserializationUtils
             case SOCAT:
                 tool = ExtTools.SOCAT;
                 break;
-            case UTIL_LINUX:
-                tool = ExtTools.UTIL_LINUX;
+            case COREUTILS_LINUX:
+                tool = ExtTools.COREUTILS_LINUX;
                 break;
             case UDEVADM:
                 tool = ExtTools.UDEVADM;

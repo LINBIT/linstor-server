@@ -359,9 +359,9 @@ public class BackupNodeFinder
                     getErrorRcIfNotSupported(
                         deviceProviderKind,
                         extToolsManager,
-                        ExtTools.UTIL_LINUX,
-                        "setsid from util_linux",
-                        VERSION_UTIL_LINUX
+                        ExtTools.COREUTILS_LINUX,
+                        "timeout from coreutils",
+                        new ExtToolsInfo.Version(8, 5) // coreutils commit c403c31e8806b732e1164ef4a206b0eab71bca95
                     )
                 );
                 if (deviceProviderKind.equals(DeviceProviderKind.LVM_THIN))

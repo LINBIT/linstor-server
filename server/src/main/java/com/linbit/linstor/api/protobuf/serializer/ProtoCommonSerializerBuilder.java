@@ -113,9 +113,9 @@ import com.linbit.linstor.proto.common.StorageRscOuterClass.LvmVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.RemoteSpdkVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.SpdkVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageRsc;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
-import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageSpacesVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageSpacesThinVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageSpacesVlm;
+import com.linbit.linstor.proto.common.StorageRscOuterClass.StorageVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsThinVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ZfsVlm;
 import com.linbit.linstor.proto.common.VlmDfnOuterClass;
@@ -1584,8 +1584,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case SOCAT:
                 ret = ExternalTools.SOCAT;
                 break;
-            case UTIL_LINUX:
-                ret = ExternalTools.UTIL_LINUX;
+            case COREUTILS_LINUX:
+                ret = ExternalTools.COREUTILS_LINUX;
                 break;
             case UDEVADM:
                 ret = ExternalTools.UDEVADM;

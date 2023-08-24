@@ -1,6 +1,8 @@
 package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ChildProcessTimeoutException;
+import com.linbit.ImplementationError;
+import com.linbit.Platform;
 import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
@@ -12,8 +14,6 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
-import com.linbit.ImplementationError;
-import com.linbit.Platform;
 import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
@@ -67,7 +67,9 @@ public class StltExtToolsChecker
         .compile("(\\d+)\\.(\\d+)(?:\\.(\\d+))?");
     private static final Pattern ZSTD_VERSION_PATTERN = Pattern.compile("v(\\d+)\\.(\\d+)\\.(\\d+)");
     private static final Pattern SOCAT_VERSION_PATTERN = Pattern.compile("version (\\d+)\\.(\\d+)\\.(\\d+)");
-    private static final Pattern UTIL_LINUX_VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)");
+    private static final Pattern COREUTILS_VERSION_PATTERN = Pattern.compile(
+        "timeout \\(GNU coreutils\\) (\\d+)\\.(\\d+)"
+    );
     private static final Pattern UDEVADM_VERSION_PATTERN = Pattern.compile("(\\d+)");
     private static final Pattern LSSCSI_VERSION_PATTERN = Pattern.compile("(?:version: )?(\\d+)\\.(\\d+)");
     private static final String PLATFORM_LINUX = "Linux";
@@ -119,7 +121,7 @@ public class StltExtToolsChecker
             getLosetupInfo(),
             getZstdInfo(),
             getSocatInfo(),
-            getUtilLinuxInfo(),
+            getCoreUtilsInfo(),
             getUdevadmInfo(),
             getLsscsiInfo(),
             getSasPhyInfo(),
@@ -192,7 +194,7 @@ public class StltExtToolsChecker
 
     private ExtToolsInfo doesNotExist(ExtTools tool)
     {
-        List<String> reasons = new ArrayList<String>();
+        List<String> reasons = new ArrayList<>();
         reasons.add(String.format("This tool does not exist on the %s platform.", Platform.isLinux() ? "Linux" : "Windows"));
 
         return new ExtToolsInfo(tool, false, null, null, null, reasons);
@@ -520,9 +522,15 @@ public class StltExtToolsChecker
         return infoBy3MatchGroupPattern(SOCAT_VERSION_PATTERN, ExtTools.SOCAT, false, "socat", "-V");
     }
 
-    private ExtToolsInfo getUtilLinuxInfo()
+    private ExtToolsInfo getCoreUtilsInfo()
     {
-        return infoBy3MatchGroupPattern(UTIL_LINUX_VERSION_PATTERN, ExtTools.UTIL_LINUX, false, "setsid", "-V");
+        return infoBy3MatchGroupPattern(
+            COREUTILS_VERSION_PATTERN,
+            ExtTools.COREUTILS_LINUX,
+            false,
+            "timeout",
+            "--version"
+        );
     }
 
     private ExtToolsInfo getUdevadmInfo()
