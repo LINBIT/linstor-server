@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.extproc.ChildProcessHandler;
 import com.linbit.extproc.DaemonHandler;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
@@ -926,6 +927,7 @@ public class CtrlSosReportApiCallHandler
             throws IOException, ExtCmdFailedException, ChildProcessTimeoutException
     {
         ExtCmd extCommand = extCmdFactory.create();
+        extCommand.setTimeout(ChildProcessHandler.TimeoutType.WAIT, 4*60*1000);
         List<String> cmd = new ArrayList<>();
         cmd.add("tar");
         cmd.add("-C");
