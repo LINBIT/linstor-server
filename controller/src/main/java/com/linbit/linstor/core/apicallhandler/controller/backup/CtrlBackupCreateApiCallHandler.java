@@ -267,15 +267,18 @@ public class CtrlBackupCreateApiCallHandler
                 DeviceLayerKind.DRBD,
                 RscLayerSuffixes.SUFFIX_DATA
             );
-            for (DrbdRscData<Resource> rscData : rscDfnData.getDrbdRscDataList())
+            if (rscDfnData != null)
             {
-                if (!rscData.isDiskless(sysCtx))
+                for (DrbdRscData<Resource> rscData : rscDfnData.getDrbdRscDataList())
                 {
-                    /*
-                     * diskless nodes do reserve a node-id for themselves, but the peer-slot is not used in the
-                     * metadata of diskfull peers
-                     */
-                    nodeIds.add(rscData.getNodeId().value);
+                    if (!rscData.isDiskless(sysCtx))
+                    {
+                        /*
+                         * diskless nodes do reserve a node-id for themselves, but the peer-slot is not used in the
+                         * metadata of diskfull peers
+                         */
+                        nodeIds.add(rscData.getNodeId().value);
+                    }
                 }
             }
             setStartBackupProps(snapDfn, remoteName, nodeIds);
