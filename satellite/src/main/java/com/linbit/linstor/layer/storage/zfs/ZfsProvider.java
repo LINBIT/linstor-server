@@ -33,6 +33,7 @@ import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
+import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands.ZfsVolumeType;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils.ZfsInfo;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -419,7 +420,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         ZfsCommands.delete(
             extCmdFactory.create(),
             vlmData.getZPool(),
-            lvId
+            lvId,
+            ZfsVolumeType.VOLUME
         );
         vlmData.setExists(false);
 
@@ -440,7 +442,12 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                     vlmData.getRscLayerObject().getResourceNameSuffix(),
                     getCloneSnapshotName(vlmData),
                     vlmData.getVlmNr().value);
-                ZfsCommands.delete(extCmdFactory.create(), getZPool(vlmData.getStorPool()), srcFullSnapshotName);
+                ZfsCommands.delete(
+                    extCmdFactory.create(),
+                    getZPool(vlmData.getStorPool()),
+                    srcFullSnapshotName,
+                    ZfsVolumeType.SNAPSHOT
+                );
             }
         }
         catch (AccessDeniedException | StorageException exc)
@@ -505,7 +512,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         ZfsCommands.delete(
             extCmdFactory.create(),
             getZPool(snapVlmRef.getStorPool()),
-            asSnapLvIdentifier(snapVlmRef)
+            asSnapLvIdentifier(snapVlmRef),
+            ZfsVolumeType.SNAPSHOT
         );
     }
 
@@ -967,7 +975,12 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
                 final String srcFullSnapshotName = getCloneSnapshotNameFull(
                     srcData, (ZfsData<Resource>) cloneInfo.getDstVlmData(), "@");
-                ZfsCommands.delete(extCmdFactory.create(), getZPool(srcData.getStorPool()), srcFullSnapshotName);
+                ZfsCommands.delete(
+                    extCmdFactory.create(),
+                    getZPool(srcData.getStorPool()),
+                    srcFullSnapshotName,
+                    ZfsVolumeType.SNAPSHOT
+                );
             }
         }
         catch (AccessDeniedException accessDeniedException)

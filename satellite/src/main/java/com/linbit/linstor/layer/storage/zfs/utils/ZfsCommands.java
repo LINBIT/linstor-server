@@ -97,7 +97,7 @@ public class ZfsCommands
         );
     }
 
-    public static OutputData delete(ExtCmd extCmd, String zpool, String identifier)
+    public static OutputData delete(ExtCmd extCmd, String zpool, String identifier, ZfsVolumeType type)
         throws StorageException
     {
         String fullQualifiedId = zpool + File.separator + identifier;
@@ -108,8 +108,8 @@ public class ZfsCommands
                 "destroy",
                 fullQualifiedId
             },
-            "Failed to delete zfs volume",
-            "Failed to delete zfs volume '" + fullQualifiedId + "'",
+            "Failed to delete zfs " + type.descr,
+            "Failed to delete zfs " + type.descr + " '" + fullQualifiedId + "'",
             new RetryIfDeviceBusy()
         );
     }
@@ -419,6 +419,18 @@ public class ZfsCommands
             "Failed to set user property",
             "Failed to set user property"
         );
+    }
+
+    public enum ZfsVolumeType
+    {
+        VOLUME("volume"), SNAPSHOT("snapshot");
+
+        private final String descr;
+
+        ZfsVolumeType(String descrRef)
+        {
+            descr = descrRef;
+        }
     }
 
     private ZfsCommands()

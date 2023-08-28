@@ -192,7 +192,13 @@ public class LvmCommands
         );
     }
 
-    public static OutputData delete(ExtCmd extCmd, String volumeGroup, String vlmId, String lvmConfig)
+    public static OutputData delete(
+        ExtCmd extCmd,
+        String volumeGroup,
+        String vlmId,
+        String lvmConfig,
+        LvmVolumeType type
+    )
         throws StorageException
     {
         return genericExecutor(
@@ -204,8 +210,8 @@ public class LvmCommands
                 "-f", // skip the "are you sure?"
                 volumeGroup + File.separator + vlmId
             ),
-            "Failed to delete lvm volume",
-            "Failed to delete lvm volume '" + vlmId + "' from volume group '" + volumeGroup,
+            "Failed to delete lvm " + type.descr,
+            "Failed to delete lvm " + type.descr + " '" + vlmId + "' from volume group '" + volumeGroup,
             new RetryIfDeviceBusy()
         );
     }
@@ -686,6 +692,18 @@ public class LvmCommands
             "'vgscan' failed",
             "'vgscan' failed"
         );
+    }
+
+    public enum LvmVolumeType
+    {
+        VOLUME("volume"), SNAPSHOT("snapshot"), THIN_POOL("thin pool");
+
+        private final String descr;
+
+        LvmVolumeType(String descrRef)
+        {
+            descr = descrRef;
+        }
     }
 
     private LvmCommands()

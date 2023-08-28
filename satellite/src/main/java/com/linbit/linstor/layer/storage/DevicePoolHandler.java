@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
+import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LvmVolumeType;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands;
 import com.linbit.linstor.layer.storage.utils.Commands;
@@ -283,7 +284,8 @@ public class DevicePoolHandler
                     extCmdFactory.create(),
                     lvmPoolName,
                     thinPoolName,
-                    config
+                    config,
+                    LvmVolumeType.THIN_POOL
                 )
             );
             apiCallRc.addEntry(

@@ -19,6 +19,7 @@ import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
+import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LvmVolumeType;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
@@ -182,7 +183,8 @@ public class LvmThinProvider extends LvmProvider
                 extCmdFactory.create(),
                 lvmVlmData.getVolumeGroup(),
                 oldLvmId,
-                config
+                config,
+                LvmVolumeType.VOLUME
             )
         );
         lvmVlmData.setExists(false);
@@ -283,7 +285,8 @@ public class LvmThinProvider extends LvmProvider
                 extCmdFactory.create(),
                 getVolumeGroup(snapVlm.getStorPool()),
                 asSnapLvIdentifier(snapVlm),
-                config
+                config,
+                LvmVolumeType.SNAPSHOT
             )
         );
         snapVlm.setExists(false);

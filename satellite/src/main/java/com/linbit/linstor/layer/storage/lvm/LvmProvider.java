@@ -29,6 +29,7 @@ import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
+import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LvmVolumeType;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
@@ -470,7 +471,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                     extCmdFactory.create(),
                     volumeGroup,
                     oldLvmId,
-                    config
+                    config,
+                    LvmVolumeType.VOLUME
                 )
             );
             vlmData.setExists(false);
@@ -516,7 +518,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                             extCmdFactory.create(),
                             volumeGroup,
                             newLvmId,
-                            config
+                            config,
+                            LvmVolumeType.VOLUME
                         )
                     );
                 }
@@ -869,7 +872,8 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 extCmdFactory.create(),
                 vlmGroup,
                 srcFullSnapshotName,
-                config
+                config,
+                LvmVolumeType.SNAPSHOT
             )
         );
     }
