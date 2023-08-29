@@ -428,34 +428,39 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         List<RawParameters> ret = new ArrayList<>();
         Map<String, String> dataMap = new TreeMap<>(namespace(tableRef).get(true));
 
-        // check for corner case where we might not have a primary key, i.e. "tables" with only one entry
-        boolean tableHasPrimaryKey = false;
-        for (Column clm : tableRef.values())
+        // no data -> nothing to add to the returned list
+        if (!dataMap.isEmpty())
         {
-            if (clm.isPk())
+            // check for corner case where we might not have a primary key, i.e. "tables" with only one entry
+            boolean tableHasPrimaryKey = false;
+            for (Column clm : tableRef.values())
             {
-                tableHasPrimaryKey = true;
-                break;
+                if (clm.isPk())
+                {
+                    tableHasPrimaryKey = true;
+                    break;
+                }
+            }
+
+            if (tableHasPrimaryKey)
+            {
+                Set<String> composedPkList = EtcdUtils.getComposedPkList(dataMap);
+                if (!composedPkList.isEmpty())
+                {
+                    for (String composedPk : composedPkList)
+                    {
+                        Map<String, Object> rawObjects = new TreeMap<>();
+                        ret.add(buildRawParams(tableRef, dataMap, composedPk, rawObjects));
+                    }
+                }
+            }
+            else
+            {
+                Map<String, Object> rawObjects = new TreeMap<>();
+                ret.add(buildRawParams(tableRef, dataMap, null, rawObjects));
             }
         }
 
-        if (tableHasPrimaryKey)
-        {
-            Set<String> composedPkList = EtcdUtils.getComposedPkList(dataMap);
-            if (!composedPkList.isEmpty())
-            {
-                for (String composedPk : composedPkList)
-                {
-                    Map<String, Object> rawObjects = new TreeMap<>();
-                    ret.add(buildRawParams(tableRef, dataMap, composedPk, rawObjects));
-                }
-            }
-        }
-        else
-        {
-            Map<String, Object> rawObjects = new TreeMap<>();
-            ret.add(buildRawParams(tableRef, dataMap, null, rawObjects));
-        }
         return ret;
     }
 

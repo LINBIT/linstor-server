@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backup: Fix possible NPE on non-DRBD resources
 - AutoEvict only warn about offline node
 - Fix hanging controller on multiple parallel snapshots
+- ETCD: fixed exporting empty tables
 
 ## [1.24.1] - 2023-08-10
 
