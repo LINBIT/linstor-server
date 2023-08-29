@@ -8,10 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Improve wrapped DelayedApiException error reporting
+- Improve logging on deleting for volumes/snapshots
+- Increase timeout for sos create tar command
+
 ### Fixed
 
 - Fix "attempt to replace active transMgr" due to unclean core-maps
 - Reassigning resource-definition to new resource-group had no effect on satellite
+- Use correct java-11 on sles based systems
+- Fixed node reconnect scope already entered bug
+- Do not create error reports for no connection to satellite errors
+- Use timeout 0, to workaround missing setsid -w on old systems
+- Backup: Fix possible NPE on non-DRBD resources
+- AutoEvict only warn about offline node
+- Fix hanging controller on multiple parallel snapshots
 
 ## [1.24.1] - 2023-08-10
 
