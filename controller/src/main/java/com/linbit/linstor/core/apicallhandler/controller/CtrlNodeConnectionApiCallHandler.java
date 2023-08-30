@@ -1,7 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -13,7 +12,6 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
-import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -25,9 +23,8 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeConnection;
-import com.linbit.linstor.core.objects.NodeConnectionFactory;
 import com.linbit.linstor.core.repository.NodeRepository;
-import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -69,10 +66,10 @@ public class CtrlNodeConnectionApiCallHandler
     );
 
     private final AccessContext apiCtx;
+    private final ErrorReporter errorReporter;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
-    private final NodeConnectionFactory nodeConnectionFactory;
     private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
@@ -86,10 +83,10 @@ public class CtrlNodeConnectionApiCallHandler
     @Inject
     public CtrlNodeConnectionApiCallHandler(
         @ApiContext AccessContext apiCtxRef,
+        ErrorReporter errorReporterRef,
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlPropsHelper ctrlPropsHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
-        NodeConnectionFactory nodeConnectionFactoryRef,
         CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         ResponseConverter responseConverterRef,
@@ -101,11 +98,11 @@ public class CtrlNodeConnectionApiCallHandler
         NodeRepository nodeRepoRef
     )
     {
+        errorReporter = errorReporterRef;
         apiCtx = apiCtxRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlPropsHelper = ctrlPropsHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
-        nodeConnectionFactory = nodeConnectionFactoryRef;
         ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         responseConverter = responseConverterRef;
@@ -256,7 +253,7 @@ public class CtrlNodeConnectionApiCallHandler
     }
 
     public Flux<ApiCallRc> modifyNodeConnectionInTrnasaction(
-        UUID nodeConnUuid,
+        UUID nodeConnUuidRef,
         String nodeName1,
         String nodeName2,
         Map<String, String> overrideProps,
@@ -292,7 +289,8 @@ public class CtrlNodeConnectionApiCallHandler
             }
             else
             {
-                if (nodeConnUuid != null && !nodeConnUuid.equals(nodeConn.getUuid()))
+                UUID nodeConnUuid = nodeConn.getUuid();
+                if (nodeConnUuidRef != null && !nodeConnUuidRef.equals(nodeConnUuid))
                 {
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
@@ -376,7 +374,7 @@ public class CtrlNodeConnectionApiCallHandler
                     responses,
                     context,
                     ApiSuccessUtils.defaultModifiedEntry(
-                        nodeConn.getUuid(),
+                        nodeConnUuid,
                         CtrlNodeConnectionHelper.getNodeConnectionDescriptionInline(nodeName1, nodeName2)
                     )
                 );
@@ -399,6 +397,11 @@ public class CtrlNodeConnectionApiCallHandler
                             Arrays.asList(nodes.objA)
                         ).flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2())
                 );
+
+                if (nodeConn.getProps(apiCtx).isEmpty())
+                {
+                    flux = flux.concatWith(cleanupNodeConn(nodeConn));
+                }
             }
         }
         catch (Exception | ImplementationError exc)
@@ -425,39 +428,6 @@ public class CtrlNodeConnectionApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_NODE_CONN
             );
         }
-    }
-
-    private NodeConnection createNodeConn(Node node1, Node node2)
-    {
-        NodeConnection nodeConnection;
-        try
-        {
-            nodeConnection = nodeConnectionFactory.create(
-                peerAccCtx.get(),
-                node1,
-                node2
-            );
-        }
-        catch (DatabaseException sqlExc)
-        {
-            throw new ApiDatabaseException(sqlExc);
-        }
-        catch (AccessDeniedException accDeniedExc)
-        {
-            throw new ApiAccessDeniedException(
-                accDeniedExc,
-                "create " + CtrlNodeConnectionHelper.getNodeConnectionDescriptionInline(node1, node2),
-                ApiConsts.FAIL_ACC_DENIED_NODE_CONN
-            );
-        }
-        catch (LinStorDataAlreadyExistsException dataAlreadyExistsExc)
-        {
-            throw new ApiRcException(ApiCallRcImpl.simpleEntry(
-                ApiConsts.FAIL_EXISTS_NODE_CONN,
-                CtrlNodeConnectionHelper.getNodeConnectionDescription(node1, node2) + " already exists."
-            ), dataAlreadyExistsExc);
-        }
-        return nodeConnection;
     }
 
     private Props getProps(NodeConnection nodeConn)
@@ -493,6 +463,30 @@ public class CtrlNodeConnectionApiCallHandler
         }
 
         return responses;
+    }
+
+    private Flux<ApiCallRc> cleanupNodeConn(NodeConnection nodeConnectionRef)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Cleaning up node connection",
+            lockGuardFactory.buildDeferred(WRITE, NODES_MAP),
+            () -> cleanupNodeConnInTransaction(nodeConnectionRef)
+        );
+    }
+
+    private Flux<ApiCallRc> cleanupNodeConnInTransaction(NodeConnection nodeConnRef)
+    {
+        if (nodeConnRef != null && !nodeConnRef.isDeleted() && getProps(nodeConnRef).isEmpty())
+        {
+            errorReporter.logDebug(
+                "Deleting empty %s",
+                CtrlNodeConnectionHelper.getNodeConnectionDescriptionInline(nodeConnRef)
+            );
+            nodeConnectionHelper.deleteNodeConnection(nodeConnRef);
+
+            ctrlTransactionHelper.commit();
+        }
+        return Flux.empty();
     }
 
     private static ResponseContext makeNodeConnectionContext(
