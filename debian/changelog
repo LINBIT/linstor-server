@@ -1,3 +1,25 @@
+linstor-server (1.24.2-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * gradle: set correct dir on sles systems
+  * fix node reconnect scope already entered
+  * Do not create error-report on no connection to satellite errors
+  * sos-report: wait 4 minutes for the tar command to finish
+  * update changelog
+
+  [ Gabor Hernadi ]
+  * Stlt,coreMaps: Properly clear all core maps on new connection
+  * Stlt: Properly update resource-group reassignment
+  * Db,Node: init nodes with offlinePeers
+  * Backup: Replace setsid -w with timeout 0
+  * Backup: Fix possible NPE
+  * AutoEvict: Only warn about offline node
+  * MultiSnap: Fix hanging controller with multiple client
+  * Logging: Distinguish between volume and snapshot when deleting
+  * ETCD,export: Skip empty tables
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 30 Aug 2023 05:13:59 +0000
+
 linstor-server (1.24.1-1) experimental; urgency=medium
 
   [ Moritz "WanzenBug" Wanzenböck ]
