@@ -975,8 +975,8 @@ public class PropsContainer extends AbsTransactionObject implements Props
             {
                 dbDriver.getValueDriver()
                     .update(
-                        new PropsDbEntry(rootContainer.instanceName, key, oldValue),
-                        value
+                        new PropsDbEntry(rootContainer.instanceName, key, value),
+                        oldValue
                     );
             }
         }

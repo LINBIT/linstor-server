@@ -391,7 +391,7 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
         DataToString<INPUT_TYPE> ignoredInputToString
     )
     {
-        return (data, colValue) ->
+        return (data, oldElement) ->
         {
             try
             {
@@ -399,14 +399,17 @@ public class ETCDEngine extends BaseEtcdDriver implements DbEngine
                     "Updating %s's %s from [%s] to [%s] %s",
                     col.getTable().getName(),
                     col.getName(),
+                    typeMapper.apply(oldElement),
                     dataValueToString.accept(data),
-                    typeMapper.apply(colValue),
                     dataToString.toString(data)
                 );
-                if (colValue != null)
+
+                Object newValue = setters.get(col).accept(data);
+
+                if (newValue != null)
                 {
                     namespace(col.getTable(), getPrimaryKeys(col.getTable(), data, setters))
-                        .put(col, Objects.toString(typeMapper.apply(colValue)));
+                        .put(col, Objects.toString(newValue));
                 }
                 else
                 {

@@ -1,11 +1,5 @@
 package com.linbit.linstor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.identifier.NetInterfaceName;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -30,6 +24,12 @@ import java.util.Map;
 
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class NetInterfaceDbDriverTest extends GenericDbBase
 {
@@ -288,7 +288,8 @@ public class NetInterfaceDbDriverTest extends GenericDbBase
 
         String addrStr = "::1";
         LsIpAddress addr = new LsIpAddress(addrStr);
-        niAddrDriver.update(niData, addr);
+        niData.setAddress(SYS_CTX, addr);
+        // niAddrDriver.update(niData, addr);
         commit();
 
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_NODE_NET_INTERFACES);

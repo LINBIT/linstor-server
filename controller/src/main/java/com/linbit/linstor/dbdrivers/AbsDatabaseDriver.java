@@ -321,11 +321,11 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
         }
 
         @Override
-        public void update(PARENT parentRef, COL_VALUE elementRef) throws DatabaseException
+        public void update(PARENT parentRef, COL_VALUE oldElementRef) throws DatabaseException
         {
             for (SingleColumnDatabaseDriver<PARENT, COL_VALUE> updater : updaterArr)
             {
-                updater.update(parentRef, elementRef);
+                updater.update(parentRef, oldElementRef);
             }
         }
     }

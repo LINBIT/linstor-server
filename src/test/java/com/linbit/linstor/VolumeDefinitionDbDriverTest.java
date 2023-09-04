@@ -319,7 +319,8 @@ public class VolumeDefinitionDbDriverTest extends GenericDbBase
         driver.create(volDfn);
         commit();
         long size = 9001;
-        driver.getVolumeSizeDriver().update(volDfn, size);
+        volDfn.setVolumeSize(SYS_CTX, size);
+        // driver.getVolumeSizeDriver().update(volDfn, size);
 
         PreparedStatement stmt = getConnection().prepareStatement(SELECT_ALL_VOL_DFN);
         ResultSet resultSet = stmt.executeQuery();

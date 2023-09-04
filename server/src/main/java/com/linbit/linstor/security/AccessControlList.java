@@ -211,7 +211,7 @@ public final class AccessControlList extends BaseTransactionObject
             }
             else
             {
-                dbDriver.getAccessTypeDriver().update(entry, grantedAccess);
+                dbDriver.getAccessTypeDriver().update(entry, oldEntry.access);
             }
             return oldEntry;
         }

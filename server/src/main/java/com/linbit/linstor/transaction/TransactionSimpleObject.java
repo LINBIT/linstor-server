@@ -46,7 +46,7 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
         {
             activateTransMgr();
             object = obj;
-            dbDriver.update(parent, obj);
+            dbDriver.update(parent, oldObj);
             dirty = true;
         }
         else

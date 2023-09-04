@@ -57,18 +57,18 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
     }
 
     @Override
-    public void update(DATA parentRef, INPUT_TYPE elementRef) throws DatabaseException
+    public void update(DATA parentRef, INPUT_TYPE oldElementRef) throws DatabaseException
     {
         try
         {
-            if (elementRef instanceof byte[])
+            if (oldElementRef instanceof byte[])
             {
                 errorReporter.logTrace(
                     "Updating %s's %s from [%s] to [%s] %s",
                     table.getName(),
                     colToUpdate.getName(),
+                    oldElementRef == null ? "null" : "<Array of bytes>",
                     dataValueToString.accept(parentRef) == null ? "null" : "<Array of bytes>",
-                    elementRef == null ? "null" : "<Array of bytes>",
                     dataToString.toString(parentRef)
                 );
             }
@@ -78,26 +78,26 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
                     "Updating %s's %s from [%s] to [%s] %s",
                     table.getName(),
                     colToUpdate.getName(),
+                    oldElementRef == null ? "null" : inputToStringFct.toString(oldElementRef),
                     dataValueToString.accept(parentRef),
-                    elementRef == null ? "null" : inputToStringFct.toString(elementRef),
                     dataToString.toString(parentRef)
                 );
             }
             try (PreparedStatement stmt = sqlEngine.getConnection().prepareStatement(updateStatement))
             {
-                int idx = fillSetter(stmt, 1, elementRef);
+                int idx = fillSetter(stmt, 1, (DB_TYPE) setters.get(colToUpdate).accept(parentRef));
                 sqlEngine.setPrimaryValues(setters, stmt, idx, table, parentRef);
 
                 stmt.executeUpdate();
             }
-            if (elementRef instanceof byte[])
+            if (oldElementRef instanceof byte[])
             {
                 errorReporter.logTrace(
                     "%s's %s updated from [%s] to [%s] %s",
                     table.getName(),
                     colToUpdate.getName(),
+                    oldElementRef == null ? "null" : "<Array of bytes>",
                     dataValueToString.accept(parentRef) == null ? "null" : "<Array of bytes>",
-                    elementRef == null ? "null" : "<Array of bytes>",
                     dataToString.toString(parentRef)
                 );
             }
@@ -107,8 +107,8 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
                     "%s's %s updated from [%s] to [%s] %s",
                     table.getName(),
                     colToUpdate.getName(),
+                    oldElementRef == null ? "null" : inputToStringFct.toString(oldElementRef),
                     dataValueToString.accept(parentRef),
-                    elementRef == null ? "null" : inputToStringFct.toString(elementRef),
                     dataToString.toString(parentRef)
                 );
             }
@@ -132,30 +132,29 @@ class SQLSingleColumnDriver<DATA, INPUT_TYPE, DB_TYPE> implements SingleColumnDa
      * @return the index of the next column which was not yet set.
      * @throws SQLException
      */
-    protected int fillSetter(PreparedStatement stmt, int startIdx, INPUT_TYPE element)
+    protected int fillSetter(PreparedStatement stmt, int startIdx, DB_TYPE element)
         throws SQLException
     {
-        DB_TYPE data = mapper.apply(element);
         if (colToUpdate.getSqlType() == Types.BLOB)
         {
-            if (data == null)
+            if (element == null)
             {
                 stmt.setNull(startIdx, colToUpdate.getSqlType());
             }
-            else if (data instanceof byte[])
+            else if (element instanceof byte[])
             {
                 // BLOB needs special treatment as i.e. PSQL does not support setting byte[] as a blob
-                byte[] arr = (byte[]) data;
+                byte[] arr = (byte[]) element;
                 stmt.setBytes(startIdx, arr);
             }
             else
             {
-                throw new ImplementationError("Invalid class (" + data.getClass() + ") for BLOB type");
+                throw new ImplementationError("Invalid class (" + element.getClass() + ") for BLOB type");
             }
         }
         else
         {
-            stmt.setObject(startIdx, data, colToUpdate.getSqlType());
+            stmt.setObject(startIdx, element, colToUpdate.getSqlType());
         }
         return startIdx + 1;
     }

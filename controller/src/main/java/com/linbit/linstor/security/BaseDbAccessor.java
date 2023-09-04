@@ -47,8 +47,8 @@ public abstract class BaseDbAccessor<CTRL_DB_TYPE extends ControllerDatabase> im
     {
         secCfgDriver.getValueDriver()
             .update(
-                new SecConfigDbEntry(SecurityDbConsts.KEY_DSP_SEC_LEVEL, null),
-                newLevelRef.name()
+                new SecConfigDbEntry(SecurityDbConsts.KEY_DSP_SEC_LEVEL, newLevelRef.name()),
+                null
             );
     }
 
@@ -57,8 +57,8 @@ public abstract class BaseDbAccessor<CTRL_DB_TYPE extends ControllerDatabase> im
     {
         secCfgDriver.getValueDriver()
             .update(
-                new SecConfigDbEntry(SecurityDbConsts.KEY_DSP_AUTH_REQ, null),
-                Boolean.toString(newPolicyRef)
+                new SecConfigDbEntry(SecurityDbConsts.KEY_DSP_AUTH_REQ, Boolean.toString(newPolicyRef)),
+                null
             );
 
     }
