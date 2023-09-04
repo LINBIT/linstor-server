@@ -124,7 +124,7 @@ public class NetInterfaceDbDriver
         encrTypeDriver = generateSingleColumnDriver(
             STLT_CONN_ENCR_TYPE,
             netIf -> Objects.toString(netIf.getStltConnEncryptionType(dbCtxRef)),
-            EncryptionType::name
+            EncryptionType::nameOfNullable
         );
     }
 

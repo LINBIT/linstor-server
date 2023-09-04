@@ -243,6 +243,11 @@ public class NetInterface extends AbsCoreObj<NetInterface> implements ProtectedO
         {
             return valueOf(string.toUpperCase());
         }
+
+        public static String nameOfNullable(EncryptionType type)
+        {
+            return type == null ? null : type.name();
+        }
     }
 
     @Override
