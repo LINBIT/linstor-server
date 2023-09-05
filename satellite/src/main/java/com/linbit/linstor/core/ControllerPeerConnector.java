@@ -12,7 +12,7 @@ public interface ControllerPeerConnector
 
     Peer getControllerPeer();
 
-    void setControllerPeer(Peer controllerPeerRef, UUID nodeUuid, String nodeName);
+    void setControllerPeer(UUID ctrlUuidRef, Peer controllerPeerRef, UUID nodeUuid, String nodeName);
 
     void setControllerPeerToCurrentLocalNode();
 

@@ -22,6 +22,7 @@ import java.util.UUID;
 public class ControllerProtobuf extends ProtobufIO
 {
     private ProtoCtrlStltSerializer serializer;
+    private final UUID ctrlUuid = UUID.randomUUID();
 
     public ControllerProtobuf(
         final String host,
@@ -75,7 +76,7 @@ public class ControllerProtobuf extends ProtobufIO
                 InternalApiConsts.API_AUTH,
                 getNextApiCallId()
             )
-            .authMessage(nodeUuid, nodeName, sharedSecret)
+                .authMessage(nodeUuid, nodeName, sharedSecret, ctrlUuid)
             .build()
         );
     }

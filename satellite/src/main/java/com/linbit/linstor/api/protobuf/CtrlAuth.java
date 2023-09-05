@@ -78,7 +78,7 @@ public class CtrlAuth implements ApiCall
 
         Peer controllerPeer = controllerPeerProvider.get();
         AuthenticationResult authResult =
-            apiCallHandler.authenticate(nodeUuid, nodeName, controllerPeer);
+            apiCallHandler.authenticate(nodeUuid, nodeName, controllerPeer, UUID.fromString(auth.getCtrlUuid()));
 
         byte[] replyBytes;
         if (authResult.isAuthenticated())

@@ -48,7 +48,7 @@ public interface CtrlStltSerializer extends CommonSerializer
          */
         CtrlStltSerializerBuilder primaryRequest(String rscName, String rscUuid, boolean alreadyInitialized);
 
-        CtrlStltSerializerBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret);
+        CtrlStltSerializerBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret, UUID ctrlUuid);
 
         CtrlStltSerializerBuilder changedData(AtomicUpdateSatelliteData atomicUpdateDataRef);
 

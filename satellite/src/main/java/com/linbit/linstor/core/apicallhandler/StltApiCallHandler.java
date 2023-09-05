@@ -210,7 +210,8 @@ public class StltApiCallHandler
     public AuthenticationResult authenticate(
         UUID nodeUuid,
         String nodeName,
-        Peer controllerPeer
+        Peer controllerPeer,
+        UUID ctrlUuid
     )
     {
         AuthenticationResult authResult;
@@ -222,6 +223,7 @@ public class StltApiCallHandler
         }
 
         controllerPeerConnector.setControllerPeer(
+            ctrlUuid,
             controllerPeer,
             nodeUuid,
             nodeName

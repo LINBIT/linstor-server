@@ -159,7 +159,12 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
      * Controller -> Satellite
      */
     @Override
-    public ProtoCtrlStltSerializerBuilder authMessage(UUID nodeUuid, String nodeName, byte[] sharedSecret)
+    public ProtoCtrlStltSerializerBuilder authMessage(
+        UUID nodeUuid,
+        String nodeName,
+        byte[] sharedSecret,
+        UUID ctrlUuid
+    )
     {
         try
         {
@@ -167,6 +172,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                 .setNodeUuid(nodeUuid.toString())
                 .setNodeName(nodeName)
                 .setSharedSecret(ByteString.copyFrom(sharedSecret))
+                .setCtrlUuid(ctrlUuid.toString())
                 .build()
                 .writeDelimitedTo(baos);
         }

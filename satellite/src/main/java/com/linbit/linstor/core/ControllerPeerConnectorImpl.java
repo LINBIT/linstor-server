@@ -23,6 +23,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.locks.ReadWriteLock;
 
@@ -50,6 +51,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
 
     // The currently connected controller peer
     private final PeerOffline offlineCtrlPeer;
+    private UUID ctrlUuid;
     private Peer controllerPeer;
     private final Provider<StltApiCallHandlerUtils> stltApiCallHandlerUtils;
 
@@ -115,7 +117,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     }
 
     @Override
-    public void setControllerPeer(Peer controllerPeerRef, UUID nodeUuid, String nodeName)
+    public void setControllerPeer(UUID ctrlUuidRef, Peer controllerPeerRef, UUID nodeUuid, String nodeName)
     {
         try
         {
@@ -124,14 +126,27 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
             rscDfnMapLock.writeLock().lock();
             storPoolDfnMapLock.writeLock().lock();
 
+            // additional check for ctrlUuid in order to prevent "OtherController" response because of multiple
+            // connections due to network-hicups. Unused connections will be closed soon anyways
             if (controllerPeer != null)
             {
-                controllerPeer.sendMessage(
-                    commonSerializer.onewayBuilder(InternalApiConsts.API_OTHER_CONTROLLER).build(),
-                    InternalApiConsts.API_OTHER_CONTROLLER
-                );
+                if (!Objects.equals(ctrlUuidRef, ctrlUuid))
+                {
+                    controllerPeer.sendMessage(
+                        commonSerializer.onewayBuilder(InternalApiConsts.API_OTHER_CONTROLLER).build(),
+                        InternalApiConsts.API_OTHER_CONTROLLER
+                    );
+                }
+                else
+                {
+                    errorReporter.logDebug(
+                        "Not sending '%s' since the same controller connected again",
+                        InternalApiConsts.API_OTHER_CONTROLLER
+                    );
+                }
                 // no need to close connection, controller will do so when it finished processing the OUTDATED message
             }
+            ctrlUuid = ctrlUuidRef;
             controllerPeer = controllerPeerRef;
 
             AccessContext tmpCtx = sysCtx.clone();

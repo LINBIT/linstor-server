@@ -10,4 +10,6 @@ message MsgIntAuth
     // Satellite's node name
     string node_name     = 2;
     bytes  shared_secret = 3;
+    // Controller's uuid
+    string ctrl_uuid     = 4;
 }

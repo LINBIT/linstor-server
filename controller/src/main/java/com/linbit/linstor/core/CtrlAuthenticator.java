@@ -12,6 +12,7 @@ import com.linbit.linstor.api.protobuf.internal.IntAuthResponse;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -29,6 +30,7 @@ import javax.inject.Singleton;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.UUID;
 
 import reactor.core.publisher.Flux;
 import reactor.util.context.Context;
@@ -38,6 +40,7 @@ public class CtrlAuthenticator
 {
     private final ErrorReporter errorReporter;
     private final CtrlStltSerializer serializer;
+    private final SystemConfRepository systemConfRepository;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<AccessContext> peerAccCtx;
@@ -49,6 +52,7 @@ public class CtrlAuthenticator
     CtrlAuthenticator(
         ErrorReporter errorReporterRef,
         CtrlStltSerializer serializerRef,
+        SystemConfRepository systemConfRepositoryRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
@@ -59,6 +63,7 @@ public class CtrlAuthenticator
     {
         errorReporter = errorReporterRef;
         serializer = serializerRef;
+        systemConfRepository = systemConfRepositoryRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
@@ -123,7 +128,14 @@ public class CtrlAuthenticator
                             .authMessage(
                                 node.getUuid(),
                                 node.getName().getDisplayName(),
-                                "Hello, LinStor!".getBytes()
+                                "Hello, LinStor!".getBytes(),
+                                UUID.fromString(
+                                    systemConfRepository.getCtrlConfForView(apiCtx)
+                                        .getProp(
+                                            InternalApiConsts.KEY_CLUSTER_LOCAL_ID,
+                                            ApiConsts.NAMESPC_CLUSTER
+                                        )
+                                )
                             )
                             .build(),
                         false,
