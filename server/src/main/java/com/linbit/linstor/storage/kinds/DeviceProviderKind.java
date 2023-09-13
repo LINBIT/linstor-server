@@ -319,12 +319,15 @@ public enum DeviceProviderKind
                 allowed = kind2.equals(FILE) || kind2.equals(FILE_THIN);
                 break;
             case LVM:
-                allowed = kind2.equals(LVM) || kind2.equals(EXOS) ||
-                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
+                allowed = kind2.equals(LVM) || kind2.equals(LVM_THIN) ||
+                    kind2.equals(EXOS) ||
+                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN) ||
+                    kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
                 break;
             case LVM_THIN:
-                allowed = kind2.equals(LVM_THIN) ||
-                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
+                allowed = kind2.equals(LVM_THIN) || kind2.equals(LVM) ||
+                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN) ||
+                    kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
                 break;
             case SPDK:
                 allowed = kind2.equals(SPDK);
@@ -335,7 +338,8 @@ public enum DeviceProviderKind
             case ZFS:
             case ZFS_THIN:
                 allowed = kind2.equals(ZFS) || kind2.equals(ZFS_THIN) ||
-                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
+                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN) ||
+                    kind2.equals(LVM) || kind2.equals(LVM_THIN);
                 break;
             case EXOS:
                 allowed = kind2.equals(EXOS) || kind2.equals(LVM);
