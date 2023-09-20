@@ -154,7 +154,7 @@ public class BackupNodeFinder
 
                     if (canTakeSnapshot)
                     {
-                        Set<AbsRscLayerObject<Resource>> drbdRscData = LayerRscUtils.getRscDataByProvider(
+                        Set<AbsRscLayerObject<Resource>> drbdRscData = LayerRscUtils.getRscDataByLayer(
                             rsc.getLayerData(accCtx),
                             DeviceLayerKind.DRBD
                         );

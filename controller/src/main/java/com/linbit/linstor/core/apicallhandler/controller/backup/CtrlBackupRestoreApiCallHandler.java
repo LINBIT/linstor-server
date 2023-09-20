@@ -1096,7 +1096,7 @@ public class CtrlBackupRestoreApiCallHandler
                 // add to mgr so that when port is decided src-cluster can be contacted
                 backupInfoMgr.addL2LDstData(snap, data);
                 // LUKS
-                Set<AbsRscLayerObject<Snapshot>> luksLayerData = LayerRscUtils.getRscDataByProvider(
+                Set<AbsRscLayerObject<Snapshot>> luksLayerData = LayerRscUtils.getRscDataByLayer(
                     snap.getLayerData(sysCtx),
                     DeviceLayerKind.LUKS
                 );
@@ -1301,7 +1301,7 @@ public class CtrlBackupRestoreApiCallHandler
         try
         {
             Set<AbsRscLayerObject<Snapshot>> rscDataByProvider = LayerRscUtils
-                .getRscDataByProvider(snapRef.getLayerData(sysCtx), DeviceLayerKind.STORAGE);
+                .getRscDataByLayer(snapRef.getLayerData(sysCtx), DeviceLayerKind.STORAGE);
             for (AbsRscLayerObject<Snapshot> storRscData : rscDataByProvider)
             {
                 for (VlmProviderObject<Snapshot> storVlmData : storRscData.getVlmLayerObjects().values())

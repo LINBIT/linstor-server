@@ -213,7 +213,7 @@ public class RscStorageLayerHelper extends
          * If we are toggling disk, we already have StorRscData from a previous run (boolean will be true)
          */
         boolean rscToggleDiskOrCreation = rscData != null &&
-            !LayerRscUtils.getRscDataByProvider(rscData, DeviceLayerKind.STORAGE).isEmpty();
+            !LayerRscUtils.getRscDataByLayer(rscData, DeviceLayerKind.STORAGE).isEmpty();
 
         for (StorageVlmPayload storageVlmPayload : payloadRef.storagePayload.values())
         {

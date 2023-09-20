@@ -477,7 +477,7 @@ public class SnapshotShippingInternalApiCallHandler
             Map<Pair<String, Integer>, byte[]> sourceKeys = new HashMap<>();
 
             Set<AbsRscLayerObject<Snapshot>> luksLayerObjSourceSet = LayerRscUtils
-                .getRscDataByProvider(snapSourceRef.getLayerData(apiCtx), DeviceLayerKind.LUKS);
+                .getRscDataByLayer(snapSourceRef.getLayerData(apiCtx), DeviceLayerKind.LUKS);
             if (!luksLayerObjSourceSet.isEmpty())
             {
                 for (AbsRscLayerObject<Snapshot> luksLayerObj : luksLayerObjSourceSet)
@@ -494,7 +494,7 @@ public class SnapshotShippingInternalApiCallHandler
                     }
                 }
                 Set<AbsRscLayerObject<Resource>> luksLayerObjTargetSet = LayerRscUtils
-                    .getRscDataByProvider(
+                    .getRscDataByLayer(
                         snapTargetRef.getResourceDefinition().getResource(apiCtx, snapTargetRef.getNodeName()).getLayerData(apiCtx),
                         DeviceLayerKind.LUKS
                     );

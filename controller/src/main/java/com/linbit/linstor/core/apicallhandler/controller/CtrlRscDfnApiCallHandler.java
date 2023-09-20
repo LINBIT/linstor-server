@@ -1022,7 +1022,7 @@ public class CtrlRscDfnApiCallHandler
                     );
                 }
 
-                Set<AbsRscLayerObject<Resource>> rscLayerSet = LayerRscUtils.getRscDataByProvider(
+                Set<AbsRscLayerObject<Resource>> rscLayerSet = LayerRscUtils.getRscDataByLayer(
                     newRsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD);
                 for (AbsRscLayerObject<Resource> rscLayer : rscLayerSet)
                 {

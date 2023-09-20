@@ -169,7 +169,7 @@ public class EbsUtils
     public static boolean hasEbsVlms(Resource rscRef, AccessContext accCtxRef) throws AccessDeniedException
     {
         boolean hasEbsVlm = false;
-        Set<AbsRscLayerObject<Resource>> storRscDataSet = LayerRscUtils.getRscDataByProvider(
+        Set<AbsRscLayerObject<Resource>> storRscDataSet = LayerRscUtils.getRscDataByLayer(
             rscRef.getLayerData(accCtxRef),
             DeviceLayerKind.STORAGE
         );

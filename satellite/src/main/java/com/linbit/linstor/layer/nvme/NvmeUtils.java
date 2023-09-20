@@ -1098,7 +1098,7 @@ public class NvmeUtils
      */
     public boolean isSpdkResource(AbsRscLayerObject<Resource> rscData)
     {
-        Set<AbsRscLayerObject<Resource>> storageResources = LayerRscUtils.getRscDataByProvider(
+        Set<AbsRscLayerObject<Resource>> storageResources = LayerRscUtils.getRscDataByLayer(
             rscData,
             DeviceLayerKind.STORAGE
         );

@@ -195,7 +195,7 @@ public class CtrlResyncAfterHelper
                         {
                             final Resource rsc = vol.getRscLayerObject().getAbsResource();
                             final Set<AbsRscLayerObject<Resource>> drbdRscSet = LayerRscUtils
-                                .getRscDataByProvider(rsc.getLayerData(sysCtx), DeviceLayerKind.DRBD);
+                                .getRscDataByLayer(rsc.getLayerData(sysCtx), DeviceLayerKind.DRBD);
                             if (!drbdRscSet.isEmpty())
                             {
                                 final DrbdRscData<Resource> drbdRsc =

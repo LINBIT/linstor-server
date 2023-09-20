@@ -270,7 +270,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
             {
                 if (otherRsc != rsc)
                 {
-                    Set<AbsRscLayerObject<Resource>> otherRscLuksDataSet = LayerRscUtils.getRscDataByProvider(
+                    Set<AbsRscLayerObject<Resource>> otherRscLuksDataSet = LayerRscUtils.getRscDataByLayer(
                         otherRsc.getLayerData(apiCtx),
                         DeviceLayerKind.LUKS
                     );

@@ -484,7 +484,7 @@ public class RscDrbdLayerHelper extends
         throws AccessDeniedException, InvalidNameException
     {
         Set<StorPool> storPools = new HashSet<>();
-        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
+        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
             rsc.getLayerData(apiCtx),
             DeviceLayerKind.DRBD
         );

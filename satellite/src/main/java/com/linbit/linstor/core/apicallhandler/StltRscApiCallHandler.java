@@ -807,7 +807,7 @@ class StltRscApiCallHandler
         Node node = rsc.getNode();
         NodeName nodeName = node.getName();
 
-        Map<String, VlmProviderObject<Resource>> storVlmObjMap = LayerRscUtils.getRscDataByProvider(
+        Map<String, VlmProviderObject<Resource>> storVlmObjMap = LayerRscUtils.getRscDataByLayer(
             rsc.getLayerData(apiCtx),
             DeviceLayerKind.STORAGE
         ).stream().collect(Collectors.toMap(

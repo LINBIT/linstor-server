@@ -131,7 +131,7 @@ public class CtrlRscDfnApiCallHelper
         {
             final Resource rsc = rscIt.next();
             rscs.add(rsc);
-            final Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
+            final Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
                 rsc.getLayerData(peerCtx),
                 DeviceLayerKind.DRBD
             );

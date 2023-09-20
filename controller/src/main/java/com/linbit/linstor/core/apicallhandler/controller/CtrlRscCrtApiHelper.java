@@ -738,7 +738,7 @@ public class CtrlRscCrtApiHelper
                     !rsc.getStateFlags().isSet(accCtx, Resource.Flags.DRBD_DISKLESS) &&
                     containsDrbdLayerData(rsc, accCtx))
                 {
-                    Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
+                    Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
                         rsc.getLayerData(accCtx),
                         DeviceLayerKind.DRBD
                     );

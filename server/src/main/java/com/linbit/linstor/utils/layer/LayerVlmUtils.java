@@ -55,7 +55,7 @@ public class LayerVlmUtils
     {
         VolumeNumber vlmNr = vlm.getVolumeNumber();
 
-        Set<AbsRscLayerObject<RSC>> storageRscDataSet = LayerRscUtils.getRscDataByProvider(
+        Set<AbsRscLayerObject<RSC>> storageRscDataSet = LayerRscUtils.getRscDataByLayer(
             vlm.getAbsResource().getLayerData(accCtx),
             DeviceLayerKind.STORAGE,
             withMetaData ?
@@ -93,7 +93,7 @@ public class LayerVlmUtils
     public static Set<StorPool> getStorPoolSet(VlmProviderObject<?> vlmData, AccessContext accCtx)
     {
         return getStoragePools(
-            vlmData.getVlmNr(), LayerRscUtils.getRscDataByProvider(
+            vlmData.getVlmNr(), LayerRscUtils.getRscDataByLayer(
             vlmData.getRscLayerObject(),
                 DeviceLayerKind.STORAGE
             )

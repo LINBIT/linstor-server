@@ -85,7 +85,7 @@ public class ResourceDataUtils
         else
         {
             final AbsRscLayerObject<Resource> rscData = rsc.getLayerData(accCtx);
-            final Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
+            final Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
                 rscData,
                 DeviceLayerKind.DRBD
             );

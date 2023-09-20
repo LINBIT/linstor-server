@@ -877,7 +877,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                 {
                     Integer nodeId = null;
                     {
-                        Set<AbsRscLayerObject<Resource>> drbdRscData = LayerRscUtils.getRscDataByProvider(
+                        Set<AbsRscLayerObject<Resource>> drbdRscData = LayerRscUtils.getRscDataByLayer(
                             rsc.getLayerData(peerCtxProvider.get()),
                             DeviceLayerKind.DRBD
                         );

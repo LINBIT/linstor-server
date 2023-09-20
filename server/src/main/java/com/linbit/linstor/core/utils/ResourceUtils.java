@@ -33,7 +33,7 @@ public class ResourceUtils
         return filterResources(rscDfn, accCtx, rsc ->
         {
             boolean match;
-            Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
+            Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
                 rsc.getLayerData(accCtx),
                 DeviceLayerKind.DRBD
             );

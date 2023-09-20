@@ -42,7 +42,7 @@ public class SharedStorageUtils
                         !otherRscFlags.isSet(accCtx, Resource.Flags.INACTIVE))
             )
             {
-                Set<AbsRscLayerObject<Resource>> otherRscStorDataSet = LayerRscUtils.getRscDataByProvider(
+                Set<AbsRscLayerObject<Resource>> otherRscStorDataSet = LayerRscUtils.getRscDataByLayer(
                     otherRsc.getLayerData(accCtx),
                     DeviceLayerKind.STORAGE
                 );

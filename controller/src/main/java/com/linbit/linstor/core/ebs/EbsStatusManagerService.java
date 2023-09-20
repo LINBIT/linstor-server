@@ -252,7 +252,7 @@ public class EbsStatusManagerService implements SystemService
     private <RSC extends AbsResource<RSC>> void addAllEbsData(RSC absRscRef, Consumer<EbsData<RSC>> addFunctionRef)
         throws AccessDeniedException
     {
-        Set<AbsRscLayerObject<RSC>> storRscDataSet = LayerRscUtils.getRscDataByProvider(
+        Set<AbsRscLayerObject<RSC>> storRscDataSet = LayerRscUtils.getRscDataByLayer(
             absRscRef.getLayerData(sysCtx),
             DeviceLayerKind.STORAGE
         );

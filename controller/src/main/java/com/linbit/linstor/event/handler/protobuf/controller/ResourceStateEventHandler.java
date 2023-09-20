@@ -264,7 +264,7 @@ public class ResourceStateEventHandler implements EventHandler
 
             if (rsc != null)
             {
-                Set<AbsRscLayerObject<Resource>> drbdDataSet = LayerRscUtils.getRscDataByProvider(
+                Set<AbsRscLayerObject<Resource>> drbdDataSet = LayerRscUtils.getRscDataByLayer(
                     rsc.getLayerData(apiCtx), DeviceLayerKind.DRBD);
                 for (AbsRscLayerObject<Resource> rlo : drbdDataSet)
                 {

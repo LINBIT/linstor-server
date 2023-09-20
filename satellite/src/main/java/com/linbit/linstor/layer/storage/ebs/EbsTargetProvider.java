@@ -602,7 +602,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
                     )
                 );
             }
-            Set<AbsRscLayerObject<Snapshot>> srcStorSnapDataSet = LayerRscUtils.getRscDataByProvider(
+            Set<AbsRscLayerObject<Snapshot>> srcStorSnapDataSet = LayerRscUtils.getRscDataByLayer(
                 srcSnap.getLayerData(storDriverAccCtx),
                 DeviceLayerKind.STORAGE
             );

@@ -548,7 +548,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
      */
     private void copyDrbdNodeIdIfExists(Resource rsc, LayerPayload payload) throws ImplementationError
     {
-        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
+        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
             getLayerData(apiCtx, rsc),
             DeviceLayerKind.DRBD
         );
@@ -624,7 +624,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         Set<AbsRscLayerObject<Resource>> rscDataSet;
         try
         {
-            rscDataSet = LayerRscUtils.getRscDataByProvider(rsc.getLayerData(apiCtx), kind);
+            rscDataSet = LayerRscUtils.getRscDataByLayer(rsc.getLayerData(apiCtx), kind);
         }
         catch (AccessDeniedException exc)
         {

@@ -28,7 +28,7 @@ public class DrbdLayerUtils
     {
         boolean ret = false;
         Set<AbsRscLayerObject<Resource>> drbdRscSet = LayerRscUtils
-            .getRscDataByProvider(rscRef.getLayerData(accCtx), DeviceLayerKind.DRBD);
+            .getRscDataByLayer(rscRef.getLayerData(accCtx), DeviceLayerKind.DRBD);
         for (AbsRscLayerObject<Resource> drbdRsc : drbdRscSet)
         {
             if (isDrbdResourceExpected(accCtx, (DrbdRscData<Resource>) drbdRsc))
@@ -52,10 +52,10 @@ public class DrbdLayerUtils
         }
         else
         {
-            boolean hasNvmeBelow = !LayerRscUtils.getRscDataByProvider(rscData, DeviceLayerKind.NVME).isEmpty();
+            boolean hasNvmeBelow = !LayerRscUtils.getRscDataByLayer(rscData, DeviceLayerKind.NVME).isEmpty();
             boolean isNvmeTarget = !rscFlags.isSet(accCtx, Resource.Flags.NVME_INITIATOR);
             boolean isEbsTarget = false;
-            for (AbsRscLayerObject<Resource> storRscData : LayerRscUtils.getRscDataByProvider(
+            for (AbsRscLayerObject<Resource> storRscData : LayerRscUtils.getRscDataByLayer(
                 rscData,
                 DeviceLayerKind.STORAGE
             ))

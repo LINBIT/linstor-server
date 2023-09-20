@@ -285,7 +285,7 @@ public class RscInternalCallHandler
                 }
             }
 
-            Set<AbsRscLayerObject<Resource>> storageResources = LayerRscUtils.getRscDataByProvider(
+            Set<AbsRscLayerObject<Resource>> storageResources = LayerRscUtils.getRscDataByLayer(
                 rsc.getLayerData(apiCtx),
                 DeviceLayerKind.STORAGE
             );

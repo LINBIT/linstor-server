@@ -281,7 +281,7 @@ public class StorageLayer implements DeviceLayer
 
         Map<DeviceProvider, List<VlmProviderObject<Snapshot>>> groupedSnapshotVolumes = snapshotList.stream()
             .flatMap(
-                snap -> LayerRscUtils.getRscDataByProvider(
+                snap -> LayerRscUtils.getRscDataByLayer(
                     AccessUtils.execPrivileged(() -> snap.getLayerData(storDriverAccCtx)), DeviceLayerKind.STORAGE
                 ).stream()
             )

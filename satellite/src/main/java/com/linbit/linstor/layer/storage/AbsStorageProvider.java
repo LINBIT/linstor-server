@@ -1064,7 +1064,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     .getLayerData(storDriverAccCtx);
 
                 Set<AbsRscLayerObject<Snapshot>> prevSnapStorageDataSet = LayerRscUtils
-                    .getRscDataByProvider(prevSnapLayerData, DeviceLayerKind.STORAGE);
+                    .getRscDataByLayer(prevSnapLayerData, DeviceLayerKind.STORAGE);
 
                 AbsRscLayerObject<Snapshot> currentSnapLayerData = snapVlm.getRscLayerObject();
                 String curSnapNameSuffix = currentSnapLayerData.getResourceNameSuffix();
@@ -1101,7 +1101,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     .getLayerData(storDriverAccCtx);
 
                 Set<AbsRscLayerObject<Snapshot>> prevSnapStorageDataSet = LayerRscUtils
-                    .getRscDataByProvider(prevSnapLayerData, DeviceLayerKind.STORAGE);
+                    .getRscDataByLayer(prevSnapLayerData, DeviceLayerKind.STORAGE);
 
                 AbsRscLayerObject<Snapshot> currentSnapLayerData = snapVlm.getRscLayerObject();
                 String curSnapNameSuffix = currentSnapLayerData.getResourceNameSuffix();

@@ -432,7 +432,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 }
 
                 AbsRscLayerObject<Resource> layerData = rsc.getLayerData(peerAccCtx);
-                Set<AbsRscLayerObject<Resource>> drbdDataSet = LayerRscUtils.getRscDataByProvider(
+                Set<AbsRscLayerObject<Resource>> drbdDataSet = LayerRscUtils.getRscDataByLayer(
                     layerData,
                     DeviceLayerKind.DRBD
                 );

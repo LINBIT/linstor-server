@@ -227,7 +227,7 @@ public class CtrlSnapshotCrtHelper
         try
         {
             Set<AbsRscLayerObject<Resource>> drbdLayers = LayerRscUtils
-                .getRscDataByProvider(rsc.getLayerData(apiCtx), DeviceLayerKind.DRBD);
+                .getRscDataByLayer(rsc.getLayerData(apiCtx), DeviceLayerKind.DRBD);
 
             if (drbdLayers.size() > 1)
             {

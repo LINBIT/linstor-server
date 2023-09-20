@@ -16,15 +16,15 @@ import java.util.function.Predicate;
 
 public class LayerRscUtils
 {
-    public static <RSC extends AbsResource<RSC>> Set<AbsRscLayerObject<RSC>> getRscDataByProvider(
+    public static <RSC extends AbsResource<RSC>> Set<AbsRscLayerObject<RSC>> getRscDataByLayer(
         AbsRscLayerObject<RSC> rscLayerDataRef,
         DeviceLayerKind kind
     )
     {
-        return getRscDataByProvider(rscLayerDataRef, kind, ignored -> true);
+        return getRscDataByLayer(rscLayerDataRef, kind, ignored -> true);
     }
 
-    public static <RSC extends AbsResource<RSC>> Set<AbsRscLayerObject<RSC>> getRscDataByProvider(
+    public static <RSC extends AbsResource<RSC>> Set<AbsRscLayerObject<RSC>> getRscDataByLayer(
         AbsRscLayerObject<RSC> rscLayerDataRef,
         DeviceLayerKind kind,
         Predicate<String> includeLayerSufix

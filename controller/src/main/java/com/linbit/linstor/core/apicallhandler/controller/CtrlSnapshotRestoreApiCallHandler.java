@@ -505,7 +505,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT, fromSnapshotVlmDfn.getSnapshotName().displayValue
             );
         }
-        Set<AbsRscLayerObject<Resource>> drbdLayers = LayerRscUtils.getRscDataByProvider(
+        Set<AbsRscLayerObject<Resource>> drbdLayers = LayerRscUtils.getRscDataByLayer(
             rsc.getLayerData(peerAccCtx.get()),
             DeviceLayerKind.DRBD
         );
