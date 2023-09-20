@@ -8,7 +8,6 @@ import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LvmVolumeType;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands;
-import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -16,6 +15,7 @@ import com.linbit.linstor.storage.LvmThinDriverKind;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
+import com.linbit.linstor.storage.utils.Commands;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;

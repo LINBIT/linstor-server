@@ -1,4 +1,4 @@
-package com.linbit.linstor.layer.storage.utils;
+package com.linbit.linstor.storage.utils;
 
 import com.linbit.TimeoutException;
 import com.linbit.extproc.ExtCmd;

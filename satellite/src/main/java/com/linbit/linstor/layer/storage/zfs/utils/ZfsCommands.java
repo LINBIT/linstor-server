@@ -7,7 +7,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.RaidLevel;
 import com.linbit.utils.StringUtils;
 
-import static com.linbit.linstor.layer.storage.utils.Commands.genericExecutor;
+import static com.linbit.linstor.storage.utils.Commands.genericExecutor;
 
 import java.io.File;
 import java.util.ArrayList;

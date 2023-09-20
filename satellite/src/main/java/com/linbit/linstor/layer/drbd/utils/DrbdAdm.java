@@ -16,13 +16,13 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.types.MinorNumber;
 import com.linbit.linstor.core.types.NodeId;
-import com.linbit.linstor.layer.storage.utils.Commands;
-import com.linbit.linstor.layer.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.utils.Commands;
+import com.linbit.linstor.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import javax.inject.Inject;

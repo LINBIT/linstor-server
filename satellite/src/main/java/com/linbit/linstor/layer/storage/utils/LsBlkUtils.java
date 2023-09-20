@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.utils;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nonnull;

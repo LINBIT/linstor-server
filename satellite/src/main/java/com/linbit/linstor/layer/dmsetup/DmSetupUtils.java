@@ -7,11 +7,11 @@ import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.extproc.ExtCmdUtils;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.utils.ExceptionThrowingConsumer;
 import com.linbit.utils.StringUtils;
 

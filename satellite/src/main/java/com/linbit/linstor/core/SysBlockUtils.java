@@ -2,8 +2,8 @@ package com.linbit.linstor.core;
 
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.utils.Commands;
 
 public class SysBlockUtils
 {

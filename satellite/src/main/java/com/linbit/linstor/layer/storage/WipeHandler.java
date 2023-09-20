@@ -5,9 +5,9 @@ import com.linbit.Platform;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.layer.drbd.utils.MdSuperblockBuffer;
-import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.utils.ExceptionThrowingConsumer;
 
 import javax.inject.Inject;

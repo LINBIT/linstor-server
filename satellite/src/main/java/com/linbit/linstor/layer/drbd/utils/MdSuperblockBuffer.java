@@ -2,8 +2,8 @@ package com.linbit.linstor.layer.drbd.utils;
 
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.storage.StorageUtils;
+import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.ImplementationError;
 import com.linbit.Platform;
 import com.linbit.linstor.storage.StorageException;

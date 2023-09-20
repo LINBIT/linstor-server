@@ -4,14 +4,14 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
-import com.linbit.linstor.layer.storage.utils.Commands;
-import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.utils.Commands;
+import com.linbit.linstor.storage.utils.MkfsUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;

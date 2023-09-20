@@ -17,7 +17,6 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
-import com.linbit.linstor.layer.storage.utils.Commands;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -32,6 +31,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
+import com.linbit.linstor.storage.utils.Commands;
 
 import javax.inject.Inject;
 import javax.inject.Provider;

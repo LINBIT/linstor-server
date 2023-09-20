@@ -50,8 +50,6 @@ import com.linbit.linstor.layer.drbd.utils.ConfFileBuilder;
 import com.linbit.linstor.layer.drbd.utils.DrbdAdm;
 import com.linbit.linstor.layer.drbd.utils.MdSuperblockBuffer;
 import com.linbit.linstor.layer.drbd.utils.WindowsFirewall;
-import com.linbit.linstor.layer.storage.utils.MkfsUtils;
-import com.linbit.linstor.layer.storage.utils.VolumeUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -67,6 +65,8 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.MkfsUtils;
+import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.utils.AccessUtils;
 

@@ -33,7 +33,6 @@ import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LvmVolumeType;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
-import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.utils.StorageConfigReader;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -47,6 +46,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;

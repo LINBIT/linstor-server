@@ -3,13 +3,13 @@ package com.linbit.linstor.layer.storage.lvm.utils;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.layer.storage.utils.Commands;
-import com.linbit.linstor.layer.storage.utils.Commands.RetryHandler;
 import com.linbit.linstor.layer.storage.utils.RetryIfDeviceBusy;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.kinds.RaidLevel;
+import com.linbit.linstor.storage.utils.Commands;
+import com.linbit.linstor.storage.utils.Commands.RetryHandler;
 
-import static com.linbit.linstor.layer.storage.utils.Commands.genericExecutor;
+import static com.linbit.linstor.storage.utils.Commands.genericExecutor;
 
 import java.io.File;
 import java.util.ArrayList;

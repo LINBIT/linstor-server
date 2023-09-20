@@ -40,7 +40,6 @@ import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestVolumesColle
 import com.linbit.linstor.layer.storage.utils.FsUtils;
 import com.linbit.linstor.layer.storage.utils.LsscsiUtils;
 import com.linbit.linstor.layer.storage.utils.LsscsiUtils.LsscsiRow;
-import com.linbit.linstor.layer.storage.utils.MkfsUtils;
 import com.linbit.linstor.layer.storage.utils.MultipathUtils;
 import com.linbit.linstor.layer.storage.utils.MultipathUtils.MultipathRow;
 import com.linbit.linstor.layer.storage.utils.SysClassUtils;
@@ -56,6 +55,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.utils.ExosMappingManager;
+import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Align;
 import com.linbit.utils.Triple;

@@ -1,4 +1,4 @@
-package com.linbit.linstor.layer.storage.utils;
+package com.linbit.linstor.storage.utils;
 
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmLayerObject;

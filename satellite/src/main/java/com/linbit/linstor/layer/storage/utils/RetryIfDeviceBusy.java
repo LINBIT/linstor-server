@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.storage.utils;
 
 import com.linbit.extproc.ExtCmd.OutputData;
+import com.linbit.linstor.storage.utils.Commands;
 
 public class RetryIfDeviceBusy implements Commands.RetryHandler
 {
