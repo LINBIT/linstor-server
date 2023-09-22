@@ -128,7 +128,7 @@ public class FreeCapacityFetcherProto implements FreeCapacityFetcher
     {
         return streamStorPools(node)
             .map(StorPool::getDeviceProviderKind)
-            .anyMatch(DeviceProviderKind::usesThinProvisioning);
+            .anyMatch(kind -> kind.usesThinProvisioning() && !DeviceProviderKind.DISKLESS.equals(kind));
     }
 
     private Flux<ByteArrayInputStream> prepareFreeSpaceApiCall(Node node)

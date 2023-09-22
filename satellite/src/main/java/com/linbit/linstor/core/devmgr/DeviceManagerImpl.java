@@ -2,6 +2,7 @@ package com.linbit.linstor.core.devmgr;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.PlatformStlt;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
 import com.linbit.SystemServiceStartException;
@@ -71,7 +72,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.AtomicSyncPoint;
 import com.linbit.locks.SyncPoint;
-import com.linbit.PlatformStlt;
 import com.linbit.utils.Either;
 
 import static com.linbit.linstor.api.ApiConsts.MODIFIED;
