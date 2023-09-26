@@ -138,10 +138,10 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.INFO_PROP_SET,
                     String.format(
-                        "Resource-definition property '%s/%s' updated from '%s' to '%s' by auto-quorum",
+                        "Resource-definition property '%s/%s' updated from %s to '%s' by auto-quorum",
                         NAMESPC_DRBD_RESOURCE_OPTIONS,
                         PROP_KEY_QUORUM,
-                        oldQuorum,
+                        (oldQuorum == null ? "undefined" : "'" + oldQuorum + "'"),
                         PROP_VAL_QUORUM_MAJORITY
                     )
                 )
@@ -153,10 +153,10 @@ public class CtrlRscAutoQuorumHelper implements CtrlRscAutoHelper.AutoHelper
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.INFO_PROP_SET,
                     String.format(
-                        "Resource-definition property '%s/%s' updated from '%s' to '%s' by auto-quorum",
+                        "Resource-definition property '%s/%s' updated from %s to '%s' by auto-quorum",
                         NAMESPC_DRBD_RESOURCE_OPTIONS,
                         PROP_KEY_ON_NO_QUORUM,
-                        oldQuorum,
+                        (oldQuorum == null ? "undefined" : "'" + oldQuorum + "'"),
                         autoQuorum
                     )
                 )
