@@ -38,13 +38,12 @@ public class DeviceUtils
             synchronized (syncObj)
             {
                 long start = System.currentTimeMillis();
-                fsWatchRef.addFileEntry(
-                    new FileEntry(
-                        Paths.get(devicePath),
-                        Event.CREATE,
-                        fileObserver
-                    )
+                FileEntry fileWatchEntry = new FileEntry(
+                    Paths.get(devicePath),
+                    Event.CREATE,
+                    fileObserver
                 );
+                fsWatchRef.addFileEntry(fileWatchEntry);
                 try
                 {
                     errorReporterRef.logTrace(
@@ -61,6 +60,10 @@ public class DeviceUtils
                         "Interrupted exception while waiting for device '" + devicePath + "' to show up",
                         interruptedExc
                     );
+                }
+                finally
+                {
+                    fsWatchRef.removeFileEntry(fileWatchEntry);
                 }
                 if (!Files.exists(Paths.get(devicePath)))
                 {
