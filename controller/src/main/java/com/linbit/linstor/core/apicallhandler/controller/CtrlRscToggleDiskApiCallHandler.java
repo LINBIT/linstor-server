@@ -26,6 +26,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
+import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.DiskfulBy;
@@ -77,6 +78,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -389,7 +391,9 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             payload.drbdRsc.needsNewNodeId = true;
         }
+
         // Resolve storage pool now so that nothing is committed if the storage pool configuration is invalid
+        Set<StorPoolName> storPoolNames = new HashSet<>();
         Iterator<Volume> vlmIter = rsc.iterateVolumes();
         while (vlmIter.hasNext())
         {
@@ -399,11 +403,26 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             StorPool sp = ctrlStorPoolResolveHelper
                 .resolveStorPool(rsc, vlmDfn, removeDisk)
                 .extractApiCallRc(responses);
+            storPoolNames.add(sp.getName());
             if (isSharedSpAlreadyUsed(rsc, sp))
             {
                 needsDeactivate = true;
                 payload.drbdRsc.needsNewNodeId = true;
             }
+        }
+        if (storPoolNames.size() == 1)
+        {
+            /*
+             * Since we also set the StorPoolName property when going diskless, we should also set it then going diskful
+             * (and this property makes sense to be set on resource-level)
+             */
+            ctrlPropsHelper.fillProperties(
+                responses,
+                LinStorObject.RESOURCE,
+                Collections.singletonMap(ApiConsts.KEY_STOR_POOL_NAME, storPoolNames.iterator().next().displayValue),
+                rscProps,
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
         }
 
         if (removeDisk)
@@ -420,7 +439,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         else
         {
             // diskless -> diskful
-//            ctrlLayerStackHelper.resetStoragePools(rsc);
+            // ctrlLayerStackHelper.resetStoragePools(rsc);
 
             markDiskAddRequested(rsc);
 
