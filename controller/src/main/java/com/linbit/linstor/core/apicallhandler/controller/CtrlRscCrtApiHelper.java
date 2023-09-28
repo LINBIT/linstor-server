@@ -482,6 +482,11 @@ public class CtrlRscCrtApiHelper
             resourceCreateCheck.checkCreatedResource(rsc);
         }
 
+        if (isFlagSet(rsc, Resource.Flags.DELETE) || isFlagSet(rsc, Resource.Flags.DRBD_DELETE))
+        {
+            disableFlags(rsc, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE);
+        }
+
         if (!isFlagSet(rsc, Resource.Flags.INACTIVE) && !sharedRscMgr.isActivationAllowed(rsc))
         {
             autoFlux.add(ctrlRscActivateApiCallHandler.deactivateRsc(nodeNameStr, rscNameStr));
@@ -1427,6 +1432,26 @@ public class CtrlRscCrtApiHelper
             );
         }
         return ret;
+    }
+
+    private void disableFlags(Resource rsc, Resource.Flags... flags)
+    {
+        try
+        {
+            rsc.getStateFlags().disableFlags(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "disabling flags for resource",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
     }
 
     private ApiCallRcImpl.ApiCallRcEntry makeFlaggedNvmeInitiatorWarning(StorPool storPool)
