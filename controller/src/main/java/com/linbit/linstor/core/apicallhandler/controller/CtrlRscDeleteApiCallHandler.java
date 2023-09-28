@@ -248,8 +248,13 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                 ctrlTransactionHelper.commit();
 
                 flux = Flux.just(responses);
-                Flux<ApiCallRc> next = deleteResourceOnPeers(nodeNameStr, rscNameStr, context)
-                    .concatWith(abortSnapShipFlux)
+                Flux<ApiCallRc> next = Flux.empty();
+                if (!autoResult.isPreventUpdateSatellitesForResourceDelete())
+                {
+                    // only mark resource as delete if automagic does not want to keep the resource
+                    next = next.concatWith(deleteResourceOnPeers(nodeNameStr, rscNameStr, context));
+                }
+                next = next.concatWith(abortSnapShipFlux)
                     .concatWith(autoResult.getFlux());
                 if (!autoResult.isPreventUpdateSatellitesForResourceDelete())
                 {
