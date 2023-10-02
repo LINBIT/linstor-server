@@ -25,6 +25,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.NoRouteToHostException;
 import java.net.SocketAddress;
+import java.net.StandardSocketOptions;
 import java.net.UnknownHostException;
 import java.nio.channels.AlreadyBoundException;
 import java.nio.channels.CancelledKeyException;
@@ -60,6 +61,11 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
  */
 public class TcpConnectorService implements Runnable, TcpConnector
 {
+    /**
+     * Value based on RFC 2474 and RFC 4594
+     */
+    private static final int IP_DSCP_OAM_LDP = 0x48;
+
     private static final ServiceName SERVICE_NAME;
     private static final String SERVICE_INFO = "TCP/IP network communications service";
 
@@ -215,6 +221,16 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 synchronized (syncObj)
                 {
                     srvSel.wakeup();
+                    try
+                    {
+                        // set IP_TOS before connect so also SYN packet gets prioritized
+                        socketChannel.setOption(StandardSocketOptions.IP_TOS, IP_DSCP_OAM_LDP);
+                    }
+                    catch (IOException ioExc)
+                    {
+                        // setting IP_TOS is just a "best effort" attempt.
+                        errorReporter.logDebug("Failed to set IP_TOS to " + IP_DSCP_OAM_LDP);
+                    }
                     boolean connected = socketChannel.connect(address);
                     if (connected)
                     {
@@ -795,7 +811,18 @@ public class TcpConnectorService implements Runnable, TcpConnector
                 try
                 {
                     newSocket.configureBlocking(false);
-                    newSocket.socket().setTcpNoDelay(true);
+                    try
+                    {
+                        // IP_TOS can NOT be set on serverSocketChannel since SSC no longer supports that socketOption
+                        // since java12. https://bugs.java.com/bugdatabase/view_bug?bug_id=8209152
+                        newSocket.setOption(StandardSocketOptions.IP_TOS, IP_DSCP_OAM_LDP);
+                        newSocket.socket().setTcpNoDelay(true);
+                    }
+                    catch (IOException ioExc)
+                    {
+                        // setting IP_TOS is just a "best effort" attempt.
+                        errorReporter.logDebug("Failed to set IP_TOS to " + IP_DSCP_OAM_LDP);
+                    }
 
                     // Generate the id for the peer object from the remote address of the connection
                     SocketAddress sockAddr = newSocket.getRemoteAddress();
