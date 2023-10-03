@@ -18,6 +18,8 @@ import com.linbit.utils.StringUtils;
 import javax.annotation.Nullable;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -29,7 +31,7 @@ public class DmSetupUtils
     private static final String DM_SETUP_MESSAGE_FLUSH_ON_SUSPEND = "flush_on_suspend";
 
     private static final Pattern DM_SETUP_LS_PATTERN = Pattern.compile(
-        "^([^\\s]+)\\s+\\(([0-9]+)(?::\\s|,\\s)([0-9]+)\\)$",
+        "^([^\\s]+)\\s+\\(([0-9]+)[:,]\\s*([0-9]+)\\)$",
         Pattern.MULTILINE
     );
 
@@ -185,6 +187,81 @@ public class DmSetupUtils
             );
         }
         return ret;
+    }
+
+    public static void fixSymlinkForDevice(ExtCmd extCmd, String devicePath) throws StorageException
+    {
+        try
+        {
+            OutputData outputData = extCmd.exec("dmsetup", "ls");
+            ExtCmdUtils.checkExitCode(
+                outputData,
+                StorageException::new,
+                "listing devices from dmsetup ls failed "
+            );
+
+            String stdOut = new String(outputData.stdoutData);
+            Matcher matcher = DM_SETUP_LS_PATTERN.matcher(stdOut);
+            String dmName = resolveDMName(devicePath);
+            String dmPath = "/dev/mapper/" + dmName;
+            String minor = null;
+
+            while (matcher.find())
+            {
+                String devName = matcher.group(1);
+                minor = matcher.group(3);
+
+                if (devName.equals(dmName))
+                {
+                    break;
+                }
+            }
+
+            if (minor == null)
+            {
+                throw new StorageException(
+                    "Device \"" + dmName + "\" (generated from \"" + devicePath + "\") not found in dmsetup output:\n\n" + stdOut
+                );
+            }
+
+            for (String path : new String[]{devicePath, dmPath}) {
+                if (Files.exists(Paths.get(path))) {
+                    continue;
+                }
+                OutputData symlinkOutput = extCmd.exec("ln", "-s", "../dm-" + minor, path);
+                ExtCmdUtils.checkExitCode(
+                    symlinkOutput,
+                    StorageException::new,
+                    "Failed to create device symlink"
+                );
+            }
+        }
+        catch (IOException ioExc)
+        {
+            throw new StorageException(
+                "Failed to fix device symlink",
+                ioExc
+            );
+        }
+        catch (ChildProcessTimeoutException exc)
+        {
+            throw new StorageException(
+                "Fixing device symlink timed out",
+                exc
+            );
+        }
+    }
+
+    public static String resolveDMName(String devicePath)
+    {
+        String[] parts = devicePath.replaceFirst("^/dev/", "").split("/");
+        if (parts[0].equals("mapper"))
+        {
+            return parts[1];
+        }
+        parts[0] = parts[0].replace("-", "--");
+        parts[1] = parts[1].replace("-", "--");
+        return String.join("-", parts[0], parts[1]);
     }
 
     public static void remove(ExtCmd extCmd, String identifier) throws StorageException

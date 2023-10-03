@@ -37,6 +37,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer;
+import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdConnection;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdResource;
@@ -1141,6 +1142,18 @@ public class DrbdLayer implements DeviceLayer
         {
             // internal meta data
             metaDiskPath = drbdVlmData.getDataDevice();
+        }
+
+        if (!Files.exists(Paths.get(metaDiskPath))) {
+            errorReporter.logWarning("Device path %s does not exists, fixing symlink", metaDiskPath);
+            try
+            {
+                DmSetupUtils.fixSymlinkForDevice(extCmdFactory.create(), metaDiskPath);
+            }
+            catch (StorageException exc)
+            {
+                errorReporter.reportError(exc);
+            }
         }
 
         MdSuperblockBuffer mdUtils = new MdSuperblockBuffer();
