@@ -29,7 +29,7 @@ public class DmSetupUtils
     private static final String DM_SETUP_MESSAGE_FLUSH_ON_SUSPEND = "flush_on_suspend";
 
     private static final Pattern DM_SETUP_LS_PATTERN = Pattern.compile(
-        "^([^\\s]+)\\s+\\(([0-9]+)(?::\\s|,\\s)([0-9]+)\\)$",
+        "^([^\\s]+)\\s+\\(([0-9]+)[:,]\\s*([0-9]+)\\)$",
         Pattern.MULTILINE
     );
 
