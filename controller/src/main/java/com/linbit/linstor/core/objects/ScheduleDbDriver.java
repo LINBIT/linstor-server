@@ -103,8 +103,8 @@ public class ScheduleDbDriver extends AbsDatabaseDriver<Schedule, Schedule.InitM
         incCronDriver = generateSingleColumnDriver(
             INC_CRON,
             schedule -> schedule.getIncCron(dbCtx) == null ? null : schedule.getIncCron(dbCtx).asString(),
-            Cron::asString,
-            Cron::asString
+            incCron -> incCron == null ? null : incCron.asString(),
+            incCron -> incCron == null ? null : incCron.asString()
         );
         keepLocalDriver = generateSingleColumnDriver(
             KEEP_LOCAL, schedule -> "" + schedule.getKeepLocal(dbCtx), Function.identity()
