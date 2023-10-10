@@ -220,7 +220,7 @@ tags:
   - name: developers
     description: Operations available to regular developers
 paths:
-  /v1/action/snapshot/multi:
+  /v1/actions/snapshot/multi:
     post:
       tags:
         - developers
