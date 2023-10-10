@@ -242,7 +242,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateMultiSnapshotResponse'
+                $ref: '#/components/schemas/ApiCallRcList'
         '400':
           $ref: '#/components/responses/InvalidInput'
         '500':
@@ -7979,11 +7979,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Snapshot'
-    CreateMultiSnapshotResponse:
-      type: object
-      properties:
-        messages:
-          $ref: '#/components/schemas/ApiCallRcList'
     Snapshot:
       type: object
       properties:
