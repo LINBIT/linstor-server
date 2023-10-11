@@ -269,15 +269,21 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
         }
         catch (IOException exc)
         {
-            errorReporter.reportError(new SystemServiceStartException(
-                "Unable to listen for DRBD events",
-                "I/O error attempting to start '" + DRBDSETUP_COMMAND + "'",
-                exc.getMessage(),
-                "Ensure that '" + DRBDSETUP_COMMAND + "' is installed",
-                null,
-                exc,
-                false
-            ));
+            if (drbdVersion.hasDrbd9())
+            {
+                // only report error when DRBD 9 is installed. If not, this IOException is more or less expected
+                errorReporter.reportError(
+                    new SystemServiceStartException(
+                        "Unable to listen for DRBD events",
+                        "I/O error attempting to start '" + DRBDSETUP_COMMAND + "'",
+                        exc.getMessage(),
+                        "Ensure that '" + DRBDSETUP_COMMAND + "' is installed",
+                        null,
+                        exc,
+                        false
+                    )
+                );
+            }
         }
         synchronized (this)
         {
