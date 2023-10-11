@@ -11,10 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added automated addition of --skip-disk to drbdadm adjust when a disk failure is detected
+- Added first version of "effective_props" (currently only used for "DrbdOptions/SkipDisk", other props will follow)
+- Added attempt in setting IP_TOS to LOW_DELAY (works in java11 or with forced IPv4)
+- Added creation time to ApiCallRc
 
 ### Changed
 
 - Improved checks for "OtherController" response
+- Do not send fetchFreeSpaces to diskless-only nodes
+- Improved responses during tiebreaker takeover
+
+### Fixed
+
+- Fixed possible FileWatch leak
+- Fixed toggle-disk now properly setting StorPoolName
+- Delete node-connection when last property gets deleted
+- Properly delete DRBD_DELETE flag during undelete ('r c' on a DELETING resource)
+- Fixed regex-pattern for parsing "dmsetup ls [--target TARGET]" command
+- Fixed typo in /v1/action[s]/snapshot/multi
+- Fixed incorrectly documented return type of "snapshot create-multi"
+- Fixed NPE in schedules etcd driver
 
 ## [1.24.2] - 2023-08-30
 
