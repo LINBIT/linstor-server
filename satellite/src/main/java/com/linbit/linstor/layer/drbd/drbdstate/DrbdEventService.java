@@ -243,53 +243,58 @@ public class DrbdEventService implements SystemService, Runnable, DrbdStateStore
     @Override
     public void start()
     {
-        if (needsReinitialize)
+        if (!started)
         {
-            eventsMonitor.reinitializing();
-        }
-        needsReinitialize = true;
-        running = true;
-
-        // on shutdown we interrupted the thread AND inserted a poison element
-        // the poison element is needed in case the thread was not waiting in the .take()
-        // in this case the thread would not receive the interrupt.
-        // however, if the thread was in the .take() the poison element will poison the
-        // next thread's run method.
-        // although this .clear() might also clear other (not yet progressed) events, we
-        // will also restart the demonHandler, thus the events2 stream will fill our
-        // eventDeque properly.
-
-        eventDeque.clear();
-
-        thread = new Thread(this, "DrbdEventService");
-        thread.start();
-        try
-        {
-            demonHandler.startDelimited();
-        }
-        catch (IOException exc)
-        {
-            if (drbdVersion.hasDrbd9())
+            if (needsReinitialize)
             {
-                // only report error when DRBD 9 is installed. If not, this IOException is more or less expected
-                errorReporter.reportError(
-                    new SystemServiceStartException(
-                        "Unable to listen for DRBD events",
-                        "I/O error attempting to start '" + DRBDSETUP_COMMAND + "'",
-                        exc.getMessage(),
-                        "Ensure that '" + DRBDSETUP_COMMAND + "' is installed",
-                        null,
-                        exc,
-                        false
-                    )
-                );
+                eventsMonitor.reinitializing();
+            }
+            needsReinitialize = true;
+            running = true;
+
+            // on shutdown we interrupted the thread AND inserted a poison element
+            // the poison element is needed in case the thread was not waiting in the .take()
+            // in this case the thread would not receive the interrupt.
+            // however, if the thread was in the .take() the poison element will poison the
+            // next thread's run method.
+            // although this .clear() might also clear other (not yet progressed) events, we
+            // will also restart the demonHandler, thus the events2 stream will fill our
+            // eventDeque properly.
+
+            eventDeque.clear();
+
+            thread = new Thread(this, "DrbdEventService");
+            thread.start();
+            try
+            {
+                demonHandler.startDelimited();
+                synchronized (this)
+                {
+                    notifyAll();
+                }
+                started = true;
+            }
+            catch (IOException exc)
+            {
+                if (drbdVersion.hasDrbd9())
+                {
+                    // only report error when DRBD 9 is installed. If not, this IOException is more or less expected
+                    errorReporter.reportError(
+                        new SystemServiceStartException(
+                            "Unable to listen for DRBD events",
+                            "I/O error attempting to start '" + DRBDSETUP_COMMAND + "'",
+                            exc.getMessage(),
+                            "Ensure that '" + DRBDSETUP_COMMAND + "' is installed",
+                            null,
+                            exc,
+                            false
+                        )
+                    );
+                }
+                errorReporter.logWarning("Failed to start events2 stream. Shutting down '%s' service", SERVICE_INFO);
+                shutdown();
             }
         }
-        synchronized (this)
-        {
-            notifyAll();
-        }
-        started = true;
     }
 
     @Override

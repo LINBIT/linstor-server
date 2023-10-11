@@ -7,6 +7,7 @@ import com.linbit.drbd.DrbdVersion;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.core.cfg.StltConfig;
+import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventService;
 import com.linbit.linstor.layer.storage.ebs.EbsInitiatorProvider;
 import com.linbit.linstor.layer.storage.utils.SysClassUtils;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -82,18 +83,22 @@ public class StltExtToolsChecker
 
     private Map<ExtTools, ExtToolsInfo> cache = null;
 
+    private final DrbdEventService drbdEventService;
+
     @Inject
     public StltExtToolsChecker(
         ErrorReporter errorReporterRef,
         DrbdVersion drbdVersionCheckRef,
         ExtCmdFactory extCmdFactoryRef,
-        StltConfig stltCfgRef
+        StltConfig stltCfgRef,
+        DrbdEventService drbdEventServiceRef
     )
     {
         errorReporter = errorReporterRef;
         drbdVersionCheck = drbdVersionCheckRef;
         extCmdFactory = extCmdFactoryRef;
         stltCfg = stltCfgRef;
+        drbdEventService = drbdEventServiceRef;
     }
 
     private ExtToolsInfo[] getInfoArrayForLinux()
@@ -145,8 +150,15 @@ public class StltExtToolsChecker
         {
             ExtToolsInfo[] infoArray = null;
 
+            boolean wasDrbd9AvailableBeforeRecheck = drbdVersionCheck.hasDrbd9();
+
             // needed by getDrbd9Info() and getDrbdUtilsInfo(). however, calling checkVersions() once is enough
             drbdVersionCheck.checkVersions();
+
+            if (!wasDrbd9AvailableBeforeRecheck && drbdVersionCheck.hasDrbd9() && !drbdEventService.isStarted())
+            {
+                drbdEventService.start();
+            }
 
             if (Platform.isLinux())
             {
