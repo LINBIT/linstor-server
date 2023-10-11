@@ -1,3 +1,39 @@
+linstor-server (1.25.0~rc.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Reconnect: Attempt to fix spurious OtherController msgs
+  * FileWatch: Unregister if no longer needed
+  * ToggleDisk: Set resolved StorPoolName property
+  * NodeCon: Delete nodeCon when deleting last property
+  * NetIf,Db: Use null-safe method
+  * Db,update: Treat second parameter as oldElement
+  * Rsc,Del: Improve responses when taking over as tiebreaker
+  * Rsc,Crt: always disable DELETE and DRBD_DELETE flags
+  * dmsetup ls: Fix pattern for parsing
+  * Net: Set socket option IP_TOS to LOW_DELAY
+  * Schedule,DB: Fix typemapper
+  * updated changelog
+
+  [ Rene Peinthor ]
+  * json-serialize: use same ApiCallRc to JSON impl for all cases
+  * apicallrc: Add easier parsable fields
+  * ApiCallRc interface now extends List<ApiCallRc.RcEntry>
+  * openapi: fix incorrect storagepool params
+  * rest-gen: allow referencing allOf objects
+  * openapi: fix typo in actions path
+  * openapi: fix incorrect multi/snapshot return type
+
+  [ Johanna Kucera ]
+  * FetchThinSpaces: Do not send request to diskless nodes
+  * Props: make instanceName final
+  * Props: add description and type
+  * DrbdVlm: move DiskState and ReplState to server package
+  * Drbd: add skip-disk in case of disk failure
+  * RestApi: report skipDisk back to client
+  * gitlab-ci: add missing submodule update
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 11 Oct 2023 07:24:16 +0000
+
 linstor-server (1.24.2-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

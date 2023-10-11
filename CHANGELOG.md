@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.0-rc.1] - 2023-10-11
+
 ### Added
 
 - Added automated addition of --skip-disk to drbdadm adjust when a disk failure is detected

@@ -1211,12 +1211,6 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class CreateMultiSnapshotResponse
-    {
-        public List<ApiCallRc> messages = Collections.emptyList();
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class Snapshot
     {
         public String name;
