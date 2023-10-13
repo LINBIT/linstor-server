@@ -131,6 +131,8 @@ public class CtrlRscGrpApiCallHandler
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandler;
     private final SystemConfRepository systemConfRepository;
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
+    private final CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelper;
+    private final CtrlRscAutoQuorumHelper ctrlRscAutoQuorumHelper;
 
     @Inject
     public CtrlRscGrpApiCallHandler(
@@ -159,7 +161,9 @@ public class CtrlRscGrpApiCallHandler
         AutoSnapshotTask autoSnapshotTaskRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteHandlerRef,
         SystemConfRepository systemConfRepositoryRef,
-        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
+        CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelperRef,
+        CtrlRscAutoQuorumHelper ctrlRscAutoQuorumHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -188,6 +192,8 @@ public class CtrlRscGrpApiCallHandler
         ctrlSnapDeleteHandler = ctrlSnapDeleteHandlerRef;
         systemConfRepository = systemConfRepositoryRef;
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
+        ctrlRscAutoTiebreakerHelper = ctrlRscAutoTiebreakerHelperRef;
+        ctrlRscAutoQuorumHelper = ctrlRscAutoQuorumHelperRef;
     }
 
     List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames, List<String> propFilters)
@@ -646,6 +652,28 @@ public class CtrlRscGrpApiCallHandler
                 false
             )
         );
+
+        for (ResourceDefinition rscDfn : rscGrp.getRscDfns(peerAccCtx.get()))
+        {
+            ResponseContext context = CtrlRscDfnApiCallHandler.makeResourceDefinitionContext(
+                ApiOperation.makeModifyOperation(),
+                rscDfn.getName().displayValue
+            );
+
+            // run auto quorum/tiebreaker manage code
+            String autoTiebreakerKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
+            String autoQuorumKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM;
+            if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey)
+                || overrideProps.containsKey(autoQuorumKey) || deletePropKeys.contains(autoQuorumKey))
+            {
+                ApiCallRcImpl responses = new ApiCallRcImpl();
+                CtrlRscAutoHelper.AutoHelperContext autoHelperCtx = new CtrlRscAutoHelper.AutoHelperContext(responses, context, rscDfn);
+                ctrlRscAutoTiebreakerHelper.manage(autoHelperCtx);
+                ctrlRscAutoQuorumHelper.manage(autoHelperCtx);
+
+                retFlux = retFlux.concatWith(Flux.merge(autoHelperCtx.additionalFluxList));
+            }
+        }
         return retFlux;
     }
 
