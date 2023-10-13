@@ -190,19 +190,9 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        if (level != null && linstorLevel != null)
+        if (level != null || linstorLevel != null)
         {
             setLogLevelImpl(level, linstorLevel);
-        }
-        else
-        if (level != null)
-        {
-            setLogLevelImpl(level, null);
-        }
-        else
-        if (linstorLevel != null)
-        {
-            setLogLevelImpl(null, linstorLevel);
         }
     }
 
@@ -222,15 +212,18 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 ch.qos.logback.classic.Level logBackLevel = ch.qos.logback.classic.Level.toLevel(level.toString());
                 crtLogbackLogger.setLevel(logBackLevel);
             }
-            if (mainLogger instanceof ch.qos.logback.classic.Logger && linstorLevel != null)
+            if (linstorLevel != null)
             {
-                ch.qos.logback.classic.Level logBackLevel = ch.qos.logback.classic.Level
-                    .toLevel(linstorLevel.toString());
-                ((ch.qos.logback.classic.Logger) mainLogger).setLevel(logBackLevel);
-            }
-            else
-            {
-                logError("MainLogger (linstor) is not a logback logger but the ROOT logger is!");
+                if (mainLogger instanceof ch.qos.logback.classic.Logger)
+                {
+                    ch.qos.logback.classic.Level logBackLevel = ch.qos.logback.classic.Level
+                        .toLevel(linstorLevel.toString());
+                    ((ch.qos.logback.classic.Logger) mainLogger).setLevel(logBackLevel);
+                }
+                else
+                {
+                    logError("MainLogger (linstor) is not a logback logger but the ROOT logger is!");
+                }
             }
         }
     }
