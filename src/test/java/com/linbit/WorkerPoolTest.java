@@ -324,10 +324,9 @@ public class WorkerPoolTest
         }
 
         @Override
-        public boolean setLogLevel(AccessContext accCtx, Level level, Level linstorLevel) throws AccessDeniedException
+        public void setLogLevel(AccessContext accCtx, Level level, Level linstorLevel) throws AccessDeniedException
         {
             // Tracing on/off not implemented, no-op
-            return false;
         }
 
         @Override

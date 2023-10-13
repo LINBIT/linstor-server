@@ -119,9 +119,8 @@ public class EmptyErrorReporter implements ErrorReporter
     }
 
     @Override
-    public boolean setLogLevel(AccessContext accCtx, Level levelRef, Level linstorLevelRef) throws AccessDeniedException
+    public void setLogLevel(AccessContext accCtx, Level levelRef, Level linstorLevelRef) throws AccessDeniedException
     {
-        return false;
     }
 
     @Override

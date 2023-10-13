@@ -8,6 +8,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
 import javax.annotation.Nullable;
+
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
@@ -47,7 +48,7 @@ public interface ErrorReporter
      *
      * @throws AccessDeniedException if the access context is not authorized to perform the change
      */
-    boolean setLogLevel(AccessContext accCtx, Level level, Level linstorLevel)
+    void setLogLevel(AccessContext accCtx, Level level, Level linstorLevel)
         throws AccessDeniedException;
 
     void logTrace(String format, Object... args);

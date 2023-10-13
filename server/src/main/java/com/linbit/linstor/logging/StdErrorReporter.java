@@ -186,36 +186,33 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public boolean setLogLevel(AccessContext accCtx, Level level, Level linstorLevel)
+    public void setLogLevel(AccessContext accCtx, Level level, Level linstorLevel)
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
-        boolean success = true;
         if (level != null && linstorLevel != null)
         {
-            success = setLogLevelImpl(level, linstorLevel);
+            setLogLevelImpl(level, linstorLevel);
         }
         else
         if (level != null)
         {
-            success = setLogLevelImpl(level, null);
+            setLogLevelImpl(level, null);
         }
         else
         if (linstorLevel != null)
         {
-            success = setLogLevelImpl(null, linstorLevel);
+            setLogLevelImpl(null, linstorLevel);
         }
-        return success;
     }
 
-    private boolean setLogLevelImpl(Level level, Level linstorLevel)
+    private void setLogLevelImpl(Level level, Level linstorLevel)
     {
         // FIXME: Setting the trace mode only works with Logback as a backend,
         // but e.g. with SLF4J's SimpleLogger, this method has no effect
         org.slf4j.Logger crtLogger = org.slf4j.LoggerFactory.getLogger(
             Logger.ROOT_LOGGER_NAME
         );
-        boolean success = false;
         if (crtLogger instanceof ch.qos.logback.classic.Logger)
         {
             ch.qos.logback.classic.Logger crtLogbackLogger = (ch.qos.logback.classic.Logger) crtLogger;
@@ -224,7 +221,6 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             {
                 ch.qos.logback.classic.Level logBackLevel = ch.qos.logback.classic.Level.toLevel(level.toString());
                 crtLogbackLogger.setLevel(logBackLevel);
-                success = true;
             }
             if (mainLogger instanceof ch.qos.logback.classic.Logger && linstorLevel != null)
             {
@@ -237,7 +233,6 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 logError("MainLogger (linstor) is not a logback logger but the ROOT logger is!");
             }
         }
-        return success;
     }
 
     @Override
