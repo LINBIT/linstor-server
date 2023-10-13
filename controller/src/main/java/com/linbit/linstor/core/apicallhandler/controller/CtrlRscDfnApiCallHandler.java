@@ -694,7 +694,9 @@ public class CtrlRscDfnApiCallHandler
         );
 
         String autoTiebreakerKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
-        if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey))
+        String autoQuorumKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM;
+        if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey)
+            || overrideProps.containsKey(autoQuorumKey) || deletePropKeys.contains(autoQuorumKey))
         {
             AutoHelperContext autoHelperCtx = new AutoHelperContext(responsesRef, contextRef, rscDfn);
             ctrlRscAutoTiebreakerHelper.manage(autoHelperCtx);
