@@ -76,6 +76,7 @@ public class PingTask implements Task
                 }
                 catch (Exception exc)
                 {
+                    errorReporter.reportError(exc);
                     reconnect = true;
                 }
             }
