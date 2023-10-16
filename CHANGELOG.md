@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Added ErrorReport when sending a ping request fails
+- Sos-report's tar command no longer use --verbose
 
 ### Fixed
 

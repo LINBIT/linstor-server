@@ -54,6 +54,7 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.FileCollector;
 import com.linbit.utils.StringUtils;
 
+import javax.annotation.Nonnull;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -922,9 +923,17 @@ public class CtrlSosReportApiCallHandler
      * Creates a $fileName.tar.gz file from the given source directory using the given directories relative to
      * '$source/tmp'.
      * The $source path is 'rm -rf'ed in the end.
+     *
+     * @param source The directory in which the tar command should operate.
+     * @param fileName The resulting filename of the tar command.
+     * @param directories The list of directories to include in the tar.
+     *
+     * @throws IOException Any IO error from the tar command (i.e. no space left).
+     * @throws ExtCmdFailedException If the tar command returns a non-zero exit code.
+     * @throws ChildProcessTimeoutException If the tar command does not return after 4 minutes.
      */
-    private void createTar(Path source, String fileName, List<String> directories)
-            throws IOException, ExtCmdFailedException, ChildProcessTimeoutException
+    private void createTar(@Nonnull Path source, @Nonnull String fileName, @Nonnull List<String> directories)
+        throws IOException, ExtCmdFailedException, ChildProcessTimeoutException
     {
         ExtCmd extCommand = extCmdFactory.create();
         extCommand.setTimeout(ChildProcessHandler.TimeoutType.WAIT, 4*60*1000);
@@ -932,7 +941,7 @@ public class CtrlSosReportApiCallHandler
         cmd.add("tar");
         cmd.add("-C");
         cmd.add(source.toString());
-        cmd.add("-czvf");
+        cmd.add("-czf"); // no -v to prevent "Data buffer size exceeded" exception
         cmd.add(fileName);
         cmd.addAll(directories);
         String[] command = cmd.toArray(new String[0]);
