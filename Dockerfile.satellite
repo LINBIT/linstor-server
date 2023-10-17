@@ -84,11 +84,12 @@ RUN yum -y update-minimal --security --sec-severity=Important --sec-severity=Cri
 
 # PACKAGES:
 # thin-send-recv: snapshot shipping. like 'zfs send' but for LVM
+# ktls-utils: userspace utilities to use TLS encryption with DRBD
 ENV PSK=https://packages.linbit.com/package-signing-pubkey.asc
 RUN curl "$PSK" >/tmp/psk.asc && rpm --import /tmp/psk.asc && rm /tmp/psk.asc
 ENV INTERNAL_REPO=/etc/yum.repos.d/linbit-internal.repo
 # =lbbuild RUN printf '[linbit-internal]\nname=LINBIT Internal - $basearch\nbaseurl=https://nexus.at.linbit.com/repository/packages-linbit-com/yum/rhel8/drbd-9/$basearch\nenabled=1\ngpgcheck=1\ngpgkey=%s\n' "$PSK" | tee "$INTERNAL_REPO"
-# =lbbuild RUN yum install -y thin-send-recv && yum clean all -y && rm "$INTERNAL_REPO"
+# =lbbuild RUN yum install -y thin-send-recv ktls-utils && yum clean all -y && rm "$INTERNAL_REPO"
 
 # extra tools not in UBI images
 # PACKAGES:
