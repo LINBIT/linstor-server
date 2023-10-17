@@ -7,6 +7,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.nio.file.Path;
@@ -41,14 +42,18 @@ public interface ErrorReporter
     /**
      * Sets the log level, if the backing logging frameworks supports that.
      *
-     * @param accCtx The access context of the subject performing the change
-     * @param flag {@code true} to enable tracing, {@code false} to disable tracing
+     * @param accCtx
+     *     The access context of the subject performing the change.
+     * @param level
+     *     The log-level that the logger for frameworks and libraries should use.<br/>
+     *     Does NOT influence linstor log messages.
+     * @param linstorLevel
+     *     The log-level that the logger for linstor should use.
      *
-     * @return true if setting the log level was successful. False otherwise.
-     *
-     * @throws AccessDeniedException if the access context is not authorized to perform the change
+     * @throws AccessDeniedException
+     *     if the access context is not authorized to perform the change.
      */
-    void setLogLevel(AccessContext accCtx, Level level, Level linstorLevel)
+    void setLogLevel(@Nonnull AccessContext accCtx, @Nullable Level level, @Nullable Level linstorLevel)
         throws AccessDeniedException;
 
     void logTrace(String format, Object... args);

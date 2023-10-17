@@ -4,7 +4,8 @@ import com.linbit.AutoIndent;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
+
+import javax.annotation.Nullable;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -35,7 +36,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
     }
 
     @Override
-    public void setLogLevel(AccessContext accCtx, Level levelRef, Level linstorLevelRef) throws AccessDeniedException
+    public void setLogLevel(@Nullable AccessContext accCtx, @Nullable Level levelRef, @Nullable Level linstorLevelRef)
     {
     }
 

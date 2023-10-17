@@ -12,6 +12,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
 
@@ -186,7 +187,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public void setLogLevel(AccessContext accCtx, Level level, Level linstorLevel)
+    public void setLogLevel(@Nonnull AccessContext accCtx, @Nullable Level level, @Nullable Level linstorLevel)
         throws AccessDeniedException
     {
         accCtx.getEffectivePrivs().requirePrivileges(Privilege.PRIV_SYS_ALL);
@@ -196,7 +197,16 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         }
     }
 
-    private void setLogLevelImpl(Level level, Level linstorLevel)
+    /**
+     * Sets the log-level to the given level if the logger uses Logback as a backend.
+     *
+     * @param level
+     *     The level the root-logger, used for frameworks and libraries, will be set to.<br/>
+     *     This does NOT influence linstor log messages.
+     * @param linstorLevel
+     *     The level the main-logger, used for linstor, will be set to.
+     */
+    private void setLogLevelImpl(@Nullable Level level, @Nullable Level linstorLevel)
     {
         // FIXME: Setting the trace mode only works with Logback as a backend,
         // but e.g. with SLF4J's SimpleLogger, this method has no effect

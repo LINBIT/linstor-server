@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed setting 'on-no-quorum' to 'suspend-io' at the resource-group level does not propagate down to existing resources
+- Fixed logic in setLogLevel to prevent error log if no error happened
 
 ## [1.25.0-rc.1] - 2023-10-11
 

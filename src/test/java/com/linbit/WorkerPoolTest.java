@@ -4,7 +4,8 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.AccessDeniedException;
+
+import javax.annotation.Nullable;
 
 import java.nio.file.Path;
 import java.util.Set;
@@ -324,7 +325,7 @@ public class WorkerPoolTest
         }
 
         @Override
-        public void setLogLevel(AccessContext accCtx, Level level, Level linstorLevel) throws AccessDeniedException
+        public void setLogLevel(@Nullable AccessContext accCtx, @Nullable Level level, @Nullable Level linstorLevel)
         {
             // Tracing on/off not implemented, no-op
         }
