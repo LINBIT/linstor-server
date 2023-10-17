@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Added ErrorReport when sending a ping request fails
+
 ### Fixed
 
 - Fixed setting 'on-no-quorum' to 'suspend-io' at the resource-group level does not propagate down to existing resources

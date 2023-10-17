@@ -4,6 +4,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -51,14 +52,31 @@ public class PingTask implements Task
     @Override
     public long run(long scheduleAt)
     {
-        final List<Peer> peersToRemove = new ArrayList<>();
-
         final List<Peer> currentPeers;
         synchronized (syncObj)
         {
             currentPeers = new ArrayList<>(peerSet);
         }
+        final List<Peer> peersToRemove = sendPingMessages(currentPeers);
+        synchronized (syncObj)
+        {
+            peerSet.removeAll(peersToRemove);
+        }
+        return getNextFutureReschedule(scheduleAt, PING_SLEEP);
+    }
 
+    /**
+     * Sends the ping message to the given list of Peers. If the peer's lastPongReceived is older than
+     * {@value #PING_TIMEOUT} ms, attempt to reconnect to the peer
+     *
+     * @param currentPeers The list of peers to be pinged
+     *
+     * @return A list of peers that should be removed from the pinglist since we started a reconnect.
+     * It should not cause issues if we send them new pings, it is simply unnecessary.
+     */
+    private @Nonnull List<Peer> sendPingMessages(@Nonnull final List<Peer> currentPeers)
+    {
+        List<Peer> peersToRemove = new ArrayList<>();
         for (final Peer peer : currentPeers)
         {
             final long lastPingReceived = peer.getLastPongReceived();
@@ -97,10 +115,6 @@ public class PingTask implements Task
                 }
             }
         }
-        synchronized (syncObj)
-        {
-            peerSet.removeAll(peersToRemove);
-        }
-        return getNextFutureReschedule(scheduleAt, PING_SLEEP);
+        return peersToRemove;
     }
 }
