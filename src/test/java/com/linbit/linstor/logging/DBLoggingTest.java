@@ -7,7 +7,6 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
-import java.util.List;
 
 import org.junit.After;
 import org.junit.Assert;
@@ -57,18 +56,19 @@ public class DBLoggingTest
         );
         String errId = errReporter.reportError(new NullPointerException());
 
-        List<ErrorReport> reports = errReporter.listReports(false, null, null, Collections.singleton(errId));
-        Assert.assertEquals(1, reports.size());
+        ErrorReportResult reports = errReporter.listReports(false, null, null, Collections.singleton(errId), null, null);
+        Assert.assertEquals(1, reports.getTotalCount());
 
         errReporter.reportError(new RuntimeException("myruntimeexc"));
-        reports = errReporter.listReports(false, null, null, Collections.emptySet());
-        Assert.assertEquals(2, reports.size());
-        Assert.assertEquals("myruntimeexc", reports.get(1).getExceptionMessage().orElse(""));
-        Assert.assertTrue(reports.get(1).getOriginFile().isPresent());
-        Assert.assertTrue(reports.get(1).getOriginMethod().isPresent());
-        Assert.assertEquals("testDBLogging", reports.get(1).getOriginMethod().orElse(""));
-        Assert.assertTrue(reports.get(1).getOriginLine().isPresent());
-        Assert.assertEquals(Node.Type.CONTROLLER.name(), reports.get(1).getModuleString());
+        reports = errReporter.listReports(false, null, null, Collections.emptySet(), null, null);
+        reports.sort();
+        Assert.assertEquals(2, reports.getTotalCount());
+        Assert.assertEquals("myruntimeexc", reports.getErrorReports().get(1).getExceptionMessage().orElse(""));
+        Assert.assertTrue(reports.getErrorReports().get(1).getOriginFile().isPresent());
+        Assert.assertTrue(reports.getErrorReports().get(1).getOriginMethod().isPresent());
+        Assert.assertEquals("testDBLogging", reports.getErrorReports().get(1).getOriginMethod().orElse(""));
+        Assert.assertTrue(reports.getErrorReports().get(1).getOriginLine().isPresent());
+        Assert.assertEquals(Node.Type.CONTROLLER.name(), reports.getErrorReports().get(1).getModuleString());
 
         errReporter.shutdown();
     }

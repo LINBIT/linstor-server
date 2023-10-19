@@ -9,7 +9,7 @@ import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apis.NodeApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
-import com.linbit.linstor.logging.ErrorReport;
+import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.prometheus.PrometheusBuilder;
 
@@ -77,11 +77,11 @@ public class Metrics
         SCRAPE_REQUESTS.incrementAndGet();
         long scrapeStart = System.currentTimeMillis();
 
-        List<ErrorReport> errorReportsTmp = null;
+        ErrorReportResult errorReportsTmp = null;
         if (withErrorReports)
         {
-            Flux<List<ErrorReport>> fluxErrorReports = ctrlErrorListApiCallHandler.listErrorReports(
-                Collections.emptySet(), false, null, null, Collections.emptySet())
+            Flux<ErrorReportResult> fluxErrorReports = ctrlErrorListApiCallHandler.listErrorReports(
+                Collections.emptySet(), false, null, null, Collections.emptySet(), 1L, 0L)
                 .contextWrite(requestHelper.createContext("metrics", request));
 
             try
@@ -107,7 +107,7 @@ public class Metrics
             }
         }
 
-        final List<ErrorReport> errorReports = errorReportsTmp;
+        final ErrorReportResult errorReports = errorReportsTmp;
         return requestHelper.doInScope(requestHelper.createContext("metrics", request), () ->
             {
                 final ResourceList rl = resources ? ctrlVlmListApiCallHandler.listVlmsCached(

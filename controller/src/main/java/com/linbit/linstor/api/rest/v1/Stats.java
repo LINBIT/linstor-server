@@ -20,6 +20,7 @@ import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
@@ -27,7 +28,6 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Path("v1/stats")
@@ -183,14 +183,15 @@ public class Stats
                 false,
                 null,
                 null,
-                Collections.emptySet())
+                Collections.emptySet(),
+                1L,
+                0L)
             .contextWrite(requestHelper.createContext(ApiConsts.API_ERR_REPORT_STATS, request))
-            .flatMap(reportSet -> Flux.just(reportSet.stream()))
             .flatMap(
-                errorReportStream ->
+                errorReportResult ->
                 {
                     JsonGenTypes.ErrorReportStats objStats = new JsonGenTypes.ErrorReportStats();
-                    objStats.count = errorReportStream.count();
+                    objStats.count = errorReportResult.getTotalCount();
 
                     Response resp;
                     try

@@ -11,9 +11,10 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
-import com.linbit.linstor.logging.ErrorReport;
+import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -85,7 +86,9 @@ public interface CommonSerializer
             boolean withContent,
             Date since,
             Date to,
-            Set<String> ids
+            Set<String> ids,
+            Long limit,
+            Long offset
         );
 
         CommonSerializerBuilder deleteErrorReports(
@@ -103,7 +106,7 @@ public interface CommonSerializer
             ArrayList<RequestFilePojo> nextBatchToRequestRef
         );
 
-        CommonSerializerBuilder errorReports(List<ErrorReport> errorReports);
+        CommonSerializerBuilder errorReports(@Nonnull ErrorReportResult errorReportResult);
 
         CommonSerializerBuilder sosReportFileInfoList(
             String nodeNameRef,

@@ -43,7 +43,7 @@ import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateTracker;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdVolume;
 import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
-import com.linbit.linstor.logging.ErrorReport;
+import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -56,6 +56,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -785,18 +786,22 @@ public class StltApiCallHandler
         boolean withContent,
         @Nullable final Date since,
         @Nullable final Date to,
-        final Set<String> ids
+        @Nonnull final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset
     )
     {
-        List<ErrorReport> errorReports = errorReporter.listReports(
+        ErrorReportResult errorReportResult = errorReporter.listReports(
             withContent,
             since,
             to,
-            ids
+            ids,
+            limit,
+            offset
         );
 
         return interComSerializer.answerBuilder(ApiConsts.API_LST_ERROR_REPORTS, apiCallId.get())
-            .errorReports(errorReports).build();
+            .errorReports(errorReportResult).build();
     }
 
     public byte[] deleteErrorReports(

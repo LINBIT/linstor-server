@@ -65,8 +65,8 @@ public class ErrorReports
         @QueryParam("since") Long since,
         @QueryParam("to") Long to,
         @DefaultValue("false") @QueryParam("withContent") boolean withContent,
-        @DefaultValue("0") @QueryParam("limit") int limit,
-        @DefaultValue("0") @QueryParam("offset") int offset
+        @DefaultValue("1000") @QueryParam("limit") long limit,
+        @DefaultValue("0") @QueryParam("offset") long offset // is currently ignored, because it isn't working
     )
     {
         listErrorReports(
@@ -92,8 +92,8 @@ public class ErrorReports
         @QueryParam("since") Long since,
         @QueryParam("to") Long to,
         @DefaultValue("true") @QueryParam("withContent") boolean withContent,
-        @DefaultValue("0") @QueryParam("limit") int limit,
-        @DefaultValue("0") @QueryParam("offset") int offset
+        @DefaultValue("1000") @QueryParam("limit") long limit,
+        @DefaultValue("0") @QueryParam("offset") long offset // is currently ignored, because it isn't working
     )
     {
         Date optSince = since != null ? new Date(since) : null;
@@ -116,15 +116,16 @@ public class ErrorReports
                 withContent,
                 optSince,
                 optTo,
-                filterIds)
+                filterIds,
+                limit,
+                offset)
             .contextWrite(requestHelper.createContext(ApiConsts.API_REQ_ERROR_REPORTS, request))
-            .flatMap(reportSet -> Flux.just(reportSet.stream()))
-            .flatMap(errorReportStream ->
+            .flatMap(errorReportResult ->
             {
-                Stream<ErrorReport> finalStream = errorReportStream;
+                Stream<ErrorReport> finalStream = errorReportResult.getErrorReports().stream();
                 if (limit > 0)
                 {
-                    finalStream = finalStream.skip(offset).limit(limit);
+                    finalStream = finalStream.limit(limit);
                 }
                 List<JsonGenTypes.ErrorReport> jsonReports = finalStream.map(errorReport ->
                 {

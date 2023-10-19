@@ -16,4 +16,6 @@ message MsgReqErrorReport
     optional uint64 to = 4;
     // error report ids
     repeated string ids = 5;
+    optional uint64 limit = 6;
+    optional uint64 offset = 7;
 }

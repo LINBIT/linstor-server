@@ -13,8 +13,8 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.logging.ErrorReport;
+import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.logging.LinstorFile;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass;
@@ -24,10 +24,12 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,7 +39,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -54,6 +55,7 @@ public class CtrlErrorListApiCallHandler
     private final CtrlStltSerializer stltComSerializer;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
+    private final String nodeNameForErrorReports;
 
     @Inject
     public CtrlErrorListApiCallHandler(
@@ -62,15 +64,15 @@ public class CtrlErrorListApiCallHandler
         CtrlStltSerializer clientComSerializerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef
-    )
-        {
+        LockGuardFactory lockGuardFactoryRef)
+    {
         errorReporter = errorReporterRef;
         nodeRepository = nodeRepositoryRef;
         stltComSerializer = clientComSerializerRef;
         peerAccCtx = peerAccCtxRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
+        nodeNameForErrorReports = LinStor.getHostName();
     }
 
     public Flux<ApiCallRc> deleteErrorReports(
@@ -185,26 +187,28 @@ public class CtrlErrorListApiCallHandler
         return Flux.just(apiCallRc);
     }
 
-    public Flux<List<ErrorReport>> listErrorReports(
+    public Flux<ErrorReportResult> listErrorReports(
         final Set<String> nodes,
         boolean withContent,
         @Nullable final Date since,
         @Nullable final Date to,
-        final Set<String> ids
+        @Nonnull final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset
     )
     {
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Collect error reports",
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP),
-                () -> assembleRequests(nodes, withContent, since, to, ids)
+                () -> assembleRequests(nodes, withContent, since, to, ids, limit, offset)
             )
             .collectList()
             .flatMapMany(errorReportAnswers ->
                 scopeRunner.fluxInTransactionlessScope(
                     "Assemble error report list",
                     lockGuardFactory.buildDeferred(LockType.READ), // no lock needed
-                    () -> Flux.just(assembleList(nodes, withContent, since, to, ids, errorReportAnswers))
+                    () -> Flux.just(assembleList(nodes, withContent, since, to, ids, limit, offset, errorReportAnswers))
                 )
             );
     }
@@ -214,7 +218,9 @@ public class CtrlErrorListApiCallHandler
         boolean withContent,
         @Nullable final Date since,
         @Nullable final Date to,
-        final Set<String> ids)
+        @Nonnull final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset)
         throws AccessDeniedException
     {
         Stream<Node> nodeStream = nodeRepository.getMapForView(peerAccCtx.get()).values().stream()
@@ -222,7 +228,8 @@ public class CtrlErrorListApiCallHandler
                 nodesToRequest.stream().anyMatch(node.getName().getDisplayName()::equalsIgnoreCase));
 
         List<Tuple2<NodeName, Flux<ByteArrayInputStream>>> nameAndRequests = nodeStream
-            .map(node -> Tuples.of(node.getName(), prepareErrRequestApi(node, withContent, since, to, ids)))
+            .map(node ->
+                Tuples.of(node.getName(), prepareErrRequestApi(node, withContent, since, to, ids, limit, offset)))
             .collect(Collectors.toList());
 
         return Flux
@@ -236,14 +243,16 @@ public class CtrlErrorListApiCallHandler
         boolean withContent,
         @Nullable final Date since,
         @Nullable final Date to,
-        final Set<String> ids)
+        @Nonnull final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset)
     {
         Peer peer = getPeer(node);
         Flux<ByteArrayInputStream> fluxReturn = Flux.empty();
         if (peer != null)
         {
             byte[] msg = stltComSerializer.headerlessBuilder()
-                .requestErrorReports(new HashSet<>(), withContent, since, to, ids).build();
+                .requestErrorReports(new HashSet<>(), withContent, since, to, ids, limit, offset).build();
             fluxReturn = peer.apiCall(ApiConsts.API_REQ_ERROR_REPORTS, msg)
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty());
         }
@@ -268,26 +277,43 @@ public class CtrlErrorListApiCallHandler
         return peer;
     }
 
-    private List<ErrorReport> assembleList(
+    /**
+     * Gets the errorreport answers from satellites and merges them all together with the controller.
+     *
+     * @param nodesToRequest Set of which nodes needed to be requested.
+     * @param withContent true if error-reports should include all text content
+     * @param since only include error-reports since this date
+     * @param to only include error-reports to this date
+     * @param ids only include error-reports with the given ids
+     * @param limit only fetch maximum count
+     * @param offset skip error reports until this
+     * @param errorReportsAnswers Actual binary answers from satellites
+     * @return A combined ErrorReportResult from all requested nodes
+     * @throws IOException If parsing binary data from satellites failed.
+     */
+    private ErrorReportResult assembleList(
         Set<String> nodesToRequest,
         boolean withContent,
         @Nullable final Date since,
         @Nullable final Date to,
-        final Set<String> ids,
+        @Nonnull final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset,
         List<Tuple2<NodeName, ByteArrayInputStream>> errorReportsAnswers)
         throws IOException
     {
-        List<ErrorReport> errorReports = new ArrayList<>();
+        final ErrorReportResult errorReportResult = new ErrorReportResult(0, Collections.emptyList());
 
         // Controller error reports
         if (nodesToRequest.isEmpty() || nodesToRequest.stream().anyMatch(LinStor.CONTROLLER_MODULE::equalsIgnoreCase))
         {
-            errorReports.addAll(errorReporter.listReports(
+            errorReportResult.addErrorReportResult(nodeNameForErrorReports, Node.Type.CONTROLLER.name(), errorReporter.listReports(
                 withContent,
                 since,
                 to,
-                ids
-            ));
+                ids,
+                limit,
+                offset));
         }
 
         // Returned satellite error reports
@@ -296,36 +322,41 @@ public class CtrlErrorListApiCallHandler
             // NodeName nodeName = errorReportAnswer.getT1();
             ByteArrayInputStream errorReportMsgDataIn = errorReportAnswer.getT2();
 
-            errorReports.addAll(deserializeErrorReports(errorReportMsgDataIn));
+            errorReportResult.addErrorReportResult(
+                errorReportAnswer.getT1().displayValue,
+                Node.Type.SATELLITE.name(),
+                deserializeErrorReports(errorReportMsgDataIn));
         }
 
-        errorReports.sort(LinstorFile::compareTo);
-        return errorReports;
+        errorReportResult.sort();
+        return errorReportResult;
     }
 
     // TODO? hide deserialization in interface?
-    private static Set<ErrorReport> deserializeErrorReports(InputStream msgDataIn)
+    private static @Nonnull ErrorReportResult deserializeErrorReports(InputStream msgDataIn)
         throws IOException
     {
+        List<ErrorReport> errorReports = new ArrayList<>();
         MsgErrorReportOuterClass.MsgErrorReport msgErrorReport;
-        Set<ErrorReport> errorReports = new TreeSet<>();
-        while ((msgErrorReport = MsgErrorReportOuterClass.MsgErrorReport.parseDelimitedFrom(msgDataIn)) != null)
+        msgErrorReport = MsgErrorReportOuterClass.MsgErrorReport.parseDelimitedFrom(msgDataIn);
+        for (MsgErrorReportOuterClass.ErrorReport errorReport : msgErrorReport.getErrorReportsList())
         {
             errorReports.add(new ErrorReport(
-                msgErrorReport.getNodeNames(),
-                Node.Type.getByValue(msgErrorReport.getModule()),
-                msgErrorReport.getFilename(),
-                msgErrorReport.getVersion(),
-                msgErrorReport.getPeer(),
-                msgErrorReport.getException(),
-                msgErrorReport.getExceptionMessage(),
-                msgErrorReport.getOriginFile(),
-                msgErrorReport.getOriginMethod(),
-                msgErrorReport.getOriginLine(),
-                new Date(msgErrorReport.getErrorTime()),
-                msgErrorReport.getText())
+                errorReport.getNodeNames(),
+                Node.Type.getByValue(errorReport.getModule()),
+                errorReport.getFilename(),
+                errorReport.getVersion(),
+                errorReport.getPeer(),
+                errorReport.getException(),
+                errorReport.getExceptionMessage(),
+                errorReport.getOriginFile(),
+                errorReport.getOriginMethod(),
+                errorReport.getOriginLine(),
+                new Date(errorReport.getErrorTime()),
+                errorReport.getText())
             );
         }
-        return errorReports;
+
+        return new ErrorReportResult(msgErrorReport.getTotalCount(), errorReports);
     }
 }

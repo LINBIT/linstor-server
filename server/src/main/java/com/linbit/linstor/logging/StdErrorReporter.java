@@ -607,14 +607,16 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     }
 
     @Override
-    public List<ErrorReport> listReports(
+    public ErrorReportResult listReports(
         boolean withText,
         @Nullable final Date since,
         @Nullable final Date to,
-        final Set<String> ids
+        @Nonnull final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset
     )
     {
-        return h2ErrorReporter.listReports(withText, since, to, ids);
+        return h2ErrorReporter.listReports(withText, since, to, ids, limit, offset);
     }
 
     @Override

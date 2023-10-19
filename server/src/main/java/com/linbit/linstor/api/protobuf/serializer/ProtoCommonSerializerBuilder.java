@@ -63,6 +63,7 @@ import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.event.EventIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.logging.ErrorReport;
+import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.proto.MsgHeaderOuterClass;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
@@ -155,6 +156,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.io.ByteArrayOutputStream;
@@ -666,7 +668,9 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         boolean withContent,
         @Nullable Date since,
         @Nullable Date to,
-        Set<String> ids
+        @Nonnull Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset
     )
     {
         try
@@ -680,6 +684,14 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 bld.setTo(to.getTime());
             }
+            if (limit != null)
+            {
+                bld.setLimit(limit);
+            }
+            if (offset != null)
+            {
+                bld.setOffset(offset);
+            }
             bld.addAllNodeNames(nodes).setWithContent(withContent).addAllIds(ids).build().writeDelimitedTo(baos);
         }
         catch (IOException exc)
@@ -690,29 +702,32 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder errorReports(List<ErrorReport> errorReports)
+    public CommonSerializer.CommonSerializerBuilder errorReports(@Nonnull ErrorReportResult errorReportResult)
     {
         try
         {
-            for (ErrorReport errReport : errorReports)
+            MsgErrorReport.Builder msgErrorReport = MsgErrorReport.newBuilder();
+            msgErrorReport.setTotalCount(errorReportResult.getTotalCount());
+            for (ErrorReport errReport : errorReportResult.getErrorReports())
             {
-                MsgErrorReport.Builder msgErrorReport =
-                    MsgErrorReport.newBuilder();
+                com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.ErrorReport.Builder protoErrorReport =
+                    com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.ErrorReport.newBuilder();
 
-                msgErrorReport.setErrorTime(errReport.getDateTime().getTime());
-                msgErrorReport.setNodeNames(errReport.getNodeName());
-                msgErrorReport.setFilename(errReport.getFileName());
-                msgErrorReport.setModule((int) errReport.getModule().getFlagValue());
-                errReport.getVersion().ifPresent(msgErrorReport::setVersion);
-                errReport.getPeer().ifPresent(msgErrorReport::setPeer);
-                errReport.getException().ifPresent(msgErrorReport::setException);
-                errReport.getExceptionMessage().ifPresent(msgErrorReport::setExceptionMessage);
-                errReport.getOriginFile().ifPresent(msgErrorReport::setOriginFile);
-                errReport.getOriginMethod().ifPresent(msgErrorReport::setOriginMethod);
-                errReport.getOriginLine().ifPresent(msgErrorReport::setOriginLine);
-                errReport.getText().ifPresent(msgErrorReport::setText);
-                msgErrorReport.build().writeDelimitedTo(baos);
+                protoErrorReport.setErrorTime(errReport.getDateTime().getTime());
+                protoErrorReport.setNodeNames(errReport.getNodeName());
+                protoErrorReport.setFilename(errReport.getFileName());
+                protoErrorReport.setModule((int) errReport.getModule().getFlagValue());
+                errReport.getVersion().ifPresent(protoErrorReport::setVersion);
+                errReport.getPeer().ifPresent(protoErrorReport::setPeer);
+                errReport.getException().ifPresent(protoErrorReport::setException);
+                errReport.getExceptionMessage().ifPresent(protoErrorReport::setExceptionMessage);
+                errReport.getOriginFile().ifPresent(protoErrorReport::setOriginFile);
+                errReport.getOriginMethod().ifPresent(protoErrorReport::setOriginMethod);
+                errReport.getOriginLine().ifPresent(protoErrorReport::setOriginLine);
+                errReport.getText().ifPresent(protoErrorReport::setText);
+                msgErrorReport.addErrorReports(protoErrorReport);
             }
+            msgErrorReport.build().writeDelimitedTo(baos);
         }
         catch (IOException exc)
         {

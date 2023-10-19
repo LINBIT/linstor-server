@@ -4,7 +4,7 @@ package com.linbit.linstor.proto.responses;
 
 // Contains an error report
 // Requested by: MsgReqErrorReport, ApiConsts.API_REQ_ERROR_REPORTS
-message MsgErrorReport
+message ErrorReport
 {
     required string node_names = 1;
     // Datetime as unixtimestamp UTC
@@ -21,4 +21,10 @@ message MsgErrorReport
     optional string origin_file = 10;
     optional string origin_method = 11;
     optional int32 origin_line = 12;
+}
+
+message MsgErrorReport
+{
+    required uint64 total_count = 1;
+    repeated ErrorReport error_reports = 2;
 }

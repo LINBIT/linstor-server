@@ -16,7 +16,7 @@ import com.linbit.linstor.core.apis.VolumeApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.logging.ErrorReport;
+import com.linbit.linstor.logging.ErrorReportResult;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
@@ -26,6 +26,7 @@ import com.linbit.utils.Pair;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.ArrayList;
@@ -33,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import io.prometheus.client.CollectorRegistry;
@@ -234,12 +234,26 @@ public class PrometheusBuilder
         return val;
     }
 
+    /**
+     * Builds the prometheus metrics format in a TextWriter and jvm statistics in a StringWriter and finally
+     * converts them to a String.
+     *
+     * @param nodeApiList node list included in the report
+     * @param rscDfns resource definition included in the report
+     * @param rl resource list included in the report
+     * @param storagePoolList storage pool list included in the report
+     * @param errorReports error report result for counting statistics
+     * @param scrapeRequestCount how often was yet scraped
+     * @param scrapeStartMillis scrape start time in millis
+     * @return A String in the prometheus text format output
+     * @throws IOException Prometheus format library may throw on final build.
+     */
     public String build(
         @Nullable final List<NodeApi> nodeApiList,
         @Nullable final List<ResourceDefinitionApi> rscDfns,
         @Nullable final ResourceList rl,
         @Nullable final List<StorPoolApi> storagePoolList,
-        @Nullable final List<ErrorReport> errorReports,
+        @Nullable final ErrorReportResult errorReports,
         final long scrapeRequestCount,
         final long scrapeStartMillis) throws IOException
     {
@@ -335,26 +349,14 @@ public class PrometheusBuilder
         if (errorReports != null)
         {
             tf.startGauge("linstor_error_reports_count");
-            tf.writeSample(null, errorReports.size());
-            Set<Pair<String, String>> nodes = errorReports.stream()
-                .map(err -> new Pair<>(err.getModuleString(), err.getNodeName()))
-                .collect(Collectors.toSet());
-
-            nodes.forEach(
-                node ->
-                {
-                    HashMap<String, String> errMap = new HashMap<>();
-                    errMap.put("hostname", node.objB);
-                    errMap.put("module", node.objA);
-                    tf.writeSample(
-                        errMap, errorReports.stream()
-                        .filter(
-                            rep -> (rep.getNodeName().equals(node.objB) &&
-                                rep.getModuleString().equals(node.objA)))
-                        .count()
-                    );
-                }
-            );
+            tf.writeSample(null, errorReports.getTotalCount());
+            for (Map.Entry<Pair<String, String>, Long> entry : errorReports.getNodeCounts().entrySet())
+            {
+                HashMap<String, String> errMap = new HashMap<>();
+                errMap.put("hostname", entry.getKey().objA);
+                errMap.put("module", entry.getKey().objB);
+                tf.writeSample(errMap, entry.getValue());
+            }
         }
 
         StringWriter sw = new StringWriter();

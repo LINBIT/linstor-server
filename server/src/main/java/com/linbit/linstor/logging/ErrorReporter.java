@@ -184,14 +184,16 @@ public interface ErrorReporter
 
     Path getLogDirectory();
 
-    default List<ErrorReport> listReports(
+    default @Nonnull ErrorReportResult listReports(
         boolean withText,
         @Nullable final Date since,
         @Nullable final Date to,
-        final Set<String> ids
+        @Nonnull final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset
     )
     {
-        return Collections.emptyList();
+        return new ErrorReportResult(0, Collections.emptyList());
     }
 
     default ApiCallRc deleteErrorReports(

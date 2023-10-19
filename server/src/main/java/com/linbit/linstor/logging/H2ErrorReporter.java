@@ -7,6 +7,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.io.ByteArrayInputStream;
@@ -155,13 +156,16 @@ public class H2ErrorReporter
         }
     }
 
-    public List<ErrorReport> listReports(
+    public ErrorReportResult listReports(
         boolean withText,
         @Nullable final Date since,
         @Nullable final Date to,
-        final Set<String> ids
+        @Nonnull final Set<String> ids,
+        @Nullable final Long limit,
+        @Nullable final Long offset
     )
     {
+        long count = 0;
         ArrayList<ErrorReport> errors = new ArrayList<>();
         String where = "1=1";
 
@@ -180,19 +184,30 @@ public class H2ErrorReporter
             where += " AND DATETIME <= '" + new java.sql.Date(to.getTime()) + "'";
         }
 
-        final String stmtStr = "SELECT" +
-            " INSTANCE_EPOCH, ERROR_NR, NODE, MODULE, ERROR_ID, DATETIME, VERSION, PEER," +
-            " EXCEPTION, EXCEPTION_MESSAGE, ORIGIN_FILE, ORIGIN_METHOD, ORIGIN_LINE, TEXT" +
+        final String columnsStr = "INSTANCE_EPOCH, ERROR_NR, NODE, MODULE, ERROR_ID, DATETIME, VERSION, PEER," +
+            " EXCEPTION, EXCEPTION_MESSAGE, ORIGIN_FILE, ORIGIN_METHOD, ORIGIN_LINE" + (withText ? ", TEXT" : "");
+        final String countStmtStr = "SELECT COUNT(*) FROM ERRORS WHERE " + where;
+        final String selectStmtStr = "SELECT " +
+            columnsStr +
             " FROM ERRORS" +
             " WHERE " + where +
-            " ORDER BY DATETIME";
+            " ORDER BY DATETIME DESC";
+        // ignore offset for now
+        final String stmtStr = limit != null ?
+            selectStmtStr + " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY" :
+            selectStmtStr;
         try
         (
             Connection con = dataSource.getConnection();
-            Statement stmt = con.createStatement();
-            ResultSet rslt = stmt.executeQuery(stmtStr)
+            Statement stmt = con.createStatement()
         )
         {
+            ResultSet countResult = stmt.executeQuery(countStmtStr);
+            countResult.next();
+            count = countResult.getLong(1);
+            countResult.close();
+
+            ResultSet rslt = stmt.executeQuery(stmtStr);
             while (rslt.next())
             {
                 String text = null;
@@ -219,13 +234,14 @@ public class H2ErrorReporter
                     )
                 );
             }
+            rslt.close();
         }
         catch(SQLException sqlExc)
         {
             errorReporter.logError("Unable to operate on error-reports database: " + sqlExc.getMessage());
         }
 
-        return errors;
+        return new ErrorReportResult(count, errors);
     }
 
     public ApiCallRc deleteErrorReports(
