@@ -630,7 +630,7 @@ public class CtrlRscAutoPlaceApiCallHandler
     )
     {
         return ApiCallRcImpl.simpleEntry(
-            ApiConsts.FAIL_INVLD_PLACE_COUNT,
+            ApiConsts.WARN_RSC_ALREADY_DEPLOYED,
             String.format(
                 "The resource '%s' was already deployed on %d nodes: %s. " +
                     "The resource would have to be deleted from nodes to reach the placement count.",
@@ -638,7 +638,8 @@ public class CtrlRscAutoPlaceApiCallHandler
                 alreadyPlaced.size(),
                 alreadyPlaced.stream().map(rsc -> "'" + rsc.getNode().getName().displayValue + "'")
                     .collect(Collectors.joining(", "))
-            )
+            ),
+            true
         );
     }
 

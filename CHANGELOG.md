@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sos-report's tar command no longer use --verbose
 - ErrorReports list now works with paging and a default limit.
   Fixing node timeouts on large error-reports
+- Resource-group adjust warns now for placement count needs to be reduced (instead of error)
 
 ### Fixed
 
