@@ -199,7 +199,19 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                             }
                         }
                     }
-                } // else: silently ignore diskful resources
+                }
+                else
+                {
+                    // make sure to delete the no-longer diskless resource if we had it in our sets
+                    synchronized (configSet)
+                    {
+                        AutoDiskfulConfig cfg = configSetByRsc.remove(rsc);
+                        if (cfg != null)
+                        {
+                            configSet.remove(cfg);
+                        }
+                    }
+                }
             }
             else
             {

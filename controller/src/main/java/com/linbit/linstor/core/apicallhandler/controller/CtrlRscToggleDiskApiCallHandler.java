@@ -59,6 +59,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
+import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
@@ -128,6 +129,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final ErrorReporter errorReporter;
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
     private final Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandler;
+    private final Provider<AutoDiskfulTask> autoDiskfulTaskProvider;
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
@@ -150,7 +152,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         Provider<CtrlRscAutoHelper> rscAutoHelperRef,
         ErrorReporter errorReporterRef,
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
-        Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef
+        Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef,
+        Provider<AutoDiskfulTask> autoDiskfulTaskProviderRef
     )
     {
         apiCtx = apiCtxRef;
@@ -174,6 +177,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         errorReporter = errorReporterRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
+        autoDiskfulTaskProvider = autoDiskfulTaskProviderRef;
     }
 
     @Override
@@ -857,6 +861,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ).getFlux();
 
         ctrlTransactionHelper.commit();
+
+        autoDiskfulTaskProvider.get().update(rsc);
 
         String actionSelf = removeDisk ? null : "Added disk on {0}";
         String actionPeer = removeDisk ?

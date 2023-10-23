@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed setting 'on-no-quorum' to 'suspend-io' at the resource-group level does not propagate down to existing resources
 - Fixed logic in setLogLevel to prevent error log if no error happened
+- Fixed possible 'Access to deleted Resource' in the AutoDiskfulTask
 
 ## [1.25.0-rc.1] - 2023-10-11
 
