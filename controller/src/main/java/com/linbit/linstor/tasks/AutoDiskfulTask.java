@@ -11,7 +11,6 @@ import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.BackgroundRunner;
-import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
@@ -24,6 +23,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
@@ -73,7 +73,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
     private final ErrorReporter errorReporter;
     private final CtrlRscToggleDiskApiCallHandler toggleDisklHandler;
     private final Autoplacer autoplacer;
-    private final StltConfigAccessor stltConfigAccesor;
+    private final SystemConfRepository systemConfRepository;
     private final ResourceDefinitionRepository rscDfnRepo;
 
     private final SortedSet<AutoDiskfulConfig> configSet = new TreeSet<>();
@@ -100,7 +100,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         @SystemContext AccessContext sysCtxRef,
         ErrorReporter errorReporterRef,
         CtrlRscToggleDiskApiCallHandler toggleDisklHandlerRef,
-        StltConfigAccessor stltConfigAccesorRef,
+        SystemConfRepository systemConfRepositoryRef,
         ResourceDefinitionRepository rscDfnRepoRef,
         Autoplacer autoplacerRef,
         LinStorScope linstorScopeRef,
@@ -115,7 +115,7 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
         sysCtx = sysCtxRef;
         errorReporter = errorReporterRef;
         toggleDisklHandler = toggleDisklHandlerRef;
-        stltConfigAccesor = stltConfigAccesorRef;
+        systemConfRepository = systemConfRepositoryRef;
         rscDfnRepo = rscDfnRepoRef;
         autoplacer = autoplacerRef;
         linstorScope = linstorScopeRef;
@@ -234,7 +234,9 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
             rsc.getNode().getProps(sysCtx),
             rsc.getResourceDefinition().getProps(sysCtx),
             rsc.getResourceDefinition().getResourceGroup().getProps(sysCtx),
-            stltConfigAccesor.getReadonlyProps()
+            // TODO: we should really either unify these props or start working on the generated version...
+            systemConfRepository.getStltConfForView(sysCtx),
+            systemConfRepository.getCtrlConfForView(sysCtx)
         );
     }
 
