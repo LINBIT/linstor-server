@@ -1,3 +1,30 @@
+linstor-server (1.25.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * rscGrp/modify: Run AutoQuorumHelper.manage on auto-quorum prop change
+  * rscDfn/modify: Run helper.manager also on auto-quorum prop change
+  * error-report-list: Use paging for retrieving and default limit
+  * auto-place-adjust: only warn about resource needs to be deleted
+  * linstor-common: update drbdsetup.xml to drbd-utils 9.26.0.rc2
+
+  [ Moritz "WanzenBug" Wanzenböck ]
+  * containers: add ktls-utils
+
+  [ Gabor Hernadi ]
+  * Ping: Report exception during ping
+  * PingTask: Added Javadoc
+  * Sos: Remove --verbose from tar command
+  * Gitlab: Add default MR template
+  * AutoDiskful: Fix Access to deleted Resource
+  * AutoDiskful: Also check ctrlProps for prioProps
+
+  [ Johanna Kucera ]
+  * ErrorReporter: remove unused return value of setLogLevel
+  * ErrorReporter: reworked checks to prevent misleading error message
+  * ErrorReporter: add javadoc and annotations
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 25 Oct 2023 04:02:02 +0000
+
 linstor-server (1.25.0~rc.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
