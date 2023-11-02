@@ -13,7 +13,7 @@ import java.util.HashSet;
 import java.util.UUID;
 
 @K8sCrdMigration(
-    description = "Cleanup orphaned ACL entries",
+    description = "Restore invisible KVS",
     version = 16
 )
 public class Migration_16_v1_19_1_RestoreInvisbleKvs extends BaseK8sCrdMigration
