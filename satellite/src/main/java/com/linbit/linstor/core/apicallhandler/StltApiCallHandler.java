@@ -209,10 +209,10 @@ public class StltApiCallHandler
     }
 
     public AuthenticationResult authenticate(
-        UUID nodeUuid,
-        String nodeName,
-        Peer controllerPeer,
-        UUID ctrlUuid
+        @Nonnull UUID nodeUuid,
+        @Nonnull String nodeName,
+        @Nonnull Peer controllerPeer,
+        @Nullable UUID ctrlUuid
     )
     {
         AuthenticationResult authResult;

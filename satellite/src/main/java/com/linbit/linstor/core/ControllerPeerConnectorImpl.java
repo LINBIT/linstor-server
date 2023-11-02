@@ -18,6 +18,8 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -117,7 +119,12 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     }
 
     @Override
-    public void setControllerPeer(UUID ctrlUuidRef, Peer controllerPeerRef, UUID nodeUuid, String nodeName)
+    public void setControllerPeer(
+        @Nullable UUID ctrlUuidRef,
+        @Nonnull Peer controllerPeerRef,
+        @Nonnull UUID nodeUuid,
+        @Nonnull String nodeName
+    )
     {
         try
         {

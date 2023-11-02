@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Fixed version mismatch check between new satellites and a pre v1.25.0 controller
+
 ## [1.25.0] - 2023-10-25
 
 ### Changed

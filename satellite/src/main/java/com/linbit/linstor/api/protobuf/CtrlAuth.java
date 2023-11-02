@@ -77,8 +77,17 @@ public class CtrlAuth implements ApiCall
         UUID nodeUuid = UUID.fromString(auth.getNodeUuid());
 
         Peer controllerPeer = controllerPeerProvider.get();
-        AuthenticationResult authResult =
-            apiCallHandler.authenticate(nodeUuid, nodeName, controllerPeer, UUID.fromString(auth.getCtrlUuid()));
+        UUID ctrlUuid = null;
+        if (auth.getCtrlUuid() != null && !auth.getCtrlUuid().isBlank())
+        {
+            ctrlUuid = UUID.fromString(auth.getCtrlUuid());
+        }
+        if (ctrlUuid == null)
+        {
+            errorReporter.logWarning("Controller sent invalid ctrl-UUID: '%s'", auth.getCtrlUuid());
+        }
+
+        AuthenticationResult authResult = apiCallHandler.authenticate(nodeUuid, nodeName, controllerPeer, ctrlUuid);
 
         byte[] replyBytes;
         if (authResult.isAuthenticated())
