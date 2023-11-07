@@ -52,6 +52,7 @@ public class CtrlRscAutoHelper
     private final LockGuardFactory lockGuardFactory;
     private final ResourceDefinitionProtectionRepository rscDfnRepo;
     private final AccessContext sysCtx;
+    private final CtrlTransactionHelper ctrlTxHelper;
 
     public static class AutoHelperResult
     {
@@ -89,9 +90,11 @@ public class CtrlRscAutoHelper
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         @SystemContext AccessContext sysCtxRef,
-        ResourceDefinitionProtectionRepository rscDfnRepoRef
+        ResourceDefinitionProtectionRepository rscDfnRepoRef,
+        CtrlTransactionHelper ctrlTxHelperRef
     )
     {
+        ctrlTxHelper = ctrlTxHelperRef;
         autohelperList = Arrays
             .asList(
                 autoDrbdProxyHelperRef,
@@ -144,6 +147,7 @@ public class CtrlRscAutoHelper
                 );
                 fluxList.add(result.flux);
             }
+            ctrlTxHelper.commit();
         }
         catch (AccessDeniedException exc)
         {

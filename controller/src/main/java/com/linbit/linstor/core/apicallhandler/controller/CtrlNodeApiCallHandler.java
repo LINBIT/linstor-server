@@ -155,6 +155,7 @@ public class CtrlNodeApiCallHandler
     private final Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProvider;
     private final CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandler;
     private final CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandler;
+    private final CtrlRscAutoHelper ctrlRscAutoHelper;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -190,7 +191,8 @@ public class CtrlNodeApiCallHandler
         EventNodeHandlerBridge eventNodeHandlerBridgeRef,
         Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProviderRef,
         CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef,
-        CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef
+        CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef,
+        CtrlRscAutoHelper ctrlRscAutoHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -226,6 +228,7 @@ public class CtrlNodeApiCallHandler
         ctrlNodeCrtApiCallHandlerProvider = ctrlNodeCrtApiCallHandlerProviderRef;
         ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
         ctrlBackupQueueHandler = ctrlBackupQueueHandlerRef;
+        ctrlRscAutoHelper = ctrlRscAutoHelperRef;
     }
 
     Node createNodeImpl(
@@ -1227,6 +1230,9 @@ public class CtrlNodeApiCallHandler
                 Flux<ApiCallRc> flux = Flux.empty();
                 try
                 {
+                    Map<String, String> objRefs = new TreeMap<>();
+                    objRefs.put(ApiConsts.KEY_NODE, nodeName);
+
                     AccessContext peerCtx = peerAccCtx.get();
                     Node node = ctrlApiDataLoader.loadNode(nodeName, true);
 
@@ -1356,6 +1362,22 @@ public class CtrlNodeApiCallHandler
                             );
                         }
                     }
+                    ApiCallRcImpl rc = ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
+                        "Successfully restored node " + nodeName
+                    );
+                    AutoHelperContext autoCtx = new AutoHelperContext(
+                        rc,
+                        new ResponseContext(
+                            ApiOperation.makeModifyOperation(),
+                            getNodeDescription(nodeName),
+                            getNodeDescriptionInline(nodeName),
+                            ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
+                            objRefs
+                        ),
+                        null
+                    );
+                    Flux<ApiCallRc> autoFlux = ctrlRscAutoHelper.manageAll(autoCtx);
 
                     ctrlTransactionHelper.commit();
 
@@ -1374,12 +1396,10 @@ public class CtrlNodeApiCallHandler
                         node.getName(),
                         CtrlSatelliteUpdater.findNodesToContact(peerCtx, node)
                     );
-                    ApiCallRc rc = ApiCallRcImpl.singleApiCallRc(
-                        ApiConsts.MASK_SUCCESS | ApiConsts.MASK_NODE,
-                        "Successfully restored node " + nodeName
-                    );
-                    flux = flux.concatWith(updateFlux.transform(tuple -> Flux.empty()));
-                    flux = flux.concatWithValues(rc);
+
+                    flux = flux.concatWith(updateFlux.transform(tuple -> Flux.empty()))
+                        .concatWith(autoFlux)
+                        .concatWithValues(rc);
                 }
                 catch (AccessDeniedException exc)
                 {
