@@ -54,6 +54,7 @@ import static com.linbit.linstor.api.ApiConsts.VAL_FALSE;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -123,7 +124,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     }
 
     @Override
-    public void manage(AutoHelperContext ctx)
+    public void manage(@Nonnull AutoHelperContext ctx)
     {
         try
         {
@@ -140,7 +141,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         {
                             Resource rsc = rscIt.next();
                             if (isSomeFlagSet(rsc, Resource.Flags.DRBD_DELETE, Resource.Flags.DELETE) &&
-                                !isFlagSet(rsc.getNode(), Node.Flags.EVICTED))
+                                !isSomeFlagSet(rsc.getNode(), Node.Flags.EVICTED, Node.Flags.EVACUATE))
                             {
                                 if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
                                 {
@@ -645,12 +646,12 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
         return isFlagSet;
     }
 
-    private boolean isFlagSet(Node node, Node.Flags... flags)
+    private boolean isSomeFlagSet(@Nonnull Node node, @Nonnull Node.Flags... flags)
     {
         boolean isFlagSet;
         try
         {
-            isFlagSet = node.getFlags().isSet(peerCtx.get(), flags);
+            isFlagSet = node.getFlags().isSomeSet(peerCtx.get(), flags);
         }
         catch (AccessDeniedException accDeniedExc)
         {
