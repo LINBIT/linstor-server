@@ -949,7 +949,8 @@ public class CtrlRscMakeAvailableApiCallHandler
                 ApiConsts.FAIL_NOT_FOUND_STOR_POOL,
                 "Autoplacer could not find " + (diskless ? "diskless" : "diskful") + " stor pool " +
                     (nodeName == null ? "" : "on node " + nodeName) +
-                    " matching resource-groups autoplace-settings"
+                    " matching resource-groups autoplace-settings",
+                    true
             )
         );
     }
