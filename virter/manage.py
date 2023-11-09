@@ -52,7 +52,7 @@ def remove(args):
         subprocess.check_call(["ssh-keygen", "-R", ip])
 
     if args.all:
-        subprocess.check_call(["virter", "vm", "rm", "ubuntu-focal-linstor", "centos-8-linstor"])
+        subprocess.check_call(["virter", "vm", "rm", "ubuntu-jammy-linstor", "centos-8-linstor"])
 
 
 def hosts(args):
@@ -77,12 +77,12 @@ def main():
     subparsers = parser.add_subparsers(help="sub-command help")
 
     p_provision = subparsers.add_parser("provision")
-    p_provision.add_argument("distri", choices=["ubuntu-focal", "centos-8"], help="distribution to provision")
+    p_provision.add_argument("distri", choices=["ubuntu-jammy", "centos-8"], help="distribution to provision")
     p_provision.set_defaults(func=provision)
 
     p_vms = subparsers.add_parser("vms")
     _add_vm_args(p_vms)
-    p_vms.add_argument("distri", choices=["ubuntu-focal", "centos-8"], help="distribution to provision")
+    p_vms.add_argument("distri", choices=["ubuntu-jammy", "centos-8"], help="distribution to provision")
     p_vms.set_defaults(func=vms)
 
     p_rm = subparsers.add_parser("rm")

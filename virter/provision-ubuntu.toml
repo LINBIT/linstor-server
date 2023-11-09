@@ -1,3 +1,5 @@
+version = 1
+
 [[steps]]
 [steps.shell]
 script = '''
@@ -12,7 +14,7 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get purge -yq multipath-tools unattended-upgrades
 DEBIAN_FRONTEND=noninteractive apt-get dist-upgrade -yq
 DEBIAN_FRONTEND=noninteractive apt-get install -yq thin-provisioning-tools drbd-dkms drbd-utils zfsutils-linux \
-default-jre-headless python virtualenv postgresql mariadb-server
+default-jre-headless python3 postgresql mariadb-server
 DEBIAN_FRONTEND=noninteractive apt-get autoremove -yq
 DEBIAN_FRONTEND=noninteractive apt-get clean -yq
 
