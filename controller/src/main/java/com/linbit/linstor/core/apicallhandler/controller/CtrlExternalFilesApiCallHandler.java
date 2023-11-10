@@ -22,6 +22,7 @@ import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.objects.ExternalFile;
 import com.linbit.linstor.core.objects.ExternalFile.Flags;
 import com.linbit.linstor.core.objects.ExternalFileControllerFactory;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.ExternalFileRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
@@ -31,10 +32,12 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -115,6 +118,36 @@ public class CtrlExternalFilesApiCallHandler
             // ignore, we will return an empty list
         }
         return ret;
+    }
+
+    /**
+     * Checks if the given file-path is whitelisted in the stltConfig of the given node
+     *
+     * @param fileName
+     * @param nodeName
+     *
+     * @return {@code true} if the file can be written<br/>
+     * {@code false} if it can't be written, the node doesn't exist, the nodeName or fileName is invalid, or there is an
+     * exception
+     */
+    public boolean checkFile(@Nonnull String fileName, @Nonnull String nodeName)
+    {
+        boolean allowed = false;
+        try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.EXT_FILE_MAP, LockObj.NODES_MAP))
+        {
+            Node node = ctrlApiDataLoader.loadNode(nodeName, false);
+            ExternalFileName extFileName = LinstorParsingUtils.asExtFileName(fileName);
+
+            if (node != null && extFileName != null)
+            {
+                allowed = CtrlExternalFilesHelper.isPathWhitelisted(extFileName, node, peerAccCtx.get());
+            }
+        }
+        catch (AccessDeniedException | ApiRcException exc)
+        {
+            // ignore exc, return false
+        }
+        return allowed;
     }
 
     public Flux<ApiCallRc> set(String extFileNameStr, byte[] content)

@@ -516,6 +516,7 @@ public class Nodes
                     }
                     else
                     {
+                        // Do NOT expose stltConf.getWhitelistedExternalFilePaths() due to security reasons!
                         stltConfig.config = new JsonGenTypes.ControllerConfigConfig();
                         stltConfig.config.dir = stltConf.getConfigDir();
                         stltConfig.debug = new JsonGenTypes.ControllerConfigDebug();

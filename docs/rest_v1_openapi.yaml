@@ -25,6 +25,8 @@ info:
       - Removed everything OpenFlex related (entry-points, schemas, etc..)
       - Added peerSlots to ResourceGroup (create, modify and spawn)
       - Added stor_pool_free_capacity_oversubscription_ratio and stor_pool_total_capacity_oversubscription_ratio to QuerySizeInfoSpawnResult
+      - Added GET /v1/files/{extFileName}/check/{node}
+      - Added ExtFileCheckResult
     * 1.20.2
       - Added EffectivePropertiesMap, EffectivePropertiesMapValue and PropertyWithDescription objects
     * 1.20.1
@@ -6173,6 +6175,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiCallRcList'
+  /v1/files/{extFileName}/check/{node}:
+    parameters:
+      - $ref: '#/components/parameters/ExternalFileName'
+      - $ref: '#/components/parameters/Node'
+    get:
+      tags:
+        - developers
+      summary: checks whether an extFile can be written
+      description: checks whether the given extFile can be written on the given node
+      responses:
+        '200':
+          description: returns whether the file can be written
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtFileCheckResult'
   /v1/queries/resource-groups/query-all-size-info:
     post:
       tags:
@@ -8767,6 +8785,11 @@ components:
           description: The contents of the file, in base64 encoding
           type: string
           example: 'SGVsbG8sIFdvcmxkIQo='
+    ExtFileCheckResult:
+      type: object
+      properties:
+        allowed:
+          type: boolean
     ToggleDiskDiskful:
       type: object
       description: ToggleDisk optional payload data

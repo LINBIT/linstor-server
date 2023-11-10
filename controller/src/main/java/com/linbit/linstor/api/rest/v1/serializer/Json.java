@@ -1205,6 +1205,13 @@ public class Json
         return json;
     }
 
+    public static JsonGenTypes.ExtFileCheckResult apiToExtFileCheckResult(boolean allowed)
+    {
+        JsonGenTypes.ExtFileCheckResult json = new JsonGenTypes.ExtFileCheckResult();
+        json.allowed = allowed;
+        return json;
+    }
+
     public static JsonGenTypes.ResourceDefinitionCloneStarted resourceDefCloneStarted(
         String srcRscName,
         String clonedName,

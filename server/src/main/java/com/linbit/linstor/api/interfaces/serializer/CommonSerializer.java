@@ -41,26 +41,29 @@ public interface CommonSerializer
         byte[] build();
 
         CommonSerializerBuilder authError(ApiCallRcImpl apiCallRcRef);
+
+        @Nonnull
         CommonSerializerBuilder authSuccess(
             long expectedFullSyncId,
-            int[] stltVersion,
-            String nodeUname,
-            Collection<ExtToolsInfo> layerInfoListRef,
-            ApiCallRc responses,
-            String configDir,
+            @Nonnull int[] stltVersion,
+            @Nonnull String nodeUname,
+            @Nonnull Collection<ExtToolsInfo> layerInfoListRef,
+            @Nonnull ApiCallRc responses,
+            @Nonnull String configDir,
             boolean debugConsoleEnabled,
             boolean logPrintStackTrace,
-            String logDirectory,
-            String logLevel,
-            String logLevelLinstor,
-            String stltOverrideNodeName,
+            @Nonnull String logDirectory,
+            @Nonnull String logLevel,
+            @Nullable String logLevelLinstor,
+            @Nullable String stltOverrideNodeName,
             boolean remoteSpdk,
             boolean ebs,
-            Pattern drbdKeepResPattern,
-            String netBindAddress,
-            Integer netPort,
-            String netType,
-            WhitelistProps whitelistProps
+            @Nullable Pattern drbdKeepResPattern,
+            @Nonnull String netBindAddress,
+            @Nonnull Integer netPort,
+            @Nonnull String netType,
+            @Nonnull Set<String> extFileWhitelist,
+            @Nonnull WhitelistProps whitelistProps
         );
 
         CommonSerializerBuilder bytes(byte[] bytes);

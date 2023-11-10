@@ -103,8 +103,11 @@ import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
+import com.linbit.linstor.utils.SetUtils;
 import com.linbit.utils.Base64;
 import com.linbit.utils.Either;
+
+import javax.annotation.Nonnull;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -185,7 +188,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     @Override
-    public CtrlStltSerializerBuilder changedConfig(com.linbit.linstor.core.cfg.StltConfig stltConfig)
+    public @Nonnull CtrlStltSerializerBuilder changedConfig(@Nonnull com.linbit.linstor.core.cfg.StltConfig stltConfig)
         throws IOException
     {
         StltConfigOuterClass.StltConfig.Builder bld = stltConfig(
@@ -201,7 +204,8 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             stltConfig.getDrbdKeepResPattern(),
             stltConfig.getNetBindAddress(),
             stltConfig.getNetPort(),
-            stltConfig.getNetType()
+            stltConfig.getNetType(),
+            SetUtils.convertPathsToStrings(stltConfig.getWhitelistedExternalFilePaths())
         );
         bld.build().writeDelimitedTo(baos);
         return this;

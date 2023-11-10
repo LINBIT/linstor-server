@@ -21,4 +21,5 @@ message StltConfig
 	string net_type = 12;
 	bool remote_spdk = 13;
 	bool ebs = 14;
+	repeated string whitelisted_ext_file_paths = 15;
 }

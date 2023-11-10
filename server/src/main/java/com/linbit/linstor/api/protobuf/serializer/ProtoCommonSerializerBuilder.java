@@ -96,6 +96,7 @@ import com.linbit.linstor.proto.common.RscLayerDataOuterClass;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.RscOuterClass;
 import com.linbit.linstor.proto.common.StltConfigOuterClass;
+import com.linbit.linstor.proto.common.StltConfigOuterClass.StltConfig;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
@@ -305,26 +306,27 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializerBuilder authSuccess(
+    public @Nonnull CommonSerializerBuilder authSuccess(
         long expectedFullSyncIdRef,
-        int[] stltVersionRef,
-        String uname,
-        Collection<ExtToolsInfo> extToolsList,
-        ApiCallRc responses,
-        String configDir,
+        @Nonnull int[] stltVersionRef,
+        @Nonnull String uname,
+        @Nonnull Collection<ExtToolsInfo> extToolsList,
+        @Nonnull ApiCallRc responses,
+        @Nonnull String configDir,
         boolean debugConsoleEnabled,
         boolean logPrintStackTrace,
-        String logDirectory,
-        String logLevel,
-        String logLevelLinstorPrm,
-        String stltOverrideNodeNamePrm,
+        @Nonnull String logDirectory,
+        @Nonnull String logLevel,
+        @Nullable String logLevelLinstorPrm,
+        @Nullable String stltOverrideNodeNamePrm,
         boolean remoteSpdk,
         boolean ebs,
-        Pattern drbdKeepResPatternPrm,
-        String netBindAddress,
-        Integer netPort,
-        String netType,
-        WhitelistProps whitelistProps
+        @Nullable Pattern drbdKeepResPatternPrm,
+        @Nonnull String netBindAddress,
+        @Nonnull Integer netPort,
+        @Nonnull String netType,
+        @Nonnull Set<String> extFileWhitelist,
+        @Nonnull WhitelistProps whitelistProps
     )
     {
         try
@@ -358,7 +360,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                         drbdKeepResPattern,
                         netBindAddress,
                         netPort,
-                        netType
+                        netType,
+                        extFileWhitelist
                     )
                 )
                 .setNodeUname(uname)
@@ -775,20 +778,21 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return this;
     }
 
-    public StltConfigOuterClass.StltConfig.Builder stltConfig(
-        String configDir,
+    public @Nonnull StltConfig.Builder stltConfig(
+        @Nonnull String configDir,
         boolean debugConsoleEnabled,
         boolean logPrintStackTrace,
-        String logDirectory,
-        String logLevel,
-        String logLevelLinstor,
-        String stltOverrideNodeName,
+        @Nonnull String logDirectory,
+        @Nonnull String logLevel,
+        @Nonnull String logLevelLinstor,
+        @Nonnull String stltOverrideNodeName,
         boolean remoteSpdk,
         boolean ebs,
-        Pattern drbdKeepResPattern,
-        String netBindAddress,
-        Integer netPort,
-        String netType
+        @Nonnull Pattern drbdKeepResPattern,
+        @Nonnull String netBindAddress,
+        @Nonnull Integer netPort,
+        @Nonnull String netType,
+        @Nonnull Set<String> extFileWhitelist
     )
     {
         StltConfigOuterClass.StltConfig.Builder bld = StltConfigOuterClass.StltConfig.newBuilder();
@@ -804,7 +808,8 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setDrbdKeepResPattern(drbdKeepResPattern.toString())
             .setNetBindAddress(netBindAddress)
             .setNetPort(netPort)
-            .setNetType(netType);
+            .setNetType(netType)
+            .addAllWhitelistedExtFilePaths(extFileWhitelist);
         return bld;
     }
 

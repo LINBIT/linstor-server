@@ -119,6 +119,38 @@ public class ExternalFiles
         }
     }
 
+    @GET
+    @Path("{extFileName}/check/{node}")
+    public Response getFileAllowed(
+        @Context Request request,
+        @PathParam("extFileName") String extFileName,
+        @PathParam("node") String nodeName
+    )
+    {
+        try
+        {
+            String decodedExtFileName = URLDecoder.decode(extFileName, StandardCharsets.UTF_8.displayName());
+
+            return requestHelper.doInScope(
+                requestHelper.createContext(ApiConsts.API_CHECK_EXT_FILE, request),
+                () ->
+                {
+                    boolean allowed = extFilesHandler.checkFile(decodedExtFileName, nodeName);
+
+                    return Response
+                        .status(Response.Status.OK)
+                        .entity(objectMapper.writeValueAsString(Json.apiToExtFileCheckResult(allowed)))
+                        .build();
+                },
+                false
+            );
+        }
+        catch (UnsupportedEncodingException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
     @PUT
     @Path("{extFileName}")
     @Consumes(MediaType.APPLICATION_JSON)

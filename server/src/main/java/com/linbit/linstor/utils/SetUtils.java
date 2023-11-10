@@ -1,5 +1,8 @@
 package com.linbit.linstor.utils;
 
+import javax.annotation.Nonnull;
+
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.TreeSet;
@@ -9,7 +12,7 @@ public class SetUtils
     private SetUtils()
     {
     }
-    
+
     @SafeVarargs
     public static <T extends Comparable<T>> TreeSet<T> mergeIntoTreeSet(Set<T>... sets)
     {
@@ -29,6 +32,16 @@ public class SetUtils
             targetSet.addAll(set);
         }
         return targetSet;
+    }
+
+    public static @Nonnull Set<String> convertPathsToStrings(@Nonnull Set<Path> orig)
+    {
+        Set<String> ret = new HashSet<>();
+        for (Path path : orig)
+        {
+            ret.add(path.toString());
+        }
+        return ret;
     }
 
 }

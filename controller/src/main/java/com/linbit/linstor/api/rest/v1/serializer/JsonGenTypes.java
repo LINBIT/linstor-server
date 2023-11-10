@@ -1800,6 +1800,12 @@ public class JsonGenTypes
         public String content;
     }
 
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class ExtFileCheckResult
+    {
+        public Boolean allowed;
+    }
+
     /**
      * ToggleDisk optional payload data
      */

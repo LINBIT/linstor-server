@@ -32,6 +32,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.HashSet;
 import java.util.List;
 
 import org.slf4j.event.Level;
@@ -155,6 +156,7 @@ public class CtrlAuthResponseApiCallHandler
                 stltCfg.setNetBindAddress(stltConfig.getNetBindAddress());
                 stltCfg.setNetPort(stltConfig.getNetPort());
                 stltCfg.setNetType(stltConfig.getNetType());
+                stltCfg.setExternalFilesWhitelist(new HashSet<>(stltConfig.getWhitelistedExtFilePathsList()));
                 peer.setStltConfig(stltCfg);
 
                 logExternaltools(peer, nodeUname);
