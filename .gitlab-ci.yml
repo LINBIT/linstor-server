@@ -37,7 +37,7 @@ stages:
 # build spacetracking
     - |
       ST_BRANCH="master"
-      if git ls-remote git@gitlab.linbit:linstor/linstor-server-spacetracking.git | grep refs/heads/${CI_COMMIT_REF_NAME} ; then
+      if git ls-remote https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.at.linbit.com/linstor/linstor-server-spacetracking.git | grep refs/heads/${CI_COMMIT_REF_NAME} ; then
         ST_BRANCH=${CI_COMMIT_REF_NAME}
       fi
     - echo "Using ST-Branch ${ST_BRANCH}"
