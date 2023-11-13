@@ -52,6 +52,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
+import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.toList;
 
@@ -267,7 +268,17 @@ public class StltApiCallHandlerUtils
         return allocatedMap;
     }
 
-    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getAllSpaceInfo(boolean thin)
+    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getAllSpaceInfo()
+    {
+        return getSpaceInfo(ignored -> true);
+    }
+
+    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getSpaceInfo(boolean thin)
+    {
+        return getSpaceInfo(storPool -> storPool.getDeviceProviderKind().usesThinProvisioning() == thin);
+    }
+
+    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getSpaceInfo(Predicate<StorPool> shouldIncludeSpTestRef)
     {
         Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceMap = new HashMap<>();
 
@@ -281,7 +292,7 @@ public class StltApiCallHandlerUtils
 
             for (StorPool storPool : controllerPeerConnector.getLocalNode().streamStorPools(apiCtx).collect(toList()))
             {
-                if (storPool.getDeviceProviderKind().usesThinProvisioning() == thin)
+                if (shouldIncludeSpTestRef.test(storPool))
                 {
                     spaceMap.put(storPool, getStoragePoolSpaceInfoOrError(storPool));
                 }

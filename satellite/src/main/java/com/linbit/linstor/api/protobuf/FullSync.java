@@ -137,7 +137,7 @@ public class FullSync implements ApiCall
             }
 
             Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
-                apiCallHandlerUtils.getAllSpaceInfo(false);
+                apiCallHandlerUtils.getAllSpaceInfo();
 
             for (Entry<StorPool, Either<SpaceInfo, ApiRcException>> entry : spaceInfoQueryMap.entrySet())
             {

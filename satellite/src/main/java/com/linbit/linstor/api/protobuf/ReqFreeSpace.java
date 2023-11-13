@@ -65,7 +65,7 @@ public class ReqFreeSpace implements ApiCallReactive
     private Flux<byte[]> executeInScope()
         throws IOException
     {
-        Map<StorPool, Either<SpaceInfo, ApiRcException>> freeSpaceMap = apiCallHandlerUtils.getAllSpaceInfo(true);
+        Map<StorPool, Either<SpaceInfo, ApiRcException>> freeSpaceMap = apiCallHandlerUtils.getSpaceInfo(true);
 
         MsgIntFreeSpace.Builder builder = MsgIntFreeSpace.newBuilder();
         for (Map.Entry<StorPool, Either<SpaceInfo, ApiRcException>> entry : freeSpaceMap.entrySet())

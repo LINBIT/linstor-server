@@ -1941,7 +1941,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         if (ctrlPeer != null)
         {
             Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
-                apiCallHandlerUtils.getAllSpaceInfo(false);
+                apiCallHandlerUtils.getSpaceInfo(false);
 
             Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
 

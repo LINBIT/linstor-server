@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed version mismatch check between new satellites and a pre v1.25.0 controller
 - Fixed "node restore" to try to (re-) create tiebreaker resources if needed
 - Fixed "node evacuate" no longer keeps diskless resource as a tiebreaker (in evacuating, but never deleting state)
+- Fixed "sp l" showing spurious warning that a diskless SP is offline (due to caching bug)
 
 ## [1.25.0] - 2023-10-25
 
