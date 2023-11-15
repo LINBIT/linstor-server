@@ -804,7 +804,8 @@ public class GenCrdV1_25_1
                     (String) setters.get(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_SAME).accept(data),
                     (String) setters.get(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_DIFFERENT).accept(data),
                     (String) setters.get(GeneratedDatabaseTables.ResourceGroups.ALLOWED_PROVIDER_LIST).accept(data),
-                    (Boolean) setters.get(GeneratedDatabaseTables.ResourceGroups.DISKLESS_ON_REMAINING).accept(data)
+                    (Boolean) setters.get(GeneratedDatabaseTables.ResourceGroups.DISKLESS_ON_REMAINING).accept(data),
+                    (Short) setters.get(GeneratedDatabaseTables.ResourceGroups.PEER_SLOTS).accept(data)
                 ).getCrd();
             }
             case "S3_REMOTES":
@@ -5331,7 +5332,8 @@ public class GenCrdV1_25_1
         String replicasOnSame,
         String replicasOnDifferent,
         String allowedProviderList,
-        Boolean disklessOnRemaining
+        Boolean disklessOnRemaining,
+        Short peerSlots
     )
     {
         return new ResourceGroups(
@@ -5350,7 +5352,8 @@ public class GenCrdV1_25_1
                 replicasOnSame,
                 replicasOnDifferent,
                 allowedProviderList,
-                disklessOnRemaining
+                disklessOnRemaining,
+                peerSlots
             )
         );
     }
@@ -5382,6 +5385,7 @@ public class GenCrdV1_25_1
         @JsonProperty("replicas_on_different") public final String replicasOnDifferent;
         @JsonProperty("allowed_provider_list") public final String allowedProviderList;
         @JsonProperty("diskless_on_remaining") public final Boolean disklessOnRemaining;
+        @JsonProperty("peer_slots") public final Short peerSlots;
 
         @JsonIgnore
         public static ResourceGroupsSpec fromRawParameters(RawParameters rawParamsRef)
@@ -5401,7 +5405,8 @@ public class GenCrdV1_25_1
                 rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_SAME),
                 rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_DIFFERENT),
                 rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.ALLOWED_PROVIDER_LIST),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.DISKLESS_ON_REMAINING)
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.DISKLESS_ON_REMAINING),
+                rawParamsRef.getParsed(GeneratedDatabaseTables.ResourceGroups.PEER_SLOTS)
             );
         }
 
@@ -5421,7 +5426,8 @@ public class GenCrdV1_25_1
             @JsonProperty("replicas_on_same") String replicasOnSameRef,
             @JsonProperty("replicas_on_different") String replicasOnDifferentRef,
             @JsonProperty("allowed_provider_list") String allowedProviderListRef,
-            @JsonProperty("diskless_on_remaining") Boolean disklessOnRemainingRef
+            @JsonProperty("diskless_on_remaining") Boolean disklessOnRemainingRef,
+            @JsonProperty("peer_slots") Short peerSlotsRef
         )
         {
             uuid = uuidRef;
@@ -5439,6 +5445,7 @@ public class GenCrdV1_25_1
             replicasOnDifferent = replicasOnDifferentRef;
             allowedProviderList = allowedProviderListRef;
             disklessOnRemaining = disklessOnRemainingRef;
+            peerSlots = peerSlotsRef;
 
             formattedPrimaryKey = String.format(
                 ResourceGroupsSpec.PK_FORMAT,
@@ -5477,6 +5484,7 @@ public class GenCrdV1_25_1
             ret.put("REPLICAS_ON_DIFFERENT", replicasOnDifferent);
             ret.put("ALLOWED_PROVIDER_LIST", allowedProviderList);
             ret.put("DISKLESS_ON_REMAINING", disklessOnRemaining);
+            ret.put("PEER_SLOTS", peerSlots);
             return ret;
         }
 
@@ -5516,6 +5524,8 @@ public class GenCrdV1_25_1
                     return allowedProviderList;
                 case "DISKLESS_ON_REMAINING":
                     return disklessOnRemaining;
+                case "PEER_SLOTS":
+                    return peerSlots;
                 default:
                     throw new ImplementationError("Unknown database column. Table: RESOURCE_GROUPS, Column: " + clmNameStr);
             }
@@ -10093,6 +10103,7 @@ public class GenCrdV1_25_1
             public static final ColumnImpl REPLICAS_ON_DIFFERENT = new ColumnImpl("REPLICAS_ON_DIFFERENT", Types.CLOB, false, true);
             public static final ColumnImpl ALLOWED_PROVIDER_LIST = new ColumnImpl("ALLOWED_PROVIDER_LIST", Types.VARCHAR, false, true);
             public static final ColumnImpl DISKLESS_ON_REMAINING = new ColumnImpl("DISKLESS_ON_REMAINING", Types.BOOLEAN, false, true);
+            public static final ColumnImpl PEER_SLOTS = new ColumnImpl("PEER_SLOTS", Types.SMALLINT, false, true);
 
             public static final Column[] ALL = new Column[]
             {
@@ -10110,7 +10121,8 @@ public class GenCrdV1_25_1
                 REPLICAS_ON_SAME,
                 REPLICAS_ON_DIFFERENT,
                 ALLOWED_PROVIDER_LIST,
-                DISKLESS_ON_REMAINING
+                DISKLESS_ON_REMAINING,
+                PEER_SLOTS
             };
 
             @Override
@@ -11175,6 +11187,7 @@ public class GenCrdV1_25_1
             ResourceGroups.REPLICAS_ON_DIFFERENT.table = RESOURCE_GROUPS;
             ResourceGroups.ALLOWED_PROVIDER_LIST.table = RESOURCE_GROUPS;
             ResourceGroups.DISKLESS_ON_REMAINING.table = RESOURCE_GROUPS;
+            ResourceGroups.PEER_SLOTS.table = RESOURCE_GROUPS;
             S3Remotes.UUID.table = S3_REMOTES;
             S3Remotes.NAME.table = S3_REMOTES;
             S3Remotes.DSP_NAME.table = S3_REMOTES;

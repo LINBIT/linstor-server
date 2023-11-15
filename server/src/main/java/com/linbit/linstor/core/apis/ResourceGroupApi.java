@@ -16,4 +16,5 @@ public interface ResourceGroupApi
     Map<String, String> getProps();
     @Nullable AutoSelectFilterApi getAutoSelectFilter();
     List<VolumeGroupApi> getVlmGrpList();
+    @Nullable Short getPeerSlots();
 }

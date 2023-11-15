@@ -40,5 +40,5 @@ public interface ResourceGroupDatabaseDriver extends GenericDatabaseDriver<Resou
 
     SingleColumnDatabaseDriver<ResourceGroup, Boolean> getDisklessOnRemainingDriver();
 
-
+    SingleColumnDatabaseDriver<ResourceGroup, Short> getPeerSlotsDriver();
 }

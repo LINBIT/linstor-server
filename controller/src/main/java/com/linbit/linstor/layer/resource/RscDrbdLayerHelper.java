@@ -267,7 +267,6 @@ public class RscDrbdLayerHelper extends
             initFlags |= DrbdRscObject.DrbdRscFlags.DISKLESS.flagValue;
         }
 
-
         DrbdRscData<Resource> drbdRscData = layerDataFactory.createDrbdRscData(
             layerRscIdPool.autoAllocate(),
             rscRef,

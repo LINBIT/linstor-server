@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - ResourceDefinition/VolumeDefinition to prometheus /metrics
+- Added PeerSlots to ResourceGroups (create, modify and spawn)
 
 ### Changed
 

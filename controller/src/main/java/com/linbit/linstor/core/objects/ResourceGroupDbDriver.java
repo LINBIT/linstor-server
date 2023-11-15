@@ -35,6 +35,7 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroup
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.DO_NOT_PLACE_WITH_RSC_REGEX;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.LAYER_STACK;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.NODE_NAME_LIST;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.PEER_SLOTS;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.POOL_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.POOL_NAME_DISKLESS;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.REPLICAS_ON_DIFFERENT;
@@ -77,6 +78,7 @@ public class ResourceGroupDbDriver
     private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnDifferentListDriver;
     private final CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> allowedProviderListDriver;
     private final SingleColumnDatabaseDriver<ResourceGroup, Boolean> disklessOnRemainingDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, Short> peerSlotsDriver;
     private final Provider<TransactionMgr> transMgrProvider;
 
     @Inject
@@ -139,6 +141,10 @@ public class ResourceGroupDbDriver
             REPLICAS_ON_DIFFERENT,
             rscGrp -> toString(rscGrp.getAutoPlaceConfig().getReplicasOnDifferentList(dbCtxRef))
         );
+        setColumnSetter(
+            PEER_SLOTS,
+            rscGrp -> rscGrp.getPeerSlots(dbCtxRef)
+        );
 
         descriptionDriver = generateSingleColumnDriver(
             DESCRIPTION,
@@ -166,6 +172,11 @@ public class ResourceGroupDbDriver
         disklessOnRemainingDriver = generateSingleColumnDriver(
             DISKLESS_ON_REMAINING,
             rscGrp -> Objects.toString(rscGrp.getAutoPlaceConfig().getDisklessOnRemaining(dbCtxRef)),
+            Function.identity()
+        );
+        peerSlotsDriver = generateSingleColumnDriver(
+            PEER_SLOTS,
+            rscGrp -> Objects.toString(rscGrp.getPeerSlots(dbCtxRef)),
             Function.identity()
         );
     }
@@ -243,6 +254,12 @@ public class ResourceGroupDbDriver
     }
 
     @Override
+    public SingleColumnDatabaseDriver<ResourceGroup, Short> getPeerSlotsDriver()
+    {
+        return peerSlotsDriver;
+    }
+
+    @Override
     protected Pair<ResourceGroup, ResourceGroup.InitMaps> load(
         RawParameters raw,
         Void loadAllDataRef
@@ -257,6 +274,7 @@ public class ResourceGroupDbDriver
         final List<String> replicasOnSame;
         final List<String> replicasOnDifferent;
         final Boolean disklessOnRemaining;
+        final Short peerSlots;
 
         try
         {
@@ -277,6 +295,8 @@ public class ResourceGroupDbDriver
                     String disklessOnRemainingStr = raw.get(DISKLESS_ON_REMAINING);
                     disklessOnRemaining = disklessOnRemainingStr != null ?
                         Boolean.parseBoolean(disklessOnRemainingStr) : null;
+
+                    peerSlots = raw.etcdGetShort(PEER_SLOTS);
                     break;
                 case SQL: // fall-through
                 case K8S_CRD:
@@ -286,6 +306,7 @@ public class ResourceGroupDbDriver
                     replicasOnDifferent = raw.getAsStringList(REPLICAS_ON_DIFFERENT);
 
                     disklessOnRemaining = raw.get(DISKLESS_ON_REMAINING);
+                    peerSlots = raw.get(PEER_SLOTS);
                     break;
                 default:
                     throw new ImplementationError("Unknown database type: " + getDbType());
@@ -315,6 +336,7 @@ public class ResourceGroupDbDriver
                 disklessOnRemaining,
                 vlmGrpMap,
                 rscDfnMap,
+                peerSlots,
                 this,
                 propsContainerFactory,
                 transObjFactory,

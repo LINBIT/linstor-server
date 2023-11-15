@@ -72,7 +72,9 @@ public class PrometheusBuilderTest
             "",
             Collections.emptyMap(),
             Collections.emptyList(),
-            null);
+            null,
+            null
+        );
 
         ArrayList<ResourceDefinitionApi> rscDfns = new ArrayList<>();
         rscDfns.add(

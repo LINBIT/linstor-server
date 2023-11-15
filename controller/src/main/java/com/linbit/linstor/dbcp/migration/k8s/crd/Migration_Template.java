@@ -9,14 +9,14 @@
 // public Migration_Template()
 // {
 // super(
-// GenCrdV_OLD.createSchemaUpdateContext(),
+// GenCrdV_OLD.createTxMgrContext(),
 // GenCrdV_NEW.createTxMgrContext(),
 // GenCrdV_NEW.createSchemaUpdateContext()
 // );
 // }
 //
 // @Override
-// public void migrateImpl() throws Exception
+// public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
 // {
 // // load data from database that needs to change
 //
@@ -24,5 +24,8 @@
 // updateCrdSchemaForAllTables();
 //
 // // write modified data to database
+//
+// return null;
 // }
 // }
+

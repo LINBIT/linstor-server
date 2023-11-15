@@ -61,6 +61,7 @@ import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -84,6 +85,7 @@ import static com.linbit.locks.LockGuardFactory.LockObj.RSC_GRP_MAP;
 import static com.linbit.locks.LockGuardFactory.LockObj.STOR_POOL_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -430,7 +432,8 @@ public class CtrlRscGrpApiCallHandler
         Map<String, String> overrideProps,
         HashSet<String> deletePropKeysRef,
         HashSet<String> deleteNamespacesRef,
-        AutoSelectFilterApi autoApiRef
+        AutoSelectFilterApi autoApiRef,
+        @Nullable Short peerSlotsRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -458,6 +461,7 @@ public class CtrlRscGrpApiCallHandler
                     deletePropKeysRef,
                     deleteNamespacesRef,
                     autoApiRef,
+                    peerSlotsRef,
                     context
                 )
             )
@@ -471,6 +475,7 @@ public class CtrlRscGrpApiCallHandler
         HashSet<String> deletePropKeysRef,
         HashSet<String> deleteNamespacesRef,
         AutoSelectFilterApi autoApiRef,
+        @Nullable Short peerSlotsRef,
         ResponseContext context
     )
     {
@@ -582,6 +587,11 @@ public class CtrlRscGrpApiCallHandler
                     }
                 }
                 addUnknownStoragePoolWarning(rscGrpData, apiCallRcs);
+            }
+
+            if (peerSlotsRef != null)
+            {
+                rscGrpData.setPeerSlots(peerCtx, peerSlotsRef);
             }
 
             ctrlTransactionHelper.commit();
@@ -822,7 +832,8 @@ public class CtrlRscGrpApiCallHandler
                 replicasOnSameList,
                 replicasOnDifferentList,
                 providerList,
-                disklessOnRemaining
+                disklessOnRemaining,
+                rscGrpPojoRef.getPeerSlots()
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -875,7 +886,8 @@ public class CtrlRscGrpApiCallHandler
         List<Long> vlmSizesRef,
         AutoSelectFilterApi spawnAutoSelectFilterRef,
         boolean partialRef,
-        boolean definitionsOnlyRef
+        boolean definitionsOnlyRef,
+        @Nullable Short peerSlotsRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -907,6 +919,7 @@ public class CtrlRscGrpApiCallHandler
                     spawnAutoSelectFilterRef,
                     partialRef,
                     definitionsOnlyRef,
+                    peerSlotsRef,
                     context
                 )
             )
@@ -921,6 +934,7 @@ public class CtrlRscGrpApiCallHandler
         AutoSelectFilterApi spawnAutoSelectFilterRef,
         boolean partialRef,
         boolean definitionsOnlyRef,
+        @Nullable Short peerSlotsRef,
         ResponseContext contextRef
     )
     {
@@ -1000,13 +1014,17 @@ public class CtrlRscGrpApiCallHandler
                 );
             }
 
+            LayerPayload layerPayload = new LayerPayload();
+            layerPayload.getDrbdRscDfn().peerSlotsNewResource = peerSlotsRef != null ?
+                peerSlotsRef :
+                rscGrp.getPeerSlots(peerCtx);
             ResourceDefinition rscDfn = ctrlRscDfnApiCallHandler.createResourceDefinition(
                 rscDfnNameRef,
                 rscDfnExtNameRef,
                 Collections.emptyMap(),
                 vlmDfnCrtList,
                 layerStackStr,
-                null,
+                layerPayload,
                 rscGrpNameRef,
                 true,
                 apiCallRc,

@@ -994,6 +994,7 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl REPLICAS_ON_DIFFERENT = new ColumnImpl("REPLICAS_ON_DIFFERENT", Types.CLOB, false, true);
         public static final ColumnImpl ALLOWED_PROVIDER_LIST = new ColumnImpl("ALLOWED_PROVIDER_LIST", Types.VARCHAR, false, true);
         public static final ColumnImpl DISKLESS_ON_REMAINING = new ColumnImpl("DISKLESS_ON_REMAINING", Types.BOOLEAN, false, true);
+        public static final ColumnImpl PEER_SLOTS = new ColumnImpl("PEER_SLOTS", Types.SMALLINT, false, true);
 
         public static final Column[] ALL = new Column[]
         {
@@ -1011,7 +1012,8 @@ public class GeneratedDatabaseTables
             REPLICAS_ON_SAME,
             REPLICAS_ON_DIFFERENT,
             ALLOWED_PROVIDER_LIST,
-            DISKLESS_ON_REMAINING
+            DISKLESS_ON_REMAINING,
+            PEER_SLOTS
         };
 
         @Override
@@ -2076,6 +2078,7 @@ public class GeneratedDatabaseTables
         ResourceGroups.REPLICAS_ON_DIFFERENT.table = RESOURCE_GROUPS;
         ResourceGroups.ALLOWED_PROVIDER_LIST.table = RESOURCE_GROUPS;
         ResourceGroups.DISKLESS_ON_REMAINING.table = RESOURCE_GROUPS;
+        ResourceGroups.PEER_SLOTS.table = RESOURCE_GROUPS;
         S3Remotes.UUID.table = S3_REMOTES;
         S3Remotes.NAME.table = S3_REMOTES;
         S3Remotes.DSP_NAME.table = S3_REMOTES;

@@ -47,6 +47,8 @@ spec:
                 type: "string"
               diskless_on_remaining:
                 type: "boolean"
+              peer_slots:
+                type: "integer"
   - name: "v1-19-1"
     served: true
     storage: false

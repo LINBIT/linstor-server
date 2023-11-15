@@ -348,7 +348,8 @@ public class ProtoDeserializationUtils
             rscGrpProto.getRscDfnPropsMap(),
             parseVlmGrpList(rscGrpProto.getVlmGrpList()),
             // satellite does not need the autoSelectFilter anyways
-            new AutoSelectFilterBuilder().build()
+            new AutoSelectFilterBuilder().build(),
+            null // satellite does not need the peer slots on RG level. RD level always has it
         );
     }
 

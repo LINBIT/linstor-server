@@ -88,7 +88,8 @@ class StltRscGrpApiCallHelper
                 autoPlaceConfigPojo.getReplicasOnSameList(),
                 autoPlaceConfigPojo.getReplicasOnDifferentList(),
                 autoPlaceConfigPojo.getProviderList(),
-                autoPlaceConfigPojo.getDisklessOnRemaining()
+                autoPlaceConfigPojo.getDisklessOnRemaining(),
+                rscGrpApiRef.getPeerSlots()
             );
             rscGrp.getProps(apiCtx).map().putAll(rscGrpApiRef.getProps());
             rscGrpMap.put(rscGrpName, rscGrp);

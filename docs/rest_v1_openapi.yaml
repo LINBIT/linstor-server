@@ -23,6 +23,7 @@ info:
 
     * unreleased
       - Removed everything OpenFlex related (entry-points, schemas, etc..)
+      - Added peerSlots to ResourceGroup (create, modify and spawn)
     * 1.20.2
       - Added EffectivePropertiesMap, EffectivePropertiesMapValue and PropertyWithDescription objects
     * 1.20.1
@@ -7285,6 +7286,9 @@ components:
           type: string
           description: unique object id
           example: e8ef8d6b-17bc-42f0-9367-4aae40c78ecb
+        peer_slots:
+          type: integer
+          format: int32
     ResourceGroupModify:
       type: object
       properties:
@@ -7302,6 +7306,9 @@ components:
             type: string
         select_filter:
           $ref: '#/components/schemas/AutoSelectFilter'
+        peer_slots:
+          type: integer
+          format: int32
     ResourceGroupSpawn:
       type: object
       properties:
@@ -7338,6 +7345,9 @@ components:
           description: |
             If true, the spawn command will only create the resource-definition with the volume-definitions
             but will not perform an auto-place, even if it is configured.
+        peer_slots:
+          type: integer
+          format: int32
     VolumeGroup:
       type: object
       properties:

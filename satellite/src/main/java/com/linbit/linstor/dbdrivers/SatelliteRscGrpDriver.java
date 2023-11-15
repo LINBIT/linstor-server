@@ -27,6 +27,7 @@ public class SatelliteRscGrpDriver
     private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnDifferentDriver;
     private final CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> allowedProviderListDriver;
     private final SingleColumnDatabaseDriver<ResourceGroup, Boolean> disklessOnRemainingDriver;
+    private final SingleColumnDatabaseDriver<ResourceGroup, Short> peerSlotsDriver;
 
     @Inject
     public SatelliteRscGrpDriver()
@@ -43,6 +44,7 @@ public class SatelliteRscGrpDriver
         replicasOnDifferentDriver = getNoopCollectionDriver();
         allowedProviderListDriver = getNoopCollectionDriver();
         disklessOnRemainingDriver = getNoopColumnDriver();
+        peerSlotsDriver = getNoopColumnDriver();
     }
 
     @Override
@@ -115,5 +117,11 @@ public class SatelliteRscGrpDriver
     public SingleColumnDatabaseDriver<ResourceGroup, Boolean> getDisklessOnRemainingDriver()
     {
         return disklessOnRemainingDriver;
+    }
+
+    @Override
+    public SingleColumnDatabaseDriver<ResourceGroup, Short> getPeerSlotsDriver()
+    {
+        return peerSlotsDriver;
     }
 }

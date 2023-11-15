@@ -687,6 +687,7 @@ public class JsonGenTypes
          * unique object id
          */
         public String uuid;
+        public Integer peer_slots;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -697,6 +698,7 @@ public class JsonGenTypes
         public List<String> delete_props = Collections.emptyList();
         public List<String> delete_namespaces = Collections.emptyList();
         public AutoSelectFilter select_filter;
+        public Integer peer_slots;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -730,6 +732,7 @@ public class JsonGenTypes
          * but will not perform an auto-place, even if it is configured.
          */
         public boolean definitions_only = false;
+        public Integer peer_slots;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

@@ -67,7 +67,8 @@ public class ResourceGroupControllerFactory
         @Nullable List<String> autoPlaceReplicasOnSameListRef,
         @Nullable List<String> autoPlaceReplicasOnDifferentListRef,
         @Nullable List<DeviceProviderKind> autoPlaceAllowedProviderListRef,
-        @Nullable Boolean autoPlaceDisklessOnRemainingRef
+        @Nullable Boolean autoPlaceDisklessOnRemainingRef,
+        @Nullable Short peerSlotsRef
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -100,6 +101,7 @@ public class ResourceGroupControllerFactory
             autoPlaceDisklessOnRemainingRef,
             new TreeMap<>(),
             new TreeMap<>(),
+            peerSlotsRef,
             driver,
             propsContainerFactory,
             transObjFactory,

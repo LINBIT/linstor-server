@@ -18,6 +18,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import static com.linbit.linstor.test.factories.TestFactoryUtils.copyOrNull;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -51,6 +52,7 @@ public class ResourceGroupTestFactory
     private List<String> dfltAutoPlaceReplicasOnDifferentList = null;
     private List<DeviceProviderKind> dfltAutoPlaceAllowedProviderList = null;
     private Boolean dfltAutoPlaceDisklessOnRemaining = null;
+    private @Nullable Short dfltPeerSlots = null;
 
     @Inject
     public ResourceGroupTestFactory(
@@ -231,6 +233,7 @@ public class ResourceGroupTestFactory
         private List<String> autoPlaceReplicasOnDifferentList;
         private List<DeviceProviderKind> autoPlaceAllowedProviderList;
         private Boolean autoPlaceDisklessOnRemaining;
+        private @Nullable Short peerSlots;
 
         public ResourceGroupBuilder(String rscGrpNameRef)
         {
@@ -249,6 +252,7 @@ public class ResourceGroupTestFactory
             autoPlaceReplicasOnDifferentList = copyOrNull(dfltAutoPlaceReplicasOnDifferentList);
             autoPlaceAllowedProviderList = copyOrNull(dfltAutoPlaceAllowedProviderList);
             autoPlaceDisklessOnRemaining = dfltAutoPlaceDisklessOnRemaining;
+            peerSlots = dfltPeerSlots;
         }
 
         public ResourceGroupBuilder setRscGrpName(String rscGrpNameRef)
@@ -356,7 +360,8 @@ public class ResourceGroupTestFactory
                 autoPlaceReplicasOnSameList,
                 autoPlaceReplicasOnDifferentList,
                 autoPlaceAllowedProviderList,
-                autoPlaceDisklessOnRemaining
+                autoPlaceDisklessOnRemaining,
+                peerSlots
             );
             rscGrpMap.put(rscGrpName.toUpperCase(), rscGrp);
             return rscGrp;

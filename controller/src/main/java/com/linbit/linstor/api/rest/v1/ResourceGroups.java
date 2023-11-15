@@ -1,12 +1,12 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
-import com.linbit.linstor.api.pojo.QuerySizeInfoResponsePojo;
 import com.linbit.linstor.api.pojo.RscGrpPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -153,7 +153,8 @@ public class ResourceGroups
                     rscGrp.description,
                     Collections.emptyMap(), // currently props are not supported on creation
                     Collections.emptyList(), // currently VlmGrps are not supported on creation
-                    autoSelectFilter
+                    autoSelectFilter,
+                    parsePeerSlots(rscGrp.peer_slots)
                 )
             );
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.CREATED);
@@ -216,7 +217,8 @@ public class ResourceGroups
             modifyData.override_props,
             new HashSet<>(modifyData.delete_props),
             new HashSet<>(modifyData.delete_namespaces),
-            modifyAutoSelectFilter
+            modifyAutoSelectFilter,
+            parsePeerSlots(modifyData.peer_slots)
         )
             .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_GRP, request));
 
@@ -268,7 +270,8 @@ public class ResourceGroups
                 rscGrpSpwn.volume_sizes,
                 spawnAutoSelectFilter,
                 rscGrpSpwn.partial,
-                rscGrpSpwn.definitions_only
+                rscGrpSpwn.definitions_only,
+                parsePeerSlots(rscGrpSpwn.peer_slots)
             )
                 .contextWrite(requestHelper.createContext(ApiConsts.API_SPAWN_RSC_DFN, request));
 
@@ -352,7 +355,7 @@ public class ResourceGroups
             .onErrorResume(
                 ApiRcException.class,
                 apiExc -> Flux.just(
-                    new ApiCallRcWith<QuerySizeInfoResponsePojo>(apiExc.getApiCallRc(), null)
+                    new ApiCallRcWith<>(apiExc.getApiCallRc(), null)
                 )
             )
             .flatMap(apiCallRcWith ->
@@ -471,5 +474,30 @@ public class ResourceGroups
         {
             ApiCallRcRestUtils.handleJsonParseException(ioExc, asyncResponse);
         }
+    }
+
+    public static Short parsePeerSlots(Integer peerSlotsRef)
+    {
+        Short peerSlots = null;
+        if (peerSlotsRef != null)
+        {
+            if (peerSlotsRef > MetaData.DRBD_MAX_PEERS)
+            {
+                throw new IllegalArgumentException(
+                    "given peer_slots is larger then allowed: " + peerSlotsRef + ". Allowed: " + MetaData.DRBD_MAX_PEERS
+                );
+            }
+            else if (peerSlotsRef < 0)
+            {
+                throw new IllegalArgumentException(
+                    "peer_slots must not be smaller than 0. Received " + peerSlotsRef
+                );
+            }
+            else
+            {
+                peerSlots = peerSlotsRef.shortValue();
+            }
+        }
+        return peerSlots;
     }
 }

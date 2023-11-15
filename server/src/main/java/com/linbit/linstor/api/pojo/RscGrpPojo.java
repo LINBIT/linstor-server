@@ -18,6 +18,7 @@ public class RscGrpPojo implements ResourceGroupApi
     private final Map<String, String> rscDfnPropsMap;
     private final List<VolumeGroupApi> vlmGrpList;
     private final @Nullable AutoSelectFilterApi autoSelectFilter;
+    private final @Nullable Short peerSlots;
 
     public RscGrpPojo(
         @Nullable UUID uuidRef,
@@ -25,7 +26,8 @@ public class RscGrpPojo implements ResourceGroupApi
         String descriptionRef,
         Map<String, String> rscDfnPropsRef,
         List<VolumeGroupApi> vlmGrpListRef,
-        @Nullable AutoSelectFilterApi autoSelectFilterRef
+        @Nullable AutoSelectFilterApi autoSelectFilterRef,
+        @Nullable Short peerSlotsRef
     )
     {
         uuid = uuidRef;
@@ -34,6 +36,7 @@ public class RscGrpPojo implements ResourceGroupApi
         rscDfnPropsMap = rscDfnPropsRef;
         vlmGrpList = vlmGrpListRef;
         autoSelectFilter = autoSelectFilterRef;
+        peerSlots = peerSlotsRef;
     }
 
     @Override
@@ -72,4 +75,9 @@ public class RscGrpPojo implements ResourceGroupApi
         return autoSelectFilter;
     }
 
+    @Override
+    public @Nullable Short getPeerSlots()
+    {
+        return peerSlots;
+    }
 }

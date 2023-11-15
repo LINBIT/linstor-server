@@ -27,6 +27,8 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -60,6 +62,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
     private final AutoSelectorConfig autoPlaceConfig;
 
     private final TransactionMap<ResourceName, ResourceDefinition> rscDfnMap;
+    private final TransactionSimpleObject<ResourceGroup, Short> peerSlots;
 
     private final ResourceGroupDatabaseDriver dbDriver;
 
@@ -81,6 +84,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         Boolean autoPlaceDisklessOnRemainingRef,
         Map<VolumeNumber, VolumeGroup> vlmGrpMapRef,
         Map<ResourceName, ResourceDefinition> rscDfnMapRef,
+        @Nullable Short peerSlotsRef,
         ResourceGroupDatabaseDriver dbDriverRef,
         PropsContainerFactory propsContainerFactoryRef,
         TransactionObjectFactory transObjFactory,
@@ -126,11 +130,14 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
             transMgrProvider
         );
 
+        peerSlots = transObjFactory.createTransactionSimpleObject(this, peerSlotsRef, dbDriver.getPeerSlotsDriver());
+
         transObjs = Arrays.asList(
             objProt,
             rscDfnGrpProps,
             autoPlaceConfig,
             vlmMap,
+            peerSlots,
             deleted
         );
     }
@@ -275,6 +282,20 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         return Collections.unmodifiableCollection(rscDfnMap.values());
     }
 
+    public @Nullable Short getPeerSlots(@Nonnull AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+        return peerSlots.get();
+    }
+
+    public void setPeerSlots(@Nonnull AccessContext accCtx, @Nullable Short peerSlotsRef)
+        throws AccessDeniedException, DatabaseException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtx, AccessType.USE);
+        peerSlots.set(peerSlotsRef);
+    }
 
     @Override
     public int compareTo(ResourceGroup other)
@@ -322,7 +343,8 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
             description.get(),
             rscDfnGrpProps.map(),
             vlmGrpApiList,
-            autoPlaceConfig.getApiData()
+            autoPlaceConfig.getApiData(),
+            peerSlots.get()
         );
     }
 

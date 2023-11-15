@@ -1282,6 +1282,7 @@ public class CtrlRscDfnApiCallHandler
                         null,
                         null,
                         null,
+                        null,
                         null
                     );
                     resourceGroupRepository.put(apiCtx, rscGrp);
@@ -1295,6 +1296,11 @@ public class CtrlRscDfnApiCallHandler
                         )
                     );
                 }
+            }
+
+            if (payload.getDrbdRscDfn().peerSlotsNewResource == null)
+            {
+                payload.getDrbdRscDfn().peerSlotsNewResource = rscGrp.getPeerSlots(peerAccCtx.get());
             }
 
             rscDfn = resourceDefinitionFactory.create(

@@ -74,7 +74,8 @@ public class ResourceGroupSatelliteFactory
         @Nullable List<String> autoPlaceReplicasOnSameListRef,
         @Nullable List<String> autoPlaceReplicasOnDifferentListRef,
         @Nullable List<DeviceProviderKind> autoPlaceAllowedProviderListRef,
-        @Nullable Boolean autoPlaceDisklessOnRemainingRef
+        @Nullable Boolean autoPlaceDisklessOnRemainingRef,
+        @Nullable Short peerSlotsRef
     )
         throws DatabaseException, AccessDeniedException
     {
@@ -104,6 +105,7 @@ public class ResourceGroupSatelliteFactory
                 autoPlaceDisklessOnRemainingRef,
                 new TreeMap<>(),
                 new TreeMap<>(),
+                peerSlotsRef,
                 rscGrpDriver,
                 propsContainerFactory,
                 transObjFactory,
