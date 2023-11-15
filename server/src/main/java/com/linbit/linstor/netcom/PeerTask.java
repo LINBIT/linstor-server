@@ -384,6 +384,6 @@ public class PeerTask implements Peer
     @Override
     public String toString()
     {
-        return "RestClient(" + getId() + ")";
+        return serviceName + "(" + getId() + ")";
     }
 }
