@@ -55,7 +55,9 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
+import com.linbit.linstor.tasks.BalanceResourcesTask;
 import com.linbit.linstor.tasks.ReconnectorTask;
+import com.linbit.linstor.tasks.TaskScheduleService;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
@@ -128,6 +130,8 @@ public class CtrlConfApiCallHandler
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
 
     private final CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandler;
+    private final TaskScheduleService taskScheduleService;
+    private final BalanceResourcesTask balanceResourcesTask;
 
     @FunctionalInterface
     private interface SpecialPropHandler
@@ -174,7 +178,9 @@ public class CtrlConfApiCallHandler
         CtrlResyncAfterHelper ctrlResyncAfterHelperRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
-        CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef
+        CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef,
+        TaskScheduleService taskScheduleServiceRef,
+        BalanceResourcesTask balanceResourcesTaskRef
     )
     {
         errorReporter = errorReporterRef;
@@ -205,6 +211,8 @@ public class CtrlConfApiCallHandler
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
         ctrlBackupQueueHandler = ctrlBackupQueueHandlerRef;
+        taskScheduleService = taskScheduleServiceRef;
+        balanceResourcesTask = balanceResourcesTaskRef;
     }
 
     public void updateSatelliteConf() throws AccessDeniedException
@@ -739,6 +747,21 @@ public class CtrlConfApiCallHandler
         return new Pair<>(apiCallRc, touchedResources);
     }
 
+    private void updateBalanceResourcesTaskSchedule(String newValue)
+    {
+        try
+        {
+            long newDelay = Long.parseLong(newValue);
+            taskScheduleService.rescheduleAt(balanceResourcesTask, newDelay * 1000L);
+        }
+        catch (NumberFormatException nfe)
+        {
+            errorReporter.logError("%s property number format exception, keeping old value",
+                ApiConsts.KEY_BALANCE_RESOURCES_INTERVAL);
+            errorReporter.reportError(nfe);
+        }
+    }
+
     public Triple<ApiCallRc, Boolean, Set<Resource>> setProp(
         String key,
         String namespace,
@@ -852,10 +875,19 @@ public class CtrlConfApiCallHandler
                             notifyStlts = true;
                         }
                             break;
+                        case ApiConsts.KEY_BALANCE_RESOURCES_INTERVAL:
+                        {
+                            updateBalanceResourcesTaskSchedule(normalized);
+                            setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
+                        }
+                        break;
                         case ApiConsts.KEY_STOR_POOL_MAX_FREE_CAPACITY_OVERSUBSCRIPTION_RATIO: // fall-through
                         case ApiConsts.KEY_STOR_POOL_MAX_OVERSUBSCRIPTION_RATIO: // fall-through
                         case ApiConsts.KEY_STOR_POOL_MAX_TOTAL_CAPACITY_OVERSUBSCRIPTION_RATIO: // fall-through
                         case ApiConsts.KEY_UPDATE_CACHE_INTERVAL:
+                            // fall-through
+                        case ApiConsts.KEY_BALANCE_RESOURCES_ENABLED: // fall-through
+                        case ApiConsts.KEY_BALANCE_RESOURCES_GRACE_PERIOD:
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION:
                             // fall-through

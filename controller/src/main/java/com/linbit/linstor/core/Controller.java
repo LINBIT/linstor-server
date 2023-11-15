@@ -66,6 +66,7 @@ import com.linbit.linstor.systemstarter.SpecStltProcMgrInit;
 import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
+import com.linbit.linstor.tasks.BalanceResourcesTask;
 import com.linbit.linstor.tasks.LogArchiveTask;
 import com.linbit.linstor.tasks.PingTask;
 import com.linbit.linstor.tasks.QsiClearCacheTask;
@@ -148,6 +149,7 @@ public final class Controller
     private final LogArchiveTask logArchiveTask;
     private final AutoSnapshotTask autoSnapshotTask;
     private final AutoDiskfulTask autoDiskfulTask;
+    private final BalanceResourcesTask balanceResourcesTask;
     private final UpdateSpaceInfoTask updateSpaceInfoTask;
     private final QsiClearCacheTask qsiClearCache;
 
@@ -193,6 +195,7 @@ public final class Controller
         LogArchiveTask logArchiveTaskRef,
         AutoSnapshotTask autoSnapshotTaskRef,
         AutoDiskfulTask autoDiskfulTaskRef,
+        BalanceResourcesTask balanceResourcesTaskRef,
         ExosEnclosurePingTask exosPingTaskRef,
         QsiClearCacheTask qsiClearCacheRef,
         DebugConsoleCreator debugConsoleCreatorRef,
@@ -228,6 +231,7 @@ public final class Controller
         updateSpaceInfoTask = updateSpaceInfoTaskRef;
         autoSnapshotTask = autoSnapshotTaskRef;
         autoDiskfulTask = autoDiskfulTaskRef;
+        balanceResourcesTask = balanceResourcesTaskRef;
         exosPingTask = exosPingTaskRef;
         qsiClearCache = qsiClearCacheRef;
         debugConsoleCreator = debugConsoleCreatorRef;
@@ -291,6 +295,7 @@ public final class Controller
             taskScheduleService.addTask(logArchiveTask);
             taskScheduleService.addTask(autoSnapshotTask);
             taskScheduleService.addTask(autoDiskfulTask);
+            taskScheduleService.addTask(balanceResourcesTask);
             taskScheduleService.addTask(updateSpaceInfoTask);
             taskScheduleService.addTask(exosPingTask);
             taskScheduleService.addTask(qsiClearCache);

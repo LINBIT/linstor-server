@@ -3,6 +3,7 @@ package com.linbit.linstor.satellitestate;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.event.common.ResourceState;
+import com.linbit.linstor.layer.drbd.drbdstate.DiskState;
 
 import javax.annotation.Nullable;
 
@@ -94,6 +95,12 @@ public class SatelliteResourceState
     public Map<VolumeNumber, SatelliteVolumeState> getVolumeStates()
     {
         return volumeStates;
+    }
+
+    public boolean allVolumesUpToDate()
+    {
+        return volumeStates.values().stream()
+            .allMatch(svs -> svs.getDiskState().equalsIgnoreCase(DiskState.UP_TO_DATE.toString()));
     }
 
     public <T> T getFromVolume(VolumeNumber volumeNumber, Function<SatelliteVolumeState, T> getter)

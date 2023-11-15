@@ -238,8 +238,13 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
 
     public int getNotDeletedDiskfulCount(AccessContext accCtx) throws AccessDeniedException
     {
+        return getNotDeletedDiskful(accCtx).size();
+    }
+
+    public List<Resource> getNotDeletedDiskful(AccessContext accCtx) throws AccessDeniedException
+    {
         checkDeleted();
-        int count = 0;
+        var dfResources = new ArrayList<Resource>();
         for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
         {
             StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
@@ -253,10 +258,10 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
                 )
             )
             {
-                count++;
+                dfResources.add(rsc);
             }
         }
-        return count;
+        return dfResources;
     }
 
     public Iterator<Resource> iterateResource(AccessContext accCtx)
