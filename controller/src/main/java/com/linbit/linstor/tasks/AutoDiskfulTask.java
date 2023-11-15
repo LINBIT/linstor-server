@@ -31,6 +31,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -147,8 +148,9 @@ public class AutoDiskfulTask implements TaskScheduleService.Task
                 {
                     String autoDiskful = getPrioProps(rsc)
                         .getProp(ApiConsts.KEY_DRBD_AUTO_DISKFUL, ApiConsts.NAMESPC_DRBD_OPTIONS);
-                    Boolean isPrimary = rsc.getNode().getPeer(sysCtx).getSatelliteState().getResourceStates()
-                        .get(rsc.getResourceDefinition().getName()).isInUse();
+                    SatelliteResourceState rscStates = rsc.getNode().getPeer(sysCtx)
+                            .getSatelliteState().getResourceStates().get(rsc.getResourceDefinition().getName());
+                    Boolean isPrimary = rscStates != null ? rscStates.isInUse() : null;
 
                     boolean enableAutoDiskful = autoDiskful != null && isPrimary != null && isPrimary;
                     synchronized (configSet)
