@@ -994,14 +994,28 @@ public class CtrlRscCrtApiHelper
         Resource rsc;
         try
         {
-            checkPeerSlotsForNewPeer(rscDfn);
+            Resource.Flags[] initFlags = Resource.Flags.restoreFlags(flags);
+            boolean isDiskless = false;
+            for (Resource.Flags flag : initFlags)
+            {
+                if (flag == Resource.Flags.DISKLESS || flag == Resource.Flags.DRBD_DISKLESS)
+                {
+                    isDiskless = true;
+                    break;
+                }
+            }
+            if (!isDiskless)
+            {
+                // diskless resources do not need additional peer slots
+                checkPeerSlotsForNewPeer(rscDfn);
+            }
 
             rsc = resourceFactory.create(
                 peerAccCtx.get(),
                 rscDfn,
                 node,
                 payload,
-                Resource.Flags.restoreFlags(flags),
+                initFlags,
                 layerStackRef
             );
 
