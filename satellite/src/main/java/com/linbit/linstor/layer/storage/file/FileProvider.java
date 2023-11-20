@@ -1,6 +1,7 @@
 package com.linbit.linstor.layer.storage.file;
 
 import com.linbit.ImplementationError;
+import com.linbit.PlatformStlt;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
@@ -43,7 +44,6 @@ import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.PlatformStlt;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -252,7 +252,15 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         {
             fileData.setExists(true);
             fileData.setStorageDirectory(info.directory);
-            fileData.setDevicePath(info.loPath.toString());
+            if (info.loPath != null)
+            {
+                fileData.setDevicePath(info.loPath.toString());
+            }
+            else
+            {
+                // snapshot
+                fileData.setDevicePath(null);
+            }
             fileData.setIdentifier(info.identifier);
             fileData.setAllocatedSize(info.size);
             fileData.setUsableSize(info.size);
@@ -317,7 +325,15 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         if (true)
         {
             wipeHandler.quickWipe(devicePath);
+            errorReporter.logDebug(
+                "Detaching %s volume %s/%s (device: %s)",
+                kind.toString(),
+                storageDirectory,
+                oldId,
+                devicePath
+            );
             LosetupCommands.detach(extCmdFactory.create(), devicePath);
+            errorReporter.logDebug("Deleting %s volume %s/%s", kind.toString(), storageDirectory, oldId);
             FileCommands.delete(
                 storageDirectory,
                 oldId
@@ -408,10 +424,15 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     protected void deleteSnapshot(FileData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        FileCommands.delete(
-            getStorageDirectory(snapVlmRef.getStorPool()),
-            asSnapLvIdentifier(snapVlmRef)
+        Path storageDirectory = getStorageDirectory(snapVlmRef.getStorPool());
+        String asSnapLvIdentifier = asSnapLvIdentifier(snapVlmRef);
+        errorReporter.logDebug(
+            "Deleting %s snapshot-volume %s/%s",
+            kind.toString(),
+            storageDirectory,
+            asSnapLvIdentifier
         );
+        FileCommands.delete(storageDirectory, asSnapLvIdentifier);
     }
 
     @Override
@@ -518,6 +539,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         throws StorageException, AccessDeniedException, DatabaseException
     {
         // It is possible that the backing file still exists for a logical volume, but the loop-device does not
+
+        // Map<path in FS, linstorData> - only for resources, no snapshots
         Map<String, FileData<Resource>> backingFileToFileDataMap = new HashMap<>();
         for (FileData<Resource> fileData : fileDataList)
         {
@@ -527,6 +550,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
             );
         }
 
+        // queries losetup, not ls
         Map<String, FileInfo> infoList = FileProviderUtils.getInfoList(
             extCmdFactory.create(),
             path -> getAllocatedSizeFileImpl(extCmdFactory.create(), path)
@@ -534,11 +558,13 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         for (Entry<String, FileInfo> entry : infoList.entrySet())
         {
             String backingFile = entry.getKey();
+            // for every resource we found via losetup, delete its entry from this map
             FileData<Resource> fileData = backingFileToFileDataMap.remove(backingFile);
 
             LOSETUP_DEVICES.put(entry.getValue().loPath.toString(), backingFile);
         }
 
+        // for every entry left in this map, check if the file exists and if so, create a new loop device
         for (Entry<String, FileData<Resource>> entry : backingFileToFileDataMap.entrySet())
         {
             FileData<Resource> fileData = entry.getValue();
@@ -558,9 +584,16 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         }
         for (FileData<Snapshot> snapVlmData : snapVlmDataList)
         {
-            if (Files.exists(Paths.get(getFullQualifiedIdentifier(snapVlmData))))
+            Path snapPath = Paths.get(getFullQualifiedIdentifier(snapVlmData));
+            if (Files.exists(snapPath))
             {
-
+                infoList.put(
+                    snapPath.toString(),
+                    new FileInfo(
+                        null,
+                        snapPath
+                    )
+                );
             }
         }
 

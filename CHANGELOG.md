@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed "sp l" showing spurious warning that a diskless SP is offline (due to caching bug)
 - Fixed potential null pointer exception in AutoDiskfulTask
 - Fixed "r c --drbd-diskless" falsely requiring free peer-slot
+- Fixed bug where FILE/-THIN provider did not properly find existing snapshots (thus also not deleting them properly)
 
 ## [1.25.0] - 2023-10-25
 

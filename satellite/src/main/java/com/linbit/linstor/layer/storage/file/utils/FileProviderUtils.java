@@ -7,6 +7,9 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.ExceptionThrowingFunction;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -26,12 +29,12 @@ public class FileProviderUtils
 
     public static class FileInfo
     {
-        public final Path directory;
-        public final String identifier;
-        public final Path loPath;
+        public final @Nonnull Path directory;
+        public final @Nonnull String identifier;
+        public final @Nullable Path loPath; // null for snapshots
         public final long size;
 
-        public FileInfo(Path loPathRef, Path backingPathRef)
+        public FileInfo(@Nullable Path loPathRef, @Nonnull Path backingPathRef)
         {
             loPath = loPathRef;
 
@@ -46,9 +49,9 @@ public class FileProviderUtils
         }
 
         public FileInfo(
-            Path loPathRef,
-            Path backingPathRef,
-            ExceptionThrowingFunction<String, Long, StorageException> allocatedSizeGetterRef
+            @Nullable Path loPathRef,
+            @Nonnull Path backingPathRef,
+            @Nonnull ExceptionThrowingFunction<String, Long, StorageException> allocatedSizeGetterRef
         )
             throws StorageException
         {
