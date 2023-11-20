@@ -56,7 +56,6 @@ public class CtrlRscLayerDataFactory
     private final RscLuksLayerHelper luksLayerHelper;
     private final RscStorageLayerHelper storageLayerHelper;
     private final RscNvmeLayerHelper nvmeLayerHelper;
-    private final RscOpenflexLayerHelper ofLayerHelper;
     private final RscWritecacheLayerHelper writecacheLayerHelper;
     private final RscCacheLayerHelper cacheLayerHelper;
     private final RscBCacheLayerHelper bcacheLayerHelper;
@@ -70,7 +69,6 @@ public class CtrlRscLayerDataFactory
         RscLuksLayerHelper luksLayerHelperRef,
         RscStorageLayerHelper storageLayerHelperRef,
         RscNvmeLayerHelper nvmeLayerHelperRef,
-        RscOpenflexLayerHelper ofLayerHelperRef,
         RscWritecacheLayerHelper writecacheLayerHelperRef,
         RscCacheLayerHelper cacheLayerHelperRef,
         RscBCacheLayerHelper bcacheLayerHelperRef
@@ -83,7 +81,6 @@ public class CtrlRscLayerDataFactory
         luksLayerHelper = luksLayerHelperRef;
         storageLayerHelper = storageLayerHelperRef;
         nvmeLayerHelper = nvmeLayerHelperRef;
-        ofLayerHelper = ofLayerHelperRef;
         writecacheLayerHelper = writecacheLayerHelperRef;
         cacheLayerHelper = cacheLayerHelperRef;
         bcacheLayerHelper = bcacheLayerHelperRef;
@@ -616,9 +613,6 @@ public class CtrlRscLayerDataFactory
                 break;
             case STORAGE:
                 layerHelper = (AbsRscLayerHelper<RSC_LO, ?, ?, ?>) storageLayerHelper;
-                break;
-            case OPENFLEX:
-                layerHelper = (AbsRscLayerHelper<RSC_LO, ?, ?, ?>) ofLayerHelper;
                 break;
             default:
                 throw new ImplementationError("Unknown device layer kind '" + kind + "'");

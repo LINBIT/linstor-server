@@ -20,9 +20,6 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
-import com.linbit.linstor.api.pojo.OpenflexRscPojo;
-import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
-import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -46,9 +43,6 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
-import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
-import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
-import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -508,57 +502,6 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
     }
 
     @Override
-    protected OpenflexRscData<Resource> createOpenflexRscData(
-        Resource rscRef,
-        AbsRscLayerObject<Resource> parentRef,
-        OpenflexRscDfnData<Resource> rscDfnDataRef,
-        OpenflexRscPojo ofRscPojoRefs
-    ) throws DatabaseException, AccessDeniedException
-    {
-        throw new ImplementationError("Received unknown openflex resource from satellite");
-    }
-
-    @Override
-    protected void mergeOpenflexRscData(
-        AbsRscLayerObject<Resource> parentRef,
-        OpenflexRscPojo ofRscPojoRef,
-        OpenflexRscData<Resource> ofRscDataRef
-    )
-        throws AccessDeniedException, DatabaseException
-    {
-        // nothing to merge
-    }
-
-    @Override
-    protected void removeOpenflexVlm(OpenflexRscData<Resource> ofRscDataRef, VolumeNumber vlmNrRef)
-        throws DatabaseException, AccessDeniedException
-    {
-        throw new ImplementationError("Missing openflex volume from satellite");
-    }
-
-    @Override
-    protected void createOpenflexVlm(
-        AbsVolume<Resource> vlmRef,
-        OpenflexRscData<Resource> ofRscDataRef,
-        VolumeNumber vlmNrRef,
-        StorPool storPoolRef
-    )
-    {
-        // ignored. A parent volume might have more volumes in one of its children than in an other one
-    }
-
-    @Override
-    protected void mergeOpenflexVlm(OpenflexVlmPojo vlmPojoRef, OpenflexVlmData<Resource> ofVlmDataRef)
-        throws DatabaseException
-    {
-        ofVlmDataRef.setAllocatedSize(vlmPojoRef.getAllocatedSize());
-        ofVlmDataRef.setDevicePath(vlmPojoRef.getDevicePath());
-        ofVlmDataRef.setDiskState(vlmPojoRef.getDiskState());
-        ofVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
-        ofVlmDataRef.setDiscGran(vlmPojoRef.getDiscGran());
-    }
-
-    @Override
     protected WritecacheRscData<Resource> createWritecacheRscData(
         Resource rscRef,
         AbsRscLayerObject<Resource> parentRef,
@@ -715,22 +658,6 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         bcacheVlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
         bcacheVlmDataRef.setDeviceUuid(vlmPojoRef.getDeviceUuid());
         bcacheVlmDataRef.setDiscGran(vlmPojoRef.getDiscGran());
-    }
-
-    @Override
-    protected OpenflexRscDfnData<Resource> mergeOrCreateOpenflexRscDfnData(
-        Resource rscRef,
-        OpenflexRscDfnPojo ofRscDfnPojoRef
-    )
-        throws DatabaseException, AccessDeniedException
-    {
-        OpenflexRscDfnData<Resource> ofRscDfnData = rscRef.getResourceDefinition().getLayerData(
-            apiCtx,
-            DeviceLayerKind.OPENFLEX,
-            ofRscDfnPojoRef.getRscNameSuffix()
-        );
-        ofRscDfnData.setNqn(ofRscDfnPojoRef.getNqn());
-        return ofRscDfnData;
     }
 
     @Override

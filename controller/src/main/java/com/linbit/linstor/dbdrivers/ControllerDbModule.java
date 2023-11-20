@@ -18,9 +18,6 @@ import com.linbit.linstor.core.objects.LayerDrbdVlmDfnDbDriver;
 import com.linbit.linstor.core.objects.LayerLuksRscDbDriver;
 import com.linbit.linstor.core.objects.LayerLuksVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerNvmeRscDbDriver;
-import com.linbit.linstor.core.objects.LayerOpenflexRscDbDriver;
-import com.linbit.linstor.core.objects.LayerOpenflexRscDfnDbDriver;
-import com.linbit.linstor.core.objects.LayerOpenflexVlmDbDriver;
 import com.linbit.linstor.core.objects.LayerResourceIdDbDriver;
 import com.linbit.linstor.core.objects.LayerStorageRscDbDriver;
 import com.linbit.linstor.core.objects.LayerStorageVlmDbDriver;
@@ -75,10 +72,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerLuksRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerNvmeRscCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerNvmeRscDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscCtrlDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDfnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscCtrlDatabaseDriver;
@@ -273,12 +266,6 @@ public class ControllerDbModule extends AbstractModule
         layerRscDatabaseDrivers.addBinding(DeviceLayerKind.NVME).to(LayerNvmeRscDbDriver.class);
         bind(LayerNvmeRscCtrlDatabaseDriver.class).to(LayerNvmeRscDbDriver.class);
         bind(LayerNvmeRscDatabaseDriver.class).to(LayerNvmeRscDbDriver.class);
-
-        layerRscDatabaseDrivers.addBinding(DeviceLayerKind.OPENFLEX).to(LayerOpenflexRscDbDriver.class);
-        bind(LayerOpenflexRscCtrlDatabaseDriver.class).to(LayerOpenflexRscDbDriver.class);
-        bind(LayerOpenflexRscDfnDatabaseDriver.class).to(LayerOpenflexRscDfnDbDriver.class);
-        bind(LayerOpenflexRscDatabaseDriver.class).to(LayerOpenflexRscDbDriver.class);
-        bind(LayerOpenflexVlmDatabaseDriver.class).to(LayerOpenflexVlmDbDriver.class);
 
         layerRscDatabaseDrivers.addBinding(DeviceLayerKind.WRITECACHE).to(LayerWritecacheRscDbDriver.class);
         bind(LayerWritecacheRscCtrlDatabaseDriver.class).to(LayerWritecacheRscDbDriver.class);

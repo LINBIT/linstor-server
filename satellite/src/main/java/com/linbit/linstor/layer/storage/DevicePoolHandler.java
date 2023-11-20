@@ -126,7 +126,6 @@ public class DevicePoolHandler
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             case FILE: // fall-through
             case FILE_THIN: // fall-through
-            case OPENFLEX_TARGET: // fall-through
             case STORAGE_SPACES: // fall-through
             case STORAGE_SPACES_THIN: // fall-through
             default:
@@ -515,7 +514,6 @@ public class DevicePoolHandler
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             case FILE: // fall-through
             case FILE_THIN: // fall-through
-            case OPENFLEX_TARGET: // fall-through
             case STORAGE_SPACES: // fall-through
             case STORAGE_SPACES_THIN: // fall-through
             default:
@@ -563,7 +561,6 @@ public class DevicePoolHandler
 
                 case SPDK: // fall-through for now
                 // the following cases make no sense, hence the fall-throughs
-                case OPENFLEX_TARGET: // fall-through
                 case DISKLESS: // fall-through
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
                 case FILE: // fall-through

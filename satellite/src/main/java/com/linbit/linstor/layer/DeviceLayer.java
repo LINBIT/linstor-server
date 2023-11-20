@@ -17,7 +17,6 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.openflex.OpenflexLayer;
 import com.linbit.linstor.layer.storage.StorageLayer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -155,7 +154,7 @@ public interface DeviceLayer
     }
 
     /**
-     * Most layers will no-op. Current exceptions are {@link StorageLayer} and {@link OpenflexLayer}
+     * Most layers will no-op. Current exceptions is {@link StorageLayer}
      *
      * @param storPoolRef
      *
@@ -172,7 +171,7 @@ public interface DeviceLayer
 
     /**
      * This method should only be implemented by layers managing storage.
-     * Those are currently {@link StorageLayer} and {@link OpenflexLayer}
+     * Which currently is only {@link StorageLayer}
      *
      * @throws StorageException
      * @throws AccessDeniedException

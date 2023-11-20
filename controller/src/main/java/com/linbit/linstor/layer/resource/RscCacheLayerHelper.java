@@ -254,10 +254,9 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
         throws AccessDeniedException
     {
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
-        boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
         boolean isNvmeInitiator = rscRef.getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         boolean isEbsInitiator = rscRef.getStateFlags().isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
-        return (!isNvmeBelow && !isOpenflexBelow) || isNvmeInitiator || isEbsInitiator;
+        return !isNvmeBelow || isNvmeInitiator || isEbsInitiator;
     }
 
     @Override

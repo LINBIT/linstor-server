@@ -517,7 +517,6 @@ public class BackupFindUsableNodesTest extends ApiTestBase
             case FILE:
             case FILE_THIN:
             case LVM:
-            case OPENFLEX_TARGET:
             case REMOTE_SPDK:
             case SPDK:
             case ZFS_THIN:

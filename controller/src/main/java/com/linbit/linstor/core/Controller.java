@@ -62,7 +62,7 @@ import com.linbit.linstor.systemstarter.PassphraseInitializer;
 import com.linbit.linstor.systemstarter.PreConnectInitializer;
 import com.linbit.linstor.systemstarter.ResyncAfterInitializer;
 import com.linbit.linstor.systemstarter.ServiceStarter;
-import com.linbit.linstor.systemstarter.SpecStltTargetProcMgrInit;
+import com.linbit.linstor.systemstarter.SpecStltProcMgrInit;
 import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
@@ -327,7 +327,7 @@ public final class Controller
                 systemServicesMap
             );
 
-            SpecStltTargetProcMgrInit openflexTargetProcessMgrInit = new SpecStltTargetProcMgrInit(
+            SpecStltProcMgrInit specStltProcessMgrInit = new SpecStltProcMgrInit(
                 specStltTargetProcessManager
             );
 
@@ -349,7 +349,7 @@ public final class Controller
             startOrderlist.add(preConnectCleanupInitializer);
             startOrderlist.add(resyncAfterInitializer);
             startOrderlist.add(connectNodesInitializer);
-            startOrderlist.add(openflexTargetProcessMgrInit);
+            startOrderlist.add(specStltProcessMgrInit);
             if (spaceTrackingService != null)
             {
                 startOrderlist.add(new ServiceStarter(spaceTrackingService));

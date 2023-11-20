@@ -285,10 +285,6 @@ public class LayerStorageVlmDbDriver
                     transMgrProvider
                 );
                 break;
-            case OPENFLEX_TARGET:
-                throw new ImplementationError(
-                    "Openflex volumes should be loaded by openflex db driver, not by storage layer driver"
-                );
             case EBS_INIT: // fall-through
             case EBS_TARGET:
                 vlmProviderObj = new EbsData<>(

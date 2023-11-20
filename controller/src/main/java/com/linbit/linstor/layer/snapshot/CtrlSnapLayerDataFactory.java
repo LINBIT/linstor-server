@@ -33,7 +33,6 @@ public class CtrlSnapLayerDataFactory
     private final SnapLuksLayerHelper luksLayerHelper;
     private final SnapStorageLayerHelper storageLayerHelper;
     private final SnapNvmeLayerHelper nvmeLayerHelper;
-    private final SnapOpenflexLayerHelper openflexLayerHelper;
     private final SnapWritecacheLayerHelper writecacheLayerHelper;
     private final SnapCacheLayerHelper cacheLayerHelper;
     private final SnapBCacheLayerHelper bcacheLayerHelper;
@@ -46,7 +45,6 @@ public class CtrlSnapLayerDataFactory
         SnapLuksLayerHelper luksLayerHelperRef,
         SnapStorageLayerHelper storageLayerHelperRef,
         SnapNvmeLayerHelper nvmeLayerHelperRef,
-        SnapOpenflexLayerHelper openflexLayerHelperRef,
         SnapWritecacheLayerHelper writecacheLayerHelperRef,
         SnapCacheLayerHelper cacheLayerHelperRef,
         SnapBCacheLayerHelper bcacheLayerHelperRef
@@ -58,7 +56,6 @@ public class CtrlSnapLayerDataFactory
         luksLayerHelper = luksLayerHelperRef;
         storageLayerHelper = storageLayerHelperRef;
         nvmeLayerHelper = nvmeLayerHelperRef;
-        openflexLayerHelper = openflexLayerHelperRef;
         writecacheLayerHelper = writecacheLayerHelperRef;
         cacheLayerHelper = cacheLayerHelperRef;
         bcacheLayerHelper = bcacheLayerHelperRef;
@@ -227,9 +224,6 @@ public class CtrlSnapLayerDataFactory
                 break;
             case NVME:
                 layerHelper = nvmeLayerHelper;
-                break;
-            case OPENFLEX:
-                layerHelper = openflexLayerHelper;
                 break;
             case STORAGE:
                 layerHelper = storageLayerHelper;

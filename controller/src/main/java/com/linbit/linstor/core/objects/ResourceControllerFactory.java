@@ -95,10 +95,10 @@ public class ResourceControllerFactory
             rscDfn.setLayerStack(accCtx, rscDfnLayerStack);
         }
         DeviceLayerKind lowestLayer = layerStack.get(layerStack.size() - 1);
-        if (!lowestLayer.equals(DeviceLayerKind.STORAGE) && !lowestLayer.equals(DeviceLayerKind.OPENFLEX))
+        if (!lowestLayer.equals(DeviceLayerKind.STORAGE))
         {
             throw new ImplementationError(
-                "Lowest layer has to be a STORAGE or an OPENFLEX layer. " + new ArrayList<>(layerStack)
+                "Lowest layer has to be a STORAGE layer. " + new ArrayList<>(layerStack)
             );
         }
 

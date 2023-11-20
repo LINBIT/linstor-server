@@ -14,7 +14,7 @@ message StltConfig
 	string log_level = 5;
 	string log_level_linstor = 6;
 	string stlt_override_node_name = 7;
-	bool openflex = 8;
+	// 8, openflex, deleted
 	string drbd_keep_res_pattern = 9;
 	string net_bind_address = 10;
 	uint32 net_port = 11;

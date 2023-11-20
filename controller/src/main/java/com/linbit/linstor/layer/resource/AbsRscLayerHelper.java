@@ -67,7 +67,6 @@ public abstract class AbsRscLayerHelper<
     public static final String IGNORE_REASON_LUKS_MISSING_KEY = "LUKS no key";
     public static final String IGNORE_REASON_NVME_TARGET = "NVMe target";
     public static final String IGNORE_REASON_NVME_INITIATOR = "NVMe initiator";
-    public static final String IGNORE_REASON_OF_TARGET = "OpenFlex target";
     public static final String IGNORE_REASON_RSC_INACTIVE = "Resource inactive";
     public static final String IGNORE_REASON_RSC_CLONING = "Resource cloning";
     public static final String IGNORE_REASON_SPDK_TARGET = "SPDK target";

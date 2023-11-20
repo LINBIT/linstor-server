@@ -8,7 +8,6 @@ import com.linbit.linstor.storage.FileDriverKind;
 import com.linbit.linstor.storage.FileThinDriverKind;
 import com.linbit.linstor.storage.LvmDriverKind;
 import com.linbit.linstor.storage.LvmThinDriverKind;
-import com.linbit.linstor.storage.OpenflexTargetDriverKind;
 import com.linbit.linstor.storage.RemoteSpdkDriverKind;
 import com.linbit.linstor.storage.SpdkDriverKind;
 import com.linbit.linstor.storage.StorageDriverKind;
@@ -148,18 +147,6 @@ public enum DeviceProviderKind
         false,
         new ExosDriverKind(),
         ExtTools.LSSCSI, ExtTools.SAS_PHY, ExtTools.SAS_DEVICE
-    ),
-    OPENFLEX_TARGET(
-        false,
-        false,
-        false,
-        false,
-        true,
-        true,
-        false,
-        true, // OpenFlex provides nvmeTarget, nothing to worry about
-        false,
-        new OpenflexTargetDriverKind()
     ),
     EBS_INIT(
         false,
@@ -337,9 +324,6 @@ public enum DeviceProviderKind
             case LVM_THIN:
                 allowed = kind2.equals(LVM_THIN) ||
                     kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
-                break;
-            case OPENFLEX_TARGET:
-                allowed = kind2.equals(OPENFLEX_TARGET);
                 break;
             case SPDK:
                 allowed = kind2.equals(SPDK);

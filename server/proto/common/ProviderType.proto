@@ -15,7 +15,7 @@ enum ProviderType
     FILE = 8;
     FILE_THIN = 9;
     SPDK = 10;
-    OPENFLEX_TARGET = 11;
+    // 11, openflex_target, deleted
     EXOS = 12;
     REMOTE_SPDK = 13;
     EBS_INIT = 14;

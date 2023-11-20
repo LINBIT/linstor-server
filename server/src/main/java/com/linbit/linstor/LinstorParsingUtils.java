@@ -332,9 +332,6 @@ public class LinstorParsingUtils
             case "ZFS":
                 kind = DeviceLayerKind.STORAGE;
                 break;
-            case "OPENFLEX":
-                kind = DeviceLayerKind.OPENFLEX;
-                break;
             case "NVME":
                 kind = DeviceLayerKind.NVME;
                 break;
@@ -432,10 +429,6 @@ public class LinstorParsingUtils
                 break;
             case "REMOTE_SPDK":
                 kind = DeviceProviderKind.REMOTE_SPDK;
-                break;
-            case "OPENFLEX":
-            case "OPENFLEX_TARGET":
-                kind = DeviceProviderKind.OPENFLEX_TARGET;
                 break;
             case "EXOS":
             case "EXOS_TARGET":

@@ -11,7 +11,7 @@ enum LayerType
     STORAGE = 3;
     NVME = 4;
     WRITECACHE = 5;
-    OPENFLEX = 6;
+    // 6, openflex, deleted
     CACHE = 7;
     BCACHE = 8;
 }

@@ -22,7 +22,7 @@ public class NumberPoolModule extends AbstractModule
 
     public static final String MINOR_NUMBER_POOL = "MinorNumberPool";
     public static final String TCP_PORT_POOL = "TcpPortPool";
-    public static final String SPECIAL_SATELLTE_PORT_POOL = "OpenflexTargetPortPool";
+    public static final String SPECIAL_SATELLTE_PORT_POOL = "SpecStltPortPool";
     public static final String LAYER_RSC_ID_POOL = "LayerRscIdPool";
     public static final String SNAPSHOPT_SHIPPING_PORT_POOL = "SnapshotShippingPortPool";
 
@@ -40,10 +40,10 @@ public class NumberPoolModule extends AbstractModule
     private static final int DEFAULT_TCP_PORT_MIN = 7000;
     private static final int DEFAULT_TCP_PORT_MAX = 7999;
 
-    private static final int DEFAULT_OF_TARGET_TCP_PORT_MIN = 10_000;
-    private static final int DEFAULT_OF_TARGET_TCP_PORT_MAX = 10_999;
+    private static final int DEFAULT_SPEC_STLT_TCP_PORT_MIN = 10_000;
+    private static final int DEFAULT_SPEC_STLT_TCP_PORT_MAX = 10_999;
 
-    private static final String OF_TARGET_TCP_ELEMENT_NAME = "Openflex target TCP port";
+    private static final String SPEC_STLT_TCP_ELEMENT_NAME = "Special Satellite TCP port";
 
     private static final int LAYER_RSC_ID_MIN = 0;
     private static final int LAYER_RSC_ID_MAX = BitmapPool.MAX_CAPACITY - 1;
@@ -101,7 +101,7 @@ public class NumberPoolModule extends AbstractModule
     @Provides
     @Singleton
     @Named(SPECIAL_SATELLTE_PORT_POOL)
-    public DynamicNumberPool ofTargetPortPool(
+    public DynamicNumberPool specStltPortPool(
         ErrorReporter errorReporter,
         @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
     )
@@ -109,12 +109,12 @@ public class NumberPoolModule extends AbstractModule
         return new DynamicNumberPoolImpl(
             errorReporter,
             ctrlConfRef,
-            ApiConsts.KEY_OF_TARGET_PORT_AUTO_RANGE,
-            OF_TARGET_TCP_ELEMENT_NAME,
+            ApiConsts.KEY_SPEC_STLT_PORT_AUTO_RANGE,
+            SPEC_STLT_TCP_ELEMENT_NAME,
             TcpPortNumber::tcpPortNrCheck,
             TcpPortNumber.PORT_NR_MAX,
-            DEFAULT_OF_TARGET_TCP_PORT_MIN,
-            DEFAULT_OF_TARGET_TCP_PORT_MAX
+            DEFAULT_SPEC_STLT_TCP_PORT_MIN,
+            DEFAULT_SPEC_STLT_TCP_PORT_MAX
         );
     }
 

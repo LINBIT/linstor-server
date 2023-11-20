@@ -443,86 +443,6 @@ public class GeneratedDatabaseTables
         }
     }
 
-    public static class LayerOpenflexResourceDefinitions implements DatabaseTable
-    {
-        private LayerOpenflexResourceDefinitions()
-        {
-        }
-
-        // Primary Keys
-        public static final ColumnImpl RESOURCE_NAME = new ColumnImpl("RESOURCE_NAME", Types.VARCHAR, true, false);
-        public static final ColumnImpl RESOURCE_NAME_SUFFIX = new ColumnImpl("RESOURCE_NAME_SUFFIX", Types.VARCHAR, true, false);
-
-        public static final ColumnImpl SNAPSHOT_NAME = new ColumnImpl("SNAPSHOT_NAME", Types.VARCHAR, false, false);
-        public static final ColumnImpl NQN = new ColumnImpl("NQN", Types.VARCHAR, false, true);
-
-        public static final Column[] ALL = new Column[]
-        {
-            RESOURCE_NAME,
-            SNAPSHOT_NAME,
-            RESOURCE_NAME_SUFFIX,
-            NQN
-        };
-
-        @Override
-        public Column[] values()
-        {
-            return ALL;
-        }
-
-        @Override
-        public String getName()
-        {
-            return "LAYER_OPENFLEX_RESOURCE_DEFINITIONS";
-        }
-
-        @Override
-        public String toString()
-        {
-            return "Table LAYER_OPENFLEX_RESOURCE_DEFINITIONS";
-        }
-    }
-
-    public static class LayerOpenflexVolumes implements DatabaseTable
-    {
-        private LayerOpenflexVolumes()
-        {
-        }
-
-        // Primary Keys
-        public static final ColumnImpl LAYER_RESOURCE_ID = new ColumnImpl("LAYER_RESOURCE_ID", Types.INTEGER, true, false);
-        public static final ColumnImpl VLM_NR = new ColumnImpl("VLM_NR", Types.INTEGER, true, false);
-
-        public static final ColumnImpl NODE_NAME = new ColumnImpl("NODE_NAME", Types.VARCHAR, false, true);
-        public static final ColumnImpl POOL_NAME = new ColumnImpl("POOL_NAME", Types.VARCHAR, false, true);
-
-        public static final Column[] ALL = new Column[]
-        {
-            LAYER_RESOURCE_ID,
-            VLM_NR,
-            NODE_NAME,
-            POOL_NAME
-        };
-
-        @Override
-        public Column[] values()
-        {
-            return ALL;
-        }
-
-        @Override
-        public String getName()
-        {
-            return "LAYER_OPENFLEX_VOLUMES";
-        }
-
-        @Override
-        public String toString()
-        {
-            return "Table LAYER_OPENFLEX_VOLUMES";
-        }
-    }
-
     public static class LayerResourceIds implements DatabaseTable
     {
         private LayerResourceIds()
@@ -1933,8 +1853,6 @@ public class GeneratedDatabaseTables
     public static final LayerDrbdVolumes LAYER_DRBD_VOLUMES = new LayerDrbdVolumes();
     public static final LayerDrbdVolumeDefinitions LAYER_DRBD_VOLUME_DEFINITIONS = new LayerDrbdVolumeDefinitions();
     public static final LayerLuksVolumes LAYER_LUKS_VOLUMES = new LayerLuksVolumes();
-    public static final LayerOpenflexResourceDefinitions LAYER_OPENFLEX_RESOURCE_DEFINITIONS = new LayerOpenflexResourceDefinitions();
-    public static final LayerOpenflexVolumes LAYER_OPENFLEX_VOLUMES = new LayerOpenflexVolumes();
     public static final LayerResourceIds LAYER_RESOURCE_IDS = new LayerResourceIds();
     public static final LayerStorageVolumes LAYER_STORAGE_VOLUMES = new LayerStorageVolumes();
     public static final LayerWritecacheVolumes LAYER_WRITECACHE_VOLUMES = new LayerWritecacheVolumes();
@@ -1989,8 +1907,6 @@ public class GeneratedDatabaseTables
             VOLUME_DEFINITIONS,
             LAYER_DRBD_VOLUME_DEFINITIONS,
             LAYER_LUKS_VOLUMES,
-            LAYER_OPENFLEX_RESOURCE_DEFINITIONS,
-            LAYER_OPENFLEX_VOLUMES,
             LAYER_STORAGE_VOLUMES,
             LAYER_WRITECACHE_VOLUMES,
             LINSTOR_REMOTES,
@@ -2073,14 +1989,6 @@ public class GeneratedDatabaseTables
         LayerLuksVolumes.LAYER_RESOURCE_ID.table = LAYER_LUKS_VOLUMES;
         LayerLuksVolumes.VLM_NR.table = LAYER_LUKS_VOLUMES;
         LayerLuksVolumes.ENCRYPTED_PASSWORD.table = LAYER_LUKS_VOLUMES;
-        LayerOpenflexResourceDefinitions.RESOURCE_NAME.table = LAYER_OPENFLEX_RESOURCE_DEFINITIONS;
-        LayerOpenflexResourceDefinitions.SNAPSHOT_NAME.table = LAYER_OPENFLEX_RESOURCE_DEFINITIONS;
-        LayerOpenflexResourceDefinitions.RESOURCE_NAME_SUFFIX.table = LAYER_OPENFLEX_RESOURCE_DEFINITIONS;
-        LayerOpenflexResourceDefinitions.NQN.table = LAYER_OPENFLEX_RESOURCE_DEFINITIONS;
-        LayerOpenflexVolumes.LAYER_RESOURCE_ID.table = LAYER_OPENFLEX_VOLUMES;
-        LayerOpenflexVolumes.VLM_NR.table = LAYER_OPENFLEX_VOLUMES;
-        LayerOpenflexVolumes.NODE_NAME.table = LAYER_OPENFLEX_VOLUMES;
-        LayerOpenflexVolumes.POOL_NAME.table = LAYER_OPENFLEX_VOLUMES;
         LayerResourceIds.LAYER_RESOURCE_ID.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.NODE_NAME.table = LAYER_RESOURCE_IDS;
         LayerResourceIds.RESOURCE_NAME.table = LAYER_RESOURCE_IDS;
@@ -2338,10 +2246,6 @@ public class GeneratedDatabaseTables
                 return LAYER_DRBD_VOLUME_DEFINITIONS;
             case "LAYER_LUKS_VOLUMES":
                 return LAYER_LUKS_VOLUMES;
-            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-                return LAYER_OPENFLEX_RESOURCE_DEFINITIONS;
-            case "LAYER_OPENFLEX_VOLUMES":
-                return LAYER_OPENFLEX_VOLUMES;
             case "LAYER_RESOURCE_IDS":
                 return LAYER_RESOURCE_IDS;
             case "LAYER_STORAGE_VOLUMES":

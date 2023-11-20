@@ -42,11 +42,6 @@ public enum DeviceLayerKind
         true,
         ExtTools.BCACHE_TOOLS
     ),
-    OPENFLEX(
-        false,
-        true,
-        ExtTools.NVME
-    ),
     STORAGE(true, true);
     private final ExtTools[] startupVerifications;
 

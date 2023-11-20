@@ -23,9 +23,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerNvmeRscDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDfnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
@@ -45,9 +42,6 @@ import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
-import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
-import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscDfnData;
-import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheRscData;
 import com.linbit.linstor.storage.data.adapter.writecache.WritecacheVlmData;
 import com.linbit.linstor.storage.data.provider.StorageRscData;
@@ -94,10 +88,6 @@ public class LayerDataFactory
 
     private final LayerNvmeRscDatabaseDriver layerNvmeRscDbDriver;
 
-    private final LayerOpenflexRscDfnDatabaseDriver layerOpenflexRscDfnDbDriver;
-    private final LayerOpenflexRscDatabaseDriver layerOpenflexRscDbDriver;
-    private final LayerOpenflexVlmDatabaseDriver layerOpenflexVlmDbDriver;
-
     private final LayerWritecacheRscDatabaseDriver layerWritecacheRscDbDriver;
     private final LayerWritecacheVlmDatabaseDriver layerWritecacheVlmDbDriver;
 
@@ -126,9 +116,6 @@ public class LayerDataFactory
         LayerStorageRscDatabaseDriver layerStorRscDbDriverRef,
         LayerStorageVlmDatabaseDriver layerStorVlmDbDriverRef,
         LayerNvmeRscDatabaseDriver layerNvmeRscDbDriverRef,
-        LayerOpenflexRscDfnDatabaseDriver layerOpenflexRscDfnDbDriverRef,
-        LayerOpenflexRscDatabaseDriver layerOpenflexRscDbDriverRef,
-        LayerOpenflexVlmDatabaseDriver layerOpenflexVlmDbDriverRef,
         LayerWritecacheRscDatabaseDriver layerWritecacheRscDbDriverRef,
         LayerWritecacheVlmDatabaseDriver layerWritecacheVlmDbDriverRef,
         LayerCacheRscDatabaseDriver layerCacheRscDbDriverRef,
@@ -151,9 +138,6 @@ public class LayerDataFactory
         layerStorRscDbDriver = layerStorRscDbDriverRef;
         layerStorVlmDbDriver = layerStorVlmDbDriverRef;
         layerNvmeRscDbDriver = layerNvmeRscDbDriverRef;
-        layerOpenflexRscDfnDbDriver = layerOpenflexRscDfnDbDriverRef;
-        layerOpenflexRscDbDriver = layerOpenflexRscDbDriverRef;
-        layerOpenflexVlmDbDriver = layerOpenflexVlmDbDriverRef;
         layerWritecacheRscDbDriver = layerWritecacheRscDbDriverRef;
         layerWritecacheVlmDbDriver = layerWritecacheVlmDbDriverRef;
         layerCacheRscDbDriver = layerCacheRscDbDriverRef;
@@ -425,72 +409,6 @@ public class LayerDataFactory
             transObjFactory,
             transMgrProvider
         );
-    }
-
-    public <RSC extends AbsResource<RSC>> OpenflexRscDfnData<RSC> createOpenflexRscDfnData(
-        ResourceName nameRef,
-        String rscNameSuffixRef,
-        String shortNameRef,
-        String nqnRef
-    )
-        throws DatabaseException
-    {
-        OpenflexRscDfnData<RSC> ofRscDfnData = new OpenflexRscDfnData<>(
-            nameRef,
-            rscNameSuffixRef,
-            shortNameRef,
-            new ArrayList<>(),
-            nqnRef,
-            layerOpenflexRscDfnDbDriver,
-            transObjFactory,
-            transMgrProvider
-        );
-
-        layerOpenflexRscDfnDbDriver.create(ofRscDfnData);
-        return ofRscDfnData;
-    }
-
-    public <RSC extends AbsResource<RSC>> OpenflexRscData<RSC> createOpenflexRscData(
-        int rscLayerId,
-        RSC rsc,
-        OpenflexRscDfnData<RSC> rscDfnData,
-        AbsRscLayerObject<RSC> parentData
-    )
-        throws DatabaseException
-    {
-        OpenflexRscData<RSC> ofRscData = new OpenflexRscData<>(
-            rscLayerId,
-            rsc,
-            rscDfnData,
-            parentData,
-            new HashSet<>(),
-            new TreeMap<>(),
-            layerOpenflexRscDbDriver,
-            layerOpenflexVlmDbDriver,
-            transObjFactory,
-            transMgrProvider
-        );
-        layerRscIdDatabaseDriver.create(ofRscData);
-        layerOpenflexRscDbDriver.create(ofRscData);
-        return ofRscData;
-    }
-
-    public <RSC extends AbsResource<RSC>> OpenflexVlmData<RSC> createOpenflexVlmData(
-        AbsVolume<RSC> vlm,
-        OpenflexRscData<RSC> rscData,
-        StorPool storPoolRef
-    )
-        throws DatabaseException
-    {
-        OpenflexVlmData<RSC> ofTargetData = new OpenflexVlmData<>(
-            vlm,
-            rscData,
-            storPoolRef,
-            transObjFactory,
-            transMgrProvider
-        );
-        layerOpenflexVlmDbDriver.create(ofTargetData);
-        return ofTargetData;
     }
 
     public <RSC extends AbsResource<RSC>> WritecacheRscData<RSC> createWritecacheRscData(

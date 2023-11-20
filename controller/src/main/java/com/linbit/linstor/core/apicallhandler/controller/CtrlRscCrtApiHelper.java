@@ -355,11 +355,9 @@ public class CtrlRscCrtApiHelper
                 );
 
             boolean isStorPoolDiskless = false;
-            boolean isStorPoolOpenflex = false;
             if (storPool != null)
             {
                 isStorPoolDiskless = !storPool.getDeviceProviderKind().hasBackingDevice();
-                isStorPoolOpenflex = storPool.getDeviceProviderKind().equals(DeviceProviderKind.OPENFLEX_TARGET);
             }
 
             boolean isDisklessSet = FlagsHelper.isFlagEnabled(adjustedFlags, Resource.Flags.DISKLESS);
@@ -417,17 +415,6 @@ public class CtrlRscCrtApiHelper
                         );
                     }
                 }
-            }
-
-            if (isStorPoolOpenflex && !layerStack.contains(DeviceLayerKind.OPENFLEX))
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_INVLD_LAYER_STACK,
-                        "Selecting a storage pool with the openflex driver requires OPENFLEX to be included " +
-                            "in the layer-list"
-                    )
-                );
             }
 
             rsc = createResource(rscDfn, node, payload, adjustedFlags, layerStack);
@@ -542,10 +529,7 @@ public class CtrlRscCrtApiHelper
         }
         else
         {
-            if (
-                !layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE) &&
-                    !layerStack.contains(DeviceLayerKind.OPENFLEX)
-            )
+            if (!layerStack.get(layerStack.size() - 1).equals(DeviceLayerKind.STORAGE))
             {
                 layerStack.add(DeviceLayerKind.STORAGE);
                 warnAddedStorageLayer(errorReporter, responses);
@@ -599,7 +583,6 @@ public class CtrlRscCrtApiHelper
                             DeviceProviderKind devProviderKind = storPool.getDeviceProviderKind();
                             switch (devProviderKind)
                             {
-                                case OPENFLEX_TARGET: // fall-through
                                 case DISKLESS: // ignored
                                     break;
                                 case LVM: // fall-through

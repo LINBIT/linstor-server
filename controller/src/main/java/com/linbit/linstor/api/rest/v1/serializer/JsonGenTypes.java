@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.20.2";
+    public static final String REST_API_VERSION = "1.21.0";
 
     /**
      * Common api reply structure
@@ -229,13 +229,6 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class OpenflexResourceDefinitionLayer
-    {
-        public String resource_name_suffix;
-        public String nqn;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class ResourceDefinitionLayer
     {
         public String type;
@@ -390,13 +383,6 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class OpenflexResource
-    {
-        public OpenflexResourceDefinitionLayer openflex_resource_definition;
-        public List<OpenflexVolume> openflex_volumes = Collections.emptyList();
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class WritecacheResource
     {
         public List<WritecacheVolume> writecache_volumes = Collections.emptyList();
@@ -424,7 +410,6 @@ public class JsonGenTypes
         public LUKSResource luks;
         public StorageResource storage;
         public NVMEResource nvme;
-        public OpenflexResource openflex;
         public WritecacheResource writecache;
         public CacheResource cache;
         public BCacheResource bcache;
@@ -586,22 +571,6 @@ public class JsonGenTypes
          * block device used by nvme
          */
         public String backing_device;
-        public Long allocated_size_kib;
-        public Long usable_size_kib;
-        /**
-         * String describing current volume state
-         */
-        public String disk_state;
-    }
-
-    @JsonInclude(JsonInclude.Include.NON_EMPTY)
-    public static class OpenflexVolume
-    {
-        public Integer volume_number;
-        /**
-         * block device path
-         */
-        public String device_path;
         public Long allocated_size_kib;
         public Long usable_size_kib;
         /**
@@ -1026,7 +995,6 @@ public class JsonGenTypes
         public ControllerConfigDebug debug;
         public SatelliteConfigLog log;
         public String stlt_override_node_name;
-        public Boolean openflex;
         public Boolean remote_spdk;
         public Boolean ebs;
         public Boolean special_satellite;

@@ -223,14 +223,13 @@ class RscWritecacheLayerHelper
     private boolean needsCacheDevice(WritecacheRscData<Resource> rscDataRef, List<DeviceLayerKind> layerListRef)
         throws AccessDeniedException
     {
-        boolean isNvmeOrOpenflexBelow = DeviceLayerKind.WRITECACHE.isAncestorOf(layerListRef, DeviceLayerKind.NVME) ||
-            DeviceLayerKind.WRITECACHE.isAncestorOf(layerListRef, DeviceLayerKind.OPENFLEX);
+        boolean isNvmeBelow = DeviceLayerKind.WRITECACHE.isAncestorOf(layerListRef, DeviceLayerKind.NVME);
         StateFlags<Flags> rscFlags = rscDataRef.getAbsResource().getStateFlags();
         boolean isNvmeInitiator = rscFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         boolean isEbsInitiator = rscFlags.isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
 
-        return (isNvmeInitiator && isNvmeOrOpenflexBelow) ||
-            (!isNvmeInitiator && !isNvmeOrOpenflexBelow) || isEbsInitiator;
+        return (isNvmeInitiator && isNvmeBelow) ||
+            (!isNvmeInitiator && !isNvmeBelow) || isEbsInitiator;
     }
 
     @Override

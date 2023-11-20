@@ -985,7 +985,6 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
                 DeviceProviderKind.FILE,
                 DeviceProviderKind.FILE_THIN,
                 DeviceProviderKind.SPDK,
-                DeviceProviderKind.OPENFLEX_TARGET,
                 DeviceProviderKind.EXOS,
                 DeviceProviderKind.EBS_INIT,
                 DeviceProviderKind.STORAGE_SPACES,
@@ -1004,7 +1003,6 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
                 DeviceProviderKind.FILE,
                 DeviceProviderKind.FILE_THIN,
                 DeviceProviderKind.SPDK,
-                DeviceProviderKind.OPENFLEX_TARGET,
                 DeviceProviderKind.EXOS,
                 DeviceProviderKind.EBS_INIT,
                 DeviceProviderKind.STORAGE_SPACES,
@@ -1016,13 +1014,6 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
             4,
             Collections.emptyList(),
             false
-        ),
-        OPENFLEX_TARGET(
-            5,
-            Arrays.asList(
-                DeviceProviderKind.OPENFLEX_TARGET
-            ),
-            true
         ),
         REMOTE_SPDK(
             6,

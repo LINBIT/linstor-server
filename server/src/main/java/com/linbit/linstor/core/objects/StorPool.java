@@ -389,7 +389,6 @@ public class StorPool extends AbsCoreObj<StorPool>
             case EXOS:
             case FILE:
             case LVM:
-            case OPENFLEX_TARGET:
             case REMOTE_SPDK:
             case SPDK:
             case ZFS:

@@ -5,7 +5,6 @@ package com.linbit.linstor.proto.common;
 import "common/RscGrp.proto";
 import "common/VlmDfn.proto";
 import "common/DrbdRsc.proto";
-import "common/OpenflexRsc.proto";
 import "common/LayerType.proto";
 
 // Resource definition
@@ -26,5 +25,4 @@ message RscDfnLayerData
 {
     required LayerType  layer_type = 1;
     optional DrbdRscDfn drbd = 2;
-    optional OpenflexRscDfn openflex = 3;
 }

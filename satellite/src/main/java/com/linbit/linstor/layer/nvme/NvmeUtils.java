@@ -36,8 +36,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.AbsRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
-import com.linbit.linstor.storage.data.adapter.nvme.OpenflexRscData;
-import com.linbit.linstor.storage.data.adapter.nvme.OpenflexVlmData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -387,40 +385,6 @@ public class NvmeUtils
         }
     }
 
-    public void connect(OpenflexRscData<Resource> ofRscData, AccessContext accCtx)
-        throws StorageException, AccessDeniedException
-    {
-
-        OpenflexRscData<Resource> targetRscData = null;
-        for (OpenflexRscData<Resource> ofRsc : ofRscData.getRscDfnLayerObject().getOfRscDataList())
-        {
-            if (ofRscData != ofRsc)
-            {
-                targetRscData = ofRsc;
-                break;
-            }
-        }
-        if (targetRscData == null)
-        {
-            throw new ImplementationError("No openflex target found");
-        }
-
-        Resource targetRsc = targetRscData.getAbsResource();
-        PriorityProps prioProps;
-        prioProps = new PriorityProps(
-            targetRsc.getProps(accCtx),
-            targetRsc.getNode().getProps(accCtx),
-            stltProps
-        );
-
-        connect(
-            ofRscData,
-            ofRscData.getRscDfnLayerObject().getNqn(),
-            prioProps.getProp(ApiConsts.KEY_STOR_POOL_OPENFLEX_STOR_DEV_HOST, ApiConsts.NAMESPC_STORAGE_DRIVER),
-            accCtx
-        );
-    }
-
     public <VLM_DATA extends VlmProviderObject<Resource>, RSC_DATA extends AbsRscData<Resource, VLM_DATA>> void connect(
         RSC_DATA rscData,
         String subsystemName,
@@ -500,17 +464,6 @@ public class NvmeUtils
             NvmeRscData::setExists,
             NvmeVlmData::setExists,
             NvmeVlmData::getDevicePath
-        );
-    }
-
-    public void disconnect(OpenflexRscData<Resource> ofRsc) throws StorageException
-    {
-        disconnect(
-            ofRsc,
-            ofRsc.getRscDfnLayerObject().getNqn(),
-            OpenflexRscData::setExists,
-            OpenflexVlmData::setExists,
-            OpenflexVlmData::getDevicePath
         );
     }
 
@@ -631,20 +584,6 @@ public class NvmeUtils
             NvmeRscData::setExists,
             NvmeVlmData::setExists,
             NvmeVlmData::setDevicePath
-        );
-    }
-
-    public boolean setDevicePaths(OpenflexRscData<Resource> ofRscData, boolean isWaiting)
-        throws StorageException
-    {
-        return setDevicePaths(
-            isWaiting,
-            ofRscData,
-            ofRscData.getRscDfnLayerObject().getNqn(),
-            // (rscData, exists) -> setExistsDeep(rscData, exists)
-            OpenflexRscData::setExists,
-            OpenflexVlmData::setExists,
-            OpenflexVlmData::setDevicePath
         );
     }
 

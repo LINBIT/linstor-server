@@ -35,7 +35,7 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.common.CryptoEntryOuterClass;
-import com.linbit.linstor.proto.common.StltConfigOuterClass.StltConfig;
+import com.linbit.linstor.proto.common.StltConfigOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.javainternal.IntObjectIdOuterClass.IntObjectId;
@@ -187,7 +187,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     public CtrlStltSerializerBuilder changedConfig(com.linbit.linstor.core.cfg.StltConfig stltConfig)
         throws IOException
     {
-        StltConfig.Builder bld = stltConfig(
+        StltConfigOuterClass.StltConfig.Builder bld = stltConfig(
             stltConfig.getConfigDir(),
             stltConfig.isDebugConsoleEnabled(),
             stltConfig.isLogPrintStackTrace(),
@@ -195,7 +195,6 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             stltConfig.getLogLevel(),
             stltConfig.getLogLevelLinstor(),
             stltConfig.getStltOverrideNodeName(),
-            stltConfig.isOpenflex(),
             stltConfig.isRemoteSpdk(),
             stltConfig.isEbs(),
             stltConfig.getDrbdKeepResPattern(),

@@ -39,9 +39,7 @@ public class ResourceCreateCheck
     private enum ResourceRole
     {
         NVME_TARGET,
-        NVME_INITIATOR,
-        OPENFLEX_TARGET,
-        OPENFLEX_INITIATOR
+        NVME_INITIATOR
     }
 
     /**
@@ -60,8 +58,6 @@ public class ResourceCreateCheck
             boolean rdHasNvmeTarget = false;
             boolean rdHasNvmeInitiator = false;
             boolean rdHasDrbd = !rscDfn.getLayerData(apiCtx, DeviceLayerKind.DRBD).isEmpty();
-            boolean rdHasOpenflexTarget = false;
-            boolean rdHasOpenflexInitiator = false;
 
             Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
             while (rscIt.hasNext())
@@ -79,20 +75,6 @@ public class ResourceCreateCheck
                         else
                         {
                             rdHasNvmeTarget = true;
-                        }
-                    }
-                    else
-                    {
-                        if (layerStack.contains(DeviceLayerKind.OPENFLEX))
-                        {
-                            if (otherRsc.isNvmeInitiator(apiCtx))
-                            {
-                                rdHasOpenflexInitiator = true;
-                            }
-                            else
-                            {
-                                rdHasOpenflexTarget = true;
-                            }
                         }
                     }
                 }
@@ -126,28 +108,6 @@ public class ResourceCreateCheck
                             );
                         }
                         break;
-                    case OPENFLEX_TARGET:
-                        if (rdHasOpenflexTarget)
-                        {
-                            throw new ApiRcException(
-                                ApiCallRcImpl.simpleEntry(
-                                    ApiConsts.FAIL_EXISTS_OPENFLEX_TARGET_PER_RSC_DFN,
-                                    "Only one openflex target per resource definition allowed!"
-                                )
-                            );
-                        }
-                        break;
-                    case OPENFLEX_INITIATOR:
-                        if (!rdHasOpenflexTarget)
-                        {
-                            throw new ApiRcException(
-                                ApiCallRcImpl.simpleEntry(
-                                    ApiConsts.FAIL_MISSING_NVME_TARGET,
-                                    "An Openflex Target needs to be created before the Initiator!"
-                                )
-                            );
-                        }
-                        break;
                     default:
                         // no further checks needed in this case
                         break;
@@ -172,15 +132,6 @@ public class ResourceCreateCheck
                 ret = rsc.isNvmeInitiator(apiCtx) ?
                     ResourceRole.NVME_INITIATOR :
                     ResourceRole.NVME_TARGET;
-            }
-            else
-            {
-                if (layerStack.contains(DeviceLayerKind.OPENFLEX))
-                {
-                    ret = rsc.isNvmeInitiator(apiCtx) ?
-                        ResourceRole.OPENFLEX_INITIATOR :
-                        ResourceRole.OPENFLEX_TARGET;
-                }
             }
         }
         catch (AccessDeniedException exc)

@@ -13,9 +13,6 @@ import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDfnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerLuksVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerNvmeRscDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexRscDfnDatabaseDriver;
-import com.linbit.linstor.dbdrivers.interfaces.LayerOpenflexVlmDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerResourceIdDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerStorageVlmDatabaseDriver;
@@ -109,10 +106,6 @@ public class SatelliteDbModule extends AbstractModule
         bind(LayerLuksVlmDatabaseDriver.class).to(SatelliteLayerLuksVlmDriver.class);
 
         bind(LayerNvmeRscDatabaseDriver.class).to(SatelliteLayerNvmeRscDbDriver.class);
-
-        bind(LayerOpenflexRscDfnDatabaseDriver.class).to(SatelliteLayerOpenflexRscDfnDbDriver.class);
-        bind(LayerOpenflexRscDatabaseDriver.class).to(SatelliteLayerOpenflexRscDbDriver.class);
-        bind(LayerOpenflexVlmDatabaseDriver.class).to(SatelliteLayerOpenflexVlmDbDriver.class);
 
         bind(LayerWritecacheRscDatabaseDriver.class).to(SatelliteLayerWritecacheRscDbDriver.class);
         bind(LayerWritecacheVlmDatabaseDriver.class).to(SatelliteLayerWritecacheVlmDbDriver.class);

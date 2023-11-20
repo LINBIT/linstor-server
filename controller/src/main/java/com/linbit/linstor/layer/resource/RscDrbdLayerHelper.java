@@ -308,7 +308,6 @@ public class RscDrbdLayerHelper extends
         NodeId nodeId = oldNodeIdRef;
 
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
-        boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
         boolean isNvmeInitiator = rscRef.getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         boolean isEbsInitiator = rscRef.getStateFlags().isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
 
@@ -320,7 +319,7 @@ public class RscDrbdLayerHelper extends
 
         boolean isStoragePoolShared = areAllShared(allStorPools);
 
-        if ((isNvmeBelow || isOpenflexBelow) && isNvmeInitiator || isEbsInitiator)
+        if (isNvmeBelow && isNvmeInitiator || isEbsInitiator)
         {
             // we need to find our target resource and copy the node-id from that target-resource
             final Resource targetRsc;
@@ -720,10 +719,9 @@ public class RscDrbdLayerHelper extends
                 Resource.Flags.DRBD_DISKLESS
             );
             boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
-            boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
             boolean isNvmeInitiator = rscFlags.isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
 
-            needsMetaDisk &= (!(isNvmeBelow || isOpenflexBelow) || isNvmeInitiator);
+            needsMetaDisk &= (!isNvmeBelow || isNvmeInitiator);
             ret = !allVlmsUseInternalMetaData && needsMetaDisk;
         }
         return ret;

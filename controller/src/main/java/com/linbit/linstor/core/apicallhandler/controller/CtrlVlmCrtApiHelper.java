@@ -277,11 +277,7 @@ public class CtrlVlmCrtApiHelper
             {
                 final String errorObj;
                 final DeviceProviderKind providerKind = storPool.getDeviceProviderKind();
-                if (providerKind.equals(DeviceProviderKind.OPENFLEX_TARGET))
-                {
-                    errorObj = "OpenFlex";
-                }
-                else if (providerKind.equals(DeviceProviderKind.EBS_TARGET))
+                if (providerKind.equals(DeviceProviderKind.EBS_TARGET))
                 {
                     errorObj = "EBS";
                 }
@@ -294,7 +290,7 @@ public class CtrlVlmCrtApiHelper
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_INVLD_VLM_COUNT,
-                            "Openflex based resources may only have one volumedefinition"
+                            "EBS based resources may only have one volumedefinition"
                         )
                     );
                 }
@@ -312,13 +308,12 @@ public class CtrlVlmCrtApiHelper
                 AbsRscLayerObject<Resource> rscData = CtrlRscToggleDiskApiCallHandler
                     .getLayerData(peerAccCtx.get(), rsc);
                 if (!LayerUtils.hasLayer(rscData, DeviceLayerKind.DRBD) &&
-                    !LayerUtils.hasLayer(rscData, DeviceLayerKind.NVME) &&
-                    !LayerUtils.hasLayer(rscData, DeviceLayerKind.OPENFLEX))
+                    !LayerUtils.hasLayer(rscData, DeviceLayerKind.NVME))
                 {
                     throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
                             ApiConsts.FAIL_INVLD_LAYER_STACK,
-                            "Diskless volume is only supported in combination with DRBD, NVME or OPENFLEX"
+                            "Diskless volume is only supported in combination with DRBD and/or NVME"
                         )
                     );
                 }

@@ -121,8 +121,6 @@ class SnapStorageLayerHelper extends AbsSnapLayerHelper<
                     storPool
                 );
                 break;
-            case OPENFLEX_TARGET:
-                throw new ImplementationError("Snapshots are not supported for OpenFlex-setups");
             case FILE: // fall-through
             case FILE_THIN:
                 snapVlmData = layerDataFactory.createFileData(snapVlmRef, snapDataRef, providerKind, storPool);
@@ -241,8 +239,6 @@ class SnapStorageLayerHelper extends AbsSnapLayerHelper<
                     storPool
                 );
                 break;
-            case OPENFLEX_TARGET:
-                throw new ImplementationError("Snapshots are not supported for OpenFlex-setups");
             case FILE: // fall-through
             case FILE_THIN:
                 snapVlmData = layerDataFactory.createFileData(snapVlmRef, snapDataRef, providerKind, storPool);

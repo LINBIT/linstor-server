@@ -208,9 +208,6 @@ public class SpecialSatelliteProcessManager
         String option;
         switch (nodeType)
         {
-            case OPENFLEX_TARGET:
-                option = "--openflex";
-                break;
             case REMOTE_SPDK:
                 option = "--remote-spdk";
                 break;

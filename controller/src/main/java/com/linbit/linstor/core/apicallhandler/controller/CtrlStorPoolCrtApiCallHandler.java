@@ -21,8 +21,8 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.exos.ExosEnclosurePingTask;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -224,7 +224,6 @@ public class CtrlStorPoolCrtApiCallHandler
                 case FILE_THIN: // fall-through
                 case LVM: // fall-through
                 case LVM_THIN: // fall-through
-                case OPENFLEX_TARGET: // fall-through
                 case REMOTE_SPDK: // fall-through
                 case SPDK: // fall-through
                 case ZFS: // fall-through

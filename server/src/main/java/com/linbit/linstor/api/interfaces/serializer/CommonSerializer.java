@@ -54,7 +54,6 @@ public interface CommonSerializer
             String logLevel,
             String logLevelLinstor,
             String stltOverrideNodeName,
-            boolean openflex,
             boolean remoteSpdk,
             boolean ebs,
             Pattern drbdKeepResPattern,

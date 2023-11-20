@@ -22,11 +22,11 @@ import com.linbit.linstor.core.objects.VolumeGroup;
 import com.linbit.linstor.proto.common.ApiCallResponseOuterClass;
 import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo;
 import com.linbit.linstor.proto.common.ExternalToolsOuterClass.ExternalToolsInfo.ExternalTools;
-import com.linbit.linstor.proto.common.LayerTypeOuterClass.LayerType;
+import com.linbit.linstor.proto.common.LayerTypeOuterClass;
 import com.linbit.linstor.proto.common.PropertyOuterClass;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
 import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
-import com.linbit.linstor.proto.common.StorPoolOuterClass.StorPool;
+import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.proto.common.VlmGrpOuterClass.VlmGrp;
 import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.ReqFile;
 import com.linbit.linstor.proto.responses.MsgApiRcResponseOuterClass.MsgApiRcResponse;
@@ -170,9 +170,6 @@ public class ProtoDeserializationUtils
                 case REMOTE_SPDK:
                     kind = DeviceProviderKind.REMOTE_SPDK;
                     break;
-                case OPENFLEX_TARGET:
-                    kind = DeviceProviderKind.OPENFLEX_TARGET;
-                    break;
                 case EXOS:
                     kind = DeviceProviderKind.EXOS;
                     break;
@@ -201,27 +198,33 @@ public class ProtoDeserializationUtils
         return kind;
     }
 
-    public static List<DeviceLayerKind> parseDeviceLayerKindList(List<LayerType> layerTypeList)
+    public static List<DeviceLayerKind> parseDeviceLayerKindList(List<LayerTypeOuterClass.LayerType> layerTypeList)
     {
         return parseDeviceLayerKindList(layerTypeList, true);
     }
 
-    public static List<DeviceLayerKind> parseDeviceLayerKindList(List<LayerType> layerTypeList, boolean throwIfUnknown)
+    public static List<DeviceLayerKind> parseDeviceLayerKindList(
+        List<LayerTypeOuterClass.LayerType> layerTypeList,
+        boolean throwIfUnknown
+    )
     {
         List<DeviceLayerKind> devLayerKindList = new ArrayList<>();
-        for (LayerType layerType : layerTypeList)
+        for (LayerTypeOuterClass.LayerType layerType : layerTypeList)
         {
             devLayerKindList.add(parseDeviceLayerKind(layerType, throwIfUnknown));
         }
         return devLayerKindList;
     }
 
-    public static DeviceLayerKind parseDeviceLayerKind(LayerType layerTypeRef)
+    public static DeviceLayerKind parseDeviceLayerKind(LayerTypeOuterClass.LayerType layerTypeRef)
     {
         return parseDeviceLayerKind(layerTypeRef, true);
     }
 
-    public static DeviceLayerKind parseDeviceLayerKind(LayerType layerTypeRef, boolean throwIfUnknown)
+    public static DeviceLayerKind parseDeviceLayerKind(
+        LayerTypeOuterClass.LayerType layerTypeRef,
+        boolean throwIfUnknown
+    )
     {
         DeviceLayerKind kind = null;
         switch (layerTypeRef)
@@ -246,9 +249,6 @@ public class ProtoDeserializationUtils
                 break;
             case BCACHE:
                 kind = DeviceLayerKind.BCACHE;
-                break;
-            case OPENFLEX:
-                kind = DeviceLayerKind.OPENFLEX;
                 break;
             case UNKNOWN_LAYER: // fall-through
             case UNRECOGNIZED: // fall-through
@@ -301,7 +301,7 @@ public class ProtoDeserializationUtils
         return ret;
     }
 
-    public static StorPoolApi parseStorPool(StorPool storPoolProto, long fullSyncId, long updateId)
+    public static StorPoolApi parseStorPool(StorPoolOuterClass.StorPool storPoolProto, long fullSyncId, long updateId)
     {
         return new StorPoolPojo(
             UUID.fromString(storPoolProto.getStorPoolUuid()),

@@ -13,7 +13,6 @@ import static com.linbit.linstor.storage.kinds.DeviceLayerKind.CACHE;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.LUKS;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.NVME;
-import static com.linbit.linstor.storage.kinds.DeviceLayerKind.OPENFLEX;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.STORAGE;
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.WRITECACHE;
 
@@ -33,19 +32,16 @@ public class LayerUtils
 
     static
     {
-        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE, CACHE, BCACHE, OPENFLEX);
+        TOPMOST_NODE.addChildren(DRBD, LUKS, STORAGE, NVME, WRITECACHE, CACHE, BCACHE);
 
-        NODES.get(DRBD).addChildren(NVME, LUKS, STORAGE, WRITECACHE, OPENFLEX, CACHE, BCACHE);
-        NODES.get(LUKS).addChildren(STORAGE, OPENFLEX);
-        NODES.get(NVME).addChildren(LUKS, STORAGE, WRITECACHE, CACHE, OPENFLEX, BCACHE);
-        NODES.get(WRITECACHE).addChildren(NVME, LUKS, STORAGE, CACHE, OPENFLEX, BCACHE);
-        NODES.get(CACHE).addChildren(NVME, LUKS, STORAGE, OPENFLEX, WRITECACHE, BCACHE);
-        NODES.get(BCACHE).addChildren(NVME, LUKS, STORAGE, OPENFLEX, WRITECACHE);
+        NODES.get(DRBD).addChildren(NVME, LUKS, STORAGE, WRITECACHE, CACHE, BCACHE);
+        NODES.get(LUKS).addChildren(STORAGE);
+        NODES.get(NVME).addChildren(LUKS, STORAGE, WRITECACHE, CACHE, BCACHE);
+        NODES.get(WRITECACHE).addChildren(NVME, LUKS, STORAGE, CACHE, BCACHE);
+        NODES.get(CACHE).addChildren(NVME, LUKS, STORAGE, WRITECACHE, BCACHE);
+        NODES.get(BCACHE).addChildren(NVME, LUKS, STORAGE, WRITECACHE);
 
-        NODES.get(OPENFLEX).addChildren(STORAGE); // will be ignored, just adding for convenience
         // "every layerlist has to end with STORAGE"
-
-        NODES.get(OPENFLEX).setAllowedEnd(true);
         NODES.get(STORAGE).setAllowedEnd(true);
 
         ensureAllRulesHaveAllowedEnd();
@@ -230,11 +226,6 @@ public class LayerUtils
                     usedLayers.clear();
                     usedLayers.add(kind);
                 }
-            }
-            else
-            if (DeviceLayerKind.OPENFLEX.equals(kind))
-            {
-                break; // we do not care about layers below us, regardless if we are initiator or target
             }
             curLayerObject = curLayerObject.getChildBySuffix("");
         }

@@ -109,7 +109,6 @@ public class CtrlAuth implements ApiCall
                     stltConfig.getLogLevel(),
                     stltConfig.getLogLevelLinstor(),
                     stltConfig.getStltOverrideNodeName(),
-                    stltConfig.isOpenflex(),
                     stltConfig.isRemoteSpdk(),
                     stltConfig.isEbs(),
                     stltConfig.getDrbdKeepResPattern(),

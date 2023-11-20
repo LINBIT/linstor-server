@@ -21,6 +21,8 @@ info:
 
     Changelog:
 
+    * unreleased
+      - Removed everything OpenFlex related (entry-points, schemas, etc..)
     * 1.20.2
       - Added EffectivePropertiesMap, EffectivePropertiesMapValue and PropertyWithDescription objects
     * 1.20.1
@@ -209,7 +211,7 @@ info:
       - no functional changes
     * 1.0.0
       - Initial REST API v1
-  version: 1.20.2
+  version: 1.21.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -6398,7 +6400,6 @@ components:
             - Satellite
             - Combined
             - Auxiliary
-            - Openflex_Target
         flags:
           type: array
           items:
@@ -6555,7 +6556,6 @@ components:
         - LVM_THIN
         - ZFS
         - ZFS_THIN
-        - OPENFLEX_TARGET
         - FILE
         - FILE_THIN
         - SPDK
@@ -6632,7 +6632,6 @@ components:
         - WRITECACHE
         - CACHE
         - BCACHE
-        - OPENFLEX
     DrbdResourceDefinitionLayer:
       type: object
       properties:
@@ -6660,13 +6659,6 @@ components:
           description: drbd resource secret
         down:
           type: boolean
-    OpenflexResourceDefinitionLayer:
-      type: object
-      properties:
-        resource_name_suffix:
-          type: string
-        nqn:
-          type: string
     ResourceDefinitionLayer:
       type: object
       properties:
@@ -6675,7 +6667,6 @@ components:
         data:
           oneOf:
             - $ref: '#/components/schemas/DrbdResourceDefinitionLayer'
-            - $ref: '#/components/schemas/OpenflexResourceDefinitionLayer'
     ResourceDefinition:
       type: object
       properties:
@@ -6893,15 +6884,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/NVMEVolume'
-    OpenflexResource:
-      type: object
-      properties:
-        openflex_resource_definition:
-          $ref: '#/components/schemas/OpenflexResourceDefinitionLayer'
-        openflex_volumes:
-          type: array
-          items:
-            $ref: '#/components/schemas/OpenflexVolume'
     WritecacheResource:
       type: object
       properties:
@@ -6942,8 +6924,6 @@ components:
           $ref: '#/components/schemas/StorageResource'
         nvme:
           $ref: '#/components/schemas/NVMEResource'
-        openflex:
-          $ref: '#/components/schemas/OpenflexResource'
         writecache:
           $ref: '#/components/schemas/WritecacheResource'
         cache:
@@ -7150,25 +7130,6 @@ components:
         backing_device:
           type: string
           description: block device used by nvme
-        allocated_size_kib:
-          type: integer
-          format: int64
-        usable_size_kib:
-          type: integer
-          format: int64
-        disk_state:
-          type: string
-          description: String describing current volume state
-
-    OpenflexVolume:
-      type: object
-      properties:
-        volume_number:
-          type: integer
-          format: int32
-        device_path:
-          type: string
-          description: block device path
         allocated_size_kib:
           type: integer
           format: int64
@@ -7769,8 +7730,6 @@ components:
           $ref: '#/components/schemas/SatelliteConfigLog'
         stlt_override_node_name:
           type: string
-        openflex:
-          type: boolean
         remote_spdk:
           type: boolean
         ebs:

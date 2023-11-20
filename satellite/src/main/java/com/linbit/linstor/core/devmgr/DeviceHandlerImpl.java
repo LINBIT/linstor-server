@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.devmgr;
 
 import com.linbit.ImplementationError;
+import com.linbit.Platform;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
@@ -37,7 +38,6 @@ import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.AbortLayerProcessingException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.LayerFactory;
-import com.linbit.linstor.layer.openflex.OpenflexLayer;
 import com.linbit.linstor.layer.storage.StorageLayer;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.layer.storage.utils.MkfsUtils;
@@ -56,7 +56,6 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.utils.SetUtils;
-import com.linbit.Platform;
 import com.linbit.utils.Either;
 
 import javax.inject.Inject;
@@ -97,7 +96,6 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private final LayerFactory layerFactory;
     private final AtomicBoolean fullSyncApplied;
-    private final OpenflexLayer openflexLayer;
     private final StorageLayer storageLayer;
     private final ExtCmdFactory extCmdFactory;
     private final SnapshotShippingService snapshotShippingManager;
@@ -118,7 +116,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         CtrlStltSerializer interComSerializerRef,
         Provider<NotificationListener> notificationListenerRef,
         LayerFactory layerFactoryRef,
-        OpenflexLayer openflexLayerRef,
         StorageLayer storageLayerRef,
         ResourceStateEvent resourceStateEventRef,
         ExtCmdFactory extCmdFactoryRef,
@@ -137,7 +134,6 @@ public class DeviceHandlerImpl implements DeviceHandler
         notificationListener = notificationListenerRef;
 
         layerFactory = layerFactoryRef;
-        openflexLayer = openflexLayerRef;
         storageLayer = storageLayerRef;
         resourceStateEvent = resourceStateEventRef;
         extCmdFactory = extCmdFactoryRef;
@@ -1088,9 +1084,6 @@ public class DeviceHandlerImpl implements DeviceHandler
             DeviceLayer layer;
             switch (storPool.getDeviceProviderKind())
             {
-                case OPENFLEX_TARGET:
-                    layer = openflexLayer;
-                    break;
                 case DISKLESS: // fall-through
                 case FILE: // fall-through
                 case FILE_THIN: // fall-through

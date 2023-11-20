@@ -595,7 +595,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                  * creating the first diskful resource. However, this might still mean that other layers like NVMe are
                  * involved
                  */
-                if (layerStack.contains(DeviceLayerKind.NVME) || layerStack.contains(DeviceLayerKind.OPENFLEX))
+                if (layerStack.contains(DeviceLayerKind.NVME))
                 {
                     if (hasNvmeTarget(rscDfn))
                     {

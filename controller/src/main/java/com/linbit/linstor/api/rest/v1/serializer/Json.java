@@ -30,7 +30,6 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.MaxVlmSizeCandidatePojo;
 import com.linbit.linstor.api.pojo.NetInterfacePojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
-import com.linbit.linstor.api.pojo.OpenflexRscPojo;
 import com.linbit.linstor.api.pojo.QueryAllSizeInfoRequestPojo;
 import com.linbit.linstor.api.pojo.QueryAllSizeInfoResponsePojo;
 import com.linbit.linstor.api.pojo.QueryAllSizeInfoResponsePojo.QueryAllSizeInfoResponseEntryPojo;
@@ -294,17 +293,6 @@ public class Json
         return drbdResourceDefinitionLayer;
     }
 
-    public static JsonGenTypes.OpenflexResourceDefinitionLayer pojoToOpenflexRscDfnLayer(
-        OpenflexRscPojo.OpenflexRscDfnPojo ofRscDfnPojo
-        )
-    {
-        JsonGenTypes.OpenflexResourceDefinitionLayer ofResourceDefinitionLayer = new
-            JsonGenTypes.OpenflexResourceDefinitionLayer();
-        ofResourceDefinitionLayer.resource_name_suffix = ofRscDfnPojo.getRscNameSuffix();
-        ofResourceDefinitionLayer.nqn = ofRscDfnPojo.getNqn();
-        return ofResourceDefinitionLayer;
-    }
-
     public static JsonGenTypes.ResourceDefinition apiToResourceDefinition(
         ResourceDefinitionApi rscDfnApi,
         boolean withVlmDfns
@@ -343,10 +331,6 @@ public class Json
                     case DRBD:
                         DrbdRscPojo.DrbdRscDfnPojo drbdRscDfnPojo = (DrbdRscPojo.DrbdRscDfnPojo) layer.objB;
                         rscDfnLayerData.data = pojoToDrbdRscDfnLayer(drbdRscDfnPojo);
-                        break;
-                    case OPENFLEX:
-                        OpenflexRscPojo.OpenflexRscDfnPojo ofRscDfnPojo = (OpenflexRscPojo.OpenflexRscDfnPojo) layer.objB;
-                        rscDfnLayerData.data = pojoToOpenflexRscDfnLayer(ofRscDfnPojo);
                         break;
                     case LUKS:
                     case STORAGE:
@@ -406,7 +390,6 @@ public class Json
                     case LUKS:
                     case STORAGE:
                     case NVME:
-                    case OPENFLEX:
                     case WRITECACHE:
                     case CACHE:
                     case BCACHE:
@@ -478,15 +461,6 @@ public class Json
         return nvmeResource;
     }
 
-    public static JsonGenTypes.OpenflexResource pojoToOpenflexResource(OpenflexRscPojo ofRscPojo)
-    {
-        JsonGenTypes.OpenflexResource ofResource = new JsonGenTypes.OpenflexResource();
-        ofResource.openflex_volumes = ofRscPojo.getVolumeList().stream()
-            .map(Json::pojoToOpenflexVolume)
-            .collect(Collectors.toList());
-        return ofResource;
-    }
-
     public static JsonGenTypes.WritecacheResource pojoToWritecacheResource(WritecacheRscPojo writecacheRscPojo)
     {
         JsonGenTypes.WritecacheResource writecacheResource = new JsonGenTypes.WritecacheResource();
@@ -539,10 +513,6 @@ public class Json
             case NVME:
                 NvmeRscPojo nvmeRscPojo = (NvmeRscPojo) rscLayerDataApi;
                 resourceLayer.nvme = pojoToNVMEResource(nvmeRscPojo);
-                break;
-            case OPENFLEX:
-                OpenflexRscPojo ofRscPojo = (OpenflexRscPojo) rscLayerDataApi;
-                resourceLayer.openflex = pojoToOpenflexResource(ofRscPojo);
                 break;
             case WRITECACHE:
                 WritecacheRscPojo writecacheRscPojo = (WritecacheRscPojo) rscLayerDataApi;
@@ -774,19 +744,6 @@ public class Json
         return nvmeVolume;
     }
 
-    public static JsonGenTypes.OpenflexVolume pojoToOpenflexVolume(
-        OpenflexRscPojo.OpenflexVlmPojo ofVlmPojo
-    )
-    {
-        JsonGenTypes.OpenflexVolume nvmeVolume = new JsonGenTypes.OpenflexVolume();
-        nvmeVolume.volume_number = ofVlmPojo.getVlmNr();
-        nvmeVolume.device_path = ofVlmPojo.getDevicePath();
-        nvmeVolume.allocated_size_kib = ofVlmPojo.getAllocatedSize();
-        nvmeVolume.usable_size_kib = ofVlmPojo.getUsableSize();
-        nvmeVolume.disk_state = ofVlmPojo.getDiskState();
-        return nvmeVolume;
-    }
-
     public static JsonGenTypes.WritecacheVolume pojoToWritecacheVolume(
         WritecacheRscPojo.WritecacheVlmPojo writecacheVlmPojo
     )
@@ -880,10 +837,6 @@ public class Json
                 case NVME:
                     NvmeRscPojo.NvmeVlmPojo nvmeVlmPojo = (NvmeRscPojo.NvmeVlmPojo) layerData.objB;
                     volumeLayerData.data = pojoToNVMEVolume(nvmeVlmPojo);
-                    break;
-                case OPENFLEX:
-                    OpenflexRscPojo.OpenflexVlmPojo ofVlmPojo = (OpenflexRscPojo.OpenflexVlmPojo) layerData.objB;
-                    volumeLayerData.data = pojoToOpenflexVolume(ofVlmPojo);
                     break;
                 case WRITECACHE:
                     WritecacheRscPojo.WritecacheVlmPojo writecacheVlmPojo = (WritecacheRscPojo.WritecacheVlmPojo) layerData.objB;

@@ -72,7 +72,6 @@ public class StoragePools
         RENAME_KEYS.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_ZPOOL);
         RENAME_KEYS.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_ZPOOLTHIN);
         RENAME_KEYS.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_FILE_DIRECTORY);
-        RENAME_KEYS.add(ApiConsts.NAMESPC_STORAGE_DRIVER + '/' + ApiConsts.KEY_STOR_POOL_OPENFLEX_STOR_POOL);
     }
 
     @Inject

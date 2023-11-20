@@ -70,9 +70,6 @@ class StltCmdLineArgsParser
     @CommandLine.Option(names = {"--override-node-name"}, description = "Overrides node name used in error reports.")
     private String nodeName;
 
-    @CommandLine.Option(names = {"--openflex"}, hidden = true)
-    private boolean openflex;
-
     @CommandLine.Option(names = { "--remote-spdk" }, hidden = true)
     private boolean remoteSpdk;
 
@@ -123,7 +120,6 @@ class StltCmdLineArgsParser
             }
         }
 
-        stltCfg.setOpenflex(linArgParser.openflex);
         stltCfg.setRemoteSpdk(linArgParser.remoteSpdk);
         stltCfg.setEbs(linArgParser.ebs);
 

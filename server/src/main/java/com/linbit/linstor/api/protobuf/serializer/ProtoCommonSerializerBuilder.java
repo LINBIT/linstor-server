@@ -24,9 +24,6 @@ import com.linbit.linstor.api.pojo.LuksRscPojo;
 import com.linbit.linstor.api.pojo.LuksRscPojo.LuksVlmPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo;
 import com.linbit.linstor.api.pojo.NvmeRscPojo.NvmeVlmPojo;
-import com.linbit.linstor.api.pojo.OpenflexRscPojo;
-import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexRscDfnPojo;
-import com.linbit.linstor.api.pojo.OpenflexRscPojo.OpenflexVlmPojo;
 import com.linbit.linstor.api.pojo.RequestFilePojo;
 import com.linbit.linstor.api.pojo.StorageRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo;
@@ -86,9 +83,6 @@ import com.linbit.linstor.proto.common.NetInterfaceOuterClass;
 import com.linbit.linstor.proto.common.NodeOuterClass;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeRsc;
 import com.linbit.linstor.proto.common.NvmeRscOuterClass.NvmeVlm;
-import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexRsc;
-import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexRscDfn;
-import com.linbit.linstor.proto.common.OpenflexRscOuterClass.OpenflexVlm;
 import com.linbit.linstor.proto.common.PropertyOuterClass;
 import com.linbit.linstor.proto.common.PropertyOuterClass.Property.PropertyType;
 import com.linbit.linstor.proto.common.ProviderTypeOuterClass.ProviderType;
@@ -100,7 +94,7 @@ import com.linbit.linstor.proto.common.RscGrpOuterClass.RscGrp;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.RscOuterClass;
-import com.linbit.linstor.proto.common.StltConfigOuterClass.StltConfig;
+import com.linbit.linstor.proto.common.StltConfigOuterClass;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
@@ -138,7 +132,7 @@ import com.linbit.linstor.proto.requests.MsgReqErrorReportOuterClass.MsgReqError
 import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.MsgReqSosReportFiles;
 import com.linbit.linstor.proto.requests.MsgReqSosReportFilesOuterClass.ReqFile;
 import com.linbit.linstor.proto.requests.MsgReqSosReportListOuterClass.MsgReqSosReportList;
-import com.linbit.linstor.proto.responses.FileOuterClass.File;
+import com.linbit.linstor.proto.responses.FileOuterClass;
 import com.linbit.linstor.proto.responses.MsgApiRcResponseOuterClass.MsgApiRcResponse;
 import com.linbit.linstor.proto.responses.MsgErrorReportOuterClass.MsgErrorReport;
 import com.linbit.linstor.proto.responses.MsgEventOuterClass;
@@ -323,7 +317,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         String logLevel,
         String logLevelLinstorPrm,
         String stltOverrideNodeNamePrm,
-        boolean openflex,
         boolean remoteSpdk,
         boolean ebs,
         Pattern drbdKeepResPatternPrm,
@@ -359,7 +352,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                         logLevel,
                         logLevelLinstor,
                         stltOverrideNodeName,
-                        openflex,
                         remoteSpdk,
                         ebs,
                         drbdKeepResPattern,
@@ -776,7 +768,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return this;
     }
 
-    public StltConfig.Builder stltConfig(
+    public StltConfigOuterClass.StltConfig.Builder stltConfig(
         String configDir,
         boolean debugConsoleEnabled,
         boolean logPrintStackTrace,
@@ -784,7 +776,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         String logLevel,
         String logLevelLinstor,
         String stltOverrideNodeName,
-        boolean openflex,
         boolean remoteSpdk,
         boolean ebs,
         Pattern drbdKeepResPattern,
@@ -793,7 +784,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         String netType
     )
     {
-        StltConfig.Builder bld = StltConfig.newBuilder();
+        StltConfigOuterClass.StltConfig.Builder bld = StltConfigOuterClass.StltConfig.newBuilder();
         bld.setConfigDir(configDir)
             .setDebugConsoleEnabled(debugConsoleEnabled)
             .setLogPrintStackTrace(logPrintStackTrace)
@@ -801,7 +792,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             .setLogLevel(logLevel)
             .setLogLevelLinstor(logLevelLinstor)
             .setStltOverrideNodeName(stltOverrideNodeName)
-            .setOpenflex(openflex)
             .setRemoteSpdk(remoteSpdk)
             .setEbs(ebs)
             .setDrbdKeepResPattern(drbdKeepResPattern.toString())
@@ -938,13 +928,13 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
         return this;
     }
 
-    private Iterable<File> serializeFiles(List<FilePojo> filesRef)
+    private Iterable<FileOuterClass.File> serializeFiles(List<FilePojo> filesRef)
     {
-        List<File> ret = new ArrayList<>();
+        List<FileOuterClass.File> ret = new ArrayList<>();
         for (FilePojo pojo : filesRef)
         {
             ret.add(
-                File.newBuilder()
+                FileOuterClass.File.newBuilder()
                     .setFileName(pojo.fileName)
                     .setOffset(pojo.offset)
                     .setTime(pojo.timestamp)
@@ -1337,9 +1327,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case SPDK:
                 type = ProviderType.SPDK;
                 break;
-            case OPENFLEX_TARGET:
-                type = ProviderType.OPENFLEX_TARGET;
-                break;
             case REMOTE_SPDK:
                 type = ProviderType.REMOTE_SPDK;
                 break;
@@ -1526,9 +1513,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             case NVME:
                 layerType = LayerType.NVME;
                 break;
-            case OPENFLEX:
-                layerType = LayerType.OPENFLEX;
-                break;
             case WRITECACHE:
                 layerType = LayerType.WRITECACHE;
                 break;
@@ -1651,11 +1635,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                                 buildDrbdRscDfnData((DrbdRscDfnPojo) rscDfnLayerDataApi)
                             );
                             break;
-                        case OPENFLEX:
-                            builder.setOpenflex(
-                                buildOpenflexRscDfnData((OpenflexRscDfnPojo) rscDfnLayerDataApi)
-                            );
-                            break;
                         case LUKS: // fall-through
                         case STORAGE: // fall-through
                         case NVME: // fall-through
@@ -1698,7 +1677,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                         case LUKS: // fall-through
                         case STORAGE: // fall-through
                         case NVME: // fall-through
-                        case OPENFLEX: // fall-through
                         case WRITECACHE: // fall-through
                         case CACHE: // fall-through
                         case BCACHE:
@@ -1750,9 +1728,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     break;
                 case NVME:
                     builder.setNvme(buildNvmeRscData((NvmeRscPojo) rscLayerPojo));
-                    break;
-                case OPENFLEX:
-                    builder.setOpenflex(buildOpenflexRscData((OpenflexRscPojo) rscLayerPojo));
                     break;
                 case WRITECACHE:
                     builder.setWritecache(buildWritecacheRscData((WritecacheRscPojo) rscLayerPojo));
@@ -1916,33 +1891,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .build();
         }
 
-        private static OpenflexRscDfn buildOpenflexRscDfnData(OpenflexRscDfnPojo ofRscDfnPojo)
-        {
-            OpenflexRscDfn.Builder builder = OpenflexRscDfn.newBuilder()
-                .setRscNameSuffix(ofRscDfnPojo.getRscNameSuffix())
-                .setShortName(ofRscDfnPojo.getShortName());
-            if (ofRscDfnPojo.getNqn() != null)
-            {
-                builder.setNqn(ofRscDfnPojo.getNqn());
-            }
-            return builder.build();
-        }
-
-        private static OpenflexRsc buildOpenflexRscData(OpenflexRscPojo rscLayerPojoRef)
-        {
-            List<OpenflexVlm> openflexVlms = new ArrayList<>();
-            for (OpenflexVlmPojo openflexVlmPojo : rscLayerPojoRef.getVolumeList())
-            {
-                openflexVlms.add(buildOpenflexVlm(openflexVlmPojo));
-            }
-
-            return OpenflexRsc.newBuilder()
-                .setFlags(0) // TODO serialize flags as soon NvmeRscData get flags
-                .addAllOpenflexVlms(openflexVlms)
-                .setOpenflexRscDfn(buildOpenflexRscDfnData(rscLayerPojoRef.getOpenflexRscDfn()))
-                .build();
-        }
-
         private static WritecacheRsc buildWritecacheRscData(WritecacheRscPojo rscLayerPojoRef)
         {
             List<WritecacheVlm> protoVlms = new ArrayList<>();
@@ -2058,10 +2006,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     EbsVlm.Builder ebsVlmBuilder = EbsVlm.newBuilder();
                     builder.setEbs(ebsVlmBuilder.build());
                     break;
-                case OPENFLEX_TARGET:
-                    throw new ImplementationError(
-                        "Openflex volumes should be loaded by openflex serializer, not by storage serializer"
-                    );
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                 default:
                     throw new ImplementationError("Unexpected provider kind: " + vlmPojo.getProviderKind());
@@ -2087,30 +2031,6 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             if (nvmeVlmPojo.getDiskState() != null)
             {
                 nvmeVlmBuilder.setDiskState(nvmeVlmPojo.getDiskState());
-            }
-
-            return nvmeVlmBuilder.build();
-        }
-
-        private static OpenflexVlm buildOpenflexVlm(OpenflexVlmPojo ofVlmPojo)
-        {
-            OpenflexVlm.Builder nvmeVlmBuilder = OpenflexVlm.newBuilder()
-                .setVlmNr(ofVlmPojo.getVlmNr())
-                .setStorPool(serializeStorPool(ofVlmPojo.getStorPoolApi()))
-                .setAllocatedSize(ofVlmPojo.getAllocatedSize())
-                .setUsableSize(ofVlmPojo.getUsableSize())
-                .setDiscGran(ofVlmPojo.getDiscGran());
-            if (ofVlmPojo.getDevicePath() != null)
-            {
-                nvmeVlmBuilder.setDevicePath(ofVlmPojo.getDevicePath());
-            }
-            if (ofVlmPojo.getOpenflexId() != null)
-            {
-                nvmeVlmBuilder.setOpenflexId(ofVlmPojo.getOpenflexId());
-            }
-            if (ofVlmPojo.getDiskState() != null)
-            {
-                nvmeVlmBuilder.setDiskState(ofVlmPojo.getDiskState());
             }
 
             return nvmeVlmBuilder.build();

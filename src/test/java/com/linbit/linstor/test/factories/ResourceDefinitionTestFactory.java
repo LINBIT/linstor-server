@@ -300,8 +300,6 @@ public class ResourceDefinitionTestFactory
 
             ret.drbdVlmDfn.minorNr = copyFrom.drbdVlmDfn.minorNr;
 
-            ret.ofRscDfn.nqn = copyFrom.ofRscDfn.nqn;
-
             ret.storagePayload = new HashMap<>(copyFrom.storagePayload);
         }
         return ret;

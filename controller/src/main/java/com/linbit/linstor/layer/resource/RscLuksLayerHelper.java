@@ -198,7 +198,6 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
 
         Resource rsc = vlm.getAbsResource();
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
-        boolean isOpenflexBelow = layerListRef.contains(DeviceLayerKind.OPENFLEX);
         boolean isNvmeInitiator = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.NVME_INITIATOR);
         boolean isEbsInitiator = rsc.getStateFlags().isSet(apiCtx, Resource.Flags.EBS_INITIATOR);
 
@@ -207,10 +206,10 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
 
         boolean isStoragePoolShared = areAllShared(allStorPools);
 
-        if ((isNvmeBelow || isOpenflexBelow) && isNvmeInitiator || isEbsInitiator)
+        if (isNvmeBelow && isNvmeInitiator || isEbsInitiator)
         {
             // we need to find our target resource and copy the node-id from that target-resource
-            errorReporter.logTrace("Nvme-, OpenFlex or EBS initiator below us.. looking for target");
+            errorReporter.logTrace("Nvme- or EBS initiator below us.. looking for target");
             final Resource targetRsc;
             if (isNvmeInitiator)
             {

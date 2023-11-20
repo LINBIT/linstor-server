@@ -93,7 +93,6 @@ public interface StorPoolApi
             case SPDK: // fall-through
             case REMOTE_SPDK: // fall-through
             case DISKLESS: // fall-through
-            case OPENFLEX_TARGET: // fall-through
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
             default:
                 result = "";

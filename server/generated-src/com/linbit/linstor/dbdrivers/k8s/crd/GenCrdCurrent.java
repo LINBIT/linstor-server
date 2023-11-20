@@ -39,11 +39,11 @@ import io.fabric8.kubernetes.model.annotation.Singular;
 import io.fabric8.kubernetes.model.annotation.Version;
 
 @GenCrd(
-    dataVersion = "v1-19-1"
+    dataVersion = "v1-25-1"
 )
 public class GenCrdCurrent
 {
-    public static final String VERSION = "v1-19-1";
+    public static final String VERSION = "v1-25-1";
     public static final String GROUP = "internal.linstor.linbit.com";
     private static final SimpleDateFormat RFC3339 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
     private static final Map<String, String> KEY_LUT = new HashMap<>();
@@ -73,10 +73,6 @@ public class GenCrdCurrent
         JSON_ID_TO_TYPE_CLASS_LUT.put("LayerDrbdVolumeDefinitionsSpec", LayerDrbdVolumeDefinitionsSpec.class);
         JSON_ID_TO_TYPE_CLASS_LUT.put("LayerLuksVolumes", LayerLuksVolumes.class);
         JSON_ID_TO_TYPE_CLASS_LUT.put("LayerLuksVolumesSpec", LayerLuksVolumesSpec.class);
-        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerOpenflexResourceDefinitions", LayerOpenflexResourceDefinitions.class);
-        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerOpenflexResourceDefinitionsSpec", LayerOpenflexResourceDefinitionsSpec.class);
-        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerOpenflexVolumes", LayerOpenflexVolumes.class);
-        JSON_ID_TO_TYPE_CLASS_LUT.put("LayerOpenflexVolumesSpec", LayerOpenflexVolumesSpec.class);
         JSON_ID_TO_TYPE_CLASS_LUT.put("LayerResourceIds", LayerResourceIds.class);
         JSON_ID_TO_TYPE_CLASS_LUT.put("LayerResourceIdsSpec", LayerResourceIdsSpec.class);
         JSON_ID_TO_TYPE_CLASS_LUT.put("LayerStorageVolumes", LayerStorageVolumes.class);
@@ -176,10 +172,6 @@ public class GenCrdCurrent
                 return (Class<CRD>) LayerDrbdVolumeDefinitions.class;
             case "LAYER_LUKS_VOLUMES":
                 return (Class<CRD>) LayerLuksVolumes.class;
-            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-                return (Class<CRD>) LayerOpenflexResourceDefinitions.class;
-            case "LAYER_OPENFLEX_VOLUMES":
-                return (Class<CRD>) LayerOpenflexVolumes.class;
             case "LAYER_RESOURCE_IDS":
                 return (Class<CRD>) LayerResourceIds.class;
             case "LAYER_STORAGE_VOLUMES":
@@ -277,10 +269,6 @@ public class GenCrdCurrent
                 return (CRD) new LayerDrbdVolumeDefinitions((LayerDrbdVolumeDefinitionsSpec) spec);
             case "LAYER_LUKS_VOLUMES":
                 return (CRD) new LayerLuksVolumes((LayerLuksVolumesSpec) spec);
-            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-                return (CRD) new LayerOpenflexResourceDefinitions((LayerOpenflexResourceDefinitionsSpec) spec);
-            case "LAYER_OPENFLEX_VOLUMES":
-                return (CRD) new LayerOpenflexVolumes((LayerOpenflexVolumesSpec) spec);
             case "LAYER_RESOURCE_IDS":
                 return (CRD) new LayerResourceIds((LayerResourceIdsSpec) spec);
             case "LAYER_STORAGE_VOLUMES":
@@ -380,10 +368,6 @@ public class GenCrdCurrent
                 return (Class<SPEC>) LayerDrbdVolumeDefinitionsSpec.class;
             case "LAYER_LUKS_VOLUMES":
                 return (Class<SPEC>) LayerLuksVolumesSpec.class;
-            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-                return (Class<SPEC>) LayerOpenflexResourceDefinitionsSpec.class;
-            case "LAYER_OPENFLEX_VOLUMES":
-                return (Class<SPEC>) LayerOpenflexVolumesSpec.class;
             case "LAYER_RESOURCE_IDS":
                 return (Class<SPEC>) LayerResourceIdsSpec.class;
             case "LAYER_STORAGE_VOLUMES":
@@ -484,10 +468,6 @@ public class GenCrdCurrent
                 return (SPEC) LayerDrbdVolumeDefinitionsSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_LUKS_VOLUMES":
                 return (SPEC) LayerLuksVolumesSpec.fromRawParameters(rawDataMapRef);
-            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-                return (SPEC) LayerOpenflexResourceDefinitionsSpec.fromRawParameters(rawDataMapRef);
-            case "LAYER_OPENFLEX_VOLUMES":
-                return (SPEC) LayerOpenflexVolumesSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_RESOURCE_IDS":
                 return (SPEC) LayerResourceIdsSpec.fromRawParameters(rawDataMapRef);
             case "LAYER_STORAGE_VOLUMES":
@@ -672,24 +652,6 @@ public class GenCrdCurrent
                     (int) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.LAYER_RESOURCE_ID).accept(data),
                     (int) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.VLM_NR).accept(data),
                     (String) setters.get(GeneratedDatabaseTables.LayerLuksVolumes.ENCRYPTED_PASSWORD).accept(data)
-                ).getCrd();
-            }
-            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-            {
-                return (CRD) new LayerOpenflexResourceDefinitionsSpec(
-                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME).accept(data),
-                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.SNAPSHOT_NAME).accept(data),
-                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME_SUFFIX).accept(data),
-                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.NQN).accept(data)
-                ).getCrd();
-            }
-            case "LAYER_OPENFLEX_VOLUMES":
-            {
-                return (CRD) new LayerOpenflexVolumesSpec(
-                    (int) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.LAYER_RESOURCE_ID).accept(data),
-                    (int) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.VLM_NR).accept(data),
-                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.NODE_NAME).accept(data),
-                    (String) setters.get(GeneratedDatabaseTables.LayerOpenflexVolumes.POOL_NAME).accept(data)
                 ).getCrd();
             }
             case "LAYER_RESOURCE_IDS":
@@ -1040,95 +1002,91 @@ public class GenCrdCurrent
         switch (dbTable.getName())
         {
             case "EBS_REMOTES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/EbsRemotes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/EbsRemotes.yaml";
             case "FILES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/Files.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/Files.yaml";
             case "KEY_VALUE_STORE":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/KeyValueStore.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/KeyValueStore.yaml";
             case "LAYER_BCACHE_VOLUMES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerBcacheVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LayerBcacheVolumes.yaml";
             case "LAYER_CACHE_VOLUMES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerCacheVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LayerCacheVolumes.yaml";
             case "LAYER_DRBD_RESOURCES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerDrbdResources.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LayerDrbdResources.yaml";
             case "LAYER_DRBD_RESOURCE_DEFINITIONS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerDrbdResourceDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LayerDrbdResourceDefinitions.yaml";
             case "LAYER_DRBD_VOLUMES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerDrbdVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LayerDrbdVolumes.yaml";
             case "LAYER_DRBD_VOLUME_DEFINITIONS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerDrbdVolumeDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LayerDrbdVolumeDefinitions.yaml";
             case "LAYER_LUKS_VOLUMES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerLuksVolumes.yaml";
-            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerOpenflexResourceDefinitions.yaml";
-            case "LAYER_OPENFLEX_VOLUMES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerOpenflexVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LayerLuksVolumes.yaml";
             case "LAYER_RESOURCE_IDS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerResourceIds.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LayerResourceIds.yaml";
             case "LAYER_STORAGE_VOLUMES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerStorageVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LayerStorageVolumes.yaml";
             case "LAYER_WRITECACHE_VOLUMES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LayerWritecacheVolumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LayerWritecacheVolumes.yaml";
             case "LINSTOR_REMOTES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/LinstorRemotes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/LinstorRemotes.yaml";
             case "NODES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/Nodes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/Nodes.yaml";
             case "NODE_CONNECTIONS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/NodeConnections.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/NodeConnections.yaml";
             case "NODE_NET_INTERFACES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/NodeNetInterfaces.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/NodeNetInterfaces.yaml";
             case "NODE_STOR_POOL":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/NodeStorPool.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/NodeStorPool.yaml";
             case "PROPS_CONTAINERS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/PropsContainers.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/PropsContainers.yaml";
             case "RESOURCES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/Resources.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/Resources.yaml";
             case "RESOURCE_CONNECTIONS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/ResourceConnections.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/ResourceConnections.yaml";
             case "RESOURCE_DEFINITIONS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/ResourceDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/ResourceDefinitions.yaml";
             case "RESOURCE_GROUPS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/ResourceGroups.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/ResourceGroups.yaml";
             case "S3_REMOTES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/S3Remotes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/S3Remotes.yaml";
             case "SATELLITES_CAPACITY":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SatellitesCapacity.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SatellitesCapacity.yaml";
             case "SCHEDULES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/Schedules.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/Schedules.yaml";
             case "SEC_ACCESS_TYPES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SecAccessTypes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SecAccessTypes.yaml";
             case "SEC_ACL_MAP":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SecAclMap.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SecAclMap.yaml";
             case "SEC_CONFIGURATION":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SecConfiguration.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SecConfiguration.yaml";
             case "SEC_DFLT_ROLES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SecDfltRoles.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SecDfltRoles.yaml";
             case "SEC_IDENTITIES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SecIdentities.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SecIdentities.yaml";
             case "SEC_ID_ROLE_MAP":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SecIdRoleMap.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SecIdRoleMap.yaml";
             case "SEC_OBJECT_PROTECTION":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SecObjectProtection.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SecObjectProtection.yaml";
             case "SEC_ROLES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SecRoles.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SecRoles.yaml";
             case "SEC_TYPES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SecTypes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SecTypes.yaml";
             case "SEC_TYPE_RULES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SecTypeRules.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SecTypeRules.yaml";
             case "SPACE_HISTORY":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/SpaceHistory.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/SpaceHistory.yaml";
             case "STOR_POOL_DEFINITIONS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/StorPoolDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/StorPoolDefinitions.yaml";
             case "TRACKING_DATE":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/TrackingDate.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/TrackingDate.yaml";
             case "VOLUMES":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/Volumes.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/Volumes.yaml";
             case "VOLUME_CONNECTIONS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/VolumeConnections.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/VolumeConnections.yaml";
             case "VOLUME_DEFINITIONS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/VolumeDefinitions.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/VolumeDefinitions.yaml";
             case "VOLUME_GROUPS":
-                return "/com/linbit/linstor/dbcp/k8s/crd/v1_19_1/VolumeGroups.yaml";
+                return "/com/linbit/linstor/dbcp/k8s/crd/v1_25_1/VolumeGroups.yaml";
             default:
                 // we are most likely iterating tables the current version does not know about.
                 return null;
@@ -1159,10 +1117,6 @@ public class GenCrdCurrent
                 return "layerdrbdvolumedefinitions";
             case "LAYER_LUKS_VOLUMES":
                 return "layerluksvolumes";
-            case "LAYER_OPENFLEX_RESOURCE_DEFINITIONS":
-                return "layeropenflexresourcedefinitions";
-            case "LAYER_OPENFLEX_VOLUMES":
-                return "layeropenflexvolumes";
             case "LAYER_RESOURCE_IDS":
                 return "layerresourceids";
             case "LAYER_STORAGE_VOLUMES":
@@ -1248,7 +1202,7 @@ public class GenCrdCurrent
         return new K8sCrdSchemaUpdateContext(
             GenCrdCurrent::databaseTableToYamlLocation,
             GenCrdCurrent::databaseTableToYamlName,
-            "v1-19-1"
+            "v1-25-1"
         );
     }
 
@@ -1285,7 +1239,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class EbsRemotesSpec implements LinstorSpec<EbsRemotes, EbsRemotesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 6754194544892091305L;
+        @JsonIgnore private static final long serialVersionUID = 1920020840418450765L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -1424,7 +1378,7 @@ public class GenCrdCurrent
     @Singular("ebsremotes")
     public static class EbsRemotes extends CustomResource<EbsRemotesSpec, Void> implements LinstorCrd<EbsRemotesSpec>
     {
-        private static final long serialVersionUID = -2728041316682767656L;
+        private static final long serialVersionUID = -8697358585987837132L;
         String k8sKey = null;
 
         @JsonCreator
@@ -1492,7 +1446,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class FilesSpec implements LinstorSpec<Files, FilesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 7199399309023805942L;
+        @JsonIgnore private static final long serialVersionUID = 3856813005039355261L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -1603,7 +1557,7 @@ public class GenCrdCurrent
     @Singular("files")
     public static class Files extends CustomResource<FilesSpec, Void> implements LinstorCrd<FilesSpec>
     {
-        private static final long serialVersionUID = -9060047928714145782L;
+        private static final long serialVersionUID = -4477648540486781374L;
         String k8sKey = null;
 
         @JsonCreator
@@ -1667,7 +1621,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class KeyValueStoreSpec implements LinstorSpec<KeyValueStore, KeyValueStoreSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -8621993315113862570L;
+        @JsonIgnore private static final long serialVersionUID = -3932888115569708824L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -1764,7 +1718,7 @@ public class GenCrdCurrent
     @Singular("keyvaluestore")
     public static class KeyValueStore extends CustomResource<KeyValueStoreSpec, Void> implements LinstorCrd<KeyValueStoreSpec>
     {
-        private static final long serialVersionUID = -6790241486342956922L;
+        private static final long serialVersionUID = 3124366786943110418L;
         String k8sKey = null;
 
         @JsonCreator
@@ -1832,7 +1786,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerBcacheVolumesSpec implements LinstorSpec<LayerBcacheVolumes, LayerBcacheVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -7374485150035984167L;
+        @JsonIgnore private static final long serialVersionUID = 1093340782062733715L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -1944,7 +1898,7 @@ public class GenCrdCurrent
     @Singular("layerbcachevolumes")
     public static class LayerBcacheVolumes extends CustomResource<LayerBcacheVolumesSpec, Void> implements LinstorCrd<LayerBcacheVolumesSpec>
     {
-        private static final long serialVersionUID = 876146822322175250L;
+        private static final long serialVersionUID = 3305796687508310467L;
         String k8sKey = null;
 
         @JsonCreator
@@ -2012,7 +1966,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerCacheVolumesSpec implements LinstorSpec<LayerCacheVolumes, LayerCacheVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -5736491652032388553L;
+        @JsonIgnore private static final long serialVersionUID = 7406634691717745141L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -2124,7 +2078,7 @@ public class GenCrdCurrent
     @Singular("layercachevolumes")
     public static class LayerCacheVolumes extends CustomResource<LayerCacheVolumesSpec, Void> implements LinstorCrd<LayerCacheVolumesSpec>
     {
-        private static final long serialVersionUID = 7673733349169868896L;
+        private static final long serialVersionUID = 7264228424136840143L;
         String k8sKey = null;
 
         @JsonCreator
@@ -2194,7 +2148,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdResourcesSpec implements LinstorSpec<LayerDrbdResources, LayerDrbdResourcesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 1049541184939447591L;
+        @JsonIgnore private static final long serialVersionUID = 1701557298403846620L;
         @JsonIgnore private static final String PK_FORMAT = "%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -2312,7 +2266,7 @@ public class GenCrdCurrent
     @Singular("layerdrbdresources")
     public static class LayerDrbdResources extends CustomResource<LayerDrbdResourcesSpec, Void> implements LinstorCrd<LayerDrbdResourcesSpec>
     {
-        private static final long serialVersionUID = -5397875048338767233L;
+        private static final long serialVersionUID = -8789356731371710063L;
         String k8sKey = null;
 
         @JsonCreator
@@ -2388,7 +2342,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdResourceDefinitionsSpec implements LinstorSpec<LayerDrbdResourceDefinitions, LayerDrbdResourceDefinitionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 9175273669688005872L;
+        @JsonIgnore private static final long serialVersionUID = 6642332025297794449L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -2529,7 +2483,7 @@ public class GenCrdCurrent
     @Singular("layerdrbdresourcedefinitions")
     public static class LayerDrbdResourceDefinitions extends CustomResource<LayerDrbdResourceDefinitionsSpec, Void> implements LinstorCrd<LayerDrbdResourceDefinitionsSpec>
     {
-        private static final long serialVersionUID = 5403092044055875475L;
+        private static final long serialVersionUID = 1689174987690145286L;
         String k8sKey = null;
 
         @JsonCreator
@@ -2595,7 +2549,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdVolumesSpec implements LinstorSpec<LayerDrbdVolumes, LayerDrbdVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -5244558218335923905L;
+        @JsonIgnore private static final long serialVersionUID = -2614565099918281926L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -2700,7 +2654,7 @@ public class GenCrdCurrent
     @Singular("layerdrbdvolumes")
     public static class LayerDrbdVolumes extends CustomResource<LayerDrbdVolumesSpec, Void> implements LinstorCrd<LayerDrbdVolumesSpec>
     {
-        private static final long serialVersionUID = 4609876134014526920L;
+        private static final long serialVersionUID = -5712762584485400873L;
         String k8sKey = null;
 
         @JsonCreator
@@ -2768,7 +2722,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerDrbdVolumeDefinitionsSpec implements LinstorSpec<LayerDrbdVolumeDefinitions, LayerDrbdVolumeDefinitionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -9080332676584962245L;
+        @JsonIgnore private static final long serialVersionUID = -8655080239598224769L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -2882,7 +2836,7 @@ public class GenCrdCurrent
     @Singular("layerdrbdvolumedefinitions")
     public static class LayerDrbdVolumeDefinitions extends CustomResource<LayerDrbdVolumeDefinitionsSpec, Void> implements LinstorCrd<LayerDrbdVolumeDefinitionsSpec>
     {
-        private static final long serialVersionUID = 8438513602328811139L;
+        private static final long serialVersionUID = -3253270463751811434L;
         String k8sKey = null;
 
         @JsonCreator
@@ -2946,7 +2900,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerLuksVolumesSpec implements LinstorSpec<LayerLuksVolumes, LayerLuksVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -9171492256375007273L;
+        @JsonIgnore private static final long serialVersionUID = -6428848845301734800L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -3044,7 +2998,7 @@ public class GenCrdCurrent
     @Singular("layerluksvolumes")
     public static class LayerLuksVolumes extends CustomResource<LayerLuksVolumesSpec, Void> implements LinstorCrd<LayerLuksVolumesSpec>
     {
-        private static final long serialVersionUID = -3298709539083524390L;
+        private static final long serialVersionUID = -1001304290944164024L;
         String k8sKey = null;
 
         @JsonCreator
@@ -3060,348 +3014,6 @@ public class GenCrdCurrent
 
         @Override
         public void setSpec(LayerLuksVolumesSpec specRef)
-        {
-            super.setSpec(specRef);
-            spec.parentCrd = this;
-        }
-
-        @Override
-        public void setMetadata(ObjectMeta metadataRef)
-        {
-            super.setMetadata(metadataRef);
-            k8sKey = metadataRef.getName();
-        }
-
-        @Override
-        @JsonIgnore
-        public String getLinstorKey()
-        {
-            return spec.getLinstorKey();
-        }
-
-        @Override
-        @JsonIgnore
-        public String getK8sKey()
-        {
-            return k8sKey;
-        }
-    }
-
-    public static LayerOpenflexResourceDefinitions createLayerOpenflexResourceDefinitions(
-        String resourceName,
-        String snapshotName,
-        String resourceNameSuffix,
-        String nqn
-    )
-    {
-        return new LayerOpenflexResourceDefinitions(
-            new LayerOpenflexResourceDefinitionsSpec(
-                resourceName,
-                snapshotName,
-                resourceNameSuffix,
-                nqn
-            )
-        );
-    }
-
-    @LinstorData(
-        tableName = "LAYER_OPENFLEX_RESOURCE_DEFINITIONS"
-    )
-    @JsonInclude(Include.NON_NULL)
-    public static class LayerOpenflexResourceDefinitionsSpec implements LinstorSpec<LayerOpenflexResourceDefinitions, LayerOpenflexResourceDefinitionsSpec>
-    {
-        @JsonIgnore private static final long serialVersionUID = -4056161086860513434L;
-        @JsonIgnore private static final String PK_FORMAT = "%s:%s";
-
-        @JsonIgnore private final String formattedPrimaryKey;
-        @JsonIgnore private LayerOpenflexResourceDefinitions parentCrd;
-
-        @JsonProperty("resource_name") public final String resourceName; // PK
-        @JsonProperty("snapshot_name") public final String snapshotName;
-        @JsonProperty("resource_name_suffix") public final String resourceNameSuffix; // PK
-        @JsonProperty("nqn") public final String nqn;
-
-        @JsonIgnore
-        public static LayerOpenflexResourceDefinitionsSpec fromRawParameters(RawParameters rawParamsRef)
-        {
-            return new LayerOpenflexResourceDefinitionsSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.SNAPSHOT_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.RESOURCE_NAME_SUFFIX),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexResourceDefinitions.NQN)
-            );
-        }
-
-        @JsonCreator
-        public LayerOpenflexResourceDefinitionsSpec(
-            @JsonProperty("resource_name") String resourceNameRef,
-            @JsonProperty("snapshot_name") String snapshotNameRef,
-            @JsonProperty("resource_name_suffix") String resourceNameSuffixRef,
-            @JsonProperty("nqn") String nqnRef
-        )
-        {
-            resourceName = resourceNameRef;
-            snapshotName = snapshotNameRef;
-            resourceNameSuffix = resourceNameSuffixRef;
-            nqn = nqnRef;
-
-            formattedPrimaryKey = String.format(
-                LayerOpenflexResourceDefinitionsSpec.PK_FORMAT,
-                resourceName,
-                resourceNameSuffix
-            );
-        }
-
-        @JsonIgnore
-        @Override
-        public LayerOpenflexResourceDefinitions getCrd()
-        {
-            if (parentCrd == null)
-            {
-                parentCrd = new LayerOpenflexResourceDefinitions(this);
-            }
-            return parentCrd;
-        }
-
-        @JsonIgnore
-        @Override
-        public Map<String, Object> asRawParameters()
-        {
-            Map<String, Object> ret = new TreeMap<>();
-            ret.put("RESOURCE_NAME", resourceName);
-            ret.put("SNAPSHOT_NAME", snapshotName);
-            ret.put("RESOURCE_NAME_SUFFIX", resourceNameSuffix);
-            ret.put("NQN", nqn);
-            return ret;
-        }
-
-        @JsonIgnore
-        @Override
-        public Object getByColumn(String clmNameStr)
-        {
-            switch (clmNameStr)
-            {
-                case "RESOURCE_NAME":
-                    return resourceName;
-                case "SNAPSHOT_NAME":
-                    return snapshotName;
-                case "RESOURCE_NAME_SUFFIX":
-                    return resourceNameSuffix;
-                case "NQN":
-                    return nqn;
-                default:
-                    throw new ImplementationError("Unknown database column. Table: LAYER_OPENFLEX_RESOURCE_DEFINITIONS, Column: " + clmNameStr);
-            }
-        }
-
-        @JsonIgnore
-        @Override
-        public final String getLinstorKey()
-        {
-            return formattedPrimaryKey;
-        }
-
-        @Override
-        @JsonIgnore
-        public DatabaseTable getDatabaseTable()
-        {
-            return GeneratedDatabaseTables.LAYER_OPENFLEX_RESOURCE_DEFINITIONS;
-        }
-    }
-
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
-    @Plural("layeropenflexresourcedefinitions")
-    @Singular("layeropenflexresourcedefinitions")
-    public static class LayerOpenflexResourceDefinitions extends CustomResource<LayerOpenflexResourceDefinitionsSpec, Void> implements LinstorCrd<LayerOpenflexResourceDefinitionsSpec>
-    {
-        private static final long serialVersionUID = -5045047409587334330L;
-        String k8sKey = null;
-
-        @JsonCreator
-        public LayerOpenflexResourceDefinitions()
-        {
-        }
-
-        public LayerOpenflexResourceDefinitions(LayerOpenflexResourceDefinitionsSpec spec)
-        {
-            setMetadata(new ObjectMetaBuilder().withName(deriveKey(spec.getLinstorKey())).build());
-            setSpec(spec);
-        }
-
-        @Override
-        public void setSpec(LayerOpenflexResourceDefinitionsSpec specRef)
-        {
-            super.setSpec(specRef);
-            spec.parentCrd = this;
-        }
-
-        @Override
-        public void setMetadata(ObjectMeta metadataRef)
-        {
-            super.setMetadata(metadataRef);
-            k8sKey = metadataRef.getName();
-        }
-
-        @Override
-        @JsonIgnore
-        public String getLinstorKey()
-        {
-            return spec.getLinstorKey();
-        }
-
-        @Override
-        @JsonIgnore
-        public String getK8sKey()
-        {
-            return k8sKey;
-        }
-    }
-
-    public static LayerOpenflexVolumes createLayerOpenflexVolumes(
-        int layerResourceId,
-        int vlmNr,
-        String nodeName,
-        String poolName
-    )
-    {
-        return new LayerOpenflexVolumes(
-            new LayerOpenflexVolumesSpec(
-                layerResourceId,
-                vlmNr,
-                nodeName,
-                poolName
-            )
-        );
-    }
-
-    @LinstorData(
-        tableName = "LAYER_OPENFLEX_VOLUMES"
-    )
-    @JsonInclude(Include.NON_NULL)
-    public static class LayerOpenflexVolumesSpec implements LinstorSpec<LayerOpenflexVolumes, LayerOpenflexVolumesSpec>
-    {
-        @JsonIgnore private static final long serialVersionUID = 7088237482501837428L;
-        @JsonIgnore private static final String PK_FORMAT = "%d:%d";
-
-        @JsonIgnore private final String formattedPrimaryKey;
-        @JsonIgnore private LayerOpenflexVolumes parentCrd;
-
-        @JsonProperty("layer_resource_id") public final int layerResourceId; // PK
-        @JsonProperty("vlm_nr") public final int vlmNr; // PK
-        @JsonProperty("node_name") public final String nodeName;
-        @JsonProperty("pool_name") public final String poolName;
-
-        @JsonIgnore
-        public static LayerOpenflexVolumesSpec fromRawParameters(RawParameters rawParamsRef)
-        {
-            return new LayerOpenflexVolumesSpec(
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexVolumes.LAYER_RESOURCE_ID),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexVolumes.VLM_NR),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexVolumes.NODE_NAME),
-                rawParamsRef.getParsed(GeneratedDatabaseTables.LayerOpenflexVolumes.POOL_NAME)
-            );
-        }
-
-        @JsonCreator
-        public LayerOpenflexVolumesSpec(
-            @JsonProperty("layer_resource_id") int layerResourceIdRef,
-            @JsonProperty("vlm_nr") int vlmNrRef,
-            @JsonProperty("node_name") String nodeNameRef,
-            @JsonProperty("pool_name") String poolNameRef
-        )
-        {
-            layerResourceId = layerResourceIdRef;
-            vlmNr = vlmNrRef;
-            nodeName = nodeNameRef;
-            poolName = poolNameRef;
-
-            formattedPrimaryKey = String.format(
-                LayerOpenflexVolumesSpec.PK_FORMAT,
-                layerResourceId,
-                vlmNr
-            );
-        }
-
-        @JsonIgnore
-        @Override
-        public LayerOpenflexVolumes getCrd()
-        {
-            if (parentCrd == null)
-            {
-                parentCrd = new LayerOpenflexVolumes(this);
-            }
-            return parentCrd;
-        }
-
-        @JsonIgnore
-        @Override
-        public Map<String, Object> asRawParameters()
-        {
-            Map<String, Object> ret = new TreeMap<>();
-            ret.put("LAYER_RESOURCE_ID", layerResourceId);
-            ret.put("VLM_NR", vlmNr);
-            ret.put("NODE_NAME", nodeName);
-            ret.put("POOL_NAME", poolName);
-            return ret;
-        }
-
-        @JsonIgnore
-        @Override
-        public Object getByColumn(String clmNameStr)
-        {
-            switch (clmNameStr)
-            {
-                case "LAYER_RESOURCE_ID":
-                    return layerResourceId;
-                case "VLM_NR":
-                    return vlmNr;
-                case "NODE_NAME":
-                    return nodeName;
-                case "POOL_NAME":
-                    return poolName;
-                default:
-                    throw new ImplementationError("Unknown database column. Table: LAYER_OPENFLEX_VOLUMES, Column: " + clmNameStr);
-            }
-        }
-
-        @JsonIgnore
-        @Override
-        public final String getLinstorKey()
-        {
-            return formattedPrimaryKey;
-        }
-
-        @Override
-        @JsonIgnore
-        public DatabaseTable getDatabaseTable()
-        {
-            return GeneratedDatabaseTables.LAYER_OPENFLEX_VOLUMES;
-        }
-    }
-
-    @Version(GenCrdCurrent.VERSION)
-    @Group(GenCrdCurrent.GROUP)
-    @Plural("layeropenflexvolumes")
-    @Singular("layeropenflexvolumes")
-    public static class LayerOpenflexVolumes extends CustomResource<LayerOpenflexVolumesSpec, Void> implements LinstorCrd<LayerOpenflexVolumesSpec>
-    {
-        private static final long serialVersionUID = 1216353915529599639L;
-        String k8sKey = null;
-
-        @JsonCreator
-        public LayerOpenflexVolumes()
-        {
-        }
-
-        public LayerOpenflexVolumes(LayerOpenflexVolumesSpec spec)
-        {
-            setMetadata(new ObjectMetaBuilder().withName(deriveKey(spec.getLinstorKey())).build());
-            setSpec(spec);
-        }
-
-        @Override
-        public void setSpec(LayerOpenflexVolumesSpec specRef)
         {
             super.setSpec(specRef);
             spec.parentCrd = this;
@@ -3460,7 +3072,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerResourceIdsSpec implements LinstorSpec<LayerResourceIds, LayerResourceIdsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 1870443559839359954L;
+        @JsonIgnore private static final long serialVersionUID = -374981891153286746L;
         @JsonIgnore private static final String PK_FORMAT = "%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -3592,7 +3204,7 @@ public class GenCrdCurrent
     @Singular("layerresourceids")
     public static class LayerResourceIds extends CustomResource<LayerResourceIdsSpec, Void> implements LinstorCrd<LayerResourceIdsSpec>
     {
-        private static final long serialVersionUID = -1504080243362905049L;
+        private static final long serialVersionUID = 1607472964047309091L;
         String k8sKey = null;
 
         @JsonCreator
@@ -3660,7 +3272,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerStorageVolumesSpec implements LinstorSpec<LayerStorageVolumes, LayerStorageVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 7818431198846203890L;
+        @JsonIgnore private static final long serialVersionUID = 5420746238706646183L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -3772,7 +3384,7 @@ public class GenCrdCurrent
     @Singular("layerstoragevolumes")
     public static class LayerStorageVolumes extends CustomResource<LayerStorageVolumesSpec, Void> implements LinstorCrd<LayerStorageVolumesSpec>
     {
-        private static final long serialVersionUID = -1013118550406458030L;
+        private static final long serialVersionUID = -870302460352587368L;
         String k8sKey = null;
 
         @JsonCreator
@@ -3838,7 +3450,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LayerWritecacheVolumesSpec implements LinstorSpec<LayerWritecacheVolumes, LayerWritecacheVolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 7667576167879117173L;
+        @JsonIgnore private static final long serialVersionUID = -8343656743454638449L;
         @JsonIgnore private static final String PK_FORMAT = "%d:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -3943,7 +3555,7 @@ public class GenCrdCurrent
     @Singular("layerwritecachevolumes")
     public static class LayerWritecacheVolumes extends CustomResource<LayerWritecacheVolumesSpec, Void> implements LinstorCrd<LayerWritecacheVolumesSpec>
     {
-        private static final long serialVersionUID = -7653609859744519643L;
+        private static final long serialVersionUID = -1557375264182028653L;
         String k8sKey = null;
 
         @JsonCreator
@@ -4015,7 +3627,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class LinstorRemotesSpec implements LinstorSpec<LinstorRemotes, LinstorRemotesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -3103962557539556606L;
+        @JsonIgnore private static final long serialVersionUID = 170419782783956971L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -4140,7 +3752,7 @@ public class GenCrdCurrent
     @Singular("linstorremotes")
     public static class LinstorRemotes extends CustomResource<LinstorRemotesSpec, Void> implements LinstorCrd<LinstorRemotesSpec>
     {
-        private static final long serialVersionUID = 4463488891427022164L;
+        private static final long serialVersionUID = 6019576604976366080L;
         String k8sKey = null;
 
         @JsonCreator
@@ -4208,7 +3820,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class NodesSpec implements LinstorSpec<Nodes, NodesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -2578843140506529191L;
+        @JsonIgnore private static final long serialVersionUID = -6225532948703064088L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -4319,7 +3931,7 @@ public class GenCrdCurrent
     @Singular("nodes")
     public static class Nodes extends CustomResource<NodesSpec, Void> implements LinstorCrd<NodesSpec>
     {
-        private static final long serialVersionUID = 7337711954480622449L;
+        private static final long serialVersionUID = -4512111443355356783L;
         String k8sKey = null;
 
         @JsonCreator
@@ -4383,7 +3995,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class NodeConnectionsSpec implements LinstorSpec<NodeConnections, NodeConnectionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -1475333507510339417L;
+        @JsonIgnore private static final long serialVersionUID = -156634913172048980L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -4481,7 +4093,7 @@ public class GenCrdCurrent
     @Singular("nodeconnections")
     public static class NodeConnections extends CustomResource<NodeConnectionsSpec, Void> implements LinstorCrd<NodeConnectionsSpec>
     {
-        private static final long serialVersionUID = 5936047874197134683L;
+        private static final long serialVersionUID = 8983718139022319294L;
         String k8sKey = null;
 
         @JsonCreator
@@ -4553,7 +4165,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class NodeNetInterfacesSpec implements LinstorSpec<NodeNetInterfaces, NodeNetInterfacesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 1951554369333185563L;
+        @JsonIgnore private static final long serialVersionUID = -2626898382338076669L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -4679,7 +4291,7 @@ public class GenCrdCurrent
     @Singular("nodenetinterfaces")
     public static class NodeNetInterfaces extends CustomResource<NodeNetInterfacesSpec, Void> implements LinstorCrd<NodeNetInterfacesSpec>
     {
-        private static final long serialVersionUID = 1564710745985009139L;
+        private static final long serialVersionUID = -813855034272558323L;
         String k8sKey = null;
 
         @JsonCreator
@@ -4751,7 +4363,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class NodeStorPoolSpec implements LinstorSpec<NodeStorPool, NodeStorPoolSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -3170713175272333640L;
+        @JsonIgnore private static final long serialVersionUID = 5507133779423068478L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -4877,7 +4489,7 @@ public class GenCrdCurrent
     @Singular("nodestorpool")
     public static class NodeStorPool extends CustomResource<NodeStorPoolSpec, Void> implements LinstorCrd<NodeStorPoolSpec>
     {
-        private static final long serialVersionUID = -7959124563785289962L;
+        private static final long serialVersionUID = 1204716374236910739L;
         String k8sKey = null;
 
         @JsonCreator
@@ -4941,7 +4553,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class PropsContainersSpec implements LinstorSpec<PropsContainers, PropsContainersSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -8554260445867360659L;
+        @JsonIgnore private static final long serialVersionUID = -5467006446798594729L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -5039,7 +4651,7 @@ public class GenCrdCurrent
     @Singular("propscontainers")
     public static class PropsContainers extends CustomResource<PropsContainersSpec, Void> implements LinstorCrd<PropsContainersSpec>
     {
-        private static final long serialVersionUID = 3554906612997722566L;
+        private static final long serialVersionUID = 199066946968925881L;
         String k8sKey = null;
 
         @JsonCreator
@@ -5109,7 +4721,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class ResourcesSpec implements LinstorSpec<Resources, ResourcesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -2611989798885866910L;
+        @JsonIgnore private static final long serialVersionUID = 7169427994448936025L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -5229,7 +4841,7 @@ public class GenCrdCurrent
     @Singular("resources")
     public static class Resources extends CustomResource<ResourcesSpec, Void> implements LinstorCrd<ResourcesSpec>
     {
-        private static final long serialVersionUID = 1212092480536024490L;
+        private static final long serialVersionUID = 8914906806810161987L;
         String k8sKey = null;
 
         @JsonCreator
@@ -5301,7 +4913,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class ResourceConnectionsSpec implements LinstorSpec<ResourceConnections, ResourceConnectionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 3150476221501626772L;
+        @JsonIgnore private static final long serialVersionUID = 4514650520207008510L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -5429,7 +5041,7 @@ public class GenCrdCurrent
     @Singular("resourceconnections")
     public static class ResourceConnections extends CustomResource<ResourceConnectionsSpec, Void> implements LinstorCrd<ResourceConnectionsSpec>
     {
-        private static final long serialVersionUID = 1865668186796381112L;
+        private static final long serialVersionUID = -1872174805216407666L;
         String k8sKey = null;
 
         @JsonCreator
@@ -5507,7 +5119,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class ResourceDefinitionsSpec implements LinstorSpec<ResourceDefinitions, ResourceDefinitionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 5004118833193135779L;
+        @JsonIgnore private static final long serialVersionUID = -794895579810516071L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -5654,7 +5266,7 @@ public class GenCrdCurrent
     @Singular("resourcedefinitions")
     public static class ResourceDefinitions extends CustomResource<ResourceDefinitionsSpec, Void> implements LinstorCrd<ResourceDefinitionsSpec>
     {
-        private static final long serialVersionUID = -9039132798626656208L;
+        private static final long serialVersionUID = -6816869487512317416L;
         String k8sKey = null;
 
         @JsonCreator
@@ -5742,7 +5354,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class ResourceGroupsSpec implements LinstorSpec<ResourceGroups, ResourceGroupsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 2426113688462931178L;
+        @JsonIgnore private static final long serialVersionUID = -7826368729279428298L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -5923,7 +5535,7 @@ public class GenCrdCurrent
     @Singular("resourcegroups")
     public static class ResourceGroups extends CustomResource<ResourceGroupsSpec, Void> implements LinstorCrd<ResourceGroupsSpec>
     {
-        private static final long serialVersionUID = -6265832159028535349L;
+        private static final long serialVersionUID = 8880386175552818245L;
         String k8sKey = null;
 
         @JsonCreator
@@ -5999,7 +5611,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class S3RemotesSpec implements LinstorSpec<S3Remotes, S3RemotesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 7907983812300141264L;
+        @JsonIgnore private static final long serialVersionUID = -5059891881231834881L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6138,7 +5750,7 @@ public class GenCrdCurrent
     @Singular("s3remotes")
     public static class S3Remotes extends CustomResource<S3RemotesSpec, Void> implements LinstorCrd<S3RemotesSpec>
     {
-        private static final long serialVersionUID = 937427676427463732L;
+        private static final long serialVersionUID = -4770485848428266400L;
         String k8sKey = null;
 
         @JsonCreator
@@ -6206,7 +5818,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SatellitesCapacitySpec implements LinstorSpec<SatellitesCapacity, SatellitesCapacitySpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -2024180648021451427L;
+        @JsonIgnore private static final long serialVersionUID = -1898176728554523168L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6317,7 +5929,7 @@ public class GenCrdCurrent
     @Singular("satellitescapacity")
     public static class SatellitesCapacity extends CustomResource<SatellitesCapacitySpec, Void> implements LinstorCrd<SatellitesCapacitySpec>
     {
-        private static final long serialVersionUID = -8507684302204384329L;
+        private static final long serialVersionUID = -998791876656722977L;
         String k8sKey = null;
 
         @JsonCreator
@@ -6395,7 +6007,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SchedulesSpec implements LinstorSpec<Schedules, SchedulesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 4553342707261102352L;
+        @JsonIgnore private static final long serialVersionUID = 9176198072784794222L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6541,7 +6153,7 @@ public class GenCrdCurrent
     @Singular("schedules")
     public static class Schedules extends CustomResource<SchedulesSpec, Void> implements LinstorCrd<SchedulesSpec>
     {
-        private static final long serialVersionUID = -4897388635809587145L;
+        private static final long serialVersionUID = -5878956059493241366L;
         String k8sKey = null;
 
         @JsonCreator
@@ -6603,7 +6215,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecAccessTypesSpec implements LinstorSpec<SecAccessTypes, SecAccessTypesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 9025324241958089710L;
+        @JsonIgnore private static final long serialVersionUID = 4440020558862048516L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6693,7 +6305,7 @@ public class GenCrdCurrent
     @Singular("secaccesstypes")
     public static class SecAccessTypes extends CustomResource<SecAccessTypesSpec, Void> implements LinstorCrd<SecAccessTypesSpec>
     {
-        private static final long serialVersionUID = -2385578670738607771L;
+        private static final long serialVersionUID = -5700662121043762658L;
         String k8sKey = null;
 
         @JsonCreator
@@ -6757,7 +6369,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecAclMapSpec implements LinstorSpec<SecAclMap, SecAclMapSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 383451690366840030L;
+        @JsonIgnore private static final long serialVersionUID = 1597635123231924783L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -6855,7 +6467,7 @@ public class GenCrdCurrent
     @Singular("secaclmap")
     public static class SecAclMap extends CustomResource<SecAclMapSpec, Void> implements LinstorCrd<SecAclMapSpec>
     {
-        private static final long serialVersionUID = 9185503146802083375L;
+        private static final long serialVersionUID = -2744803852520398963L;
         String k8sKey = null;
 
         @JsonCreator
@@ -6919,7 +6531,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecConfigurationSpec implements LinstorSpec<SecConfiguration, SecConfigurationSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 7834360002702203956L;
+        @JsonIgnore private static final long serialVersionUID = 1325249235256910155L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7016,7 +6628,7 @@ public class GenCrdCurrent
     @Singular("secconfiguration")
     public static class SecConfiguration extends CustomResource<SecConfigurationSpec, Void> implements LinstorCrd<SecConfigurationSpec>
     {
-        private static final long serialVersionUID = 1364981247879528821L;
+        private static final long serialVersionUID = -1712105481429259255L;
         String k8sKey = null;
 
         @JsonCreator
@@ -7078,7 +6690,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecDfltRolesSpec implements LinstorSpec<SecDfltRoles, SecDfltRolesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -3355679465730928246L;
+        @JsonIgnore private static final long serialVersionUID = -5268572333445685395L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7168,7 +6780,7 @@ public class GenCrdCurrent
     @Singular("secdfltroles")
     public static class SecDfltRoles extends CustomResource<SecDfltRolesSpec, Void> implements LinstorCrd<SecDfltRolesSpec>
     {
-        private static final long serialVersionUID = 3777937936142829058L;
+        private static final long serialVersionUID = -3044139331326319710L;
         String k8sKey = null;
 
         @JsonCreator
@@ -7238,7 +6850,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecIdentitiesSpec implements LinstorSpec<SecIdentities, SecIdentitiesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -1735186325101511978L;
+        @JsonIgnore private static final long serialVersionUID = 2629760190853334147L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7356,7 +6968,7 @@ public class GenCrdCurrent
     @Singular("secidentities")
     public static class SecIdentities extends CustomResource<SecIdentitiesSpec, Void> implements LinstorCrd<SecIdentitiesSpec>
     {
-        private static final long serialVersionUID = -4155305896444254791L;
+        private static final long serialVersionUID = 5997496171611468908L;
         String k8sKey = null;
 
         @JsonCreator
@@ -7418,7 +7030,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecIdRoleMapSpec implements LinstorSpec<SecIdRoleMap, SecIdRoleMapSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -3633327844531623751L;
+        @JsonIgnore private static final long serialVersionUID = 1312092139365942970L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7509,7 +7121,7 @@ public class GenCrdCurrent
     @Singular("secidrolemap")
     public static class SecIdRoleMap extends CustomResource<SecIdRoleMapSpec, Void> implements LinstorCrd<SecIdRoleMapSpec>
     {
-        private static final long serialVersionUID = 855745143489249294L;
+        private static final long serialVersionUID = -5013831699848523131L;
         String k8sKey = null;
 
         @JsonCreator
@@ -7575,7 +7187,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecObjectProtectionSpec implements LinstorSpec<SecObjectProtection, SecObjectProtectionSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -4447550137533758443L;
+        @JsonIgnore private static final long serialVersionUID = 5455076294585640991L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7679,7 +7291,7 @@ public class GenCrdCurrent
     @Singular("secobjectprotection")
     public static class SecObjectProtection extends CustomResource<SecObjectProtectionSpec, Void> implements LinstorCrd<SecObjectProtectionSpec>
     {
-        private static final long serialVersionUID = -7078228047346715720L;
+        private static final long serialVersionUID = 4805334108360632405L;
         String k8sKey = null;
 
         @JsonCreator
@@ -7747,7 +7359,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecRolesSpec implements LinstorSpec<SecRoles, SecRolesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 918930211648178401L;
+        @JsonIgnore private static final long serialVersionUID = -8668200807582930296L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -7858,7 +7470,7 @@ public class GenCrdCurrent
     @Singular("secroles")
     public static class SecRoles extends CustomResource<SecRolesSpec, Void> implements LinstorCrd<SecRolesSpec>
     {
-        private static final long serialVersionUID = -4805661259660621916L;
+        private static final long serialVersionUID = -3463147923344554217L;
         String k8sKey = null;
 
         @JsonCreator
@@ -7922,7 +7534,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecTypesSpec implements LinstorSpec<SecTypes, SecTypesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 6073724709793651263L;
+        @JsonIgnore private static final long serialVersionUID = 7406044074547142069L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8019,7 +7631,7 @@ public class GenCrdCurrent
     @Singular("sectypes")
     public static class SecTypes extends CustomResource<SecTypesSpec, Void> implements LinstorCrd<SecTypesSpec>
     {
-        private static final long serialVersionUID = 6636101429552607020L;
+        private static final long serialVersionUID = 2450313962134789016L;
         String k8sKey = null;
 
         @JsonCreator
@@ -8083,7 +7695,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SecTypeRulesSpec implements LinstorSpec<SecTypeRules, SecTypeRulesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -6822362700507118642L;
+        @JsonIgnore private static final long serialVersionUID = -1277396823541584975L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8181,7 +7793,7 @@ public class GenCrdCurrent
     @Singular("sectyperules")
     public static class SecTypeRules extends CustomResource<SecTypeRulesSpec, Void> implements LinstorCrd<SecTypeRulesSpec>
     {
-        private static final long serialVersionUID = 6367002021421538696L;
+        private static final long serialVersionUID = -2451475285150454977L;
         String k8sKey = null;
 
         @JsonCreator
@@ -8243,7 +7855,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class SpaceHistorySpec implements LinstorSpec<SpaceHistory, SpaceHistorySpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 6621865834150591549L;
+        @JsonIgnore private static final long serialVersionUID = 4519057488274294654L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8333,7 +7945,7 @@ public class GenCrdCurrent
     @Singular("spacehistory")
     public static class SpaceHistory extends CustomResource<SpaceHistorySpec, Void> implements LinstorCrd<SpaceHistorySpec>
     {
-        private static final long serialVersionUID = 1622556799621651588L;
+        private static final long serialVersionUID = 1726228256039443789L;
         String k8sKey = null;
 
         @JsonCreator
@@ -8397,7 +8009,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class StorPoolDefinitionsSpec implements LinstorSpec<StorPoolDefinitions, StorPoolDefinitionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 369242125905771808L;
+        @JsonIgnore private static final long serialVersionUID = -1099182187274739216L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8494,7 +8106,7 @@ public class GenCrdCurrent
     @Singular("storpooldefinitions")
     public static class StorPoolDefinitions extends CustomResource<StorPoolDefinitionsSpec, Void> implements LinstorCrd<StorPoolDefinitionsSpec>
     {
-        private static final long serialVersionUID = 3790094156236364403L;
+        private static final long serialVersionUID = -883841105934412700L;
         String k8sKey = null;
 
         @JsonCreator
@@ -8554,7 +8166,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class TrackingDateSpec implements LinstorSpec<TrackingDate, TrackingDateSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -750428328824732666L;
+        @JsonIgnore private static final long serialVersionUID = -401952333056128807L;
         @JsonIgnore private static final String PK_FORMAT = "%s";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8638,7 +8250,7 @@ public class GenCrdCurrent
     @Singular("trackingdate")
     public static class TrackingDate extends CustomResource<TrackingDateSpec, Void> implements LinstorCrd<TrackingDateSpec>
     {
-        private static final long serialVersionUID = -8956013361911536797L;
+        private static final long serialVersionUID = 4861619746625821773L;
         String k8sKey = null;
 
         @JsonCreator
@@ -8708,7 +8320,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class VolumesSpec implements LinstorSpec<Volumes, VolumesSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 2946077211196100810L;
+        @JsonIgnore private static final long serialVersionUID = 4617983087517422694L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -8829,7 +8441,7 @@ public class GenCrdCurrent
     @Singular("volumes")
     public static class Volumes extends CustomResource<VolumesSpec, Void> implements LinstorCrd<VolumesSpec>
     {
-        private static final long serialVersionUID = 8281795232796375441L;
+        private static final long serialVersionUID = -1349140707272790027L;
         String k8sKey = null;
 
         @JsonCreator
@@ -8899,7 +8511,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class VolumeConnectionsSpec implements LinstorSpec<VolumeConnections, VolumeConnectionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 8930790622440617257L;
+        @JsonIgnore private static final long serialVersionUID = -5547134031541074232L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -9021,7 +8633,7 @@ public class GenCrdCurrent
     @Singular("volumeconnections")
     public static class VolumeConnections extends CustomResource<VolumeConnectionsSpec, Void> implements LinstorCrd<VolumeConnectionsSpec>
     {
-        private static final long serialVersionUID = 6797347563376017695L;
+        private static final long serialVersionUID = 6457774912036363192L;
         String k8sKey = null;
 
         @JsonCreator
@@ -9091,7 +8703,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class VolumeDefinitionsSpec implements LinstorSpec<VolumeDefinitions, VolumeDefinitionsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = -3258336213792011883L;
+        @JsonIgnore private static final long serialVersionUID = -4324040642648915434L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -9211,7 +8823,7 @@ public class GenCrdCurrent
     @Singular("volumedefinitions")
     public static class VolumeDefinitions extends CustomResource<VolumeDefinitionsSpec, Void> implements LinstorCrd<VolumeDefinitionsSpec>
     {
-        private static final long serialVersionUID = -4587054381855771900L;
+        private static final long serialVersionUID = 6138875962978566113L;
         String k8sKey = null;
 
         @JsonCreator
@@ -9277,7 +8889,7 @@ public class GenCrdCurrent
     @JsonInclude(Include.NON_NULL)
     public static class VolumeGroupsSpec implements LinstorSpec<VolumeGroups, VolumeGroupsSpec>
     {
-        @JsonIgnore private static final long serialVersionUID = 5883629178053450568L;
+        @JsonIgnore private static final long serialVersionUID = -3161510700857804687L;
         @JsonIgnore private static final String PK_FORMAT = "%s:%d";
 
         @JsonIgnore private final String formattedPrimaryKey;
@@ -9382,7 +8994,7 @@ public class GenCrdCurrent
     @Singular("volumegroups")
     public static class VolumeGroups extends CustomResource<VolumeGroupsSpec, Void> implements LinstorCrd<VolumeGroupsSpec>
     {
-        private static final long serialVersionUID = -7795819717896910013L;
+        private static final long serialVersionUID = 1680497340224911217L;
         String k8sKey = null;
 
         @JsonCreator

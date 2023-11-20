@@ -385,10 +385,6 @@ public class RscStorageLayerHelper extends
                         throw new ImplementationError(exc);
                     }
                     break;
-                case OPENFLEX_TARGET:
-                    throw new ImplementationError(
-                        "Openflex volumes should be handled by openflex, not by storage helper"
-                    );
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
                 default:
                     throw new ImplementationError("Unexpected kind: " + kind);
@@ -671,11 +667,7 @@ public class RscStorageLayerHelper extends
             }
 
             String reason = IGNORE_REASON_NONE;
-            if (providerKindSet.contains(DeviceProviderKind.OPENFLEX_TARGET))
-            {
-                reason = IGNORE_REASON_OF_TARGET;
-            }
-            else if (providerKindSet.contains(DeviceProviderKind.EBS_TARGET))
+            if (providerKindSet.contains(DeviceProviderKind.EBS_TARGET))
             {
                 reason = IGNORE_REASON_EBS_TARGET;
             }
@@ -823,8 +815,6 @@ public class RscStorageLayerHelper extends
                     storPool
                 );
                 break;
-            case OPENFLEX_TARGET:
-                throw new ImplementationError("Restoring from snapshots is not supported for OpenFlex-setups");
             case FILE:
             case FILE_THIN:
                 vlmData = layerDataFactory.createFileData(vlmRef, storRscData, providerKind, storPool);

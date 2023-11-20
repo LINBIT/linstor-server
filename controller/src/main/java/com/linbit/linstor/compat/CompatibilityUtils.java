@@ -11,6 +11,9 @@ import java.util.List;
 
 public class CompatibilityUtils
 {
+    private static final int BIT_DRBD = 1;
+    private static final int BIT_NVME = 2;
+
     private CompatibilityUtils()
     {
     }
@@ -21,10 +24,9 @@ public class CompatibilityUtils
 
         boolean hasDrdbKind = layerList.contains(DeviceLayerKind.DRBD);
         boolean hasNvmeKind = layerList.contains(DeviceLayerKind.NVME);
-        boolean hasOpenflexKind = layerList.contains(DeviceLayerKind.OPENFLEX);
 
-        int kindCase = hasDrdbKind ? 1 : 0;
-        kindCase |= hasNvmeKind || hasOpenflexKind ? 2 : 0;
+        int kindCase = hasDrdbKind ? BIT_DRBD : 0;
+        kindCase |= hasNvmeKind ? BIT_NVME : 0;
         switch (kindCase)
         {
             case 0:
@@ -35,19 +37,15 @@ public class CompatibilityUtils
                             "from the given layer-list supports diskless storage pools"
                     )
                 );
-            case 1: // drbd only
+            case BIT_DRBD:
                 ret = Resource.Flags.DRBD_DISKLESS;
                 break;
-            case 2: // nvme or openflex
+            case BIT_NVME:
                 ret = Resource.Flags.NVME_INITIATOR;
                 break;
-            case 3: // (nvme or openflex) and drbd
-                int nvmeOpenflexIdx = layerList.indexOf(DeviceLayerKind.NVME);
-                if (nvmeOpenflexIdx == -1)
-                {
-                    nvmeOpenflexIdx = layerList.indexOf(DeviceLayerKind.OPENFLEX);
-                }
-                if (layerList.indexOf(DeviceLayerKind.DRBD) < nvmeOpenflexIdx)
+            case BIT_DRBD | BIT_NVME:
+                int nvmeIdx = layerList.indexOf(DeviceLayerKind.NVME);
+                if (layerList.indexOf(DeviceLayerKind.DRBD) < nvmeIdx)
                 {
                     ret = Resource.Flags.NVME_INITIATOR;
                 }

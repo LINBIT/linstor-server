@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Do not allow setting resource-groups with place-count 0
 
+### Removed
+
+- Support for OpenFlex
+
 ## [1.25.1] - 2023-11-20
 
 ### Fixed
