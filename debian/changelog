@@ -1,3 +1,24 @@
+linstor-server (1.25.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * K8s,migration: Fixed incorrect description
+  * Stlt,Auth: Fix version-mismatch check
+  * Node,restore: Recreate tiebreaker if needed
+  * autoTiebreaker: do not takeover evacuating diskless resource
+  * sp,l: Fix offline DfltDisklessStorPool
+  * gitlab-ci: Fix ST rebase
+  * Rsc,c: allow diskless rsc creation even if all peer-slots are occupied
+  * DRBD: Only report error if DRBD is installed
+  * DRBD: attempt to (re-) start events2 on "node reconnect"
+  * File,Snap: Fix finding existing snapshots
+
+  [ Rene Peinthor ]
+  * make-avalaible: don't produce error report
+  * virter: update to ubuntu jammy and fix provision files
+  * autodiskfultask: Fix potential NPE if no state for a resource
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 20 Nov 2023 10:06:38 +0000
+
 linstor-server (1.25.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
