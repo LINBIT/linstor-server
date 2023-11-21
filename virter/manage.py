@@ -21,7 +21,7 @@ def provision(args):
 
 
 def vms(args):
-    for i in range(1, args.num + 1):
+    for i in range(args.startnum, args.startnum + args.num):
         node = args.prefix + str(i)
         disk_args = ["--disk", "name=" + node + "_scratch,size=1GiB"]
         if args.distri.startswith('ubuntu'):
@@ -44,7 +44,7 @@ def vms(args):
 
 
 def remove(args):
-    nodes = [args.prefix + str(i) for i in range(1, args.num + 1)]
+    nodes = [args.prefix + str(i) for i in range(args.startnum, args.startnum)]
     for n in nodes:
         subprocess.check_call(["virter", "vm", "rm", n])
         subprocess.check_call(["ssh-keygen", "-R", n])
@@ -68,6 +68,7 @@ def hosts(args):
 def _add_vm_args(parser: argparse.ArgumentParser):
     parser.add_argument("-p", "--prefix", default="linstor", help="VM prefix name")
     parser.add_argument("-n", "--num", type=int, default=3, help="Number of vms")
+    parser.add_argument("-s", "--startnum", type=int, default=1, help="Start index, e.g. expanding vms")
 
     return parser
 
