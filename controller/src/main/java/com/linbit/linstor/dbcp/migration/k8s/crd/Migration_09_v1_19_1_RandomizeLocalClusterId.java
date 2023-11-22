@@ -17,11 +17,7 @@ public class Migration_09_v1_19_1_RandomizeLocalClusterId extends BaseK8sCrdMigr
 {
     public Migration_09_v1_19_1_RandomizeLocalClusterId()
     {
-        super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_19_1.createMigrationContext());
     }
 
     @Override

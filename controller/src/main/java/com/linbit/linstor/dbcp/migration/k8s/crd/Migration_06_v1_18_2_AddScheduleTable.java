@@ -13,9 +13,8 @@ public class Migration_06_v1_18_2_AddScheduleTable extends BaseK8sCrdMigration
     public Migration_06_v1_18_2_AddScheduleTable()
     {
         super(
-            GenCrdV1_17_0.createTxMgrContext(),
-            GenCrdV1_18_2.createTxMgrContext(),
-            GenCrdV1_18_2.createSchemaUpdateContext()
+            GenCrdV1_17_0.createMigrationContext(),
+            GenCrdV1_18_2.createMigrationContext()
         );
     }
 

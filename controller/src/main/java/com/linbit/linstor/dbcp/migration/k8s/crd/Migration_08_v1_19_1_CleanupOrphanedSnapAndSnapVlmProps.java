@@ -29,11 +29,7 @@ public class Migration_08_v1_19_1_CleanupOrphanedSnapAndSnapVlmProps extends Bas
 {
     public Migration_08_v1_19_1_CleanupOrphanedSnapAndSnapVlmProps()
     {
-        super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_19_1.createMigrationContext());
     }
 
     @Override

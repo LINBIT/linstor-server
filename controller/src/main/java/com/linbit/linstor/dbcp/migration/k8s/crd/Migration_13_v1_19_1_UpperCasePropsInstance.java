@@ -16,11 +16,7 @@ public class Migration_13_v1_19_1_UpperCasePropsInstance extends BaseK8sCrdMigra
 {
     public Migration_13_v1_19_1_UpperCasePropsInstance()
     {
-        super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_19_1.createMigrationContext());
     }
 
     @Override

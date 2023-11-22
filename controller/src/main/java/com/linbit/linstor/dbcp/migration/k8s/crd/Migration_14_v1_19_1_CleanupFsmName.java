@@ -16,11 +16,7 @@ public class Migration_14_v1_19_1_CleanupFsmName extends BaseK8sCrdMigration
 {
     public Migration_14_v1_19_1_CleanupFsmName()
     {
-        super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_19_1.createMigrationContext());
     }
 
     @Override

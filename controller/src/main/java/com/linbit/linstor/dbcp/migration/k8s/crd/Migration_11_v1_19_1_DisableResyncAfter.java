@@ -18,11 +18,7 @@ public class Migration_11_v1_19_1_DisableResyncAfter extends BaseK8sCrdMigration
 
     public Migration_11_v1_19_1_DisableResyncAfter()
     {
-        super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_19_1.createMigrationContext());
     }
 
     @Override

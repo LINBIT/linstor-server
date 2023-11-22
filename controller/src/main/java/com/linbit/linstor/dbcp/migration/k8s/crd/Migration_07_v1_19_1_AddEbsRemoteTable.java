@@ -13,9 +13,8 @@ public class Migration_07_v1_19_1_AddEbsRemoteTable extends BaseK8sCrdMigration
     public Migration_07_v1_19_1_AddEbsRemoteTable()
     {
         super(
-            GenCrdV1_18_2.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
+            GenCrdV1_18_2.createMigrationContext(),
+            GenCrdV1_19_1.createMigrationContext()
         );
     }
 

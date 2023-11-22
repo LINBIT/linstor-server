@@ -50,6 +50,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
             controllerK8sCrdDatabaseRef,
             new BaseControllerK8sCrdTransactionMgrContext(
                 GenCrdCurrent::databaseTableToCustomResourceClass,
+                GeneratedDatabaseTables.ALL_TABLES,
                 GenCrdCurrent.VERSION
             )
         );

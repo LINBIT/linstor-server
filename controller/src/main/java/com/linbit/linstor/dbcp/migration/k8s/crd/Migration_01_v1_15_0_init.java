@@ -14,8 +14,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     {
         super(
             null, // only valid for migration 0 -> 1
-            GenCrdV1_15_0.createTxMgrContext(),
-            GenCrdV1_15_0.createSchemaUpdateContext()
+            GenCrdV1_15_0.createMigrationContext()
         );
     }
 

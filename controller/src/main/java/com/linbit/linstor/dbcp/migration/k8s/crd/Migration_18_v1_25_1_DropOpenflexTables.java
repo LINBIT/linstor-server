@@ -8,16 +8,15 @@ import java.util.Collection;
 
 @K8sCrdMigration(
     description = "Drop OpenFlex tables",
-    version = 19
+    version = 18
 )
 public class Migration_18_v1_25_1_DropOpenflexTables extends BaseK8sCrdMigration
 {
     public Migration_18_v1_25_1_DropOpenflexTables()
     {
         super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_25_1.createTxMgrContext(),
-            GenCrdV1_25_1.createSchemaUpdateContext()
+            GenCrdV1_19_1.createMigrationContext(),
+            GenCrdV1_25_1.createMigrationContext()
         );
     }
 

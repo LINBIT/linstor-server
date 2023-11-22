@@ -33,11 +33,7 @@ public class Migration_16_v1_19_1_RestoreInvisbleKvs extends BaseK8sCrdMigration
 
     public Migration_16_v1_19_1_RestoreInvisbleKvs()
     {
-        super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_19_1.createMigrationContext());
     }
 
     @Override

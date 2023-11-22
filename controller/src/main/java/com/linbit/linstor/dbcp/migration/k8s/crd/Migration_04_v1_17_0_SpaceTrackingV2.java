@@ -16,11 +16,7 @@ public class Migration_04_v1_17_0_SpaceTrackingV2 extends BaseK8sCrdMigration
 {
     public Migration_04_v1_17_0_SpaceTrackingV2()
     {
-        super(
-            GenCrdV1_17_0.createTxMgrContext(),
-            GenCrdV1_17_0.createTxMgrContext(),
-            GenCrdV1_17_0.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_17_0.createMigrationContext());
     }
 
     @SuppressWarnings("unchecked")

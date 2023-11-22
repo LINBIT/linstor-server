@@ -5,6 +5,7 @@ import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext;
+import com.linbit.linstor.transaction.K8sCrdMigrationContext;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
 import com.linbit.linstor.utils.ByteUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
@@ -1192,6 +1193,7 @@ public class GenCrdV1_18_2
     {
         return new BaseControllerK8sCrdTransactionMgrContext(
             GenCrdV1_18_2::databaseTableToCustomResourceClass,
+            GeneratedDatabaseTables.ALL_TABLES,
             GenCrdV1_18_2.VERSION
         );
     }
@@ -1203,6 +1205,11 @@ public class GenCrdV1_18_2
             GenCrdV1_18_2::databaseTableToYamlName,
             "v1-18-2"
         );
+    }
+
+    public static K8sCrdMigrationContext createMigrationContext()
+    {
+        return new K8sCrdMigrationContext(createTxMgrContext(), createSchemaUpdateContext());
     }
 
     public static Files createFiles(
@@ -1329,7 +1336,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public Files()
         {
-            super();
         }
 
         public Files(FilesSpec spec)
@@ -1468,7 +1474,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public KeyValueStore()
         {
-            super();
         }
 
         public KeyValueStore(KeyValueStoreSpec spec)
@@ -1624,7 +1629,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerBcacheVolumes()
         {
-            super();
         }
 
         public LayerBcacheVolumes(LayerBcacheVolumesSpec spec)
@@ -1780,7 +1784,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerCacheVolumes()
         {
-            super();
         }
 
         public LayerCacheVolumes(LayerCacheVolumesSpec spec)
@@ -1943,7 +1946,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerDrbdResources()
         {
-            super();
         }
 
         public LayerDrbdResources(LayerDrbdResourcesSpec spec)
@@ -2132,7 +2134,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerDrbdResourceDefinitions()
         {
-            super();
         }
 
         public LayerDrbdResourceDefinitions(LayerDrbdResourceDefinitionsSpec spec)
@@ -2280,7 +2281,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerDrbdVolumes()
         {
-            super();
         }
 
         public LayerDrbdVolumes(LayerDrbdVolumesSpec spec)
@@ -2438,7 +2438,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerDrbdVolumeDefinitions()
         {
-            super();
         }
 
         public LayerDrbdVolumeDefinitions(LayerDrbdVolumeDefinitionsSpec spec)
@@ -2578,7 +2577,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerLuksVolumes()
         {
-            super();
         }
 
         public LayerLuksVolumes(LayerLuksVolumesSpec spec)
@@ -2726,7 +2724,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerOpenflexResourceDefinitions()
         {
-            super();
         }
 
         public LayerOpenflexResourceDefinitions(LayerOpenflexResourceDefinitionsSpec spec)
@@ -2874,7 +2871,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerOpenflexVolumes()
         {
-            super();
         }
 
         public LayerOpenflexVolumes(LayerOpenflexVolumesSpec spec)
@@ -3053,7 +3049,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerResourceIds()
         {
-            super();
         }
 
         public LayerResourceIds(LayerResourceIdsSpec spec)
@@ -3209,7 +3204,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerStorageVolumes()
         {
-            super();
         }
 
         public LayerStorageVolumes(LayerStorageVolumesSpec spec)
@@ -3357,7 +3351,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LayerWritecacheVolumes()
         {
-            super();
         }
 
         public LayerWritecacheVolumes(LayerWritecacheVolumesSpec spec)
@@ -3528,7 +3521,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public LinstorRemotes()
         {
-            super();
         }
 
         public LinstorRemotes(LinstorRemotesSpec spec)
@@ -3683,7 +3675,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public Nodes()
         {
-            super();
         }
 
         public Nodes(NodesSpec spec)
@@ -3823,7 +3814,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public NodeConnections()
         {
-            super();
         }
 
         public NodeConnections(NodeConnectionsSpec spec)
@@ -3995,7 +3985,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public NodeNetInterfaces()
         {
-            super();
         }
 
         public NodeNetInterfaces(NodeNetInterfacesSpec spec)
@@ -4167,7 +4156,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public NodeStorPool()
         {
-            super();
         }
 
         public NodeStorPool(NodeStorPoolSpec spec)
@@ -4307,7 +4295,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public PropsContainers()
         {
-            super();
         }
 
         public PropsContainers(PropsContainersSpec spec)
@@ -4472,7 +4459,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public Resources()
         {
-            super();
         }
 
         public Resources(ResourcesSpec spec)
@@ -4646,7 +4632,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public ResourceConnections()
         {
-            super();
         }
 
         public ResourceConnections(ResourceConnectionsSpec spec)
@@ -4842,7 +4827,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public ResourceDefinitions()
         {
-            super();
         }
 
         public ResourceDefinitions(ResourceDefinitionsSpec spec)
@@ -5077,7 +5061,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public ResourceGroups()
         {
-            super();
         }
 
         public ResourceGroups(ResourceGroupsSpec spec)
@@ -5264,7 +5247,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public S3Remotes()
         {
-            super();
         }
 
         public S3Remotes(S3RemotesSpec spec)
@@ -5419,7 +5401,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SatellitesCapacity()
         {
-            super();
         }
 
         public SatellitesCapacity(SatellitesCapacitySpec spec)
@@ -5614,7 +5595,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public Schedules()
         {
-            super();
         }
 
         public Schedules(SchedulesSpec spec)
@@ -5745,7 +5725,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SecAccessTypes()
         {
-            super();
         }
 
         public SecAccessTypes(SecAccessTypesSpec spec)
@@ -5885,7 +5864,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SecAclMap()
         {
-            super();
         }
 
         public SecAclMap(SecAclMapSpec spec)
@@ -6024,7 +6002,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SecConfiguration()
         {
-            super();
         }
 
         public SecConfiguration(SecConfigurationSpec spec)
@@ -6155,7 +6132,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SecDfltRoles()
         {
-            super();
         }
 
         public SecDfltRoles(SecDfltRolesSpec spec)
@@ -6318,7 +6294,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SecIdentities()
         {
-            super();
         }
 
         public SecIdentities(SecIdentitiesSpec spec)
@@ -6450,7 +6425,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SecIdRoleMap()
         {
-            super();
         }
 
         public SecIdRoleMap(SecIdRoleMapSpec spec)
@@ -6597,7 +6571,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SecObjectProtection()
         {
-            super();
         }
 
         public SecObjectProtection(SecObjectProtectionSpec spec)
@@ -6752,7 +6725,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SecRoles()
         {
-            super();
         }
 
         public SecRoles(SecRolesSpec spec)
@@ -6891,7 +6863,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SecTypes()
         {
-            super();
         }
 
         public SecTypes(SecTypesSpec spec)
@@ -7031,7 +7002,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SecTypeRules()
         {
-            super();
         }
 
         public SecTypeRules(SecTypeRulesSpec spec)
@@ -7162,7 +7132,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public SpaceHistory()
         {
-            super();
         }
 
         public SpaceHistory(SpaceHistorySpec spec)
@@ -7301,7 +7270,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public StorPoolDefinitions()
         {
-            super();
         }
 
         public StorPoolDefinitions(StorPoolDefinitionsSpec spec)
@@ -7425,7 +7393,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public TrackingDate()
         {
-            super();
         }
 
         public TrackingDate(TrackingDateSpec spec)
@@ -7591,7 +7558,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public Volumes()
         {
-            super();
         }
 
         public Volumes(VolumesSpec spec)
@@ -7758,7 +7724,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public VolumeConnections()
         {
-            super();
         }
 
         public VolumeConnections(VolumeConnectionsSpec spec)
@@ -7923,7 +7888,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public VolumeDefinitions()
         {
-            super();
         }
 
         public VolumeDefinitions(VolumeDefinitionsSpec spec)
@@ -8071,7 +8035,6 @@ public class GenCrdV1_18_2
         @JsonCreator
         public VolumeGroups()
         {
-            super();
         }
 
         public VolumeGroups(VolumeGroupsSpec spec)

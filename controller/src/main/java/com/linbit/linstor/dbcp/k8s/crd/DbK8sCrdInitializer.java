@@ -1,5 +1,6 @@
 package com.linbit.linstor.dbcp.k8s.crd;
 
+import com.linbit.ImplementationError;
 import com.linbit.SystemServiceStartException;
 import com.linbit.linstor.ControllerDatabase;
 import com.linbit.linstor.InitializationException;
@@ -54,7 +55,7 @@ public class DbK8sCrdInitializer implements DbInitializer
                 dbK8sCrd.migrate("k8s");
             }
         }
-        catch (Exception exc)
+        catch (Exception | ImplementationError exc)
         {
             throw new SystemServiceStartException("Database initialization error", exc, true);
         }

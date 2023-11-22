@@ -11,11 +11,7 @@ public class Migration_02_v1_15_0_fixRollbackSpec extends BaseK8sCrdMigration
 {
     public Migration_02_v1_15_0_fixRollbackSpec()
     {
-        super(
-            GenCrdV1_15_0.createTxMgrContext(),
-            GenCrdV1_15_0.createTxMgrContext(),
-            GenCrdV1_15_0.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_15_0.createMigrationContext());
     }
 
     @Override

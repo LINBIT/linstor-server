@@ -22,11 +22,7 @@ public class Migration_15_v1_19_1_AddEmptySnapNameToLRI extends BaseK8sCrdMigrat
 
     public Migration_15_v1_19_1_AddEmptySnapNameToLRI()
     {
-        super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_19_1.createMigrationContext());
     }
 
     @Override

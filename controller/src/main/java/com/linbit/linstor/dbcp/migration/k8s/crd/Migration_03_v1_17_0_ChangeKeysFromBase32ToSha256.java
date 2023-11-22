@@ -24,9 +24,8 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
     public Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256()
     {
         super(
-            GenCrdV1_15_0.createTxMgrContext(),
-            GenCrdV1_17_0.createTxMgrContext(),
-            GenCrdV1_17_0.createSchemaUpdateContext()
+            GenCrdV1_15_0.createMigrationContext(),
+            GenCrdV1_17_0.createMigrationContext()
         );
     }
 

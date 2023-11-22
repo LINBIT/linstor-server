@@ -38,11 +38,7 @@ public class Migration_10_v1_19_1_CleanupOrphanedObjects extends BaseK8sCrdMigra
 {
     public Migration_10_v1_19_1_CleanupOrphanedObjects()
     {
-        super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_19_1.createMigrationContext());
     }
 
     @Override

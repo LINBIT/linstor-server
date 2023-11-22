@@ -17,11 +17,7 @@ public class Migration_05_v1_17_0_RenameNetComNamespace extends BaseK8sCrdMigrat
 {
     public Migration_05_v1_17_0_RenameNetComNamespace()
     {
-        super(
-            GenCrdV1_17_0.createTxMgrContext(),
-            GenCrdV1_17_0.createTxMgrContext(),
-            GenCrdV1_17_0.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_17_0.createMigrationContext());
     }
 
     @Override

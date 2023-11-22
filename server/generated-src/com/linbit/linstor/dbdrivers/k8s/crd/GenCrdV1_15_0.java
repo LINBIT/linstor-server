@@ -5,6 +5,7 @@ import com.linbit.linstor.dbdrivers.DatabaseTable;
 import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext;
+import com.linbit.linstor.transaction.K8sCrdMigrationContext;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
 import com.linbit.utils.ExceptionThrowingFunction;
 
@@ -959,6 +960,7 @@ public class GenCrdV1_15_0
     {
         return new BaseControllerK8sCrdTransactionMgrContext(
             GenCrdV1_15_0::databaseTableToCustomResourceClass,
+            GeneratedDatabaseTables.ALL_TABLES,
             GenCrdV1_15_0.VERSION
         );
     }
@@ -970,6 +972,11 @@ public class GenCrdV1_15_0
             GenCrdV1_15_0::databaseTableToYamlName,
             "v1-15-0"
         );
+    }
+
+    public static K8sCrdMigrationContext createMigrationContext()
+    {
+        return new K8sCrdMigrationContext(createTxMgrContext(), createSchemaUpdateContext());
     }
 
     public static Files createFiles(
@@ -1109,7 +1116,6 @@ public class GenCrdV1_15_0
 
         public Files()
         {
-            super();
         }
 
         public Files(FilesSpec spec)
@@ -1251,7 +1257,6 @@ public class GenCrdV1_15_0
 
         public KeyValueStore()
         {
-            super();
         }
 
         public KeyValueStore(KeyValueStoreSpec spec)
@@ -1412,7 +1417,6 @@ public class GenCrdV1_15_0
 
         public LayerBcacheVolumes()
         {
-            super();
         }
 
         public LayerBcacheVolumes(LayerBcacheVolumesSpec spec)
@@ -1573,7 +1577,6 @@ public class GenCrdV1_15_0
 
         public LayerCacheVolumes()
         {
-            super();
         }
 
         public LayerCacheVolumes(LayerCacheVolumesSpec spec)
@@ -1742,7 +1745,6 @@ public class GenCrdV1_15_0
 
         public LayerDrbdResources()
         {
-            super();
         }
 
         public LayerDrbdResources(LayerDrbdResourcesSpec spec)
@@ -1940,7 +1942,6 @@ public class GenCrdV1_15_0
 
         public LayerDrbdResourceDefinitions()
         {
-            super();
         }
 
         public LayerDrbdResourceDefinitions(LayerDrbdResourceDefinitionsSpec spec)
@@ -2092,7 +2093,6 @@ public class GenCrdV1_15_0
 
         public LayerDrbdVolumes()
         {
-            super();
         }
 
         public LayerDrbdVolumes(LayerDrbdVolumesSpec spec)
@@ -2255,7 +2255,6 @@ public class GenCrdV1_15_0
 
         public LayerDrbdVolumeDefinitions()
         {
-            super();
         }
 
         public LayerDrbdVolumeDefinitions(LayerDrbdVolumeDefinitionsSpec spec)
@@ -2398,7 +2397,6 @@ public class GenCrdV1_15_0
 
         public LayerLuksVolumes()
         {
-            super();
         }
 
         public LayerLuksVolumes(LayerLuksVolumesSpec spec)
@@ -2550,7 +2548,6 @@ public class GenCrdV1_15_0
 
         public LayerOpenflexResourceDefinitions()
         {
-            super();
         }
 
         public LayerOpenflexResourceDefinitions(LayerOpenflexResourceDefinitionsSpec spec)
@@ -2702,7 +2699,6 @@ public class GenCrdV1_15_0
 
         public LayerOpenflexVolumes()
         {
-            super();
         }
 
         public LayerOpenflexVolumes(LayerOpenflexVolumesSpec spec)
@@ -2889,7 +2885,6 @@ public class GenCrdV1_15_0
 
         public LayerResourceIds()
         {
-            super();
         }
 
         public LayerResourceIds(LayerResourceIdsSpec spec)
@@ -3050,7 +3045,6 @@ public class GenCrdV1_15_0
 
         public LayerStorageVolumes()
         {
-            super();
         }
 
         public LayerStorageVolumes(LayerStorageVolumesSpec spec)
@@ -3202,7 +3196,6 @@ public class GenCrdV1_15_0
 
         public LayerWritecacheVolumes()
         {
-            super();
         }
 
         public LayerWritecacheVolumes(LayerWritecacheVolumesSpec spec)
@@ -3380,7 +3373,6 @@ public class GenCrdV1_15_0
 
         public LinstorRemotes()
         {
-            super();
         }
 
         public LinstorRemotes(LinstorRemotesSpec spec)
@@ -3540,7 +3532,6 @@ public class GenCrdV1_15_0
 
         public Nodes()
         {
-            super();
         }
 
         public Nodes(NodesSpec spec)
@@ -3683,7 +3674,6 @@ public class GenCrdV1_15_0
 
         public NodeConnections()
         {
-            super();
         }
 
         public NodeConnections(NodeConnectionsSpec spec)
@@ -3862,7 +3852,6 @@ public class GenCrdV1_15_0
 
         public NodeNetInterfaces()
         {
-            super();
         }
 
         public NodeNetInterfaces(NodeNetInterfacesSpec spec)
@@ -4041,7 +4030,6 @@ public class GenCrdV1_15_0
 
         public NodeStorPool()
         {
-            super();
         }
 
         public NodeStorPool(NodeStorPoolSpec spec)
@@ -4184,7 +4172,6 @@ public class GenCrdV1_15_0
 
         public PropsContainers()
         {
-            super();
         }
 
         public PropsContainers(PropsContainersSpec spec)
@@ -4355,7 +4342,6 @@ public class GenCrdV1_15_0
 
         public Resources()
         {
-            super();
         }
 
         public Resources(ResourcesSpec spec)
@@ -4536,7 +4522,6 @@ public class GenCrdV1_15_0
 
         public ResourceConnections()
         {
-            super();
         }
 
         public ResourceConnections(ResourceConnectionsSpec spec)
@@ -4742,7 +4727,6 @@ public class GenCrdV1_15_0
 
         public ResourceDefinitions()
         {
-            super();
         }
 
         public ResourceDefinitions(ResourceDefinitionsSpec spec)
@@ -4992,7 +4976,6 @@ public class GenCrdV1_15_0
 
         public ResourceGroups()
         {
-            super();
         }
 
         public ResourceGroups(ResourceGroupsSpec spec)
@@ -5188,7 +5171,6 @@ public class GenCrdV1_15_0
 
         public S3Remotes()
         {
-            super();
         }
 
         public S3Remotes(S3RemotesSpec spec)
@@ -5330,7 +5312,6 @@ public class GenCrdV1_15_0
 
         public SatellitesCapacity()
         {
-            super();
         }
 
         public SatellitesCapacity(SatellitesCapacitySpec spec)
@@ -5463,7 +5444,6 @@ public class GenCrdV1_15_0
 
         public SecAccessTypes()
         {
-            super();
         }
 
         public SecAccessTypes(SecAccessTypesSpec spec)
@@ -5606,7 +5586,6 @@ public class GenCrdV1_15_0
 
         public SecAclMap()
         {
-            super();
         }
 
         public SecAclMap(SecAclMapSpec spec)
@@ -5748,7 +5727,6 @@ public class GenCrdV1_15_0
 
         public SecConfiguration()
         {
-            super();
         }
 
         public SecConfiguration(SecConfigurationSpec spec)
@@ -5881,7 +5859,6 @@ public class GenCrdV1_15_0
 
         public SecDfltRoles()
         {
-            super();
         }
 
         public SecDfltRoles(SecDfltRolesSpec spec)
@@ -6050,7 +6027,6 @@ public class GenCrdV1_15_0
 
         public SecIdentities()
         {
-            super();
         }
 
         public SecIdentities(SecIdentitiesSpec spec)
@@ -6184,7 +6160,6 @@ public class GenCrdV1_15_0
 
         public SecIdRoleMap()
         {
-            super();
         }
 
         public SecIdRoleMap(SecIdRoleMapSpec spec)
@@ -6335,7 +6310,6 @@ public class GenCrdV1_15_0
 
         public SecObjectProtection()
         {
-            super();
         }
 
         public SecObjectProtection(SecObjectProtectionSpec spec)
@@ -6495,7 +6469,6 @@ public class GenCrdV1_15_0
 
         public SecRoles()
         {
-            super();
         }
 
         public SecRoles(SecRolesSpec spec)
@@ -6637,7 +6610,6 @@ public class GenCrdV1_15_0
 
         public SecTypes()
         {
-            super();
         }
 
         public SecTypes(SecTypesSpec spec)
@@ -6780,7 +6752,6 @@ public class GenCrdV1_15_0
 
         public SecTypeRules()
         {
-            super();
         }
 
         public SecTypeRules(SecTypeRulesSpec spec)
@@ -6913,7 +6884,6 @@ public class GenCrdV1_15_0
 
         public SpaceHistory()
         {
-            super();
         }
 
         public SpaceHistory(SpaceHistorySpec spec)
@@ -7055,7 +7025,6 @@ public class GenCrdV1_15_0
 
         public StorPoolDefinitions()
         {
-            super();
         }
 
         public StorPoolDefinitions(StorPoolDefinitionsSpec spec)
@@ -7180,7 +7149,6 @@ public class GenCrdV1_15_0
 
         public TrackingDate()
         {
-            super();
         }
 
         public TrackingDate(TrackingDateSpec spec)
@@ -7352,7 +7320,6 @@ public class GenCrdV1_15_0
 
         public Volumes()
         {
-            super();
         }
 
         public Volumes(VolumesSpec spec)
@@ -7525,7 +7492,6 @@ public class GenCrdV1_15_0
 
         public VolumeConnections()
         {
-            super();
         }
 
         public VolumeConnections(VolumeConnectionsSpec spec)
@@ -7696,7 +7662,6 @@ public class GenCrdV1_15_0
 
         public VolumeDefinitions()
         {
-            super();
         }
 
         public VolumeDefinitions(VolumeDefinitionsSpec spec)
@@ -7848,7 +7813,6 @@ public class GenCrdV1_15_0
 
         public VolumeGroups()
         {
-            super();
         }
 
         public VolumeGroups(VolumeGroupsSpec spec)

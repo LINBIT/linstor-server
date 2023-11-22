@@ -525,6 +525,7 @@ public final class DatabaseConstantsGenerator
             "com.linbit.linstor.dbdrivers.RawParameters",
             "com.linbit.linstor.security.AccessDeniedException",
             "com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext",
+            "com.linbit.linstor.transaction.K8sCrdMigrationContext",
             "com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext",
             "com.linbit.linstor.utils.ByteUtils",
             "com.linbit.utils.ExceptionThrowingFunction",
@@ -858,6 +859,7 @@ public final class DatabaseConstantsGenerator
                 try (IndentLevel argsIndent = new IndentLevel("", "", false, false))
                 {
                     appendLine("%s::databaseTableToCustomResourceClass,", clazzName);
+                    appendLine("GeneratedDatabaseTables.ALL_TABLES,");
                     appendLine("%s.VERSION", clazzName);
                 }
                 appendLine(");");
@@ -875,6 +877,13 @@ public final class DatabaseConstantsGenerator
                     appendLine("\"%s\"", asYamlVersionString(currentVersionRef));
                 }
                 appendLine(");");
+            }
+
+            appendEmptyLine();
+            appendLine("public static K8sCrdMigrationContext createMigrationContext()");
+            try (IndentLevel methodIndent = new IndentLevel())
+            {
+                appendLine("return new K8sCrdMigrationContext(createTxMgrContext(), createSchemaUpdateContext());");
             }
 
             for (Table tbl : tbls.values())

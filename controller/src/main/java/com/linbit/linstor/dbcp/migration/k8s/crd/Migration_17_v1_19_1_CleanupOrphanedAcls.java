@@ -45,11 +45,7 @@ public class Migration_17_v1_19_1_CleanupOrphanedAcls extends BaseK8sCrdMigratio
 {
     public Migration_17_v1_19_1_CleanupOrphanedAcls()
     {
-        super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_19_1.createMigrationContext());
     }
 
     @Override

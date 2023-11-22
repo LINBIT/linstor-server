@@ -6,6 +6,7 @@ import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext;
+import com.linbit.linstor.transaction.K8sCrdMigrationContext;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
 import com.linbit.linstor.utils.ByteUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
@@ -1193,6 +1194,7 @@ public class GenCrdV1_25_1
     {
         return new BaseControllerK8sCrdTransactionMgrContext(
             GenCrdV1_25_1::databaseTableToCustomResourceClass,
+            GeneratedDatabaseTables.ALL_TABLES,
             GenCrdV1_25_1.VERSION
         );
     }
@@ -1204,6 +1206,11 @@ public class GenCrdV1_25_1
             GenCrdV1_25_1::databaseTableToYamlName,
             "v1-25-1"
         );
+    }
+
+    public static K8sCrdMigrationContext createMigrationContext()
+    {
+        return new K8sCrdMigrationContext(createTxMgrContext(), createSchemaUpdateContext());
     }
 
     public static EbsRemotes createEbsRemotes(

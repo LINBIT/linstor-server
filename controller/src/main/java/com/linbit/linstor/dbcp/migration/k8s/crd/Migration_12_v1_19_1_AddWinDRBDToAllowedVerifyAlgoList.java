@@ -17,11 +17,7 @@ public class Migration_12_v1_19_1_AddWinDRBDToAllowedVerifyAlgoList extends Base
 
     public Migration_12_v1_19_1_AddWinDRBDToAllowedVerifyAlgoList()
     {
-        super(
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createTxMgrContext(),
-            GenCrdV1_19_1.createSchemaUpdateContext()
-        );
+        super(GenCrdV1_19_1.createMigrationContext());
     }
 
     @Override
