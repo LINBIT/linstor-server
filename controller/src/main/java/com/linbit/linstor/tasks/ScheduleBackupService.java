@@ -822,13 +822,14 @@ public class ScheduleBackupService implements SystemService
         if (namespaceProps.isPresent())
         {
             Set<String> copySet = new HashSet<>(namespaceProps.get().map().keySet());
+            final int expectedKeyLength = 4;
             for (String propKey : copySet)
             {
                 // key for activating scheduled shipping is namespace/{remoteName}/{scheduleName}/Enabled
                 String[] splitKey = propKey.split(Props.PATH_SEPARATOR);
-                if (
+                if (splitKey.length == expectedKeyLength && (
                     remoteName != null && splitKey[1].equals(remoteName) ||
-                        scheduleName != null && splitKey[2].equals(scheduleName)
+                    scheduleName != null && splitKey[2].equals(scheduleName))
                 )
                 {
                     props.removeProp(propKey);
