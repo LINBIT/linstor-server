@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - ResourceDefinition/VolumeDefinition to prometheus /metrics
 
+### Changed
+
+- Added copy of GenDbTables to GenCrdV* classes for migrations
+
 ### Fixed
 
 - Do not allow setting resource-groups with place-count 0

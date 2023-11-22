@@ -99,8 +99,8 @@ public class GenerateSql
 
         DatabaseConstantsGenerator gen = new DatabaseConstantsGenerator(dataSource.getConnection());
         String gitRoot = getGitRoot();
-        renderGeneratedDatabaseTables(gen, gitRoot);
-        renderGeneratedKubernetesCustomResourceDefinitions(gen, gitRoot);
+        String genDbTablesJavaCode = renderGeneratedDatabaseTables(gen, gitRoot);
+        renderGeneratedKubernetesCustomResourceDefinitions(gen, gitRoot, genDbTablesJavaCode);
 
         dataSource.close();
 
@@ -132,24 +132,27 @@ public class GenerateSql
         }
     }
 
-    private static void renderGeneratedDatabaseTables(DatabaseConstantsGenerator generator, String gitRoot)
+    private static String renderGeneratedDatabaseTables(DatabaseConstantsGenerator generator, String gitRoot)
         throws IOException
     {
+        String genDbTablesJavaCode = generator.renderSqlConsts(
+            DatabaseConstantsGenerator.DFLT_DBDRIVERS_PACKAGE,
+            DatabaseConstantsGenerator.DFLT_GEN_DB_TABLES_CLASS_NAME
+        );
         renderJavaFile(
-            generator.renderSqlConsts(
-                DatabaseConstantsGenerator.DFLT_DBDRIVERS_PACKAGE,
-                DatabaseConstantsGenerator.DFLT_GEN_DB_TABLES_CLASS_NAME
-            ),
+            genDbTablesJavaCode,
             DatabaseConstantsGenerator.DFLT_DBDRIVERS_PACKAGE,
             DatabaseConstantsGenerator.DFLT_GEN_DB_TABLES_CLASS_NAME,
             gitRoot,
             "server"
         );
+        return genDbTablesJavaCode;
     }
 
     private static void renderGeneratedKubernetesCustomResourceDefinitions(
         DatabaseConstantsGenerator generator,
-        String gitRoot
+        String gitRoot,
+        String genDbTablesJavaCodeRef
     )
         throws IOException
     {
@@ -162,7 +165,8 @@ public class GenerateSql
             loadAllCrdVersionNumbers(
                 gitRoot,
                 DatabaseConstantsGenerator.getYamlLocation("", "")
-            )
+            ),
+            genDbTablesJavaCodeRef
         );
 
         if (genCrdCurrentChanged(gitRoot, result))
@@ -228,6 +232,7 @@ public class GenerateSql
                     generatedCrdJavaClass.pkgName
                 )
                     .resolve(generatedCrdJavaClass.clazzName + ".java");
+
                 if (Files.exists(path))
                 {
                     String oldCode;
@@ -246,11 +251,62 @@ public class GenerateSql
                     // System.out.println("new checksum: " + checksumNew);
 
                     ret = !sanitizedNewCode.equals(sanitizedOldCode);
+
+                    // if (ret)
+                    // {
+                    // printDiff(sanitizedOldCode, sanitizedNewCode);
+                    // ret = false;
+                    // }
                 }
                 break;
             }
         }
         return ret;
+    }
+
+    private static void printDiff(String sanitizedOldCode, String sanitizedNewCode)
+    {
+        String[] oldLines = sanitizedOldCode.split("\n");
+        String[] newLines = sanitizedNewCode.split("\n");
+        String[] rest;
+        String restType;
+        int minLines;
+        int maxLines;
+        if (oldLines.length > newLines.length)
+        {
+            minLines = newLines.length;
+            maxLines = oldLines.length;
+            rest = oldLines;
+            restType = "old";
+        }
+        else
+        {
+            minLines = oldLines.length;
+            maxLines = newLines.length;
+            rest = newLines;
+            restType = "new";
+        }
+        int curLine = 0;
+        while (curLine < minLines)
+        {
+            if (!oldLines[curLine].equals(newLines[curLine]))
+            {
+                System.out.println("line: " + curLine);
+                System.out.println("  old: " + oldLines[curLine]);
+                System.out.println("  new: " + newLines[curLine]);
+            }
+            curLine++;
+        }
+        while (curLine < maxLines)
+        {
+            System.out.println("line: " + curLine);
+            System.out.println("  " + restType + ": " + rest[curLine]);
+            curLine++;
+        }
+
+        // System.out.println("~~~~");
+        //
+        // System.out.println(sanitizedNewCode);
     }
 
     private static String replaceVersionUID(String javaCode)

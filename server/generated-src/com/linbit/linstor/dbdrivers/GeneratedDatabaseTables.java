@@ -2300,6 +2300,7 @@ public class GeneratedDatabaseTables
             return isNullable;
         }
 
+        @Override
         public DatabaseTable getTable()
         {
             return table;

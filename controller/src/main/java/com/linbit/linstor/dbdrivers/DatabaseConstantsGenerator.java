@@ -71,7 +71,7 @@ public final class DatabaseConstantsGenerator
 
     private static final ObjectMapper YAML_MAPPER = new ObjectMapper(new YAMLFactory());
 
-    private static Random random = new Random();
+    private Random random = new Random();
     private StringBuilder mainBuilder = new StringBuilder();
     private int indentLevel = 0;
     private TreeMap<String, Table> tbls = new TreeMap<>();
@@ -199,7 +199,7 @@ public final class DatabaseConstantsGenerator
             pkgName,
             "com.linbit.ImplementationError",
             "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
-            null, // empty line
+            "", // empty line
             "java.sql.Types"
         );
 
@@ -323,13 +323,16 @@ public final class DatabaseConstantsGenerator
         appendEmptyLine();
         for (String imp : imports)
         {
-            if (imp == null)
+            if (imp != null)
             {
-                appendEmptyLine();
-            }
-            else
-            {
-                appendLine("import " + imp + ";");
+                if (imp.isBlank())
+                {
+                    appendEmptyLine();
+                }
+                else
+                {
+                    appendLine("import " + imp + ";");
+                }
             }
         }
     }
@@ -438,7 +441,8 @@ public final class DatabaseConstantsGenerator
         String basePkgName,
         String clazzNameFormatRef,
         String currentVersionStrRef,
-        Set<String> allVersionsRef
+        Set<String> allVersionsRef,
+        String genDbTablesJavaCodeRef
     )
     {
         // reinitialize random with currentVersion based seed
@@ -461,19 +465,24 @@ public final class DatabaseConstantsGenerator
         Set<GeneratedResources> resources = new HashSet<>();
 
         // currently we are only generating one large class instead of many smaller classes (one per table? or three?)
-        renderCurrentGenCrd(basePkgName, currentVersionStrRef, DFLT_K8S_CRD_CLASS_NAME_CURRENT);
+        renderCurrentGenCrd(basePkgName, currentVersionStrRef, DFLT_K8S_CRD_CLASS_NAME_CURRENT, null);
         String genCrdCurrentCode = mainBuilder.toString();
         javaClasses.add(
             new GeneratedCrdJavaClass(basePkgName, DFLT_K8S_CRD_CLASS_NAME_CURRENT, genCrdCurrentCode)
         );
-        // also save the just generated code as GenCrd${currentVersion}.java for the migration to refer to
+
+        // re-render but this time add the "GeneratedDatbaseTables".
+        // although we have to render the same class twice, the first version can be used as "GenCrdCurrent"
+        // while the second can be used as "GenCrdV...". Only the latter one should include a copy of
+        // "GeneratedDatabaseTables" class
+        mainBuilder.setLength(0);
         String versionedClassName = String.format(DFLT_K8S_CRD_CLASS_NAME_FORMAT, currentVersionStrRef.toUpperCase());
+        renderCurrentGenCrd(basePkgName, currentVersionStrRef, versionedClassName, genDbTablesJavaCodeRef);
+        String genCrdVersionCode = mainBuilder.toString();
+
+        // also save the just generated code as GenCrd${currentVersion}.java for the migration to refer to
         javaClasses.add(
-            new GeneratedCrdJavaClass(
-                basePkgName,
-                versionedClassName,
-                genCrdCurrentCode.replaceAll(DFLT_K8S_CRD_CLASS_NAME_CURRENT, versionedClassName)
-            )
+            new GeneratedCrdJavaClass(basePkgName, versionedClassName, genCrdVersionCode)
         );
 
         // renderMainGenCrd(basePkgName, clazzNameFormatRef, allVersions, curVer);
@@ -496,24 +505,32 @@ public final class DatabaseConstantsGenerator
         return new GeneratedCrdResult(javaClasses, resources);
     }
 
-    private void renderCurrentGenCrd(String pkgName, String currentVersionRef, String clazzName)
+    private void renderCurrentGenCrd(
+        String pkgName,
+        String currentVersionRef,
+        String clazzName,
+        String genDbTablesJavaCodeRef
+    )
     {
         mainBuilder.setLength(0);
         renderPackageAndImports(
             pkgName,
+            // "" will result in empty line, null will be skipped (no empty line)
+
             // "java.io.Serializable",
             "com.linbit.ImplementationError",
             "com.linbit.linstor.dbdrivers.DatabaseTable",
             "com.linbit.linstor.dbdrivers.DatabaseTable.Column",
-            "com.linbit.linstor.dbdrivers.GeneratedDatabaseTables",
+            genDbTablesJavaCodeRef == null ? "com.linbit.linstor.dbdrivers.GeneratedDatabaseTables" : null,
             "com.linbit.linstor.dbdrivers.RawParameters",
             "com.linbit.linstor.security.AccessDeniedException",
             "com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgrContext",
             "com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext",
             "com.linbit.linstor.utils.ByteUtils",
             "com.linbit.utils.ExceptionThrowingFunction",
-            null, // empty line
+            "", // empty line
             "java.nio.charset.StandardCharsets",
+            genDbTablesJavaCodeRef != null ? "java.sql.Types" : null,
             "java.text.SimpleDateFormat",
             // "java.util.ArrayList",
             "java.util.Date",
@@ -522,7 +539,7 @@ public final class DatabaseConstantsGenerator
             "java.util.Map",
             "java.util.TreeMap",
             "java.util.concurrent.atomic.AtomicLong",
-            null, // empty line
+            "", // empty line
             "com.fasterxml.jackson.annotation.JsonCreator",
             "com.fasterxml.jackson.annotation.JsonIgnore",
             "com.fasterxml.jackson.annotation.JsonInclude",
@@ -901,6 +918,10 @@ public final class DatabaseConstantsGenerator
 
             renderResolver("CrdResolver", "LinstorCrd<?>", "crdClass", "");
             // renderResolver("SpecResolver", "LinstorSpec", "specClass", "Spec");
+            if (genDbTablesJavaCodeRef != null)
+            {
+                copyGenDbTables(genDbTablesJavaCodeRef);
+            }
         }
     }
 
@@ -952,6 +973,34 @@ public final class DatabaseConstantsGenerator
             {
                 appendLine("Class<?> typeClass = JSON_ID_TO_TYPE_CLASS_LUT.get(idRef);");
                 appendLine("return TypeFactory.defaultInstance().constructSpecializedType(baseType, typeClass);");
+            }
+        }
+    }
+
+    private void copyGenDbTables(String genDbTablesJavaCodeRef)
+    {
+        appendEmptyLine();
+
+        // we need to skip the first lines like "package" and "import" and unnecessary empty lines
+        boolean copy = false;
+        String[] lines = genDbTablesJavaCodeRef.split("\n");
+        for (String line : lines)
+        {
+            if (!copy && !line.startsWith("package") && !line.startsWith("import") && !line.isBlank())
+            {
+                copy = true;
+            }
+            if (copy)
+            {
+                String tmp = line.replace("public class", "public static class");
+                if (tmp.isBlank())
+                {
+                    appendEmptyLine();
+                }
+                else
+                {
+                    appendLine(tmp);
+                }
             }
         }
     }
@@ -1505,7 +1554,7 @@ public final class DatabaseConstantsGenerator
 //            "com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec",
             "com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgr",
 //            "com.linbit.linstor.transaction.K8sCrdTransaction"
-            null, // empty line
+            "", // empty line
             "io.fabric8.kubernetes.client.KubernetesClient"
         );
         appendEmptyLine();
@@ -1802,6 +1851,7 @@ public final class DatabaseConstantsGenerator
         for (String[] field : fieldsWithPrivateSetter)
         {
             appendEmptyLine();
+            appendLine("@Override");
             if (field[1].matches("is[A-Z0-9].*"))
             {
                 appendLine("public %s %s()", field[0], field[1]);
@@ -1825,23 +1875,32 @@ public final class DatabaseConstantsGenerator
         }
     }
 
-    private void appendEmptyLine()
+    private StringBuilder appendEmptyLine()
     {
-        mainBuilder.append("\n");
+        return mainBuilder.append("\n");
     }
 
-    private void appendLine(String format, Object... args)
+    private StringBuilder appendLine(String format, Object... args)
     {
-        append(format + "%n", args);
+        return append(format + "%n", args);
     }
 
     private StringBuilder append(String format, Object... args)
     {
-        for (int indent = 0; indent < indentLevel; ++indent)
+        StringBuilder ret;
+        if (format.isBlank())
         {
-            mainBuilder.append(INDENT);
+            ret = appendEmptyLine();
         }
-        return mainBuilder.append(String.format(format, args));
+        else
+        {
+            for (int indent = 0; indent < indentLevel; ++indent)
+            {
+                mainBuilder.append(INDENT);
+            }
+            ret = mainBuilder.append(String.format(format, args));
+        }
+        return ret;
     }
 
     private class IndentLevel implements AutoCloseable
