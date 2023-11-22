@@ -1292,7 +1292,6 @@ public final class DatabaseConstantsGenerator
             appendLine("public %s()", tblNameCamelCase);
             try (IndentLevel ctorIndent = new IndentLevel())
             {
-                appendLine("super();");
             }
             appendEmptyLine();
 
