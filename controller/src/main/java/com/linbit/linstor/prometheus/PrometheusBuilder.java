@@ -13,6 +13,7 @@ import com.linbit.linstor.core.apis.ResourceApi;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.apis.VolumeApi;
+import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
@@ -137,6 +138,27 @@ public class PrometheusBuilder
         }
         map.put("node", nodeApi.getName());
         map.put("nodetype", nodeApi.getType());
+        return map;
+    }
+
+    @Nonnull
+    public static Map<String, String> resourceDfnLabels(
+        @Nonnull final ResourceDefinitionApi rscDfnApi)
+    {
+        final HashMap<String, String> map = new HashMap<>();
+        map.put("name", rscDfnApi.getResourceName());
+        map.put("resource_group", rscDfnApi.getResourceGroup().getName());
+        return map;
+    }
+
+    @Nonnull
+    public static Map<String, String> volumeDfnLabels(
+        @Nonnull final ResourceDefinitionApi rscDfnApi, @Nonnull final VolumeDefinitionApi vlmDfnApi)
+    {
+        final HashMap<String, String> map = new HashMap<>();
+        map.put("name", rscDfnApi.getResourceName());
+        map.put("volume_number", vlmDfnApi.getVolumeNr() + "");
+        map.put("resource_group", rscDfnApi.getResourceGroup().getName());
         return map;
     }
 
@@ -282,6 +304,26 @@ public class PrometheusBuilder
         {
             tf.startGauge("linstor_resource_definition_count");
             tf.writeSample(rscDfns.size());
+
+            if (rl != null)
+            {
+                tf.startGauge("linstor_resource_definition_resource_count");
+                for (var rscDfn : rscDfns)
+                {
+                    double count = rl.getResources().stream()
+                        .filter(r -> r.getName().equalsIgnoreCase(rscDfn.getResourceName())).count();
+                    tf.writeSample(resourceDfnLabels(rscDfn), count);
+                }
+            }
+
+            tf.startGauge("linstor_volume_definition_size_bytes");
+            for (var rscDfn : rscDfns)
+            {
+                for (var vlmDfn : rscDfn.getVlmDfnList())
+                {
+                    tf.writeSample(volumeDfnLabels(rscDfn, vlmDfn), vlmDfn.getSize() * 1024);
+                }
+            }
         }
 
         if (rl != null)

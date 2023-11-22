@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ResourceDefinition/VolumeDefinition to prometheus /metrics
+
 ### Fixed
 
 - Do not allow setting resource-groups with place-count 0
