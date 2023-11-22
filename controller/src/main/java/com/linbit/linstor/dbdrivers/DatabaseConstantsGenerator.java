@@ -877,6 +877,7 @@ public final class DatabaseConstantsGenerator
                     appendLine("synchronized (KEY_LUT)");
                     try (IndentLevel synchIndent = new IndentLevel())
                     {
+                        appendLine("sha = KEY_LUT.get(formattedPrimaryKey);");
                         appendLine("if (sha == null)");
                         try (IndentLevel secondIfIndent = new IndentLevel())
                         {

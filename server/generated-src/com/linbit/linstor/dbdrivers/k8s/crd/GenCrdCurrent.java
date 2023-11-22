@@ -9477,6 +9477,7 @@ public class GenCrdCurrent
         {
             synchronized (KEY_LUT)
             {
+                sha = KEY_LUT.get(formattedPrimaryKey);
                 if (sha == null)
                 {
                     sha = ByteUtils.bytesToHex(ByteUtils.checksumSha256(formattedPrimaryKey.getBytes(StandardCharsets.UTF_8))).toLowerCase();
