@@ -252,7 +252,7 @@ public class CtrlRscGrpApiCallHandler
 
             if (rscGrpPojoRef.getAutoSelectFilter() != null &&
                     rscGrpPojoRef.getAutoSelectFilter().getReplicaCount() != null &&
-                    rscGrpPojoRef.getAutoSelectFilter().getReplicaCount() < 0)
+                    rscGrpPojoRef.getAutoSelectFilter().getReplicaCount() < 1)
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
@@ -484,7 +484,7 @@ public class CtrlRscGrpApiCallHandler
             requireRscGrpMapChangeAccess();
 
             if (autoApiRef != null && autoApiRef.getReplicaCount() != null &&
-                    autoApiRef.getReplicaCount() < 0)
+                    autoApiRef.getReplicaCount() < 1)
             {
                 throw new ApiRcException(
                         ApiCallRcImpl.simpleEntry(
