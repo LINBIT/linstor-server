@@ -266,15 +266,30 @@ public class ScheduleBackupService implements SystemService
                         prop.getValue().equals(ApiConsts.VAL_TRUE)
                 )
                 {
-                    AbsRemote remote = remoteRepo.get(accCtx, new RemoteName(keyParts[0]));
-                    Schedule schedule = scheduleRepo.get(accCtx, new ScheduleName(keyParts[1]));
+                    String remoteStr = keyParts[0];
+                    String scheduleStr = keyParts[1];
+                    AbsRemote remote = remoteRepo.get(accCtx, new RemoteName(remoteStr));
+                    Schedule schedule = scheduleRepo.get(accCtx, new ScheduleName(scheduleStr));
                     addNewTask(rscDfn, schedule, remote, false, accCtx);
-                    if (remote != null && schedule != null)
+                    if (remote == null || schedule == null)
+                    {
+                        rc.addEntry(
+                            String.format(
+                                "Resource Definition %s was not set to be shipped " +
+                                    "because %s %s has already been deleted.",
+                                rscDfn.getName().displayValue,
+                                remote == null ? "remote" : "schedule",
+                                remote == null ? remoteStr : scheduleStr
+                            ),
+                            ApiConsts.MASK_SCHEDULE | ApiConsts.INFO_NOOP
+                        );
+                    }
+                    else
                     {
                         rc.addEntry(
                             "Resource Definition " + rscDfn.getName().displayValue +
-                                " sucessfully set to be shipped per schedule " + schedule.getName().displayValue +
-                                " to remote " + remote.getName().displayValue + ".",
+                                " sucessfully set to be shipped per schedule " + scheduleStr +
+                                " to remote " + remoteStr + ".",
                             ApiConsts.MASK_SCHEDULE | ApiConsts.CREATED
                         );
                     }
