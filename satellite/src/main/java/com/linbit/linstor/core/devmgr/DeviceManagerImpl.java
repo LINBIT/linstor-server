@@ -167,7 +167,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private final AtomicBoolean waitUpdFlag     = new AtomicBoolean(true);
     private final AtomicBoolean fullSyncFlag    = new AtomicBoolean(false);
     private final AtomicBoolean shutdownFlag    = new AtomicBoolean(false);
-    private final AtomicBoolean collectUpdateNofiticationForceWakeFlag = new AtomicBoolean(false);
+    private final AtomicBoolean collectUpdateNotificationForceWakeFlag = new AtomicBoolean(false);
 
     private final Map<NodeName, ApiCallRc> dispatchNodeResponses = new TreeMap<>();
     private final Map<ResourceName, ApiCallRc> dispatchRscResponses = new TreeMap<>();
@@ -596,7 +596,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     @Override
     public void forceWakeUpdateNotifications()
     {
-        collectUpdateNofiticationForceWakeFlag.set(true);
+        collectUpdateNotificationForceWakeFlag.set(true);
     }
 
     @Override
@@ -616,7 +616,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
             fullSyncFlag.set(true);
             svcCondFlag.set(true);
-            collectUpdateNofiticationForceWakeFlag.set(true);
+            collectUpdateNotificationForceWakeFlag.set(true);
             sched.notify();
             try
             {
@@ -928,7 +928,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 updTracker.collectUpdateNotifications(
                     updPendingBundle,
                     svcCondFlag,
-                    collectUpdateNofiticationForceWakeFlag,
+                    collectUpdateNotificationForceWakeFlag,
                     waitUpdFlag.get() && pendingDispatchRscs.isEmpty() && pendingDispatchNodes.isEmpty()
                 );
                 if (!svcCondFlag.get())
