@@ -233,7 +233,6 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         }
         else
         {
-            sslEngine.closeInbound();
             closeConnection(true);
             rdState = ReadState.END_OF_STREAM;
         }
