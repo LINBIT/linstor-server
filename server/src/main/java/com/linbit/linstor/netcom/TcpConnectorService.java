@@ -538,6 +538,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
                     // Cleaned up by the next select() or selectNow() operation
                 }
 
+                onSelectorWakeup();
 
                 Iterator<SelectionKey> keysIter = serverSelector.selectedKeys().iterator();
                 while (keysIter.hasNext())
@@ -1050,6 +1051,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
             // enough to file an error report
             errorReporter.reportError(closeIoExc);
         }
+        onConnectionClosed(currentKey);
         currentKey.cancel();
     }
 
@@ -1385,6 +1387,15 @@ public class TcpConnectorService implements Runnable, TcpConnector
         {
             selectorLoopThread.setName(serviceInstanceName.getDisplayName());
         }
+    }
+
+    protected void onSelectorWakeup()
+        throws IllegalMessageStateException, IOException
+    {
+    }
+
+    protected void onConnectionClosed(final SelectionKey currentKey)
+    {
     }
 
     private static class SafeConnectionObserver implements ConnectionObserver

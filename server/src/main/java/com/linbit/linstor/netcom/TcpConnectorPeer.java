@@ -311,7 +311,7 @@ public class TcpConnectorPeer implements Peer
 
                 try
                 {
-                    enableOpInterest(OP_WRITE);
+                    enableInterestOps(OP_WRITE);
                     connector.wakeup();
                 }
                 catch (IllegalStateException illState)
@@ -324,27 +324,44 @@ public class TcpConnectorPeer implements Peer
         return connFlag;
     }
 
-    protected void enableOpInterest(int op)
+    /**
+     * Adds the specified I/O operations to this peer's I/O operations interest set.
+     * @param ops <code>SelectionKey</code> I/O operations - ACCEPT, CONNECT, READ, WRITE
+     */
+    protected void enableInterestOps(final int ops)
     {
-        opInterest |= op;
+        opInterest |= ops;
         selKey.interestOps(opInterest);
     }
 
-    protected boolean isInterestOpEnabled(int op)
+    /**
+     * Indicates whether this peer's interest set contains all of the specified I/O operations.
+     * @param ops <code>SelectionKey</code> I/O operations - ACCEPT, CONNECT, READ, WRITE
+     * @return true if the interest set contains all of the specified operations
+     */
+    protected boolean hasInterestOps(final int ops)
     {
-        return (opInterest & op) == op;
+        return (opInterest & ops) == ops;
     }
 
-    protected void disableInterestOp(int op)
+    /**
+     * Removes the specified I/O operations from this peer's I/O operations interest set.
+     * @param ops <code>SelectionKey</code> I/O operations - ACCEPT, CONNECT, READ, WRITE
+     */
+    protected void disableInterestOps(final int ops)
     {
-        opInterest &= ~op;
+        opInterest &= ~ops;
         selKey.interestOps(opInterest);
     }
 
-    protected void setOpInterest(int op)
+    /**
+     * Sets this peer's I/O operations interest set to match the specified I/O operations.
+     * @param ops <code>SelectionKey</code> I/O operations - ACCEPT, CONNECT, READ, WRITE
+     */
+    protected void setInterestOps(final int ops)
     {
-        opInterest = op;
-        selKey.interestOps(op);
+        opInterest = ops;
+        selKey.interestOps(ops);
     }
 
     @Override
@@ -515,7 +532,7 @@ public class TcpConnectorPeer implements Peer
         authenticated = false;
 
         // deactivate all interest in READ or WRITE operations
-        setOpInterest(0);
+        setInterestOps(0);
 
         synchronized (openRpcs)
         {
@@ -586,7 +603,7 @@ public class TcpConnectorPeer implements Peer
         ++msgRecvCtr;
     }
 
-    SelectionKey getSelectionKey()
+    protected SelectionKey getSelectionKey()
     {
         return selKey;
     }
@@ -606,7 +623,7 @@ public class TcpConnectorPeer implements Peer
                 try
                 {
                     // No more outbound messages present, disable OP_WRITE
-                    disableInterestOp(OP_WRITE);
+                    disableInterestOps(OP_WRITE);
                 }
                 catch (IllegalStateException illState)
                 {
@@ -858,9 +875,9 @@ public class TcpConnectorPeer implements Peer
     public Message nextCurrentMsgIn()
     {
         Message message = finishedMsgInQueue.poll();
-        if (finishedMsgInQueue.size() < MAX_INCOMING_QUEUE_SIZE && !isInterestOpEnabled(OP_READ))
+        if (finishedMsgInQueue.size() < MAX_INCOMING_QUEUE_SIZE && !hasInterestOps(OP_READ))
         {
-            enableOpInterest(OP_READ);
+            enableInterestOps(OP_READ);
         }
         return message;
     }
@@ -1047,7 +1064,7 @@ public class TcpConnectorPeer implements Peer
              * when a message which is ready to process is consumed (i.e.
              * leaves our queue).
              */
-            disableInterestOp(OP_READ);
+            disableInterestOps(OP_READ);
         }
     }
 
