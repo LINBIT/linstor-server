@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
@@ -37,6 +38,7 @@ public class CtrlQuerySizeInfoHelper
     private static final int SEC_TO_MS = 1000;
 
     private final ErrorReporter errorReporter;
+    private final AccessContext sysAccCtx;
     private final Provider<AccessContext> peerCtxProvider;
     private final Autoplacer autoplacer;
     private final StorPoolFilter storPoolFilter;
@@ -44,15 +46,18 @@ public class CtrlQuerySizeInfoHelper
     private final Map<AutoSelectFilterPojo, CacheEntry<QueryAllSizeInfoResponsePojo>> cachedQasiMap;
     private final Map<String /* RgName */, Map<AutoSelectFilterPojo, CacheEntry<ApiCallRcWith<QuerySizeInfoResponsePojo>>>> cachedQsiPojoMap;
 
+
     @Inject
     public CtrlQuerySizeInfoHelper(
         ErrorReporter errorReporterRef,
+        @SystemContext AccessContext sysAccCtxRef,
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
         Autoplacer autoplacerRef,
         StorPoolFilter storPoolFilterRef
     )
     {
         errorReporter = errorReporterRef;
+        sysAccCtx = sysAccCtxRef;
         peerCtxProvider = peerCtxProviderRef;
         autoplacer = autoplacerRef;
         storPoolFilter = storPoolFilterRef;
@@ -112,12 +117,11 @@ public class CtrlQuerySizeInfoHelper
         Long maxVlmSize = null;
         if (selectedStorPoolSetRef != null)
         {
-            AccessContext peerCtx = peerCtxProvider.get();
             for (StorPool sp : selectedStorPoolSetRef)
             {
                 Optional<Long> optFreeCap = FreeCapacityAutoPoolSelectorUtils
                     .getFreeCapacityCurrentEstimationPrivileged(
-                        peerCtx,
+                        sysAccCtx,
                         thinFreeCapacitiesRef,
                         sp,
                         true
@@ -146,13 +150,12 @@ public class CtrlQuerySizeInfoHelper
         }
         else
         {
-            AccessContext peerCtx = peerCtxProvider.get();
             ArrayList<Long> availableSizes = new ArrayList<>();
             for (StorPool sp : availableStorPoolListRef)
             {
                 Optional<Long> optFreeCap = FreeCapacityAutoPoolSelectorUtils
                     .getFreeCapacityCurrentEstimationPrivileged(
-                        peerCtx,
+                        sysAccCtx,
                         thinFreeCapacitiesRef,
                         sp,
                         false
