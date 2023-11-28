@@ -65,7 +65,7 @@ public class StltFreeSpaceMgr extends BaseTransactionObject implements FreeSpace
     }
 
     @Override
-    public long getReservedCapacity(AccessContext accCtx)
+    public long getPendingAllocatedSum(AccessContext accCtx)
         throws AccessDeniedException
     {
         throw new UnsupportedOperationException("Satellite does not track free space");

@@ -17,10 +17,13 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.ComparatorUtils;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -42,24 +45,27 @@ public class CtrlQueryMaxVlmSizeHelper
     private final AccessContext apiCtx;
     private final Autoplacer autoplacer;
     private final StorPoolDefinitionRepository storPoolDfnRepo;
+    private final SystemConfRepository sysCfgRepo;
 
     @Inject
     public CtrlQueryMaxVlmSizeHelper(
         @ApiContext AccessContext apiCtxRef,
         Autoplacer autoplacerRef,
-        StorPoolDefinitionRepository storPoolDfnRepoRef
+        StorPoolDefinitionRepository storPoolDfnRepoRef,
+        SystemConfRepository sysCfgRepoRef
     )
     {
         apiCtx = apiCtxRef;
         autoplacer = autoplacerRef;
         storPoolDfnRepo = storPoolDfnRepoRef;
+        sysCfgRepo = sysCfgRepoRef;
     }
 
     public Flux<ApiCallRcWith<List<MaxVlmSizeCandidatePojo>>> queryMaxVlmSize(
-        AutoSelectFilterApi selectFilter,
+        @Nonnull AutoSelectFilterApi selectFilter,
         @Nullable ResourceDefinition rscDfnRef,
         int size,
-        Map<StorPool.Key, Long> thinFreeCapacities
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities
     )
     {
         /*
@@ -85,8 +91,10 @@ public class CtrlQueryMaxVlmSizeHelper
         List<String> storPoolNameList = selectFilter.getStorPoolNameList();
         if (storPoolNameList == null || storPoolNameList.isEmpty())
         {
-            storPoolNameList = getStorPoolNamesAsString();
+            storPoolNameList = getStorPoolNamesAsStringPrivileged();
         }
+
+        final Props ctrlProps = getCtrlPropsPrivileged();
 
         for (String storPoolNameStr : storPoolNameList)
         {
@@ -108,7 +116,7 @@ public class CtrlQueryMaxVlmSizeHelper
 
                 for (StorPool sp : selectedStorPoolSet)
                 {
-                    spDfnSet.add(getStorPoolDfn(sp));
+                    spDfnSet.add(getStorPoolDfnPrivileged(sp));
                     allThin &= sp.getDeviceProviderKind().usesThinProvisioning();
 
                     nodeNameList.add(sp.getNode().getName().displayValue);
@@ -118,6 +126,7 @@ public class CtrlQueryMaxVlmSizeHelper
                             apiCtx,
                             thinFreeCapacities,
                             sp,
+                            ctrlProps,
                             false
                         );
                     if (freeCapacityCurrentEstimation.isPresent())
@@ -137,7 +146,7 @@ public class CtrlQueryMaxVlmSizeHelper
 
                 candidatesWithCapacity.add(
                     new MaxVlmSizeCandidatePojo(
-                        getStorPoolDfnApiData(spDfnSet.iterator().next()),
+                        getStorPoolDfnApiDataPrivileged(spDfnSet.iterator().next()),
                         allThin,
                         nodeNameList,
                         lowestFreeSpace
@@ -148,7 +157,7 @@ public class CtrlQueryMaxVlmSizeHelper
         return Flux.just(makeResponse(candidatesWithCapacity));
     }
 
-    private List<String> getStorPoolNamesAsString()
+    private @Nonnull List<String> getStorPoolNamesAsStringPrivileged()
     {
         List<String> storPoolNamesStr = new ArrayList<>();
         try
@@ -166,7 +175,7 @@ public class CtrlQueryMaxVlmSizeHelper
         return storPoolNamesStr;
     }
 
-    private StorPoolDefinition getStorPoolDfn(StorPool storPool)
+    private @Nonnull StorPoolDefinition getStorPoolDfnPrivileged(@Nonnull StorPool storPool)
     {
         StorPoolDefinition storPoolDfn;
         try
@@ -180,7 +189,7 @@ public class CtrlQueryMaxVlmSizeHelper
         return storPoolDfn;
     }
 
-    private StorPoolDefinitionApi getStorPoolDfnApiData(StorPoolDefinition storPoolDfn)
+    private @Nonnull StorPoolDefinitionApi getStorPoolDfnApiDataPrivileged(@Nonnull StorPoolDefinition storPoolDfn)
     {
         StorPoolDefinitionApi apiData;
         try
@@ -192,6 +201,18 @@ public class CtrlQueryMaxVlmSizeHelper
             throw new ImplementationError(exc);
         }
         return apiData;
+    }
+
+    private @Nonnull Props getCtrlPropsPrivileged()
+    {
+        try
+        {
+            return sysCfgRepo.getCtrlConfForView(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
     }
 
     private ApiCallRcWith<List<MaxVlmSizeCandidatePojo>> makeResponse(List<MaxVlmSizeCandidatePojo> candidates)

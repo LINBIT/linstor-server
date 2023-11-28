@@ -852,6 +852,9 @@ public class CtrlConfApiCallHandler
                             notifyStlts = true;
                         }
                             break;
+                        case ApiConsts.KEY_STOR_POOL_MAX_FREE_CAPACITY_OVERSUBSCRIPTION_RATIO: // fall-through
+                        case ApiConsts.KEY_STOR_POOL_MAX_OVERSUBSCRIPTION_RATIO: // fall-through
+                        case ApiConsts.KEY_STOR_POOL_MAX_TOTAL_CAPACITY_OVERSUBSCRIPTION_RATIO: // fall-through
                         case ApiConsts.KEY_UPDATE_CACHE_INTERVAL:
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_ALLOW_EVICTION:

@@ -167,7 +167,7 @@ public class FreeSpaceMgr extends BaseTransactionObject implements FreeSpaceTrac
      * @throws AccessDeniedException
      */
     @Override
-    public long getReservedCapacity(AccessContext accCtx)
+    public long getPendingAllocatedSum(AccessContext accCtx)
     {
         long sum = 0;
         HashSet<VlmProviderObject<?>> pendingAddVlmCopy;

@@ -1,5 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRcWith;
@@ -14,11 +15,14 @@ import com.linbit.linstor.core.apicallhandler.controller.autoplacer.StorPoolFilt
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.Key;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -46,6 +50,7 @@ public class CtrlQuerySizeInfoHelper
     private final Map<AutoSelectFilterPojo, CacheEntry<QueryAllSizeInfoResponsePojo>> cachedQasiMap;
     private final Map<String /* RgName */, Map<AutoSelectFilterPojo, CacheEntry<ApiCallRcWith<QuerySizeInfoResponsePojo>>>> cachedQsiPojoMap;
 
+    private final SystemConfRepository sysCfgRepo;
 
     @Inject
     public CtrlQuerySizeInfoHelper(
@@ -53,7 +58,8 @@ public class CtrlQuerySizeInfoHelper
         @SystemContext AccessContext sysAccCtxRef,
         @PeerContext Provider<AccessContext> peerCtxProviderRef,
         Autoplacer autoplacerRef,
-        StorPoolFilter storPoolFilterRef
+        StorPoolFilter storPoolFilterRef,
+        SystemConfRepository sysCfgRepoRef
     )
     {
         errorReporter = errorReporterRef;
@@ -61,6 +67,7 @@ public class CtrlQuerySizeInfoHelper
         peerCtxProvider = peerCtxProviderRef;
         autoplacer = autoplacerRef;
         storPoolFilter = storPoolFilterRef;
+        sysCfgRepo = sysCfgRepoRef;
 
         // weak hash maps so the garbage-collector is free to cleanup the cache if it feels like it
         cachedQasiMap = new WeakHashMap<>();
@@ -112,11 +119,15 @@ public class CtrlQuerySizeInfoHelper
         return new QuerySizeInfoResponsePojo(maxVlmSize, available, capacity, selectedStorPools);
     }
 
-    private long getMaxVlmSize(Set<StorPool> selectedStorPoolSetRef, Map<Key, Long> thinFreeCapacitiesRef)
+    private long getMaxVlmSize(
+        @Nullable Set<StorPool> selectedStorPoolSetRef,
+        @Nullable Map<Key, Long> thinFreeCapacitiesRef
+    )
     {
         Long maxVlmSize = null;
         if (selectedStorPoolSetRef != null)
         {
+            final Props ctrlProps = getCtrlPropsPrivileged();
             for (StorPool sp : selectedStorPoolSetRef)
             {
                 Optional<Long> optFreeCap = FreeCapacityAutoPoolSelectorUtils
@@ -124,6 +135,7 @@ public class CtrlQuerySizeInfoHelper
                         sysAccCtx,
                         thinFreeCapacitiesRef,
                         sp,
+                        ctrlProps,
                         true
                     );
                 long freeCap = optFreeCap.orElse(0L);
@@ -136,11 +148,23 @@ public class CtrlQuerySizeInfoHelper
         return maxVlmSize == null ? 0 : maxVlmSize;
     }
 
+    private @Nonnull Props getCtrlPropsPrivileged()
+    {
+        try
+        {
+            return sysCfgRepo.getCtrlConfForView(sysAccCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
     private long getAvailable(
         int placeCountRef,
-        Set<StorPool> selectedStorPoolSetRef,
-        List<StorPool> availableStorPoolListRef,
-        Map<Key, Long> thinFreeCapacitiesRef
+        @Nullable Set<StorPool> selectedStorPoolSetRef,
+        @Nonnull List<StorPool> availableStorPoolListRef,
+        @Nullable Map<Key, Long> thinFreeCapacitiesRef
     )
     {
         long available;
@@ -151,6 +175,8 @@ public class CtrlQuerySizeInfoHelper
         else
         {
             ArrayList<Long> availableSizes = new ArrayList<>();
+
+            final Props ctrlProps = getCtrlPropsPrivileged();
             for (StorPool sp : availableStorPoolListRef)
             {
                 Optional<Long> optFreeCap = FreeCapacityAutoPoolSelectorUtils
@@ -158,6 +184,7 @@ public class CtrlQuerySizeInfoHelper
                         sysAccCtx,
                         thinFreeCapacitiesRef,
                         sp,
+                        ctrlProps,
                         false
                     );
                 if (optFreeCap.isPresent())

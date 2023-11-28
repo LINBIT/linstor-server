@@ -418,7 +418,7 @@ public class StorPool extends AbsCoreObj<StorPool>
                 props,
                 getDefinition(accCtxRef).getProps(accCtxRef)
             )
-                .getProp(ApiConsts.KEY_STOR_POOL_DFN_MAX_OVERSUBSCRIPTION_RATIO);
+                .getProp(ApiConsts.KEY_STOR_POOL_MAX_OVERSUBSCRIPTION_RATIO);
             if (oversubscriptionProp == null)
             {
                 if (dfltVal != null)

@@ -32,7 +32,7 @@ public interface FreeSpaceTracker extends TransactionObject
 
     Optional<Long> getTotalCapacity(AccessContext accCtx) throws AccessDeniedException;
 
-    long getReservedCapacity(AccessContext accCtx) throws AccessDeniedException;
+    long getPendingAllocatedSum(AccessContext accCtx) throws AccessDeniedException;
 
     void setCapacityInfo(AccessContext accCtx, long freeSpaceRef, long totalCapacity) throws AccessDeniedException;
 }

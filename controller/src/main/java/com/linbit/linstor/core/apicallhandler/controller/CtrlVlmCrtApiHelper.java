@@ -22,10 +22,12 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeControllerFactory;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -36,6 +38,7 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -53,19 +56,22 @@ public class CtrlVlmCrtApiHelper
     private final VolumeControllerFactory volumeFactory;
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
+    private final SystemConfRepository sysCfgRepo;
 
     @Inject
     CtrlVlmCrtApiHelper(
         @ApiContext AccessContext apiCtxRef,
         VolumeControllerFactory volumeFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlStorPoolResolveHelper storPoolResolveHelperRef
+        CtrlStorPoolResolveHelper storPoolResolveHelperRef,
+        SystemConfRepository sysCfgRepoRef
     )
     {
         apiCtx = apiCtxRef;
         volumeFactory = volumeFactoryRef;
         peerAccCtx = peerAccCtxRef;
         storPoolResolveHelper = storPoolResolveHelperRef;
+        sysCfgRepo = sysCfgRepoRef;
     }
 
     public ApiCallRcWith<Volume> createVolumeResolvingStorPool(
@@ -231,6 +237,7 @@ public class CtrlVlmCrtApiHelper
         {
             poolsToCheck.addAll(thinPools);
         }
+        final Props ctrlProps = getCtrlPropsPrivileged();
         for (StorPool storPool : poolsToCheck)
         {
             if (getPeerPrivileged(rsc.getNode()).getConnectionStatus() == ApiConsts.ConnectionStatus.ONLINE &&
@@ -255,6 +262,7 @@ public class CtrlVlmCrtApiHelper
                         true,
                         storPool.getName(),
                         rsc.getNode(),
+                        ctrlProps,
                         apiCtx
                     )
                     // allow the volume to be created if the free capacity is unknown
@@ -318,6 +326,18 @@ public class CtrlVlmCrtApiHelper
                     );
                 }
             }
+        }
+    }
+
+    private @Nonnull Props getCtrlPropsPrivileged()
+    {
+        try
+        {
+            return sysCfgRepo.getCtrlConfForView(apiCtx);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 

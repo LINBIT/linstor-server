@@ -1,19 +1,25 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-
-import org.jetbrains.annotations.NotNull;
 
 public class FreeCapacityAutoPoolSelectorUtils
 {
@@ -23,11 +29,12 @@ public class FreeCapacityAutoPoolSelectorUtils
      */
     public static Optional<Boolean> isStorPoolUsable(
         long rscSize,
-        Map<StorPool.Key, Long> freeCapacities,
+        @Nullable Map<StorPool.Key, Long> freeCapacities,
         boolean includeThin,
-        StorPoolName storPoolName,
-        Node node,
-        AccessContext apiCtx
+        @Nonnull StorPoolName storPoolName,
+        @Nonnull Node node,
+        @Nonnull Props ctrlPropsRef,
+        @Nonnull AccessContext apiCtx
     )
     {
         StorPool storPool = getStorPoolPrivileged(apiCtx, node, storPoolName);
@@ -43,77 +50,11 @@ public class FreeCapacityAutoPoolSelectorUtils
                 apiCtx,
                 freeCapacities,
                 storPool,
+                ctrlPropsRef,
                 true
             ).map(freeCapacity -> freeCapacity >= rscSize);
         }
         return usable;
-    }
-
-    public static Optional<Long> getFreeCapacityCurrentEstimationPrivileged(
-        @Nonnull AccessContext sysCtxRef,
-        @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
-        @Nonnull StorPool storPool,
-        boolean includeOversubscriptionRatioRef
-    )
-    {
-        long reservedCapacity = getReservedCapacityPrivileged(sysCtxRef, storPool);
-
-        Long freeCapacityOverride = thinFreeCapacities == null ?
-            null :
-            thinFreeCapacities.get(new StorPool.Key(storPool));
-
-        Optional<Long> freeCapacity = freeCapacityOverride != null ?
-            Optional.of(freeCapacityOverride) :
-            getFreeSpaceLastUpdatedPrivileged(sysCtxRef, storPool);
-
-        Optional<Long> usableCapacity = freeCapacity.map(
-            capacity ->
-            {
-                final long ret;
-                boolean thinPool = storPool.getDeviceProviderKind().usesThinProvisioning();
-                if (thinPool && capacity != Long.MAX_VALUE && includeOversubscriptionRatioRef)
-                {
-                    long oversubscriptionCapacity = (long) (capacity * getOversubscriptionRatioPrivileged(
-                        sysCtxRef,
-                        storPool
-                    ));
-                    if (oversubscriptionCapacity < capacity)
-                    {
-                        // overflow
-                        ret = Long.MAX_VALUE;
-                    }
-                    else
-                    {
-                        ret = oversubscriptionCapacity;
-                    }
-                }
-                else
-                {
-                    ret = capacity;
-                }
-                return ret;
-            }
-        );
-        return usableCapacity.map(capacity ->
-        {
-            final long ret;
-            if (reservedCapacity < 0 && -reservedCapacity > Long.MAX_VALUE - capacity)
-            {
-                /*
-                 * we cannot check for overflow with:
-                 * c - r > M
-                 * if r is negative, since (c - r) would go beyond M, missing the point of the check
-                 * -r > M - c
-                 * should not have this problem
-                 */
-                ret = Long.MAX_VALUE; // prevent overflow
-            }
-            else
-            {
-                ret = capacity - reservedCapacity;
-            }
-            return ret;
-        });
     }
 
     private static StorPool getStorPoolPrivileged(
@@ -134,18 +75,209 @@ public class FreeCapacityAutoPoolSelectorUtils
         return storPool;
     }
 
-    private static long getReservedCapacityPrivileged(@NotNull AccessContext sysCtxRef, @Nonnull StorPool storPoolRef)
+    /**
+     * The current estimation of free capacity is calculated as follows:
+     *
+     * There are two separate calculations made in the background:
+     * 1) (Storage pool's free space) * (MaxFreeCapacityOversubscriptionRatio)
+     * 2) (Storage pool's total capacity) * (MaxTotalCapacityOversubscriptionRatio)
+     *
+     * If both values can be calculated, the lower of the two is returned by this method.
+     * If some information is missing such that at least one of the values cannot be calculated (due to missing updates
+     * from the satellite i.e. regarding free space), an Optional.empty() is returned.
+     *
+     * The properties "MaxFreeCapacityOversubscriptionRatio" and "MaxTotalCapacityOversubscriptionRatio" will each
+     * default to "MaxOversubscriptionRatio" if they do not exist. If "MaxOversubscriptionRatio" itself does not exist,
+     * the {@link StorPool} class has rules for default values, which are then used for the above properties.
+     *
+     * @param sysCtxRef
+     * @param thinFreeCapacities
+     * @param storPoolRef
+     * @param includeOversubscriptionRatioRef
+     *
+     * @return
+     */
+    public static Optional<Long> getFreeCapacityCurrentEstimationPrivileged(
+        @Nonnull AccessContext sysCtxRef,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
+        @Nonnull StorPool storPoolRef,
+        @Nonnull Props ctrlPropRef,
+        boolean includeOversubscriptionRatioRef
+    )
+    {
+        final Optional<Long> ret;
+        final Long freeSpace = getFreeSpacePrivileged(sysCtxRef, thinFreeCapacities, storPoolRef);
+        if (!includeOversubscriptionRatioRef)
+        {
+            ret = Optional.ofNullable(freeSpace);
+        }
+        else
+        {
+            Long capacity = getCapacityPrivilged(sysCtxRef, storPoolRef);
+            if (freeSpace == null || capacity == null)
+            {
+                ret = Optional.empty();
+            }
+            else
+            {
+                final double maxOversubRatio = getMaxOversubscriptionRatioPrivileged(sysCtxRef, storPoolRef);
+                final double maxFreeRatio = getRatioPrivileged(
+                    sysCtxRef,
+                    storPoolRef,
+                    ctrlPropRef,
+                    ApiConsts.KEY_STOR_POOL_MAX_FREE_CAPACITY_OVERSUBSCRIPTION_RATIO,
+                    maxOversubRatio
+                );
+                final double maxCapacityRatio = getRatioPrivileged(
+                    sysCtxRef,
+                    storPoolRef,
+                    ctrlPropRef,
+                    ApiConsts.KEY_STOR_POOL_MAX_TOTAL_CAPACITY_OVERSUBSCRIPTION_RATIO,
+                    maxOversubRatio
+                );
+
+                final long freeSpaceBased = calculateOverProvisionedSpace(freeSpace, maxFreeRatio);
+
+                final long reservedCapacity = getReservedCapacityPrivileged(sysCtxRef, storPoolRef);
+                final long totalSpaceBased = calculateOverProvisionedSpace(capacity, maxCapacityRatio);
+
+                ret = Optional.of(
+                    Math.min(
+                        freeSpaceBased,
+                        totalSpaceBased - reservedCapacity
+                    )
+                );
+            }
+        }
+        return ret;
+    }
+
+    private static long calculateOverProvisionedSpace(long spaceRef, double ratioRef)
+    {
+        final long ret;
+        if (spaceRef == Long.MAX_VALUE || Long.MAX_VALUE / ratioRef < spaceRef)
+        {
+            ret = Long.MAX_VALUE; // prevent overflow
+        }
+        else
+        {
+            ret = (long) (spaceRef * ratioRef);
+        }
+        return ret;
+    }
+
+    /**
+     * If thinFreeCapacitiesRef is not null, it's value will be returned for the given storPool (if it exists).
+     * Otherwise the storPool's freeSpaceTracker is asked for the free space. If that is also not set, null is returned.
+     *
+     * @param sysCtxRef
+     * @param thinFreeCapacitiesRef
+     * @param storPoolRef
+     *
+     * @return
+     */
+    private static Long getFreeSpacePrivileged(
+        @Nonnull AccessContext sysCtxRef,
+        @Nullable Map<StorPool.Key, Long> thinFreeCapacitiesRef,
+        @Nonnull StorPool storPoolRef
+    )
+    {
+        Long ret = null;
+        if (thinFreeCapacitiesRef != null)
+        {
+            ret = thinFreeCapacitiesRef.get(storPoolRef.getKey());
+        }
+        if (ret == null)
+        {
+            try
+            {
+                ret = storPoolRef.getFreeSpaceTracker().getFreeCapacityLastUpdated(sysCtxRef).orElse(null);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+        return ret;
+    }
+
+    private static Long getCapacityPrivilged(@Nonnull AccessContext sysCtxRef, @Nonnull StorPool storPoolRef)
+    {
+        try
+        {
+            return storPoolRef.getFreeSpaceTracker().getTotalCapacity(sysCtxRef).orElse(null);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private static long getReservedCapacityPrivileged(@Nonnull AccessContext sysCtxRef, @Nonnull StorPool storPoolRef)
     {
         long reservedCapacity;
         try
         {
-            reservedCapacity = storPoolRef.getFreeSpaceTracker().getReservedCapacity(sysCtxRef);
+            reservedCapacity = storPoolRef.getFreeSpaceTracker().getPendingAllocatedSum(sysCtxRef);
+            reservedCapacity += getReservedSum(sysCtxRef, storPoolRef.getVolumes(sysCtxRef));
+            reservedCapacity += getReservedSum(sysCtxRef, storPoolRef.getSnapVolumes(sysCtxRef));
         }
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
         return reservedCapacity;
+    }
+
+    private static <RSC extends AbsResource<RSC>> long getReservedSum(
+        @Nonnull AccessContext sysCtxRef,
+        @Nonnull Collection<VlmProviderObject<RSC>> absVlmListRef
+    )
+        throws AccessDeniedException
+    {
+        long ret = 0;
+        for (VlmProviderObject<RSC> absVlmData : absVlmListRef)
+        {
+            ret += absVlmData.getVolume().getVolumeSize(sysCtxRef);
+        }
+        return ret;
+    }
+
+    private static Double getRatioPrivileged(
+        @Nonnull AccessContext sysCtxRef,
+        @Nonnull StorPool storPoolRef,
+        @Nonnull Props ctrlPropRef,
+        @Nonnull String propKeyRef,
+        double dfltVal
+    )
+    {
+        final double ret;
+        String val = null;
+        try
+        {
+            val = new PriorityProps(
+                storPoolRef.getProps(sysCtxRef),
+                storPoolRef.getDefinition(sysCtxRef).getProps(sysCtxRef),
+                ctrlPropRef
+            ).getProp(propKeyRef);
+            if (val != null)
+            {
+                ret = Double.parseDouble(val);
+            }
+            else
+            {
+                ret = dfltVal;
+            }
+        }
+        catch (InvalidKeyException | AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (NumberFormatException nfe)
+        {
+            throw new ApiException("Unable to parse number. Property: " + propKeyRef + ". Value: " + val, nfe);
+        }
+        return ret;
     }
 
     private static Optional<Long> getFreeSpaceLastUpdatedPrivileged(
@@ -165,7 +297,7 @@ public class FreeCapacityAutoPoolSelectorUtils
         return freeSpaceLastUpdated;
     }
 
-    private static double getOversubscriptionRatioPrivileged(
+    private static double getMaxOversubscriptionRatioPrivileged(
         @Nonnull AccessContext sysCtxRef,
         @Nonnull StorPool storPoolRef
     )
