@@ -30,6 +30,7 @@ import com.linbit.linstor.api.pojo.WritecacheRscPojo;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
 import com.linbit.linstor.api.prop.NumericOrSymbolProperty;
 import com.linbit.linstor.api.prop.Property;
+import com.linbit.linstor.api.prop.RangeFloatProperty;
 import com.linbit.linstor.api.prop.RangeProperty;
 import com.linbit.linstor.api.prop.RegexProperty;
 import com.linbit.linstor.api.prop.WhitelistProps;
@@ -453,6 +454,12 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     RangeProperty rangeProperty = (RangeProperty) prop;
                     builder.setMax(rangeProperty.getMax());
                     builder.setMin(rangeProperty.getMin());
+                    break;
+                case RANGE_FLOAT:
+                    builder.setPropType(PropertyType.RANGE_FLOAT);
+                    RangeFloatProperty rangeFloatProperty = (RangeFloatProperty) prop;
+                    builder.setMaxFloat(rangeFloatProperty.getMax());
+                    builder.setMinFloat(rangeFloatProperty.getMin());
                     break;
                 case REGEX:
                     builder.setPropType(PropertyType.REGEX);

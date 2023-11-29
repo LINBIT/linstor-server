@@ -14,6 +14,7 @@ public interface Property
         // 'true' or 'false' (also accepts 'yes' or 'no' as input)
         BOOLEAN_TRUE_FALSE,
         RANGE("numeric"),
+        RANGE_FLOAT,
         STRING,
         NUMERIC_OR_SYMBOL,
         LONG;

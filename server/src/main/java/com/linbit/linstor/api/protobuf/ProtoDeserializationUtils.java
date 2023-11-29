@@ -13,6 +13,7 @@ import com.linbit.linstor.api.prop.BooleanTrueFalseProperty;
 import com.linbit.linstor.api.prop.LongProperty;
 import com.linbit.linstor.api.prop.NumericOrSymbolProperty;
 import com.linbit.linstor.api.prop.Property;
+import com.linbit.linstor.api.prop.RangeFloatProperty;
 import com.linbit.linstor.api.prop.RangeProperty;
 import com.linbit.linstor.api.prop.RegexProperty;
 import com.linbit.linstor.api.prop.StringProperty;
@@ -523,6 +524,18 @@ public class ProtoDeserializationUtils
                         protoProp.getMin(),
                         protoProp.getMax(),
                         protoProp.getRegex(),
+                        internal,
+                        info,
+                        unit,
+                        dflt
+                    );
+                    break;
+                case RANGE_FLOAT:
+                    prop = new RangeFloatProperty(
+                        name,
+                        key,
+                        protoProp.getMinFloat(),
+                        protoProp.getMaxFloat(),
                         internal,
                         info,
                         unit,

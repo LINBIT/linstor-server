@@ -13,6 +13,7 @@ message Property
         STRING = 5;
         REGEX = 6;                 // not used in DRBD xml help
         SYMBOL = 7;                // not used in DRBD xml help, special kind of REGEX_PROP
+        RANGE_FLOAT = 8;           // not used in DRBD xml help, special kind of NUMERIC (float based instead of long based)
     }
 
     string key = 1;
@@ -27,4 +28,7 @@ message Property
     uint64 min = 8;     // used by NUMERIC and NUMERIC_OR_SYMBOL
     uint64 max = 9;     // used by NUMERIC and NUMERIC_OR_SYMBOL
     string regex = 10;  // used by REGEX, SYMBOL and NUMERIC_OR_SYMBOL
+
+    double min_float = 11; // used by RANGE_FLOAT
+    double max_float = 12; // used by RANGE_FLOAT
 }

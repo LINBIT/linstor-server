@@ -22,6 +22,8 @@ public class PropertyBuilder
     private String[] values;
     private long max;
     private long min;
+    private double minFloat;
+    private double maxFloat;
     private String dflt;
     private String unit;
 
@@ -49,6 +51,9 @@ public class PropertyBuilder
                 break;
             case RANGE:
                 prop = new RangeProperty(name, key, min, max, internal, info, unit, dflt);
+                break;
+            case RANGE_FLOAT:
+                prop = new RangeFloatProperty(name, key, minFloat, maxFloat, internal, info, unit, dflt);
                 break;
             case STRING:
                 prop = new StringProperty(name, key, internal, info, unit, dflt);
@@ -161,6 +166,18 @@ public class PropertyBuilder
     public PropertyBuilder min(String minStr)
     {
         min = Long.parseLong(minStr);
+        return this;
+    }
+
+    public PropertyBuilder max_float(String maxStr)
+    {
+        maxFloat = Double.parseDouble(maxStr);
+        return this;
+    }
+
+    public PropertyBuilder min_float(String minStr)
+    {
+        minFloat = Double.parseDouble(minStr);
         return this;
     }
 
