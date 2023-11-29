@@ -16,9 +16,9 @@ public class QuerySizeInfoResponsePojo
         long availableSizeRef,
         long capacityRef,
         List<StorPoolApi> nextSpawnSpListRef
+
     )
     {
-        super();
         maxVlmSize = maxVlmSizeRef;
         availableSize = availableSizeRef;
         capacity = capacityRef;
@@ -44,5 +44,4 @@ public class QuerySizeInfoResponsePojo
     {
         return nextSpawnSpList;
     }
-
 }

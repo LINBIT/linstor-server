@@ -327,6 +327,9 @@ public class ProtoDeserializationUtils
                     null
             ),
             storPoolProto.getOversubscriptionRatio(),
+            null, // we do not care what we receive from the satellite/controller here. This info is only interesting
+            // for user / plugins
+            null, // same as above
             null,
             storPoolProto.getSnapshotSupported(),
             storPoolProto.getIsPmem(),

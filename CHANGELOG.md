@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ResourceDefinition/VolumeDefinition to prometheus /metrics
 - Added PeerSlots to ResourceGroups (create, modify and spawn)
 - Added additional oversubscription calculation
+- Added new oversubscription ratios to QSI result
 
 ### Changed
 

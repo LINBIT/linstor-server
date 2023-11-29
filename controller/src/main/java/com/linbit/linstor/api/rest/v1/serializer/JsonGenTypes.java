@@ -862,6 +862,9 @@ public class JsonGenTypes
          */
         public Long capacity_in_kib;
         public Double default_max_oversubscription_ratio;
+        public Double max_oversubscription_ratio;
+        public Double max_free_capacity_oversubscription_ratio;
+        public Double max_total_capacity_oversubscription_ratio;
         public List<QuerySizeInfoSpawnResult> next_spawn_result = Collections.emptyList();
     }
 
@@ -871,6 +874,8 @@ public class JsonGenTypes
         public String node_name;
         public String stor_pool_name;
         public Double stor_pool_oversubscription_ratio;
+        public Double stor_pool_free_capacity_oversubscription_ratio;
+        public Double stor_pool_total_capacity_oversubscription_ratio;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

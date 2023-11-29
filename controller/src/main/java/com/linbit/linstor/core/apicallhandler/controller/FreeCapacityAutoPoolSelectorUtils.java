@@ -120,21 +120,29 @@ public class FreeCapacityAutoPoolSelectorUtils
             }
             else
             {
-                final double maxOversubRatio = getMaxOversubscriptionRatioPrivileged(sysCtxRef, storPoolRef);
-                final double maxFreeRatio = getRatioPrivileged(
+                final double maxOversubRatio = getMaxOversubscriptionRatioPrivileged(
                     sysCtxRef,
                     storPoolRef,
-                    ctrlPropRef,
-                    ApiConsts.KEY_STOR_POOL_MAX_FREE_CAPACITY_OVERSUBSCRIPTION_RATIO,
-                    maxOversubRatio
+                    ctrlPropRef
                 );
-                final double maxCapacityRatio = getRatioPrivileged(
+                Double maxFreeRatio = getFreeCapacityOversubscriptionRatioPrivileged(
                     sysCtxRef,
                     storPoolRef,
-                    ctrlPropRef,
-                    ApiConsts.KEY_STOR_POOL_MAX_TOTAL_CAPACITY_OVERSUBSCRIPTION_RATIO,
-                    maxOversubRatio
+                    ctrlPropRef
                 );
+                if (maxFreeRatio == null)
+                {
+                    maxFreeRatio = maxOversubRatio;
+                }
+                Double maxCapacityRatio = getTotalCapacityOversubscriptionRatioPrivileged(
+                    sysCtxRef,
+                    storPoolRef,
+                    ctrlPropRef
+                );
+                if (maxCapacityRatio == null)
+                {
+                    maxCapacityRatio = maxOversubRatio;
+                }
 
                 final long freeSpaceBased = calculateOverProvisionedSpace(freeSpace, maxFreeRatio);
 
@@ -243,15 +251,14 @@ public class FreeCapacityAutoPoolSelectorUtils
         return ret;
     }
 
-    private static Double getRatioPrivileged(
+    private static @Nullable Double getRatioPrivileged(
         @Nonnull AccessContext sysCtxRef,
         @Nonnull StorPool storPoolRef,
         @Nonnull Props ctrlPropRef,
-        @Nonnull String propKeyRef,
-        double dfltVal
+        @Nonnull String propKeyRef
     )
     {
-        final double ret;
+        final Double ret;
         String val = null;
         try
         {
@@ -266,7 +273,7 @@ public class FreeCapacityAutoPoolSelectorUtils
             }
             else
             {
-                ret = dfltVal;
+                ret = null;
             }
         }
         catch (InvalidKeyException | AccessDeniedException exc)
@@ -297,21 +304,50 @@ public class FreeCapacityAutoPoolSelectorUtils
         return freeSpaceLastUpdated;
     }
 
-    private static double getMaxOversubscriptionRatioPrivileged(
+    public static double getMaxOversubscriptionRatioPrivileged(
         @Nonnull AccessContext sysCtxRef,
-        @Nonnull StorPool storPoolRef
+        @Nonnull StorPool storPoolRef,
+        @Nullable Props ctrlPropsRef
     )
     {
         double osRatio;
         try
         {
-            osRatio = storPoolRef.getOversubscriptionRatio(sysCtxRef);
+            osRatio = storPoolRef.getOversubscriptionRatio(sysCtxRef, ctrlPropsRef);
         }
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
         return osRatio;
+    }
+
+    public static @Nullable Double getFreeCapacityOversubscriptionRatioPrivileged(
+        @Nonnull AccessContext sysCtxRef,
+        @Nonnull StorPool storPoolRef,
+        @Nonnull Props ctrlPropRef
+    )
+    {
+        return getRatioPrivileged(
+            sysCtxRef,
+            storPoolRef,
+            ctrlPropRef,
+            ApiConsts.KEY_STOR_POOL_MAX_FREE_CAPACITY_OVERSUBSCRIPTION_RATIO
+        );
+    }
+
+    public static @Nullable Double getTotalCapacityOversubscriptionRatioPrivileged(
+        @Nonnull AccessContext sysCtxRef,
+        @Nonnull StorPool storPoolRef,
+        @Nonnull Props ctrlPropRef
+    )
+    {
+        return getRatioPrivileged(
+            sysCtxRef,
+            storPoolRef,
+            ctrlPropRef,
+            ApiConsts.KEY_STOR_POOL_MAX_TOTAL_CAPACITY_OVERSUBSCRIPTION_RATIO
+        );
     }
 
     private FreeCapacityAutoPoolSelectorUtils()

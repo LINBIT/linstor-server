@@ -49,7 +49,10 @@ public interface StorPoolApi
     Optional<Long> getTotalCapacity();
     @JsonIgnore
     double getOversubscriptionRatio();
-
+    @JsonIgnore
+    Double getMaxFreeCapacityOversubscriptionRatio();
+    @JsonIgnore
+    Double getMaxTotalCapacityOversubscriptionRatio();
     @JsonIgnore
     Map<String, String> getStorPoolProps();
     @JsonIgnore

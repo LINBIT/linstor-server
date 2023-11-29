@@ -81,6 +81,8 @@ public class ApplyStorPool implements ApiCall
             Optional.empty(), // free space
             Optional.empty(), // total space
             LinStor.OVERSUBSCRIPTION_RATIO_UNKOWN,
+            null, // not needed by the satellite
+            null, // not needed by the satellite
             null,
             protoStorPool.getSnapshotSupported(),
             protoStorPool.getIsPmem(),

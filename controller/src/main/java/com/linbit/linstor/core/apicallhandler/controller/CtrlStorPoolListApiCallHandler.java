@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -17,6 +18,7 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -56,6 +58,8 @@ public class CtrlStorPoolListApiCallHandler
     private final Provider<AccessContext> peerAccCtx;
     private final DecryptionHelper decryptionHelper;
     private final CtrlSecurityObjects secObjs;
+    private final SystemConfRepository sysCfgRepo;
+    private final AccessContext sysCtx;
 
     @Inject
     public CtrlStorPoolListApiCallHandler(
@@ -63,18 +67,22 @@ public class CtrlStorPoolListApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         StorPoolDefinitionRepository storPoolDefinitionRepositoryRef,
+        @SystemContext AccessContext sysCtxRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         DecryptionHelper decryptionHelperRef,
-        CtrlSecurityObjects secObjsRef
+        CtrlSecurityObjects secObjsRef,
+        SystemConfRepository sysCfgRepoRef
     )
     {
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         storPoolDefinitionRepository = storPoolDefinitionRepositoryRef;
+        sysCtx = sysCtxRef;
         peerAccCtx = peerAccCtxRef;
         decryptionHelper = decryptionHelperRef;
         secObjs = secObjsRef;
+        sysCfgRepo = sysCfgRepoRef;
     }
 
     public Flux<List<StorPoolApi>> listStorPools(
@@ -177,6 +185,7 @@ public class CtrlStorPoolListApiCallHandler
         ArrayList<StorPoolApi> storPools = new ArrayList<>();
         try
         {
+            Props ctrlProps = sysCfgRepo.getCtrlConfForView(peerAccCtx.get());
             storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
                 .filter(
                     storPoolDfn -> storPoolsFilter.isEmpty() ||
@@ -240,7 +249,19 @@ public class CtrlStorPoolListApiCallHandler
                                         freeCapacity,
                                         peerAccCtx.get(),
                                         null,
-                                        null
+                                        null,
+                                        FreeCapacityAutoPoolSelectorUtils
+                                            .getFreeCapacityOversubscriptionRatioPrivileged(
+                                                sysCtx,
+                                                storPool,
+                                                ctrlProps
+                                            ),
+                                        FreeCapacityAutoPoolSelectorUtils
+                                            .getTotalCapacityOversubscriptionRatioPrivileged(
+                                                sysCtx,
+                                                storPool,
+                                                ctrlProps
+                                            )
                                     );
                                     patchStorPoolProps(apiData.getStorPoolProps());
                                     storPools.add(apiData);

@@ -109,14 +109,38 @@ public class CtrlQuerySizeInfoHelper
         long capacity = getCapacity(placeCount, availableStorPoolList);
 
         List<StorPoolApi> selectedStorPools = new ArrayList<>();
+        Props ctrpProps = getCtrlPropsPrivileged();
         if (selectedStorPoolSet != null)
         {
             for (StorPool sp : selectedStorPoolSet)
             {
-                selectedStorPools.add(sp.getApiData(null, null, peerCtxProvider.get(), null, null));
+                selectedStorPools.add(
+                    sp.getApiData(
+                        null,
+                        null,
+                        peerCtxProvider.get(),
+                        null,
+                        null,
+                        FreeCapacityAutoPoolSelectorUtils.getFreeCapacityOversubscriptionRatioPrivileged(
+                            sysAccCtx,
+                            sp,
+                            ctrpProps
+                        ),
+                        FreeCapacityAutoPoolSelectorUtils.getTotalCapacityOversubscriptionRatioPrivileged(
+                            sysAccCtx,
+                            sp,
+                            ctrpProps
+                        )
+                    )
+                );
             }
         }
-        return new QuerySizeInfoResponsePojo(maxVlmSize, available, capacity, selectedStorPools);
+        return new QuerySizeInfoResponsePojo(
+            maxVlmSize,
+            available,
+            capacity,
+            selectedStorPools
+        );
     }
 
     private long getMaxVlmSize(

@@ -117,7 +117,7 @@ public class ZfsData<RSC extends AbsResource<RSC>>
                 getSnapshotUsableSize(),
                 new ArrayList<>(getStates()).toString(), // avoid "TransactionList " in the toString()
                 discGran.get(),
-                storPool.get().getApiData(null, null, accCtxRef, null, null)
+                storPool.get().getApiData(null, null, accCtxRef, null, null, null, null)
             );
         }
         else
@@ -131,7 +131,7 @@ public class ZfsData<RSC extends AbsResource<RSC>>
                 getSnapshotUsableSize(),
                 new ArrayList<>(getStates()).toString(), // avoid "TransactionList " in the toString()
                 discGran.get(),
-                storPool.get().getApiData(null, null, accCtxRef, null, null)
+                storPool.get().getApiData(null, null, accCtxRef, null, null, null, null)
             );
         }
         return pojo;

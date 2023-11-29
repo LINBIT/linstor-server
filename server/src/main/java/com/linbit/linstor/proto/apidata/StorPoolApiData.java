@@ -7,6 +7,8 @@ import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -159,5 +161,25 @@ public class StorPoolApiData implements StorPoolApi
     public double getOversubscriptionRatio()
     {
         return storPool.getOversubscriptionRatio();
+    }
+
+    /**
+     * Always null, since we do not care what we receive from the satellite/controller here. This info is only
+     * interesting for user / plugins, i.e. not relevant for ProtoBuf messages
+     */
+    @Override
+    public @Nullable Double getMaxFreeCapacityOversubscriptionRatio()
+    {
+        return null;
+    }
+
+    /**
+     * Always null, since we do not care what we receive from the satellite/controller here. This info is only
+     * interesting for user / plugins, i.e. not relevant for ProtoBuf messages
+     */
+    @Override
+    public @Nullable Double getMaxTotalCapacityOversubscriptionRatio()
+    {
+        return null;
     }
 }

@@ -50,11 +50,6 @@ import com.linbit.linstor.api.pojo.backups.ScheduleDetailsPojo;
 import com.linbit.linstor.api.pojo.backups.ScheduledRscsPojo;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.AutoSelectFilter;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.ExosDefaults;
-import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.NodeConnection;
-import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QueryAllSizeInfoResponse;
-import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoResponse;
-import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoResponseSpaceInfo;
-import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes.QuerySizeInfoSpawnResult;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.apis.BackupApi.BackupS3Api;
@@ -192,7 +187,7 @@ public class Json
         NodeConnectionApi nodeConnApi
     )
     {
-        NodeConnection nodeCon = new JsonGenTypes.NodeConnection();
+        JsonGenTypes.NodeConnection nodeCon = new JsonGenTypes.NodeConnection();
         String localNodeName = nodeConnApi.getLocalNodeName();
         String otherNodeName = nodeConnApi.getOtherNodeApi().getName();
         if (localNodeName.compareTo(otherNodeName) < 0)
@@ -1445,7 +1440,8 @@ public class Json
         );
     }
 
-    public static QuerySizeInfoResponse pojoToQuerySizeInfoResp(
+    @SuppressWarnings("checkstyle:LineLengthCheck")
+    public static JsonGenTypes.QuerySizeInfoResponse pojoToQuerySizeInfoResp(
         QuerySizeInfoResponsePojo pojo,
         ApiCallRc apiCallRcRef
     )
@@ -1454,19 +1450,22 @@ public class Json
         if (pojo != null)
         {
             resp.space_info = new JsonGenTypes.QuerySizeInfoResponseSpaceInfo();
-            QuerySizeInfoResponseSpaceInfo spaceInfo = resp.space_info;
+            JsonGenTypes.QuerySizeInfoResponseSpaceInfo spaceInfo = resp.space_info;
             spaceInfo.max_vlm_size_in_kib = pojo.getMaxVlmSize();
             spaceInfo.available_size_in_kib = pojo.getAvailableSize();
             spaceInfo.capacity_in_kib = pojo.getCapacity();
             spaceInfo.next_spawn_result = new ArrayList<>();
             spaceInfo.default_max_oversubscription_ratio = LinStor.OVERSUBSCRIPTION_RATIO_DEFAULT;
-            List<QuerySizeInfoSpawnResult> nextSpawnList = spaceInfo.next_spawn_result;
+
+            List<JsonGenTypes.QuerySizeInfoSpawnResult> nextSpawnList = spaceInfo.next_spawn_result;
             for (StorPoolApi spApi : pojo.nextSpawnSpList())
             {
-                QuerySizeInfoSpawnResult spawnResult = new QuerySizeInfoSpawnResult();
+                JsonGenTypes.QuerySizeInfoSpawnResult spawnResult = new JsonGenTypes.QuerySizeInfoSpawnResult();
                 spawnResult.node_name = spApi.getNodeName();
                 spawnResult.stor_pool_name = spApi.getStorPoolName();
                 spawnResult.stor_pool_oversubscription_ratio = spApi.getOversubscriptionRatio();
+                spawnResult.stor_pool_free_capacity_oversubscription_ratio = spApi.getMaxFreeCapacityOversubscriptionRatio();
+                spawnResult.stor_pool_total_capacity_oversubscription_ratio = spApi.getMaxTotalCapacityOversubscriptionRatio();
                 nextSpawnList.add(spawnResult);
             }
         }
@@ -1489,7 +1488,7 @@ public class Json
         QueryAllSizeInfoResponsePojo resultPojoRef
     )
     {
-        JsonGenTypes.QueryAllSizeInfoResponse resp = new QueryAllSizeInfoResponse();
+        JsonGenTypes.QueryAllSizeInfoResponse resp = new JsonGenTypes.QueryAllSizeInfoResponse();
         if (resultPojoRef != null)
         {
             Map<String, QueryAllSizeInfoResponseEntryPojo> map = resultPojoRef.getResult();

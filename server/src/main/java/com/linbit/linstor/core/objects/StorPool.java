@@ -34,6 +34,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
 
@@ -375,7 +376,8 @@ public class StorPool extends AbsCoreObj<StorPool>
         return traits;
     }
 
-    public double getOversubscriptionRatio(AccessContext accCtxRef) throws AccessDeniedException
+    public double getOversubscriptionRatio(@Nonnull AccessContext accCtxRef, @Nullable Props ctrlPropsRef)
+        throws AccessDeniedException
     {
         Double override = null; // override, regardless of property
         Double dfltVal = null; // use value if property is missing
@@ -416,7 +418,8 @@ public class StorPool extends AbsCoreObj<StorPool>
             // argument, which is weird...
             String oversubscriptionProp = new PriorityProps(
                 props,
-                getDefinition(accCtxRef).getProps(accCtxRef)
+                getDefinition(accCtxRef).getProps(accCtxRef),
+                ctrlPropsRef
             )
                 .getProp(ApiConsts.KEY_STOR_POOL_MAX_OVERSUBSCRIPTION_RATIO);
             if (oversubscriptionProp == null)
@@ -492,7 +495,9 @@ public class StorPool extends AbsCoreObj<StorPool>
         @Nullable Long freeSpaceRef,
         AccessContext accCtx,
         Long fullSyncId,
-        Long updateId
+        Long updateId,
+        @Nullable Double maxFreeCapacityOversubscriptionRatioRef,
+        @Nullable Double maxTotalCapacityOversubscriptionRatioRef
     )
         throws AccessDeniedException
     {
@@ -512,7 +517,9 @@ public class StorPool extends AbsCoreObj<StorPool>
             getFreeSpaceTracker().getName().displayValue,
             Optional.ofNullable(freeSpaceRef),
             Optional.ofNullable(totalSpaceRef),
-            getOversubscriptionRatio(accCtx),
+            getOversubscriptionRatio(accCtx, null),
+            maxFreeCapacityOversubscriptionRatioRef,
+            maxTotalCapacityOversubscriptionRatioRef,
             getReports(),
             supportsSnapshots.get(),
             isPmem.get(),

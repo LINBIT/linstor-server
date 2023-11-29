@@ -5,6 +5,8 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
+
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -44,6 +46,10 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     @JsonIgnore
     private final double oversubscriptionRatio;
     @JsonIgnore
+    private final @Nullable Double maxFreeCapacityOversubscriptionRatio;
+    @JsonIgnore
+    private final @Nullable Double maxTotalCapacityOversubscriptionRatio;
+    @JsonIgnore
     private final ApiCallRc reports;
     @JsonIgnore
     private final Boolean supportsSnapshots;
@@ -70,6 +76,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         final Optional<Long> freeSpaceRef,
         final Optional<Long> totalSpaceRef,
         final double oversubscriptionRatioRef,
+        final @Nullable Double maxFreeCapacityOversubscriptionRatioRef,
+        final @Nullable Double maxTotalCapacityOversubscriptionRatioRef,
         final ApiCallRc reportsRef,
         final Boolean supportsSnapshotsRef,
         final Boolean isPmemRef,
@@ -92,6 +100,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         freeSpace = freeSpaceRef;
         totalSpace = totalSpaceRef;
         oversubscriptionRatio = oversubscriptionRatioRef;
+        maxFreeCapacityOversubscriptionRatio = maxFreeCapacityOversubscriptionRatioRef;
+        maxTotalCapacityOversubscriptionRatio = maxTotalCapacityOversubscriptionRatioRef;
         reports = reportsRef;
         supportsSnapshots = supportsSnapshotsRef;
         isPmem = isPmemRef;
@@ -120,6 +130,8 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
         freeSpace = Optional.empty();
         totalSpace = Optional.empty();
         oversubscriptionRatio = LinStor.OVERSUBSCRIPTION_RATIO_UNKOWN;
+        maxFreeCapacityOversubscriptionRatio = null;
+        maxTotalCapacityOversubscriptionRatio = null;
         reports = null;
         supportsSnapshots = null;
         isPmem = null;
@@ -185,6 +197,18 @@ public class StorPoolPojo implements Comparable<StorPoolPojo>, StorPoolApi
     public double getOversubscriptionRatio()
     {
         return oversubscriptionRatio;
+    }
+
+    @Override
+    public @Nullable Double getMaxFreeCapacityOversubscriptionRatio()
+    {
+        return maxFreeCapacityOversubscriptionRatio;
+    }
+
+    @Override
+    public @Nullable Double getMaxTotalCapacityOversubscriptionRatio()
+    {
+        return maxTotalCapacityOversubscriptionRatio;
     }
 
     @Override

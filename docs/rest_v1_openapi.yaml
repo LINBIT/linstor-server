@@ -24,6 +24,7 @@ info:
     * unreleased
       - Removed everything OpenFlex related (entry-points, schemas, etc..)
       - Added peerSlots to ResourceGroup (create, modify and spawn)
+      - Added stor_pool_free_capacity_oversubscription_ratio and stor_pool_total_capacity_oversubscription_ratio to QuerySizeInfoSpawnResult
     * 1.20.2
       - Added EffectivePropertiesMap, EffectivePropertiesMapValue and PropertyWithDescription objects
     * 1.20.1
@@ -7555,6 +7556,15 @@ components:
         default_max_oversubscription_ratio:
           type: number
           format: double
+        max_oversubscription_ratio:
+          type: number
+          format: double
+        max_free_capacity_oversubscription_ratio:
+          type: number
+          format: double
+        max_total_capacity_oversubscription_ratio:
+          type: number
+          format: double
         next_spawn_result:
           type: array
           items:
@@ -7570,6 +7580,12 @@ components:
         stor_pool_name:
           type: string
         stor_pool_oversubscription_ratio:
+          type: number
+          format: double
+        stor_pool_free_capacity_oversubscription_ratio:
+          type: number
+          format: double
+        stor_pool_total_capacity_oversubscription_ratio:
           type: number
           format: double
     ControllerPropsModify:
