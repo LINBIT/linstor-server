@@ -17,7 +17,25 @@ public class MathUtils
         43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
     };
 
+    // Frequency for interrupt checks in interruptible methods, every INTR_CHECK_FREQ cycles
     private static final int INTR_CHECK_FREQ    = 10000;
+
+    // The maximum value that will not overflow a signed 64 bit field if squared
+    private static final long LONG_SQRT_MAX     = 0xB504F333L;
+
+    // Selector that returns true if the value to probe for selection is less than the other value to compare with
+    private static final Selector<Long> minSelector =
+        (value, other) ->
+        {
+            return value < other;
+        };
+
+    // Selector that returns true if the value to probe for selection is greater than the other value to compare with
+    private static final Selector<Long> maxSelector =
+        (value, other) ->
+        {
+            return value > other;
+        };
 
     /**
      * See <code>longFloorSqrt</code>
@@ -44,7 +62,7 @@ public class MathUtils
             do
             {
                 long probe = base | mask;
-                if (probe <= 0xB504F333L)
+                if (probe <= LONG_SQRT_MAX)
                 {
                     final long probeSquared = probe * probe;
                     if (probeSquared <= value)
@@ -100,7 +118,7 @@ public class MathUtils
         long product = 1;
         for (long ctr = 0; ctr < exponent; ++ctr)
         {
-            if (base == 0 || Long.MAX_VALUE / base >= base)
+            if (base == 0 || Long.MAX_VALUE / base >= product)
             {
                 product *= base;
             }
@@ -110,6 +128,31 @@ public class MathUtils
             }
         }
         return product;
+    }
+
+    /**
+     * Calculates and stores the prime factor (always 2 in this case) and exponent of the smallest power of 2 number
+     * in the specified set of numbers.
+     * <br/><br/>
+     * From all positive powers of 2 in the specified set of numbers, this method will find the smallest number and
+     * determine its exponent. An entry for base 2 and the calculated exponent is stored in the
+     * <code>primeFactors</code> map.<br/>
+     * If <code>remaining</code> is non-null, all numbers that are not positive powers of 2 are stored in the
+     * <code>remaining</code> set.<br/>
+     * <br/>
+     * The number 1 is not considered to be a power of 2.
+     *
+     * @param numbers Set of input numbers
+     * @param remaining If non-null, receives the set of numbers that are not positive powers of 2
+     * @param primeFactors Map of calculated base / exponent entries
+     */
+    public static void fastPower2MinFactorize(
+        @Nonnull final Set<Long>            numbers,
+        @Nullable final Set<Long>           remaining,
+        @Nonnull final Map<Long, Integer>   primeFactors
+    )
+    {
+        fastPower2GenericFactorize(numbers, remaining, primeFactors, minSelector);
     }
 
     /**
@@ -128,21 +171,47 @@ public class MathUtils
      * @param remaining If non-null, receives the set of numbers that are not positive powers of 2
      * @param primeFactors Map of calculated base / exponent entries
      */
-    public static void fastPower2Factorize(
+    public static void fastPower2MaxFactorize(
         @Nonnull final Set<Long>            numbers,
         @Nullable final Set<Long>           remaining,
         @Nonnull final Map<Long, Integer>   primeFactors
     )
     {
-        long ceilValue = 0;
+        fastPower2GenericFactorize(numbers, remaining, primeFactors, maxSelector);
+    }
+
+    /**
+     * Depending on the Selector <code>valueSelector</code>, selects the smallest or greatest power of 2 number, and
+     * then calculates and stores the prime factor (always 2 in this case) and exponent in the specified
+     * set of numbers.
+     * <br/><br/>
+     * The prime factor and exponent is stored in the <code>primeFactors</code> map.<br/>
+     * If <code>remaining</code> is non-null, all numbers that are not positive powers of 2 are stored in the
+     * <code>remaining</code> set.<br/>
+     * <br/>
+     * The number 1 is not considered to be a power of 2.
+     *
+     * @param numbers Set of input numbers
+     * @param remaining If non-null, receives the set of numbers that are not positive powers of 2
+     * @param primeFactors Map of calculated base / exponent entries
+     * @param valueSelector Selector that decides whether a number is greater or smaller than another number
+     */
+    private static void fastPower2GenericFactorize(
+        @Nonnull final Set<Long>            numbers,
+        @Nullable final Set<Long>           remaining,
+        @Nonnull final Map<Long, Integer>   primeFactors,
+        Selector<Long>                      valueSelector
+    )
+    {
+        long selectedValue = 0;
         for (Long value : numbers)
         {
             // All positive powers of two, and only powers of two, are positive numbers with a hamming weight of 1
             if (value > 1 && Long.bitCount(value) == 1)
             {
-                if (value > ceilValue)
+                if (valueSelector.select(value, selectedValue))
                 {
-                    ceilValue = value;
+                    selectedValue = value;
                 }
             }
             else
@@ -152,39 +221,84 @@ public class MathUtils
             }
         }
 
-        int exponent = 0;
-        ceilValue >>= 1;
-        while (ceilValue != 0)
+        uncheckedFastPower2GenericFactorize(selectedValue, primeFactors, valueSelector);
+    }
+
+    public boolean fastPower2MinFactorize(
+        final long                          number,
+        @Nonnull final Map<Long, Integer>   primeFactors
+    )
+    {
+        return fastPower2GenericFactorize(number, primeFactors, minSelector);
+    }
+
+    public boolean fastPower2MaxFactorize(
+        final long                          number,
+        @Nonnull final Map<Long, Integer>   primeFactors
+    )
+    {
+        return fastPower2GenericFactorize(number, primeFactors, maxSelector);
+    }
+
+    private static boolean fastPower2GenericFactorize(
+        final long                          number,
+        @Nonnull final Map<Long, Integer>   primeFactors,
+        Selector<Long>                      valueSelector
+    )
+    {
+        final boolean isPower2 = number > 1 && Long.bitCount(number) == 1;
+        if (isPower2)
         {
-            ceilValue >>= 1;
+            uncheckedFastPower2GenericFactorize(number, primeFactors, valueSelector);
+        }
+        return isPower2;
+    }
+
+    private static void uncheckedFastPower2GenericFactorize(
+        final long                          number,
+        @Nonnull final Map<Long, Integer>   primeFactors,
+        Selector<Long>                      valueSelector
+    )
+    {
+        long remainder = number;
+        int exponent = 0;
+        remainder >>= 1;
+        while (remainder != 0)
+        {
+            remainder >>= 1;
             ++exponent;
         }
         if (exponent > 0)
         {
-            storeMaxExponent(primeFactors, Long.valueOf(2), exponent);
+            storeSelectedExponent(primeFactors, Long.valueOf(2), exponent, valueSelector);
         }
     }
 
-    /**
-     * Factorizes the specified set of <code>numbers</code> and stores the calculated base/exponent entries in
-     * the <code>primeFactors</code> map.
-     *
-     * @param numbers Set of numbers to factorize
-     * @param primeFactors Map of calculated base / exponent entries
-     */
-    public static void factorize(@Nonnull final Set<Long> numbers, @Nonnull final Map<Long, Integer> primeFactors)
+    public static void factorize(
+        @Nonnull final Set<Long>            numbers,
+        @Nonnull final Map<Long, Integer>   primeFactors
+    )
         throws InterruptedException
     {
         Set<Long> notPowerTwo = new TreeSet<>();
-        fastPower2Factorize(numbers, notPowerTwo, primeFactors);
+        fastPower2GenericFactorize(numbers, notPowerTwo, primeFactors, maxSelector);
         for (Long nr : notPowerTwo)
         {
-            if (nr < 1)
-            {
-                throw new ArithmeticException("Factorization of 0 and of negative numbers is not implemented");
-            }
-            baseFactorize(nr, primeFactors);
+            factorize(nr, primeFactors);
         }
+    }
+
+    public static void factorize(
+        final long                          number,
+        @Nonnull final Map<Long, Integer>   primeFactors
+    )
+        throws InterruptedException
+    {
+        if (number < 1)
+        {
+            throw new ArithmeticException("Factorization of 0 and of negative numbers is not implemented");
+        }
+        baseFactorize(number, primeFactors);
     }
 
     /**
@@ -193,8 +307,12 @@ public class MathUtils
      *
      * @param nr Input number to factorize
      * @param primeFactors Map of calculated base / exponent entries
+     * @param valueSelector Selector that decides whether a number is greater or smaller than another number
      */
-    private static void baseFactorize(final long nr, @Nonnull final Map<Long, Integer> primeFactors)
+    private static void baseFactorize(
+        final long                          nr,
+        @Nonnull final Map<Long,Integer>    primeFactors
+    )
         throws InterruptedException
     {
         long remainder = nr;
@@ -209,7 +327,7 @@ public class MathUtils
             }
             if (exponent > 0)
             {
-                storeMaxExponent(primeFactors, factor, exponent);
+                storeSelectedExponent(primeFactors, factor, exponent, maxSelector);
             }
         }
 
@@ -218,7 +336,7 @@ public class MathUtils
             final long maxStoredPrime = PRIMES_TO_100[PRIMES_TO_100.length - 1];
             if (remainder <= (maxStoredPrime * maxStoredPrime))
             {
-                primeFactors.putIfAbsent(remainder, Integer.valueOf(1));
+                storeSelectedExponent(primeFactors, remainder, 1, maxSelector);
             }
             else
             {
@@ -233,8 +351,12 @@ public class MathUtils
      *
      * @param nr Input number to factorize
      * @param primeFactors Map of calculated base / exponent entries
+     * @param valueSelector Selector that decides whether a number is greater or smaller than another number
      */
-    private static void extendedSimpleFactorize(final long nr, @Nonnull final Map<Long, Integer> primeFactors)
+    private static void extendedSimpleFactorize(
+        final long                          nr,
+        @Nonnull final Map<Long, Integer>   primeFactors
+    )
         throws InterruptedException
     {
         long remainder = nr;
@@ -257,7 +379,7 @@ public class MathUtils
             if (exponent > 0)
             {
                 range = longCeilingSqrt(remainder);
-                storeMaxExponent(primeFactors, factor, exponent);
+                storeSelectedExponent(primeFactors, factor, exponent, maxSelector);
             }
             factor += 2;
             ++intrCheckCtr;
@@ -272,7 +394,7 @@ public class MathUtils
 
         if (remainder > 1)
         {
-            storeMaxExponent(primeFactors, remainder, 1);
+            storeSelectedExponent(primeFactors, remainder, 1, maxSelector);
         }
     }
 
@@ -292,7 +414,7 @@ public class MathUtils
             Map<Long, Integer> primeFactors = new TreeMap<>();
             Set<Long> notPowerTwo = new TreeSet<>();
 
-            fastPower2Factorize(numbers, notPowerTwo, primeFactors);
+            fastPower2MaxFactorize(numbers, notPowerTwo, primeFactors);
 
             final Iterator<Long> nrIter = notPowerTwo.iterator();
             while (nrIter.hasNext())
@@ -310,6 +432,72 @@ public class MathUtils
             result = numbersIter.next();
         }
         return result;
+    }
+
+    /**
+     * Calculates the greatest common divisor (GCD) of the specified set of numbers.
+     *
+     * @param numbers Set of numbers for GCD calculation
+     * @return Least common multiple of the specified set of numbers
+     */
+    public static Long greatestCommonDivisor(@Nonnull final Set<Long> numbers)
+        throws InterruptedException
+    {
+        Long result = 1L;
+        final int count = numbers.size();
+        if (count > 1)
+        {
+            Map<Long, Integer> primeFactors = new TreeMap<>();
+            Set<Long> notPowerTwo = new TreeSet<>();
+
+            fastPower2MinFactorize(numbers, notPowerTwo, primeFactors);
+
+            final Iterator<Long> nrIter = notPowerTwo.iterator();
+            if (primeFactors.size() == 0 && nrIter.hasNext())
+            { // None of the numbers were powers of 2, initialize primeFactors
+                final Long initNumber = nrIter.next();
+                factorize(initNumber, primeFactors);
+            }
+            while (nrIter.hasNext())
+            {
+                final Map<Long, Integer> updatedFactors = new TreeMap<>();
+                final long nr = nrIter.next();
+                long remainder = nr;
+                for (final Long factor : primeFactors.keySet())
+                {
+                    int exponent = 0;
+                    while (remainder > 1 && remainder % factor == 0)
+                    {
+                        remainder /= factor;
+                        ++exponent;
+                    }
+                    updatedFactors.put(factor, exponent);
+                }
+                for (Map.Entry<Long, Integer> factorEntry : updatedFactors.entrySet())
+                {
+                    final Long factor = factorEntry.getKey();
+                    final Integer exponent = factorEntry.getValue();
+
+                    if (exponent == 0)
+                    {
+                        primeFactors.remove(factor);
+                    }
+                    else
+                    {
+                        storeSelectedExponent(primeFactors, factor, exponent, minSelector);
+                    }
+                }
+            }
+
+            result = productOfFactors(primeFactors);
+        }
+        else
+        if (count == 1)
+        {
+            final Iterator<Long> numbersIter = numbers.iterator();
+            result = numbersIter.next();
+        }
+        return result == 0 ? 1 : result;
     }
 
     /**
@@ -349,7 +537,8 @@ public class MathUtils
     }
 
     /**
-     * Stores the greatest <code>exponent</code> for the base value <code>factor</code> as a base / exponent entry in
+     * Depending on the specified Selector <code>valueSelector</code>, stores the smallest or greatest
+     * <code>exponent</code> for the base value <code>factor</code> as a base / exponent entry in
      * the <code>primeFactors</code> map.
      * <br/><br/>
      * If no base / exponent entry for the specified <code>base</code> exists in the <code>primeFactors</code> map,
@@ -360,15 +549,17 @@ public class MathUtils
      * @param primeFactors Map of base / exponent entries
      * @param base Base value for the map entry
      * @param exponent Exponent value for the map entry
+     * @param valueSelector Selector that decides whether a number is greater or smaller than another number
      */
-    private static void storeMaxExponent(
+    private static void storeSelectedExponent(
         @Nonnull final Map<Long, Integer>   primeFactors,
         @Nonnull final Long                 base,
-        @Nonnull final Integer              exponent
+        @Nonnull final Integer              exponent,
+        @Nonnull Selector<Long>             valueSelector
     )
     {
         final Integer storedExponent = primeFactors.get(base);
-        if (storedExponent == null || storedExponent < exponent)
+        if (storedExponent == null || valueSelector.select(exponent.longValue(), storedExponent.longValue()))
         {
             primeFactors.put(base, exponent);
         }
@@ -407,5 +598,10 @@ public class MathUtils
 
     private MathUtils()
     {
+    }
+
+    private static interface Selector<T>
+    {
+        boolean select(@Nonnull final T value, @Nonnull final T other);
     }
 }
