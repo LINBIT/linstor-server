@@ -224,6 +224,22 @@ public class MathUtils
         uncheckedFastPower2GenericFactorize(selectedValue, primeFactors, valueSelector);
     }
 
+    /**
+     * If <code>number</code> is a power of 2, calculates and stores its prime factor (always 2 in this case) and
+     * exponent and stores them in the <code>primeFactors</code> map if there is no entry for base 2 in the map,
+     * or if the exponent of an existing entry is greater than the calculated exponent.
+     * <br/><br/>
+     * If <code>number</code> is not a power of 2, this method does nothing and returns false.
+     * <br/><br/>
+     * An entry for base 2 and the calculated exponent is stored in the <code>primeFactors</code> map.<br/>
+     * <br/>
+     * Returns true if <code>number</code> is a power of 2.
+     * The number 1 is not considered to be a power of 2.
+     *
+     * @param number Input number
+     * @param primeFactors Map of calculated base / exponent entries
+     * @return true if <code>number</code> is a power of 2
+     */
     public boolean fastPower2MinFactorize(
         final long                          number,
         @Nonnull final Map<Long, Integer>   primeFactors
@@ -232,6 +248,22 @@ public class MathUtils
         return fastPower2GenericFactorize(number, primeFactors, minSelector);
     }
 
+    /**
+     * If <code>number</code> is a power of 2, calculates and stores its prime factor (always 2 in this case) and
+     * exponent and stores them in the <code>primeFactors</code> map if there is no entry for base 2 in the map,
+     * or if the exponent of an existing entry is smaller than the calculated exponent.
+     * <br/><br/>
+     * If <code>number</code> is not a power of 2, this method does nothing and returns false.
+     * <br/><br/>
+     * An entry for base 2 and the calculated exponent is stored in the <code>primeFactors</code> map.<br/>
+     * <br/>
+     * Returns true if <code>number</code> is a power of 2.
+     * The number 1 is not considered to be a power of 2.
+     *
+     * @param number Input number
+     * @param primeFactors Map of calculated base / exponent entries
+     * @return true if <code>number</code> is a power of 2
+     */
     public boolean fastPower2MaxFactorize(
         final long                          number,
         @Nonnull final Map<Long, Integer>   primeFactors
@@ -240,6 +272,14 @@ public class MathUtils
         return fastPower2GenericFactorize(number, primeFactors, maxSelector);
     }
 
+    /**
+     * Generic implementation of fastPower2MinFactorize and fastPower2MaxFactorize. See description of those methods.
+     *
+     * @param number Input number
+     * @param primeFactors Map of calculated base / exponent entries
+     * @param valueSelector Selector that decides whether a number is greater or smaller than another number
+     * @return true if <code>number</code> is a power of 2
+     */
     private static boolean fastPower2GenericFactorize(
         final long                          number,
         @Nonnull final Map<Long, Integer>   primeFactors,
@@ -254,6 +294,16 @@ public class MathUtils
         return isPower2;
     }
 
+    /**
+     * Unchecked implementation of min/max factorization of numbers that are powers of 2.
+     * <br/><br/>
+     * Specified number must be a power of 2. See description of methods fastPower2MinFactorize
+     * and fastPower2MaxFactorize.
+     *
+     * @param number Input number
+     * @param primeFactors Map of calculated base / exponent entries
+     * @param valueSelector Selector that decides whether a number is greater or smaller than another number
+     */
     private static void uncheckedFastPower2GenericFactorize(
         final long                          number,
         @Nonnull final Map<Long, Integer>   primeFactors,
@@ -274,6 +324,16 @@ public class MathUtils
         }
     }
 
+    /**
+     * Factorizes the specified <code>numbers</code> and stores the calculated base/exponent entries in
+     * the <code>primeFactors</code> map.
+     *
+     * Each number in the <code>numbers</code> set must be greater than 0. Attempting to factorize 0 or
+     * a negative number generates an <code>ArithmeticException</code>.
+     *
+     * @param numbers Set of input numbers
+     * @param primeFactors Map of calculated base / exponent entries
+     */
     public static void factorize(
         @Nonnull final Set<Long>            numbers,
         @Nonnull final Map<Long, Integer>   primeFactors
@@ -288,6 +348,16 @@ public class MathUtils
         }
     }
 
+    /**
+     * Factorizes the specified <code>number</code> and stores the calculated base/exponent entries in
+     * the <code>primeFactors</code> map.
+     *
+     * The specified <code>number</code> must be greater than 0. Attempting to factorize 0 or
+     * a negative number generates an <code>ArithmeticException</code>.
+     *
+     * @param number Input number
+     * @param primeFactors Map of calculated base / exponent entries
+     */
     public static void factorize(
         final long                          number,
         @Nonnull final Map<Long, Integer>   primeFactors
@@ -302,7 +372,7 @@ public class MathUtils
     }
 
     /**
-     * Factorizes the specified number nd stores the calculated base/exponent entries in
+     * Factorizes the specified number and stores the calculated base/exponent entries in
      * the <code>primeFactors</code> map.
      *
      * @param nr Input number to factorize
@@ -401,6 +471,8 @@ public class MathUtils
     /**
      * Calculates the least common multiple (LCM) of the specified set of numbers.
      *
+     * If the input set of numbers contains more than one entry, all numbers must be greater than 0.
+     *
      * @param numbers Set of numbers for LCM calculation
      * @return Least common multiple of the specified set of numbers
      */
@@ -436,6 +508,8 @@ public class MathUtils
 
     /**
      * Calculates the greatest common divisor (GCD) of the specified set of numbers.
+     *
+     * If the input set of numbers contains more than one entry, all numbers must be greater than 0.
      *
      * @param numbers Set of numbers for GCD calculation
      * @return Least common multiple of the specified set of numbers
