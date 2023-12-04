@@ -544,7 +544,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         else
         { // Error
             throw new ImplementationError(
-                "Unknown SSL handshake status, SSLEngineResult.HandshakeStatus ordinal = " + hsStatus.ordinal()
+                "Unknown SSL handshake status, SSLEngineResult.HandshakeStatus ordinal = " + hsStatus.name()
             );
         }
         return trafficStatus;
@@ -761,9 +761,14 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
      */
     protected void cancelSslTasks()
     {
-        synchronized (sslTaskLock)
+        sslTaskLock.lock();
+        try
         {
             sslTasksCanceled = true;
+        }
+        finally
+        {
+            sslTaskLock.unlock();
         }
     }
 
