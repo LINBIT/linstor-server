@@ -592,6 +592,10 @@ public class MathUtils
                 final Entry<Long, Integer> factorsEntry = factorsIter.next();
                 final long factor = factorsEntry.getKey();
                 final long exponent = factorsEntry.getValue();
+                if (exponent < 0 || exponent >= 63)
+                {
+                    throw new ArithmeticException("Exponent " + exponent + " is out of range");
+                }
                 for (int cycle = 0; cycle < exponent; ++cycle)
                 {
                     if (Long.MAX_VALUE / factor >= product)
