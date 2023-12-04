@@ -247,6 +247,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
                 stateFlags.isUnset(
                     accCtx,
                     Resource.Flags.DELETE,
+                    Resource.Flags.DRBD_DELETE,
                     Resource.Flags.DRBD_DISKLESS,
                     Resource.Flags.NVME_INITIATOR
                 )
