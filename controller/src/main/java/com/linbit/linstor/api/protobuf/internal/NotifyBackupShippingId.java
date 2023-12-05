@@ -1,9 +1,15 @@
 package com.linbit.linstor.api.protobuf.internal;
 
+import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.BackupInfoManager;
+import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
+import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntBackupShippingIdOuterClass.MsgIntBackupShippingId;
 
 import javax.inject.Inject;
@@ -36,14 +42,21 @@ public class NotifyBackupShippingId implements ApiCallReactive
     public Flux<byte[]> executeReactive(InputStream msgDataInRef) throws IOException
     {
         MsgIntBackupShippingId ship = MsgIntBackupShippingId.parseDelimitedFrom(msgDataInRef);
-        backupInfoMgr.abortCreateAddS3Entry(
-            ship.getNodeName(),
-            ship.getRscName(),
-            ship.getSnapName(),
-            ship.getBackupName(),
-            ship.getUploadId(),
-            ship.getRemoteName()
-        );
+        try
+        {
+            backupInfoMgr.abortCreateAddS3Entry(
+                new NodeName(ship.getNodeName()),
+                new ResourceName(ship.getRscName()),
+                new SnapshotName(ship.getSnapName()),
+                ship.getBackupName(),
+                ship.getUploadId(),
+                new RemoteName(ship.getRemoteName())
+            );
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError(exc);
+        }
         return Flux.<byte[]>empty();
     }
 }

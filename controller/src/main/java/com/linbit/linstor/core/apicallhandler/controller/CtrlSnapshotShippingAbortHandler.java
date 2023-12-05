@@ -56,6 +56,7 @@ public class CtrlSnapshotShippingAbortHandler
     private final RemoteRepository remoteRepo;
     private final ErrorReporter errorReporter;
     private final CtrlSecurityObjects ctrlSecObj;
+    private final Provider<CtrlRemoteApiCallHandler> ctrlRemoteApiCallHandler;
 
     @Inject
     public CtrlSnapshotShippingAbortHandler(
@@ -68,7 +69,8 @@ public class CtrlSnapshotShippingAbortHandler
         BackupToS3 backupHandlerRef,
         RemoteRepository remoteRepoRef,
         ErrorReporter errorReporterRef,
-        CtrlSecurityObjects ctrlSecObjRef
+        CtrlSecurityObjects ctrlSecObjRef,
+        Provider<CtrlRemoteApiCallHandler> ctrlRemoteApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -81,6 +83,7 @@ public class CtrlSnapshotShippingAbortHandler
         remoteRepo = remoteRepoRef;
         errorReporter = errorReporterRef;
         ctrlSecObj = ctrlSecObjRef;
+        ctrlRemoteApiCallHandler = ctrlRemoteApiCallHandlerRef;
     }
 
     public Flux<ApiCallRc> abortAllShippingPrivileged(Node nodeRef, boolean abortMultiPartRef)
@@ -320,7 +323,12 @@ public class CtrlSnapshotShippingAbortHandler
                             }
                             // nothing to do for AbortL2LInfo entries, just enable the ABORT flag
                         }
-                        backupInfoMgr.abortCreateDeleteEntries(snap.getNodeName(), snapDfn.getSnapDfnKey());
+                        flux = flux.concatWith(
+                            ctrlRemoteApiCallHandler.get()
+                                .cleanupRemotesIfNeeded(
+                                backupInfoMgr.abortCreateDeleteEntries(snap.getNodeName(), snapDfn.getSnapDfnKey())
+                            )
+                        );
                     }
                 }
             }
@@ -335,12 +343,14 @@ public class CtrlSnapshotShippingAbortHandler
                 snapDfn,
                 SnapshotDefinition.Flags.SHIPPING_ABORT
             );
-            flux = snapDelHandlerProvider.get()
-                .deleteSnapshot(
-                    snapDfn.getResourceName().displayValue,
-                    snapDfn.getName().displayValue,
-                    null
-                );
+            flux = flux.concatWith(
+                snapDelHandlerProvider.get()
+                    .deleteSnapshot(
+                        snapDfn.getResourceName().displayValue,
+                        snapDfn.getName().displayValue,
+                        null
+                    )
+            );
         }
         return flux;
     }

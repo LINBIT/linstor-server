@@ -12,6 +12,7 @@ import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotShippingAbortHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiHelper;
@@ -73,6 +74,7 @@ public class CtrlBackupShippingSentInternalCallHandler
     private final TaskScheduleService taskScheduleService;
     private final CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandler;
     private final BackgroundRunner backgroundRunner;
+    private final CtrlRemoteApiCallHandler ctrlRemoteApiCallHandler;
 
     @Inject
     public CtrlBackupShippingSentInternalCallHandler(
@@ -93,7 +95,8 @@ public class CtrlBackupShippingSentInternalCallHandler
         CtrlBackupQueueInternalCallHandler queueHandlerRef,
         TaskScheduleService taskScheduleServiceRef,
         CtrlBackupL2LSrcApiCallHandler backupL2LSrcApiCallHandlerRef,
-        BackgroundRunner backgroundRunnerRef
+        BackgroundRunner backgroundRunnerRef,
+        CtrlRemoteApiCallHandler ctrlRemoteApiCallHandlerRef
     )
     {
         scopeRunner = scopeRunnerRef;
@@ -114,6 +117,7 @@ public class CtrlBackupShippingSentInternalCallHandler
         taskScheduleService = taskScheduleServiceRef;
         backupL2LSrcApiCallHandler = backupL2LSrcApiCallHandlerRef;
         backgroundRunner = backgroundRunnerRef;
+        ctrlRemoteApiCallHandler = ctrlRemoteApiCallHandlerRef;
     }
 
     /**
@@ -172,7 +176,9 @@ public class CtrlBackupShippingSentInternalCallHandler
                 else
                 {
                     // handle flag/prop cleanup
-                    backupInfoMgr.abortCreateDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef);
+                    ret = ctrlRemoteApiCallHandler.cleanupRemotesIfNeeded(
+                        backupInfoMgr.abortCreateDeleteEntries(nodeName.displayValue, rscNameRef, snapNameRef)
+                    );
                     doStltCleanup = true;
                     handleResult = cleanupFlagsNProps(snapDfn, nodeName, successRef);
                     if (handleResult.objB instanceof S3Remote)
@@ -192,21 +198,23 @@ public class CtrlBackupShippingSentInternalCallHandler
                 }
                 ctrlTransactionHelper.commit();
                 boolean doStltCleanupCopyForEffectivelyFinal = doStltCleanup;
-                ret = ctrlSatelliteUpdateCaller.updateSatellites(
-                    snapDfn,
-                    CtrlSatelliteUpdateCaller.notConnectedWarn()
-                ).transform(
-                    responses -> CtrlResponseUtils.combineResponses(
-                        errorReporter,
-                        responses,
-                        LinstorParsingUtils.asRscName(rscNameRef),
-                        "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
-                    ).concatWith(
-                        doStltCleanupCopyForEffectivelyFinal ? backupHelper.startStltCleanup(
-                            peerProvider.get(),
-                            rscNameRef,
-                            snapNameRef
-                        ) : Flux.empty()
+                ret = ret.concatWith(
+                    ctrlSatelliteUpdateCaller.updateSatellites(
+                        snapDfn,
+                        CtrlSatelliteUpdateCaller.notConnectedWarn()
+                    ).transform(
+                        responses -> CtrlResponseUtils.combineResponses(
+                            errorReporter,
+                            responses,
+                            LinstorParsingUtils.asRscName(rscNameRef),
+                            "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"
+                        ).concatWith(
+                            doStltCleanupCopyForEffectivelyFinal ? backupHelper.startStltCleanup(
+                                peerProvider.get(),
+                                rscNameRef,
+                                snapNameRef
+                            ) : Flux.empty()
+                        )
                     )
                 );
                 // The handleResult-flux will not be executed if ret has an error - this issue is currently

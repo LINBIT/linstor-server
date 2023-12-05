@@ -19,6 +19,7 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -188,6 +189,27 @@ public class CtrlBackupApiHelper
             );
         }
         return remote;
+    }
+
+    /**
+     * throws an exception if the remote is marked for deletion, since those remotes are not allowed to start new
+     * shipments
+     *
+     * @param remote
+     *
+     * @return
+     *
+     * @throws AccessDeniedException
+     */
+    void ensureShippingToRemoteAllowed(AbsRemote remote) throws AccessDeniedException
+    {
+        if (remote.getFlags().isSomeSet(peerAccCtx.get(), AbsRemote.Flags.MARK_DELETED, AbsRemote.Flags.DELETE))
+        {
+            throw new ApiException(
+                "The given remote " + remote +
+                    " is marked for deletion and therefore not allowed to start a new restore."
+            );
+        }
     }
 
     /**

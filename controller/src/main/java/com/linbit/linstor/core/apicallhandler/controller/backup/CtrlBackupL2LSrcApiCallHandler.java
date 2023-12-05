@@ -490,7 +490,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             NodeName srcSendingNodeName = data.srcSnapshot.getNodeName();
             backupInfoMgr.abortCreateAddL2LEntry(
                 srcSendingNodeName,
-                data.srcSnapshot.getSnapshotDefinition().getSnapDfnKey()
+                data.srcSnapshot.getSnapshotDefinition().getSnapDfnKey(),
+                data.getStltRemote().getLinstorRemoteName()
             );
 
             ExtToolsManager extToolsMgr = data.srcSnapshot.getNode().getPeer(sysCtx).getExtToolsManager();

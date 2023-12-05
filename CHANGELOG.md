@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Freespace calc: Snapshots only reserve allocated size now instead of volume size
 
+### Fixed
+
+- Deleting a remote can now be safely done even if there are active shippings to said remote
+
 ## [1.27.0] - 2024-04-02
 
 ### Added

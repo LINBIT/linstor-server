@@ -7,19 +7,21 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlNodeApiCallHandler;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSatelliteConnectionNotifier;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
+import com.linbit.utils.Pair;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -29,6 +31,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 
 import reactor.core.publisher.Flux;
@@ -45,6 +48,7 @@ public class CtrlFullSyncResponseApiCallHandler
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDelApiCallHandler;
     private final BackupInfoManager backupInfoMgr;
     private final CtrlTransactionHelper ctrlTransactionHelper;
+    private final CtrlRemoteApiCallHandler ctrlRemoteApiCallHandler;
 
     @Inject
     public CtrlFullSyncResponseApiCallHandler(
@@ -56,7 +60,8 @@ public class CtrlFullSyncResponseApiCallHandler
         Provider<Peer> satelliteProviderRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDelApiCallHandlerRef,
         BackupInfoManager backupInfoMgrRef,
-        CtrlTransactionHelper ctrlTransactionHelperRef
+        CtrlTransactionHelper ctrlTransactionHelperRef,
+        CtrlRemoteApiCallHandler ctrlRemoteApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -68,6 +73,7 @@ public class CtrlFullSyncResponseApiCallHandler
         ctrlSnapDelApiCallHandler = ctrlSnapDelApiCallHandlerRef;
         backupInfoMgr = backupInfoMgrRef;
         ctrlTransactionHelper = ctrlTransactionHelperRef;
+        ctrlRemoteApiCallHandler = ctrlRemoteApiCallHandlerRef;
     }
 
     public Flux<?> fullSyncSuccess()
@@ -117,32 +123,21 @@ public class CtrlFullSyncResponseApiCallHandler
                 fluxes.add(ctrlSatelliteConnectionNotifier.resourceConnected(localRsc, context));
             }
 
-            Iterator<Snapshot> localSnapIter = localNode.iterateSnapshots(apiCtx);
-            while (localSnapIter.hasNext())
+            Pair<Set<SnapshotDefinition>, Set<RemoteName>> objsToDel = backupInfoMgr.removeAllRestoreEntries(
+                apiCtx,
+                localNode
+            );
+            for (SnapshotDefinition snapDfn : objsToDel.objA)
             {
-                Snapshot localSnap = localSnapIter.next();
-                if (
-                    localSnap.getFlags().isSet(apiCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                    localSnap.getSnapshotDefinition().getFlags().isSet(
-                        apiCtx,
-                        SnapshotDefinition.Flags.SHIPPING,
-                        SnapshotDefinition.Flags.BACKUP
+                fluxes.add(
+                    ctrlSnapDelApiCallHandler.deleteSnapshot(
+                        snapDfn.getResourceName().displayValue,
+                        snapDfn.getName().displayValue,
+                        null
                     )
-                )
-                {
-                    // complete abort, remove restore-lock on rscDfn
-                    backupInfoMgr.removeAllRestoreEntries(
-                        localSnap.getResourceDefinition(), localSnap.getResourceName().displayValue, localSnap
-                    );
-                    fluxes.add(
-                        ctrlSnapDelApiCallHandler.deleteSnapshot(
-                            localSnap.getResourceName().displayValue,
-                            localSnap.getSnapshotName().displayValue,
-                            null
-                        )
-                    );
-                }
+                );
             }
+            fluxes.add(ctrlRemoteApiCallHandler.cleanupRemotesIfNeeded(objsToDel.objB));
             ctrlTransactionHelper.commit();
         }
         catch (AccessDeniedException exc)

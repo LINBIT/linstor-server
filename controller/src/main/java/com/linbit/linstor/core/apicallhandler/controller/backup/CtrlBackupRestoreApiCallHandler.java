@@ -30,6 +30,7 @@ import com.linbit.linstor.backupshipping.S3MetafileNameInfo;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRemoteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler;
@@ -165,6 +166,7 @@ public class CtrlBackupRestoreApiCallHandler
     private final LayerSizeHelper layerSizeHelper;
     private final SystemConfRepository systemConfRepository;
     private final CtrlRscDeleteApiCallHandler ctrlRscDelApiCallHandler;
+    private final CtrlRemoteApiCallHandler ctrlRemoteApiCallHandler;
 
     @Inject
     public CtrlBackupRestoreApiCallHandler(
@@ -196,7 +198,8 @@ public class CtrlBackupRestoreApiCallHandler
         BackupShippingRestClient backupShippingRestClientRef,
         LayerSizeHelper layerSizeHelperRef,
         SystemConfRepository systemConfRepositoryRef,
-        CtrlRscDeleteApiCallHandler ctrlRscDelApiCallHandlerRef
+        CtrlRscDeleteApiCallHandler ctrlRscDelApiCallHandlerRef,
+        CtrlRemoteApiCallHandler ctrlRemoteApiCallHandlerRef
     )
     {
         freeCapacityFetcher = freeCapacityFetcherRef;
@@ -228,6 +231,7 @@ public class CtrlBackupRestoreApiCallHandler
         layerSizeHelper = layerSizeHelperRef;
         systemConfRepository = systemConfRepositoryRef;
         ctrlRscDelApiCallHandler = ctrlRscDelApiCallHandlerRef;
+        ctrlRemoteApiCallHandler = ctrlRemoteApiCallHandlerRef;
     }
 
     public Flux<ApiCallRc> restoreBackup(
@@ -542,7 +546,12 @@ public class CtrlBackupRestoreApiCallHandler
             // 3d. nextBackup now points to the end of the chain, i.e. the full backup. Start restoring from here
             nextBackup.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
             if (!backupInfoMgr.addAllRestoreEntries(
-                    nextBackup.getResourceDefinition(), toRestore.toString(), targetRscName, allSnaps, restoreOrder
+                nextBackup.getResourceDefinition(),
+                toRestore.toString(),
+                targetRscName,
+                allSnaps,
+                restoreOrder,
+                remote.getName()
                 )
             )
             {
@@ -559,7 +568,9 @@ public class CtrlBackupRestoreApiCallHandler
             SnapshotDefinition nextBackSnapDfn = nextBackup.getSnapshotDefinition();
             return snapshotCrtHandler.postCreateSnapshot(nextBackSnapDfn, false)
                 .concatWith(Flux.just(responses))
-                .onErrorResume(error -> cleanupAfterFailedRestore(error, nextBackSnapDfn, targetRscName));
+                .onErrorResume(
+                    error -> cleanupAfterFailedRestore(error, nextBackSnapDfn, targetRscName)
+                );
         }
         catch (IOException | ParseException exc)
         {
@@ -692,6 +703,7 @@ public class CtrlBackupRestoreApiCallHandler
             snapName,
             rscDfn,
             responses,
+            remote,
             downloadOnly,
             forceRestore
         );
@@ -781,13 +793,21 @@ public class CtrlBackupRestoreApiCallHandler
         String rscName
     ) throws AccessDeniedException
     {
+        Flux<ApiCallRc> flux = Flux.empty();
         for (Snapshot snap : snapDfnRef.getAllSnapshots(sysCtx))
         {
-            backupInfoMgr.removeAllRestoreEntries(snapDfnRef.getResourceDefinition(), rscName, snap);
+            flux = flux.concatWith(
+                ctrlRemoteApiCallHandler.cleanupRemotesIfNeeded(
+                    backupInfoMgr.removeAllRestoreEntries(
+                        snapDfnRef.getResourceDefinition(),
+                        rscName,
+                        snap
+                    )
+                )
+            );
         }
-        ctrlTransactionHelper.commit();
 
-        return Flux.error(throwableRef);
+        return flux.concatWith(Flux.error(throwableRef));
     }
 
     /**
@@ -984,11 +1004,14 @@ public class CtrlBackupRestoreApiCallHandler
         SnapshotName snapName,
         ResourceDefinition rscDfn,
         ApiCallRcImpl responsesRef,
+        AbsRemote remote,
         boolean downloadOnly,
         boolean forceRestore
     )
         throws AccessDeniedException, DatabaseException
     {
+        backupHelper.ensureShippingToRemoteAllowed(remote);
+
         // if the snapDfn exists here, it can only be empty. While this should not be possible (since the delete of the
         // last snap should also delete the snapDfn), we don't want to run into an exception in case this somehow
         // happens anyways. Therefore we just treat the empty snapDfn as if it had just been created.
@@ -1146,6 +1169,7 @@ public class CtrlBackupRestoreApiCallHandler
                 data.snapName,
                 rscDfn,
                 responses,
+                backupHelper.getRemote(data.stltRemote.getLinstorRemoteName().displayValue),
                 data.downloadOnly,
                 data.forceRestore
             );
@@ -1278,7 +1302,12 @@ public class CtrlBackupRestoreApiCallHandler
                 );
                 snap.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
                 if (!backupInfoMgr.addAllRestoreEntries(
-                        rscDfn, "", data.dstRscName, Collections.singletonList(snap), Collections.emptyMap()
+                    rscDfn,
+                    "",
+                    data.dstRscName,
+                    Collections.singletonList(snap),
+                    Collections.emptyMap(),
+                    data.stltRemote.getLinstorRemoteName()
                     )
                 )
                 {
@@ -1344,7 +1373,13 @@ public class CtrlBackupRestoreApiCallHandler
                 ret = ctrlSatelliteUpdateCaller.updateSatellites(data.stltRemote)
                     .thenMany(
                         snapshotCrtHandler.postCreateSnapshotSuppressingErrorClasses(snapDfn, true)
-                            .onErrorResume(error -> cleanupAfterFailedRestore(error, snapDfn, data.dstRscName))
+                            .onErrorResume(
+                                error -> cleanupAfterFailedRestore(
+                                    error,
+                                    snapDfn,
+                                    data.dstRscName
+                                )
+                            )
                             .map(apiCallRcList ->
                             {
                                 responses.addEntries(apiCallRcList);
@@ -1374,7 +1409,7 @@ public class CtrlBackupRestoreApiCallHandler
         {
             throw new ApiDatabaseException(exc);
         }
-        catch (InvalidKeyException | InvalidValueException exc)
+        catch (InvalidKeyException | InvalidValueException | InvalidNameException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -1703,29 +1738,37 @@ public class CtrlBackupRestoreApiCallHandler
                     }
 
                     boolean keepGoing;
-
+                    String remoteName = snap.getProps(peerCtx)
+                        .removeProp(
+                            InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
+                            ApiConsts.NAMESPC_BACKUP_SHIPPING
+                        );
+                    AbsRemote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
                     Snapshot nextSnap = backupInfoMgr.getNextBackupToDownload(snap);
                     if (successRef && nextSnap != null)
                     {
                         snapDfnFlags.enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
-                        backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
+                        flux = ctrlRemoteApiCallHandler.cleanupRemotesIfNeeded(
+                            backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap)
+                        );
                         SnapshotDefinition nextSnapDfn = nextSnap.getSnapshotDefinition();
                         nextSnapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
                         nextSnap.getFlags().enableFlags(peerCtx, Snapshot.Flags.BACKUP_TARGET);
 
                         ctrlTransactionHelper.commit();
-                        flux = ctrlSatelliteUpdateCaller.updateSatellites(
-                            snapDfn,
-                            CtrlSatelliteUpdateCaller.notConnectedWarn()
-                        ).transform(
-                            responses -> CtrlResponseUtils.combineResponses(
-                                errorReporter,
-                                responses,
-                                LinstorParsingUtils.asRscName(rscNameRef),
-                                "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
-                            )
-                        )
-                            .concatWith(snapshotCrtHandler.postCreateSnapshot(nextSnapDfn, true));
+                        flux = flux.concatWith(
+                            ctrlSatelliteUpdateCaller.updateSatellites(
+                                snapDfn,
+                                CtrlSatelliteUpdateCaller.notConnectedWarn()
+                            ).transform(
+                                responses -> CtrlResponseUtils.combineResponses(
+                                    errorReporter,
+                                    responses,
+                                    LinstorParsingUtils.asRscName(rscNameRef),
+                                    "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
+                                )
+                            ).concatWith(snapshotCrtHandler.postCreateSnapshot(nextSnapDfn, true))
+                        );
                         keepGoing = true;
                     }
                     else
@@ -1733,7 +1776,13 @@ public class CtrlBackupRestoreApiCallHandler
                         if (successRef)
                         {
                             snapDfnFlags.enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
-                            backupInfoMgr.removeAllRestoreEntries(snapDfn.getResourceDefinition(), rscNameRef, snap);
+                            flux = ctrlRemoteApiCallHandler.cleanupRemotesIfNeeded(
+                                backupInfoMgr.removeAllRestoreEntries(
+                                    snapDfn.getResourceDefinition(),
+                                    rscNameRef,
+                                    snap
+                                )
+                            );
                             // start snap-restore
                             int rscCt = snapDfn.getResourceDefinition().getResourceCount();
                             if (snapDfnFlags.isSet(peerCtx, SnapshotDefinition.Flags.FORCE_RESTORE_BACKUP_ON_SUCCESS) &&
@@ -1809,6 +1858,7 @@ public class CtrlBackupRestoreApiCallHandler
                                     peerCtx,
                                     SnapshotDefinition.Flags.FORCE_RESTORE_BACKUP_ON_SUCCESS
                                 );
+
                                 flux = flux.concatWith(
                                     ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
                                         Collections.emptyList(),
@@ -1823,7 +1873,6 @@ public class CtrlBackupRestoreApiCallHandler
                                  * no need for a "successfully downloaded" message, as this flux is triggered
                                  * by the satellite who does not care about this kind of ApiCallRc message
                                  */
-                                flux = Flux.empty();
                             }
                             keepGoing = false; // we received the last backup
                         }
@@ -1844,8 +1893,13 @@ public class CtrlBackupRestoreApiCallHandler
                             Set<Snapshot> leftovers = backupInfoMgr.abortRestoreGetEntries(rscNameRef);
                             if (leftovers != null && leftovers.isEmpty())
                             {
-                                backupInfoMgr
-                                    .removeAllRestoreEntries(snapDfn.getResourceDefinition(), rscNameRef, snap);
+                                ctrlRemoteApiCallHandler.cleanupRemotesIfNeeded(
+                                    backupInfoMgr.removeAllRestoreEntries(
+                                        snapDfn.getResourceDefinition(),
+                                        rscNameRef,
+                                        snap
+                                    )
+                                );
                             }
                             else
                             {
@@ -1873,11 +1927,7 @@ public class CtrlBackupRestoreApiCallHandler
 
                     if (!keepGoing)
                     {
-                        String remoteName = snap.getProps(peerCtx)
-                            .removeProp(
-                                InternalApiConsts.KEY_BACKUP_SRC_REMOTE,
-                                ApiConsts.NAMESPC_BACKUP_SHIPPING
-                            );
+                        // commit any unsaved props-changes and update the stlts
                         ctrlTransactionHelper.commit();
 
                         Flux<ApiCallRc> delPropFlux = ctrlSatelliteUpdateCaller.updateSatellites(
@@ -1892,7 +1942,6 @@ public class CtrlBackupRestoreApiCallHandler
                             )
                         );
 
-                        AbsRemote remote = remoteRepo.get(sysCtx, new RemoteName(remoteName, true));
                         if (remote instanceof StltRemote)
                         {
                             // cleanupStltRemote will not be executed if flux has an error - this issue is currently

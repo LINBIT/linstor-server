@@ -225,7 +225,7 @@ public class CtrlBackupCreateApiCallHandler
                 );
             }
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
-            AbsRemote remote = null;
+            AbsRemote remote;
             SnapshotDefinition prevSnapDfn = null;
             if (remoteTypeRef.equals(RemoteType.S3))
             {
@@ -239,6 +239,10 @@ public class CtrlBackupCreateApiCallHandler
             {
                 remote = backupHelper.getL2LRemote(remoteName);
                 prevSnapDfn = getIncrementalBaseL2L(rscDfn, prevSnapDfnUuid, allowIncremental);
+            }
+            else
+            {
+                throw new ImplementationError("remote type " + remoteTypeRef + " not allowed");
             }
 
             SnapshotDefinition snapDfn = snapCrtHelper
@@ -370,6 +374,7 @@ public class CtrlBackupCreateApiCallHandler
     {
         try
         {
+            backupHelper.ensureShippingToRemoteAllowed(remote);
             Flux<ApiCallRc> flux;
             // doublecheck free shipping slots, if none are free, queue
             if (getFreeShippingSlots(node) > 0)

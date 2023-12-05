@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -1009,6 +1010,22 @@ public class CtrlRemoteApiCallHandler
             .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(ebsRemote));
     }
 
+    /**
+     * Checks if there are in-progress shipments to this remote and if...
+     * <list>
+     * <ul>
+     * ...there are, sets {@link AbsRemote.Flags#MARK_DELETED}: this remote will be deleted as soon as all in-progress
+     * shipments are finished or aborted. While this is set, new shipments to this remote cannot be started.
+     * </ul>
+     * <ul>
+     * ...there aren't, sets {@link AbsRemote.Flags#DELETE}: this remote will be deleted
+     * </ul>
+     * </list>
+     *
+     * @param remoteNameStrRef
+     *
+     * @return
+     */
     public Flux<ApiCallRc> delete(String remoteNameStrRef)
     {
         ResponseContext context = makeRemoteContext(
@@ -1021,7 +1038,24 @@ public class CtrlRemoteApiCallHandler
             lockGuardFactory.buildDeferred(
                 LockType.WRITE, LockObj.REMOTE_MAP, LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP, LockObj.CTRL_CONFIG
             ),
-            () -> deleteInTransaction(remoteNameStrRef)
+            () -> {
+                @Nullable AbsRemote remote = loadRemote(remoteNameStrRef);
+                Flux<ApiCallRc> flux;
+                if (remote == null)
+                {
+                    flux = Flux.<ApiCallRc>just(
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.WARN_NOT_FOUND,
+                            getRemoteDescription(remoteNameStrRef) + " not found."
+                        )
+                    );
+                }
+                else
+                {
+                    flux = deleteInTransaction(remote);
+                }
+                return flux;
+            }
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
@@ -1060,54 +1094,53 @@ public class CtrlRemoteApiCallHandler
         return (REMOTE_TYPE) remote;
     }
 
-    private Flux<ApiCallRc> deleteInTransaction(String remoteNameStrRef)
+    private @Nullable AbsRemote loadRemote(String remoteNameStr)
+    {
+        return loadRemote(LinstorParsingUtils.asRemoteName(remoteNameStr));
+    }
+
+    private @Nullable AbsRemote loadRemote(RemoteName remoteName)
+    {
+        return ctrlApiDataLoader.loadRemote(remoteName, false);
+    }
+
+    private Flux<ApiCallRc> deleteInTransaction(AbsRemote remote) throws ImplementationError
     {
         Flux<ApiCallRc> flux;
-        RemoteName remoteName = LinstorParsingUtils.asRemoteName(remoteNameStrRef);
-        AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteName, false);
-        String remoteDescription = getRemoteDescription(remoteNameStrRef);
 
-        if (remote == null)
+        String remoteDescription = getRemoteDescription(remote.getName().displayValue);
+        ensureEbsRemoteUnusedPrivileged(remote);
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        Flux<ApiCallRc> postUpdateStltFlux;
+        try
         {
-            flux = Flux.<ApiCallRc>just(
-                ApiCallRcImpl.singleApiCallRc(
-                    ApiConsts.WARN_NOT_FOUND,
-                    remoteDescription + " not found."
-                )
+            scheduleService.removeTasks(remote, peerAccCtx.get());
+        }
+        catch (InvalidKeyException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "while trying to remove props",
+                ApiConsts.FAIL_ACC_DENIED_REMOTE
             );
         }
-        else
+        catch (DatabaseException exc)
         {
-            checkIfRemoteCanBeDeletedPriviledged(remote);
-
+            throw new ApiDatabaseException(exc);
+        }
+        backupInfoMgr.deleteFromQueue(remote);
+        if (!backupInfoMgr.hasRemoteInProgressBackups(remote.getName()))
+        {
             enableFlags(remote, AbsRemote.Flags.DELETE);
             if (remote instanceof S3Remote)
             {
                 backupHandler.deleteRemoteFromCache((S3Remote) remote);
             }
-            try
-            {
-                scheduleService.removeTasks(remote, peerAccCtx.get());
-            }
-            catch (InvalidKeyException exc)
-            {
-                throw new ImplementationError(exc);
-            }
-            catch (AccessDeniedException exc)
-            {
-                throw new ApiAccessDeniedException(
-                    exc,
-                    "while trying to remove props",
-                    ApiConsts.FAIL_ACC_DENIED_REMOTE
-                );
-            }
-            catch (DatabaseException exc)
-            {
-                throw new ApiDatabaseException(exc);
-            }
             ctrlTransactionHelper.commit();
-            backupInfoMgr.deleteFromQueue(remote);
-            ApiCallRcImpl responses = new ApiCallRcImpl();
             responses.addEntry(
                 ApiCallRcImpl
                     .entryBuilder(ApiConsts.DELETED, remoteDescription + " marked for deletion.")
@@ -1115,19 +1148,35 @@ public class CtrlRemoteApiCallHandler
                     .build()
             );
 
-            flux = Flux.<ApiCallRc>just(responses);
-            if (!(remote instanceof LinstorRemote))
-            {
-                // satellites do not know about any linstor-remote, so updating them here would break stuff
-                // (as in, the satellite will ignore the update and not answer -> timeout)
-                flux = flux.concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote));
-            }
-            flux = flux.concatWith(deleteImpl(remote));
+            postUpdateStltFlux = deleteImpl(remote);
         }
-        return flux;
+        else
+        {
+            enableFlags(remote, AbsRemote.Flags.MARK_DELETED);
+            ctrlTransactionHelper.commit();
+            responses.addEntry(
+                ApiCallRcImpl
+                    .entryBuilder(
+                        ApiConsts.MODIFIED,
+                        remoteDescription +
+                            " prepared for deletion. Waiting for ongoing shipments to complete or abort."
+                    )
+                    .setDetails(remoteDescription + " UUID is: " + remote.getUuid().toString())
+                    .build()
+            );
+            postUpdateStltFlux = Flux.empty();
+        }
+        flux = Flux.<ApiCallRc>just(responses);
+        if (!(remote instanceof LinstorRemote))
+        {
+            // satellites do not know about any linstor-remote, so updating them here would break stuff
+            // (as in, the satellite will ignore the update and not answer -> timeout)
+            flux = flux.concatWith(ctrlSatelliteUpdateCaller.updateSatellites(remote));
+        }
+        return flux.concatWith(postUpdateStltFlux);
     }
 
-    private void checkIfRemoteCanBeDeletedPriviledged(AbsRemote remoteRef)
+    private void ensureEbsRemoteUnusedPrivileged(AbsRemote remoteRef)
     {
         try
         {
@@ -1239,6 +1288,66 @@ public class CtrlRemoteApiCallHandler
         {
             missingParams.add(description);
         }
+    }
+
+    public Flux<ApiCallRc> cleanupRemotesIfNeeded(Set<RemoteName> remotes)
+    {
+        Flux<ApiCallRc> ret = Flux.empty();
+        for (RemoteName remoteName : remotes)
+        {
+            String remoteNameStr = remoteName.displayValue;
+            ResponseContext context = makeRemoteContext(
+                ApiOperation.makeModifyOperation(),
+                remoteNameStr
+            );
+            // take extra locks because schedule-related props might need to be deleted as well
+            ret = ret.concatWith(
+                scopeRunner.fluxInTransactionalScope(
+                    "Delete remote",
+                    lockGuardFactory.buildDeferred(
+                        LockType.WRITE,
+                        LockObj.REMOTE_MAP,
+                        LockObj.RSC_DFN_MAP,
+                        LockObj.RSC_GRP_MAP,
+                        LockObj.CTRL_CONFIG
+                    ),
+                    () ->
+                    cleanupIfNeededInTransaction(remoteNameStr)
+                ).transform(responses -> responseConverter.reportingExceptions(context, responses))
+            );
+        }
+        return ret;
+    }
+
+    private Flux<ApiCallRc> cleanupIfNeededInTransaction(String remoteNameStr) throws ImplementationError
+    {
+        AbsRemote remote = loadRemote(remoteNameStr);
+        Flux<ApiCallRc> flux = Flux.empty();
+        try
+        {
+            if (remote == null)
+            {
+                flux = Flux.<ApiCallRc>just(
+                    ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.WARN_NOT_FOUND,
+                        getRemoteDescription(remoteNameStr) + " not found."
+                    )
+                );
+            }
+            else if (remote.getFlags().isSet(peerAccCtx.get(), AbsRemote.Flags.MARK_DELETED))
+            {
+                flux = deleteInTransaction(remote);
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "Cannot access Flags of " + remoteNameStr,
+                ApiConsts.FAIL_ACC_DENIED_REMOTE
+            );
+        }
+        return flux;
     }
 
     public static ResponseContext makeRemoteContext(

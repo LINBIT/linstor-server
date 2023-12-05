@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LDstApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
@@ -24,6 +25,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.StltRemoteCleanupTask;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.utils.BidirectionalMultiMap;
+import com.linbit.utils.Pair;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -49,6 +51,9 @@ public class BackupInfoManager
     private final Map<NodeName, Map<SnapshotDefinition.Key, AbortInfo>> abortCreateMap;
     private final Map<ResourceName, Set<Snapshot>> abortRestoreMap;
     private final Map<Snapshot, Snapshot> backupsToDownload;
+
+    private final Map<RemoteName, Set<SnapshotDefinition>> inProgressBackups;
+
     private final Object restoreSyncObj = new Object();
     // Map<LinstorRemoteName, Map<StltRemoteName, Data>>
     private final Map<RemoteName, Map<RemoteName, CtrlBackupL2LSrcApiCallHandler.BackupShippingData>> l2lSrcData;
@@ -64,20 +69,24 @@ public class BackupInfoManager
     private final Map<StltRemote, CleanupData> cleanupDataMap;
     private final AccessContext sysCtx;
     private final ErrorReporter errorReporter;
+    private final ResourceDefinitionMap rscDfnMap;
 
     @Inject
     public BackupInfoManager(
         TransactionObjectFactory transObjFactoryRef,
         @SystemContext AccessContext sysCtxRef,
-        ErrorReporter errorReporterRef
+        ErrorReporter errorReporterRef,
+        ResourceDefinitionMap rscDfnMapRef
     )
     {
         sysCtx = sysCtxRef;
         errorReporter = errorReporterRef;
+        rscDfnMap = rscDfnMapRef;
         restoreMap = transObjFactoryRef.createTransactionPrimitiveMap(new HashMap<>(), null);
         abortCreateMap = new HashMap<>();
         abortRestoreMap = new HashMap<>();
         backupsToDownload = new HashMap<>();
+        inProgressBackups = new HashMap<>();
         l2lSrcData = new HashMap<>();
         l2lDstData = new HashMap<>();
         uploadQueues = new BidirectionalMultiMap<>();
@@ -90,7 +99,8 @@ public class BackupInfoManager
         String metaName,
         String rscNameStr,
         List<Snapshot> snaps,
-        Map<Snapshot, Snapshot> snapsToDownload
+        Map<Snapshot, Snapshot> snapsToDownload,
+        RemoteName remoteName
     )
     {
         synchronized (restoreSyncObj)
@@ -102,6 +112,7 @@ public class BackupInfoManager
                 for (Snapshot snap : snaps)
                 {
                     abortRestoreAddEntry(rscNameStr, snap);
+                    addSnapToInProgressBackups(remoteName, snap.getSnapshotDefinition());
                 }
                 for (Entry<Snapshot, Snapshot> toDownload : snapsToDownload.entrySet())
                 {
@@ -116,13 +127,47 @@ public class BackupInfoManager
         }
     }
 
-    public void removeAllRestoreEntries(ResourceDefinition rscDfn, String rscName, Snapshot snap)
+    public Set<RemoteName> removeAllRestoreEntries(ResourceDefinition rscDfn, String rscName, Snapshot snap)
     {
         synchronized (restoreSyncObj)
         {
             restoreRemoveEntry(rscDfn);
             abortRestoreDeleteAllEntries(rscName);
             backupsToDownloadCleanUp(snap);
+            return removeInProgressBackups(Collections.singleton(snap.getSnapshotDefinition()));
+        }
+    }
+
+    public Pair<Set<SnapshotDefinition>, Set<RemoteName>> removeAllRestoreEntries(AccessContext accCtx, Node node)
+        throws AccessDeniedException
+    {
+        Set<SnapshotDefinition> snapDfnsToCleanup = new HashSet<>();
+        synchronized (restoreSyncObj)
+        {
+            Iterator<Snapshot> localSnapIter = node.iterateSnapshots(accCtx);
+            while (localSnapIter.hasNext())
+            {
+                Snapshot localSnap = localSnapIter.next();
+                if (
+                    localSnap.getFlags().isSet(accCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                        localSnap.getSnapshotDefinition()
+                            .getFlags()
+                            .isSet(
+                                accCtx,
+                                SnapshotDefinition.Flags.SHIPPING,
+                                SnapshotDefinition.Flags.BACKUP
+                            )
+                )
+                {
+                    snapDfnsToCleanup.add(localSnap.getSnapshotDefinition());
+                    // complete abort, remove restore-lock on rscDfn
+                    restoreRemoveEntry(localSnap.getResourceDefinition());
+                    abortRestoreDeleteAllEntries(localSnap.getResourceName().displayValue);
+                    backupsToDownloadCleanUp(localSnap);
+                }
+            }
+            Set<RemoteName> remotesToCleanup = removeInProgressBackups(snapDfnsToCleanup);
+            return new Pair<Set<SnapshotDefinition>, Set<RemoteName>>(snapDfnsToCleanup, remotesToCleanup);
         }
     }
 
@@ -229,8 +274,10 @@ public class BackupInfoManager
     /**
      * remove a single snapshot from the list associated with the given rscDfn,
      * signifying that this snapshot is completed and no longer needs aborting
+     *
+     * @return set of remoteNames from {@link #removeInProgressBackups(Set)}
      */
-    public void abortRestoreDeleteEntry(String rscNameStr, Snapshot snap)
+    public Set<RemoteName> abortRestoreDeleteEntry(String rscNameStr, Snapshot snap)
     {
         try
         {
@@ -242,6 +289,7 @@ public class BackupInfoManager
                 {
                     snaps.remove(snap);
                 }
+                return removeInProgressBackups(Collections.singleton(snap.getSnapshotDefinition()));
             }
         }
         catch (InvalidNameException exc)
@@ -254,21 +302,30 @@ public class BackupInfoManager
      * add all the information needed to cleanly abort a multipart-upload to s3 to a list for easy access when needed
      */
     public void abortCreateAddS3Entry(
-        String nodeName,
-        String rscName,
-        String snapName,
+        NodeName nodeName,
+        ResourceName rscName,
+        SnapshotName snapName,
         String backupName,
         String uploadId,
-        String remoteName
+        RemoteName remoteName
     )
     {
         // DO NOT just synchronize within getAbortInfo as the following .add(new Abort*Info(..)) should also be in the
         // same synchronized block as the initial get
         synchronized (abortCreateMap)
         {
-            getAbortCreateInfo(nodeName, rscName, snapName).abortS3InfoList.add(
-                new AbortS3Info(backupName, uploadId, remoteName)
-            );
+            try
+            {
+                SnapshotDefinition snapDfn = rscDfnMap.get(rscName).getSnapshotDfn(sysCtx, snapName);
+                addSnapToInProgressBackups(remoteName, snapDfn);
+                getAbortCreateInfo(nodeName, snapDfn.getSnapDfnKey()).abortS3InfoList.add(
+                    new AbortS3Info(backupName, uploadId, remoteName.displayValue)
+                );
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
         }
     }
 
@@ -276,28 +333,23 @@ public class BackupInfoManager
      * add information about a l2l-shipping to a list to automatically abort it when issues like loss of connection
      * arise
      */
-    public void abortCreateAddL2LEntry(NodeName nodeName, SnapshotDefinition.Key key)
+    public void abortCreateAddL2LEntry(NodeName nodeName, SnapshotDefinition.Key key, RemoteName remoteName)
     {
         // DO NOT just synchronize within getAbortInfo as the following .add(new Abort*Info(..)) should also be in the
         // same synchronized block as the initial get
         synchronized (abortCreateMap)
         {
-            getAbortCreateInfo(nodeName, key).abortL2LInfoList.add(new AbortL2LInfo());
-        }
-    }
-
-    private AbortInfo getAbortCreateInfo(String nodeName, String rscName, String snapName)
-    {
-        try
-        {
-            return getAbortCreateInfo(
-                new NodeName(nodeName),
-                new SnapshotDefinition.Key(new ResourceName(rscName), new SnapshotName(snapName))
-            );
-        }
-        catch (InvalidNameException exc)
-        {
-            throw new ImplementationError(exc);
+            SnapshotDefinition snapDfn;
+            try
+            {
+                snapDfn = rscDfnMap.get(key.getResourceName()).getSnapshotDfn(sysCtx, key.getSnapshotName());
+                addSnapToInProgressBackups(remoteName, snapDfn);
+                getAbortCreateInfo(nodeName, key).abortL2LInfoList.add(new AbortL2LInfo());
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
         }
     }
 
@@ -309,12 +361,15 @@ public class BackupInfoManager
 
     /**
      * delete the abort-information given when it is no longer needed
+     *
+     * @return set of remoteNames from {@link #removeInProgressBackups(Set)}
      */
-    public void abortCreateDeleteEntries(String nodeName, String rscName, String snapName) throws InvalidNameException
+    public Set<RemoteName> abortCreateDeleteEntries(String nodeName, String rscName, String snapName)
+        throws InvalidNameException
     {
         synchronized (abortCreateMap)
         {
-            abortCreateDeleteEntries(
+            return abortCreateDeleteEntries(
                 new NodeName(nodeName),
                 new SnapshotDefinition.Key(new ResourceName(rscName), new SnapshotName(snapName))
             );
@@ -323,8 +378,10 @@ public class BackupInfoManager
 
     /**
      * delete the abort-information given when it is no longer needed
+     *
+     * @return set of remoteNames from {@link #removeInProgressBackups(Set)}
      */
-    public void abortCreateDeleteEntries(NodeName nodeName, SnapshotDefinition.Key snapDfnKey)
+    public Set<RemoteName> abortCreateDeleteEntries(NodeName nodeName, SnapshotDefinition.Key snapDfnKey)
     {
         synchronized (abortCreateMap)
         {
@@ -332,6 +389,18 @@ public class BackupInfoManager
             if (map != null)
             {
                 map.remove(snapDfnKey);
+            }
+            try
+            {
+                return removeInProgressBackups(
+                    Collections.singleton(
+                        rscDfnMap.get(snapDfnKey.getResourceName()).getSnapshotDfn(sysCtx, snapDfnKey.getSnapshotName())
+                    )
+                );
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
             }
         }
     }
@@ -383,6 +452,66 @@ public class BackupInfoManager
         while (toDelete != null)
         {
             toDelete = backupsToDownload.remove(toDelete);
+        }
+    }
+
+    /**
+     * checks if the given remote is currently used for any backup (create or restore)
+     *
+     * @param remote
+     *
+     * @return
+     */
+    public boolean hasRemoteInProgressBackups(RemoteName remote)
+    {
+        synchronized (inProgressBackups)
+        {
+            Set<SnapshotDefinition> snaps = inProgressBackups.get(remote);
+            return snaps != null && !snaps.isEmpty();
+        }
+    }
+
+    /**
+     * add the given snapDfn to mark that the given remote is currently used for this backup
+     *
+     * @param remote
+     * @param snapDfn
+     */
+    private void addSnapToInProgressBackups(RemoteName remote, SnapshotDefinition snapDfn)
+    {
+        synchronized (inProgressBackups)
+        {
+            inProgressBackups.computeIfAbsent(remote, ignored -> new HashSet<>()).add(snapDfn);
+        }
+    }
+
+    /**
+     * removes the given snapDfns from the inProgressBackups map, and returns a set of all remoteNames that now have no
+     * in-progress backups (aka need to be checked if they need to be deleted)
+     *
+     * @param snapDfnsToCleanup
+     *
+     * @return
+     */
+    private Set<RemoteName> removeInProgressBackups(Set<SnapshotDefinition> snapDfnsToCleanup)
+    {
+        synchronized (inProgressBackups)
+        {
+            Set<RemoteName> emptyRemotes = new HashSet<>();
+            for (Entry<RemoteName, Set<SnapshotDefinition>> entry : inProgressBackups.entrySet())
+            {
+                Set<SnapshotDefinition> snapDfns = entry.getValue();
+                snapDfns.removeAll(snapDfnsToCleanup);
+                if (snapDfns.isEmpty())
+                {
+                    emptyRemotes.add(entry.getKey());
+                }
+            }
+            for (RemoteName emptyRemote : emptyRemotes)
+            {
+                inProgressBackups.remove(emptyRemote);
+            }
+            return emptyRemotes;
         }
     }
 

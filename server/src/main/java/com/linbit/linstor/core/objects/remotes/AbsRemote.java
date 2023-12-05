@@ -58,7 +58,11 @@ public abstract class AbsRemote extends AbsCoreObj<AbsRemote> implements Compara
     public enum Flags implements com.linbit.linstor.stateflags.Flags
     {
         DELETE(1L),
-        S3_USE_PATH_STYLE(1L << 1);
+        S3_USE_PATH_STYLE(1L << 1),
+        /**
+         * do not start new shippings to this remote, and delete it as soon as all in-progress shippings are done.
+         */
+        MARK_DELETED(1L << 2);
 
         public final long flagValue;
 
