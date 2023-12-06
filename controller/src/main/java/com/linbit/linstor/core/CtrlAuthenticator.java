@@ -15,6 +15,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.netcom.PeerClosingConnectionException;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.netcom.TcpConnectorPeer;
 import com.linbit.linstor.security.AccessContext;
@@ -95,6 +96,10 @@ public class CtrlAuthenticator
             .concatMap(inputStream -> this.processAuthResponse(node, inputStream))
             .onErrorResume(
                 PeerNotConnectedException.class,
+                ignored -> Flux.empty()
+            )
+            .onErrorResume(
+                PeerClosingConnectionException.class,
                 ignored -> Flux.empty()
             );
     }
