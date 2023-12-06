@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+@Deprecated(forRemoval = true)
 public class ExosEnclosureEventPojo
 {
     private final String severity;

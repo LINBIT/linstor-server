@@ -63,6 +63,7 @@ public abstract class AbsRscLayerHelper<
     public static final String IGNORE_REASON_DRBD_METADATA = "DRBD metadata";
     public static final String IGNORE_REASON_EBS_TARGET = "EBS target";
     public static final String IGNORE_REASON_EBS_MISSING_KEY = "EBS no key";
+    @Deprecated(forRemoval = true)
     public static final String IGNORE_REASON_EXOS_TARGET = "EXOS target";
     public static final String IGNORE_REASON_LUKS_MISSING_KEY = "LUKS no key";
     public static final String IGNORE_REASON_NVME_TARGET = "NVMe target";

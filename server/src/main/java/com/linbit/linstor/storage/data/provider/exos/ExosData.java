@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+@Deprecated(forRemoval = true)
 public class ExosData<RSC extends AbsResource<RSC>>
     extends AbsStorageVlmData<RSC> implements LvmProviderObject<RSC>
 {

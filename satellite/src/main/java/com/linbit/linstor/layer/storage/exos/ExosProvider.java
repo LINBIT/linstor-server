@@ -83,6 +83,7 @@ import java.util.regex.Pattern;
 
 import com.google.common.base.Objects;
 
+@Deprecated(forRemoval = true)
 @Singleton
 public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Resource>, ExosData<Snapshot>>
 {

@@ -2,6 +2,7 @@ package com.linbit.linstor.api.pojo;
 
 import javax.annotation.Nullable;
 
+@Deprecated(forRemoval = true)
 public class ExosEnclosureHealthPojo implements Comparable<ExosEnclosureHealthPojo>
 {
     private final String enclosureName;

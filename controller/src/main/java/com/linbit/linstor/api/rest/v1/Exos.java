@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 
+@Deprecated(forRemoval = true)
 @Path("v1/vendor/seagate/exos")
 public class Exos
 {
@@ -94,6 +95,7 @@ public class Exos
                 modifyData.password_env,
                 modifyData.unset_keys
             );
+            addDeprecationWarning(apiCallRc);
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
@@ -134,7 +136,6 @@ public class Exos
             List<ExosConnectionMap> jsonList = pojoList.stream()
                 .map(Json::apiToExosConnectionMap)
                 .collect(Collectors.toList());
-            List<ExosConnectionMap> ret = new ArrayList<>();
             return Response.status(Response.Status.OK)
                 .entity(objectMapper.writeValueAsString(jsonList))
                 .build();
@@ -190,6 +191,7 @@ public class Exos
                 createData.username,
                 createData.username_env
             );
+            addDeprecationWarning(apiCallRc);
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
@@ -216,6 +218,7 @@ public class Exos
                 createData.username,
                 createData.username_env
             );
+            addDeprecationWarning(apiCallRc);
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
@@ -230,6 +233,7 @@ public class Exos
         return requestHelper.doInScope(ApiConsts.API_DEL_EXOS_ENCLOSURE, request, () ->
         {
             ApiCallRcImpl apiCallRc = ctrlExosHandler.deleteEnclosure(enclosure);
+            addDeprecationWarning(apiCallRc);
             return ApiCallRcRestUtils.toResponse(apiCallRc, Response.Status.OK);
         }, true);
     }
@@ -254,5 +258,15 @@ public class Exos
                 .entity(objectMapper.writeValueAsString(response))
                 .build();
         }, false);
+    }
+
+    public static void addDeprecationWarning(ApiCallRcImpl apiCallRcRef)
+    {
+        apiCallRcRef.add(
+            ApiCallRcImpl.simpleEntry(
+                ApiConsts.WARN_DEPRECATED,
+                "EXOS is deprecated and will be deleted in a future LINSTOR release"
+            )
+        );
     }
 }

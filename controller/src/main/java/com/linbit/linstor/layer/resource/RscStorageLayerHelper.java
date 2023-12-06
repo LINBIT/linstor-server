@@ -76,6 +76,7 @@ public class RscStorageLayerHelper extends
 >
 {
     private final CtrlStorPoolResolveHelper storPoolResolveHelper;
+    @Deprecated(forRemoval = true)
     private final NameShortener exosNameShortener;
     private final ExosMappingManager exosMapMgr;
     private final CtrlSecurityObjects secObjs;

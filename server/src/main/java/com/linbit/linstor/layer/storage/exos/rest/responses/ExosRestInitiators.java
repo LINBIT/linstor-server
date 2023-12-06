@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.exos.rest.responses;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@Deprecated(forRemoval = true)
 public class ExosRestInitiators extends ExosRestBaseResponse
 {
     @JsonProperty("initiator")

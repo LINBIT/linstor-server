@@ -16,9 +16,9 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.FILE_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.REMOTE_SPDK;
+import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SPDK;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.STORAGE_SPACES;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.STORAGE_SPACES_THIN;
-import static com.linbit.linstor.storage.kinds.DeviceProviderKind.SPDK;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
 
@@ -785,6 +785,7 @@ public class StorageRscPojo implements RscLayerDataApi
         }
     }
 
+    @Deprecated(forRemoval = true)
     public static class ExosVlmPojo extends AbsVlmProviderPojo
     {
         public ExosVlmPojo(
@@ -814,6 +815,7 @@ public class StorageRscPojo implements RscLayerDataApi
         }
     }
 
+    @Deprecated(forRemoval = true)
     public static class EbsVlmPojo extends AbsVlmProviderPojo
     {
         public EbsVlmPojo(

@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 public class NameShortener
 {
     public static final String OPENFLEX = "OpenFlex";
+    @Deprecated(forRemoval = true)
     public static final String EXOS = "Exos";
 
     /**

@@ -89,6 +89,7 @@ message FileThinVlm
 
 message ExosVlm
 {
+    option deprecated = true;
     // currently no special payload
 }
 

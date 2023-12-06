@@ -135,6 +135,7 @@ public enum DeviceProviderKind
         false,
         new RemoteSpdkDriverKind()
     ),
+    @Deprecated(forRemoval = true)
     EXOS(
         false,
         false,

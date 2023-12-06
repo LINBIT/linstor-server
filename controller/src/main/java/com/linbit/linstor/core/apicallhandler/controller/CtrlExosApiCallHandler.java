@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+@Deprecated(forRemoval = true)
 @Singleton
 public class CtrlExosApiCallHandler
 {

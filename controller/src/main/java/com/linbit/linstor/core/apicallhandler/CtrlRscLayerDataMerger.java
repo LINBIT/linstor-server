@@ -414,6 +414,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         fileData.setDiscGran(vlmPojoRef.getDiscGran());
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     protected VlmProviderObject<Resource> createExosData(
         AbsVolume<Resource> vlm,
@@ -426,6 +427,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         throw new ImplementationError("Received unknown Exos storage volume from satellite");
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     protected void mergeExosData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
         throws DatabaseException

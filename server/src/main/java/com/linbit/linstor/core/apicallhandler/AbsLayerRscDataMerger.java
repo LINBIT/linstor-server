@@ -977,6 +977,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
 
     protected abstract void putVlmData(StorageRscData<RSC> storRscDataRef, VlmProviderObject<RSC> vlmDataRef);
 
+    @Deprecated(forRemoval = true)
     protected abstract VlmProviderObject<RSC> createExosData(
         AbsVolume<RSC> vlm,
         StorageRscData<RSC> storRscData,
@@ -985,6 +986,7 @@ public abstract class AbsLayerRscDataMerger<RSC extends AbsResource<RSC>>
     )
         throws DatabaseException, AccessDeniedException;
 
+    @Deprecated(forRemoval = true)
     protected abstract void mergeExosData(VlmLayerDataApi vlmPojo, VlmProviderObject<RSC> vlmData)
         throws DatabaseException;
 

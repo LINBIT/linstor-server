@@ -3,11 +3,13 @@ package com.linbit.linstor.layer.storage.exos.rest.responses;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@Deprecated(forRemoval = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ExosRestBaseResponse
 {
     public ExosStatus[] status;
 
+    @Deprecated(forRemoval = true)
     public static class ExosStatus
     {
         public static final int STATUS_SUCCESS = 0;

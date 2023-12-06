@@ -633,6 +633,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         vlmDataRef.setUsableSize(vlmPojoRef.getUsableSize());
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     protected VlmProviderObject<Resource> createExosData(
         AbsVolume<Resource> vlmRef,
@@ -647,6 +648,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
         return exosData;
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     protected void mergeExosData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Resource> vlmDataRef)
         throws DatabaseException

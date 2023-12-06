@@ -5,6 +5,7 @@ import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestDiskGroupCol
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ExosRestPoolCollection extends ExosRestBaseResponse
 {

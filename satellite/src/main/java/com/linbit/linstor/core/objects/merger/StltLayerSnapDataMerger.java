@@ -574,6 +574,7 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
         // ignoring usableSize
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     protected VlmProviderObject<Snapshot> createExosData(
         AbsVolume<Snapshot> vlmRef,
@@ -588,6 +589,7 @@ public class StltLayerSnapDataMerger extends AbsLayerRscDataMerger<Snapshot>
         return exosData;
     }
 
+    @Deprecated(forRemoval = true)
     @Override
     protected void mergeExosData(VlmLayerDataApi vlmPojoRef, VlmProviderObject<Snapshot> vlmDataRef)
         throws DatabaseException

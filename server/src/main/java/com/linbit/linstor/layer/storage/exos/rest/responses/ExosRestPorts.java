@@ -4,6 +4,7 @@ import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers.
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@Deprecated(forRemoval = true)
 public class ExosRestPorts extends ExosRestBaseResponse
 {
     @JsonProperty("port")

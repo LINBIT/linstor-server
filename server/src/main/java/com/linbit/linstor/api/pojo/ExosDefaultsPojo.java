@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.pojo;
 
+@Deprecated(forRemoval = true)
 public class ExosDefaultsPojo
 {
     private final String username;

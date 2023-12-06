@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+@Deprecated(forRemoval = true)
 public class ExosDriverKind implements StorageDriverKind
 {
     public ExosDriverKind()

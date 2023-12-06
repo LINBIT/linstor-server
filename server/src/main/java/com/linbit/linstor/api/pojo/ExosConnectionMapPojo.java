@@ -3,6 +3,7 @@ package com.linbit.linstor.api.pojo;
 import java.util.Collections;
 import java.util.List;
 
+@Deprecated(forRemoval = true)
 public class ExosConnectionMapPojo
 {
     private final String nodeName;

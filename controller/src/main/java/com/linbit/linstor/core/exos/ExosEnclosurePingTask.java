@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Deprecated(forRemoval = true)
 @Singleton
 public class ExosEnclosurePingTask implements Task
 {

@@ -51,6 +51,7 @@ import java.util.function.Predicate;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.google.common.io.BaseEncoding;
 
+@Deprecated(forRemoval = true)
 public class ExosRestClient
 {
     public static final String EXOS_POOL_NAME = InternalApiConsts.NAMESPC_EXOS + "/PoolName";

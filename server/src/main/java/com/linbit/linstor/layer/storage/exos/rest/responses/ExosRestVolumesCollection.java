@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage.exos.rest.responses;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@Deprecated(forRemoval = true)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ExosRestVolumesCollection extends ExosRestBaseResponse
 {
