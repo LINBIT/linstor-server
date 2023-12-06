@@ -43,6 +43,7 @@ import com.linbit.linstor.core.objects.remotes.StltRemoteControllerFactory;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.snapshot.AbsSnapLayerHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -267,6 +268,16 @@ public class CtrlBackupL2LSrcApiCallHandler
         }
         Date now = new Date();
         String backupName = BackupShippingUtils.generateBackupName(now);
+        Map<String, String> storPoolRenameMap;
+        if (storPoolRenameRef == null)
+        {
+            storPoolRenameMap = new HashMap<>();
+        }
+        else
+        {
+            storPoolRenameMap = new HashMap<>(storPoolRenameRef);
+        }
+        storPoolRenameMap.put(AbsSnapLayerHelper.RENAME_STOR_POOL_DFLT_KEY, dstStorPoolRef);
         BackupShippingData data = new BackupShippingData(
             srcClusterId,
             srcNodeNameRef,
@@ -278,7 +289,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             dstNodeNameRef,
             dstNetIfNameRef,
             dstStorPoolRef,
-            storPoolRenameRef,
+            storPoolRenameMap,
             downloadOnly,
             scheduleNameRef,
             allowIncremental

@@ -38,6 +38,8 @@ public abstract class AbsSnapLayerHelper<
     SNAPVLM_DFN_LO extends VlmDfnLayerObject
 >
 {
+    public static final String RENAME_STOR_POOL_DFLT_KEY = "*";
+
     protected final ErrorReporter errorReporter;
     protected final AccessContext apiCtx;
     protected final LayerDataFactory layerDataFactory;
@@ -352,16 +354,28 @@ public abstract class AbsSnapLayerHelper<
         String renamedStorPool = renameStorPoolMap.get(storPoolName);
         if (renamedStorPool == null)
         {
-            // if no mapping is found, it is assumed that the old storPoolName still applies
-            renamedStorPool = storPoolName;
+            // if no mapping is found, first check if there is a dflt-entry
+            renamedStorPool = renameStorPoolMap.get(RENAME_STOR_POOL_DFLT_KEY);
+            if (renamedStorPool == null)
+            {
+                // if no mapping is found, it is assumed that the old storPoolName still applies
+                renamedStorPool = storPoolName;
+            }
         }
 
         storPool = snapVlmRef.getNode().getStorPool(apiCtx, new StorPoolName(renamedStorPool));
         if (storPool == null)
         {
-            throw new ImplementationError(
-                "StorPool not found: " + snapVlmRef.getNode() + " " + renamedStorPool
-            );
+            if (!storPoolName.equals(renamedStorPool))
+            {
+                storPool = snapVlmRef.getNode().getStorPool(apiCtx, new StorPoolName(storPoolName));
+            }
+            if (storPool == null)
+            {
+                throw new ImplementationError(
+                    "StorPool not found: " + snapVlmRef.getNode() + " " + renamedStorPool
+                );
+            }
         }
         return storPool;
     }
