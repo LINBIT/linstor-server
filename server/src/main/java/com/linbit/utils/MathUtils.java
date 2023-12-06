@@ -320,7 +320,7 @@ public class MathUtils
         }
         if (exponent > 0)
         {
-            storeSelectedExponent(primeFactors, Long.valueOf(2), exponent, valueSelector);
+            storeSelectedExponent(primeFactors, 2L, exponent, valueSelector);
         }
     }
 
@@ -479,7 +479,7 @@ public class MathUtils
     public static Long leastCommonMultiple(@Nonnull final Set<Long> numbers)
         throws InterruptedException
     {
-        Long result = Long.valueOf(0);
+        Long result = 0L;
         final int count = numbers.size();
         if (count > 1)
         {
