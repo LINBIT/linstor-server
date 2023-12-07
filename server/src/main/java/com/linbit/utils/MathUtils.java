@@ -519,7 +519,7 @@ public class MathUtils
     /**
      * Calculates the greatest common divisor (GCD) of the specified set of numbers.
      *
-     * If the input set of numbers contains more than one entry, all numbers must be greater than 0.
+     * If there are no input numbers, or the only input number is zero, then the result is <code>Long.MAX_VALUE</code>.
      *
      * @param numbers Set of numbers for GCD calculation
      * @return Least common multiple of the specified set of numbers
@@ -527,7 +527,7 @@ public class MathUtils
     public static Long greatestCommonDivisor(@Nonnull final Set<Long> numbers)
         throws InterruptedException
     {
-        Long result = 1L;
+        Long result = Long.MAX_VALUE;
         final int count = numbers.size();
         if (count > 1)
         {
@@ -537,10 +537,17 @@ public class MathUtils
             fastPower2MinFactorize(numbers, notPowerTwo, primeFactors);
 
             final Iterator<Long> nrIter = notPowerTwo.iterator();
-            if (primeFactors.size() == 0 && nrIter.hasNext())
+            if (primeFactors.size() == 0)
             { // None of the numbers were powers of 2, initialize primeFactors
-                final Long initNumber = nrIter.next();
-                factorize(initNumber, primeFactors);
+                Long initNumber = 0L;
+                while (initNumber == 0L && nrIter.hasNext())
+                {
+                   initNumber = nrIter.next();
+                }
+                if (initNumber != 0)
+                {
+                    factorize(initNumber, primeFactors);
+                }
             }
             while (nrIter.hasNext())
             {
@@ -579,7 +586,11 @@ public class MathUtils
         if (count == 1)
         {
             final Iterator<Long> numbersIter = numbers.iterator();
-            result = numbersIter.next();
+            final long nr = numbersIter.next();
+            if (nr > 0)
+            {
+                result = nr;
+            }
         }
         return result == 0 ? 1 : result;
     }
