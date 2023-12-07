@@ -244,6 +244,7 @@ public class View
         }, false);
     }
 
+    @Deprecated(forRemoval = true)
     @GET
     @Path("snapshot-shippings")
     public Response listSnapshotShippings(

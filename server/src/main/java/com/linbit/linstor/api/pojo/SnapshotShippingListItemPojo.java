@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+@Deprecated(forRemoval = true)
 public class SnapshotShippingListItemPojo implements SnapshotShippingListItemApi
 {
     private final SnapshotDefinitionApi snapDfnApi;

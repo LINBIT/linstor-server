@@ -54,6 +54,7 @@ import java.util.Set;
 
 import reactor.core.publisher.Flux;
 
+@Deprecated(forRemoval = true)
 @Singleton
 public class SnapshotShippingInternalApiCallHandler
 {

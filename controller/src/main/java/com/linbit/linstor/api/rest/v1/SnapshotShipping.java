@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
 import reactor.core.publisher.Flux;
 
+@Deprecated(forRemoval = true)
 @Path("v1/resource-definitions/{rscName}/snapshot-shipping")
 public class SnapshotShipping
 {

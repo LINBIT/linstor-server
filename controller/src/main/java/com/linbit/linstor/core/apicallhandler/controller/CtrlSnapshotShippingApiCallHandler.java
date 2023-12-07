@@ -71,6 +71,7 @@ import java.util.stream.Collectors;
 
 import reactor.core.publisher.Flux;
 
+@Deprecated(forRemoval = true)
 @Singleton
 public class CtrlSnapshotShippingApiCallHandler
 {
@@ -297,6 +298,8 @@ public class CtrlSnapshotShippingApiCallHandler
         enableFlags(snapDfn, SnapshotDefinition.Flags.SHIPPING);
 
         ctrlTransactionHelper.commit();
+
+        addDeprecationWarning(responses);
 
         return snapCrtHandler.postCreateSnapshot(snapDfn, runInBackgroundRef);
     }
@@ -775,5 +778,16 @@ public class CtrlSnapshotShippingApiCallHandler
         }
 
         return predicate;
+    }
+
+    public static void addDeprecationWarning(ApiCallRcImpl apiCallRcRef)
+    {
+        apiCallRcRef.add(
+            ApiCallRcImpl.simpleEntry(
+                ApiConsts.WARN_DEPRECATED,
+                "Snapshot-shipping is deprecated and will be deleted in a future LINSTOR release." +
+                    " Use Backup-shipping instead"
+            )
+        );
     }
 }

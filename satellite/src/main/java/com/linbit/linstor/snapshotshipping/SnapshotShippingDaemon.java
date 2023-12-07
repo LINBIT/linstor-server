@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.BiConsumer;
 
+@Deprecated(forRemoval = true)
 public class SnapshotShippingDaemon implements Runnable
 {
     private static final int DFLT_DEQUE_CAPACITY = 100;

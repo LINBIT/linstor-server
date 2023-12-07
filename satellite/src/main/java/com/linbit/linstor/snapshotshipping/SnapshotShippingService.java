@@ -33,6 +33,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiConsumer;
 
+@Deprecated(forRemoval = true)
 @Singleton
 public class SnapshotShippingService implements SystemService
 {

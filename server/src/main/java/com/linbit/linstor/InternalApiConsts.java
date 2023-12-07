@@ -111,13 +111,21 @@ public class InternalApiConsts
     /*
      * Snapshot shipping
      */
+    @Deprecated(forRemoval = true)
     public static final String API_NOTIFY_SNAPSHOT_SHIPPING_RECEIVED = "SnapshotShippingReceived";
+    @Deprecated(forRemoval = true)
     public static final String KEY_SNAPSHOT_SHIPPING_NAME_IN_PROGRESS = "SnapshotShippingNameInProgress";
+    @Deprecated(forRemoval = true)
     public static final String KEY_SNAPSHOT_SHIPPING_NAME_PREV = "SnapshotShippingNamePrev";
+    @Deprecated(forRemoval = true)
     public static final String KEY_SNAPSHOT_SHIPPING_TARGET_NODE = "Shipping/Target";
+    @Deprecated(forRemoval = true)
     public static final String KEY_SNAPSHOT_SHIPPING_SOURCE_NODE = "Shipping/Source";
+    @Deprecated(forRemoval = true)
     public static final String KEY_SNAPSHOT_SHIPPING_PORT = "Shipping/Port";
+    @Deprecated(forRemoval = true)
     public static final String KEY_SNAPSHOT_SHIPPING_PREF_TARGET_NIC = "Shipping/PrefTargetNic";
+    @Deprecated(forRemoval = true)
     public static final String KEY_SNAPSHOT_SHIPPING_NEXT_ID = "SnapshotShippingNextId";
 
     /*

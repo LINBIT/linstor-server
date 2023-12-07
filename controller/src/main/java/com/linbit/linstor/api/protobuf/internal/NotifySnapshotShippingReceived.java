@@ -14,6 +14,7 @@ import java.io.InputStream;
 
 import reactor.core.publisher.Flux;
 
+@Deprecated(forRemoval = true)
 @ProtobufApiCall(
     name = InternalApiConsts.API_NOTIFY_SNAPSHOT_SHIPPING_RECEIVED,
     description = "Called by the satellite to notify the controller that a snapshot has been received",
