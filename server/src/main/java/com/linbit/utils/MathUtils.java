@@ -364,10 +364,6 @@ public class MathUtils
     )
         throws InterruptedException
     {
-        if (number < 1)
-        {
-            throw new ArithmeticException("Factorization of 0 and of negative numbers is not implemented");
-        }
         baseFactorize(number, primeFactors);
     }
 
@@ -385,32 +381,40 @@ public class MathUtils
     )
         throws InterruptedException
     {
-        long remainder = nr;
-        for (int idx = 0; idx < PRIMES_TO_100.length && remainder > 1; ++idx)
+        if (nr < 0)
         {
-            final long factor = PRIMES_TO_100[idx];
-            int exponent = 0;
-            while (remainder % factor == 0 && remainder > 1)
-            {
-                ++exponent;
-                remainder /= factor;
-            }
-            if (exponent > 0)
-            {
-                storeSelectedExponent(primeFactors, factor, exponent, maxSelector);
-            }
+            throw new ArithmeticException("Factorization of negative numbers is not implemented");
         }
 
-        if (remainder > 1)
+        if (nr > 0)
         {
-            final long maxStoredPrime = PRIMES_TO_100[PRIMES_TO_100.length - 1];
-            if (remainder <= (maxStoredPrime * maxStoredPrime))
+            long remainder = nr;
+            for (int idx = 0; idx < PRIMES_TO_100.length && remainder > 1; ++idx)
             {
-                storeSelectedExponent(primeFactors, remainder, 1, maxSelector);
+                final long factor = PRIMES_TO_100[idx];
+                int exponent = 0;
+                while (remainder % factor == 0 && remainder > 1)
+                {
+                    ++exponent;
+                    remainder /= factor;
+                }
+                if (exponent > 0)
+                {
+                    storeSelectedExponent(primeFactors, factor, exponent, maxSelector);
+                }
             }
-            else
+
+            if (remainder > 1)
             {
-                extendedSimpleFactorize(remainder, primeFactors);
+                final long maxStoredPrime = PRIMES_TO_100[PRIMES_TO_100.length - 1];
+                if (remainder <= (maxStoredPrime * maxStoredPrime))
+                {
+                    storeSelectedExponent(primeFactors, remainder, 1, maxSelector);
+                }
+                else
+                {
+                    extendedSimpleFactorize(remainder, primeFactors);
+                }
             }
         }
     }
