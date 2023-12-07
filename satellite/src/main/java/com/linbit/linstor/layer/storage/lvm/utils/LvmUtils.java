@@ -8,6 +8,7 @@ import com.linbit.linstor.layer.storage.utils.ParseUtils;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_ATTRIBUTES;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_CHUNK_SIZE;
@@ -223,7 +224,7 @@ public class LvmUtils
                             null,
                             null,
                             "External command used to query logical volume info: " +
-                                String.join(" ", output.executedCommand),
+                                StringUtils.joinShellQuote(output.executedCommand),
                                 nfExc
                             );
                     }
@@ -242,7 +243,7 @@ public class LvmUtils
                         null,
                         null,
                         "External command used to query logical volume info: " +
-                            String.join(" ", output.executedCommand),
+                            StringUtils.joinShellQuote(output.executedCommand),
                             nfExc
                         );
                 }
@@ -263,7 +264,7 @@ public class LvmUtils
                         null,
                         null,
                         "External command used to query logical volume info: " +
-                            String.join(" ", output.executedCommand),
+                            StringUtils.joinShellQuote(output.executedCommand),
                         nfExc
                     );
                 }
@@ -384,7 +385,7 @@ public class LvmUtils
                         "Numeric value to parse: '" + data[1] + "'",
                         null,
                         null,
-                        "External command: " + String.join(" ", output.executedCommand),
+                        "External command: " + StringUtils.joinShellQuote(output.executedCommand),
                         nfExc
                         );
                 }
@@ -396,7 +397,7 @@ public class LvmUtils
                     "Expected " + expectedColums + " columns, but got " + data.length,
                     "Failed to parse line: " + line,
                     null,
-                    "External command: " + String.join(" ", output.executedCommand)
+                    "External command: " + StringUtils.joinShellQuote(output.executedCommand)
                     );
             }
         }

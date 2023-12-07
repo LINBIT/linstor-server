@@ -77,7 +77,7 @@ public class DmStatCommands
                     "External command timed out" :
                     "External command threw an IOException",
                 null,
-                String.format("External command: %s", StringUtils.join(" ", command)),
+                String.format("External command: %s", StringUtils.joinShellQuote(command)),
                 exc
             );
         }

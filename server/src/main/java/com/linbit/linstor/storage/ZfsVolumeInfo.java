@@ -6,8 +6,7 @@ import java.io.IOException;
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmd.OutputData;
-
-import static com.linbit.utils.StringUtils.join;
+import com.linbit.utils.StringUtils;
 
 public class ZfsVolumeInfo extends VolumeInfo
 {
@@ -65,7 +64,7 @@ public class ZfsVolumeInfo extends VolumeInfo
                     "Pool: " + pool + ", zvol: " + identifier + "; output to parse: '" + rawOut + "'",
                     null,
                     null,
-                    "External command used: " + join(" ", command)
+                    "External command used: " + StringUtils.joinShellQuote(command)
                 );
             }
             long size = Long.parseLong(parts[0]) >> 10; // convert to  KiB
@@ -87,7 +86,7 @@ public class ZfsVolumeInfo extends VolumeInfo
                 null,
                 String.format(
                     "External command: %s",
-                    join(" ", command)
+                    StringUtils.joinShellQuote(command)
                 ),
                 exc
             );

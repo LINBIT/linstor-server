@@ -117,7 +117,7 @@ public class Commands
                     "External command threw an IOException" :
                     "External command timed out",
                 null,
-                String.format("External command: %s", StringUtils.join(" ", command)),
+                String.format("External command: %s", StringUtils.joinShellQuote(command)),
                 exc
             );
         }

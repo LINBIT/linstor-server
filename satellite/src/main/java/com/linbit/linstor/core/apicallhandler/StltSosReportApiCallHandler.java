@@ -321,7 +321,7 @@ public class StltSosReportApiCallHandler
             Files.write(
                 errFileRef.toPath(),
                 ("\n\nCommand did not terminate within " + ChildProcessHandler.dfltWaitTimeout + "ms. Command was: " +
-                    StringUtils.join(" ", commandRef)).getBytes()
+                    StringUtils.joinShellQuote(commandRef)).getBytes()
             );
         }
 

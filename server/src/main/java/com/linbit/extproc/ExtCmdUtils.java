@@ -81,7 +81,7 @@ public class ExtCmdUtils
                         "Error message: %n" +
                         "%s" +
                         "%n",
-                    StringUtils.join(" ", output.executedCommand),
+                    StringUtils.joinShellQuote(output.executedCommand),
                     output.exitCode,
                     new String(output.stdoutData),
                     new String(output.stderrData)

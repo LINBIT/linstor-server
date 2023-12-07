@@ -108,7 +108,7 @@ public class ExtCmd extends ChildProcessHandler
         throws IOException
     {
         execCommand = command;
-        execCommandStr = StringUtils.join(" ", command);
+        execCommandStr = StringUtils.joinShellQuote(command);
 
         if (logExecution)
         {

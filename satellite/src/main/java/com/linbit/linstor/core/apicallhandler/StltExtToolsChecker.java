@@ -642,7 +642,7 @@ public class StltExtToolsChecker
                         null,
                         null,
                         Arrays.asList(
-                            "Failed to parse version of installed '" + StringUtils.join(" ", cmd) + "'",
+                            "Failed to parse version of installed '" + StringUtils.joinShellQuote(cmd) + "'",
                             "Standard out: '" + pair.objA.trim() + "'",
                             "Standard err: '" + pair.objB.trim() + "'"
                         )
@@ -715,7 +715,7 @@ public class StltExtToolsChecker
             {
                 ret = Either.right(
                     Arrays.asList(
-                        "'" + StringUtils.join(" ", cmds) + "' returned with exit code " + out.exitCode
+                        "'" + StringUtils.joinShellQuote(cmds) + "' returned with exit code " + out.exitCode
                     )
                 );
             }
@@ -724,7 +724,7 @@ public class StltExtToolsChecker
         {
             ret = Either.right(
                 Arrays.asList(
-                    "IO exception occured when running '" + StringUtils.join(" ", cmds) + "': " +
+                    "IO exception occured when running '" + StringUtils.joinShellQuote(cmds) + "': " +
                         ioExc.getMessage()
                 )
             );
@@ -734,7 +734,7 @@ public class StltExtToolsChecker
         {
             ret = Either.right(
                 Arrays.asList(
-                    "'" + StringUtils.join(" ", cmds) + "' timed out."
+                    "'" + StringUtils.joinShellQuote(cmds) + "' timed out."
                 )
             );
             errorReporter.reportError(timeoutExc);

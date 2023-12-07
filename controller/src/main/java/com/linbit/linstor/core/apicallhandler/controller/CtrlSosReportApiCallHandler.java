@@ -822,7 +822,7 @@ public class CtrlSosReportApiCallHandler
                     errorReporter.logError(
                         "Unknown event type during SOS report: %s while processing command %s",
                         event.getClass().getCanonicalName(),
-                        StringUtils.join(" ", command)
+                        StringUtils.joinShellQuote(command)
                     );
                 }
             }
@@ -883,7 +883,7 @@ public class CtrlSosReportApiCallHandler
                 errorReporter.logError(
                     "IOException occured while writing to %s from the command '%s'",
                     file.toString(),
-                    StringUtils.join(" ", command)
+                    StringUtils.joinShellQuote(command)
                 );
             }
             else

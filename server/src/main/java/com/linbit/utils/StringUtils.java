@@ -1,5 +1,6 @@
 package com.linbit.utils;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -9,6 +10,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -16,6 +19,12 @@ import java.util.StringJoiner;
  */
 public class StringUtils
 {
+    /**
+     * This pattern matches any characters that need escaping in Unix shells.
+     * This is taken from Pythons shlex.quote.
+     */
+    private static Pattern unsafeForShell = Pattern.compile("[^\\w@%+=:,./-]");
+
     /**
      * Joins a collection into a string with the given delimeter.
      * @param col collection to join.
@@ -70,6 +79,42 @@ public class StringUtils
         }
         sb.setLength(sb.length() - delimiter.length());
         return sb.toString();
+    }
+
+    /**
+     * Return a shell-escaped version of the string.
+     *
+     * @param string The string to escape.
+     * @return The escaped string.
+     */
+    public static String shellQuote(@Nonnull String string)
+    {
+        String result;
+        Matcher matcher = unsafeForShell.matcher(string);
+        if (string.isEmpty())
+        {
+            result = "''";
+        }
+        else if (matcher.find())
+        {
+            result = "'" + string.replace("'", "'\"'\"'") + "'";
+        }
+        else
+        {
+            result = string;
+        }
+        return result;
+    }
+
+    /**
+     * Return a shell-ready version of the string array.
+     *
+     * @param strings The strings to escape.
+     * @return The escaped string, joined together.
+     */
+    public static String joinShellQuote(@Nonnull String... strings)
+    {
+        return join(" ", Arrays.stream(strings).map(StringUtils::shellQuote).toArray());
     }
 
     public static String firstLetterCaps(String string)

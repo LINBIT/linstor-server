@@ -1,7 +1,6 @@
 package com.linbit.extproc;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd.OutputData;
@@ -29,7 +28,7 @@ public class ExtCmdFailedException extends LinStorException
             "- The operating system may have entered an erroneous state.",
             "Check whether the external program and the operating system are still operating properly.\n" +
             "Check whether the system's load is within normal parameters.\n",
-            String.format(EXCEPTION_DETAILS_FORMAT, glue(command)),
+            String.format(EXCEPTION_DETAILS_FORMAT, StringUtils.joinShellQuote(command)),
             cause
         );
     }
@@ -42,7 +41,7 @@ public class ExtCmdFailedException extends LinStorException
             "Data exchange with the external command failed before the execution completed, or " +
             "the amount of data sent by the external command exceeded the size limit.",
             "Check whether the external program is operating properly and produces meaningful output.",
-            String.format(EXCEPTION_DETAILS_FORMAT, glue(command)),
+            String.format(EXCEPTION_DETAILS_FORMAT, StringUtils.joinShellQuote(command)),
             cause
         );
     }
@@ -60,15 +59,10 @@ public class ExtCmdFailedException extends LinStorException
             String.format(
                 EXCEPTION_DETAILS_FORMAT +
                 "\n\n",
-                glue(command)
+                StringUtils.joinShellQuote(command)
             ) +
             EXCEPTION_STDOUT_DATA + "\n" + new String(outputData.stdoutData) + "\n\n" +
             EXCEPTION_STDERR_DATA + "\n" + new String(outputData.stderrData) + "\n"
         );
-    }
-
-    private static String glue(String... strings)
-    {
-        return StringUtils.join(Arrays.asList(strings), " ");
     }
 }
