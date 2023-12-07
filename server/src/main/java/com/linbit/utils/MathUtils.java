@@ -583,28 +583,42 @@ public class MathUtils
     private static long productOfFactors(@Nonnull final Map<Long, Integer> primeFactors)
     {
         long result = 0;
-        Iterator<Entry<Long, Integer>> factorsIter = primeFactors.entrySet().iterator();
-        if (factorsIter.hasNext())
+        long product = 1;
         {
-            long product = 1;
-            do
+            final Integer exponent = primeFactors.get(2L);
+            if (exponent != null)
             {
-                final Entry<Long, Integer> factorsEntry = factorsIter.next();
-                final long factor = factorsEntry.getKey();
-                final long exponent = factorsEntry.getValue();
                 if (exponent < 0 || exponent >= 63)
                 {
                     throw new ArithmeticException("Exponent " + exponent + " is out of range");
                 }
-                for (int cycle = 0; cycle < exponent; ++cycle)
+                product <<= exponent;
+            }
+        }
+        Iterator<Entry<Long, Integer>> factorsIter = primeFactors.entrySet().iterator();
+        if (factorsIter.hasNext())
+        {
+            do
+            {
+                final Entry<Long, Integer> factorsEntry = factorsIter.next();
+                final long factor = factorsEntry.getKey();
+                if (factor != 2)
                 {
-                    if (Long.MAX_VALUE / factor >= product)
+                    final long exponent = factorsEntry.getValue();
+                    if (exponent < 0 || exponent >= 63)
                     {
-                        product *= factor;
+                        throw new ArithmeticException("Exponent " + exponent + " is out of range");
                     }
-                    else
+                    for (int cycle = 0; cycle < exponent; ++cycle)
                     {
-                        throw new ArithmeticException("Product of prime factors is out of range");
+                        if (Long.MAX_VALUE / factor >= product)
+                        {
+                            product *= factor;
+                        }
+                        else
+                        {
+                            throw new ArithmeticException("Product of prime factors is out of range");
+                        }
                     }
                 }
             }
