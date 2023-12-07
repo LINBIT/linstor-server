@@ -57,14 +57,6 @@ fi
 case $1 in
 	startSatellite)
 		shift
-		# Some lvm daemons think it's a good idea to close all file descriptors starting at the soft FD cap.
-		# On newer systems such as RHEL9, this is around > 1_000_000_000, and may take some time.
-		# Instead, we just use the known-to-be-reasonable 1024*1024 we saw on RHEL8, and start the daemon
-		# here already.
-		SOFT_FILE_LIMIT="$(echo -e "1048576\n$(prlimit --noheadings --output SOFT --nofile)" | sort -n | head -1)"
-		if ! prlimit --nofile="$SOFT_FILE_LIMIT:" dmeventd; then
-			echo "Could not start dmeventd. If LVM is not used, this can be ignored." >&2
-		fi
 		/usr/share/linstor-server/bin/Satellite --logs=/var/log/linstor-satellite --config-directory=/etc/linstor --skip-hostname-check "$@"
 		;;
 	startController)
