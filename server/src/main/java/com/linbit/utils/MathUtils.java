@@ -496,6 +496,12 @@ public class MathUtils
             while (nrIter.hasNext())
             {
                 final long nr = nrIter.next();
+                if (nr == 0)
+                {
+                    throw new ArithmeticException(
+                        "Set of numbers for least common multiple calculation contains zero"
+                    );
+                }
                 baseFactorize(nr, primeFactors);
             }
 
