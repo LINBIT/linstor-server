@@ -82,6 +82,24 @@ public class MathUtilsTest
             assertTrue("Incorrect result exponent " + resultExponent + ", expected " + solutionExponent,
                        resultExponent == solutionExponent);
         }
+
+        primeFactors.clear();
+        MathUtils.factorize(0, primeFactors);
+        if (primeFactors.size() > 0)
+        {
+            fail("Prime factorization thinks that zero is the product of prime numbers, but mathematicians think " +
+                 "this result might be a little bit dubious");
+        }
+
+        try
+        {
+            MathUtils.factorize(-25, primeFactors);
+            fail("Prime factorization did not reject a negative input number");
+        }
+        catch (ArithmeticException ignored)
+        {
+            // expected; no-op
+        }
     }
 
     @Test
@@ -221,10 +239,19 @@ public class MathUtilsTest
         PrimeProductData[] testInput = new PrimeProductData[]
         {
             new PrimeProductData(8192, 4, 8, 256, 512, 4096, 8192),
+            new PrimeProductData(4096, 4096),
             new PrimeProductData(8085, 385, 147),
             new PrimeProductData(1260, 60, 63),
             new PrimeProductData(420, 28, 30),
-            new PrimeProductData(270, 135, 54)
+            new PrimeProductData(270, 135, 54),
+            new PrimeProductData(34560, 8, 135, 256, 54, 4),
+            new PrimeProductData(647721, 911, 711),
+            new PrimeProductData(1, 1),
+            new PrimeProductData(64, 64),
+            new PrimeProductData(510510, 510510),
+            new PrimeProductData(510510, 221, 2310),
+            new PrimeProductData(0),
+            new PrimeProductData(0, 0)
         };
 
         for (PrimeProductData data : testInput)
@@ -232,6 +259,26 @@ public class MathUtilsTest
             final long result = MathUtils.leastCommonMultiple(data.numbers);
             assertTrue("Result " + result + " does not match expected result " + data.result,
                        result == data.result);
+        }
+
+        try
+        {
+            MathUtils.leastCommonMultiple((new PrimeProductData(0, 8, 135, 256, -1, 54, 4)).numbers);
+            fail("LCM calculation failed to reject a negative input number");
+        }
+        catch (ArithmeticException ignored)
+        {
+            // expected; no-op
+        }
+
+        try
+        {
+            MathUtils.leastCommonMultiple((new PrimeProductData(0, 8, 135, 256, 0, 54, 4)).numbers);
+            fail("LCM calculation failed to reject a zero input number");
+        }
+        catch (ArithmeticException ignored)
+        {
+            // expected; no-op
         }
     }
 
@@ -242,8 +289,13 @@ public class MathUtilsTest
         PrimeProductData[] testInput = new PrimeProductData[]
         {
             new PrimeProductData(140, 4620, 3920, 3640, 560, 1400, 27300, 3220),
+            new PrimeProductData(140, 4620, 3920, 3640, 560, 0, 1400, 27300, 3220),
             new PrimeProductData(1, 400, 735, 77, 209, 299),
-            new PrimeProductData(8192, 376832, 466944, 696320, 745472, 991232, 745472)
+            new PrimeProductData(8192, 376832, 466944, 696320, 745472, 991232, 745472),
+            new PrimeProductData(1, 1),
+            new PrimeProductData(Long.MAX_VALUE, Long.MAX_VALUE),
+            new PrimeProductData(Long.MAX_VALUE, 0),
+            new PrimeProductData(Long.MAX_VALUE),
         };
 
         for (PrimeProductData data : testInput)
