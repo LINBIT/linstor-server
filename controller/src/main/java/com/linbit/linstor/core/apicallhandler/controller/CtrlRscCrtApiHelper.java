@@ -710,6 +710,60 @@ public class CtrlRscCrtApiHelper
         return deployResources(context, deployedResources, true);
     }
 
+    /**
+     * Get currently online node ids.
+     * @param rscDfn
+     * @param accCtx
+     * @return A Map with resource to nodeid mapping
+     */
+    public static Map<Resource, Integer> getOnlineNodeIds(ResourceDefinition rscDfn, AccessContext accCtx)
+    {
+        Map<Resource, Integer> onlineNodeIds = new HashMap<>();
+        try
+        {
+            // deployedResources only contains the resources that were just created in the current API call, not the
+            // already existing ones
+            Iterator<Resource> rscIt = rscDfn.iterateResource(accCtx);
+            while (rscIt.hasNext())
+            {
+                Resource rsc = rscIt.next();
+
+                /*
+                 * do NOT wait for resources that are
+                 * * not online
+                 * * diskless DRBD
+                 * * not an active DRBD (i.e. nvme target, inactive, etc...)
+                 */
+                if (rsc.getNode().getPeer(accCtx).getConnectionStatus().equals(ConnectionStatus.ONLINE) &&
+                    !rsc.getStateFlags().isSet(accCtx, Resource.Flags.DRBD_DISKLESS) &&
+                    containsDrbdLayerData(rsc, accCtx))
+                {
+                    Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
+                        rsc.getLayerData(accCtx),
+                        DeviceLayerKind.DRBD
+                    );
+                    if (drbdRscDataSet.size() > 1)
+                    {
+                        throw new ImplementationError("Unexpected drbdRscDataSet size: " + drbdRscDataSet.size());
+                    }
+                    if (!drbdRscDataSet.isEmpty())
+                    {
+                        onlineNodeIds.put(
+                            rsc,
+                            ((DrbdRscData<Resource>) drbdRscDataSet.iterator().next()).getNodeId().value
+                        );
+                    }
+                }
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+
+        return onlineNodeIds;
+    }
+
     public Publisher<ApiCallRc> waitResourcesReady(
         ResponseContext context,
         ResourceDefinition rscDfn,
@@ -730,48 +784,7 @@ public class CtrlRscCrtApiHelper
         }
         else
         {
-            Map<Resource, Integer> onlineNodeIds = new HashMap<>();
-            try
-            {
-                // deployedResources only contains the resources that were just created in the current API call, not the
-                // already existing ones
-                Iterator<Resource> rscIt = rscDfn.iterateResource(apiCtx);
-                while (rscIt.hasNext())
-                {
-                    Resource rsc = rscIt.next();
-
-                    /*
-                     * do NOT wait for resources that are
-                     * * not online
-                     * * diskless DRBD
-                     * * not an active DRBD (i.e. nvme target, inactive, etc...)
-                     */
-                    if (rsc.getNode().getPeer(apiCtx).getConnectionStatus().equals(ConnectionStatus.ONLINE) &&
-                        !rsc.getStateFlags().isSet(apiCtx, Resource.Flags.DRBD_DISKLESS) &&
-                        containsDrbdLayerData(rsc))
-                    {
-                        Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByProvider(
-                            rsc.getLayerData(apiCtx),
-                            DeviceLayerKind.DRBD
-                        );
-                        if (drbdRscDataSet.size() > 1)
-                        {
-                            throw new ImplementationError("Unexpected drbdRscDataSet size: " + drbdRscDataSet.size());
-                        }
-                        if (!drbdRscDataSet.isEmpty())
-                        {
-                            onlineNodeIds.put(
-                                rsc,
-                                ((DrbdRscData<Resource>) drbdRscDataSet.iterator().next()).getNodeId().value
-                            );
-                        }
-                    }
-                }
-            }
-            catch (AccessDeniedException accDeniedExc)
-            {
-                throw new ImplementationError(accDeniedExc);
-            }
+            Map<Resource, Integer> onlineNodeIds = getOnlineNodeIds(rscDfn, apiCtx);
 
             List<Mono<ApiCallRc>> resourceReadyResponses = new ArrayList<>();
             if (rscDfn.getResourceCount() > 1)
@@ -785,7 +798,7 @@ public class CtrlRscCrtApiHelper
                     ))
                     {
                         NodeName nodeName = rsc.getNode().getName();
-                        if (containsDrbdLayerData(rsc))
+                        if (containsDrbdLayerData(rsc, peerAccCtx.get()))
                         {
                             Map<Resource, Integer> onlinePeerdNodeIds = new HashMap<>(onlineNodeIds);
                             onlinePeerdNodeIds.remove(rsc);
@@ -1297,13 +1310,13 @@ public class CtrlRscCrtApiHelper
         return allDiskless;
     }
 
-    private boolean containsDrbdLayerData(Resource rsc)
+    private static boolean containsDrbdLayerData(Resource rsc, AccessContext accCtx)
     {
         boolean ret = false;
         try
         {
             List<AbsRscLayerObject<Resource>> drbdLayerDataSet = LayerUtils.getChildLayerDataByKind(
-                rsc.getLayerData(peerAccCtx.get()),
+                rsc.getLayerData(accCtx),
                 DeviceLayerKind.DRBD
             );
             for (AbsRscLayerObject<Resource> drbdData : drbdLayerDataSet)
