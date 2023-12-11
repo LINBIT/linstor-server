@@ -165,6 +165,39 @@ check-openapi:
     - cd docs
     - lint-openapi -e rest_v1_openapi.yaml
 
+check-package-info:
+  stage: build
+  interruptible: true
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
+    - if: $CI_COMMIT_BRANCH == 'jenkins'
+    - if: $CI_COMMIT_BRANCH == 'master'
+  before_script:
+    - echo "checking package-info.java"
+  script:
+    - ret=0
+    - |
+      function check_package_info() {
+        for f in ${1}/*; do
+           if [ -d "${f}" ]; then
+             if ls ${f}/*.java 1> /dev/null 2>&1; then
+               # this folder contains at least 1 .java file
+               if [ ! -f ${f}/package-info.java ]; then
+                 ret=1
+                 echo -e "\x1b[31;mno package-info.java in \x1b[0m${f}"
+               fi
+             fi
+             check_package_info ${f}
+           fi
+         done
+      }
+    - |
+      for entry in ./{.,controller,satellite,server}/src/main/java; do
+        check_package_info ${entry}
+      done
+    - exit ${ret}
+
+
 test:
   stage: test
   interruptible: true
