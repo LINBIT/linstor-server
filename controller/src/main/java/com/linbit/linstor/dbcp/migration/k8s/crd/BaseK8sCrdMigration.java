@@ -167,7 +167,6 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
         if (fromCtx != null)
         {
             // if fromCtx is null, there cannot be db-tables to delete
-            Function<DatabaseTable, String> dbTableFromYamlLocation = fromCtx.schemaCtx.getGetYamlKindNameFunction();
             HashMap<String, DatabaseTable> dbTablesToDelete = new HashMap<>();
             for (DatabaseTable dbTable : fromCtx.txMgrContext.getAllDatabaseTables())
             {
@@ -177,9 +176,9 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
             {
                 dbTablesToDelete.remove(dbTable.getName());
             }
+            Function<DatabaseTable, String> dbTableFromYamlLocation = fromCtx.schemaCtx.getGetYamlLocations();
             for (DatabaseTable dbTable : dbTablesToDelete.values())
             {
-
                 String yamlLocation = dbTableFromYamlLocation.apply(dbTable);
                 if (yamlLocation != null)
                 {
