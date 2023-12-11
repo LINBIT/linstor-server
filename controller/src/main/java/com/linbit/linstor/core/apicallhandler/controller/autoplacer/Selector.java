@@ -21,6 +21,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -287,7 +288,7 @@ class Selector
     }
 
 
-    public Node unselect(
+    public @Nullable Node unselect(
         ResourceDefinition rscDfn,
         List<Node> fixedNodes,
         StorPoolWithScore[] sortedStorPoolByScoreArr
@@ -306,7 +307,7 @@ class Selector
          */
 
         // default: no node to unselect
-        Node ret = null;
+        @Nullable Node ret = null;
         if (sortedStorPoolByScoreArr.length > 0)
         {
             // sorts highest to lowest as defined in StorPoolWithScore' Comparator

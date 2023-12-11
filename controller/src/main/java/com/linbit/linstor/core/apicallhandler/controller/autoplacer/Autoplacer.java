@@ -150,13 +150,12 @@ public class Autoplacer
      * score for the data-storagePool
      *
      * @param rscDfnRef
-     * @param unplaceCount
      * @param fixedResources
      * @return
      */
-    public Resource autoUnplace(ResourceDefinition rscDfnRef, Collection<Resource> fixedResources)
+    public @Nullable Resource autoUnplace(ResourceDefinition rscDfnRef, Collection<Resource> fixedResources)
     {
-        Resource ret = null;
+        @Nullable Resource ret = null;
         try
         {
             List<Node> fixedNodes = new ArrayList<>();
@@ -179,7 +178,7 @@ public class Autoplacer
 
             Collection<StorPoolWithScore> sortedStorPoolByScore = strategyHandler.rate(storPoolList);
 
-            Node unselectedNode = selector.unselect(
+            @Nullable Node unselectedNode = selector.unselect(
                 rscDfnRef,
                 fixedNodes,
                 sortedStorPoolByScore.toArray(new StorPoolWithScore[0])
