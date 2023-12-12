@@ -8,6 +8,7 @@ import com.linbit.SystemServiceStartException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.AccessToDeletedDataException;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.types.TcpPortNumber;
@@ -570,11 +571,13 @@ public class TcpConnectorService implements Runnable, TcpConnector
                                         }
                                         break;
                                     case END_OF_STREAM:
-                                        if (connPeer.getNode() != null)
+                                        final Node connNode = connPeer.getNode();
+                                        if (connNode != null)
                                         {
+                                            final NodeName name = connNode.getName();
                                             errorReporter.logInfo(
-                                                "Remote satellite peer %s has closed the connection.",
-                                                connPeer.peerAddress()
+                                                "Remote satellite %s (peer %s) has closed the connection.",
+                                                name.displayValue, connPeer.getId()
                                             );
                                         }
                                         closeConnection(currentKey, true);
