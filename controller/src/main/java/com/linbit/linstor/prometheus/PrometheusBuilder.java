@@ -216,6 +216,7 @@ public class PrometheusBuilder
         map.put("node", resourceApi.getNodeName());
         map.put("volume", vlmApi.getVlmNr() + "");
         map.put("device_path", vlmApi.getDevicePath());
+        map.put("storage_pool", vlmApi.getStorageStorPool().map(StorPoolApi::getStorPoolName).orElse("_unknown"));
         return map;
     }
 

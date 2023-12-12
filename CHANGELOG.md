@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added PeerSlots to ResourceGroups (create, modify and spawn)
 - Added additional oversubscription calculation
 - Added new oversubscription ratios to QSI result
+- Prometheus/metrics added storage_pool to volume labels
 
 ### Changed
 
