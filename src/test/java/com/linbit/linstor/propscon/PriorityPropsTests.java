@@ -72,6 +72,7 @@ public class PriorityPropsTests extends GenericDbBase
         assertEquals("7", map.get("3"));
         assertEquals("8", map.get("a/1"));
         assertEquals(4, map.size());
+        assertEquals(map, prioProps.renderRelativeMap("b/"));
     }
 
     @Test

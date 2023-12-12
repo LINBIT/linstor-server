@@ -141,7 +141,7 @@ public class PriorityProps
         Map<String, String> ret = new HashMap<>();
 
         int nsLen = namespace == null ? 0 : namespace.length();
-        if (nsLen > 0 && !namespace.equals("/"))
+        if (nsLen > 0 && !namespace.endsWith(Props.PATH_SEPARATOR))
         {
             nsLen++; // also cut the trailing "/"
         }
