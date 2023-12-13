@@ -283,7 +283,7 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        Map<String, Long> map = new HashMap<String, Long>();
+        Map<String, Long> map = new HashMap<>();
         OutputData res;
 
         res = WmiHelper.run(extCmdFactory, new String[] {

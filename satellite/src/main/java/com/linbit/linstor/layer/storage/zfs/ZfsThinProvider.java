@@ -111,6 +111,8 @@ public class ZfsThinProvider extends ZfsProvider
     @Override
     public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
+        LocalPropsChangePojo ret = new LocalPropsChangePojo();
+
         String thinZpoolName = getZPool(storPool);
         if (thinZpoolName == null)
         {
@@ -128,7 +130,10 @@ public class ZfsThinProvider extends ZfsProvider
         {
             throw new StorageException("no zfs dataset found with name '" + thinZpoolName + "'");
         }
-        return null;
+
+        checkExtentSize(storPool, ret);
+
+        return ret;
     }
 
     @Override

@@ -146,7 +146,7 @@ public class SpdkLocalCommands implements SpdkCommands<OutputData>
                 "bdev_lvol_create", // construct_lvol_bdev is deprecated
                 vlmId,
                 String.valueOf(
-                    SizeConv.convert(sizeInKib, SizeUnit.UNIT_KiB, SizeUnit.UNIT_MiB)
+                    SizeConv.convertRoundUp(sizeInKib, SizeUnit.UNIT_KiB, SizeUnit.UNIT_MiB)
                 ),
                 "--lvs-name", volumeGroup
             },

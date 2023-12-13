@@ -31,6 +31,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -178,6 +179,12 @@ public class CtrlVlmCrtApiHelper
         catch (DatabaseException sqlExc)
         {
             throw new ApiDatabaseException(sqlExc);
+        }
+        catch (StorageException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.copyFromLinstorExc(ApiConsts.FAIL_STOR_POOL_CONFIGURATION_ERROR, exc)
+            );
         }
         catch (MinSizeException | MaxSizeException exc)
         {

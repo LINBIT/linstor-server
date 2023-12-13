@@ -1244,7 +1244,7 @@ public class DrbdLayer implements DeviceLayer
                     )
                         .stream()
                         .map(VlmProviderObject::getProviderKind)
-                        .allMatch(kind -> kind == DeviceProviderKind.ZFS || kind == DeviceProviderKind.ZFS_THIN);
+                        .allMatch(kind -> kind == DeviceProviderKind.ZFS_THIN);
 
                     if (!skipInitSync)
                     {

@@ -669,12 +669,24 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     @Override
     public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        Props props = DeviceLayerUtils.getNamespaceStorDriver(
-            storPool.getProps(storDriverAccCtx)
-        );
-        StorageConfigReader.checkVolumeGroupEntry(extCmdFactory, props);
-        StorageConfigReader.checkToleranceFactor(props);
-        return null;
+        LocalPropsChangePojo ret = new LocalPropsChangePojo();
+
+        Props publicStorDriverNamespace = DeviceLayerUtils.getNamespaceStorDriver(storPool.getProps(storDriverAccCtx));
+        StorageConfigReader.checkVolumeGroupEntry(extCmdFactory, publicStorDriverNamespace);
+        StorageConfigReader.checkToleranceFactor(publicStorDriverNamespace);
+
+        checkExtentSize(storPool, ret);
+
+        return ret;
+    }
+
+    protected void checkExtentSize(StorPool storPool, LocalPropsChangePojo ret)
+        throws StorageException, ImplementationError
+    {
+        String lvmVG = getVolumeGroup(storPool);
+        Map<String, Long> extentSizeInKibMap = LvmUtils.getExtentSize(extCmdFactory, Collections.singleton(lvmVG));
+        Long extentSizeInKib = extentSizeInKibMap.get(lvmVG);
+        markAllocGranAsChangedIfNeeded(extentSizeInKib, storPool, ret);
     }
 
     @Override

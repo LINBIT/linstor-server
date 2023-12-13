@@ -616,7 +616,7 @@ public class LvmThinProvider extends LvmProvider
             LvmUtils.execWithRetry(
                 extCmdFactory,
                 Collections.singleton(vlmGrp),
-                config ->  LvmCommands.activateZero(extCmdFactory, vlmGrp, thinPool,config)
+                config -> LvmCommands.activateZero(extCmdFactory, vlmGrp, thinPool, config)
             );
         }
 
@@ -630,6 +630,9 @@ public class LvmThinProvider extends LvmProvider
             StorageConstants.NAMESPACE_INTERNAL + StorageConstants.KEY_INT_THIN_POOL_METADATA_PERCENT,
             thinPoolInfo.metaDataPercentStr
         );
+
+        super.checkExtentSize(storPool, ret);
+
         return ret;
     }
 

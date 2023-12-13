@@ -273,7 +273,6 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     protected void deleteLvImpl(SpdkData<Resource> vlmData, String oldSpdkId)
         throws StorageException, DatabaseException, AccessDeniedException
     {
-
         vlmData.setExists(false);
 
         // SPDK by default wipes a lvol bdev during deletion, unless this option was disabled in lvol store
@@ -430,12 +429,29 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     @Override
     public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
+        LocalPropsChangePojo ret = new LocalPropsChangePojo();
+
         Props props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
         );
         SpdkConfigReader.checkVolumeGroupEntry(spdkCommands, props);
         SpdkConfigReader.checkToleranceFactor(props);
+
+        checkExtentSize(storPool, ret);
+
         return null;
+    }
+
+    protected void checkExtentSize(StorPool storPool, LocalPropsChangePojo ret)
+        throws StorageException, ImplementationError, AccessDeniedException
+    {
+        String vlmGrp = getVolumeGroup(storPool);
+        final Map<String, Long> extentSizes = SpdkUtils.getExtentSize(
+            spdkCommands,
+            Collections.singleton(vlmGrp)
+        );
+        Long extentSizeInKib = extentSizes.get(vlmGrp);
+        markAllocGranAsChangedIfNeeded(extentSizeInKib, storPool, ret);
     }
 
     @Override

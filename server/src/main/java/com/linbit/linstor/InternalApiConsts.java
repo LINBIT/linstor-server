@@ -241,6 +241,9 @@ public class InternalApiConsts
     public static final String KEY_EBS_COOLDOWN_UNTIL = "CooldownUntil";
     public static final String KEY_EBS_COOLDOWN_UNTIL_TIMESTAMP = "CooldownUntilTimestamp";
 
+    // storage
+    public static final String ALLOCATION_GRANULARITY = "AllocationGranularity";
+
     private InternalApiConsts()
     {
     }

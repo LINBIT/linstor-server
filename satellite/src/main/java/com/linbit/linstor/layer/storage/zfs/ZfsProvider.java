@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -78,6 +79,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     private static final int TOLERANCE_FACTOR = 3;
 
     private static final Pattern PATTERN_EXTENT_SIZE = Pattern.compile("(\\d+)\\s*(.*)");
+    private static final String ZFS_DFLT_EXTENT_SIZE_IN_KIB = "8";
 
     private  Map<StorPool, Long> extentSizes = new TreeMap<>();
 
@@ -294,33 +296,6 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             throw new ImplementationError(exc);
         }
         return additionalOptionsArr;
-    }
-
-    protected long roundUpToExtentSize(ZfsData<Resource> vlmDataRef, long sizeRef) throws StorageException
-    {
-        long volumeSize = sizeRef;
-
-        long extentSize = getExtentSize(vlmDataRef);
-
-        if (volumeSize % extentSize != 0)
-        {
-            long origSize = volumeSize;
-            volumeSize = ((volumeSize / extentSize) + 1) * extentSize;
-            final String device = vlmDataRef.getDevicePath() == null ?
-                vlmDataRef.getRscLayerObject().getSuffixedResourceName() + "/" + vlmDataRef.getVlmNr().value :
-                vlmDataRef.getDevicePath();
-
-            errorReporter.logInfo(
-                String.format(
-                    "Aligning %s size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
-                    device,
-                    origSize,
-                    volumeSize,
-                    extentSize
-                )
-            );
-        }
-        return volumeSize;
     }
 
     @Override
@@ -560,6 +535,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     @Override
     public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
+        LocalPropsChangePojo ret = new LocalPropsChangePojo();
+
         String zpoolName = getZPool(storPool);
         if (zpoolName == null)
         {
@@ -577,7 +554,28 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         {
             throw new StorageException("no zpool found with name '" + zpoolName + "'");
         }
-        return null;
+
+        checkExtentSize(storPool, ret);
+
+        return ret;
+    }
+
+    protected void checkExtentSize(StorPool storPool, LocalPropsChangePojo ret)
+        throws StorageException, ImplementationError, AccessDeniedException
+    {
+        String oldExtentSizeInKib = storPool.getProps(storDriverAccCtx)
+            .getProp(
+                InternalApiConsts.ALLOCATION_GRANULARITY,
+                StorageConstants.NAMESPACE_INTERNAL
+            );
+        if (!Objects.equals(ZFS_DFLT_EXTENT_SIZE_IN_KIB, oldExtentSizeInKib))
+        {
+            ret.changeStorPoolProp(
+                storPool,
+                StorageConstants.NAMESPACE_INTERNAL + "/" + InternalApiConsts.ALLOCATION_GRANULARITY,
+                ZFS_DFLT_EXTENT_SIZE_IN_KIB
+            );
+        }
     }
 
     @Override
@@ -845,9 +843,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     protected void setExpectedUsableSize(ZfsData<Resource> vlmData, long size)
         throws DatabaseException, StorageException
     {
-        vlmData.setExepectedSize(
-            roundUpToExtentSize(vlmData, size)
-        );
+        vlmData.setExepectedSize(size);
     }
 
     @Override

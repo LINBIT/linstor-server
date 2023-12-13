@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage;
 
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
+import com.linbit.Platform;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.fsevent.FileSystemWatch;
 import com.linbit.linstor.InternalApiConsts;
@@ -49,6 +50,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
@@ -60,7 +62,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
-import com.linbit.Platform;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.Pair;
@@ -75,6 +76,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -108,7 +110,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private final FileSystemWatch fsWatch;
     protected final DeviceProviderKind kind;
 
-    private final Map<StorPool, Long> extentSizeCache = new HashMap<>();
+    private final Map<StorPool, Long> extentSizeFromSpCache = new HashMap<>();
 
     private final Set<StorPool> changedStorPools = new HashSet<>();
     private boolean prepared;
@@ -1524,12 +1526,15 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
          * satellite restarts or gets reconnected
          */
         StorPool sp = vlmData.getStorPool();
-        Long extentSize = extentSizeCache.get(sp);
-        if (extentSize == null)
+        Long extentSizeFromSp = extentSizeFromSpCache.get(sp);
+        if (extentSizeFromSp == null)
         {
-            extentSize = getExtentSize((LAYER_DATA) vlmData);
-            extentSizeCache.put(sp, extentSize);
+            extentSizeFromSp = getExtentSize((LAYER_DATA) vlmData);
+            extentSizeFromSpCache.put(sp, extentSizeFromSp);
         }
+        long extentSizeFromVlmDfn = getExtentSizeFromVlmDfn(vlmData);
+
+        long extentSize = Math.max(extentSizeFromVlmDfn, extentSizeFromSp);
 
         long volumeSize = vlmData.getUsableSize();
 
@@ -1543,11 +1548,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 vlmData.getDevicePath();
             errorReporter.logInfo(
                 String.format(
-                    "Aligning %s size from %d KiB to %d KiB to be a multiple of extent size %d KiB",
+                    "Aligning %s size from %d KiB to %d KiB to be a multiple of extent size %d KiB (from %s)",
                     device,
                     origSize,
                     volumeSize,
-                    extentSize
+                    extentSize,
+                    extentSize == extentSizeFromSp ? "Storage Pool" : "Volume Definition"
                 )
             );
         }
@@ -1580,6 +1586,38 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     @Override
     public abstract LocalPropsChangePojo checkConfig(StorPool storPool)
         throws StorageException, AccessDeniedException;
+
+    protected void markAllocGranAsChangedIfNeeded(
+        Long extentSizeInKibRef,
+        StorPool storPoolRef,
+        LocalPropsChangePojo localPropsChangePojoRef
+    )
+    {
+        if (extentSizeInKibRef != null)
+        {
+            String extentSizeInKibStr = extentSizeInKibRef.toString();
+            try
+            {
+                String oldExtentSizeInKib = storPoolRef.getProps(storDriverAccCtx)
+                    .getProp(
+                        InternalApiConsts.ALLOCATION_GRANULARITY,
+                        StorageConstants.NAMESPACE_INTERNAL
+                    );
+                if (!Objects.equals(extentSizeInKibStr, oldExtentSizeInKib))
+                {
+                    localPropsChangePojoRef.changeStorPoolProp(
+                        storPoolRef,
+                        StorageConstants.NAMESPACE_INTERNAL + "/" + InternalApiConsts.ALLOCATION_GRANULARITY,
+                        extentSizeInKibStr
+                    );
+                }
+            }
+            catch (InvalidKeyException | AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+    }
 
     @Override
     public abstract SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException;
@@ -1707,6 +1745,21 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             snapVlmDfn.getSnapshotName(),
             snapVlmDfn.getVolumeNumber()
         );
+    }
+
+    protected long getExtentSizeFromVlmDfn(VlmProviderObject<Resource> vlmDataRef) throws AccessDeniedException
+    {
+        VolumeDefinition vlmDfn = vlmDataRef.getVolume().getVolumeDefinition();
+        String allocGran = vlmDfn.getProps(storDriverAccCtx)
+            .getProp(
+                InternalApiConsts.ALLOCATION_GRANULARITY,
+                StorageConstants.NAMESPACE_INTERNAL
+            );
+        if (allocGran == null)
+        {
+            throw new ImplementationError("AllocationGranularity is not set");
+        }
+        return Long.parseLong(allocGran);
     }
 
     protected abstract String asLvIdentifier(

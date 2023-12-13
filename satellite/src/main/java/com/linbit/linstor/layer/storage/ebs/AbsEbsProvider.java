@@ -63,9 +63,9 @@ import com.amazonaws.services.ec2.model.Tag;
 
 public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsData<Resource>, EbsData<Snapshot>>
 {
-    /** <code>"${spName}/${rscName}$[rscSuffix}_${vlmNr}"</code> */
+    /** <code>"${spName}/${rscName}${rscSuffix}_${vlmNr}"</code> */
     public static final String FORMAT_RSC_TO_LVM_ID = "%s/%s%s_%05d";
-    /** <code>"${spName}/${rscName}$[rscSuffix}_${vlmNr}_${snapName}"</code> */
+    /** <code>"${spName}/${rscName}${rscSuffix}_${vlmNr}_${snapName}"</code> */
     public static final String FORMAT_SNAP_TO_LVM_ID = FORMAT_RSC_TO_LVM_ID + "_%s";
 
     public static final String FORMAT_PATTERN_KEY_SP_NAME = "spName";
