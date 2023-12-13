@@ -48,6 +48,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -491,7 +492,18 @@ public class CtrlRscAutoPlaceApiCallHandler
             }
         }
 
-        responseConverter.addWithOp(responses, context, ApiCallRcImpl
+        int idx = 0;
+        var objRefs = new HashMap<String, String>();
+        for (var sp : selectedStorPoolSet)
+        {
+            objRefs.put("Node/" + idx, sp.getNode().getName().displayValue);
+            objRefs.put(
+                String.format("StoragePool/%d/0", idx),
+                sp.getName().toString() + "," + sp.getDeviceProviderKind().toString());
+            idx++;
+        }
+
+        ApiCallRc.RcEntry entry = ApiCallRcImpl
             .entryBuilder(
                 ApiConsts.CREATED,
                 "Resource '" + rscNameStr + "' successfully autoplaced on " +
@@ -501,11 +513,13 @@ public class CtrlRscAutoPlaceApiCallHandler
             .setDetails(
                 "Used nodes (storage pool name): '" +
                     selectedStorPoolSet.stream().map(
-                        sp -> sp.getNode().getName().displayValue + " (" + sp.getName().displayValue + ")"
-                    )
-                .collect(Collectors.joining("', '")) + "'")
-            .build()
-        );
+                            sp -> sp.getNode().getName().displayValue + " (" + sp.getName().displayValue + ")"
+                        )
+                        .collect(Collectors.joining("', '")) + "'")
+            .putAllObjRefs(objRefs)
+            .build();
+
+        responseConverter.addWithOp(responses, context, entry);
 
         return new Pair<>(autoFlux, deployedResources);
     }

@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added copy of GenDbTables to GenCrdV* classes for migrations
 - Escape executed commands in logs, making them paste-able
 - Oversubscription now takes minimum of old and of new calculation
+- Autoplace API answer now contains object refs to nodes and storagepools
 
 ### Fixed
 
