@@ -44,6 +44,7 @@ import javax.inject.Singleton;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -375,6 +376,7 @@ public class ScheduleBackupService implements SystemService
             if (isNew)
             {
                 String prefNode = null;
+                Map<String, String> renameStorpoolMap = new HashMap<>();
                 try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP))
                 {
                     PriorityProps prioProps = new PriorityProps(
@@ -382,11 +384,20 @@ public class ScheduleBackupService implements SystemService
                         rscDfn.getResourceGroup().getProps(accCtx),
                         systemConfRepository.getCtrlConfForView(accCtx)
                     );
-                    // key for prefNode is {remoteName}/{scheduleName}/KEY_SCHEDULE_PREF_NODE
-                    prefNode = prioProps.getProp(
+                    // namespace for schedule-remote-rsc props is {remoteName}/{scheduleName}/
+                    String namespace = InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR +
                         remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue +
-                            Props.PATH_SEPARATOR + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
-                        InternalApiConsts.NAMESPC_SCHEDULE
+                        Props.PATH_SEPARATOR;
+                    Map<String, String> propsInNamespace = prioProps.renderRelativeMap(
+                        namespace + InternalApiConsts.KEY_RENAME_STORPOOL_MAP
+                    );
+                    for (Entry<String, String> prop : propsInNamespace.entrySet())
+                    {
+                        renameStorpoolMap.put(prop.getKey(), prop.getValue());
+                    }
+                    prefNode = prioProps.getProp(
+                        InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                        namespace
                     );
                 }
                 ZonedDateTime now = ZonedDateTime.now();
@@ -415,7 +426,8 @@ public class ScheduleBackupService implements SystemService
                     rscDfn,
                     lastInc,
                     infoPair,
-                    now.toEpochSecond() * 1000
+                    now.toEpochSecond() * 1000,
+                    renameStorpoolMap
                 );
                 boolean confIsActive = activeShippings.contains(config);
                 if (lastStartTime >= 0 && confIsActive || lastStartTime == NOT_STARTED_YET)
@@ -755,7 +767,7 @@ public class ScheduleBackupService implements SystemService
 
     public void removeSingleTask(Schedule schedule, AbsRemote remote, ResourceDefinition rscDfn)
     {
-        removeSingleTask(new ScheduledShippingConfig(schedule, remote, rscDfn, false, new Pair<>(), null), false);
+        removeSingleTask(new ScheduledShippingConfig(schedule, remote, rscDfn, false, new Pair<>(), null, null), false);
     }
 
     /**
@@ -874,6 +886,7 @@ public class ScheduleBackupService implements SystemService
         public final AbsRemote remote;
         public final ResourceDefinition rscDfn;
         public final boolean lastInc;
+        public final Map<String, String> storpoolRenameMap;
 
         public Pair<Long, Boolean> timeoutAndType;
         public Long timeoutAndTypeCalculatedFrom;
@@ -886,7 +899,8 @@ public class ScheduleBackupService implements SystemService
             ResourceDefinition rscDfnRef,
             boolean lastIncRef,
             Pair<Long, Boolean> timeoutAndTypeRef,
-            Long timeoutAndTypeCalculatedFromRef
+            Long timeoutAndTypeCalculatedFromRef,
+            Map<String, String> storpoolRenameMapRef
         )
         {
             schedule = scheduleRef;
@@ -894,6 +908,7 @@ public class ScheduleBackupService implements SystemService
             rscDfn = rscDfnRef;
             lastInc = lastIncRef;
             timeoutAndType = timeoutAndTypeRef;
+            storpoolRenameMap = storpoolRenameMapRef;
             retryCt = 0;
             timeoutAndTypeCalculatedFrom = timeoutAndTypeCalculatedFromRef;
         }

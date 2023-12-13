@@ -8365,6 +8365,12 @@ components:
           type: string
         node_name:
           type: string
+        dst_stor_pool:
+          type: string
+        stor_pool_rename:
+          type: object
+          additionalProperties:
+            type: string
     ScheduleDetailsList:
       type: object
       properties:

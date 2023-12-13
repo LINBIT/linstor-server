@@ -1455,6 +1455,8 @@ public class JsonGenTypes
         public String rsc_name;
         public String grp_name;
         public String node_name;
+        public String dst_stor_pool;
+        public Map<String, String> stor_pool_rename = Collections.emptyMap();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

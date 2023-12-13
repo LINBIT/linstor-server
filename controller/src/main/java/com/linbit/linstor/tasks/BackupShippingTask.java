@@ -88,7 +88,7 @@ public class BackupShippingTask implements TaskScheduleService.Task
                     null,
                     null,
                     null,
-                    null,
+                    conf.storpoolRenameMap,
                     true,
                     conf.schedule.getName().displayValue,
                     inc,

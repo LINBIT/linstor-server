@@ -410,7 +410,15 @@ public class Backups
         {
             JsonGenTypes.BackupSchedule data = objectMapper.readValue(jsonData, JsonGenTypes.BackupSchedule.class);
             responses = scheduledBackupsApiCallHandler
-                .enableSchedule(data.rsc_name, data.grp_name, remoteName, scheduleName, data.node_name)
+                .enableSchedule(
+                    data.rsc_name,
+                    data.grp_name,
+                    remoteName,
+                    scheduleName,
+                    data.node_name,
+                    data.dst_stor_pool,
+                    data.stor_pool_rename
+                )
                 .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
                 asyncResponse,

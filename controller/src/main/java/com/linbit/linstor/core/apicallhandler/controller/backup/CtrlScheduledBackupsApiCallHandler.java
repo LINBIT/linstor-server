@@ -25,6 +25,7 @@ import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.snapshot.AbsSnapLayerHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -35,6 +36,7 @@ import com.linbit.linstor.tasks.ScheduleBackupService;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -43,6 +45,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -501,7 +504,9 @@ public class CtrlScheduledBackupsApiCallHandler
         String grpNameRef,
         String remoteNameRef,
         String scheduleNameRef,
-        String nodeNameRef
+        String nodeNameRef,
+        String dstStorPool,
+        Map<String, String> storpoolRename
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -509,7 +514,16 @@ public class CtrlScheduledBackupsApiCallHandler
             lockGuardFactory.create().write(LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP, LockObj.CTRL_CONFIG)
                 .read(LockObj.REMOTE_MAP, LockObj.SCHEDULE_MAP)
                 .buildDeferred(),
-            () -> setScheduleInTransaction(rscNameRef, grpNameRef, remoteNameRef, scheduleNameRef, nodeNameRef, true)
+            () -> setScheduleInTransaction(
+                rscNameRef,
+                grpNameRef,
+                remoteNameRef,
+                scheduleNameRef,
+                nodeNameRef,
+                dstStorPool,
+                storpoolRename,
+                true
+            )
         );
     }
 
@@ -529,7 +543,16 @@ public class CtrlScheduledBackupsApiCallHandler
             lockGuardFactory.create().write(LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP, LockObj.CTRL_CONFIG)
                 .read(LockObj.REMOTE_MAP, LockObj.SCHEDULE_MAP)
                 .buildDeferred(),
-            () -> setScheduleInTransaction(rscNameRef, grpNameRef, remoteNameRef, scheduleNameRef, nodeNameRef, false)
+            () -> setScheduleInTransaction(
+                rscNameRef,
+                grpNameRef,
+                remoteNameRef,
+                scheduleNameRef,
+                nodeNameRef,
+                null,
+                null,
+                false
+            )
         );
     }
 
@@ -542,6 +565,8 @@ public class CtrlScheduledBackupsApiCallHandler
         String remoteNameRef,
         String scheduleNameRef,
         String nodeNameRef,
+        @Nullable String dstStorPool,
+        @Nullable Map<String, String> storpoolRename,
         boolean add
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
@@ -549,23 +574,41 @@ public class CtrlScheduledBackupsApiCallHandler
         Schedule schedule = ctrlApiDataLoader.loadSchedule(scheduleNameRef, true);
         String msg = "";
         List<ResourceDefinition> rscDfnsToCheck = new ArrayList<>();
+        Map<String, String> renameMap = new HashMap<>();
+        if (storpoolRename != null)
+        {
+            renameMap.putAll(storpoolRename);
+        }
+        if (dstStorPool != null && !dstStorPool.isEmpty())
+        {
+            renameMap.put(AbsSnapLayerHelper.RENAME_STOR_POOL_DFLT_KEY, dstStorPool);
+        }
+        final String namespace = InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR +
+            remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue +
+            Props.PATH_SEPARATOR;
         if (rscNameRef != null && !rscNameRef.isEmpty())
         {
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
             Props propsRef = rscDfn.getProps(peerAccCtx.get());
             propsRef.setProp(
-                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
-                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
-                    + InternalApiConsts.KEY_TRIPLE_ENABLED,
-                add ? ApiConsts.VAL_TRUE : ApiConsts.VAL_FALSE
+                InternalApiConsts.KEY_TRIPLE_ENABLED,
+                add ? ApiConsts.VAL_TRUE : ApiConsts.VAL_FALSE,
+                namespace
             );
             if (nodeNameRef != null && !nodeNameRef.isEmpty())
             {
                 propsRef.setProp(
-                    InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
-                        + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
-                        + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
-                    nodeNameRef
+                    InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                    nodeNameRef,
+                    namespace
+                );
+            }
+            for (Entry<String, String> renameEntry : renameMap.entrySet())
+            {
+                propsRef.setProp(
+                    InternalApiConsts.KEY_RENAME_STORPOOL_MAP + Props.PATH_SEPARATOR + renameEntry.getKey(),
+                    renameEntry.getValue(),
+                    namespace
                 );
             }
             rscDfnsToCheck.add(rscDfn);
@@ -577,18 +620,24 @@ public class CtrlScheduledBackupsApiCallHandler
             ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(grpNameRef, true);
             Props propsRef = rscGrp.getProps(peerAccCtx.get());
             propsRef.setProp(
-                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
-                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
-                    + InternalApiConsts.KEY_TRIPLE_ENABLED,
-                add ? ApiConsts.VAL_TRUE : ApiConsts.VAL_FALSE
+                InternalApiConsts.KEY_TRIPLE_ENABLED,
+                add ? ApiConsts.VAL_TRUE : ApiConsts.VAL_FALSE,
+                namespace
             );
             if (nodeNameRef != null && !nodeNameRef.isEmpty())
             {
                 propsRef.setProp(
-                    InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
-                        + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
-                        + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
-                    nodeNameRef
+                    InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                    nodeNameRef,
+                    namespace
+                );
+            }
+            for (Entry<String, String> renameEntry : renameMap.entrySet())
+            {
+                propsRef.setProp(
+                    InternalApiConsts.KEY_RENAME_STORPOOL_MAP + Props.PATH_SEPARATOR + renameEntry.getKey(),
+                    renameEntry.getValue(),
+                    namespace
                 );
             }
             rscDfnsToCheck.addAll(rscGrp.getRscDfns(peerAccCtx.get()));
@@ -599,19 +648,26 @@ public class CtrlScheduledBackupsApiCallHandler
         {
             systemConfRepository.setCtrlProp(
                 peerAccCtx.get(),
-                remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
-                    + Props.PATH_SEPARATOR + InternalApiConsts.KEY_TRIPLE_ENABLED,
+                InternalApiConsts.KEY_TRIPLE_ENABLED,
                 add ? ApiConsts.VAL_TRUE : ApiConsts.VAL_FALSE,
-                InternalApiConsts.NAMESPC_SCHEDULE
+                namespace
             );
             if (nodeNameRef != null && !nodeNameRef.isEmpty())
             {
                 systemConfRepository.setCtrlProp(
                     peerAccCtx.get(),
-                    remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
-                        + Props.PATH_SEPARATOR + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                    InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
                     nodeNameRef,
-                    InternalApiConsts.NAMESPC_SCHEDULE
+                    namespace
+                );
+            }
+            for (Entry<String, String> renameEntry : renameMap.entrySet())
+            {
+                systemConfRepository.setCtrlProp(
+                    peerAccCtx.get(),
+                    InternalApiConsts.KEY_RENAME_STORPOOL_MAP + Props.PATH_SEPARATOR + renameEntry.getKey(),
+                    renameEntry.getValue(),
+                    namespace
                 );
             }
             rscDfnsToCheck.addAll(rscDfnRepo.getMapForView(peerAccCtx.get()).values());
