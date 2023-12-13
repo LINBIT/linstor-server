@@ -58,7 +58,7 @@ class Selector
 
     public Set<StorPoolWithScore> select(
         AutoSelectFilterApi selectFilterRef,
-        ResourceDefinition rscDfnRef,
+        @Nullable ResourceDefinition rscDfnRef,
         Collection<StorPoolWithScore> storPoolWithScores
     )
         throws AccessDeniedException
@@ -81,7 +81,9 @@ class Selector
         int alreadyDeployedDisklessCount = 0;
         List<SharedStorPoolName> alreadyDeployedInSharedSPNames = new ArrayList<>();
         Map<DeviceProviderKind, List</* DrbdVersion */Version>> alreadyDeployedKindsAndVersion = new HashMap<>();
-        boolean allowMixing = isStorPoolMixingEnabled(rscDfnRef);
+
+        // if rscDfn is null, we are most likely in something like query-size-info
+        boolean allowMixing = rscDfnRef == null || isStorPoolMixingEnabled(rscDfnRef);
         if (rscDfnRef != null)
         {
             Iterator<Resource> rscIt = rscDfnRef.iterateResource(apiCtx);
