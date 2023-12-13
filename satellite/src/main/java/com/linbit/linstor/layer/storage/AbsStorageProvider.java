@@ -1755,11 +1755,16 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 InternalApiConsts.ALLOCATION_GRANULARITY,
                 StorageConstants.NAMESPACE_INTERNAL
             );
+        long ret;
         if (allocGran == null)
         {
-            throw new ImplementationError("AllocationGranularity is not set");
+            ret = 1; // old vlmDfn, value has not yet been recalcuated by controller
         }
-        return Long.parseLong(allocGran);
+        else
+        {
+            ret = Long.parseLong(allocGran);
+        }
+        return ret;
     }
 
     protected abstract String asLvIdentifier(
