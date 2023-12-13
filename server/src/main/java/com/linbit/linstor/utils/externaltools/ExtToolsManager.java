@@ -4,6 +4,9 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
+
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -186,5 +189,14 @@ public class ExtToolsManager
             }
         }
         return allChecksSatisfied;
+    }
+
+    /**
+     * Returns the version of the requested ExtTools if available. Null otherwise.
+     */
+    public @Nullable Version getVersion(ExtTools extToolsRef)
+    {
+        ExtToolsInfo extToolInfo = getExtToolInfo(extToolsRef);
+        return extToolInfo == null ? null : extToolInfo.getVersion();
     }
 }

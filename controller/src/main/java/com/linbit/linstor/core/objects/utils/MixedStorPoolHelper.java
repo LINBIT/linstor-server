@@ -6,7 +6,9 @@ import com.linbit.SizeConv.SizeUnit;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
@@ -26,7 +28,11 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.MkfsUtils;
+import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.utils.MathUtils;
@@ -68,6 +74,7 @@ public class MixedStorPoolHelper
         Set<StorPool> storPoolSet = getAllStorPools(rscDfn);
         if (hasMixedStoragePools(storPoolSet))
         {
+            ensureAllStltsHaveDrbdVersion(storPoolSet);
             try
             {
                 rscDfn.getProps(sysCtx)
@@ -99,6 +106,49 @@ public class MixedStorPoolHelper
         }
     }
 
+    private void ensureAllStltsHaveDrbdVersion(Set<StorPool> storPoolSetRef)
+    {
+        try
+        {
+            for (StorPool sp : storPoolSetRef)
+            {
+                ExtToolsManager extToolsMgr = sp.getNode()
+                    .getPeer(sysCtx)
+                    .getExtToolsManager();
+                ExtToolsInfo info = extToolsMgr.getExtToolInfo(ExtTools.DRBD9_KERNEL);
+                if (info == null)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_STLT_DOES_NOT_SUPPORT_LAYER,
+                            sp.getNode() + " does not support DRBD9!"
+                        )
+                    );
+                }
+                if (!DeviceProviderKind.doesDrbdVersionSupportStorPoolMixing(info.getVersion()))
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_STLT_DOES_NOT_SUPPORT_LAYER,
+                            String.format(
+                                "%s has DRBD version %s, but version %s (or higher) is required",
+                                sp.getNode(),
+                                info.getVersion(),
+                                info.getVersionMinor() == 1 ?
+                                    DeviceProviderKind.SP_MIXING_REQ_DRBD91_MIN_VERISON :
+                                    DeviceProviderKind.SP_MIXING_REQ_DRBD92_MIN_VERISON
+                            )
+                        )
+                    );
+                }
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
     private Set<StorPool> getAllStorPools(ResourceDefinition resourceDefinitionRef)
         throws AccessDeniedException
     {
@@ -123,18 +173,22 @@ public class MixedStorPoolHelper
         {
             for (StorPool sp : storagePoolsRef)
             {
-                if (sp.getDeviceProviderKind().usesThinProvisioning())
+                DeviceProviderKind kind = sp.getDeviceProviderKind();
+                if (!kind.equals(DeviceProviderKind.DISKLESS))
                 {
-                    usesThin = true;
+                    if (kind.usesThinProvisioning())
+                    {
+                        usesThin = true;
+                    }
+                    else
+                    {
+                        usesThick = true;
+                    }
+                    allocationGranularities.add(
+                        sp.getProps(sysCtx)
+                            .getProp(InternalApiConsts.ALLOCATION_GRANULARITY, StorageConstants.NAMESPACE_INTERNAL)
+                    );
                 }
-                else
-                {
-                    usesThick = true;
-                }
-                allocationGranularities.add(
-                    sp.getProps(sysCtx)
-                        .getProp(InternalApiConsts.ALLOCATION_GRANULARITY, StorageConstants.NAMESPACE_INTERNAL)
-                );
             }
         }
         catch (InvalidKeyException | AccessDeniedException exc)

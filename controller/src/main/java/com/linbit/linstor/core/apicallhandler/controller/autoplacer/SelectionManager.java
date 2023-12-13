@@ -9,15 +9,17 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 /**
@@ -32,10 +34,12 @@ import java.util.Set;
  */
 public class SelectionManager
 {
+    private static final Version DFLT_DISKLESS_DRBD_VERSION = new Version(9, 1, 0);
+
     private final AccessContext accessContext;
     private final ErrorReporter errorReporter;
     private final List<Node> alreadyDeployedOnNodes;
-    private final List<DeviceProviderKind> alreadySetProviderKindList;
+    private final Map<DeviceProviderKind, List</* DrbdVersion */Version>> alreadyDeployedProviderKindsAndVersions;
     private final List<SharedStorPoolName> alreadyDeployedInSharedSPNames;
 
     private final AutoSelectFilterApi selectFilter;
@@ -44,14 +48,15 @@ public class SelectionManager
     private final Set<Autoplacer.StorPoolWithScore> selectedStorPoolWithScoreSet;
     private final Autoplacer.StorPoolWithScore[] sortedStorPoolByScoreArr;
     private final int additionalRscCountToSelect;
-    private final ArrayList<DeviceProviderKind> selectedProviderKindList;
+    private final Map<DeviceProviderKind, List</* DrbdVersion */ Version>> selectedProviderKindsToDrbdVersions;
+    private final boolean allowStorPoolMixing;
 
     /*
      * temporary maps, extended when a storage pool is added and
      * recalculated when a storage pool is removed
      */
-    final private HashMap<String, String> sameProps = new HashMap<>();
-    final private HashMap<String, List<String>> diffProps = new HashMap<>();
+    private final HashMap<String, String> sameProps = new HashMap<>();
+    private final HashMap<String, List<String>> diffProps = new HashMap<>();
 
     public SelectionManager(
         AccessContext accessContextRef,
@@ -61,8 +66,9 @@ public class SelectionManager
         int diskfulNodeCount,
         int disklessNodeCount,
         List<SharedStorPoolName> alreadyDeployedInSharedSPNamesRef,
-        Collection<DeviceProviderKind> alreadySelectedProviderKindsRef,
-        Autoplacer.StorPoolWithScore[] sortedStorPoolByScoreArrRef
+        Map<DeviceProviderKind, List</* DrbdVersion */Version>> alreadyDeployedProviderKindsRef,
+        Autoplacer.StorPoolWithScore[] sortedStorPoolByScoreArrRef,
+        boolean allowStorPoolMixingRef
     )
         throws AccessDeniedException
     {
@@ -71,21 +77,39 @@ public class SelectionManager
         selectFilter = selectFilterRef;
         alreadyDeployedOnNodes = alreadyDeployedOnNodesRef;
         alreadyDeployedInSharedSPNames = alreadyDeployedInSharedSPNamesRef;
-        selectedProviderKindList = new ArrayList<>();
+        selectedProviderKindsToDrbdVersions = new HashMap<>();
         sortedStorPoolByScoreArr = sortedStorPoolByScoreArrRef;
 
         if (selectFilterRef.getDisklessType() == null)
         {
             additionalRscCountToSelect = getReplicaCount(selectFilterRef, diskfulNodeCount);
-            alreadySetProviderKindList = Collections.unmodifiableList(
-                new ArrayList<>(alreadySelectedProviderKindsRef)
-            );
+
+            HashMap<DeviceProviderKind, List<Version>> tmpMap = new HashMap<>();
+            for (Entry<DeviceProviderKind, List<Version>> entry : alreadyDeployedProviderKindsRef.entrySet())
+            {
+                tmpMap.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
+            }
+            alreadyDeployedProviderKindsAndVersions = Collections.unmodifiableMap(tmpMap);
         }
         else
         {
             additionalRscCountToSelect = getReplicaCount(selectFilterRef, disklessNodeCount);
-            alreadySetProviderKindList = Collections.singletonList(DeviceProviderKind.DISKLESS);
+            alreadyDeployedProviderKindsAndVersions = Collections.singletonMap(
+                DeviceProviderKind.DISKLESS,
+                Collections.singletonList(DFLT_DISKLESS_DRBD_VERSION) // should not matter what version we take here
+            );
         }
+
+        boolean tmpAllowMixing = allowStorPoolMixingRef;
+        for (Node alreadyDeployedNode : alreadyDeployedOnNodesRef)
+        {
+            Version drbdVersion = getDrbdVersion(alreadyDeployedNode);
+            if (!DeviceProviderKind.doesDrbdVersionSupportStorPoolMixing(drbdVersion))
+            {
+                tmpAllowMixing = false;
+            }
+        }
+        allowStorPoolMixing = tmpAllowMixing;
 
         selectedNodes = new HashSet<>();
         selectedSharedSPNames = new HashSet<>();
@@ -183,19 +207,33 @@ public class SelectionManager
             );
         }
 
-        for (DeviceProviderKind selectedProviderKind : selectedProviderKindList)
+        DeviceProviderKind candidateDevProvKind = sp.getDeviceProviderKind();
+        Version candidateDrbdVersion = getDrbdVersion(sp);
+        Set<Entry<DeviceProviderKind, List<Version>>> selectedDevProvKindsToDrbdVersion = selectedProviderKindsToDrbdVersions
+            .entrySet();
+        for (Entry<DeviceProviderKind, List<Version>> selectedKindAndVersion : selectedDevProvKindsToDrbdVersion)
         {
-            if (!DeviceProviderKind.isMixingAllowed(sp.getDeviceProviderKind(), selectedProviderKind))
+            DeviceProviderKind selectedKind = selectedKindAndVersion.getKey();
+            for (Version selectedDrbdVersion : selectedKindAndVersion.getValue())
             {
-                errorReporter.logTrace(
-                    "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
-                        "canditate-selection as its provider kind (%s) does not match already selected (%s)",
-                    sp.getName().displayValue,
-                    sp.getNode().getName().displayValue,
-                    sp.getDeviceProviderKind().name(),
-                    selectedProviderKind.name()
-                );
-                isAllowed = false;
+                if (!DeviceProviderKind.isMixingAllowed(
+                    candidateDevProvKind,
+                    candidateDrbdVersion,
+                    selectedKind,
+                    selectedDrbdVersion,
+                    allowStorPoolMixing
+                ))
+                {
+                    errorReporter.logTrace(
+                        "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
+                            "canditate-selection as its provider kind (%s) does not match already selected (%s)",
+                        sp.getName().displayValue,
+                        sp.getNode().getName().displayValue,
+                        candidateDevProvKind.name(),
+                        selectedKind.name()
+                    );
+                    isAllowed = false;
+                }
             }
         }
 
@@ -266,7 +304,11 @@ public class SelectionManager
             currentSpWithScoreRef.storPool.getNode().getName().displayValue
         );
 
-        selectedProviderKindList.add(currentSpWithScoreRef.storPool.getDeviceProviderKind());
+        selectedProviderKindsToDrbdVersions.computeIfAbsent(
+            currentStorPool.getDeviceProviderKind(),
+            ignored -> new ArrayList<>()
+        )
+            .add(getDrbdVersion(currentStorPool));
 
         // update same props
         Map<String, String> updateEntriesForSameProps = new HashMap<>(); // prevent concurrentModificationException
@@ -307,11 +349,20 @@ public class SelectionManager
         selectedNodes.remove(sp.getNode());
         selectedSharedSPNames.remove(sp.getSharedStorPoolName());
 
-        selectedProviderKindList.remove(currentSpWithScoreRef.storPool.getDeviceProviderKind());
+        List<Version> drbdVersions = selectedProviderKindsToDrbdVersions.get(sp.getDeviceProviderKind());
+        drbdVersions.remove(getDrbdVersion(sp));
+        if (drbdVersions.isEmpty())
+        {
+            selectedProviderKindsToDrbdVersions.remove(sp.getDeviceProviderKind());
+        }
         /*
          * The current selection always must contain all alreadyExistingProviderKinds
          */
-        assert selectedProviderKindList.containsAll(alreadySetProviderKindList);
+        for (Entry<DeviceProviderKind, List<Version>> entry : alreadyDeployedProviderKindsAndVersions.entrySet())
+        {
+            assert selectedProviderKindsToDrbdVersions.containsKey(entry.getKey());
+            assert selectedProviderKindsToDrbdVersions.get(entry.getKey()).containsAll(entry.getValue());
+        }
 
         errorReporter.logTrace(
             "Autoplacer.Selector: Removing StorPool '%s' on Node '%s' to current selection",
@@ -401,10 +452,23 @@ public class SelectionManager
         selectedSharedSPNames.clear();
         selectedSharedSPNames.addAll(alreadyDeployedInSharedSPNames);
 
-        selectedProviderKindList.clear();
-        selectedProviderKindList.addAll(alreadySetProviderKindList);
+        selectedProviderKindsToDrbdVersions.clear();
+        for (Entry<DeviceProviderKind, List<Version>> entry : alreadyDeployedProviderKindsAndVersions.entrySet())
+        {
+            selectedProviderKindsToDrbdVersions.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
 
         selectedStorPoolWithScoreSet.clear();
         rebuildTemporaryMaps();
+    }
+
+    private Version getDrbdVersion(StorPool sp) throws AccessDeniedException
+    {
+        return getDrbdVersion(sp.getNode());
+    }
+
+    private Version getDrbdVersion(Node node) throws AccessDeniedException
+    {
+        return node.getPeer(accessContext).getExtToolsManager().getVersion(ExtTools.DRBD9_KERNEL);
     }
 }

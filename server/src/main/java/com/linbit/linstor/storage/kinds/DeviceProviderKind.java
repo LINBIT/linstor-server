@@ -15,8 +15,9 @@ import com.linbit.linstor.storage.StorageSpacesKind;
 import com.linbit.linstor.storage.StorageSpacesThinKind;
 import com.linbit.linstor.storage.ZfsDriverKind;
 import com.linbit.linstor.storage.ZfsThinDriverKind;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public enum DeviceProviderKind
 {
@@ -215,6 +216,10 @@ public enum DeviceProviderKind
     // no startup verifications, should always trigger an error anyways :)
     );
 
+    public static final Version SP_MIXING_REQ_DRBD91_MIN_VERISON = new Version(9, 1, 18);
+    public static final Version SP_MIXING_REQ_DRBD91_MAX_VERISON = new Version(9, 2, 0);
+    public static final Version SP_MIXING_REQ_DRBD92_MIN_VERISON = new Version(9, 2, 7);
+
     private final boolean isSnapshotSupported;
     private final boolean isSnapshotDependent;
     private final boolean isSnapshotShippingSupported;
@@ -306,9 +311,17 @@ public enum DeviceProviderKind
         return startupVerifications;
     }
 
-    public static boolean isMixingAllowed(@Nonnull DeviceProviderKind kind1, @Nonnull DeviceProviderKind kind2)
+    public static boolean isMixingAllowed(
+        DeviceProviderKind kind1,
+        @Nullable Version drbdVersionNode1,
+        DeviceProviderKind kind2,
+        @Nullable Version drbdVersionNode2,
+        boolean allowStorPoolMixing
+    )
     {
         boolean allowed = false;
+        boolean allowedWithRecentEnoughDrbdVersion = false;
+
         switch (kind1)
         {
             case DISKLESS:
@@ -316,17 +329,18 @@ public enum DeviceProviderKind
                 break;
             case FILE:
             case FILE_THIN:
-                allowed = kind2.equals(FILE) || kind2.equals(FILE_THIN);
+                allowed = kind2.equals(FILE) || kind2.equals(FILE_THIN) || kind2.equals(DISKLESS);
                 break;
             case LVM:
-                allowed = kind2.equals(LVM) || kind2.equals(LVM_THIN) ||
-                    kind2.equals(EXOS) ||
-                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN) ||
+                allowed = kind2.equals(LVM) || kind2.equals(EXOS) ||
+                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
+                allowedWithRecentEnoughDrbdVersion = kind2.equals(LVM_THIN) ||
                     kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
                 break;
             case LVM_THIN:
-                allowed = kind2.equals(LVM_THIN) || kind2.equals(LVM) ||
-                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN) ||
+                allowed = kind2.equals(LVM_THIN) ||
+                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
+                allowedWithRecentEnoughDrbdVersion = kind2.equals(LVM) ||
                     kind2.equals(ZFS) || kind2.equals(ZFS_THIN);
                 break;
             case SPDK:
@@ -338,8 +352,8 @@ public enum DeviceProviderKind
             case ZFS:
             case ZFS_THIN:
                 allowed = kind2.equals(ZFS) || kind2.equals(ZFS_THIN) ||
-                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN) ||
-                    kind2.equals(LVM) || kind2.equals(LVM_THIN);
+                    kind2.equals(STORAGE_SPACES) || kind2.equals(STORAGE_SPACES_THIN);
+                allowedWithRecentEnoughDrbdVersion = kind2.equals(LVM) || kind2.equals(LVM_THIN);
                 break;
             case EXOS:
                 allowed = kind2.equals(EXOS) || kind2.equals(LVM);
@@ -359,7 +373,27 @@ public enum DeviceProviderKind
                 break;
         }
 
+        if (!allowed && allowedWithRecentEnoughDrbdVersion && allowStorPoolMixing)
+        {
+            allowed = doesDrbdVersionSupportStorPoolMixing(drbdVersionNode1) &&
+                doesDrbdVersionSupportStorPoolMixing(drbdVersionNode2);
+        }
+
         return allowed;
+    }
+
+    public static boolean doesDrbdVersionSupportStorPoolMixing(@Nullable Version drbdVersion)
+    {
+        boolean supported = false;
+        if (drbdVersion != null)
+        {
+            // check if DRBD version >= 9.1.18 but < 9.2.0
+            supported = drbdVersion.greaterOrEqual(SP_MIXING_REQ_DRBD91_MIN_VERISON, false) &&
+                !drbdVersion.greaterOrEqual(SP_MIXING_REQ_DRBD91_MAX_VERISON);
+            // or >= 9.2.7
+            supported |= drbdVersion.greaterOrEqual(SP_MIXING_REQ_DRBD92_MIN_VERISON);
+        }
+        return supported;
     }
 
     public boolean isShrinkingSupported()

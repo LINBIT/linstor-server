@@ -30,6 +30,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.GenericDbBase;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -595,7 +596,15 @@ public class NodeDbDriverTest extends GenericDbBase
                         Props volDfnProps = volDfn.getProps(SYS_CTX);
                         assertNotNull(volDfnProps);
                         assertEquals(volDfnTestValue, volDfnProps.getProp(volDfnTestKey));
-                        assertEquals(1, volDfnProps.size());
+                        String dfltLvmExtentSize = "4096"; // from the storPool1
+                        assertEquals(
+                            dfltLvmExtentSize,
+                            volDfnProps.getProp(
+                                InternalApiConsts.ALLOCATION_GRANULARITY,
+                                StorageConstants.NAMESPACE_INTERNAL
+                            )
+                        );
+                        assertEquals(2, volDfnProps.size());
                     }
                     assertEquals(res.getResourceDefinition(), volDfn.getResourceDefinition());
                     assertEquals(volDfnUuid, volDfn.getUuid());
@@ -645,7 +654,15 @@ public class NodeDbDriverTest extends GenericDbBase
                 Props storPoolConfig = storPool.getProps(SYS_CTX);
                 assertNotNull(storPoolConfig);
                 assertEquals(storPool1TestValue, storPoolConfig.getProp(storPool1TestKey));
-                assertEquals(1, storPoolConfig.size());
+                String dfltLvmExtentSize = "4096"; // due to LVM
+                assertEquals(
+                    dfltLvmExtentSize,
+                    storPoolConfig.getProp(
+                        InternalApiConsts.ALLOCATION_GRANULARITY,
+                        StorageConstants.NAMESPACE_INTERNAL
+                    )
+                );
+                assertEquals(2, storPoolConfig.size());
             }
             {
                 StorPoolDefinition storPoolDefinition = storPool.getDefinition(SYS_CTX);

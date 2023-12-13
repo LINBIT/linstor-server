@@ -113,8 +113,10 @@ public class SelectionManagerTest extends GenericDbBase
             0,
             0,
             Collections.emptyList(),
-            Collections.emptyList(),
-            storPoolWithScores);
+            Collections.emptyMap(),
+            storPoolWithScores,
+            false
+        );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
         Assert.assertEquals(3, actual.size());
@@ -142,8 +144,10 @@ public class SelectionManagerTest extends GenericDbBase
             0,
             0,
             Collections.emptyList(),
-            Collections.emptyList(),
-            storPoolWithScores);
+            Collections.emptyMap(),
+            storPoolWithScores,
+            false
+        );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
         Assert.assertEquals(3, actual.size());
@@ -175,8 +179,10 @@ public class SelectionManagerTest extends GenericDbBase
             0,
             0,
             Collections.emptyList(),
-            Collections.emptyList(),
-            storPoolWithScores);
+            Collections.emptyMap(),
+            storPoolWithScores,
+            false
+        );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
         Assert.assertEquals(0, actual.size());
@@ -198,8 +204,10 @@ public class SelectionManagerTest extends GenericDbBase
             2,
             0,
             Collections.emptyList(),
-            Collections.emptyList(),
-            storPoolWithScores);
+            Collections.emptyMap(),
+            storPoolWithScores,
+            false
+        );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
         Assert.assertEquals(1, actual.size());
@@ -228,8 +236,10 @@ public class SelectionManagerTest extends GenericDbBase
             0,
             0,
             Collections.emptyList(),
-            Collections.emptyList(),
-            storPoolWithScores);
+            Collections.emptyMap(),
+            storPoolWithScores,
+            false
+        );
 
         Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
         Assert.assertEquals(3, actual.size());

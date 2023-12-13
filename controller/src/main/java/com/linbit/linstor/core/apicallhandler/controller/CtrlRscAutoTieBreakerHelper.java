@@ -485,8 +485,9 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
             alreadyDeployedDiskfulNodes.size(),
             0,
             Collections.emptyList(),
-            Collections.emptyList(),
-            null
+            Collections.emptyMap(),
+            null,
+            false // not that it matters for tiebreaker selection
         );
 
         return storPool -> {

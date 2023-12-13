@@ -1,7 +1,9 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
@@ -10,6 +12,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -19,6 +22,9 @@ import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObje
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.LayerUtils;
 
 import javax.annotation.Nullable;
@@ -28,8 +34,11 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 @Singleton
@@ -37,12 +46,14 @@ class Selector
 {
     private final AccessContext apiCtx;
     private final ErrorReporter errorReporter;
+    private final SystemConfRepository sysCfgRepo;
 
     @Inject
-    Selector(@SystemContext AccessContext apiCtxRef, ErrorReporter errorReporterRef)
+    Selector(@SystemContext AccessContext apiCtxRef, ErrorReporter errorReporterRef, SystemConfRepository sysCfgRepoRef)
     {
         apiCtx = apiCtxRef;
         errorReporter = errorReporterRef;
+        sysCfgRepo = sysCfgRepoRef;
     }
 
     public Set<StorPoolWithScore> select(
@@ -69,7 +80,8 @@ class Selector
         int alreadyDeployedDiskfulCount = 0;
         int alreadyDeployedDisklessCount = 0;
         List<SharedStorPoolName> alreadyDeployedInSharedSPNames = new ArrayList<>();
-        ArrayList<DeviceProviderKind> alreadySelectedProviderKindList = new ArrayList<>();
+        Map<DeviceProviderKind, List</* DrbdVersion */Version>> alreadyDeployedKindsAndVersion = new HashMap<>();
+        boolean allowMixing = isStorPoolMixingEnabled(rscDfnRef);
         if (rscDfnRef != null)
         {
             Iterator<Resource> rscIt = rscDfnRef.iterateResource(apiCtx);
@@ -130,25 +142,43 @@ class Selector
                                 alreadyDeployedInSharedSPNames.add(sp.getSharedStorPoolName());
 
                                 DeviceProviderKind storageVlmProviderKind = sp.getDeviceProviderKind();
+                                ExtToolsInfo drbdInfo = sp.getNode()
+                                    .getPeer(apiCtx)
+                                    .getExtToolsManager()
+                                    .getExtToolInfo(ExtTools.DRBD9_KERNEL);
+                                Version storageVlmDrbdVersion = drbdInfo == null ? null : drbdInfo.getVersion();
                                 if (!storageVlmProviderKind.equals(DeviceProviderKind.DISKLESS))
                                 {
-                                    for (
-                                        DeviceProviderKind alreadySelectedProviderKind : alreadySelectedProviderKindList
-                                    )
+                                    Set<Entry<DeviceProviderKind, List</* DrbdVersion */ Version>>> entrySet = alreadyDeployedKindsAndVersion
+                                        .entrySet();
+                                    for (Entry<DeviceProviderKind, List<Version>> entry : entrySet)
                                     {
-                                        boolean isMixingAllowed = DeviceProviderKind.isMixingAllowed(
-                                            alreadySelectedProviderKind,
-                                            storageVlmProviderKind
-                                        );
-                                        if (!isMixingAllowed)
+                                        DeviceProviderKind alreadyDeloyedKind = entry.getKey();
+                                        for (Version alreadyDeloyedDrbdVersion : entry.getValue())
                                         {
-                                            throw new ImplementationError(
-                                                "Multiple deployed provider kinds found for: " +
-                                                    rsc
+
+                                            boolean isMixingAllowed = DeviceProviderKind.isMixingAllowed(
+                                                alreadyDeloyedKind,
+                                                alreadyDeloyedDrbdVersion,
+                                                storageVlmProviderKind,
+                                                storageVlmDrbdVersion,
+                                                allowMixing
                                             );
+
+                                            if (!isMixingAllowed)
+                                            {
+                                                throw new ImplementationError(
+                                                    "Multiple deployed provider kinds found for: " +
+                                                        rsc
+                                                );
+                                            }
                                         }
+
                                     }
-                                    alreadySelectedProviderKindList.add(storageVlmProviderKind);
+                                    alreadyDeployedKindsAndVersion.computeIfAbsent(
+                                        storageVlmProviderKind,
+                                        ignored -> new ArrayList<>()
+                                    ).add(storageVlmDrbdVersion);
                                 }
                             }
                         }
@@ -187,8 +217,9 @@ class Selector
             alreadyDeployedDiskfulCount,
             alreadyDeployedDisklessCount,
             alreadyDeployedInSharedSPNames,
-            alreadySelectedProviderKindList,
-            sortedStorPoolByScoreArr
+            alreadyDeployedKindsAndVersion,
+            sortedStorPoolByScoreArr,
+            allowMixing
         );
         final int replicaCount = selectionManager.getAdditionalRscCountToSelect();
         errorReporter.logTrace(
@@ -287,6 +318,26 @@ class Selector
         return selectionResult;
     }
 
+
+    private boolean isStorPoolMixingEnabled(ResourceDefinition rscDfnRef)
+    {
+        PriorityProps prioProps;
+        try
+        {
+            prioProps = new PriorityProps(
+                rscDfnRef.getProps(apiCtx),
+                rscDfnRef.getResourceGroup().getProps(apiCtx),
+                sysCfgRepo.getCtrlConfForView(apiCtx)
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        return "true".equalsIgnoreCase(
+            prioProps.getProp(ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND, null, "false")
+        );
+    }
 
     public @Nullable Node unselect(
         ResourceDefinition rscDfn,

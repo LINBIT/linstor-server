@@ -46,6 +46,7 @@ import static com.linbit.linstor.storage.kinds.DeviceProviderKind.LVM_THIN;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS;
 import static com.linbit.linstor.storage.kinds.DeviceProviderKind.ZFS_THIN;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import java.util.ArrayList;
@@ -1849,6 +1850,58 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
+    public void AllowMixStorPoolWithRecentEnoughDrbdTest() throws Exception
+    {
+        /*
+         * Scenario: We already have a diskful resource in an LVM pool, the
+         * autoplace should reject the "best candidate" if it is not an LVM pool.
+         */
+        RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            2,
+            true,
+            ApiConsts.CREATED,
+            ApiConsts.CREATED
+        )
+            .setRscDfnProp(TEST_RSC_NAME, ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND, ApiConsts.VAL_TRUE)
+            .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
+            .stltBuilder("stlt1")
+                .addStorPool("sp1", 100 * GB, LVM_THIN)
+                .setExtToolSupported(ExtTools.DRBD9_KERNEL, true, 9, 1, 18)
+                .build()
+            .stltBuilder("stlt2")
+                .addStorPool("sp1", 100 * GB, ZFS)
+                .setExtToolSupported(ExtTools.DRBD9_KERNEL, true, 9, 1, 18)
+                .build()
+            .stltBuilder("stlt3")
+                .addStorPool("sp1", 100 * GB, ZFS_THIN)
+                .setExtToolSupported(ExtTools.DRBD9_KERNEL, true, 9, 1, 18)
+                .build()
+            .stltBuilder("stlt4")
+                .addStorPool("sp1", 10 * GB, LVM)
+                .setExtToolSupported(ExtTools.DRBD9_KERNEL, true, 9, 1, 18)
+                .build()
+            .stltBuilder("stlt5")
+                .addStorPool("sp1", 90 * GB, LVM)
+                .setExtToolSupported(ExtTools.DRBD9_KERNEL, true, 9, 1, 18)
+                .build()
+            .addRsc(TEST_RSC_NAME, "sp1", "stlt5");
+        evaluateTest(call);
+
+        List<Resource> deployedRscs = nodesMap.values()
+            .stream()
+            .flatMap(this::streamResources)
+            .filter(
+                rsc -> rsc.getResourceDefinition().getName().displayValue.equals(TEST_RSC_NAME)
+            )
+            .sorted()
+            .collect(Collectors.toList());
+        assertEquals(2, deployedRscs.size());
+        assertEquals("stlt1", deployedRscs.get(0).getNode().getName().displayValue);
+        assertEquals("stlt5", deployedRscs.get(1).getNode().getName().displayValue);
+    }
+
+    @Test
     public void extToolsTest() throws Exception
     {
         RscAutoPlaceApiCall call = new RscAutoPlaceApiCall(
@@ -2367,7 +2420,16 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             return this;
         }
 
-
+        RscAutoPlaceApiCall setRscDfnProp(String rscNameRef, String propKeyRef, String propValRef)
+            throws Exception
+        {
+            enterScope();
+            rscDfnMap.get(new ResourceName(rscNameRef))
+                .getProps(SYS_CTX)
+                .setProp(propKeyRef, propValRef);
+            commitAndCleanUp(true);
+            return this;
+        }
 
         RscAutoPlaceApiCall addRscDfn(String rscNameStrRef, int tcpPortRef) throws Exception
         {
@@ -2421,7 +2483,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             mockedPeer = Mockito.mock(Peer.class);
             mockedExtToolsMgr = Mockito.mock(ExtToolsManager.class);
 
-            // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to be ready
+            // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to be
+            // ready
             Mockito.when(mockedPeer.apiCall(anyString(), any()))
                 .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
             Mockito.when(mockedPeer.isOnline()).thenReturn(true);
@@ -2527,7 +2590,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             enterScope();
             stlt.getStorPool(SYS_CTX, new StorPoolName(storPoolNameRef))
                 .getProps(SYS_CTX)
-                .setProp(propKeyRef,propKeyVal);
+                .setProp(propKeyRef, propKeyVal);
             commitAndCleanUp(true);
             return this;
         }
@@ -2567,15 +2630,25 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         public SatelliteBuilder setExtToolSupported(
             ExtTools tool,
             boolean supported,
-            int majorVer,
-            int minorVer,
-            int patchVer,
+            @Nullable Integer majorVer,
+            @Nullable Integer minorVer,
+            @Nullable Integer patchVer,
             String... reasonsNotSupported
         )
         {
             Mockito.when(mockedExtToolsMgr.getExtToolInfo(tool)).thenReturn(
                 new ExtToolsInfo(tool, supported, majorVer, minorVer, patchVer, Arrays.asList(reasonsNotSupported))
             );
+            Version version;
+            if (majorVer != null)
+            {
+                version = new Version(majorVer, minorVer, patchVer);
+            }
+            else
+            {
+                version = null;
+            }
+            Mockito.when(mockedExtToolsMgr.getVersion(tool)).thenReturn(version);
             return this;
         }
 

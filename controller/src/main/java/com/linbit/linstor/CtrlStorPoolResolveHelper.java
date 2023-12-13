@@ -8,8 +8,8 @@ import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
@@ -19,6 +19,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.api.ApiConsts.FAIL_INVLD_STOR_POOL_NAME;
@@ -118,6 +120,11 @@ public class CtrlStorPoolResolveHelper
             PriorityProps vlmPrioProps = new PriorityProps(
                 rscProps, vlmDfnProps, rscDfnProps, rscGrpProps, nodeProps
             );
+            PriorityProps spMixingPrioProps = new PriorityProps(
+                rscDfnProps,
+                rscGrpProps,
+                ctrlPropsHelper.getCtrlPropsForView(accCtx)
+            );
 
             String storPoolNameStr = vlmPrioProps.getProp(KEY_STOR_POOL_NAME);
             if (isRscDiskless)
@@ -163,12 +170,12 @@ public class CtrlStorPoolResolveHelper
                     if (storPool != null)
                     {
                         if (storPool.getDeviceProviderKind().hasBackingDevice() &&
-                            rscDfnProps.getPropWithDefault(KEY_RSC_ALLOW_MIXING_DEVICE_KIND, "false")
+                            spMixingPrioProps.getProp(KEY_RSC_ALLOW_MIXING_DEVICE_KIND, null, "false")
                                 .equalsIgnoreCase("false"))
                         {
                             // If the storage pool has backing storage,
                             // check that it is of the same kind as the peers
-                            checkSameKindAsPeers(vlmDfn, rsc.getNode().getName(), storPool);
+                            checkSameKindAsPeers(vlmDfn, storPool, true);
                         }
                         break;
                     }
@@ -194,7 +201,7 @@ public class CtrlStorPoolResolveHelper
         enableChecks = enableCheckRef;
     }
 
-    private void checkSameKindAsPeers(VolumeDefinition vlmDfn, NodeName nodeName, StorPool storPool)
+    private void checkSameKindAsPeers(VolumeDefinition vlmDfn, StorPool storPool, boolean allowMixingRef)
         throws AccessDeniedException
     {
         if (!enableChecks)
@@ -202,21 +209,34 @@ public class CtrlStorPoolResolveHelper
             return;
         }
 
-        DeviceProviderKind driverKind = storPool.getDeviceProviderKind();
+        DeviceProviderKind currentDriverKind = storPool.getDeviceProviderKind();
+        Node currentNode = storPool.getNode();
+        Version currentDrbdVersion = currentNode.getPeer(apiCtx).getExtToolsManager().getVersion(ExtTools.DRBD9_KERNEL);
 
         for (Resource peerRsc : vlmDfn.getResourceDefinition().streamResource(apiCtx).collect(Collectors.toList()))
         {
-            if (!peerRsc.isDiskless(apiCtx) && !peerRsc.getNode().getName().equals(nodeName))
+            if (!peerRsc.isDiskless(apiCtx) && !peerRsc.getNode().equals(currentNode))
             {
                 Volume peerVlm = peerRsc.getVolume(vlmDfn.getVolumeNumber());
                 if (peerVlm != null)
                 {
+                    Version peerDrbdVersion = peerVlm.getAbsResource()
+                        .getNode()
+                        .getPeer(apiCtx)
+                        .getExtToolsManager()
+                        .getVersion(ExtTools.DRBD9_KERNEL);
                     for (StorPool peerStorPool : LayerVlmUtils.getStorPoolSet(peerVlm, apiCtx, false))
                     {
                         DeviceProviderKind peerKind = peerStorPool.getDeviceProviderKind();
-                        if (!DeviceProviderKind.isMixingAllowed(driverKind, peerKind))
+                        if (!DeviceProviderKind.isMixingAllowed(
+                            currentDriverKind,
+                            currentDrbdVersion,
+                            peerKind,
+                            peerDrbdVersion,
+                            allowMixingRef
+                        ))
                         {
-                            throw new ApiRcException(makeInvalidDriverKindError(driverKind, peerKind));
+                            throw new ApiRcException(makeInvalidDriverKindError(currentDriverKind, peerKind));
                         }
                     }
                 }
