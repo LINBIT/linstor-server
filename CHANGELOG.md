@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Small DB resource leak in health check
 - Fixed unrecoverable state with failed rollback of deleting snapshot
 - Fixed race condition between node lost and backup queue cleanup
+- NetCom SSL reimplementation: Fixed buffer handling, SSL handshake/negotiation/renegotiation
 
 ### Removed
 
