@@ -1486,6 +1486,8 @@ public class DrbdLayer implements DeviceLayer
                                     drbdVlmData.setHasMetaData(true);
                                     // No additional check for existing meta data is required
                                     drbdVlmData.setCheckMetaData(false);
+
+                                    drbdVlmData.setFailed(false);
                                     // fall-through
                                 case ATTACHING:
                                     drbdVlmData.setHasDisk(true);
