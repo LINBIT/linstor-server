@@ -696,7 +696,7 @@ public class CtrlRscMakeAvailableApiCallHandler
             disklessForErrorMsg = false;
         }
 
-        Set<StorPool> storPoolSet = autoplacer.autoPlace(
+        @Nullable Set<StorPool> storPoolSet = autoplacer.autoPlace(
             AutoSelectFilterPojo.merge(
                 autoSelect,
                 rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData()
@@ -705,7 +705,25 @@ public class CtrlRscMakeAvailableApiCallHandler
             CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerAccCtx)
         );
 
-        StorPool sp = getStorPoolOrFail(storPoolSet, nodeNameRef, disklessForErrorMsg);
+        @Nullable StorPool sp = getStorPoolOrNull(storPoolSet);
+        if (sp == null)
+        {
+            // if diskless assignment, run autoplacer again without resource group restrictions
+            if (disklessForErrorMsg)
+            {
+                storPoolSet = autoplacer.autoPlace(
+                    autoSelect,
+                    rscDfn,
+                    CtrlRscAutoPlaceApiCallHandler.calculateResourceDefinitionSize(rscDfn, peerAccCtx)
+                );
+                sp = getStorPoolOrNull(storPoolSet);
+            }
+
+            if (sp == null)
+            {
+                throw failNoStorPoolFound(nodeNameRef, disklessForErrorMsg);
+            }
+        }
         ResourceWithPayloadPojo createRscPojo = new ResourceWithPayloadPojo(
             new RscPojo(
                 rscDfn.getName().displayValue,
@@ -923,15 +941,15 @@ public class CtrlRscMakeAvailableApiCallHandler
             .build();
     }
 
-    static StorPool getStorPoolOrFail(Set<StorPool> storPoolSetRef, String nodeNameRef, boolean disklessRef)
+    static @Nullable StorPool getStorPoolOrNull(@Nullable Set<StorPool> storPoolSetRef)
     {
         if (storPoolSetRef == null)
         {
-            throw failNoStorPoolFound(nodeNameRef, disklessRef);
+            return null;
         }
         if (storPoolSetRef.isEmpty())
         {
-            throw failNoStorPoolFound(nodeNameRef, disklessRef);
+            return null;
         }
         if (storPoolSetRef.size() != 1)
         {
@@ -941,6 +959,17 @@ public class CtrlRscMakeAvailableApiCallHandler
         }
         return storPoolSetRef.iterator().next();
     }
+
+    static StorPool getStorPoolOrFail(@Nullable Set<StorPool> storPoolSetRef, String nodeName, boolean diskless)
+    {
+        @Nullable StorPool sp = getStorPoolOrNull(storPoolSetRef);
+        if (sp == null)
+        {
+            throw failNoStorPoolFound(nodeName, diskless);
+        }
+        return sp;
+    }
+
 
     static ApiRcException failNoStorPoolFound(String nodeName, boolean diskless)
     {
