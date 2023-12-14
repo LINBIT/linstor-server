@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added new oversubscription ratios to QSI result
 - Prometheus/metrics added storage_pool to volume labels
 - Added BalanceResourcesTask that in the first version tries to keep the resource-group place-count for resources
+- Added MathUtils methods for integer-based square root, exponentiation, prime factorization, LCM and GCD calculation
 
 ### Changed
 
