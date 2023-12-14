@@ -29,36 +29,64 @@ import javax.net.ssl.SSLSession;
  */
 public class SslTcpConnectorPeer extends TcpConnectorPeer
 {
-    // clientMode: true if connecting, false if accepting connections
+    /**
+     * clientMode: true if connecting, false if accepting connections
+     */
     private final boolean           clientMode;
 
-    // True if SSL is ready to transfer data
-    // (after the initial handshake on a new network connection has been completed)
+    /**
+     * True if SSL is ready to transfer data
+     * (after the initial handshake on a new network connection has been completed)
+     */
     private boolean                 sslReady;
 
-    // True if network I/O is required before SSL handling can continue
+    /**
+     * True if network I/O is required before SSL handling can continue
+     */
     private boolean                 ioRequest;
 
     private SSLEngine               sslEngine;
     private SSLContext              sslCtx;
     private InetSocketAddress       address;
 
-    // Buffer for received SSL encrypted data
+    /**
+     * Buffer for received SSL encrypted data
+     */
     private ByteBuffer              encryptedReadBuffer;
-    // Buffer for SSL encrypted data to send
+
+    /**
+     * Buffer for SSL encrypted data to send
+     */
     private ByteBuffer              encryptedWriteBuffer;
 
-    // Buffer for received data that has been decrypted
+    /**
+     * Buffer for received data that has been decrypted
+     */
     private ByteBuffer              plainReadBuffer;
 
-    // Dummy buffer for handshake operations without application data
+    /**
+     * Dummy buffer for handshake operations without application data
+     */
     private ByteBuffer              dummyBuffer;
 
-    // SSL asynchronous task management
+    /**
+     * SSL asynchronous task management - synchronization lock
+     */
     private Lock                    sslTaskLock;
+
+    /**
+     * SSL asynchronous task management - number of pending tasks
+     */
     private int                     activeTaskCount;
+
+    /**
+     * SSL asynchronous task management - cancelation flag
+     */
     private boolean                 sslTasksCanceled;
 
+    /**
+     * State after I/O read (network receive) operations
+     */
     private ReadState               rdState;
 
     /**
