@@ -1,8 +1,6 @@
 package com.linbit.linstor.layer.storage.zfs;
 
 import com.linbit.ImplementationError;
-import com.linbit.SizeConv;
-import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.PriorityProps;
@@ -46,6 +44,7 @@ import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
+import com.linbit.linstor.storage.utils.ZfsPropsUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.inject.Inject;
@@ -54,7 +53,6 @@ import javax.inject.Singleton;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,21 +62,16 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Singleton
 public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, ZfsData<Snapshot>>
 {
-    protected static final int DEFAULT_ZFS_EXTENT_SIZE = 8; // 8K
-
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
     public static final String FORMAT_RSC_TO_ZFS_ID = "%s%s_%05d";
     public static final String FORMAT_SNAP_TO_ZFS_ID = FORMAT_RSC_TO_ZFS_ID + "@%s";
     private static final String FORMAT_ZFS_DEV_PATH = "/dev/zvol/%s/%s";
     private static final int TOLERANCE_FACTOR = 3;
 
-    private static final Pattern PATTERN_EXTENT_SIZE = Pattern.compile("(\\d+)\\s*(.*)");
     private static final String ZFS_DFLT_EXTENT_SIZE_IN_KIB = "8";
 
     private  Map<StorPool, Long> extentSizes = new TreeMap<>();
@@ -301,79 +294,18 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     @Override
     protected long getExtentSize(ZfsData<Resource> vlmDataRef) throws StorageException
     {
-        long extentSize = DEFAULT_ZFS_EXTENT_SIZE;
-        String[] zfscreateOptions = getZfscreateOptions(vlmDataRef);
         try
         {
-            for (int idx = 0; idx < zfscreateOptions.length; idx++)
-            {
-                String opt = zfscreateOptions[idx];
-                String extSizeStr;
-
-                /*
-                 * might be {..., "-b", "32k", ... } but also {..., "-b32k", ... }
-                 */
-                if (opt.equals("-b"))
-                {
-                    extSizeStr = zfscreateOptions[idx + 1];
-                }
-                else
-                if (opt.startsWith("-b"))
-                {
-                    extSizeStr = opt;
-                }
-                else
-                if (opt.equals("-o"))
-                {
-                    extSizeStr = zfscreateOptions[idx + 1].startsWith("volblocksize=") ?
-                        zfscreateOptions[idx + 1] :
-                        null;
-                }
-                else
-                if (opt.startsWith("-ovolblocksize="))
-                {
-                    extSizeStr = opt;
-                }
-                else
-                {
-                    extSizeStr = null;
-                }
-
-
-                if (extSizeStr != null)
-                {
-                    Matcher matcher = PATTERN_EXTENT_SIZE.matcher(extSizeStr);
-                    if (matcher.find())
-                    {
-                        long val = Long.parseLong(matcher.group(1));
-                        SizeUnit unit = SizeUnit.parse(matcher.group(2), true);
-
-                        extentSize = SizeConv.convert(val, unit, SizeUnit.UNIT_KiB);
-                    }
-                    else
-                    {
-                        throw new StorageException("Could not find blocksize in string: " + extSizeStr);
-                    }
-                    break;
-                }
-            }
-        }
-        catch (ArrayIndexOutOfBoundsException boundsExc)
-        {
-            throw new StorageException(
-                "Expected additional argument while looking for extentSize in: " + Arrays.toString(zfscreateOptions)
+            return ZfsPropsUtils.extractZfsVolBlockSizePrivileged(
+                vlmDataRef,
+                storDriverAccCtx,
+                stltConfigAccessor.getReadonlyProps()
             );
         }
-        catch (NumberFormatException nfe)
+        catch (AccessDeniedException exc)
         {
-            throw new StorageException("Could not parse blocksize", nfe);
+            throw new ImplementationError(exc);
         }
-        catch (IllegalArgumentException exc)
-        {
-            throw new StorageException("Could not parse blocksize unit ", exc);
-        }
-
-        return extentSize;
     }
 
     @Override
