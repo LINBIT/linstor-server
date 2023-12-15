@@ -37,6 +37,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
+import com.linbit.linstor.core.objects.utils.MixedStorPoolHelper;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -53,6 +54,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -130,6 +132,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
     private final Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandler;
     private final Provider<AutoDiskfulTask> autoDiskfulTaskProvider;
+    private final MixedStorPoolHelper mixedStorPoolHelper;
 
     @Inject
     public CtrlRscToggleDiskApiCallHandler(
@@ -153,7 +156,8 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ErrorReporter errorReporterRef,
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
         Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef,
-        Provider<AutoDiskfulTask> autoDiskfulTaskProviderRef
+        Provider<AutoDiskfulTask> autoDiskfulTaskProviderRef,
+        MixedStorPoolHelper mixedStorPoolHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -178,6 +182,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
         autoDiskfulTaskProvider = autoDiskfulTaskProviderRef;
+        mixedStorPoolHelper = mixedStorPoolHelperRef;
     }
 
     @Override
@@ -738,6 +743,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             else
             {
                 markDiskAdding(rsc);
+                handleMixedStoragePool(rsc);
             }
 
             ctrlTransactionHelper.commit();
@@ -773,6 +779,37 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         }
 
         return responses;
+    }
+
+    private void handleMixedStoragePool(Resource rscRef)
+    {
+        Iterator<Volume> vlmsIt = rscRef.iterateVolumes();
+        try
+        {
+            while (vlmsIt.hasNext())
+            {
+                Volume vlm = vlmsIt.next();
+                mixedStorPoolHelper.handleMixedStoragePools(vlm);
+            }
+        }
+        catch (StorageException exc)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_UNKNOWN_ERROR,
+                    "An error occured while checking for mixed storage setups"
+                ),
+                exc
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(exc, "checking for mixed storage setups", ApiConsts.FAIL_ACC_DENIED_VLM);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
     }
 
     private Flux<ApiCallRc> resetDiskAdding(NodeName nodeName, ResourceName rscName)

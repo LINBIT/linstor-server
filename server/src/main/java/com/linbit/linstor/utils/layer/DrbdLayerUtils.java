@@ -101,6 +101,4 @@ public class DrbdLayerUtils
             .getProp(InternalApiConsts.KEY_FORCE_INITIAL_SYNC_PERMA, ApiConsts.NAMESPC_DRBD_OPTIONS);
         return forceSync != null && Boolean.parseBoolean(forceSync);
     }
-
-
 }
