@@ -565,7 +565,8 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             ioRequest = true;
         }
         else
-        if (hsStatus == SSLEngineResult.HandshakeStatus.FINISHED)
+        if (hsStatus == SSLEngineResult.HandshakeStatus.FINISHED ||
+            hsStatus == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)
         { // SSL handshake successful
             sslReady = true;
         }
