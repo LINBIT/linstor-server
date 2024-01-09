@@ -5,8 +5,6 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
-import com.linbit.drbd.md.MaxSizeException;
-import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinStorException;
@@ -75,12 +73,10 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
-import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
@@ -116,7 +112,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.common.collect.ImmutableMap;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -502,7 +497,6 @@ public class CtrlRscDfnApiCallHandler
             if (!overrideProps.isEmpty() || !deletePropKeys.isEmpty())
             {
                 Props rscDfnProps = ctrlPropsHelper.getProps(rscDfn);
-                ImmutableMap<String, String> origProps = ImmutableMap.copyOf(rscDfnProps.map());
 
                 List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
                 prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
@@ -534,7 +528,6 @@ public class CtrlRscDfnApiCallHandler
                     // TODO convert these handlers to propChangedListeners
                     handleChangedProperties(
                         rscDfn,
-                        origProps,
                         overrideProps,
                         deletePropKeys,
                         deletePropNamespaces,
@@ -649,7 +642,6 @@ public class CtrlRscDfnApiCallHandler
 
     private Flux<ApiCallRc> handleChangedProperties(
         ResourceDefinition rscDfn,
-        ImmutableMap<String, String> originalProps,
         Map<String, String> overrideProps,
         Set<String> deletePropKeys,
         Set<String> deletePropNamespacesRef,
@@ -712,14 +704,6 @@ public class CtrlRscDfnApiCallHandler
         )
         {
             autoDiskfulTask.update(rscDfn);
-        }
-
-        final String propAllowMixing = originalProps.get(ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND);
-        if ("true".equalsIgnoreCase(propAllowMixing) &&
-            (!overrideProps.getOrDefault(ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND, "true").equalsIgnoreCase("true") ||
-                deletePropKeys.contains(ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND)))
-        {
-            retFlux = retFlux.concatWith(adjustVolumeDfnSizes(rscDfn));
         }
 
         return retFlux;
@@ -1096,49 +1080,6 @@ public class CtrlRscDfnApiCallHandler
         }
 
         return flux;
-    }
-
-    private Flux<ApiCallRc> adjustVolumeDfnSizes(ResourceDefinition rscDfn)
-        throws AccessDeniedException, DatabaseException
-    {
-        ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
-        Iterator<Resource> itRes = rscDfn.iterateResource(peerAccCtx.get());
-
-        Iterator<VolumeDefinition> itVlmDfn = rscDfn.iterateVolumeDfn(peerAccCtx.get());
-        while (itVlmDfn.hasNext())
-        {
-            VolumeDefinition vlmDfn = itVlmDfn.next();
-            long currentVlmSize = vlmDfn.getVolumeSize(peerAccCtx.get());
-            long smallestSize = Long.MAX_VALUE;
-            while (itRes.hasNext())
-            {
-                final Resource rsc = itRes.next();
-                final AbsRscLayerObject<Resource> rscLayerData = rsc.getLayerData(peerAccCtx.get());
-                if (!rsc.isDiskless(peerAccCtx.get()) && LayerUtils.hasLayer(rscLayerData, DeviceLayerKind.DRBD))
-                {
-                    AbsRscLayerObject<Resource> rscLayerDataObject = rscLayerData
-                        .getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-
-                    smallestSize = Math.min(smallestSize,
-                        rscLayerDataObject.getVlmLayerObjects().get(vlmDfn.getVolumeNumber()).getUsableSize());
-                }
-            }
-            smallestSize = Math.max(smallestSize, currentVlmSize);
-            if (currentVlmSize != smallestSize)
-            {
-                try
-                {
-                    vlmDfn.setVolumeSize(peerAccCtx.get(), smallestSize);
-                }
-                catch (MinSizeException | MaxSizeException exc)
-                {
-                    throw new ImplementationError("smallestSize is invalid", exc);
-                }
-                apiCallRc.addEntry(String.format("Volume number %d definition size adjusted to %dKib",
-                    vlmDfn.getVolumeNumber().value, smallestSize), ApiConsts.MASK_VLM_DFN | ApiConsts.MODIFIED);
-            }
-        }
-        return Flux.just(apiCallRc);
     }
 
     private void requireRscDfnMapChangeAccess()
