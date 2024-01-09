@@ -119,6 +119,8 @@ public class LuksRscPojo implements RscLayerDataApi
         private final String diskState;
         @JsonIgnore
         private final long discGran;
+        @JsonIgnore
+        private final boolean exists;
 
         public LuksVlmPojo(
             int vlmNrRef,
@@ -129,7 +131,8 @@ public class LuksRscPojo implements RscLayerDataApi
             long usableSizeRef,
             boolean isOpenRef,
             String diskStateRef,
-            long discGranRef
+            long discGranRef,
+            boolean existsRef
         )
         {
             vlmNr = vlmNrRef;
@@ -141,6 +144,7 @@ public class LuksRscPojo implements RscLayerDataApi
             open = isOpenRef;
             diskState = diskStateRef;
             discGran = discGranRef;
+            exists = existsRef;
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -158,6 +162,7 @@ public class LuksRscPojo implements RscLayerDataApi
             open = false;
             diskState = null;
             discGran = VlmProviderObject.UNINITIALIZED_SIZE;
+            exists = false;
         }
 
         @Override
@@ -221,6 +226,12 @@ public class LuksRscPojo implements RscLayerDataApi
         public DeviceLayerKind getLayerKind()
         {
             return DeviceLayerKind.LUKS;
+        }
+
+        @Override
+        public boolean exists()
+        {
+            return exists;
         }
     }
 }

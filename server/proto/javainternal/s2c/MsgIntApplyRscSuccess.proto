@@ -20,6 +20,9 @@ message MsgIntApplyRscSuccess
     map<string, Props> snap_props = 6;
     // <snap_name, <vlm_nr, <key, value>>
     map<string, SnapVlmProps> snap_vlm_props = 7;
+    // <snap_name, snap-layer-data>
+    map<string, common.RscLayerData> snap_storage_layer_objects = 8;
+    //next id 9
 }
 
 message Props

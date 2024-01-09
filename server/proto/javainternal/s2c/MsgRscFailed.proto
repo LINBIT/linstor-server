@@ -4,6 +4,7 @@ package com.linbit.linstor.proto.javainternal.s2c;
 
 import "common/ApiCallResponse.proto";
 import "common/Rsc.proto";
+import "common/RscLayerData.proto";
 
 
 // checkstyle will not find this { :D
@@ -14,4 +15,7 @@ message MsgRscFailed {
 
     // errors
     repeated common.ApiCallResponse responses = 2;
+    // <snap_name, snap-layer-data> - in case "exists" changed despite the failure
+    map<string, common.RscLayerData> snap_storage_layer_objects = 3;
+    //next id 4
 }

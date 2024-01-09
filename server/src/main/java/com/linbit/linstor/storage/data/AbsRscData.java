@@ -39,13 +39,17 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     protected final String rscSuffix;
     protected final LayerResourceIdDatabaseDriver dbDriver;
 
-    // persisted, serialized
+    // not (explicitly) persisted, serialized
     protected final TransactionMap<VolumeNumber, VLM_TYPE> vlmMap;
-    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> parent;
     protected final TransactionSet<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> children;
+
+    // not persisted, serialized
+    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, String> ignoreReason;
+
+    // persisted, serialized
+    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> parent;
     // TODO: this would make more sense of VLM level since non-DRBD layers can now also be suspended
     protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, Boolean> suspend;
-    protected final TransactionSimpleObject<AbsRscData<RSC, VLM_TYPE>, String> ignoreReason;
 
     // volatile satellite only
     private boolean checkFileSystem;

@@ -199,7 +199,8 @@ public class BCacheVlmData<RSC extends AbsResource<RSC>>
             usableSize.get(),
             diskState,
             discGran.get(),
-            deviceUuid.get()
+            deviceUuid.get(),
+            exists.get()
         );
     }
 

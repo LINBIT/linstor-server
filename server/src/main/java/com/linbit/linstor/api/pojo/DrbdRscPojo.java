@@ -304,6 +304,8 @@ public class DrbdRscPojo implements RscLayerDataApi
         private final String diskState;
         @JsonIgnore
         private final long discGran;
+        @JsonIgnore
+        private final boolean exists;
 
         public DrbdVlmPojo(
             DrbdVlmDfnPojo drbdVlmDfnRef,
@@ -314,7 +316,8 @@ public class DrbdRscPojo implements RscLayerDataApi
             long allocatedSizeRef,
             long usableSizeRef,
             String diskStateRef,
-            long discGranRef
+            long discGranRef,
+            boolean existsRef
         )
         {
             drbdVlmDfn = drbdVlmDfnRef;
@@ -326,6 +329,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             usableSize = usableSizeRef;
             diskState = diskStateRef;
             discGran = discGranRef;
+            exists = existsRef;
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -344,6 +348,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
             diskState = null;
             discGran = VlmProviderObject.UNINITIALIZED_SIZE;
+            exists = false;
         }
 
         public DrbdVlmDfnPojo getDrbdVlmDfn()
@@ -396,6 +401,7 @@ public class DrbdRscPojo implements RscLayerDataApi
             return diskState;
         }
 
+        @Override
         public long getDiscGran()
         {
             return discGran;
@@ -409,6 +415,12 @@ public class DrbdRscPojo implements RscLayerDataApi
         public DeviceLayerKind getLayerKind()
         {
             return DeviceLayerKind.DRBD;
+        }
+
+        @Override
+        public boolean exists()
+        {
+            return exists;
         }
     }
 

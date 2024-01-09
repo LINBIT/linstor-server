@@ -456,7 +456,8 @@ public class ProtoLayerUtils
             protoDrbdVlm.getAllocatedSize(),
             protoDrbdVlm.getUsableSize(),
             protoDrbdVlm.getDiskState(),
-            protoDrbdVlm.getDiscGran()
+            protoDrbdVlm.getDiscGran(),
+            false
         );
     }
 
@@ -480,7 +481,8 @@ public class ProtoLayerUtils
             protoLuksVlm.getUsableSize(),
             protoLuksVlm.getOpened(),
             protoLuksVlm.getDiskState(),
-            protoLuksVlm.getDiscGran()
+            protoLuksVlm.getDiscGran(),
+            false
         );
     }
 
@@ -498,6 +500,7 @@ public class ProtoLayerUtils
         long usableSize = protoVlm.getUsableSize();
         String diskState = protoVlm.getDiskState();
         long discGran = protoVlm.getDiscGran();
+        boolean exists = protoVlm.getExists();
         StorPoolApi storPoolApi = ProtoDeserializationUtils.parseStorPool(
             protoVlm.getStoragePool(),
             fullSyncId,
@@ -515,7 +518,8 @@ public class ProtoLayerUtils
                     null,
                     null,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case LVM:
@@ -528,7 +532,8 @@ public class ProtoLayerUtils
                     null,
                     diskState,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case LVM_THIN:
@@ -541,7 +546,8 @@ public class ProtoLayerUtils
                     null,
                     diskState,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case STORAGE_SPACES:
@@ -553,7 +559,8 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case STORAGE_SPACES_THIN:
@@ -565,7 +572,8 @@ public class ProtoLayerUtils
                     null,
                     null,
                     diskState,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case ZFS:
@@ -578,7 +586,8 @@ public class ProtoLayerUtils
                     null,
                     diskState,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case ZFS_THIN:
@@ -591,7 +600,8 @@ public class ProtoLayerUtils
                     null,
                     diskState,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case FILE:
@@ -604,7 +614,8 @@ public class ProtoLayerUtils
                     null,
                     diskState,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case FILE_THIN:
@@ -617,7 +628,8 @@ public class ProtoLayerUtils
                     null,
                     diskState,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case SPDK:
@@ -630,7 +642,8 @@ public class ProtoLayerUtils
                     null,
                     diskState,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case REMOTE_SPDK:
@@ -643,7 +656,8 @@ public class ProtoLayerUtils
                     null,
                     diskState,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case EXOS:
@@ -656,7 +670,8 @@ public class ProtoLayerUtils
                     null,
                     diskState,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case EBS_INIT:
@@ -670,7 +685,8 @@ public class ProtoLayerUtils
                     null,
                     diskState,
                     discGran,
-                    storPoolApi
+                    storPoolApi,
+                    exists
                 );
                 break;
             case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER: // fall-through
@@ -724,7 +740,8 @@ public class ProtoLayerUtils
             protoNvmeVlm.getAllocatedSize(),
             protoNvmeVlm.getUsableSize(),
             protoNvmeVlm.getDiskState(),
-            protoNvmeVlm.getDiscGran()
+            protoNvmeVlm.getDiscGran(),
+            false
         );
     }
 
@@ -739,7 +756,8 @@ public class ProtoLayerUtils
             protoVlm.getAllocatedSize(),
             protoVlm.getUsableSize(),
             protoVlm.getDiskState(),
-            protoVlm.getDiscGran()
+            protoVlm.getDiscGran(),
+            false
         );
     }
 
@@ -756,7 +774,8 @@ public class ProtoLayerUtils
             protoVlm.getAllocatedSize(),
             protoVlm.getUsableSize(),
             protoVlm.getDiskState(),
-            protoVlm.getDiscGran()
+            protoVlm.getDiscGran(),
+            false
         );
     }
 
@@ -777,7 +796,8 @@ public class ProtoLayerUtils
             protoVlm.getUsableSize(),
             protoVlm.getDiskState(),
             protoVlm.getDiscGran(),
-            uuid
+            uuid,
+            false
         );
     }
 

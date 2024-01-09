@@ -211,7 +211,8 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
             usableSize.get(),
             opened,
             diskState,
-            discGran.get()
+            discGran.get(),
+            exists.get()
         );
     }
 }

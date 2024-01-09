@@ -20,6 +20,7 @@ message StorageVlm
     optional int64          usable_size = 4;
     optional string         disk_state = 5;
     optional int64          disc_gran = 20;
+    required bool           exists = 23;
 
     required StorPool            storage_pool = 6;
     optional DisklessVlm         diskless = 7;
@@ -35,6 +36,7 @@ message StorageVlm
     optional EbsVlm              ebs = 19;
     optional StorageSpacesVlm    storage_spaces = 21;
     optional StorageSpacesThinVlm    storage_spaces_thin = 22;
+    // next id 24
 }
 
 message StorageVlmDfn

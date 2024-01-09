@@ -12,6 +12,7 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.apicallhandler.CtrlRscLayerDataMerger;
+import com.linbit.linstor.core.apicallhandler.CtrlSnapLayerDataMerger;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -85,6 +86,7 @@ public class RscInternalCallHandler
     private final ReadWriteLock rscDfnMapLock;
     private final ReadWriteLock storPoolDfnMapLock;
     private final CtrlRscLayerDataMerger layerRscDataMerger;
+    private final CtrlSnapLayerDataMerger layerSnapDataMerger;
     private final RetryResourcesTask retryResourceTask;
     private final CtrlSatelliteUpdater stltUpdater;
     private final SnapshotShippingInternalApiCallHandler snapShipIntHandler;
@@ -103,6 +105,7 @@ public class RscInternalCallHandler
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         CtrlRscLayerDataMerger layerRscDataMergerRef,
+        CtrlSnapLayerDataMerger layerSnapDataMergerRef,
         RetryResourcesTask retryResourceTaskRef,
         CtrlApiDataLoader ctrlApiDataLoader,
         CtrlSatelliteUpdater stltUpdaterRef,
@@ -122,6 +125,7 @@ public class RscInternalCallHandler
         rscDfnMapLock = rscDfnMapLockRef;
         storPoolDfnMapLock = storPoolDfnMapLockRef;
         layerRscDataMerger = layerRscDataMergerRef;
+        layerSnapDataMerger = layerSnapDataMergerRef;
         retryResourceTask = retryResourceTaskRef;
         apiDataLoader = ctrlApiDataLoader;
         stltUpdater = stltUpdaterRef;
@@ -213,6 +217,7 @@ public class RscInternalCallHandler
         Map<Integer, Map<String, String>> vlmPropsRef,
         Map<String, Map<String, String>> snapPropsRef,
         Map<String, Map<Integer, Map<String, String>>> snapVlmPropsRef,
+        Map<String, RscLayerDataApi> snapLayersRef,
         List<CapacityInfoPojo> capacityInfos
     )
     {
@@ -254,6 +259,12 @@ public class RscInternalCallHandler
                 if (snapshot != null)
                 {
                     mergeStltProps(snapPropsRef.get(snapDfn.getName().value), snapshot.getProps(apiCtx));
+
+                    RscLayerDataApi snapLayerDataPojo = snapLayersRef.get(snapDfn.getName().value);
+                    if (snapLayerDataPojo != null)
+                    {
+                        layerSnapDataMerger.mergeLayerData(snapshot, snapLayerDataPojo, false);
+                    }
 
                     Map<Integer, Map<String, String>> allSnapVlmProps = snapVlmPropsRef.get(snapDfn.getName().value);
                     if (allSnapVlmProps != null)
@@ -403,7 +414,7 @@ public class RscInternalCallHandler
         }
     }
 
-    public void handleResourceFailed(String nodeName, String rscName)
+    public void handleResourceFailed(String nodeName, String rscName, Map<String, RscLayerDataApi> snapLayersRef)
     {
         try (LockGuard ls = LockGuard.createLocked(nodesMapLock.readLock(), rscDfnMapLock.readLock()))
         {
@@ -412,7 +423,23 @@ public class RscInternalCallHandler
                 rscName,
                 true
             );
+            for (SnapshotDefinition snapDfn : rsc.getResourceDefinition().getSnapshotDfns(apiCtx))
+            {
+                Snapshot snapshot = snapDfn.getSnapshot(apiCtx, new NodeName(nodeName));
+                if (snapshot != null)
+                {
+                    RscLayerDataApi snapLayerDataPojo = snapLayersRef.get(snapDfn.getName().value);
+                    if (snapLayerDataPojo != null)
+                    {
+                        layerSnapDataMerger.mergeLayerData(snapshot, snapLayerDataPojo, false);
+                    }
+                }
+            }
             retryResourceTask.add(rsc, null);
+        }
+        catch (InvalidNameException | AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
         }
     }
 

@@ -77,7 +77,8 @@ public class StorageSpacesData<RSC extends AbsResource<RSC>>
                 getSnapshotAllocatedSize(),
                 getSnapshotUsableSize(),
                 new ArrayList<>(getStates()).toString(), // avoid "TransactionList " in the toString()
-                storPool.get().getApiData(null, null, accCtxRef, null, null, null, null)
+                storPool.get().getApiData(null, null, accCtxRef, null, null, null, null),
+                exists.get()
             );
         }
         if (providerKind.equals(DeviceProviderKind.STORAGE_SPACES_THIN))
@@ -90,7 +91,8 @@ public class StorageSpacesData<RSC extends AbsResource<RSC>>
                 getSnapshotAllocatedSize(),
                 getSnapshotUsableSize(),
                 new ArrayList<>(getStates()).toString(), // avoid "TransactionList " in the toString()
-                storPool.get().getApiData(null, null, accCtxRef, null, null, null, null)
+                storPool.get().getApiData(null, null, accCtxRef, null, null, null, null),
+                exists.get()
             );
         }
         return null;

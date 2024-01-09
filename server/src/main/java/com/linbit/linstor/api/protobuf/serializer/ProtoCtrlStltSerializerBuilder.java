@@ -35,6 +35,7 @@ import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.proto.common.CryptoEntryOuterClass;
+import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.StltConfigOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
@@ -113,6 +114,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -898,6 +900,13 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
                         .putAllProp(snap.getProps(serializerCtx).map())
                         .build()
                 );
+                builder.putSnapStorageLayerObjects(
+                    snapName,
+                    ProtoCommonSerializerBuilder.LayerObjectSerializer.serializeLayerObject(
+                        snap.getLayerData(serializerCtx),
+                        serializerCtx
+                    )
+                );
 
                 MsgIntApplyRscSuccessOuterClass.SnapVlmProps.Builder allSnapVlmPropsBuilder =
                     MsgIntApplyRscSuccessOuterClass.SnapVlmProps.newBuilder();
@@ -1099,9 +1108,11 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     {
         try
         {
-            MsgRscFailed.newBuilder()
+            MsgRscFailed.Builder builder = MsgRscFailed.newBuilder()
                 .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, resource))
-                .addAllResponses(ProtoCommonSerializerBuilder.serializeApiCallRc(apiCallRc))
+                .addAllResponses(ProtoCommonSerializerBuilder.serializeApiCallRc(apiCallRc));
+
+            builder.putAllSnapStorageLayerObjects(createSnapLayerMap(resource))
                 .build()
                 .writeDelimitedTo(baos);
         }
@@ -1114,6 +1125,26 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             handleAccessDeniedException(exc);
         }
         return this;
+    }
+
+    private Map<String, RscLayerData> createSnapLayerMap(Resource resource) throws AccessDeniedException
+    {
+        // <SnapName, RscLayerData>
+        Map<String, RscLayerData> ret = new HashMap<>();
+        final NodeName localNodeName = resource.getNode().getName();
+        for (SnapshotDefinition snapDfn : resource.getResourceDefinition().getSnapshotDfns(serializerCtx))
+        {
+            Snapshot snap = snapDfn.getSnapshot(serializerCtx, localNodeName);
+            String snapName = snapDfn.getName().value;
+            ret.put(
+                snapName,
+                ProtoCommonSerializerBuilder.LayerObjectSerializer.serializeLayerObject(
+                    snap.getLayerData(serializerCtx),
+                    serializerCtx
+                )
+            );
+        }
+        return ret;
     }
 
     @Override

@@ -125,6 +125,8 @@ public class BCacheRscPojo implements RscLayerDataApi
         private final long discGran;
         @JsonIgnore
         private final @Nullable UUID deviceUuid;
+        @JsonIgnore
+        private final boolean exists;
 
         public BCacheVlmPojo(
             int vlmNrRef,
@@ -136,7 +138,8 @@ public class BCacheRscPojo implements RscLayerDataApi
             long usableSizeRef,
             String diskStateRef,
             long discGranRef,
-            @Nullable UUID deviceUuidRef
+            @Nullable UUID deviceUuidRef,
+            boolean existsRef
         )
         {
             super();
@@ -150,6 +153,7 @@ public class BCacheRscPojo implements RscLayerDataApi
             diskState = diskStateRef;
             discGran = discGranRef;
             deviceUuid = deviceUuidRef;
+            exists = existsRef;
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -169,6 +173,7 @@ public class BCacheRscPojo implements RscLayerDataApi
             diskState = null;
             discGran = VlmProviderObject.UNINITIALIZED_SIZE;
             deviceUuid = null;
+            exists = false;
         }
 
         @Override
@@ -237,6 +242,12 @@ public class BCacheRscPojo implements RscLayerDataApi
         public UUID getDeviceUuid()
         {
             return deviceUuid;
+        }
+
+        @Override
+        public boolean exists()
+        {
+            return exists;
         }
     }
 }

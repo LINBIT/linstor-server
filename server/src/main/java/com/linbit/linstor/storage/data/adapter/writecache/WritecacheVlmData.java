@@ -178,7 +178,8 @@ public class WritecacheVlmData<RSC extends AbsResource<RSC>>
             allocatedSize.get(),
             usableSize.get(),
             diskState,
-            discGran.get()
+            discGran.get(),
+            exists.get()
         );
     }
 

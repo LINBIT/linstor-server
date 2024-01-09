@@ -1966,6 +1966,7 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                 .setAllocatedSize(vlmPojo.getAllocatedSize())
                 .setUsableSize(vlmPojo.getUsableSize())
                 .setDiscGran(vlmPojo.getDiscGran())
+                .setExists(vlmPojo.exists())
                 .setStoragePool(serializeStorPool(vlmPojo.getStorPoolApi()));
             if (vlmPojo.getDevicePath() != null)
             {

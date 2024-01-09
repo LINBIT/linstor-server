@@ -2,10 +2,12 @@ package com.linbit.linstor.api.protobuf.internal;
 
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCall;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.protobuf.ProtoLayerUtils;
 import com.linbit.linstor.api.protobuf.ProtoStorPoolFreeSpaceUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
 import com.linbit.linstor.core.apicallhandler.controller.internal.RscInternalCallHandler;
+import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.MsgIntApplyRscSuccess;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.Props;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyRscSuccessOuterClass.SnapVlmProps;
@@ -73,6 +75,12 @@ public class NotifyResourceApplied implements ApiCall
             snapVlmProps.put(entry.getKey(), curSnapVlmProps);
         }
 
+        Map<String, RscLayerDataApi> snapLayers = new HashMap<>();
+        for (Entry<String, RscLayerData> entry : msgIntAppliedRsc.getSnapStorageLayerObjectsMap().entrySet())
+        {
+            snapLayers.put(entry.getKey(), ProtoLayerUtils.extractRscLayerData(entry.getValue(), -1, -1));
+        }
+
         rscInternalCallHandler.updateVolume(
             msgIntAppliedRsc.getRscId().getName(),
             ProtoLayerUtils.extractRscLayerData(
@@ -84,6 +92,7 @@ public class NotifyResourceApplied implements ApiCall
             vlmProps,
             snapProps,
             snapVlmProps,
+            snapLayers,
             ProtoStorPoolFreeSpaceUtils.toFreeSpacePojo(
                 msgIntAppliedRsc.getFreeSpaceList()
             )

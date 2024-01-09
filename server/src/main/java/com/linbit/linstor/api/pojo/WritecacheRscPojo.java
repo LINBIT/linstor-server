@@ -121,6 +121,8 @@ public class WritecacheRscPojo implements RscLayerDataApi
         private final String diskState;
         @JsonIgnore
         private final long discGran;
+        @JsonIgnore
+        private final boolean exists;
 
         public WritecacheVlmPojo(
             int vlmNrRef,
@@ -131,7 +133,8 @@ public class WritecacheRscPojo implements RscLayerDataApi
             long allocatedSizeRef,
             long usableSizeRef,
             String diskStateRef,
-            long discGranRef
+            long discGranRef,
+            boolean existsRef
         )
         {
             super();
@@ -144,6 +147,7 @@ public class WritecacheRscPojo implements RscLayerDataApi
             usableSize = usableSizeRef;
             diskState = diskStateRef;
             discGran = discGranRef;
+            exists = existsRef;
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -162,6 +166,7 @@ public class WritecacheRscPojo implements RscLayerDataApi
             usableSize = VlmProviderObject.UNINITIALIZED_SIZE;
             diskState = null;
             discGran = VlmProviderObject.UNINITIALIZED_SIZE;
+            exists = false;
         }
 
         @Override
@@ -225,6 +230,12 @@ public class WritecacheRscPojo implements RscLayerDataApi
         public long getDiscGran()
         {
             return discGran;
+        }
+
+        @Override
+        public boolean exists()
+        {
+            return exists;
         }
     }
 

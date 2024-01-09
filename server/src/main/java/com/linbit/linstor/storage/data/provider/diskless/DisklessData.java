@@ -87,7 +87,8 @@ public class DisklessData<RSC extends AbsResource<RSC>>
             null,
             null,
             discGran.get(),
-            storPool.get().getApiData(null, null, accCtxRef, null, null, null, null)
+            storPool.get().getApiData(null, null, accCtxRef, null, null, null, null),
+            exists.get()
         );
     }
 }
