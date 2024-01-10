@@ -13,7 +13,9 @@ import static com.linbit.linstor.dbdrivers.derby.DbConstants.TBL_SEC_CONFIGURATI
 import javax.inject.Inject;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 public class DbConnectionPoolInitializer implements DbInitializer
 {
@@ -123,7 +125,10 @@ public class DbConnectionPoolInitializer implements DbInitializer
         try
         {
             conn = dbConnPool.getConnection();
-            conn.createStatement().executeQuery(DERBY_CONNECTION_TEST_SQL);
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(DERBY_CONNECTION_TEST_SQL);
+            rs.close();
+            stmt.close();
         }
         catch (SQLException exc)
         {

@@ -37,7 +37,9 @@ import javax.inject.Singleton;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -80,9 +82,9 @@ public class DbConnectionPool implements ControllerSQLDatabase
 
     private ServiceName serviceNameInstance;
     private String dbConnectionUrl;
-    private AtomicBoolean atomicStarted = new AtomicBoolean(false);
+    private final AtomicBoolean atomicStarted = new AtomicBoolean(false);
 
-    private ThreadLocal<List<Connection>> threadLocalConnections;
+    private final ThreadLocal<List<Connection>> threadLocalConnections;
 
     private final CtrlConfig linstorConfig;
     private final ErrorReporter errorLog;
@@ -518,7 +520,10 @@ public class DbConnectionPool implements ControllerSQLDatabase
         try
         {
             conn = getConnection();
-            conn.createStatement().executeQuery("SELECT 1 FROM " + TBL_SEC_CONFIGURATION);
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT 1 FROM " + TBL_SEC_CONFIGURATION);
+            rs.close();
+            stmt.close();
         }
         catch (SQLException exc)
         {

@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Do not allow setting resource-groups with place-count 0
+- Small DB resource leak in health check
 
 ### Removed
 
