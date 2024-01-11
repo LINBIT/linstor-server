@@ -737,6 +737,8 @@ public class CtrlBackupRestoreApiCallHandler
                     .restoreSnapshotVolume(layers, snap, snapVlmDfns.get(vlmMetaEntry.getKey()), renameMap);
                 snapVlm.getProps(peerAccCtx.get()).map()
                     .putAll(metadata.getRsc().getVlms().get(vlmMetaEntry.getKey()).getProps());
+
+                recalculateCommonAllocationGranularityIfNeeded(snapVlm);
             }
         }
         catch (InvalidKeyException | InvalidValueException exc)
@@ -744,6 +746,30 @@ public class CtrlBackupRestoreApiCallHandler
             throw new ImplementationError(exc);
         }
         return snap;
+    }
+
+    /**
+     * Pre version 1.26.0 (where storpool-mixing was introduce), backups had no
+     * "StorDriver/internal/AllocationGranularity" property on VlmDfn.
+     * If those backups had a non-default extent-size, new peers (additional to the one that we might restore shortly)
+     * will create themselves with a possibly too small disk, leading to Standalone scenario on DRBD level.
+     *
+     * If the property is missing, we cannot reconstruct the exact allocation-granularity here, but we can calculate a
+     * "good enough" estimate of it, so that new peers will not be able to create too small devices. This is done with
+     * the following calculation:
+     * Let vds be the size from the volumeDefinition, bds the usable size of the snapshot (STORAGE layer of the
+     * snapVlm).
+     * From vds we need to calculate the additional sizes for metadata (DRBD, LUKS, etc..), which gives us the minimum
+     * usable size on STORAGE layer. Since we have the minimum usable size as well as the actual usable size, we can
+     * calculate a granularity G that matches the actual size (and is >= minimum size). That G value needs to be stored
+     * on the SnapshotVolumeDefinition's property for future usage. *
+     *
+     * @param snapVlmRef
+     */
+    private void recalculateCommonAllocationGranularityIfNeeded(SnapshotVolume snapVlmRef)
+    {
+        // TODO implement this method. Currently the metadata calculations are only available on the satellite
+
     }
 
     /**
