@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
@@ -19,6 +20,7 @@ import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.AbsLayerHelperUtils;
 // import com.linbit.linstor.layer.LayerPayload;
 // import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -37,6 +39,7 @@ import com.linbit.linstor.storage.utils.LayerDataFactory;
 
 import static com.linbit.linstor.storage.kinds.DeviceLayerKind.DRBD;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -241,7 +244,8 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
         SnapshotVolume snapVlmRef,
         DrbdRscData<Snapshot> snapDataRef,
         VlmLayerDataApi vlmLayerDataApiRef,
-        Map<String, String> renameStorPoolMapRef
+        Map<String, String> renameStorPoolMapRef,
+        @Nullable ApiCallRc apiCallRc
     )
         throws AccessDeniedException, InvalidNameException, DatabaseException
     {
@@ -251,7 +255,14 @@ class SnapDrbdLayerHelper extends AbsSnapLayerHelper<
         StorPool extMdStorPool = null;
         if (externalMetaDataStorPool != null)
         {
-            extMdStorPool = getStorPool(snapVlmRef, externalMetaDataStorPool, renameStorPoolMapRef);
+            extMdStorPool = AbsLayerHelperUtils.getStorPool(
+                apiCtx,
+                snapVlmRef,
+                snapDataRef,
+                externalMetaDataStorPool,
+                renameStorPoolMapRef,
+                apiCallRc
+            );
         }
 
         return layerDataFactory.createDrbdVlmData(

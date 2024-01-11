@@ -7,6 +7,7 @@ import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
@@ -40,6 +41,7 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -78,7 +80,8 @@ public class CtrlVlmCrtApiHelper
     public ApiCallRcWith<Volume> createVolumeResolvingStorPool(
         Resource rsc,
         VolumeDefinition vlmDfn,
-        Map<StorPool.Key, Long> thinFreeCapacities
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        Map<String, String> storpoolRenameMap
     )
     {
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
@@ -94,7 +97,9 @@ public class CtrlVlmCrtApiHelper
                 rsc,
                 vlmDfn,
                 payload,
-                thinFreeCapacities
+                thinFreeCapacities,
+                storpoolRenameMap,
+                apiCallRc
             )
         );
     }
@@ -103,10 +108,12 @@ public class CtrlVlmCrtApiHelper
         Resource rsc,
         VolumeDefinition vlmDfn,
         LayerPayload payload,
-        Map<StorPool.Key, Long> thinFreeCapacities
+        Map<StorPool.Key, Long> thinFreeCapacities,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
     {
-        return createVlmImpl(rsc, vlmDfn, payload, thinFreeCapacities, null);
+        return createVlmImpl(rsc, vlmDfn, payload, thinFreeCapacities, null, storpoolRenameMap, apiCallRc);
     }
 
     public <RSC extends AbsResource<RSC>> Volume createVolumeFromAbsVolume(
@@ -114,10 +121,20 @@ public class CtrlVlmCrtApiHelper
         VolumeDefinition toVlmDfnRef,
         LayerPayload payload,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        AbsVolume<RSC> fromAbsVolumeRef
+        AbsVolume<RSC> fromAbsVolumeRef,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
     {
-        return createVlmImpl(rscRef, toVlmDfnRef, payload, thinFreeCapacities, fromAbsVolumeRef);
+        return createVlmImpl(
+            rscRef,
+            toVlmDfnRef,
+            payload,
+            thinFreeCapacities,
+            fromAbsVolumeRef,
+            storpoolRenameMap,
+            apiCallRc
+        );
     }
 
     private <RSC extends AbsResource<RSC>> Volume createVlmImpl(
@@ -125,7 +142,9 @@ public class CtrlVlmCrtApiHelper
         VolumeDefinition vlmDfn,
         LayerPayload payload,
         Map<StorPool.Key, Long> thinFreeCapacities,
-        AbsVolume<RSC> snapVlmRef
+        AbsVolume<RSC> snapVlmRef,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
     {
         Set<StorPool> storPoolSet = payload.storagePayload.values().stream().map(vlmPayload -> vlmPayload.storPool)
@@ -145,7 +164,9 @@ public class CtrlVlmCrtApiHelper
                     vlmDfn,
                     null, // flags
                     payload,
-                    null
+                    null,
+                    storpoolRenameMap,
+                    apiCallRc
                 );
             }
             else
@@ -156,7 +177,9 @@ public class CtrlVlmCrtApiHelper
                     vlmDfn,
                     null, // flags
                     payload,
-                    snapVlmRef.getAbsResource().getLayerData(peerAccCtx.get())
+                    snapVlmRef.getAbsResource().getLayerData(peerAccCtx.get()),
+                    storpoolRenameMap,
+                    apiCallRc
                 );
             }
         }

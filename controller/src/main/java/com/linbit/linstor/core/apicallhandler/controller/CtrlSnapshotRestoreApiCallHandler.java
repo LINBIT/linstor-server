@@ -55,6 +55,7 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 
 import static com.linbit.utils.StringUtils.firstLetterCaps;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -139,7 +140,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         List<String> nodeNameStrs,
         String fromRscNameStr,
         String fromSnapshotNameStr,
-        String toRscNameStr
+        String toRscNameStr,
+        Map<String, String> renameStorPoolMap
     )
     {
         ResponseContext context = makeSnapshotRestoreContext(toRscNameStr);
@@ -149,7 +151,14 @@ public class CtrlSnapshotRestoreApiCallHandler
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
                 .build(),
-            () -> restoreResourceInTransaction(nodeNameStrs, fromRscNameStr, fromSnapshotNameStr, toRscNameStr, false)
+            () -> restoreResourceInTransaction(
+                nodeNameStrs,
+                fromRscNameStr,
+                fromSnapshotNameStr,
+                toRscNameStr,
+                false,
+                renameStorPoolMap
+            )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
@@ -166,7 +175,14 @@ public class CtrlSnapshotRestoreApiCallHandler
                 .read(LockObj.NODES_MAP)
                 .write(LockObj.RSC_DFN_MAP)
                 .build(),
-            () -> restoreResourceInTransaction(nodeNameStrs, toRscNameStr, fromSnapshotNameStr, toRscNameStr, true)
+            () -> restoreResourceInTransaction(
+                nodeNameStrs,
+                toRscNameStr,
+                fromSnapshotNameStr,
+                toRscNameStr,
+                true,
+                Collections.emptyMap() // rename-storpool already happened during download
+            )
         ).transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
 
@@ -175,7 +191,8 @@ public class CtrlSnapshotRestoreApiCallHandler
         String fromRscNameStr,
         String fromSnapshotNameStr,
         String toRscNameStr,
-        boolean fromBackup
+        boolean fromBackup,
+        Map<String, String> renameStorPoolMap
     )
     {
         Flux<ApiCallRc> deploymentResponses = Flux.just();
@@ -244,7 +261,16 @@ public class CtrlSnapshotRestoreApiCallHandler
             {
                 for (Snapshot snapshot : fromSnapshotDfn.getAllSnapshots(peerAccCtx.get()))
                 {
-                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, snapshot.getNode(), fromBackup));
+                    restoredResources.add(
+                        restoreOnNode(
+                            fromSnapshotDfn,
+                            toRscDfn,
+                            snapshot.getNode(),
+                            fromBackup,
+                            renameStorPoolMap,
+                            responses
+                        )
+                    );
                 }
             }
             else
@@ -252,7 +278,9 @@ public class CtrlSnapshotRestoreApiCallHandler
                 for (String nodeNameStr : nodeNameStrs)
                 {
                     Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
-                    restoredResources.add(restoreOnNode(fromSnapshotDfn, toRscDfn, node, fromBackup));
+                    restoredResources.add(
+                        restoreOnNode(fromSnapshotDfn, toRscDfn, node, fromBackup, renameStorPoolMap, responses)
+                    );
                 }
             }
 
@@ -415,7 +443,9 @@ public class CtrlSnapshotRestoreApiCallHandler
         SnapshotDefinition fromSnapshotDfn,
         ResourceDefinition toRscDfn,
         Node node,
-        boolean fromBackup
+        boolean fromBackup,
+        Map<String, String> renameStorPoolMap,
+        @Nullable ApiCallRc apiCallRc
     )
         throws AccessDeniedException, InvalidKeyException, InvalidValueException, DatabaseException
     {
@@ -427,7 +457,9 @@ public class CtrlSnapshotRestoreApiCallHandler
             toRscDfn,
             node,
             snapshot,
-            fromBackup
+            fromBackup,
+            renameStorPoolMap,
+            apiCallRc
         );
 
         ctrlPropsHelper.copy(
@@ -491,7 +523,15 @@ public class CtrlSnapshotRestoreApiCallHandler
                 }
             }
             Volume toVlm = ctrlVlmCrtApiHelper
-                .createVolumeFromAbsVolume(rsc, toVlmDfn, payload, null, fromSnapshotVolume);
+                .createVolumeFromAbsVolume(
+                    rsc,
+                    toVlmDfn,
+                    payload,
+                    null,
+                    fromSnapshotVolume,
+                    renameStorPoolMap,
+                    apiCallRc
+                );
 
             Props vlmProps = ctrlPropsHelper.getProps(toVlm);
             ctrlPropsHelper.copy(

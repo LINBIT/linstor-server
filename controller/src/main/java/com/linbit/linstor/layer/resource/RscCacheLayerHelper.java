@@ -7,6 +7,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmApiCallHandler;
@@ -22,6 +23,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.AbsLayerHelperUtils;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -40,6 +42,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -48,6 +51,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Singleton
@@ -531,14 +535,34 @@ class RscCacheLayerHelper extends AbsRscLayerHelper<
     protected <RSC extends AbsResource<RSC>> CacheVlmData<Resource> restoreVlmData(
         Volume vlmRef,
         CacheRscData<Resource> rscDataRef,
-        VlmProviderObject<RSC> vlmProviderObjectRef
+        VlmProviderObject<RSC> vlmProviderObjectRef,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
-        throws DatabaseException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException, InvalidNameException
     {
+        CacheVlmData<RSC> cacheVlmData = (CacheVlmData<RSC>) vlmProviderObjectRef;
+        StorPool cachePool = AbsLayerHelperUtils.getStorPool(
+            apiCtx,
+            vlmRef,
+            rscDataRef,
+            cacheVlmData.getCacheStorPool(),
+            storpoolRenameMap,
+            apiCallRc
+        );
+        StorPool metaPool = AbsLayerHelperUtils.getStorPool(
+            apiCtx,
+            vlmRef,
+            rscDataRef,
+            cacheVlmData.getMetaStorPool(),
+            storpoolRenameMap,
+            apiCallRc
+        );
+
         return layerDataFactory.createCacheVlmData(
             vlmRef,
-            ((CacheVlmData<RSC>) vlmProviderObjectRef).getCacheStorPool(),
-            ((CacheVlmData<RSC>) vlmProviderObjectRef).getMetaStorPool(),
+            cachePool,
+            metaPool,
             rscDataRef
         );
     }

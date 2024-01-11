@@ -9,6 +9,7 @@ import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
@@ -27,6 +28,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.AbsLayerHelperUtils;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.StorageVlmPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
@@ -66,6 +68,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Singleton
@@ -798,14 +801,23 @@ public class RscStorageLayerHelper extends
     protected <RSC extends AbsResource<RSC>> VlmProviderObject<Resource> restoreVlmData(
         Volume vlmRef,
         StorageRscData<Resource> storRscData,
-        VlmProviderObject<RSC> snapVlmData
+        VlmProviderObject<RSC> snapVlmData,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
-        throws DatabaseException, AccessDeniedException, LinStorException
+        throws DatabaseException, AccessDeniedException, LinStorException, InvalidNameException
     {
         VlmProviderObject<Resource> vlmData;
 
         DeviceProviderKind providerKind = snapVlmData.getProviderKind();
-        StorPool storPool = snapVlmData.getStorPool();
+        StorPool storPool = AbsLayerHelperUtils.getStorPool(
+            apiCtx,
+            vlmRef,
+            storRscData,
+            snapVlmData.getStorPool(),
+            storpoolRenameMap,
+            apiCallRc
+        );
         switch (providerKind)
         {
             case DISKLESS:

@@ -12,6 +12,7 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.NodeIdAlloc;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
@@ -33,6 +34,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.AbsLayerHelperUtils;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.LayerPayload.DrbdRscDfnPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory.ChildResourceData;
@@ -63,6 +65,7 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -73,6 +76,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -935,14 +939,23 @@ public class RscDrbdLayerHelper extends
     protected <RSC extends AbsResource<RSC>> DrbdVlmData<Resource> restoreVlmData(
         Volume vlmRef,
         DrbdRscData<Resource> rscDataRef,
-        VlmProviderObject<RSC> vlmProviderObjectRef
+        VlmProviderObject<RSC> vlmProviderObjectRef,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
-        throws DatabaseException, AccessDeniedException
+        throws DatabaseException, AccessDeniedException, InvalidNameException
     {
         DrbdVlmData<RSC> drbdSnapVlmData = (DrbdVlmData<RSC>) vlmProviderObjectRef;
         return layerDataFactory.createDrbdVlmData(
             vlmRef,
-            drbdSnapVlmData.getExternalMetaDataStorPool(),
+            AbsLayerHelperUtils.getStorPool(
+                apiCtx,
+                vlmRef,
+                rscDataRef,
+                drbdSnapVlmData.getExternalMetaDataStorPool(),
+                storpoolRenameMap,
+                apiCallRc
+            ),
             rscDataRef,
             vlmRef.getVolumeDefinition().getLayerData(
                 apiCtx,

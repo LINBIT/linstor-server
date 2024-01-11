@@ -83,6 +83,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHa
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -442,7 +443,8 @@ public class CtrlRscCrtApiHelper
                 Volume vlmData = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
                     rsc,
                     vlmDfn,
-                    thinFreeCapacities
+                    thinFreeCapacities,
+                    Collections.emptyMap()
                 ).extractApiCallRc(responses);
 
                 Props vlmProps = ctrlPropsHelper.getProps(vlmData);
@@ -465,7 +467,8 @@ public class CtrlRscCrtApiHelper
                     Volume vlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
                         rsc,
                         vlmDfn,
-                        thinFreeCapacities
+                        thinFreeCapacities,
+                        Collections.emptyMap()
                     ).extractApiCallRc(responses);
 
                     setDrbdPropsForThinVolumesIfNeeded(vlm);
@@ -1088,7 +1091,9 @@ public class CtrlRscCrtApiHelper
         ResourceDefinition toRscDfn,
         Node toNode,
         Snapshot fromSnapshotRef,
-        boolean fromBackup
+        boolean fromBackup,
+        Map<String, String> renameStorPoolMap,
+        @Nullable ApiCallRc apiCallRc
     )
     {
         Resource rsc;
@@ -1102,7 +1107,9 @@ public class CtrlRscCrtApiHelper
                 toNode,
                 fromSnapshotRef.getLayerData(peerAccCtx.get()),
                 new Resource.Flags[0],
-                fromBackup
+                fromBackup,
+                renameStorPoolMap,
+                apiCallRc
             );
         }
         catch (AccessDeniedException accDeniedExc)

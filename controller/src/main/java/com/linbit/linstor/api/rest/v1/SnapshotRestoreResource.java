@@ -13,7 +13,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.container.AsyncResponse;
 import javax.ws.rs.container.Suspended;
 import javax.ws.rs.core.Context;
+
 import java.io.IOException;
+import java.util.Collections;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.glassfish.grizzly.http.server.Request;
@@ -59,7 +61,8 @@ public class SnapshotRestoreResource
                 snapRestore.nodes,
                 rscName,
                 snapName,
-                snapRestore.to_resource
+                snapRestore.to_resource,
+                snapRestore.stor_pool_rename == null ? Collections.emptyMap() : snapRestore.stor_pool_rename
             ).contextWrite(requestHelper.createContext(ApiConsts.API_RESTORE_SNAPSHOT, request));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));

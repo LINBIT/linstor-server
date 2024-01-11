@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotDatabaseDriver;
@@ -13,6 +14,7 @@ import com.linbit.linstor.stateflags.StateFlagsBits;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -92,7 +94,8 @@ public class SnapshotControllerFactory
         Node node,
         SnapshotDefinition snapDfn,
         Snapshot.Flags[] initFlags,
-        Map<String, String> renameStorPoolMap
+        Map<String, String> renameStorPoolMap,
+        @Nullable ApiCallRc apiCallRc
     ) throws LinStorDataAlreadyExistsException, DatabaseException, AccessDeniedException
     {
         snapDfn.getResourceDefinition().getObjProt().requireAccess(accCtx, AccessType.USE);
@@ -121,7 +124,7 @@ public class SnapshotControllerFactory
         snapDfn.addSnapshot(accCtx, snapshot);
         node.addSnapshot(accCtx, snapshot);
 
-        snapLayerFactory.restoreLayerData(layerData, snapshot, renameStorPoolMap);
+        snapLayerFactory.restoreLayerData(layerData, snapshot, renameStorPoolMap, apiCallRc);
 
         return snapshot;
     }

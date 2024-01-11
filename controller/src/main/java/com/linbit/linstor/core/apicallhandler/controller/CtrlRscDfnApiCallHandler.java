@@ -970,7 +970,9 @@ public class CtrlRscDfnApiCallHandler
                     rsc.getNode(),
                     rsc.getLayerData(peerAccCtx.get()),
                     Resource.Flags.restoreFlags(rsc.getStateFlags().getFlagsBits(peerAccCtx.get())),
-                    false
+                    false,
+                    Collections.emptyMap(), // storpool-rename might be useful for clone
+                    responses
                 );
 
                 ctrlPropsHelper.copy(
@@ -998,7 +1000,15 @@ public class CtrlRscDfnApiCallHandler
                     }
 
                     Volume cloneVlm = ctrlVlmCrtApiHelper
-                        .createVolumeFromAbsVolume(newRsc, toVlmDfn, vlmDfnPayload, thinFreeCapacities, srcVlm);
+                        .createVolumeFromAbsVolume(
+                            newRsc,
+                            toVlmDfn,
+                            vlmDfnPayload,
+                            thinFreeCapacities,
+                            srcVlm,
+                            Collections.emptyMap(), // storpool-rename might be useful for clone
+                            responses
+                        );
 
                     ctrlPropsHelper.copy(
                         ctrlPropsHelper.getProps(srcVlm),

@@ -25,7 +25,7 @@ import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.snapshot.AbsSnapLayerHelper;
+import com.linbit.linstor.layer.AbsLayerHelperUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -581,7 +581,7 @@ public class CtrlScheduledBackupsApiCallHandler
         }
         if (dstStorPool != null && !dstStorPool.isEmpty())
         {
-            renameMap.put(AbsSnapLayerHelper.RENAME_STOR_POOL_DFLT_KEY, dstStorPool);
+            renameMap.put(AbsLayerHelperUtils.RENAME_STOR_POOL_DFLT_KEY, dstStorPool);
         }
         final String namespace = InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR +
             remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue +

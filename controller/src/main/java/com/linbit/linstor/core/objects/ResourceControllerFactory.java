@@ -2,6 +2,7 @@ package com.linbit.linstor.core.objects;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -24,12 +25,14 @@ import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -113,7 +116,9 @@ public class ResourceControllerFactory
         Node node,
         AbsRscLayerObject<RSC> absLayerData,
         Resource.Flags[] flags,
-        boolean fromBackup
+        boolean fromBackup,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
         throws AccessDeniedException, LinStorDataAlreadyExistsException, DatabaseException
     {
@@ -125,7 +130,7 @@ public class ResourceControllerFactory
             LayerRscUtils.getLayerStack(absLayerData, accCtx),
             fromBackup
         );
-        layerStackHelper.copyLayerData(absLayerData, rscData);
+        layerStackHelper.copyLayerData(absLayerData, rscData, storpoolRenameMap, apiCallRc);
 
         return rscData;
     }

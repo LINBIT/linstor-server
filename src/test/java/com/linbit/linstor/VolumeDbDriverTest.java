@@ -194,6 +194,8 @@ public class VolumeDbDriverTest extends GenericDbBase
             volDfn,
             new Volume.Flags[] {Volume.Flags.DELETE},
             payload,
+            null,
+            Collections.emptyMap(),
             null
         );
         commit();
@@ -285,6 +287,8 @@ public class VolumeDbDriverTest extends GenericDbBase
             volDfn,
             null,
             payload,
+            null,
+            Collections.emptyMap(),
             null
         );
 
@@ -432,6 +436,8 @@ public class VolumeDbDriverTest extends GenericDbBase
             volDfn,
             null,
             new LayerPayload(),
+            null,
+            Collections.emptyMap(),
             null
         );
     }

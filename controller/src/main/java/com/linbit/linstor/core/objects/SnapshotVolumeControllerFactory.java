@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.objects;
 
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.SnapshotVolumeDatabaseDriver;
@@ -12,6 +13,7 @@ import com.linbit.linstor.security.AccessType;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
@@ -83,7 +85,8 @@ public class SnapshotVolumeControllerFactory
         RscLayerDataApi layerData,
         Snapshot snapshot,
         SnapshotVolumeDefinition snapshotVolumeDefinition,
-        Map<String, String> renameStorPoolsMap
+        Map<String, String> renameStorPoolsMap,
+        @Nullable ApiCallRc apiCallRc
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException
     {
@@ -110,7 +113,7 @@ public class SnapshotVolumeControllerFactory
         snapshot.putVolume(accCtx, snapshotVolume);
         snapshotVolumeDefinition.addSnapshotVolume(accCtx, snapshotVolume);
 
-        snapLayerFactory.restoreLayerData(layerData, snapshot, renameStorPoolsMap);
+        snapLayerFactory.restoreLayerData(layerData, snapshot, renameStorPoolsMap, apiCallRc);
         return snapshotVolume;
     }
 }

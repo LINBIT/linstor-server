@@ -148,6 +148,8 @@ public class ConnectionPropsTest extends GenericDbBase
             volDfn,
             null,
             payload1,
+            null,
+            Collections.emptyMap(),
             null
         );
         payload2.putStorageVlmPayload("", volDfn.getVolumeNumber().value, storPool2);
@@ -157,6 +159,8 @@ public class ConnectionPropsTest extends GenericDbBase
             volDfn,
             null,
             payload2,
+            null,
+            Collections.emptyMap(),
             null
         );
 

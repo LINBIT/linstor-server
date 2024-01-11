@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -455,10 +456,12 @@ public abstract class AbsRscLayerHelper<
     public <RSC extends AbsResource<RSC>> RSC_LO restoreFromAbsRsc(
         Resource rsc,
         AbsRscLayerObject<RSC> fromAbsRscDataRef,
-        AbsRscLayerObject<Resource> rscParentRef
+        AbsRscLayerObject<Resource> rscParentRef,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException, LinStorException
+        ValueInUseException, LinStorException, InvalidNameException
     {
         ensureResourceDefinitionDataCopiedFromAbsRsc(
             rsc.getResourceDefinition(),
@@ -509,7 +512,9 @@ public abstract class AbsRscLayerHelper<
                 VLM_LO vlmData = restoreVlmData(
                     vlm,
                     rscData,
-                    fromAbsRscDataRef.getVlmProviderObject(vlmNr)
+                    fromAbsRscDataRef.getVlmProviderObject(vlmNr),
+                    storpoolRenameMap,
+                    apiCallRc
                 );
                 vlmMap.put(vlmNr, vlmData);
             }
@@ -746,7 +751,9 @@ public abstract class AbsRscLayerHelper<
     protected abstract <RSC extends AbsResource<RSC>> VLM_LO restoreVlmData(
         Volume vlm,
         RSC_LO rscDataRef,
-        VlmProviderObject<RSC> vlmProviderObjectRef
+        VlmProviderObject<RSC> vlmProviderObjectRef,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
-        throws DatabaseException, AccessDeniedException, LinStorException;
+        throws DatabaseException, AccessDeniedException, LinStorException, InvalidNameException;
 }

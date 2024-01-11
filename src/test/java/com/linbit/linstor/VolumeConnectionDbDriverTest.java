@@ -171,6 +171,8 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
             volDfn,
             null,
             payload1,
+            null,
+            Collections.emptyMap(),
             null
         );
         LayerPayload payload2 = new LayerPayload();
@@ -181,6 +183,8 @@ public class VolumeConnectionDbDriverTest extends GenericDbBase
             volDfn,
             null,
             payload2,
+            null,
+            Collections.emptyMap(),
             null
         );
     }

@@ -1279,6 +1279,7 @@ public class JsonGenTypes
          * List of nodes where to place the restored snapshot
          */
         public List<String> nodes = Collections.emptyList();
+        public Map<String, String> stor_pool_rename = Collections.emptyMap();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

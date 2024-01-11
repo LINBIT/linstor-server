@@ -43,6 +43,8 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
 
     boolean exists();
 
+    void setExists(boolean existsRef) throws DatabaseException;
+
     boolean hasFailed();
 
     /**

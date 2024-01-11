@@ -446,6 +446,8 @@ public class NodeDbDriverTest extends GenericDbBase
                 new Volume.Flags[]
                 {},
                 payload1,
+                null,
+                Collections.emptyMap(),
                 null
             );
             vol1.getProps(SYS_CTX).setProp(vol1TestKey, vol1TestValue);
@@ -477,6 +479,8 @@ public class NodeDbDriverTest extends GenericDbBase
                 new Volume.Flags[]
                 {},
                 payload2,
+                null,
+                Collections.emptyMap(),
                 null
             );
             vol2.getProps(SYS_CTX).setProp(vol2TestKey, vol2TestValue);

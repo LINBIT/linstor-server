@@ -6,6 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
@@ -19,6 +20,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -139,7 +141,8 @@ public class CtrlSnapLayerDataFactory
     public void restoreLayerData(
         RscLayerDataApi fromRscLayerDataApiRef,
         Snapshot toSnapshot,
-        Map<String, String> renameStorPoolMapRef
+        Map<String, String> renameStorPoolMapRef,
+        @Nullable ApiCallRc apiCallRc
     )
     {
         try
@@ -148,7 +151,8 @@ public class CtrlSnapLayerDataFactory
                 fromRscLayerDataApiRef,
                 toSnapshot,
                 null,
-                renameStorPoolMapRef
+                renameStorPoolMapRef,
+                apiCallRc
             );
             toSnapshot.setLayerData(apiCtx, snapData);
         }
@@ -188,7 +192,8 @@ public class CtrlSnapLayerDataFactory
         RscLayerDataApi fromRscLayerDataApiRef,
         Snapshot toSnapshotRef,
         AbsRscLayerObject<Snapshot> parentRef,
-        Map<String, String> renameStorPoolMapRef
+        Map<String, String> renameStorPoolMapRef,
+        @Nullable ApiCallRc apiCallRc
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException, InvalidNameException
@@ -199,12 +204,13 @@ public class CtrlSnapLayerDataFactory
             toSnapshotRef,
             fromRscLayerDataApiRef,
             parentRef,
-            renameStorPoolMapRef
+            renameStorPoolMapRef,
+            apiCallRc
         );
 
         for (RscLayerDataApi child : fromRscLayerDataApiRef.getChildren())
         {
-            snapData.getChildren().add(restoreRec(child, toSnapshotRef, snapData, renameStorPoolMapRef));
+            snapData.getChildren().add(restoreRec(child, toSnapshotRef, snapData, renameStorPoolMapRef, apiCallRc));
         }
         return snapData;
     }

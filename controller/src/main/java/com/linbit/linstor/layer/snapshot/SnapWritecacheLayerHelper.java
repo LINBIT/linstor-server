@@ -5,6 +5,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
 import com.linbit.linstor.api.pojo.WritecacheRscPojo.WritecacheVlmPojo;
@@ -15,6 +16,7 @@ import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.AbsLayerHelperUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -29,6 +31,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -152,11 +155,17 @@ class SnapWritecacheLayerHelper
         SnapshotVolume snapVlmRef,
         WritecacheRscData<Snapshot> snapDataRef,
         VlmLayerDataApi vlmLayerDataApiRef,
-        Map<String, String> renameStorPoolMapRef
+        Map<String, String> renameStorPoolMapRef,
+        @Nullable ApiCallRc apiCallRc
     ) throws AccessDeniedException, InvalidNameException, DatabaseException
     {
-        StorPool cacheStorPool = getStorPool(
-            snapVlmRef, ((WritecacheVlmPojo) vlmLayerDataApiRef).getCacheStorPoolName(), renameStorPoolMapRef
+        StorPool cacheStorPool = AbsLayerHelperUtils.getStorPool(
+            apiCtx,
+            snapVlmRef,
+            snapDataRef,
+            ((WritecacheVlmPojo) vlmLayerDataApiRef).getCacheStorPoolName(),
+            renameStorPoolMapRef,
+            apiCallRc
         );
         return layerDataFactory.createWritecacheVlmData(
             snapVlmRef,

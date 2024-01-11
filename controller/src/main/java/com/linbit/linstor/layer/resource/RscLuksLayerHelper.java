@@ -8,6 +8,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SharedResourceManager;
@@ -41,6 +42,7 @@ import com.linbit.linstor.storage.utils.LayerDataFactory;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -50,6 +52,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -391,7 +394,9 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
     protected <RSC extends AbsResource<RSC>> LuksVlmData<Resource> restoreVlmData(
         Volume vlmRef,
         LuksRscData<Resource> rscDataRef,
-        VlmProviderObject<RSC> vlmProviderObjectRef
+        VlmProviderObject<RSC> vlmProviderObjectRef,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
         throws DatabaseException
     {

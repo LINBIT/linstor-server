@@ -5,16 +5,15 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.VlmLayerDataApi;
-import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -27,6 +26,8 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
+import javax.annotation.Nullable;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -38,8 +39,6 @@ public abstract class AbsSnapLayerHelper<
     SNAPVLM_DFN_LO extends VlmDfnLayerObject
 >
 {
-    public static final String RENAME_STOR_POOL_DFLT_KEY = "*";
-
     protected final ErrorReporter errorReporter;
     protected final AccessContext apiCtx;
     protected final LayerDataFactory layerDataFactory;
@@ -129,7 +128,8 @@ public abstract class AbsSnapLayerHelper<
         Snapshot snapRef,
         RscLayerDataApi rscLayerDataApiRef,
         AbsRscLayerObject<Snapshot> parentRef,
-        Map<String, String> renameStorPoolMapRef
+        Map<String, String> renameStorPoolMapRef,
+        @Nullable ApiCallRc apiCallRc
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
         ValueInUseException, InvalidNameException
@@ -223,7 +223,8 @@ public abstract class AbsSnapLayerHelper<
                     snapVlm,
                     snapData,
                     vlmLayerDataApi,
-                    renameStorPoolMapRef
+                    renameStorPoolMapRef,
+                    apiCallRc
                 );
                 snapVlmMap.put(vlmNr, snapVlmData);
             }
@@ -340,43 +341,8 @@ public abstract class AbsSnapLayerHelper<
         SnapshotVolume snapVlmRef,
         SNAP_LO snapDataRef,
         VlmLayerDataApi vlmLayerDataApiRef,
-        Map<String, String> renameStorPoolMapRef
+        Map<String, String> renameStorPoolMapRef,
+        @Nullable ApiCallRc apiCallRc
     )
         throws AccessDeniedException, InvalidNameException, DatabaseException;
-
-    protected StorPool getStorPool(
-        SnapshotVolume snapVlmRef,
-        String storPoolName,
-        Map<String, String> renameStorPoolMap
-    ) throws AccessDeniedException, InvalidNameException
-    {
-        StorPool storPool = null;
-        String renamedStorPool = renameStorPoolMap.get(storPoolName);
-        if (renamedStorPool == null)
-        {
-            // if no mapping is found, first check if there is a dflt-entry
-            renamedStorPool = renameStorPoolMap.get(RENAME_STOR_POOL_DFLT_KEY);
-            if (renamedStorPool == null)
-            {
-                // if no mapping is found, it is assumed that the old storPoolName still applies
-                renamedStorPool = storPoolName;
-            }
-        }
-
-        storPool = snapVlmRef.getNode().getStorPool(apiCtx, new StorPoolName(renamedStorPool));
-        if (storPool == null)
-        {
-            if (!storPoolName.equals(renamedStorPool))
-            {
-                storPool = snapVlmRef.getNode().getStorPool(apiCtx, new StorPoolName(storPoolName));
-            }
-            if (storPool == null)
-            {
-                throw new ImplementationError(
-                    "StorPool not found: " + snapVlmRef.getNode() + " " + renamedStorPool
-                );
-            }
-        }
-        return storPool;
-    }
 }

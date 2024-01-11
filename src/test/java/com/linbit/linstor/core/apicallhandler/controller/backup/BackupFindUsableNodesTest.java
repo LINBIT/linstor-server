@@ -616,7 +616,16 @@ public class BackupFindUsableNodesTest extends ApiTestBase
 
     private Volume makeVlm(Resource rsc, VolumeDefinition vlmDfn) throws Exception
     {
-        return volumeFactory.create(PUBLIC_CTX, rsc, vlmDfn, new Volume.Flags[0], new LayerPayload(), null);
+        return volumeFactory.create(
+            PUBLIC_CTX,
+            rsc,
+            vlmDfn,
+            new Volume.Flags[0],
+            new LayerPayload(),
+            null,
+            Collections.emptyMap(),
+            null
+        );
     }
 
     private SnapshotVolume makeSnapVlm(Resource rsc, Snapshot snap, SnapshotVolumeDefinition snapVlmDfn)

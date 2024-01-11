@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiCallRcWith;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
@@ -20,6 +21,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
+import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -80,7 +82,11 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
         backupInfoMgr = backupInfoMgrRef;
     }
 
-    public ApiCallRc restoreVlmDfn(String fromRscNameStr, String fromSnapshotNameStr, String toRscNameStr)
+    public ApiCallRc restoreVlmDfn(
+        String fromRscNameStr,
+        String fromSnapshotNameStr,
+        String toRscNameStr
+    )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = new ResponseContext(
@@ -149,7 +155,13 @@ class CtrlSnapshotRestoreVlmDfnApiCallHandler
                 Iterator<Resource> rscIterator = getRscIterator(toRscDfn);
                 while (rscIterator.hasNext())
                 {
-                    ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(rscIterator.next(), vlmDfn, null);
+                    ApiCallRcWith<Volume> respWithVlm = ctrlVlmCrtApiHelper.createVolumeResolvingStorPool(
+                        rscIterator.next(),
+                        vlmDfn,
+                        null,
+                        Collections.emptyMap()
+                    );
+                    respWithVlm.extractApiCallRc(responses);
                 }
             }
 

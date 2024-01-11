@@ -43,7 +43,7 @@ import com.linbit.linstor.core.objects.remotes.StltRemoteControllerFactory;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
-import com.linbit.linstor.layer.snapshot.AbsSnapLayerHelper;
+import com.linbit.linstor.layer.AbsLayerHelperUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
@@ -277,7 +277,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         {
             storPoolRenameMap = new HashMap<>(storPoolRenameRef);
         }
-        storPoolRenameMap.put(AbsSnapLayerHelper.RENAME_STOR_POOL_DFLT_KEY, dstStorPoolRef);
+        storPoolRenameMap.put(AbsLayerHelperUtils.RENAME_STOR_POOL_DFLT_KEY, dstStorPoolRef);
         BackupShippingData data = new BackupShippingData(
             srcClusterId,
             srcNodeNameRef,

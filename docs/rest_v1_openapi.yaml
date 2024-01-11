@@ -8092,6 +8092,10 @@ components:
           items:
             type: string
           description: List of nodes where to place the restored snapshot
+        stor_pool_rename:
+          type: object
+          additionalProperties:
+            type: string
     SnapshotShipping:
       type: object
       required:

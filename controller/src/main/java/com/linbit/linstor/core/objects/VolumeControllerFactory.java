@@ -3,6 +3,7 @@ package com.linbit.linstor.core.objects;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.objects.utils.MixedStorPoolHelper;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.VolumeDatabaseDriver;
@@ -22,6 +23,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -58,7 +60,9 @@ public class VolumeControllerFactory
         VolumeDefinition vlmDfn,
         Volume.Flags[] flags,
         LayerPayload payload,
-        @Nullable AbsRscLayerObject<RSC> absLayerData
+        @Nullable AbsRscLayerObject<RSC> absLayerData,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
         throws DatabaseException, AccessDeniedException, LinStorDataAlreadyExistsException, MinSizeException,
         MaxSizeException, StorageException
@@ -96,7 +100,7 @@ public class VolumeControllerFactory
         else
         {
             // ignore payload if we have snapLayerData
-            layerStackHelper.copyLayerData(absLayerData, rsc);
+            layerStackHelper.copyLayerData(absLayerData, rsc, storpoolRenameMap, apiCallRc);
         }
 
         mixedStorPoolHelper.handleMixedStoragePools(volData);

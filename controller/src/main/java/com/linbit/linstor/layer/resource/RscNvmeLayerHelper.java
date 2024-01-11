@@ -8,6 +8,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.AbsResource;
@@ -37,6 +38,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -47,6 +49,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
@@ -346,7 +349,9 @@ class RscNvmeLayerHelper
     protected <RSC extends AbsResource<RSC>> NvmeVlmData<Resource> restoreVlmData(
         Volume vlmRef,
         NvmeRscData<Resource> rscDataRef,
-        VlmProviderObject<RSC> vlmProviderObjectRef
+        VlmProviderObject<RSC> vlmProviderObjectRef,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
         throws DatabaseException, AccessDeniedException
     {

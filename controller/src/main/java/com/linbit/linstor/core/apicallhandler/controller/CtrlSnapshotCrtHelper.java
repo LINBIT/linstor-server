@@ -8,6 +8,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
@@ -52,6 +53,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiC
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 import static com.linbit.linstor.utils.layer.LayerVlmUtils.getStorPoolMap;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -563,7 +565,8 @@ public class CtrlSnapshotCrtHelper
         SnapshotDefinition snapshotDfn,
         Node node,
         RscLayerDataApi layerData,
-        Map<String, String> renameStorPoolsMap
+        Map<String, String> renameStorPoolsMap,
+        @Nullable ApiCallRc apiCallRc
     )
     {
         String snapshotNameStr = snapshotDfn.getName().displayValue;
@@ -579,7 +582,8 @@ public class CtrlSnapshotCrtHelper
                 node,
                 snapshotDfn,
                 new Snapshot.Flags[0],
-                renameStorPoolsMap
+                renameStorPoolsMap,
+                apiCallRc
             );
         }
         catch (AccessDeniedException accDeniedExc)
@@ -672,7 +676,8 @@ public class CtrlSnapshotCrtHelper
         RscLayerDataApi layerData,
         Snapshot snapshot,
         SnapshotVolumeDefinition snapshotVolumeDefinition,
-        Map<String, String> renameStorPoolsMap
+        Map<String, String> renameStorPoolsMap,
+        @Nullable ApiCallRc apiCallRc
     )
     {
         SnapshotVolume snapVlm;
@@ -683,7 +688,8 @@ public class CtrlSnapshotCrtHelper
                 layerData,
                 snapshot,
                 snapshotVolumeDefinition,
-                renameStorPoolsMap
+                renameStorPoolsMap,
+                apiCallRc
             );
         }
         catch (AccessDeniedException accDeniedExc)

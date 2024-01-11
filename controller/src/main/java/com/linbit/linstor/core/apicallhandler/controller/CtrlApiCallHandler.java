@@ -1028,7 +1028,11 @@ public class CtrlApiCallHandler
         );
     }
 
-    public ApiCallRc restoreVlmDfn(String fromRscName, String fromSnapshotName, String toRscName)
+    public ApiCallRc restoreVlmDfn(
+        String fromRscName,
+        String fromSnapshotName,
+        String toRscName
+    )
     {
         ApiCallRc apiCallRc;
 

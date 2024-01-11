@@ -27,6 +27,7 @@ import com.linbit.utils.Triple;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
@@ -281,6 +282,8 @@ public class VolumeTestFactory
                 vlmDfnFact.get(rscName, vlmNr, vlmSize, true),
                 flags,
                 payload,
+                null,
+                Collections.emptyMap(),
                 null
             );
             vlmMap.put(new Triple<>(nodeName.toUpperCase(), rscName.toUpperCase(), vlmNr), vlm);

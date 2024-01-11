@@ -610,7 +610,8 @@ public class CtrlBackupRestoreApiCallHandler
             snapDfn,
             snapVlmDfns,
             storPoolMap,
-            remote
+            remote,
+            responses
         );
 
         // 5. re-encrypt LUKS keys if needed
@@ -696,12 +697,13 @@ public class CtrlBackupRestoreApiCallHandler
         SnapshotDefinition snapDfn,
         Map<Integer, SnapshotVolumeDefinition> snapVlmDfns,
         Map<String, String> renameMap,
-        AbsRemote remote
+        AbsRemote remote,
+        @Nullable ApiCallRc apiCallRc
     )
         throws AccessDeniedException, DatabaseException
     {
         Snapshot snap = snapshotCrtHelper
-            .restoreSnapshot(snapDfn, node, layers, renameMap);
+            .restoreSnapshot(snapDfn, node, layers, renameMap, apiCallRc);
         Props snapProps = snap.getProps(peerAccCtx.get());
 
         snapProps.map().putAll(metadata.getRsc().getProps());
@@ -734,7 +736,7 @@ public class CtrlBackupRestoreApiCallHandler
             for (Entry<Integer, VlmMetaPojo> vlmMetaEntry : metadata.getRsc().getVlms().entrySet())
             {
                 SnapshotVolume snapVlm = snapshotCrtHelper
-                    .restoreSnapshotVolume(layers, snap, snapVlmDfns.get(vlmMetaEntry.getKey()), renameMap);
+                    .restoreSnapshotVolume(layers, snap, snapVlmDfns.get(vlmMetaEntry.getKey()), renameMap, apiCallRc);
                 snapVlm.getProps(peerAccCtx.get()).map()
                     .putAll(metadata.getRsc().getVlms().get(vlmMetaEntry.getKey()).getProps());
 
@@ -1102,7 +1104,8 @@ public class CtrlBackupRestoreApiCallHandler
                     snapDfn,
                     snapVlmDfns,
                     data.storPoolRenameMap,
-                    data.stltRemote
+                    data.stltRemote,
+                    responses
                 );
                 snap.getProps(peerAccCtx.get()).setProp(
                     InternalApiConsts.KEY_BACKUP_TO_RESTORE,

@@ -8,6 +8,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.CtrlStorPoolResolveHelper;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
+import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -44,6 +45,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Singleton
@@ -467,12 +469,14 @@ public class CtrlRscLayerDataFactory
 
     public <RSC extends AbsResource<RSC>> void copyLayerData(
         AbsRscLayerObject<RSC> fromAbsRsc,
-        Resource toResource
+        Resource toResource,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
     {
         try
         {
-            AbsRscLayerObject<Resource> rscData = copyRec(toResource, fromAbsRsc, null);
+            AbsRscLayerObject<Resource> rscData = copyRec(toResource, fromAbsRsc, null, storpoolRenameMap, apiCallRc);
             toResource.setLayerData(apiCtx, rscData);
             clearIgnoreReasonsRec(rscData);
             recalculateVolatileRscData(toResource);
@@ -534,18 +538,26 @@ public class CtrlRscLayerDataFactory
     private <RSC extends AbsResource<RSC>> AbsRscLayerObject<Resource> copyRec(
         Resource rsc,
         AbsRscLayerObject<RSC> fromRscData,
-        AbsRscLayerObject<Resource> rscParentRef
+        AbsRscLayerObject<Resource> rscParentRef,
+        Map<String, String> storpoolRenameMap,
+        @Nullable ApiCallRc apiCallRc
     )
         throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException, LinStorException
+        ValueInUseException, LinStorException, InvalidNameException
     {
         AbsRscLayerHelper<?, ?, ?, ?> layerHelper = getLayerHelperByKind(fromRscData.getLayerKind());
 
-        AbsRscLayerObject<Resource> rscData = layerHelper.restoreFromAbsRsc(rsc, fromRscData, rscParentRef);
+        AbsRscLayerObject<Resource> rscData = layerHelper.restoreFromAbsRsc(
+            rsc,
+            fromRscData,
+            rscParentRef,
+            storpoolRenameMap,
+            apiCallRc
+        );
 
         for (AbsRscLayerObject<RSC> snapChild : fromRscData.getChildren())
         {
-            rscData.getChildren().add(copyRec(rsc, snapChild, rscData));
+            rscData.getChildren().add(copyRec(rsc, snapChild, rscData, storpoolRenameMap, apiCallRc));
         }
         return rscData;
     }
