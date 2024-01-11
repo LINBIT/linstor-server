@@ -569,6 +569,9 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             hsStatus == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)
         { // SSL handshake successful
             sslReady = true;
+            // Update the timestamp as if a ping/pong cycle had been completed, so that the peer is not
+            // kicked out by the TaskScheduleService/PingTask if the connection/handshake process took long
+            pongReceived();
         }
         else
         { // Error
