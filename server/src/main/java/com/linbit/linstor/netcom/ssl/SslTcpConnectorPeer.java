@@ -12,16 +12,19 @@ import javax.net.ssl.SSLException;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.TcpConnectorPeer;
 import com.linbit.linstor.security.AccessContext;
+import java.nio.channels.CancelledKeyException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.net.ssl.SSLSession;
+import org.slf4j.event.Level;
 
 
 /**
@@ -286,25 +289,34 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         throws SSLException, IllegalMessageStateException
     {
         plainReadBuffer.compact();
-        SSLEngineResult sslStatus = sslEngine.unwrap(encryptedReadBuffer, plainReadBuffer);
-        SSLEngineResult.Status trafficStatus = sslStatus.getStatus();
-        if (trafficStatus == SSLEngineResult.Status.BUFFER_OVERFLOW)
+        SSLEngineResult.Status trafficStatus;
+        try
         {
-            if (plainReadBuffer.position() == 0)
-            { // Buffer too small
-                adjustPlainReadBuffer();
+            SSLEngineResult sslStatus = sslEngine.unwrap(encryptedReadBuffer, plainReadBuffer);
+            trafficStatus = sslStatus.getStatus();
+            if (trafficStatus == SSLEngineResult.Status.BUFFER_OVERFLOW)
+            {
+                if (plainReadBuffer.position() == 0)
+                { // Buffer too small
+                    adjustPlainReadBuffer();
+                }
+            }
+            else
+            if (trafficStatus == SSLEngineResult.Status.BUFFER_UNDERFLOW)
+            {
+                if (encryptedReadBuffer.remaining() == encryptedReadBuffer.capacity())
+                { // Buffer too small
+                    adjustEncryptedReadBuffer();
+                }
+                // Read more data into the buffer
+                enableInterestOps(SelectionKey.OP_READ);
+                ioRequest = true;
             }
         }
-        else
-        if (trafficStatus == SSLEngineResult.Status.BUFFER_UNDERFLOW)
+        catch (SSLException sslExc)
         {
-            if (encryptedReadBuffer.remaining() == encryptedReadBuffer.capacity())
-            { // Buffer too small
-                adjustEncryptedReadBuffer();
-            }
-            // Read more data into the buffer
-            enableInterestOps(SelectionKey.OP_READ);
-            ioRequest = true;
+            logSslException(sslExc);
+            throw sslExc;
         }
 
         extractMessages();
@@ -433,47 +445,55 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         throws SSLException, IllegalMessageStateException
     {
         SSLEngineResult sslStatus = null;
-        if (msgOut != null)
+        try
         {
-            switch (currentWritePhase)
+            if (msgOut != null)
             {
-                case HEADER:
-                    final ByteBuffer headerBuffer = msgOut.getHeaderBuffer();
-                    sslStatus = sslEngine.wrap(headerBuffer, encryptedWriteBuffer);
-                    if (!headerBuffer.hasRemaining())
-                    {
-                        currentWritePhase = currentWritePhase.getNextPhase();
-                    }
-                    break;
-                case DATA:
-                    final ByteBuffer dataBuffer = msgOut.getDataBuffer();
-                    sslStatus = sslEngine.wrap(dataBuffer, encryptedWriteBuffer);
-                    if (!dataBuffer.hasRemaining())
-                    {
-                        currentWritePhase = Phase.HEADER;
-                        // If there are no more outbound messages pending, this will disable OP_WRITE.
-                        nextOutMessage();
-                        // WriteState.FINISHED would be returned here to indicate that an entire message
-                        // has been sent, if it were to be implemented in the netcom connector
-                    }
-                    break;
-                default:
-                    throw new ImplementationError(
-                        String.format(
-                            "Missing case label for enum member '%s'",
-                            currentWritePhase.name()
-                        ),
-                        null
-                    );
+                switch (currentWritePhase)
+                {
+                    case HEADER:
+                        final ByteBuffer headerBuffer = msgOut.getHeaderBuffer();
+                        sslStatus = sslEngine.wrap(headerBuffer, encryptedWriteBuffer);
+                        if (!headerBuffer.hasRemaining())
+                        {
+                            currentWritePhase = currentWritePhase.getNextPhase();
+                        }
+                        break;
+                    case DATA:
+                        final ByteBuffer dataBuffer = msgOut.getDataBuffer();
+                        sslStatus = sslEngine.wrap(dataBuffer, encryptedWriteBuffer);
+                        if (!dataBuffer.hasRemaining())
+                        {
+                            currentWritePhase = Phase.HEADER;
+                            // If there are no more outbound messages pending, this will disable OP_WRITE.
+                            nextOutMessage();
+                            // WriteState.FINISHED would be returned here to indicate that an entire message
+                            // has been sent, if it were to be implemented in the netcom connector
+                        }
+                        break;
+                    default:
+                        throw new ImplementationError(
+                            String.format(
+                                "Missing case label for enum member '%s'",
+                                currentWritePhase.name()
+                            ),
+                            null
+                        );
+                }
+            }
+            else
+            {
+                if (forceWrap)
+                { // The SSL handshake requires an SSLEngine wrap operation, but there was no application data to wrap
+                    sslStatus = sslEngine.wrap(dummyBuffer, encryptedWriteBuffer);
+                }
+                ioRequest = true;
             }
         }
-        else
+        catch (SSLException sslExc)
         {
-            if (forceWrap)
-            { // The SSL handshake requires an SSLEngine wrap operation, but there was no application data to wrap
-                sslStatus = sslEngine.wrap(dummyBuffer, encryptedWriteBuffer);
-            }
-            ioRequest = true;
+            logSslException(sslExc);
+            throw sslExc;
         }
 
         if (sslStatus != null)
@@ -509,10 +529,36 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         throws SSLException, IllegalMessageStateException, IOException
     {
         SSLEngineResult.HandshakeStatus hsStatus = sslEngine.getHandshakeStatus();
-        SSLEngineResult.Status trafficStatus = sslHandshake(hsStatus, false);
-        if (trafficStatus == SSLEngineResult.Status.CLOSED)
+        try
         {
-            sslEngine.closeInbound();
+            SSLEngineResult.Status trafficStatus = sslHandshake(hsStatus, false);
+            if (trafficStatus == SSLEngineResult.Status.CLOSED)
+            {
+                sslEngine.closeInbound();
+                closeConnection(true);
+            }
+        }
+        catch (CancelledKeyException keyExc)
+        {
+            // Connection was closed, or the connector is shutting down and it will be closed
+        }
+        catch (IllegalMessageStateException msgStateExc)
+        {
+            throw new ImplementationError(msgStateExc);
+        }
+        catch (SSLException sslExc)
+        {
+            logSslException(sslExc);
+            closeConnection(true);
+        }
+        catch (IOException ioExc)
+        {
+            // I/O error; typically through sslHandshake -> executeSslTasks,
+            // if spawning an asynchronous SSL task fails
+            getErrorReporter().reportError(
+                Level.TRACE, ioExc, getAccessContext(), this,
+                "I/O error during asynchronous SSL task completion"
+            );
             closeConnection(true);
         }
     }
@@ -813,5 +859,22 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     protected SelectionKey getSelectionKey()
     {
         return super.getSelectionKey();
+    }
+
+    private void logSslException(final SSLException sslExc)
+    {
+        String excPeer = "Peer " + getId();
+        final Node excNode = getNode();
+        if (excNode != null)
+        {
+            final NodeName excNodeName = excNode.getName();
+            excPeer += " (satellite " + excNodeName.displayValue + ")";
+        }
+        final String errorMsg = sslExc.getMessage();
+        getErrorReporter().logError(
+            "%s: SSL error: %s",
+            excPeer,
+            errorMsg != null ? errorMsg : "The SSL engine did not provide an error description"
+        );
     }
 }
