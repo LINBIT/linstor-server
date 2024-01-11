@@ -211,6 +211,11 @@ public class TcpConnectorPeer implements Peer
             );
     }
 
+    protected ErrorReporter getErrorReporter()
+    {
+        return errorReporter;
+    }
+
     @Override
     public String getId()
     {
