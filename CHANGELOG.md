@@ -25,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Oversubscription now takes minimum of old and of new calculation
 - Autoplace API answer now contains object refs to nodes and storagepools
 - Make-Available will now retry auto-place with no restrictions on diskless resources
+- StoragePoolMixing is now based on extent-sizes and thin/thick. Also changed implementation
+- Autoplacer now also allows for mixed storage pools if the corresponding property allows
 
 ### Fixed
 
