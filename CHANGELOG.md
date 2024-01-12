@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Do not allow setting resource-groups with place-count 0
 - Small DB resource leak in health check
+- Fixed unrecoverable state with failed rollback of deleting snapshot
 
 ### Removed
 

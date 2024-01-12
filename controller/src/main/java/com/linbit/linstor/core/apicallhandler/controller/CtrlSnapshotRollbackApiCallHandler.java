@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.mgr.SnapshotRollbackManger;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -88,6 +89,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private final Provider<AccessContext> peerAccCtx;
     private LockGuardFactory lockGuardFactory;
     private final BackupInfoManager backupInfoMgr;
+    private final SnapshotRollbackManger snapRollbackMgr;
 
     @Inject
     public CtrlSnapshotRollbackApiCallHandler(
@@ -100,7 +102,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         ResponseConverter responseConverterRef,
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        BackupInfoManager backupInfoMgrRef
+        BackupInfoManager backupInfoMgrRef,
+        SnapshotRollbackManger snapRollbackMgrRef
     )
     {
         apiCtx = apiCtxRef;
@@ -113,6 +116,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         lockGuardFactory = lockGuardFactoryRef;
         peerAccCtx = peerAccCtxRef;
         backupInfoMgr = backupInfoMgrRef;
+        snapRollbackMgr = snapRollbackMgrRef;
     }
 
     @Override
@@ -182,6 +186,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         ));
 
         Flux<ApiCallRc> nextStep = startRollback(rscName, snapshotName);
+
         return Flux
             .just(responses)
             .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), nextStep)
@@ -258,8 +263,6 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapshotName, true);
         ResourceDefinition rscDfn = snapshotDfn.getResourceDefinition();
 
-        unmarkDownPrivileged(rscDfn);
-
         Iterator<Resource> rscIter = iterateResourcePrivileged(rscDfn);
         while (rscIter.hasNext())
         {
@@ -301,18 +304,29 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         }
 
         Flux<ApiCallRc> finishRollback = finishRollback(rscName);
-        return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, finishRollback)
-            .map(nodeResponse -> handleRollbackResponse(
-                rscName,
-                nodeResponse
-            ))
-            .transform(responses -> CtrlResponseUtils.combineResponses(
-                responses,
-                rscName,
-                diskNodeNames,
-                "Rolled resource {1} back on {0}",
-                null
-            ))
+        Flux<ApiCallRc> snapRollbackFlux = snapRollbackMgr.prepareFlux(rscDfn, diskNodeNames);
+        return Flux.merge(
+            // both fluxes need to be started simultaneously, since the updateSatellites triggers
+            // "SnapshotRollbackResult" responses that require an initialized fluxSink within the snapRollbackFlux. That
+            // however only gets initialized when snapRollbackFlux is subscribed to
+            ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, finishRollback)
+                .map(
+                    nodeResponse -> handleRollbackResponse(
+                        rscName,
+                        nodeResponse
+                    )
+                )
+                .transform(
+                    responses -> CtrlResponseUtils.combineResponses(
+                        responses,
+                        rscName,
+                        diskNodeNames,
+                        "Rolled resource {1} back on {0}",
+                        null
+                    )
+                ),
+            snapRollbackFlux
+        )
             .concatWith(finishRollback);
     }
 
@@ -354,7 +368,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private Flux<ApiCallRc> finishRollback(ResourceName rscName)
     {
         return scopeRunner
-            .fluxInTransactionlessScope(
+            .fluxInTransactionalScope(
                 "Reactivate resources after rollback",
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP),
                 () -> finishRollbackInScope(rscName)
@@ -364,6 +378,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private Flux<ApiCallRc> finishRollbackInScope(ResourceName rscName)
     {
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
+        unmarkDownPrivileged(rscDfn);
 
         return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
             .transform(responses -> CtrlResponseUtils.combineResponses(

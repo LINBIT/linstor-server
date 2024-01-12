@@ -200,6 +200,8 @@ public interface DeviceLayer
         void notifyFreeSpacesChanged(Map<StorPool, SpaceInfo> spaceInfoMapRef);
 
         void notifyResourceFailed(Resource rsc, ApiCallRc apiCallRc);
+
+        void notifySnapshotRollbackResult(Resource rscRef, ApiCallRc apiCallRcRef, boolean successRef);
     }
 
     class AbortLayerProcessingException extends LinStorRuntimeException

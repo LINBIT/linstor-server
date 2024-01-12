@@ -130,6 +130,12 @@ public interface CtrlStltSerializer extends CommonSerializer
             ApiCallRc apiCallRc
         );
 
+        CommonSerializerBuilder notifySnapshotRollbackResult(
+            Resource rscRef,
+            ApiCallRc apiCallRcRef,
+            boolean successRef
+        );
+
         @Deprecated(forRemoval = true)
         CtrlStltSerializerBuilder notifySnapshotShipped(
             Snapshot snap,

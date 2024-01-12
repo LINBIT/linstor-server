@@ -517,7 +517,10 @@ public class CtrlSnapshotRestoreApiCallHandler
             {
                 forceInitSync = true;
                 drbdRscData.getFlags().disableFlags(peerAccCtx.get(), DrbdRscFlags.INITIALIZED);
-                drbdRscData.getFlags().enableFlags(peerAccCtx.get(), DrbdRscFlags.FROM_BACKUP);
+                drbdRscData.getFlags().enableFlags(
+                    peerAccCtx.get(),
+                    DrbdRscFlags.FROM_BACKUP, DrbdRscFlags.FORCE_NEW_METADATA
+                );
             }
         }
         if (forceInitSync)

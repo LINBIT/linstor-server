@@ -916,7 +916,7 @@ public class DrbdLayer implements DeviceLayer
         }
         StateFlags<DrbdRscFlags> flags = drbdVlmData.getRscLayerObject().getFlags();
         return flags.isUnset(workerCtx, DrbdRscFlags.INITIALIZED) &&
-            flags.isSet(workerCtx, DrbdRscFlags.FROM_BACKUP) &&
+            flags.isSet(workerCtx, DrbdRscFlags.FORCE_NEW_METADATA) &&
             !isRscUp;
     }
 

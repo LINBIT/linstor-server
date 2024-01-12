@@ -40,7 +40,8 @@ public interface DrbdRscObject<RSC extends AbsResource<RSC>>
         DISK_REMOVE_REQUESTED(1L << 5),
         DISK_REMOVING(1L << 6),
         INITIALIZED(1L << 7),
-        FROM_BACKUP(1L << 8);
+        FROM_BACKUP(1L << 8),
+        FORCE_NEW_METADATA(1L << 9);
 
         public final long flagValue;
 

@@ -47,6 +47,7 @@ public class InternalApiConsts
     // deleted. This API call indicates that the action is completed; the underlying snapshot volume may still be
     // present.
     public static final String API_APPLY_IN_PROGRESS_SNAPSHOT_ENDED = "ApplyEndedInProgressSnapshot";
+    public static final String API_NOTIFY_SNAPSHOT_ROLLBACK_RESULT  = "SnapshotRollbackResult";
 
     public static final String API_CHANGED_STOR_POOL       = "ChangedStorPool";
     public static final String API_REQUEST_STOR_POOL       = "RequestStorPool";

@@ -2034,6 +2034,22 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         }
     }
 
+    @Override
+    public void notifySnapshotRollbackResult(Resource rscRef, ApiCallRc apiCallRcRef, boolean successRef)
+    {
+        Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
+        if (ctrlPeer != null)
+        {
+            ctrlPeer.sendMessage(
+                interComSerializer
+                    .onewayBuilder(InternalApiConsts.API_NOTIFY_SNAPSHOT_ROLLBACK_RESULT)
+                    .notifySnapshotRollbackResult(rscRef, apiCallRcRef, successRef)
+                    .build(),
+                InternalApiConsts.API_NOTIFY_SNAPSHOT_ROLLBACK_RESULT
+            );
+        }
+    }
+
     static <K> Map<K, UUID> extractUuids(Map<K, UpdateNotification> map)
     {
         return map.entrySet().stream()

@@ -7,6 +7,8 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.apicallhandler.controller.mgr.SnapshotRollbackManger;
+import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -18,6 +20,9 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
+import com.linbit.locks.LockGuardFactory;
+import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -34,6 +39,8 @@ public class SnapshotInternalCallHandler
     private final CtrlStltSerializer ctrlStltSerializer;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
+    private final LockGuardFactory lockGuardFactory;
+    private final SnapshotRollbackManger snapRollbackMgr;
 
     private final ReadWriteLock rscDfnMapLock;
 
@@ -45,7 +52,9 @@ public class SnapshotInternalCallHandler
         CtrlStltSerializer ctrlStltSerializerRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef
+        @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
+        LockGuardFactory lockGuardFactoryRef,
+        SnapshotRollbackManger snapRollbackMgrRef
     )
     {
         errorReporter = errorReporterRef;
@@ -55,6 +64,8 @@ public class SnapshotInternalCallHandler
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
         rscDfnMapLock = rscDfnMapLockRef;
+        lockGuardFactory = lockGuardFactoryRef;
+        snapRollbackMgr = snapRollbackMgrRef;
     }
 
     public void handleSnapshotRequest(String resourceNameStr, UUID snapshotUuid, String snapshotNameStr)
@@ -119,6 +130,25 @@ public class SnapshotInternalCallHandler
                 new ImplementationError(
                     "Controller's api context has not enough privileges to gather requested storpool data.",
                     accDeniedExc
+                )
+            );
+        }
+    }
+
+    public void handleSnapshotRollbackResult(String nodeNameRef, String rscNameRef, boolean successRef)
+    {
+        try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.NODES_MAP, LockObj.RSC_DFN_MAP))
+        {
+            NodeName nodeName = new NodeName(nodeNameRef);
+            ResourceName rscName = new ResourceName(rscNameRef);
+            snapRollbackMgr.handle(nodeName, rscName, successRef);
+        }
+        catch (InvalidNameException invalidNameExc)
+        {
+            errorReporter.reportError(
+                new ImplementationError(
+                    "Satellite requested data for invalid name '" + invalidNameExc.invalidName + "'.",
+                    invalidNameExc
                 )
             );
         }

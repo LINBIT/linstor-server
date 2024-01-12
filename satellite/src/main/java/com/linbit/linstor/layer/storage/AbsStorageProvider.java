@@ -1215,7 +1215,21 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 .get(ApiConsts.KEY_RSC_ROLLBACK_TARGET);
             if (rollbackTargetSnapshotName != null)
             {
-                rollbackImpl(vlmData, rollbackTargetSnapshotName);
+                boolean success = false;
+                try
+                {
+                    rollbackImpl(vlmData, rollbackTargetSnapshotName);
+                    success = true;
+                }
+                finally
+                {
+                    notificationListenerProvider.get()
+                        .notifySnapshotRollbackResult(
+                            vlmData.getVolume().getAbsResource(),
+                            apiCallRc,
+                            success
+                        );
+                }
             }
         }
     }

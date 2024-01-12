@@ -96,6 +96,7 @@ import com.linbit.linstor.proto.javainternal.s2c.MsgIntUpdateLocalNodeChangeOute
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass.MsgPhysicalDevices;
 import com.linbit.linstor.proto.javainternal.s2c.MsgRscFailedOuterClass.MsgRscFailed;
+import com.linbit.linstor.proto.javainternal.s2c.MsgSnapshotRollbackResultOuterClass.MsgSnapshotRollbackResult;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.LsBlkEntry;
@@ -1097,6 +1098,33 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
             MsgRscFailed.newBuilder()
                 .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, resource))
                 .addAllResponses(ProtoCommonSerializerBuilder.serializeApiCallRc(apiCallRc))
+                .build()
+                .writeDelimitedTo(baos);
+        }
+        catch (IOException exc)
+        {
+            handleIOException(exc);
+        }
+        catch (AccessDeniedException exc)
+        {
+            handleAccessDeniedException(exc);
+        }
+        return this;
+    }
+
+    @Override
+    public CtrlStltSerializer.CtrlStltSerializerBuilder notifySnapshotRollbackResult(
+        Resource rscRef,
+        ApiCallRc apiCallRcRef,
+        boolean successRef
+    )
+    {
+        try
+        {
+            MsgSnapshotRollbackResult.newBuilder()
+                .setRsc(ProtoCommonSerializerBuilder.serializeResource(serializerCtx, rscRef))
+                .addAllResponses(ProtoCommonSerializerBuilder.serializeApiCallRc(apiCallRcRef))
+                .setSuccess(successRef)
                 .build()
                 .writeDelimitedTo(baos);
         }
