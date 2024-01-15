@@ -65,6 +65,7 @@ public class MixedStorPoolHelper
         if (hasMixedStoragePools(storPoolSet))
         {
             ensureAllStltsHaveDrbdVersion(storPoolSet);
+            ensureNoGrossSize(vlmDfn);
             try
             {
                 rscDfn.getProps(sysCtx)
@@ -91,6 +92,29 @@ public class MixedStorPoolHelper
             );
         }
         catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private void ensureNoGrossSize(VolumeDefinition vlmDfnRef)
+    {
+        try
+        {
+            // TODO: moving the size-calculations to the server project is NOT enough to remove this check
+            // To properly remove this check, we need DRBD support to set the specific size of the DRBD device
+            // regardless of the size of the backing disk
+            if (vlmDfnRef.getFlags().isSet(sysCtx, VolumeDefinition.Flags.GROSS_SIZE))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_SP_MIXING_NOT_ALLOWED,
+                        "Mixed Storage pools is (currently) not allowed with gross-sizes"
+                    )
+                );
+            }
+        }
+        catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
