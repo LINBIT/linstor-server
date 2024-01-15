@@ -25,11 +25,13 @@ public class HexViewer
         {
             isDisplayChar[ch] = true;
         }
-        for (char ch : DISPLAY_SPECIAL_CHARS.toCharArray())
+        for (byte spec_char : DISPLAY_SPECIAL_CHARS.getBytes())
         {
-            int value = ch;
+            // -128 to 127
+            int value = spec_char;
             if (value < 0)
             {
+                // -128 + 256 == 128 .. -1 + 256 == 255 => value == 0 .. 255
                 value += 0x100;
             }
             isDisplayChar[value] = true;
