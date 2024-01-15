@@ -528,38 +528,44 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     protected void sslTasksCompleted()
         throws SSLException, IllegalMessageStateException, IOException
     {
+        ioRequest = false;
         SSLEngineResult.HandshakeStatus hsStatus = sslEngine.getHandshakeStatus();
-        try
+        while (!ioRequest && hsStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)
         {
-            SSLEngineResult.Status trafficStatus = sslHandshake(hsStatus, false);
-            if (trafficStatus == SSLEngineResult.Status.CLOSED)
+            try
             {
-                sslEngine.closeInbound();
+                SSLEngineResult.Status trafficStatus = sslHandshake(hsStatus, false);
+                if (trafficStatus == SSLEngineResult.Status.CLOSED)
+                {
+                    sslEngine.closeInbound();
+                    closeConnection(true);
+                    ioRequest = true;
+                }
+            }
+            catch (CancelledKeyException keyExc)
+            {
+                // Connection was closed, or the connector is shutting down and it will be closed
+            }
+            catch (IllegalMessageStateException msgStateExc)
+            {
+                throw new ImplementationError(msgStateExc);
+            }
+            catch (SSLException sslExc)
+            {
+                logSslException(sslExc);
                 closeConnection(true);
             }
-        }
-        catch (CancelledKeyException keyExc)
-        {
-            // Connection was closed, or the connector is shutting down and it will be closed
-        }
-        catch (IllegalMessageStateException msgStateExc)
-        {
-            throw new ImplementationError(msgStateExc);
-        }
-        catch (SSLException sslExc)
-        {
-            logSslException(sslExc);
-            closeConnection(true);
-        }
-        catch (IOException ioExc)
-        {
-            // I/O error; typically through sslHandshake -> executeSslTasks,
-            // if spawning an asynchronous SSL task fails
-            getErrorReporter().reportError(
-                Level.TRACE, ioExc, getAccessContext(), this,
-                "I/O error during asynchronous SSL task completion"
-            );
-            closeConnection(true);
+            catch (IOException ioExc)
+            {
+                // I/O error; typically through sslHandshake -> executeSslTasks,
+                // if spawning an asynchronous SSL task fails
+                getErrorReporter().reportError(
+                    Level.TRACE, ioExc, getAccessContext(), this,
+                    "I/O error during asynchronous SSL task completion"
+                );
+                closeConnection(true);
+            }
+            hsStatus = sslEngine.getHandshakeStatus();
         }
     }
 
