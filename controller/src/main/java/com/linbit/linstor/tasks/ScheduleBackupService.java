@@ -269,12 +269,15 @@ public class ScheduleBackupService implements SystemService
                     AbsRemote remote = remoteRepo.get(accCtx, new RemoteName(keyParts[0]));
                     Schedule schedule = scheduleRepo.get(accCtx, new ScheduleName(keyParts[1]));
                     addNewTask(rscDfn, schedule, remote, false, accCtx);
-                    rc.addEntry(
-                        "Resource Definition " + rscDfn.getName().displayValue +
-                            " sucessfully set to be shipped per schedule " + schedule.getName().displayValue +
-                            " to remote " + remote.getName().displayValue + ".",
-                        ApiConsts.MASK_SCHEDULE | ApiConsts.CREATED
-                    );
+                    if (remote != null && schedule != null)
+                    {
+                        rc.addEntry(
+                            "Resource Definition " + rscDfn.getName().displayValue +
+                                " sucessfully set to be shipped per schedule " + schedule.getName().displayValue +
+                                " to remote " + remote.getName().displayValue + ".",
+                            ApiConsts.MASK_SCHEDULE | ApiConsts.CREATED
+                        );
+                    }
                 }
             }
             return rc;
