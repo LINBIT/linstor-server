@@ -1457,6 +1457,9 @@ public class DrbdLayer implements DeviceLayer
                                     {
                                         drbdVlmData.setFailed(true);
                                         drbdRscData.setAdjustRequired(true);
+                                        // if we are unintentionally diskless, we should check our metadata as soon as
+                                        // we have our disk again
+                                        drbdVlmData.setCheckMetaData(true);
                                     }
                                     else
                                     {
