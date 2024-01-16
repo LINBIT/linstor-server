@@ -31,12 +31,12 @@ public class AbsLayerHelperUtils
         AccessContext apiCtx,
         AbsVolume<RSC> absVlmRef,
         AbsRscData<RSC, ? extends VlmProviderObject<RSC>> rscLayerData,
-        StorPool storPool,
+        @Nullable StorPool storPool,
         Map<String, String> renameStorPoolMap,
         @Nullable ApiCallRc apiCallRc
     ) throws AccessDeniedException, InvalidNameException
     {
-        return storPool == null ? 
+        return storPool == null ?
             null :
             getStorPool(
                 apiCtx,

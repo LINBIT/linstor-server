@@ -27,6 +27,7 @@ info:
       - Added stor_pool_free_capacity_oversubscription_ratio and stor_pool_total_capacity_oversubscription_ratio to QuerySizeInfoSpawnResult
       - Added GET /v1/files/{extFileName}/check/{node}
       - Added ExtFileCheckResult
+      - Added storpool_rename to SnapshotRestore and BackupSchedule
     * 1.20.2
       - Added EffectivePropertiesMap, EffectivePropertiesMapValue and PropertyWithDescription objects
     * 1.20.1

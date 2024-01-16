@@ -268,16 +268,15 @@ public class CtrlBackupL2LSrcApiCallHandler
         }
         Date now = new Date();
         String backupName = BackupShippingUtils.generateBackupName(now);
-        Map<String, String> storPoolRenameMap;
-        if (storPoolRenameRef == null)
+        Map<String, String> storPoolRenameMap = new HashMap<>();
+        if (storPoolRenameRef != null)
         {
-            storPoolRenameMap = new HashMap<>();
+            storPoolRenameMap.putAll(storPoolRenameRef);
         }
-        else
+        if (dstStorPoolRef != null)
         {
-            storPoolRenameMap = new HashMap<>(storPoolRenameRef);
+            storPoolRenameMap.put(AbsLayerHelperUtils.RENAME_STOR_POOL_DFLT_KEY, dstStorPoolRef);
         }
-        storPoolRenameMap.put(AbsLayerHelperUtils.RENAME_STOR_POOL_DFLT_KEY, dstStorPoolRef);
         BackupShippingData data = new BackupShippingData(
             srcClusterId,
             srcNodeNameRef,

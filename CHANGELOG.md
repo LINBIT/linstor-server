@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added BalanceResourcesTask that in the first version tries to keep the resource-group place-count for resources
 - Added MathUtils methods for integer-based square root, exponentiation, prime factorization, LCM and GCD calculation
 - Added new checkExtFiles-API
+- Schedule enable and snapshot restore now have a --storpool-rename option
 
 ### Changed
 
@@ -28,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Make-Available will now retry auto-place with no restrictions on diskless resources
 - StoragePoolMixing is now based on extent-sizes and thin/thick. Also changed implementation
 - Autoplacer now also allows for mixed storage pools if the corresponding property allows
+- Backup ship now uses the --target-storpool as a default storpool name
 
 ### Fixed
 
