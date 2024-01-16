@@ -506,7 +506,8 @@ public class CtrlScheduledBackupsApiCallHandler
         String scheduleNameRef,
         String nodeNameRef,
         String dstStorPool,
-        Map<String, String> storpoolRename
+        Map<String, String> storpoolRename,
+        boolean forceRestoreRef
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -522,7 +523,8 @@ public class CtrlScheduledBackupsApiCallHandler
                 nodeNameRef,
                 dstStorPool,
                 storpoolRename,
-                true
+                true,
+                forceRestoreRef
             )
         );
     }
@@ -551,6 +553,7 @@ public class CtrlScheduledBackupsApiCallHandler
                 nodeNameRef,
                 null,
                 null,
+                false,
                 false
             )
         );
@@ -567,7 +570,8 @@ public class CtrlScheduledBackupsApiCallHandler
         String nodeNameRef,
         @Nullable String dstStorPool,
         @Nullable Map<String, String> storpoolRename,
-        boolean add
+        boolean add,
+        boolean forceRestore
     ) throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
     {
         AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
@@ -611,6 +615,15 @@ public class CtrlScheduledBackupsApiCallHandler
                     namespace
                 );
             }
+            if (add && forceRestore)
+            {
+                propsRef.setProp(
+                    InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue +
+                        Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR +
+                        InternalApiConsts.KEY_FORCE_RESTORE,
+                    ApiConsts.VAL_TRUE
+                );
+            }
             rscDfnsToCheck.add(rscDfn);
             msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully " + (add ? "enabled" : "disabled") +
                 " for resource definition '" + rscNameRef + "' to remote '" + remoteNameRef + "'.";
@@ -638,6 +651,15 @@ public class CtrlScheduledBackupsApiCallHandler
                     InternalApiConsts.KEY_RENAME_STORPOOL_MAP + Props.PATH_SEPARATOR + renameEntry.getKey(),
                     renameEntry.getValue(),
                     namespace
+                );
+            }
+            if (add && forceRestore)
+            {
+                propsRef.setProp(
+                    InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue +
+                        Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR +
+                        InternalApiConsts.KEY_FORCE_RESTORE,
+                    ApiConsts.VAL_TRUE
                 );
             }
             rscDfnsToCheck.addAll(rscGrp.getRscDfns(peerAccCtx.get()));
@@ -668,6 +690,16 @@ public class CtrlScheduledBackupsApiCallHandler
                     InternalApiConsts.KEY_RENAME_STORPOOL_MAP + Props.PATH_SEPARATOR + renameEntry.getKey(),
                     renameEntry.getValue(),
                     namespace
+                );
+            }
+            if (add && forceRestore)
+            {
+                systemConfRepository.setCtrlProp(
+                    peerAccCtx.get(),
+                    remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue +
+                        Props.PATH_SEPARATOR + InternalApiConsts.KEY_FORCE_RESTORE,
+                    ApiConsts.VAL_TRUE,
+                    InternalApiConsts.NAMESPC_SCHEDULE
                 );
             }
             rscDfnsToCheck.addAll(rscDfnRepo.getMapForView(peerAccCtx.get()).values());

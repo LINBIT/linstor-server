@@ -13,11 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow users to provide their own encryption passphrase for volumes
 - Allow users to provide their own encryption passphrase after cloning
 - Allow users to change the passphrase for a luks volume definition
+- Backup ship, restore and scheduled backups now have a --force-restore option
 
-- ### Changed
+### Changed
 
 - Default configuration directory for linstor-database utility (export-db and import-db) is now "/etc/linstor"
-
 
 ## [1.26.2] - 2024-02-28
 

@@ -3,6 +3,7 @@
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
 ## [Unreleased]
+  - Added force_restore parameter to backup ship, restore and schedule backups
 
 ### Added
   - Added volume_passphrases to resource-group spawn

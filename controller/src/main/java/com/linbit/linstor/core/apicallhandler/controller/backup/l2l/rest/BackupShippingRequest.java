@@ -38,6 +38,7 @@ public class BackupShippingRequest
     public final @Nullable String dstStorPool;
     public final boolean useZstd;
     public final boolean downloadOnly;
+    public final boolean forceRestore;
     public final boolean resetData;
     public final @Nullable String dstBaseSnapName;
     public final String dstActualNodeName;
@@ -57,6 +58,7 @@ public class BackupShippingRequest
         @JsonProperty("storPoolRenameMap") @Nullable Map<String, String> storPoolRenameMapRef,
         @JsonProperty("useZstd") boolean useZstdRef,
         @JsonProperty("downloadOnly") boolean downloadOnlyRef,
+        @JsonProperty("forceRestore") boolean forceRestoreRef,
         @JsonProperty("resetData") boolean resetDataRef,
         @JsonProperty("dstBaseSnapName") @Nullable String dstBaseSnapNameRef,
         @JsonProperty("dstActualNodeName") @Nullable String dstActualNodeNameRef
@@ -78,6 +80,7 @@ public class BackupShippingRequest
         dstStorPool = dstStorPoolRef;
         useZstd = useZstdRef;
         downloadOnly = downloadOnlyRef;
+        forceRestore = forceRestoreRef;
         resetData = resetDataRef;
         dstBaseSnapName = dstBaseSnapNameRef;
         dstActualNodeName = dstActualNodeNameRef;

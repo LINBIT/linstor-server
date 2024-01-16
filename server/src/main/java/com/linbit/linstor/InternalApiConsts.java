@@ -174,6 +174,7 @@ public class InternalApiConsts
     public static final String NAMESPC_SCHEDULE = "Schedule";
     public static final String KEY_TRIPLE_ENABLED = "Enabled";
     public static final String KEY_SCHEDULE_PREF_NODE = "PrefNode";
+    public static final String KEY_FORCE_RESTORE = "ForceRestore";
     public static final String KEY_LAST_BACKUP_TIME = "LastBackupTime";
     public static final String KEY_LAST_BACKUP_INC = "LastBackupInc";
     public static final String KEY_BACKUP_SHIPPED_BY_SCHEDULE = "BackupShippedBySchedule";

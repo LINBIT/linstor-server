@@ -897,6 +897,9 @@ public class CtrlConfApiCallHandler
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT:
                             // fall-through
+                        case ApiConsts.NAMESPC_BACKUP_SHIPPING + Props.PATH_SEPARATOR +
+                            ApiConsts.KEY_ALLOW_FORCE_RESTORE:
+                            // fall-through
                         case BackupConsts.CONCURRENT_BACKUPS_KEY:
                             // fall-through
                         case ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND:

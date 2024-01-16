@@ -177,6 +177,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         @Nullable String dstStorPoolRef,
         @Nullable Map<String, String> storPoolRenameRef,
         boolean downloadOnly,
+        boolean forceRestore,
         String scheduleNameRef,
         boolean allowIncremental,
         boolean runInBackgroundRef
@@ -197,6 +198,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                 dstStorPoolRef,
                 storPoolRenameRef,
                 downloadOnly,
+                forceRestore,
                 scheduleNameRef,
                 allowIncremental,
                 runInBackgroundRef
@@ -214,6 +216,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         String dstStorPoolRef,
         Map<String, String> storPoolRenameRef,
         boolean downloadOnly,
+        boolean forceRestore,
         String scheduleNameRef,
         boolean allowIncremental,
         boolean runInBackgroundRef
@@ -290,6 +293,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             dstStorPoolRef,
             storPoolRenameMap,
             downloadOnly,
+            forceRestore,
             scheduleNameRef,
             allowIncremental
         );
@@ -847,6 +851,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                                     data.storPoolRename,
                                     data.useZstd,
                                     data.downloadOnly,
+                                    data.forceRestore,
                                     data.resetData,
                                     data.dstBaseSnapName,
                                     data.dstActualNodeName
@@ -1019,6 +1024,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         private final LinstorRemote linstorRemote;
         private boolean useZstd;
         private boolean downloadOnly;
+        private boolean forceRestore;
         private boolean allowIncremental;
 
         private BackupMetaDataPojo metaDataPojo;
@@ -1047,6 +1053,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             String dstStorPoolRef,
             Map<String, String> storPoolRenameRef,
             boolean downloadOnlyRef,
+            boolean forceRestoreRef,
             String scheduleNameRef,
             boolean allowIncrementalRef
         )
@@ -1063,6 +1070,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             dstStorPool = dstStorPoolRef;
             storPoolRename = storPoolRenameRef;
             downloadOnly = downloadOnlyRef;
+            forceRestore = forceRestoreRef;
             scheduleName = scheduleNameRef;
             allowIncremental = allowIncrementalRef;
         }

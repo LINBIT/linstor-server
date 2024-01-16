@@ -35,12 +35,14 @@ public class BackupShippingTask implements TaskScheduleService.Task
     private final BackupShippingtaskConfig cfg;
 
     private boolean incremental;
+    private boolean forceRestore;
 
     public BackupShippingTask(BackupShippingtaskConfig baseTaskObjectsRef)
     {
         cfg = baseTaskObjectsRef;
 
         incremental = cfg.isIncremental();
+        forceRestore = cfg.isForceRestore();
     }
 
     @Override
@@ -89,7 +91,8 @@ public class BackupShippingTask implements TaskScheduleService.Task
                     null,
                     null,
                     conf.storpoolRenameMap,
-                    true,
+                    !forceRestore,
+                    forceRestore,
                     conf.schedule.getName().displayValue,
                     inc,
                     true

@@ -146,7 +146,13 @@ public class Backups
         {
             JsonGenTypes.BackupRestore data = objectMapper.readValue(jsonData, JsonGenTypes.BackupRestore.class);
 
-            validateBackupSelectionParams(data.last_backup, data.src_rsc_name, data.src_snap_name);
+            validateBackupSelectionParams(
+                data.last_backup,
+                data.src_rsc_name,
+                data.src_snap_name,
+                data.download_only,
+                data.force_restore
+            );
 
             responses = backupRestoreApiCallHandler.restoreBackup(
                 data.src_rsc_name,
@@ -157,7 +163,8 @@ public class Backups
                 data.target_rsc_name,
                 remoteName,
                 data.passphrase,
-                data.download_only
+                data.download_only,
+                data.force_restore
             ).contextWrite(requestHelper.createContext(ApiConsts.API_RESTORE_BACKUP, request));
                 requestHelper.doFlux(asyncResponse,ApiCallRcRestUtils.mapToMonoResponse(responses, Response.Status.CREATED));
         }
@@ -332,6 +339,7 @@ public class Backups
                 data.dst_stor_pool,
                 data.stor_pool_rename,
                 data.download_only,
+                data.force_restore,
                 null,
                 data.allow_incremental,
                 false
@@ -362,7 +370,7 @@ public class Backups
             JsonGenTypes.BackupInfoRequest data = objectMapper
                 .readValue(jsonData, JsonGenTypes.BackupInfoRequest.class);
 
-            validateBackupSelectionParams(data.last_backup, data.src_rsc_name, data.src_snap_name);
+            validateBackupSelectionParams(data.last_backup, data.src_rsc_name, data.src_snap_name, false, false);
 
             boolean renameMapNullOrEmpty = data.stor_pool_map == null || data.stor_pool_map.isEmpty();
             boolean nodeNameNullOrEmpty = data.node_name == null || data.node_name.isEmpty();
@@ -417,7 +425,8 @@ public class Backups
                     scheduleName,
                     data.node_name,
                     data.dst_stor_pool,
-                    data.stor_pool_rename
+                    data.stor_pool_rename,
+                    data.force_restore
                 )
                 .contextWrite(requestHelper.createContext(ApiConsts.API_CRT_BACKUP, request));
             requestHelper.doFlux(
@@ -504,7 +513,13 @@ public class Backups
         }).next();
     }
 
-    private static void validateBackupSelectionParams(String backupIdRef, String rscNameRef, String snapNameRef)
+    private static void validateBackupSelectionParams(
+        String backupIdRef,
+        String rscNameRef,
+        String snapNameRef,
+        boolean downloadOnly,
+        boolean forceRestore
+    )
         throws ApiRcException
     {
         String backupId = (backupIdRef == null) ? "" : backupIdRef;
@@ -517,6 +532,15 @@ public class Backups
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_REQUEST,
                     "One of backup ID, resource name or snapshot name is required, but none was given"
+                )
+            );
+        }
+        if (downloadOnly && forceRestore)
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.FAIL_INVLD_REQUEST,
+                    "--download-only and --force-restore are mutually exclusive, use at most one of them."
                 )
             );
         }

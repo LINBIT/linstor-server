@@ -8074,6 +8074,9 @@ components:
         download_only:
           type: boolean
           default: false
+        force_restore:
+          type: boolean
+          default: false
     BackupCreate:
       type: object
       required:
@@ -8121,6 +8124,9 @@ components:
           additionalProperties:
             type: string
         download_only:
+          type: boolean
+          default: false
+        force_restore:
           type: boolean
           default: false
         allow_incremental:
@@ -8224,6 +8230,9 @@ components:
           type: object
           additionalProperties:
             type: string
+        force_restore:
+          type: boolean
+          default: false
     ScheduleDetailsList:
       type: object
       properties:

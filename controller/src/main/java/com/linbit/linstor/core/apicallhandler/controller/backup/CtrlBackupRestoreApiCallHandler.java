@@ -7,6 +7,7 @@ import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -29,6 +30,7 @@ import com.linbit.linstor.backupshipping.S3MetafileNameInfo;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDeleteApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallHandler;
@@ -58,6 +60,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
+import com.linbit.linstor.core.objects.SnapshotDefinition.Flags;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
@@ -67,6 +70,7 @@ import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
+import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerSizeHelper;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -78,6 +82,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
@@ -124,6 +129,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import org.slf4j.event.Level;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -156,6 +162,8 @@ public class CtrlBackupRestoreApiCallHandler
     private final CtrlBackupApiCallHandler backupApiCallHandler;
     private final BackupShippingRestClient backupShippingRestClient;
     private final LayerSizeHelper layerSizeHelper;
+    private final SystemConfRepository systemConfRepository;
+    private final CtrlRscDeleteApiCallHandler ctrlRscDelApiCallHandler;
 
     @Inject
     public CtrlBackupRestoreApiCallHandler(
@@ -185,7 +193,9 @@ public class CtrlBackupRestoreApiCallHandler
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandlerRef,
         CtrlBackupApiCallHandler backupApiCallHandlerRef,
         BackupShippingRestClient backupShippingRestClientRef,
-        LayerSizeHelper layerSizeHelperRef
+        LayerSizeHelper layerSizeHelperRef,
+        SystemConfRepository systemConfRepositoryRef,
+        CtrlRscDeleteApiCallHandler ctrlRscDelApiCallHandlerRef
     )
     {
         freeCapacityFetcher = freeCapacityFetcherRef;
@@ -215,6 +225,8 @@ public class CtrlBackupRestoreApiCallHandler
         backupApiCallHandler = backupApiCallHandlerRef;
         backupShippingRestClient = backupShippingRestClientRef;
         layerSizeHelper = layerSizeHelperRef;
+        systemConfRepository = systemConfRepositoryRef;
+        ctrlRscDelApiCallHandler = ctrlRscDelApiCallHandlerRef;
     }
 
     public Flux<ApiCallRc> restoreBackup(
@@ -226,7 +238,8 @@ public class CtrlBackupRestoreApiCallHandler
         String targetRscName,
         String remoteName,
         String passphrase,
-        boolean downloadOnly
+        boolean downloadOnly,
+        boolean forceRestore
     )
     {
         return freeCapacityFetcher
@@ -246,7 +259,8 @@ public class CtrlBackupRestoreApiCallHandler
                         targetRscName,
                         remoteName,
                         passphrase,
-                        downloadOnly
+                        downloadOnly,
+                        forceRestore
                     )
                 )
             );
@@ -272,7 +286,8 @@ public class CtrlBackupRestoreApiCallHandler
         String targetRscName,
         String remoteName,
         String passphrase,
-        boolean downloadOnly
+        boolean downloadOnly,
+        boolean forceRestore
     ) throws AccessDeniedException, InvalidNameException
     {
         // 1. Ensure node is ready
@@ -444,7 +459,8 @@ public class CtrlBackupRestoreApiCallHandler
                     metadata.objB,
                     responses,
                     resetData,
-                    downloadOnly
+                    downloadOnly,
+                    forceRestore
                 );
                 allSnaps.add(snap);
                 // all other "basedOn" snapshots should not change props / size / etc..
@@ -526,7 +542,8 @@ public class CtrlBackupRestoreApiCallHandler
         BackupMetaDataPojo metadata,
         ApiCallRcImpl responses,
         boolean resetData,
-        boolean downloadOnly
+        boolean downloadOnly,
+        boolean forceRestore
     )
         throws AccessDeniedException, ImplementationError, DatabaseException
     {
@@ -597,7 +614,14 @@ public class CtrlBackupRestoreApiCallHandler
         // 3. Create definitions based on metadata
         SnapshotName snapName = LinstorParsingUtils.asSnapshotName(metafileNameInfo.snapName);
         ResourceDefinition rscDfn = getRscDfnForBackupRestore(targetRscName, snapName, metadata, resetData);
-        SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(metadata, snapName, rscDfn, responses, downloadOnly);
+        SnapshotDefinition snapDfn = getSnapDfnForBackupRestore(
+            metadata,
+            snapName,
+            rscDfn,
+            responses,
+            downloadOnly,
+            forceRestore
+        );
         Map<Integer, SnapshotVolumeDefinition> snapVlmDfns = new TreeMap<>();
         createSnapVlmDfnForBackupRestore(
             targetRscName,
@@ -872,7 +896,8 @@ public class CtrlBackupRestoreApiCallHandler
         SnapshotName snapName,
         ResourceDefinition rscDfn,
         ApiCallRcImpl responsesRef,
-        boolean downloadOnly
+        boolean downloadOnly,
+        boolean forceRestore
     )
         throws AccessDeniedException, DatabaseException
     {
@@ -895,18 +920,27 @@ public class CtrlBackupRestoreApiCallHandler
             SnapshotDefinition.Flags.BACKUP
         );
 
-        if (rscDfn.getResourceCount() != 0)
+        int rscCt = rscDfn.getResourceCount();
+        if (rscCt != 0)
         {
-            responsesRef.addEntry(
-                ApiCallRcImpl.simpleEntry(
-                    ApiConsts.WARN_BACKUP_DL_ONLY,
-                    "The target resource-definition is already deployed on nodes. " +
-                        "After downloading the Backup Linstor will NOT restore the data to prevent unintentional " +
-                        "data-loss."
-                )
-            );
+            if (rscCt == 1 && forceRestore)
+            {
+                snapDfn.getFlags()
+                    .enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.FORCE_RESTORE_BACKUP_ON_SUCCESS);
+            }
+            else if (!downloadOnly)
+            {
+                responsesRef.addEntry(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.WARN_BACKUP_DL_ONLY,
+                        "The target resource-definition is already deployed on nodes. " +
+                            "After downloading the Backup Linstor will NOT restore the data to prevent unintentional " +
+                            "data-loss."
+                    )
+                );
+            }
         }
-        else if (!downloadOnly)
+        else if (!downloadOnly) // ignore forceRestore, nothing to force
         {
             snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS);
         }
@@ -1021,7 +1055,14 @@ public class CtrlBackupRestoreApiCallHandler
             Set<StorPool> storPools;
             Snapshot snap = null;
 
-            snapDfn = getSnapDfnForBackupRestore(data.metaData, data.snapName, rscDfn, responses, data.downloadOnly);
+            snapDfn = getSnapDfnForBackupRestore(
+                data.metaData,
+                data.snapName,
+                rscDfn,
+                responses,
+                data.downloadOnly,
+                data.forceRestore
+            );
             // 10. create vlmDfn(s)
             // 11. create snapVlmDfn(s)
             long totalSize = createSnapVlmDfnForBackupRestore(
@@ -1558,7 +1599,8 @@ public class CtrlBackupRestoreApiCallHandler
                 Snapshot snap = snapDfn.getSnapshot(peerCtx, nodeName);
                 boolean deletingSnap = false;
 
-                snapDfn.getFlags().disableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
+                StateFlags<Flags> snapDfnFlags = snapDfn.getFlags();
+                snapDfnFlags.disableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
                 if (snap != null && !snap.isDeleted())
                 {
                     snap.getProps(peerCtx).removeProp(
@@ -1579,7 +1621,7 @@ public class CtrlBackupRestoreApiCallHandler
                     Snapshot nextSnap = backupInfoMgr.getNextBackupToDownload(snap);
                     if (successRef && nextSnap != null)
                     {
-                        snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
+                        snapDfnFlags.enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
                         backupInfoMgr.abortRestoreDeleteEntry(rscNameRef, snap);
                         SnapshotDefinition nextSnapDfn = nextSnap.getSnapshotDefinition();
                         nextSnapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPING);
@@ -1603,20 +1645,89 @@ public class CtrlBackupRestoreApiCallHandler
                     {
                         if (successRef)
                         {
-                            snapDfn.getFlags().enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
+                            snapDfnFlags.enableFlags(peerCtx, SnapshotDefinition.Flags.SHIPPED);
                             backupInfoMgr.removeAllRestoreEntries(snapDfn.getResourceDefinition(), rscNameRef, snap);
                             // start snap-restore
-                            if (snapDfn.getFlags().isSet(peerCtx, SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS))
+                            int rscCt = snapDfn.getResourceDefinition().getResourceCount();
+                            if (snapDfnFlags.isSet(peerCtx, SnapshotDefinition.Flags.FORCE_RESTORE_BACKUP_ON_SUCCESS) &&
+                                rscCt > 0)
                             {
-                                // make sure to not restore it a second time
-                                snapDfn.getFlags().disableFlags(
-                                    peerCtx,
-                                    SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS
+                                PriorityProps prioProps = new PriorityProps(
+                                    snapDfn.getResourceDefinition().getProps(peerCtx),
+                                    snapDfn.getResourceDefinition().getResourceGroup().getProps(peerCtx),
+                                    systemConfRepository.getCtrlConfForView(peerCtx)
                                 );
-                                flux = ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
-                                    Collections.emptyList(),
-                                    snapNameRef,
-                                    rscNameRef
+                                boolean forceRestoreAllowed = ApiConsts.VAL_TRUE.equalsIgnoreCase(
+                                    prioProps.getProp(
+                                        ApiConsts.KEY_ALLOW_FORCE_RESTORE,
+                                        ApiConsts.NAMESPC_BACKUP_SHIPPING,
+                                        ApiConsts.VAL_TRUE
+                                    )
+                                );
+                                boolean inUse = snapDfn.getResourceDefinition().anyResourceInUse(peerCtx).isPresent();
+                                if (forceRestoreAllowed && !inUse && rscCt == 1)
+                                {
+                                    flux = ctrlRscDelApiCallHandler.deleteResource(nodeName.displayValue, rscNameRef);
+                                }
+                                else
+                                {
+                                    List<String> problemDetails = new ArrayList<>();
+                                    if (!forceRestoreAllowed)
+                                    {
+                                        problemDetails.add(
+                                            String.format(
+                                                " * The property %s/%s is not effectively set to False on the target " +
+                                                    "resource-definition (property is inherited from resource-group " +
+                                                    "and controller)",
+                                                ApiConsts.NAMESPC_BACKUP_SHIPPING,
+                                                ApiConsts.KEY_ALLOW_FORCE_RESTORE
+                                            )
+                                        );
+                                    }
+                                    if (inUse)
+                                    {
+                                        problemDetails.add(" * The target resource-definition is not in use");
+                                    }
+                                    if (rscCt > 1)
+                                    {
+                                        problemDetails.add(" * The target resource-definition has at most 1 resource");
+                                    }
+                                    if (!problemDetails.isEmpty())
+                                    {
+                                        errorReporter.reportProblem(
+                                            Level.WARN,
+                                            new LinStorException(
+                                                "Force restore option was used, but conditions are not met",
+                                                null,
+                                                null,
+                                                null,
+                                                "Make sure that: \n" + StringUtils.join(problemDetails, "\n")
+                                            ),
+                                            peerCtx,
+                                            null,
+                                            snapNameRef
+                                        );
+                                        // disables both, FORCE_RESTORE and RESTORE
+                                        snapDfnFlags.disableFlags(
+                                            peerCtx,
+                                            SnapshotDefinition.Flags.FORCE_RESTORE_BACKUP_ON_SUCCESS
+                                        );
+                                    }
+                                }
+                            }
+                            if (snapDfnFlags.isSet(peerCtx, SnapshotDefinition.Flags.RESTORE_BACKUP_ON_SUCCESS))
+                            {
+                                // make sure to not restore it a second time; FORCE_RESTORE... disables both flags
+                                snapDfnFlags.disableFlags(
+                                    peerCtx,
+                                    SnapshotDefinition.Flags.FORCE_RESTORE_BACKUP_ON_SUCCESS
+                                );
+                                flux = flux.concatWith(
+                                    ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
+                                        Collections.emptyList(),
+                                        snapNameRef,
+                                        rscNameRef
+                                    )
                                 );
                             }
                             else

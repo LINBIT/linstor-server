@@ -169,6 +169,7 @@ public class BackupShippingInternal
                 shipRequest.storPoolRenameMap,
                 shipRequest.useZstd,
                 shipRequest.downloadOnly,
+                shipRequest.forceRestore,
                 shipRequest.srcL2LRemoteName, // linstorRemoteName, not StltRemoteName
                 shipRequest.srcStltRemoteName,
                 shipRequest.resetData,

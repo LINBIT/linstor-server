@@ -380,6 +380,7 @@ public class ScheduleBackupService implements SystemService
             {
                 String prefNode = null;
                 Map<String, String> renameStorpoolMap = new HashMap<>();
+                boolean forceRestore = false;
                 try (LockGuard lg = lockGuardFactory.build(LockType.READ, LockObj.RSC_DFN_MAP, LockObj.RSC_GRP_MAP))
                 {
                     PriorityProps prioProps = new PriorityProps(
@@ -401,6 +402,14 @@ public class ScheduleBackupService implements SystemService
                     prefNode = prioProps.getProp(
                         InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
                         namespace
+                    );
+                    // key for prefNode is {remoteName}/{scheduleName}/KEY_FORCE_RESTORE
+                    forceRestore = Boolean.parseBoolean(
+                        prioProps.getProp(
+                            remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue +
+                                Props.PATH_SEPARATOR + InternalApiConsts.KEY_FORCE_RESTORE,
+                            InternalApiConsts.NAMESPC_SCHEDULE
+                        )
                     );
                 }
                 ZonedDateTime now = ZonedDateTime.now();
@@ -442,6 +451,7 @@ public class ScheduleBackupService implements SystemService
                             rscDfn.getName().displayValue,
                             prefNode,
                             incremental,
+                            forceRestore,
                             lastStartTime
                         )
                     );
@@ -1009,6 +1019,7 @@ public class ScheduleBackupService implements SystemService
         private final String rscName;
         private final String nodeName;
         private final boolean incremental;
+        private final boolean forceRestore;
         private final long lastStartTime;
 
         private BackupShippingtaskConfig(
@@ -1017,6 +1028,7 @@ public class ScheduleBackupService implements SystemService
             String rscNameRef,
             String nodeNameRef,
             boolean incrementalRef,
+            boolean forceRestoreRef,
             long lastStartTimeRef
         )
         {
@@ -1025,6 +1037,7 @@ public class ScheduleBackupService implements SystemService
             rscName = rscNameRef;
             nodeName = nodeNameRef;
             incremental = incrementalRef;
+            forceRestore = forceRestoreRef;
             lastStartTime = lastStartTimeRef;
         }
 
@@ -1051,6 +1064,11 @@ public class ScheduleBackupService implements SystemService
         boolean isIncremental()
         {
             return incremental;
+        }
+
+        boolean isForceRestore()
+        {
+            return forceRestore;
         }
 
         long getLastStartTime()

@@ -297,6 +297,7 @@ public class CtrlBackupL2LDstApiCallHandler
         @Nullable Map<String, String> storPoolRenameMapRef,
         boolean useZstd,
         boolean downloadOnly,
+        boolean forceRestore,
         String srcL2LRemoteName, // linstorRemoteName, not StltRemoteName
         String srcStltRemoteName,
         boolean resetData,
@@ -335,6 +336,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     snapShipPorts,
                     useZstd,
                     downloadOnly,
+                    forceRestore,
                     resetData,
                     dstBaseSnapName,
                     dstActualNodeName
@@ -729,6 +731,7 @@ public class CtrlBackupL2LDstApiCallHandler
         public final Map<String, Integer> snapShipPorts;
         public boolean useZstd;
         public boolean downloadOnly;
+        public boolean forceRestore;
         public final boolean resetData;
         public final String dstBaseSnapName;
         public final String dstActualNodeName;
@@ -749,6 +752,7 @@ public class CtrlBackupL2LDstApiCallHandler
             Map<String, Integer> snapShipPortsRef,
             boolean useZstdRef,
             boolean downloadOnlyRef,
+            boolean forceRestoreRef,
             boolean resetDataRef,
             String dstBaseSnapNameRef,
             String dstActualNodeNameRef // the node that needs to do the receive
@@ -769,6 +773,7 @@ public class CtrlBackupL2LDstApiCallHandler
             snapShipPorts = snapShipPortsRef;
             useZstd = useZstdRef;
             downloadOnly = downloadOnlyRef;
+            forceRestore = forceRestoreRef;
             resetData = resetDataRef;
             dstBaseSnapName = dstBaseSnapNameRef;
             dstActualNodeName = dstActualNodeNameRef;

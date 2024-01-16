@@ -648,7 +648,8 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
         SHIPPED(1L << 7),
         AUTO_SNAPSHOT(1L << 8),
         BACKUP(1L << 9),
-        RESTORE_BACKUP_ON_SUCCESS(1L << 10)
+        RESTORE_BACKUP_ON_SUCCESS(1L << 10),
+        FORCE_RESTORE_BACKUP_ON_SUCCESS(1L << 11 | RESTORE_BACKUP_ON_SUCCESS.flagValue),
         ;
 
         public final long flagValue;
