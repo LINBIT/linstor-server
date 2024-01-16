@@ -14,6 +14,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.debug.HexViewer;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.IllegalMessageStateException;
 import com.linbit.linstor.netcom.TcpConnectorPeer;
@@ -32,6 +33,49 @@ import org.slf4j.event.Level;
  */
 public class SslTcpConnectorPeer extends TcpConnectorPeer
 {
+    // Begin debug logging flags
+
+    /**
+     * If enabled, generates INFO level log entries for tracking the SSLEngine state
+     */
+    private final boolean           DEBUG_SSL_STATE     = false;
+
+    /**
+     * If enabled, generates INFO level log entries for I/O operations
+     */
+    private final boolean           DEBUG_IO            = false;
+
+    /**
+     * If enabled, generates INFO level log entries with hex dumps of the contents of the network
+     * data buffers (encrypted data) before write and unwrap operations and after read and wrap operations
+     */
+    private final boolean           DEBUG_NET_DATA      = false;
+
+    /**
+     * If enabled, generates INFO level log entries with hex dumps of the contents of the application
+     * data buffers (unencrypted/decrypted data) before wrap operations and after unwrap operations
+     */
+    private final boolean           DEBUG_PLAIN_DATA    = false;
+
+    /**
+     * If enabled, generates INFO level log entries for tracking the state of concurrently executing
+     * SSLEngine delegated tasks
+     */
+    private final boolean           DEBUG_SSL_TASKS     = false;
+
+    /**
+     * If enabled, generates INFO level log entries for inbound and outbound LINSTOR messages
+     */
+    private final boolean           DEBUG_MSG_DATA      = false;
+
+    /**
+     * If enabled, generates INFO level log entries for buffer resize operations
+     */
+    private final boolean           DEBUG_BUFFER_RESIZE = false;
+
+    // End debug logging flags
+
+
     /**
      * clientMode: true if connecting, false if accepting connections
      */
@@ -196,6 +240,13 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
 
         sslEngine.beginHandshake();
 
+        if (DEBUG_IO || DEBUG_SSL_STATE)
+        {
+            debugLog(
+                "connectionEstablished: Initial I/O interest: " +
+                (clientMode ? "OP_WRITE" : "OP_READ") + " due to clientMode == " + Boolean.toString(clientMode)
+            );
+        }
         setInterestOps(clientMode ? SelectionKey.OP_WRITE : SelectionKey.OP_READ);
 
         super.connectionEstablished();
@@ -234,16 +285,29 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
 
         encryptedReadBuffer.compact();
         final int readSize = inChannel.read(encryptedReadBuffer);
+        if (DEBUG_IO)
+        {
+            debugLog("read: read " + readSize + " bytes");
+        }
 
         if (readSize >= 0)
         {
             encryptedReadBuffer.flip();
+
+            if (DEBUG_NET_DATA)
+            {
+                debugLogBufferContent("read: buffer data:", encryptedReadBuffer, encryptedReadBuffer.limit());
+            }
 
             SSLEngineResult.Status trafficStatus = null;
             ioRequest = false;
             while (!ioRequest)
             {
                 SSLEngineResult.HandshakeStatus hsStatus = sslEngine.getHandshakeStatus();
+                if (DEBUG_SSL_STATE)
+                {
+                    debugLog("read: SSL handshake status: " + hsStatus.name());
+                }
                 if (hsStatus == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)
                 { // SSL decrypt application data
                     sslReady = true;
@@ -257,6 +321,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
 
             if (trafficStatus == SSLEngineResult.Status.CLOSED)
             {
+                if (DEBUG_SSL_STATE || DEBUG_IO)
+                {
+                    debugLog("read: SSL status: " + trafficStatus.name() + ": Close connection");
+                }
                 sslEngine.closeInbound();
                 closeConnection(true);
                 rdState = ReadState.END_OF_STREAM;
@@ -264,6 +332,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         }
         else
         {
+            if (DEBUG_IO)
+            {
+                debugLog("read: 0 bytes read: Close connection");
+            }
             closeConnection(true);
             rdState = ReadState.END_OF_STREAM;
         }
@@ -293,11 +365,23 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         try
         {
             SSLEngineResult sslStatus = sslEngine.unwrap(encryptedReadBuffer, plainReadBuffer);
+            if (DEBUG_PLAIN_DATA)
+            {
+                debugLogBufferContent("sslInbound: buffer data:", plainReadBuffer, plainReadBuffer.position());
+            }
             trafficStatus = sslStatus.getStatus();
+            if (DEBUG_SSL_STATE)
+            {
+                debugLog("sslInbound: SSL status after unwrap: " + trafficStatus.name());
+            }
             if (trafficStatus == SSLEngineResult.Status.BUFFER_OVERFLOW)
             {
                 if (plainReadBuffer.position() == 0)
                 { // Buffer too small
+                    if (DEBUG_BUFFER_RESIZE)
+                    {
+                        debugLog("sslInbound: " + trafficStatus.name() + ": plainReadBuffer too small");
+                    }
                     adjustPlainReadBuffer();
                 }
             }
@@ -306,7 +390,15 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             {
                 if (encryptedReadBuffer.remaining() == encryptedReadBuffer.capacity())
                 { // Buffer too small
+                    if (DEBUG_BUFFER_RESIZE)
+                    {
+                        debugLog("sslInbound: " + trafficStatus.name() + ": encrytedReadBuffer too small");
+                    }
                     adjustEncryptedReadBuffer();
+                }
+                if (DEBUG_SSL_STATE || DEBUG_IO)
+                {
+                    debugLog("sslInbound: " + trafficStatus.name() + ": I/O required: OP_READ");
                 }
                 // Read more data into the buffer
                 enableInterestOps(SelectionKey.OP_READ);
@@ -369,6 +461,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         while (!ioRequest)
         {
             hsStatus = sslEngine.getHandshakeStatus();
+            if (DEBUG_SSL_STATE)
+            {
+                debugLog("write: SSL handshake status: " + hsStatus.name());
+            }
             if (hsStatus == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)
             { // SSL encrypt application data
                 sslReady = true;
@@ -384,6 +480,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                 // Typically from an unwrap/inbound operation; SSL shutdown not implemented as of Nov 21, 2023,
                 // LINSTOR just closes the network connection.
                 // Partial implementation for possible future use.
+                if (DEBUG_SSL_STATE || DEBUG_IO)
+                {
+                    debugLog("write: SSL status: " + trafficStatus.name() + ": Close connection");
+                }
                 sslEngine.closeInbound();
                 closeConnection(true);
             }
@@ -391,11 +491,23 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
 
         // Send encrypted data
         encryptedWriteBuffer.flip();
+        if (DEBUG_NET_DATA)
+        {
+            debugLogBufferContent("write: buffer data:", encryptedWriteBuffer, encryptedWriteBuffer.limit());
+        }
         final int writeSize = outChannel.write(encryptedWriteBuffer);
+        if (DEBUG_IO)
+        {
+            debugLog("write: wrote " + writeSize + " bytes");
+        }
         if (encryptedWriteBuffer.hasRemaining())
         {
             // Case 1: Not all data could be sent, make sure OP_WRITE is enabled, so the rest of the data can
             //         be sent later
+            if (DEBUG_IO)
+            {
+                debugLog("write: I/O required: OP_WRITE (Case 1, Buffer contains data)");
+            }
             enableInterestOps(SelectionKey.OP_WRITE);
         }
         else
@@ -403,21 +515,37 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         {
             // Case 2: The SSL handshake has produced data that was sent, but needs to be invoked again, because
             //         it might need to send data again
+            if (DEBUG_IO)
+            {
+                debugLog("write: I/O required: OP_WRITE (Case 2, " + hsStatus.name() + ")");
+            }
             enableInterestOps(SelectionKey.OP_WRITE);
         }
         else
         if (hsStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING &&
             hsStatus != SSLEngineResult.HandshakeStatus.FINISHED)
-        { // SSL handshake in progress
+        { // Case 3: SSL handshake in progress
+            if (DEBUG_IO)
+            {
+                debugLog("write: Disable I/O: OP_WRITE (Case 3, " + hsStatus.name() + ")");
+            }
             disableInterestOps(SelectionKey.OP_WRITE);
         }
         else
         if (msgOut != null)
-        { // SSL handshake not in progress and more application messages pending
+        { // Case 4: SSL handshake not in progress and more application messages pending
+            if (DEBUG_IO)
+            {
+                debugLog("write: I/O required: OP_WRITE (Case 4, Outbound message pending)");
+            }
             enableInterestOps(SelectionKey.OP_WRITE);
         }
         else
         {
+            if (DEBUG_IO)
+            {
+                debugLog("write: Disable I/O: OP_WRITE (Default case)");
+            }
             disableInterestOps(SelectionKey.OP_WRITE);
         }
 
@@ -452,25 +580,67 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                 switch (currentWritePhase)
                 {
                     case HEADER:
+                    {
                         final ByteBuffer headerBuffer = msgOut.getHeaderBuffer();
+                        if (DEBUG_PLAIN_DATA)
+                        {
+                            debugLogBufferContent(
+                                "sslOutbound: wrap: buffer data:",
+                                headerBuffer, headerBuffer.limit()
+                            );
+                        }
                         sslStatus = sslEngine.wrap(headerBuffer, encryptedWriteBuffer);
+                        if (DEBUG_SSL_STATE)
+                        {
+                            debugLog("sslOutbound: SSL status after wrap: " + sslStatus.getStatus().name());
+                        }
                         if (!headerBuffer.hasRemaining())
                         {
                             currentWritePhase = currentWritePhase.getNextPhase();
                         }
                         break;
+                    }
                     case DATA:
+                    {
                         final ByteBuffer dataBuffer = msgOut.getDataBuffer();
+                        if (DEBUG_PLAIN_DATA)
+                        {
+                            debugLogBufferContent(
+                                "sslOutbound: wrap: buffer data:",
+                                dataBuffer, dataBuffer.limit()
+                            );
+                        }
                         sslStatus = sslEngine.wrap(dataBuffer, encryptedWriteBuffer);
+                        if (DEBUG_SSL_STATE)
+                        {
+                            debugLog("sslOutbound: SSL status after wrap: " + sslStatus.getStatus().name());
+                        }
                         if (!dataBuffer.hasRemaining())
                         {
+                            if (DEBUG_MSG_DATA)
+                            {
+                                final ByteBuffer headerBuffer = msgOut.getHeaderBuffer();
+                                debugLogBufferContent(
+                                    "sslOutbound: Message processed, message header:",
+                                    headerBuffer, headerBuffer.limit()
+                                );
+                                debugLogBufferContent(
+                                    "sslOutbound: Message processed, message data:",
+                                    dataBuffer, dataBuffer.limit()
+                                );
+                            }
                             currentWritePhase = Phase.HEADER;
                             // If there are no more outbound messages pending, this will disable OP_WRITE.
                             nextOutMessage();
                             // WriteState.FINISHED would be returned here to indicate that an entire message
                             // has been sent, if it were to be implemented in the netcom connector
+                            if (DEBUG_IO && msgOut == null)
+                            {
+                                debugLog("sslOutbound: Disable I/O: OP_WRITE (by nextOutMessage)");
+                            }
                         }
                         break;
+                    }
                     default:
                         throw new ImplementationError(
                             String.format(
@@ -485,7 +655,15 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             {
                 if (forceWrap)
                 { // The SSL handshake requires an SSLEngine wrap operation, but there was no application data to wrap
+                    if (DEBUG_PLAIN_DATA)
+                    {
+                        debugLog("sslOutbound: wrap with dummy buffer");
+                    }
                     sslStatus = sslEngine.wrap(dummyBuffer, encryptedWriteBuffer);
+                    if (DEBUG_SSL_STATE)
+                    {
+                        debugLog("sslOutbound: SSL status after wrap: " + sslStatus.getStatus().name());
+                    }
                 }
                 ioRequest = true;
             }
@@ -503,10 +681,18 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             {
                 if (encryptedWriteBuffer.position() == 0)
                 { // Buffer is too small
+                    if (DEBUG_BUFFER_RESIZE)
+                    {
+                        debugLog("sslOutbound: " + trafficStatus.name() + ": encryptedWriteBuffer too small");
+                    }
                     adjustEncryptedWriteBuffer();
                 }
                 else
                 { // Too much data in the buffer
+                    if (DEBUG_SSL_STATE || DEBUG_IO)
+                    {
+                        debugLog("sslOutbound: " + trafficStatus.name() + ": I/O required: OP_WRITE");
+                    }
                     enableInterestOps(SelectionKey.OP_WRITE);
                     ioRequest = true;
                 }
@@ -532,11 +718,19 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         SSLEngineResult.HandshakeStatus hsStatus = sslEngine.getHandshakeStatus();
         while (!ioRequest && hsStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)
         {
+            if (DEBUG_SSL_STATE)
+            {
+                debugLog("sslTasksCompleted: SSL handshake status: " + hsStatus.name());
+            }
             try
             {
                 SSLEngineResult.Status trafficStatus = sslHandshake(hsStatus, false);
                 if (trafficStatus == SSLEngineResult.Status.CLOSED)
                 {
+                    if (DEBUG_SSL_STATE || DEBUG_IO)
+                    {
+                        debugLog("sslTasksCompleted: SSL status: " + trafficStatus.name() + ": Close connection");
+                    }
                     sslEngine.closeInbound();
                     closeConnection(true);
                     ioRequest = true;
@@ -553,6 +747,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             catch (SSLException sslExc)
             {
                 logSslException(sslExc);
+                if (DEBUG_SSL_STATE || DEBUG_IO)
+                {
+                    debugLog("sslTasksCompleted: SSLException: Close connection");
+                }
                 closeConnection(true);
             }
             catch (IOException ioExc)
@@ -563,9 +761,17 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                     Level.TRACE, ioExc, getAccessContext(), this,
                     "I/O error during asynchronous SSL task completion"
                 );
+                if (DEBUG_SSL_STATE || DEBUG_IO)
+                {
+                    debugLog("sslTasksCompleted: I/O error: Close connection");
+                }
                 closeConnection(true);
             }
             hsStatus = sslEngine.getHandshakeStatus();
+        }
+        if (DEBUG_SSL_STATE)
+        {
+            debugLog("sslTasksCompleted: SSL handshake status: " + hsStatus.name());
         }
     }
 
@@ -586,15 +792,27 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     )
         throws SSLException, IllegalMessageStateException, IOException
     {
+        if (DEBUG_SSL_STATE)
+        {
+            debugLog("sslHandshake: SSL handshake status: " + hsStatus.name());
+        }
         SSLEngineResult.Status trafficStatus = null;
         if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP)
         { // SSL handshake needs to produce and send outbound data
             if (writeReady)
             {
+                if (DEBUG_SSL_STATE)
+                {
+                    debugLog("sslHandshake: sslOutbound with writeReady == true");
+                }
                 trafficStatus = sslOutbound(true);
             }
             else
             {
+                if (DEBUG_SSL_STATE || DEBUG_IO)
+                {
+                    debugLog("sslHandshake: I/O required: OP_WRITE");
+                }
                 enableInterestOps(SelectionKey.OP_WRITE);
                 ioRequest = true;
             }
@@ -603,6 +821,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         if (hsStatus == SSLEngineResult.HandshakeStatus.NEED_UNWRAP ||
             hsStatus == SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN)
         { // SSL handshake needs to receive data
+            if (DEBUG_SSL_STATE)
+            {
+                debugLog("sslHandshake: Delegate to sslInbound");
+            }
             trafficStatus = sslInbound();
         }
         else
@@ -620,6 +842,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         if (hsStatus == SSLEngineResult.HandshakeStatus.FINISHED ||
             hsStatus == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING)
         { // SSL handshake successful
+            if (DEBUG_SSL_STATE)
+            {
+                debugLog("sslHandshake: SSL handshake complete, set ping timestamp");
+            }
             sslReady = true;
             // Update the timestamp as if a ping/pong cycle had been completed, so that the peer is not
             // kicked out by the TaskScheduleService/PingTask if the connection/handshake process took long
@@ -629,6 +855,13 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         { // Error
             throw new ImplementationError(
                 "Unknown SSL handshake status, SSLEngineResult.HandshakeStatus ordinal = " + hsStatus.name()
+            );
+        }
+        if (DEBUG_SSL_STATE)
+        {
+            debugLog(
+                "sslHandshake: SSL status: " +
+                (trafficStatus == null ? "no-op (null)" : trafficStatus.name())
             );
         }
         return trafficStatus;
@@ -650,6 +883,7 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             switch (currentReadPhase)
             {
                 case HEADER:
+                {
                     final ByteBuffer headerBuffer = msgIn.getHeaderBuffer();
                     transferBufferData(plainReadBuffer, headerBuffer);
                     if (!headerBuffer.hasRemaining())
@@ -658,17 +892,32 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                         initDataByteBuffer(headerBuffer);
                     }
                     break;
+                }
                 case DATA:
+                {
                     final ByteBuffer dataBuffer = msgIn.getDataBuffer();
                     transferBufferData(plainReadBuffer, dataBuffer);
                     if (!dataBuffer.hasRemaining())
                     {
+                        if (DEBUG_MSG_DATA)
+                        {
+                            final ByteBuffer headerBuffer = msgIn.getHeaderBuffer();
+                            debugLogBufferContent(
+                                "extractMessages: Message processed, message header:",
+                                headerBuffer, headerBuffer.limit()
+                            );
+                            debugLogBufferContent(
+                                "extractMessages: Message processed, message data:",
+                                dataBuffer, dataBuffer.limit()
+                            );
+                        }
                         currentReadPhase = currentReadPhase.getNextPhase();
                         addToQueue(msgIn);
                         rdState = ReadState.FINISHED;
                         msgIn = createMessage(false);
                     }
                     break;
+                }
                 default:
                     throw new ImplementationError(
                         String.format(
@@ -725,6 +974,14 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         final int reqSize = session.getPacketBufferSize();
         if (reqSize > encryptedWriteBuffer.capacity())
         {
+            if (DEBUG_BUFFER_RESIZE)
+            {
+                debugLog(
+                    "adjustEncryptedWriteBuffer: " +
+                    "Resize buffer, current capacity: " + encryptedWriteBuffer.capacity() +
+                    ", new capacity: " + reqSize
+                );
+            }
             encryptedWriteBuffer = ByteBuffer.allocate(reqSize);
         }
     }
@@ -746,6 +1003,13 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         final int reqSize = session.getPacketBufferSize();
         if (reqSize > encryptedReadBuffer.capacity())
         {
+            if (DEBUG_BUFFER_RESIZE)
+            {
+                debugLog(
+                    "adjustEncryptedReadBuffer: Resize buffer, current capacity: " + encryptedReadBuffer.capacity() +
+                    ", new capacity: " + reqSize
+                );
+            }
             final ByteBuffer resizedBuffer = ByteBuffer.allocate(reqSize);
             resizedBuffer.put(encryptedReadBuffer);
             encryptedReadBuffer = resizedBuffer;
@@ -767,6 +1031,13 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
         final int reqSize = session.getApplicationBufferSize();
         if (reqSize > plainReadBuffer.capacity())
         {
+            if (DEBUG_BUFFER_RESIZE)
+            {
+                debugLog(
+                    "adjustPlainBuffer: Resize buffer, current capacity: " + plainReadBuffer.capacity() +
+                    ", new capacity: " + reqSize
+                );
+            }
             plainReadBuffer = ByteBuffer.allocate(reqSize);
         }
     }
@@ -780,6 +1051,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     private void executeSslTasks()
         throws IOException
     {
+        if (DEBUG_SSL_STATE)
+        {
+            debugLog("executeSslTasks: Spawning threads for delegated SSL engine tasks");
+        }
         Runnable sslTask = sslEngine.getDelegatedTask();
         sslTaskLock.lock();
         try
@@ -795,7 +1070,21 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                         {
                             try
                             {
+                                if (DEBUG_SSL_TASKS)
+                                {
+                                    debugLog(
+                                        "Delegated SSL task running, thread ID == " +
+                                        Thread.currentThread().threadId()
+                                    );
+                                }
                                 curSslTask.run();
+                                if (DEBUG_SSL_TASKS)
+                                {
+                                    debugLog(
+                                        "Delegated SSL task complete, thread ID == " +
+                                        Thread.currentThread().threadId()
+                                    );
+                                }
                             }
                             catch (Exception ignored)
                             {
@@ -808,8 +1097,25 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                                 --activeTaskCount;
                                 tasksComplete = activeTaskCount <= 0;
                                 tasksCanceled = sslTasksCanceled;
+                                if (DEBUG_SSL_TASKS)
+                                {
+                                    debugLog(
+                                        "Delegated SSL task, thread ID == " +
+                                        Thread.currentThread().threadId() +
+                                        ": remaining activeTaskCount == " + activeTaskCount
+                                    );
+                                }
                                 sslTaskLock.unlock();
 
+                                if (DEBUG_SSL_TASKS)
+                                {
+                                    debugLog(
+                                        "Delegated SSL task, thread ID == " +
+                                        Thread.currentThread().threadId() +
+                                        ": tasksComplete == " + Boolean.toString(tasksComplete) +
+                                        ", tasksCanceled == " + Boolean.toString(tasksCanceled)
+                                    );
+                                }
                                 if (tasksComplete)
                                 {
                                     if (!tasksCanceled)
@@ -823,10 +1129,15 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                         }
                     );
                     sslTaskThread.start();
+                    debugLog("executeSslTasks: Delegated task created, activeTaskCount == " + activeTaskCount);
                 }
                 catch (Exception exc)
                 {
                     --activeTaskCount;
+                    if (DEBUG_SSL_STATE)
+                    {
+                        debugLog("executeSslTasks: Delegated task creation failed:\n" + exc.toString());
+                    }
                     throw new IOException("SSL protocol error: Unable to execute delegated task", exc);
                 }
                 sslTask = sslEngine.getDelegatedTask();
@@ -846,6 +1157,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     protected void cancelSslTasks()
     {
         sslTaskLock.lock();
+        if (DEBUG_SSL_STATE)
+        {
+            debugLog("cancelSslTasks: activeTaskCount == " + activeTaskCount);
+        }
         try
         {
             sslTasksCanceled = true;
@@ -882,5 +1197,50 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
             excPeer,
             errorMsg != null ? errorMsg : "The SSL engine did not provide an error description"
         );
+    }
+
+    private void debugLog(final String logMsg)
+    {
+        final ErrorReporter debugLog = this.getErrorReporter();
+        debugLog.logInfo("%s", getClass().getName() + ": DEBUG: " + logMsg);
+    }
+
+    /**
+     * Generates a hex dump of the content of a ByteBuffer, with the specified length, from the zero position
+     * @param logMsg
+     * @param buffer
+     * @param length
+     */
+    private void debugLogBufferContent(
+        final String        logMsg,
+        final ByteBuffer    buffer,
+        final int           length
+    )
+    {
+        final ErrorReporter debugLog = this.getErrorReporter();
+        final byte[] data = buffer.array();
+        if (data != null)
+        {
+            final int safeLength = data.length > length ? length : data.length;
+            if (data.length == safeLength)
+            {
+                final byte[] dumpData = data;
+            }
+            else
+            {
+                final byte[] dumpData = new byte[safeLength];
+                System.arraycopy(data, 0, dumpData, 0, safeLength);
+            }
+            final String hexDump = HexViewer.binaryToHexDump(data);
+            debugLog.logInfo("%s\n%s", getClass().getName() + ": DEBUG: " + logMsg, hexDump);
+        }
+        else
+        {
+            debugLog.logError(
+                "%s", getClass().getName() +
+                ": Debug logging: Cannot log buffer contents, byte array of the ByteBuffer is inaccessible " +
+                "(null)"
+            );
+        }
     }
 }
