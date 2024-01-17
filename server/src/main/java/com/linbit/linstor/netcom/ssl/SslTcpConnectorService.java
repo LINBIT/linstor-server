@@ -319,8 +319,6 @@ public class SslTcpConnectorService extends TcpConnectorService
              connPeer != null;
              connPeer = nextTaskCompletionEntry())
         {
-            final SelectionKey key = connPeer.getSelectionKey();
-            final SocketChannel channel = (SocketChannel) key.channel();
             if (DEBUG_SSL_TASKS)
             {
                 final String peerId = connPeer.getId();
