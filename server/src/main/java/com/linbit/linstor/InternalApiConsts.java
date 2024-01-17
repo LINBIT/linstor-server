@@ -222,9 +222,11 @@ public class InternalApiConsts
     public static final String DEFAULT_AUTO_SNAPSHOT_PREFIX = "autoSnap";
 
     // drbd option consts
+    public static final String NAMESPC_DRBD = "Drbd";
     public static final String DRBD_VERIFY_ALGO = "verify-alg";
     public static final String DRBD_AUTO_VERIFY_ALGO = "auto-verify-alg";
     public static final String KEY_DRBD_AUTO_VERIFY_ALGO_ALLOWED_LIST = "auto-verify-algo-allowed-list";
+    public static final String KEY_DRBD_NODE_IDS_TO_RESET = "NodeIdsToReset";
 
     // external files consts
     public static final String NAMESPC_FILES = "files";
