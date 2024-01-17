@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - StoragePoolMixing is now based on extent-sizes and thin/thick. Also changed implementation
 - Autoplacer now also allows for mixed storage pools if the corresponding property allows
 - Backup ship now uses the --target-storpool as a default storpool name
+- ZFS and ZFS_THIN provider now report REFER for thin-volumes and snapshots and VOLSIZE for thick-volumes
 
 ### Fixed
 

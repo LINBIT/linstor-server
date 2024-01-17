@@ -157,4 +157,11 @@ public class ZfsThinProvider extends ZfsProvider
 
         return SpaceInfo.buildOrThrowOnError(capacity, freeSpace, storPool);
     }
+
+    @Override
+    protected void setAllocatedSize(ZfsData<Resource> vlmDataRef, long sizeRef) throws DatabaseException
+    {
+        // this method is called (for now) only with an input from "blockdev --getsize64 ..."
+        // however, we want to ignore that "allocatedSize", and use instead the size from "zfs list ..."
+    }
 }

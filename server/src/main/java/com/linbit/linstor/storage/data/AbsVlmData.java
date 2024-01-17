@@ -86,6 +86,7 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
         return exists.get();
     }
 
+    @Override
     public void setExists(boolean existsRef) throws DatabaseException
     {
         exists.set(existsRef);

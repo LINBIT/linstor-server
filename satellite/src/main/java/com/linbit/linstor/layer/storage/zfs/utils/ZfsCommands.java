@@ -29,8 +29,8 @@ public class ZfsCommands
                     "-r",   // recursive
                     "-H",   // no headers, single tab instead of spaces
                     "-p",   // sizes in bytes
-                    // columns: name, used space, refered space, available space, type
-                    "-o", "name,used,refer,volsize,type",
+                    // columns: name, referred space, available space, type
+                    "-o", "name,refer,volsize,type",
                     "-t", "volume,snapshot"
                 },
                 datasets

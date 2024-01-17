@@ -7,6 +7,7 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.layer.storage.utils.ParseUtils;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -24,11 +25,10 @@ public class ZfsUtils
 {
     private static final String DELIMITER = "\t"; // default for all "zfs -H ..." commands
 
-    private static final int ZFS_LIST_COL_IDENTIFIER = 0;
-    private static final int ZFS_LIST_COL_USED_SIZE = 1;
-    private static final int ZFS_LIST_COL_REFER_SIZE = 2;
-    private static final int ZFS_LIST_COL_USABLE_SIZE = 3;
-    private static final int ZFS_LIST_COL_TYPE = 4;
+    private static final int ZFS_LIST_COL_IDENTIFIER    = 0; // -o "name"
+    private static final int ZFS_LIST_COL_REFER_SIZE    = 1; // -o "refer"
+    private static final int ZFS_LIST_COL_VOLSIZE       = 2; // -o "volsize"
+    private static final int ZFS_LIST_COL_TYPE          = 3; // -o "type"
 
     private static final int ZFS_LIST_FILESYSTEMS_COL_IDENTIFIER = 0;
     private static final int ZFS_LIST_FILESYSTEMS_COL_AVAILABLE_SIZE = 1;
@@ -123,7 +123,11 @@ public class ZfsUtils
 
     }
 
-    public static HashMap<String, ZfsInfo> getZfsList(final ExtCmd extCmd, Collection<String> datasets)
+    public static HashMap<String, ZfsInfo> getZfsList(
+        final ExtCmd extCmd,
+        Collection<String> datasets,
+        DeviceProviderKind kindRef
+    )
         throws StorageException
     {
         final OutputData output = ZfsCommands.list(extCmd, datasets);
@@ -132,7 +136,7 @@ public class ZfsUtils
         final HashMap<String, ZfsInfo> infoByIdentifier = new HashMap<>();
 
         final String[] lines = stdOut.split("\n");
-        final int expectedColCount = 5;
+        final int expectedColCount = 4;
         for (final String line : lines)
         {
             final String[] data = line.trim().split(DELIMITER);
@@ -141,14 +145,30 @@ public class ZfsUtils
                 if (data.length == expectedColCount)
                 {
                     final String identifier = data[ZFS_LIST_COL_IDENTIFIER];
-                    final String snapSizeStr = data[ZFS_LIST_COL_USED_SIZE]; // USED size seems to be right for snapshot
-                    final String allocatedSizeStr = data[ZFS_LIST_COL_REFER_SIZE]; // volumes use REFER
-                    final String usableSizeStr = data[ZFS_LIST_COL_USABLE_SIZE];
+                    final String usableSizeStr = data[ZFS_LIST_COL_VOLSIZE];
                     final String type = data[ZFS_LIST_COL_TYPE];
+
+                    final String allocatedSizeStr;
+                    if (kindRef == DeviceProviderKind.ZFS_THIN || type.equals(ZFS_TYPE_SNAPSHOT))
+                    {
+                        /*
+                         * "refer" column shows the allocation size on disk. This size will grow for thick and thin
+                         * volumes as well as for snapshots while using
+                         */
+                        allocatedSizeStr = data[ZFS_LIST_COL_REFER_SIZE];
+                    }
+                    else
+                    {
+                        /*
+                         * "volsize" represents the size which was used during "zfs create -V ..." regardless if thin or
+                         * thick volume
+                         */
+                        allocatedSizeStr = data[ZFS_LIST_COL_VOLSIZE]; // -o "volsize"
+                    }
 
                     if (type.equals(ZFS_TYPE_VOLUME) || type.equals(ZFS_TYPE_SNAPSHOT))
                     {
-                        String allocateByteSizeStr = type.equals(ZFS_TYPE_SNAPSHOT) ? snapSizeStr : allocatedSizeStr;
+                        String allocateByteSizeStr = allocatedSizeStr;
                         long allocatedSize = SizeConv.convert(
                             StorageUtils.parseDecimalAsLong(allocateByteSizeStr.trim()),
                             SizeUnit.UNIT_B,

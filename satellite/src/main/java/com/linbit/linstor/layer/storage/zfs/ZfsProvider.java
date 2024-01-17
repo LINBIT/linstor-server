@@ -169,7 +169,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     {
         return ZfsUtils.getZfsList(
             extCmdFactory.create(),
-            getDataSets(vlmDataListRef, snapVlmsRef)
+            getDataSets(vlmDataListRef, snapVlmsRef),
+            kind
         );
     }
 
