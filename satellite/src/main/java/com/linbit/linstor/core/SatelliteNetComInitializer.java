@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.file.Path;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -70,8 +69,8 @@ public final class SatelliteNetComInitializer
     }
 
     public boolean initMainNetComService(final AccessContext initCtx)
+        throws SystemServiceStartException
     {
-        Path configurationDirectory = stltCfg.getConfigPath();
         String bindAddressStr = stltCfg.getNetBindAddress();
         Integer port = stltCfg.getNetPort();
         String type = stltCfg.getNetType();
@@ -79,6 +78,21 @@ public final class SatelliteNetComInitializer
         boolean success = false;
         try
         {
+            if (bindAddressStr == null || port == null || type == null)
+            {
+                throw new SystemServiceStartException(
+                    "Required parameters for the network connector are absent from the satellite configuration",
+                    "The configuration for the network connector is not valid",
+                    "Required parameters are absent from the configuration",
+                    "Configure the required parameters (see details)",
+                    "The following parameters are missing:" +
+                    (bindAddressStr == null ? "\n  bind_address" : "") +
+                    (port == null ? "\n  port" : "") +
+                    (type == null ? "\n  type" : ""),
+                    true
+                );
+            }
+
             InetAddress addr = InetAddress.getByName(bindAddressStr);
             SocketAddress bindAddress = new InetSocketAddress(addr, port);
 
@@ -97,6 +111,33 @@ public final class SatelliteNetComInitializer
             else
             if (type.equalsIgnoreCase(NET_COM_CONF_TYPE_SSL))
             {
+                final String sslProtocol = stltCfg.getNetSecureSslProtocol();
+                final String serverCertificate = stltCfg.getNetSecureServerCertificate();
+                final String keystorePassword = stltCfg.getNetSecureKeystorePassword();
+                final String keyPassword = stltCfg.getNetSecureKeyPassword();
+                final String truststore = stltCfg.getNetSecureTrustedCertificates();
+                final String truststorePassword = stltCfg.getNetSecureTruststorePassword();
+
+                if (sslProtocol == null || serverCertificate == null ||
+                    keystorePassword == null || keyPassword == null ||
+                    truststore == null || truststorePassword == null)
+                {
+                    throw new SystemServiceStartException(
+                        "Required parameters for the SSL configuration are absent from the satellite configuration",
+                        "The SSL configuration for the network connector is not valid",
+                        "Required parameters are absent from the configuration",
+                        "Configure the required parameters (see details)",
+                        "The following parameters are missing:" +
+                        (sslProtocol == null ? "\n  ssl_protocol" : "") +
+                        (serverCertificate == null ? "\n  server_certificate" : "") +
+                        (keystorePassword == null ? "\n  keystore_password" : "") +
+                        (keyPassword == null ? "\n  key_password" : "") +
+                        (truststore == null ? "\n  trusted_certificates" : "") +
+                        (truststorePassword == null ? "\n  truststore_password" : ""),
+                        true
+                    );
+                }
+
                 try
                 {
                     netComSvc = new SslTcpConnectorService(
@@ -108,12 +149,12 @@ public final class SatelliteNetComInitializer
                         initCtx,
                         stltConnTracker,
                         cryptoProvider,
-                        stltCfg.getNetSecureSslProtocol(),
-                        stltCfg.getNetSecureServerCertificate(),
-                        stltCfg.getNetSecureKeystorePassword().toCharArray(),
-                        stltCfg.getNetSecureKeyPassword().toCharArray(),
-                        stltCfg.getNetSecureTrustedCertificates(),
-                        stltCfg.getNetSecureTruststorePassword().toCharArray()
+                        sslProtocol,
+                        serverCertificate,
+                        keystorePassword.toCharArray(),
+                        keyPassword.toCharArray(),
+                        truststore,
+                        truststorePassword.toCharArray()
                     );
                 }
                 catch (KeyManagementException keyMgmtExc)
