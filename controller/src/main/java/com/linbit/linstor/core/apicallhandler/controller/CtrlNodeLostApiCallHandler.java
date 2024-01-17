@@ -10,6 +10,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.SpecialSatelliteProcessManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -76,6 +77,7 @@ public class CtrlNodeLostApiCallHandler
     private final ReadWriteLock nodesMapLock;
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
+    private final CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandler;
 
     @Inject
     public CtrlNodeLostApiCallHandler(
@@ -92,7 +94,8 @@ public class CtrlNodeLostApiCallHandler
         ResponseConverter responseConverterRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
-        CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef
+        CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
+        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef
     )
     {
         apiCtx = apiCtxRef;
@@ -109,6 +112,7 @@ public class CtrlNodeLostApiCallHandler
         nodesMapLock = nodesMapLockRef;
         peerAccCtx = peerAccCtxRef;
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
+        ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
     }
 
     /**
@@ -123,13 +127,16 @@ public class CtrlNodeLostApiCallHandler
             nodeNameStr
         );
 
-        return scopeRunner
-            .fluxInTransactionalScope(
-                "Remove lost node",
-                LockGuard.createDeferred(nodesMapLock.writeLock()),
-                () -> lostNodeInTransaction(nodeNameStr, context)
-            )
-            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+        return ctrlBackupCrtApiCallHandler.deleteNodeQueueAndReQueueSnapsIfNeeded(nodeNameStr)
+            .concatWith(
+                scopeRunner
+                    .fluxInTransactionalScope(
+                        "Remove lost node",
+                        LockGuard.createDeferred(nodesMapLock.writeLock()),
+                        () -> lostNodeInTransaction(nodeNameStr, context)
+                    )
+                    .transform(responses -> responseConverter.reportingExceptions(context, responses))
+            );
     }
 
     private Flux<ApiCallRc> lostNodeInTransaction(String nodeNameStr, ResponseContext context)

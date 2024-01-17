@@ -507,6 +507,18 @@ public class CtrlBackupCreateApiCallHandler
         }
     }
 
+    public Flux<ApiCallRc> deleteNodeQueueAndReQueueSnapsIfNeeded(String nodeName)
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "Delete node queue",
+            lockGuardFactory.create()
+                .read(LockObj.NODES_MAP)
+                .write(LockObj.RSC_DFN_MAP)
+                .buildDeferred(),
+            () -> deleteNodeQueueAndReQueueSnapsIfNeededInTransaction(ctrlApiDataLoader.loadNode(nodeName, false))
+        );
+    }
+
     /*
      * Deletes the queue of the given node and checks if any snapDfn is not being shipped anymore because of it.
      * If so, finds new nodes to ship that snapDfn from and either queues it there or starts the shipping.
@@ -525,74 +537,78 @@ public class CtrlBackupCreateApiCallHandler
 
     private Flux<ApiCallRc> deleteNodeQueueAndReQueueSnapsIfNeededInTransaction(Node node)
     {
-        List<QueueItem> itemsToReQueue = backupInfoMgr.deleteFromQueue(node);
-        ApiCallRcImpl responses = new ApiCallRcImpl();
         Flux<ApiCallRc> flux = Flux.empty();
-        for (QueueItem item : itemsToReQueue)
+        if (node != null && !node.isDeleted())
         {
-            try
+            List<QueueItem> itemsToReQueue = backupInfoMgr.deleteFromQueue(node);
+            ApiCallRcImpl responses = new ApiCallRcImpl();
+            for (QueueItem item : itemsToReQueue)
             {
-                SnapshotDefinition prevSnap = item.prevSnapDfn;
-                if (prevSnap != null)
+                try
                 {
-                    boolean needsNewPrevSnap = false;
-                    boolean isDeleted = prevSnap.isDeleted() ||
-                        prevSnap.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.DELETE);
-                    if (isDeleted)
+                    SnapshotDefinition prevSnap = item.prevSnapDfn;
+                    if (prevSnap != null)
                     {
-                        needsNewPrevSnap = true;
-                    }
-                    else
-                    {
-                        boolean isLastSnapOnNodeToClear = prevSnap.getAllNotDeletingSnapshots(peerAccCtx.get())
-                            .size() == 1 && prevSnap.getSnapshot(peerAccCtx.get(), node.getName()) != null;
-                        if (isLastSnapOnNodeToClear)
+                        boolean needsNewPrevSnap = false;
+                        boolean isDeleted = prevSnap.isDeleted() ||
+                            prevSnap.getFlags().isSet(peerAccCtx.get(), SnapshotDefinition.Flags.DELETE);
+                        if (isDeleted)
                         {
                             needsNewPrevSnap = true;
                         }
+                        else
+                        {
+                            boolean isLastSnapOnNodeToClear = prevSnap.getAllNotDeletingSnapshots(peerAccCtx.get())
+                                .size() == 1 && prevSnap.getSnapshot(peerAccCtx.get(), node.getName()) != null;
+                            if (isLastSnapOnNodeToClear)
+                            {
+                                needsNewPrevSnap = true;
+                            }
+                        }
+                        if (needsNewPrevSnap)
+                        {
+                            /*
+                             * TODO: a better but far more complicated option would be to do the same flux-loop-stuff as
+                             * with startQueuedL2LShippingInTransaction in order to get a new prevSnap from the
+                             * targetCluster
+                             * instead, we simply force a full backup
+                             */
+                            prevSnap = null;
+                        }
                     }
-                    if (needsNewPrevSnap)
-                    {
-                        /*
-                         * TODO: a better but far more complicated option would be to do the same flux-loop-stuff as
-                         * with startQueuedL2LShippingInTransaction in order to get a new prevSnap from the
-                         * targetCluster
-                         * instead, we simply force a full backup
-                         */
-                        prevSnap = null;
-                    }
-                }
-                Node shipFromNode = getNodeForBackupOrQueue(
-                    item.snapDfn.getResourceDefinition(),
-                    prevSnap,
-                    item.snapDfn,
-                    item.remote,
-                    item.preferredNode,
-                    responses,
-                    false,
-                    item.l2lData
-                );
-                if (shipFromNode != null)
-                {
-                    flux = flux.concatWith(
-                        startShippingInTransaction(
-                            item.snapDfn,
-                            shipFromNode,
-                            item.remote,
-                            item.prevSnapDfn,
-                            responses,
-                            item.preferredNode,
-                            item.l2lData
-                        )
+                    Node shipFromNode = getNodeForBackupOrQueue(
+                        item.snapDfn.getResourceDefinition(),
+                        prevSnap,
+                        item.snapDfn,
+                        item.remote,
+                        item.preferredNode,
+                        responses,
+                        false,
+                        item.l2lData
                     );
+                    if (shipFromNode != null)
+                    {
+                        flux = flux.concatWith(
+                            startShippingInTransaction(
+                                item.snapDfn,
+                                shipFromNode,
+                                item.remote,
+                                item.prevSnapDfn,
+                                responses,
+                                item.preferredNode,
+                                item.l2lData
+                            )
+                        );
+                    }
+                }
+                catch (AccessDeniedException exc)
+                {
+                    responses.addEntry(exc.getMessage(), ApiConsts.MASK_ERROR);
                 }
             }
-            catch (AccessDeniedException exc)
-            {
-                responses.addEntry(exc.getMessage(), ApiConsts.MASK_ERROR);
-            }
+            flux = flux.concatWith(Flux.just(responses));
         }
-        return flux.concatWith(Flux.just(responses));
+        return flux;
     }
 
     @Nullable
