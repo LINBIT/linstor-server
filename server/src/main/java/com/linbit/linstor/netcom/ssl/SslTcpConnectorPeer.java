@@ -1072,17 +1072,19 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                             {
                                 if (DEBUG_SSL_TASKS)
                                 {
+                                    // Change getId to threadId in Java 19+
                                     debugLog(
                                         "Delegated SSL task running, thread ID == " +
-                                        Thread.currentThread().threadId()
+                                        Thread.currentThread().getId()
                                     );
                                 }
                                 curSslTask.run();
                                 if (DEBUG_SSL_TASKS)
                                 {
+                                    // Change getId to threadId in Java 19+
                                     debugLog(
                                         "Delegated SSL task complete, thread ID == " +
-                                        Thread.currentThread().threadId()
+                                        Thread.currentThread().getId()
                                     );
                                 }
                             }
@@ -1099,9 +1101,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                                 tasksCanceled = sslTasksCanceled;
                                 if (DEBUG_SSL_TASKS)
                                 {
+                                    // Change getId to threadId in Java 19+
                                     debugLog(
                                         "Delegated SSL task, thread ID == " +
-                                        Thread.currentThread().threadId() +
+                                        Thread.currentThread().getId() +
                                         ": remaining activeTaskCount == " + activeTaskCount
                                     );
                                 }
@@ -1109,9 +1112,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
 
                                 if (DEBUG_SSL_TASKS)
                                 {
+                                    // Change getId to threadId in Java 19+
                                     debugLog(
                                         "Delegated SSL task, thread ID == " +
-                                        Thread.currentThread().threadId() +
+                                        Thread.currentThread().getId() +
                                         ": tasksComplete == " + Boolean.toString(tasksComplete) +
                                         ", tasksCanceled == " + Boolean.toString(tasksCanceled)
                                     );
