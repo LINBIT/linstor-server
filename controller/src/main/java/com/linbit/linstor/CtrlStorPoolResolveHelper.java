@@ -169,13 +169,17 @@ public class CtrlStorPoolResolveHelper
                     storPool = rsc.getNode().getStorPool(apiCtx, storPoolName);
                     if (storPool != null)
                     {
-                        if (storPool.getDeviceProviderKind().hasBackingDevice() &&
-                            spMixingPrioProps.getProp(KEY_RSC_ALLOW_MIXING_DEVICE_KIND, null, "false")
-                                .equalsIgnoreCase("false"))
+                        boolean spMixingAllowed = spMixingPrioProps.getProp(
+                            KEY_RSC_ALLOW_MIXING_DEVICE_KIND,
+                            null,
+                            "false"
+                        )
+                            .equalsIgnoreCase(ApiConsts.VAL_TRUE);
+                        if (storPool.getDeviceProviderKind().hasBackingDevice())
                         {
                             // If the storage pool has backing storage,
-                            // check that it is of the same kind as the peers
-                            checkSameKindAsPeers(vlmDfn, storPool, true);
+                            // check the current storPool's kind is compatible with the peer kinds
+                            checkSameKindAsPeers(vlmDfn, storPool, spMixingAllowed);
                         }
                         break;
                     }
@@ -236,7 +240,23 @@ public class CtrlStorPoolResolveHelper
                             allowMixingRef
                         ))
                         {
-                            throw new ApiRcException(makeInvalidDriverKindError(currentDriverKind, peerKind));
+                            if (!allowMixingRef)
+                            {
+                                boolean wouldBeAllowedWithSpMixing = DeviceProviderKind.isMixingAllowed(
+                                    currentDriverKind,
+                                    currentDrbdVersion,
+                                    peerKind,
+                                    peerDrbdVersion,
+                                    true
+                                );
+                                if (wouldBeAllowedWithSpMixing)
+                                {
+                                    throw new ApiRcException(
+                                        makeInvalidDriverKindError(currentDriverKind, peerKind, true)
+                                    );
+                                }
+                            }
+                            throw new ApiRcException(makeInvalidDriverKindError(currentDriverKind, peerKind, false));
                         }
                     }
                 }
@@ -317,7 +337,8 @@ public class CtrlStorPoolResolveHelper
 
     private ApiCallRcImpl.ApiCallRcEntry makeInvalidDriverKindError(
         DeviceProviderKind driverKind,
-        DeviceProviderKind peerKind
+        DeviceProviderKind peerKind,
+        boolean wouldBeAllowedWithSpMixingRef
     )
     {
         return ApiCallRcImpl
@@ -327,7 +348,15 @@ public class CtrlStorPoolResolveHelper
             )
             .setDetails("Using storage pools with different storage drivers on the same volume definition " +
                 "is not supported.")
-            .setCorrection(String.format("Use a storage pool with the driver '%s'", peerKind))
+            .setCorrection(
+                wouldBeAllowedWithSpMixingRef ?
+                    String.format(
+                        "Either use a storage pool with a driver compatible with %s, or enable property '%s'",
+                        peerKind,
+                        KEY_RSC_ALLOW_MIXING_DEVICE_KIND
+                    ) :
+                    String.format("Use a storage pool with the driver '%s'", peerKind)
+            )
             .build();
     }
 }
