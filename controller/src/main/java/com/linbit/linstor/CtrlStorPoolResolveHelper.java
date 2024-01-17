@@ -351,7 +351,8 @@ public class CtrlStorPoolResolveHelper
             .setCorrection(
                 wouldBeAllowedWithSpMixingRef ?
                     String.format(
-                        "Either use a storage pool with a driver compatible with %s, or enable property '%s'",
+                        "Either use a storage pool with a driver compatible with %s, or enable storage pool mixing " +
+                            "using the property '%s'",
                         peerKind,
                         KEY_RSC_ALLOW_MIXING_DEVICE_KIND
                     ) :

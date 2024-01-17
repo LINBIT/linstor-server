@@ -898,6 +898,8 @@ public class CtrlConfApiCallHandler
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT:
                             // fall-through
                         case BackupConsts.CONCURRENT_BACKUPS_KEY:
+                            // fall-through
+                        case ApiConsts.KEY_RSC_ALLOW_MIXING_DEVICE_KIND:
                             // no need to update stlts
                             setCtrlProp(peerAccCtx.get(), key, normalized, namespace, propChangedListener);
                             break;
