@@ -34,6 +34,27 @@ import javax.annotation.Nonnull;
 
 public class SslTcpConnectorService extends TcpConnectorService
 {
+    // Begin debug logging flags
+
+    /**
+     * If enabled, generates INFO level log entries for the connector's initialization
+     */
+    private final boolean           DEBUG_INIT          = false;
+
+    /**
+     * If enabled, generates INFO level log entries for new connections and when connections are closed
+     */
+    private final boolean           DEBUG_CONNECTION    = false;
+
+    /**
+     * If enabled, generates INFO level log entries for tracking the state of concurrently executing
+     * SSLEngine delegated tasks
+     */
+    private final boolean           DEBUG_SSL_TASKS     = false;
+
+    // End debug logging flags
+
+
     private final ModularCryptoProvider cryptoProvider;
     private final SSLContext sslCtx;
 
@@ -95,10 +116,37 @@ public class SslTcpConnectorService extends TcpConnectorService
             privAccCtxRef,
             connObserverRef
         );
+        if (DEBUG_INIT)
+        {
+            final String debugSslProtocol = (sslProtocol != null ? "\"" + sslProtocol + "\"" : "null");
+            final String debugKeyStoreFile = (keyStoreFile != null ? "\"" + keyStoreFile + "\"" : "null");
+            final String debugKeyStorePassword = (keyStorePasswd != null ? "\"" + keyStorePasswd + "\"" : "null");
+            final String debugKeyPassword = (keyPasswd != null ? "\"" + keyPasswd + "\"" : "null");
+            final String debugTrustStoreFile = (trustStoreFile != null ? "\"" + trustStoreFile + "\"" : "null");
+            final String debugTrustStorePassword = (trustStorePasswd != null ? "\"" + trustStorePasswd + "\"" : "null");
+
+            debugLog(
+                "Constructor: " +
+                "sslProtocol=" + debugSslProtocol +
+                ", keyStoreFile=" + debugKeyStoreFile +
+                ", keyStorePassword=" + debugKeyStorePassword +
+                ", keyPassword=" + debugKeyPassword +
+                ", trustStoreFile=" + debugTrustStoreFile +
+                ", trustStorePassword=" + debugTrustStorePassword
+            );
+        }
         taskCompletionMap = new TreeMap<>();
         cryptoProvider = cryptoProviderRef;
+        if (DEBUG_INIT)
+        {
+            debugLog("Constructor: Creating SSL context");
+        }
         sslCtx = cryptoProviderRef.createSslContext(sslProtocol);
         initialize(keyStoreFile, keyStorePasswd, keyPasswd, trustStoreFile, trustStorePasswd);
+        if (DEBUG_INIT)
+        {
+            debugLog("Constructor: Connector construction complete");
+        }
     }
 
     /**
@@ -145,11 +193,19 @@ public class SslTcpConnectorService extends TcpConnectorService
             );
         }
 
+        if (DEBUG_INIT)
+        {
+            debugLog("initialize: Initializing SSL context");
+        }
         cryptoProvider.initializeSslContext(
             sslCtx,
             keyStoreFile, keyStorePasswd, keyPasswd,
             trustStoreFile, trustStorePasswd
         );
+        if (DEBUG_INIT)
+        {
+            debugLog("initialize: Initialization complete");
+        }
     }
 
     /**
@@ -171,7 +227,19 @@ public class SslTcpConnectorService extends TcpConnectorService
         @Nonnull final Node         node
     )
     {
-
+        if (DEBUG_CONNECTION)
+        {
+            String nodeName = null;
+            if (node != null)
+            {
+                nodeName = node.getName().displayValue;
+            }
+            debugLog(
+                "createTcpConnectorPeer: New " + (outgoing ? "outbound" : "inbound") + " connection, " +
+                "peerId=" + (peerId != null ? "\"" + peerId + "\"" : "null") +
+                (nodeName != null ? ", node name=\"" + nodeName + "\"" : "")
+            );
+        }
         InetSocketAddress address = null;
         if (outgoing)
         {
@@ -182,6 +250,10 @@ public class SslTcpConnectorService extends TcpConnectorService
             String host = socket.getInetAddress().getHostAddress();
             int port = socket.getPort();
             address = new InetSocketAddress(host, port);
+            if (DEBUG_CONNECTION)
+            {
+                debugLog("createTcpConnectorPeer: Outbound connection address=" + host + ":" + port);
+            }
         }
 
         final SslTcpConnectorPeer newPeer = new SslTcpConnectorPeer(
@@ -207,11 +279,19 @@ public class SslTcpConnectorService extends TcpConnectorService
      */
     protected void taskCompleted(@Nonnull final SslTcpConnectorPeer connPeer)
     {
+        if (DEBUG_SSL_TASKS)
+        {
+            debugLog("taskCompleted: Connector notified of delegated SSL tasks completion");
+        }
         synchronized (taskCompletionMap)
         {
             final String id = connPeer.getId();
             if (id != null)
             {
+                if (DEBUG_SSL_TASKS)
+                {
+                    debugLog("taskCompleted: Peer added to taskCompletionMap, peerId=\"" + id + "\"");
+                }
                 taskCompletionMap.put(id, connPeer);
             }
         }
@@ -231,12 +311,24 @@ public class SslTcpConnectorService extends TcpConnectorService
     protected void onSelectorWakeup()
         throws IllegalMessageStateException, IOException
     {
+        if (DEBUG_SSL_TASKS)
+        {
+            debugLog("onSelectorWakeup called");
+        }
         for (SslTcpConnectorPeer connPeer = nextTaskCompletionEntry();
              connPeer != null;
              connPeer = nextTaskCompletionEntry())
         {
             final SelectionKey key = connPeer.getSelectionKey();
             final SocketChannel channel = (SocketChannel) key.channel();
+            if (DEBUG_SSL_TASKS)
+            {
+                final String peerId = connPeer.getId();
+                debugLog(
+                    "onSelectorWakeup: Calling sslTasksCompleted, peerId=" +
+                    (peerId != null ? "\"" + peerId + "\"" : "null")
+                );
+            }
             connPeer.sslTasksCompleted();
         }
     }
@@ -256,6 +348,15 @@ public class SslTcpConnectorService extends TcpConnectorService
         if (connPeer instanceof SslTcpConnectorPeer)
         {
             final SslTcpConnectorPeer sslPeer = (SslTcpConnectorPeer) connPeer;
+            if (DEBUG_CONNECTION)
+            {
+                final String peerId = connPeer.getId();
+                debugLog(
+                    "onConnectionClosed: Connection closed, peerId=" +
+                    (peerId != null ? "\"" + peerId + "\"" : "null") +
+                    ", calling cancelSslTasks"
+                );
+            }
             sslPeer.cancelSslTasks();
         }
     }
@@ -276,5 +377,10 @@ public class SslTcpConnectorService extends TcpConnectorService
             connPeer = entry == null ? null : entry.getValue();
         }
         return connPeer;
+    }
+
+    private void debugLog(final String logMsg)
+    {
+        errorReporter.logInfo("%s", getClass().getName() + ": DEBUG: " + logMsg);
     }
 }
