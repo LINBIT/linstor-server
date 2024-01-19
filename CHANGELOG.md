@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added MathUtils methods for integer-based square root, exponentiation, prime factorization, LCM and GCD calculation
 - Added new checkExtFiles-API
 - Schedule enable and snapshot restore now have a --storpool-rename option
+- /metrics/scrape-target endpoint with drbd-reactor scrape targets
 
 ### Changed
 
