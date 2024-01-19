@@ -12,6 +12,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotApiCallHandler.getSnapshotDescription;
 
+import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -91,16 +93,19 @@ public class CreateMultiSnapRequest
      *
      * @throws AccessDeniedException
      */
-    public void updateDescriptionAndJoinedRscNames(AccessContext accCtx) throws AccessDeniedException
+    public void updateDescriptionAndJoinedRscNames(@Nullable AccessContext accCtx) throws AccessDeniedException
     {
         StringBuilder descrBuilder = new StringBuilder("MultiSnapshot ").append(id).append(" [");
         StringBuilder joinedRscNamesBuilder = new StringBuilder("[");
+        List<String> descriptions = new ArrayList<>();
+        List<String> resourceNames = new ArrayList<>();
+
         if (createdSnapDfns == null)
         {
             for (SnapReq snap : snapshots)
             {
-                descrBuilder.append(snap.getDescription()).append(", ");
-                joinedRscNamesBuilder.append(snap.rscName).append(", ");
+                descriptions.add(snap.getDescription());
+                resourceNames.add(snap.getRscName());
             }
         }
         else
@@ -120,14 +125,15 @@ public class CreateMultiSnapRequest
                         snapDfn.getName().displayValue
                     );
 
-                    descrBuilder.append(snapDfnDescr).append(", ");
-                    joinedRscNamesBuilder.append(snapDfn.getResourceName().displayValue).append(", ");
+                    descriptions.add(snapDfnDescr);
+                    resourceNames.add(snapDfn.getResourceName().getDisplayName());
                 }
             }
         }
-        descrBuilder.setLength(descrBuilder.length() - 2);
+
+        descrBuilder.append(String.join(", ", descriptions));
         descrBuilder.append("]");
-        joinedRscNamesBuilder.setLength(joinedRscNamesBuilder.length() - 2);
+        joinedRscNamesBuilder.append(String.join(", ", resourceNames));
         joinedRscNamesBuilder.append("]");
 
         descr = descrBuilder.toString();
@@ -318,4 +324,3 @@ public class CreateMultiSnapRequest
         }
     }
 }
-
