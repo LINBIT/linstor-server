@@ -45,6 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NetCom SSL reimplementation: Fixed buffer handling, SSL handshake/negotiation/renegotiation
 - Prohibit disk accesses in DrbdLayer while SkipDisk is set
 
+### Deprecated
+
+- Support for EXOS
+
 ### Removed
 
 - Support for OpenFlex

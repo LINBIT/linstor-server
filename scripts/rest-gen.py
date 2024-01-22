@@ -119,6 +119,8 @@ def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: Ordered
 
     out = gen_description_javadoc(schema, indent, 1)
     out += indent + "@JsonInclude(JsonInclude.Include.NON_EMPTY)\n"
+    if schema.get("deprecated"):
+        out += indent + "@Deprecated(forRemoval = true)\n"
     out += indent + "public static class " + schema_type + "\n"
     if "allOf" in schema:
         out += indent * 2 + "extends " + schema["allOf"][0]["$ref"][len('#/components/schemas/'):] + "\n"
@@ -129,37 +131,38 @@ def generate_class(schema_type: str, schema: OrderedDict, schema_lookup: Ordered
             field = schema["properties"][fieldname]
             out += gen_description_javadoc(field, indent, 2)
             t = resolve_type_str(schema_lookup, field)
+            depr = "@Deprecated(forRemoval = true) " if schema.get("deprecated") else ""
             if t.startswith("Map"):
                 dval = 'null' if "default" in field and field['default'] is None else 'Collections.emptyMap()'
-                out += indent * 2 + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=dval)
+                out += indent * 2 + depr + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=dval)
             elif t.startswith("List"):
                 dval = 'null' if "default" in field and field['default'] is None else 'Collections.emptyList()'
-                out += indent * 2 + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=dval)
+                out += indent * 2 + depr + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=dval)
             else:
                 if "default" in field:
                     dval = field['default']
                     if t == "String":
                         if dval is None:
-                            out += indent * 2 + 'public {t} {n} = null;\n'.format(
+                            out += indent * 2 + depr + 'public {t} {n} = null;\n'.format(
                                 t=t, n=fieldname
                             )
                         else:
-                            out += indent * 2 + 'public {t} {n} = "{v}";\n'.format(
+                            out += indent * 2 + depr + 'public {t} {n} = "{v}";\n'.format(
                                 t=t, n=fieldname, v=value_to_string(dval)
                             )
                     else:
-                        out += indent * 2 + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=value_to_string(dval))
+                        out += indent * 2 + depr + "public {t} {n} = {v};\n".format(t=t, n=fieldname, v=value_to_string(dval))
                 elif "required" in schema and fieldname in schema["required"]:
                     if t not in ["String", "Integer", "Long", "Double", "Boolean"]:
-                        out += indent * 2 + "public {t} {n} = new {v};\n".format(t=t, n=fieldname, v=t + "()")
+                        out += indent * 2 + depr + "public {t} {n} = new {v};\n".format(t=t, n=fieldname, v=t + "()")
                     elif t == "Integer":
-                        out += indent * 2 + "public int {n};\n".format(n=fieldname)
+                        out += indent * 2 + depr + "public int {n};\n".format(n=fieldname)
                     elif t == "String":
-                        out += indent * 2 + "public String {n};\n".format(n=fieldname)
+                        out += indent * 2 + depr + "public String {n};\n".format(n=fieldname)
                     else:
-                        out += indent * 2 + "public {t} {n};\n".format(t=t.lower(), n=fieldname)
+                        out += indent * 2 + depr + "public {t} {n};\n".format(t=t.lower(), n=fieldname)
                 else:
-                    out += indent * 2 + "public {t} {n};\n".format(t=t, n=fieldname)
+                    out += indent * 2 + depr + "public {t} {n};\n".format(t=t, n=fieldname)
     out += indent + "}\n"
     return out
 

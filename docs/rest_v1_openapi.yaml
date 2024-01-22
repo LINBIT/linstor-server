@@ -28,6 +28,7 @@ info:
       - Added GET /v1/files/{extFileName}/check/{node}
       - Added ExtFileCheckResult
       - Added storpool_rename to SnapshotRestore and BackupSchedule
+      - Deprecated EXOS entry points
     * 1.20.2
       - Added EffectivePropertiesMap, EffectivePropertiesMapValue and PropertyWithDescription objects
     * 1.20.1
@@ -5671,6 +5672,7 @@ paths:
                         $ref: '#/components/schemas/EventNodeModified'
   /v1/vendor/seagate/exos/defaults:
     get:
+      deprecated: true
       tags:
         - developers
       summary: Lists default setting for all EXOS enclosures
@@ -5685,6 +5687,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ExosDefaults'
     put:
+      deprecated: true
       tags:
         - developers
       summary: modify default settings of EXOS configurations
@@ -5705,6 +5708,7 @@ paths:
               $ref: '#/components/schemas/ExosDefaultsModify'
   /v1/vendor/seagate/exos/enclosures:
     get:
+      deprecated: true
       tags:
         - developers
       summary: List of EXOS enclosures
@@ -5725,6 +5729,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/ExosEnclosureHealth'
     post:
+      deprecated: true
       tags:
         - developers
       summary: creates a new enclosure
@@ -5744,6 +5749,7 @@ paths:
               $ref: '#/components/schemas/ExosEnclosure'
   /v1/vendor/seagate/exos/enclosures/{enclosure}:
     put:
+      deprecated: true
       tags:
         - developers
       summary: modifies an existing enclosure
@@ -5769,6 +5775,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ExosEnclosure'
     delete:
+      deprecated: true
       tags:
         - developers
       summary: modifies an existing enclosure
@@ -5790,6 +5797,7 @@ paths:
                 $ref: '#/components/schemas/ApiCallRcList'
   /v1/vendor/seagate/exos/{enclosure}/events:
     get:
+      deprecated: true
       tags:
         - developers
       summary: Returns the last EXOS events
@@ -5819,6 +5827,7 @@ paths:
                   $ref: '#/components/schemas/ExosEnclosureEvent'
   /v1/vendor/seagate/exos/map:
     get:
+      deprecated: true
       tags:
         - developers
       summary: Lists all EXOS Ports connected to each Linstor Node
@@ -8698,6 +8707,7 @@ components:
         new_node:
           $ref: '#/components/schemas/Node'
     ExosDefaults:
+      deprecated: true
       type: object
       description: Default settings for EXOS enclosures
       properties:
@@ -8710,6 +8720,7 @@ components:
         password_env:
           type: string
     ExosDefaultsModify:
+      deprecated: true
       allOf:
         - $ref: '#/components/schemas/ExosDefaults'
         - type: object
@@ -8721,6 +8732,7 @@ components:
               description: |
                 A list of keys to unset. The keys have to exist in ExosDefaults
     ExosEnclosureHealth:
+      deprecated: true
       type: object
       description: EXOS enclosure name, controller IPs and health status
       properties:
@@ -8735,6 +8747,7 @@ components:
         health_reason:
           type: string
     ExosEnclosure:
+      deprecated: true
       type: object
       description: EXOS enclosure
       properties:
@@ -8753,6 +8766,7 @@ components:
         password_env:
           type: string
     ExosEnclosureEvent:
+      deprecated: true
       type: object
       description: EXOS event
       properties:
@@ -8774,6 +8788,7 @@ components:
         recommended_action:
           type: string
     ExosConnectionMap:
+      deprecated: true
       type: object
       properties:
         node_name:

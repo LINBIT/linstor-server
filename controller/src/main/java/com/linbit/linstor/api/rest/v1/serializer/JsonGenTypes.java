@@ -1717,15 +1717,17 @@ public class JsonGenTypes
      * Default settings for EXOS enclosures
      */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Deprecated(forRemoval = true)
     public static class ExosDefaults
     {
-        public String username;
-        public String username_env;
-        public String password;
-        public String password_env;
+        @Deprecated(forRemoval = true) public String username;
+        @Deprecated(forRemoval = true) public String username_env;
+        @Deprecated(forRemoval = true) public String password;
+        @Deprecated(forRemoval = true) public String password_env;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Deprecated(forRemoval = true)
     public static class ExosDefaultsModify
         extends ExosDefaults
     {
@@ -1739,52 +1741,56 @@ public class JsonGenTypes
      * EXOS enclosure name, controller IPs and health status
      */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Deprecated(forRemoval = true)
     public static class ExosEnclosureHealth
     {
-        public String name;
-        public String ctrl_a_ip;
-        public String ctrl_b_ip;
-        public String health;
-        public String health_reason;
+        @Deprecated(forRemoval = true) public String name;
+        @Deprecated(forRemoval = true) public String ctrl_a_ip;
+        @Deprecated(forRemoval = true) public String ctrl_b_ip;
+        @Deprecated(forRemoval = true) public String health;
+        @Deprecated(forRemoval = true) public String health_reason;
     }
 
     /**
      * EXOS enclosure
      */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Deprecated(forRemoval = true)
     public static class ExosEnclosure
     {
-        public String name;
-        public String ctrl_a_ip;
-        public String ctrl_b_ip;
-        public String username;
-        public String username_env;
-        public String password;
-        public String password_env;
+        @Deprecated(forRemoval = true) public String name;
+        @Deprecated(forRemoval = true) public String ctrl_a_ip;
+        @Deprecated(forRemoval = true) public String ctrl_b_ip;
+        @Deprecated(forRemoval = true) public String username;
+        @Deprecated(forRemoval = true) public String username_env;
+        @Deprecated(forRemoval = true) public String password;
+        @Deprecated(forRemoval = true) public String password_env;
     }
 
     /**
      * EXOS event
      */
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Deprecated(forRemoval = true)
     public static class ExosEnclosureEvent
     {
-        public String severity;
-        public String event_id;
-        public String controller;
-        public String time_stamp;
-        public Long time_stamp_numeric;
-        public String message;
-        public String additional_information;
-        public String recommended_action;
+        @Deprecated(forRemoval = true) public String severity;
+        @Deprecated(forRemoval = true) public String event_id;
+        @Deprecated(forRemoval = true) public String controller;
+        @Deprecated(forRemoval = true) public String time_stamp;
+        @Deprecated(forRemoval = true) public Long time_stamp_numeric;
+        @Deprecated(forRemoval = true) public String message;
+        @Deprecated(forRemoval = true) public String additional_information;
+        @Deprecated(forRemoval = true) public String recommended_action;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Deprecated(forRemoval = true)
     public static class ExosConnectionMap
     {
-        public String node_name;
-        public String enclosure_name;
-        public List<String> connections = Collections.emptyList();
+        @Deprecated(forRemoval = true) public String node_name;
+        @Deprecated(forRemoval = true) public String enclosure_name;
+        @Deprecated(forRemoval = true) public List<String> connections = Collections.emptyList();
     }
 
     /**
