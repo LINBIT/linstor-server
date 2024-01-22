@@ -21,7 +21,7 @@ info:
 
     Changelog:
 
-    * unreleased
+    * 1.21.0
       - Removed everything OpenFlex related (entry-points, schemas, etc..)
       - Added peerSlots to ResourceGroup (create, modify and spawn)
       - Added stor_pool_free_capacity_oversubscription_ratio and stor_pool_total_capacity_oversubscription_ratio to QuerySizeInfoSpawnResult

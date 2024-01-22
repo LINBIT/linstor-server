@@ -1,3 +1,113 @@
+linstor-server (1.26.0~rc.1-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * resource-groups: Do not allow setting resource-groups with place-count 0
+  * metrics: add rscDfn and vlmDfn metrics
+  * metrics: add storage_pool to the volume labels
+  * autplace: Add node/storpool objrefs to autoplace api answer
+  * PeerTask: fix incorrect toString method
+  * virter/manage: allow start index to be specified
+  * autoplacer: null safe autounplace
+  * RscCrtApiHelper: factor out getOnlineNodeIds map
+  * ResourceDefinition: fix missing DRBD_DELETE flag in getNotDeletedDiskful
+  * balanceresourcestask: Add task that keeps the resource-group place-count
+  * make-avail: Retry auto-place with no restrictions on diskless resources
+  * dbconnectionpool: fix a small resource leak in health check method
+  * add /metrics/scrape-target endpoint
+
+  [ Gabor Hernadi ]
+  * GenCrd: Copied GeneratedDatabaseTables
+  * GenCrd*: Fixed double-checked locking in deriveKey method
+  * DbConstsGen: Fixed incorrect import order
+  * DbConstGen: Removed unnecessary super() call
+  * GenCrd*: Added copy of GenDbTables to GenCrd* classes
+  * OpenFlex: Drop support
+  * Db,migration: added k8s delete crd functionality
+  * DevMgr: Fixed typo
+  * RscGrp: Added peer_slots column to rscGrp
+  * OpenFlex: delete leftover interfaces
+  * Exos: Added deprecation warnings and annotations
+  * K8s: Fixed migration bug
+  * SnapShip: Added deprecation warnings and annotations
+  * QSI: Use sysCtx for privileged access
+  * Overprovision: Added new calculation
+  * SpApi: Add new oversubscription ratios
+  * PropType: Introduce new type: range-float
+  * StorPool: Allow mixing of lvm <-> zfs and thin<->thick
+  * VlmCrt: Treat thin volume as thick when mixing
+  * MkFsUtils: Moved to server project
+  * LayerRscUtils: Renamed method
+  * SpMixing: First version
+  * SpMixing: Added version check and enabling property
+  * Storage: Set default AllocGran to 1
+  * SpMixing: Allow mixing if rscDfn is missing
+  * DrbdLayer: Removed failed flag if disk was attached
+  * SpMixing: Fixed toggle-disk bug
+  * Zfs,blocksize: deduplicated method
+  * SpMixing: Deleted obsolete SpMixing feature
+  * SpMixing: Prepare compatibilty-code for restoring old backups
+  * SpMixing: Add Changelog entry
+  * SpMixing: Prohibit spMixing with gross flag
+  * Snap,Rollback: Fixed unrecoverable state with failed rollback and dele [...]
+  * Drbd: Check metadata after disk-failure
+  * SpMixing: Fixed incorrect property check
+  * ZFS: Fixed reported allocation size
+  * SpMixing: Fixed error-text and ctrl-prop
+  * Drbd,skipDisk: Do not process anything disk-related during skipDisk
+  * Drbd,forget-peer: Rework deleting resource
+
+  [ Moritz Wanzenböck ]
+  * ExtCmd: log commands using shell-quoting
+  * docker: remove dmeventd dependency
+  * docker: exec LINSTOR commands
+  * snapshots: fix string builder exception
+
+  [ Robert Altnoeder ]
+  * Add least common multiple calculation
+  * Add greatest common divisor (GCD) calculation
+  * MathUtils: Update JavaDoc
+  * MathUtils: Add exponent range check
+  * Unit tests for MathUtils
+  * Simplify constants (L suffix vs. Long.valueOf)
+  * productOfFactors: optimized powers-of-2 case
+  * Support prime factorization of 0 as a simple no-op
+  * Disallow zero as one of multiple input numbers for LCM
+  * Handle 0 as an input number for GCD calculation
+  * Update MathUtilsTest
+  * Update CHANGELOG.md
+  * Quorum property update: Avoid string representation of null pointers,  [...]
+  * Log the satellite name & peer ID instead of the address upon disconnec [...]
+  * New implementation of the SSL/TLS connector
+  * Standardize naming for I/O operation interest methods
+  * Delete SslTcpConnectorHandshaker (implemented in SslTcpConnectorPeer now)
+  * Do not close inbound SSL on end of stream while receiving
+  * Fix locking, use name instead of ordinal in unknown enum message
+  * Add flux error handler for PeerClosingConnectionException
+  * Update CHANGELOG.md
+  * Update field comments for use with javadoc
+  * Handle NOT_HANDSHAKING in sslHandshake, state can be entered from sslT [...]
+  * Update ping/pong timestamp after finishing connect & SSL handshake
+  * Add getErrorReporter method
+  * Log SSL error messages for easier diagnostics in case of SSL-related p [...]
+  * Loop over sslHandshake in sslTasksCompleted
+  * SslTcpConnectorPeer: Add logging for SSL and I/O debugging
+  * SslTcpConnectorService: Add debug logging
+  * SslTcpConnectorService: Remove code that does nothing in onSelectorWakeup
+  * Change threadId to getId, so the code compiles on Java versions earlie [...]
+
+  [ Johanna Kucera ]
+  * ExtFiles: added check-API
+  * Backups: use dstStorPoolName as fallback storpool
+  * PrioProps: ensure renderRelativeMap properly handles trailing slash
+  * Schedules: allow storpool-rename on schedule enable
+  * Snapshots: add exists field to SnapVlmLayerData
+  * Snapshots: allow renaming storpools during snapshot restore
+  * Schedules: prevent NPE while adding schedule
+  * Make review changes
+  * NodeLost: prevent race condition
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 22 Jan 2024 06:59:02 +0000
+
 linstor-server (1.25.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
