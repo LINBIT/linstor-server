@@ -9,6 +9,7 @@ import java.util.TreeSet;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -344,6 +345,73 @@ public class MathUtilsTest
         catch (ArithmeticException ignored)
         {
             // expected; no-op
+        }
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testCeilingPowerTwoFail()
+    {
+        MathUtils.longCeilingPowerTwo(-1);
+    }
+
+    @Test
+    public void testCeilingPowerTwo()
+    {
+        // 0 -> 1
+        assertEquals(1, MathUtils.longCeilingPowerTwo(0));
+        // 1 -> 1
+        assertEquals(1, MathUtils.longCeilingPowerTwo(1));
+        // 2 -> 2
+        assertEquals(2, MathUtils.longCeilingPowerTwo(2));
+
+        final long max = (Long.MAX_VALUE / 2) + 1;
+        for (long powTwo = 4; powTwo < max; powTwo *= 2)
+        {
+            // loop checks:
+            // 3 -> 4
+            // 4 -> 4
+            // 5 -> 8
+            // 7 -> 8
+            // 8 -> 8
+            // 9 -> 16
+            // 15 -> 16
+            // 16 -> 16
+            // 17 -> 32
+            // ...
+            assertEquals(powTwo, MathUtils.longCeilingPowerTwo(powTwo - 1));
+            assertEquals(powTwo, MathUtils.longCeilingPowerTwo(powTwo));
+            assertEquals(powTwo * 2, MathUtils.longCeilingPowerTwo(powTwo + 1));
+        }
+    }
+
+    @Test
+    public void testFloorPowerTwo()
+    {
+        // special case: 0 is not a power of two...
+        // 0 -> 1
+        assertEquals(1, MathUtils.longFloorPowerTwo(0));
+        // 1 -> 1
+        assertEquals(1, MathUtils.longFloorPowerTwo(1));
+        // 2 -> 2
+        assertEquals(2, MathUtils.longFloorPowerTwo(2));
+
+        final long max = (Long.MAX_VALUE / 2) + 1;
+        for (long powTwo = 4; powTwo < max; powTwo *= 2)
+        {
+            // loop checks:
+            // 3 -> 2
+            // 4 -> 4
+            // 5 -> 4
+            // 7 -> 4
+            // 8 -> 8
+            // 9 -> 8
+            // 15 -> 8
+            // 16 -> 16
+            // 17 -> 16
+            // ...
+            assertEquals(powTwo / 2, MathUtils.longFloorPowerTwo(powTwo - 1));
+            assertEquals(powTwo, MathUtils.longFloorPowerTwo(powTwo));
+            assertEquals(powTwo, MathUtils.longFloorPowerTwo(powTwo + 1));
         }
     }
 

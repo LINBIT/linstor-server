@@ -40,6 +40,74 @@ public class MathUtils
         };
 
     /**
+     * Calculates the next higher (or equal) number that is a power of 2 from the given {@code num}. A few examples:
+     *
+     * <table border="1px"><tr><thead>Input</thead><thead>Output</thead></tr>
+     * <tr><td>0</td><td>1 (special case)</td></tr>
+     * <tr><td>1</td><td>1</td></tr>
+     * <tr><td>2</td><td>2</td></tr>
+     * <tr><td>3</td><td>4</td></tr>
+     * <tr><td>4</td><td>4</td></tr>
+     * <tr><td>5</td><td>8</td></tr>
+     * <tr><td>42</td><td>64</td></tr>
+     * <tr><td>9001</td><td>9216</td></tr>
+     * </table>
+     *
+     * @param num
+     *
+     * @throws ArithmeticException for any negative number.
+     */
+    public static long longCeilingPowerTwo(long num) throws ArithmeticException
+    {
+        if (num < 0)
+        {
+            throw new ArithmeticException("Only positive numbers are allowed");
+        }
+        long ret = 1;
+        while (ret < num)
+        {
+            ret <<= 1;
+        }
+        return ret;
+    }
+
+    /**
+     * Calculates the next smaller (or equal) number that is a power of 2 from the given {@code num}. A few examples:
+     *
+     * <table border="1px"><tr><thead>Input</thead><thead>Output</thead></tr>
+     * <tr><td>0</td><td>1 (special case)</td></tr>
+     * <tr><td>1</td><td>1</td></tr>
+     * <tr><td>2</td><td>2</td></tr>
+     * <tr><td>3</td><td>2</td></tr>
+     * <tr><td>4</td><td>4</td></tr>
+     * <tr><td>5</td><td>4</td></tr>
+     * <tr><td>42</td><td>32</td></tr>
+     * <tr><td>9001</td><td>4098</td></tr>
+     * </table>
+     *
+     * @param num
+     *
+     * @throws ArithmeticException for any negative number.
+     */
+    public static long longFloorPowerTwo(long num)
+    {
+        long ret;
+        if (num == 0 || num == 1)
+        {
+            ret = 1;
+        }
+        else
+        {
+            ret = longCeilingPowerTwo(num);
+            if (num < ret)
+            {
+                ret >>= 1;
+            }
+        }
+        return ret;
+    }
+
+    /**
      * See <code>longFloorSqrt</code>
      */
     public static long longSqrt(final long value)
