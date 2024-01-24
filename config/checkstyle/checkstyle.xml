@@ -72,7 +72,7 @@ Checkstyle: https://checkstyle.sourceforge.net, https://github.com/checkstyle/ch
         </module>
 
         <module name="MagicNumber">
-            <property name="ignoreNumbers" value="-2,-1,0,1,2"/>
+            <property name="ignoreNumbers" value="-2,-1,0,1,2,100"/>
             <property name="ignoreHashCodeMethod" value="true"/>
             <property name="ignoreFieldDeclaration" value="true"/>
             <property name="severity" value="warning"/>
