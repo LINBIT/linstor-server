@@ -16,7 +16,6 @@ import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
-import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -34,7 +33,6 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -71,7 +69,6 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
-import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.utils.AccessUtils;
 
 import javax.inject.Inject;
@@ -235,7 +232,7 @@ public class DrbdLayer implements DeviceLayer
             StateFlags<Flags> rscFlags = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags();
             boolean isDiskless = rscFlags.isSet(workerCtx, Resource.Flags.DRBD_DISKLESS) &&
                 !rscFlags.isSomeSet(workerCtx, Resource.Flags.DISK_ADD_REQUESTED, Resource.Flags.DISK_ADDING);
-            if (!isDiskless && !isSkipDiskEnabled(drbdRscData))
+            if (!isDiskless && !drbdRscData.isSkipDiskEnabled(workerCtx, stltCfgAccessor.getReadonlyProps()))
             {
                 long netSize = drbdVlmData.getUsableSize();
 
@@ -326,7 +323,7 @@ public class DrbdLayer implements DeviceLayer
         {
             boolean isDiskless = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags()
                 .isSet(workerCtx, Resource.Flags.DRBD_DISKLESS);
-            if (!isDiskless && !isSkipDiskEnabled(drbdRscData))
+            if (!isDiskless && !drbdRscData.isSkipDiskEnabled(workerCtx, stltCfgAccessor.getReadonlyProps()))
             {
                 // let next layer calculate
                 VlmProviderObject<Resource> dataChildVlmData = drbdVlmData.getChildBySuffix(
@@ -650,7 +647,7 @@ public class DrbdLayer implements DeviceLayer
 
             shrinkVolumesIfNecessary(drbdRscData);
 
-            final boolean skipDisk = isSkipDiskEnabled(drbdRscData);
+            final boolean skipDisk = drbdRscData.isSkipDiskEnabled(workerCtx, stltCfgAccessor.getReadonlyProps());
 
             if (!childAlreadyProcessed && !skipDisk)
             {
@@ -2058,24 +2055,6 @@ public class DrbdLayer implements DeviceLayer
     {
         // ignored
         return null;
-    }
-
-    private boolean isSkipDiskEnabled(DrbdRscData<Resource> drbdRscData) throws AccessDeniedException
-    {
-        Resource rsc = drbdRscData.getAbsResource();
-        PriorityProps prioProps = new PriorityProps(rsc.getProps(workerCtx));
-        for (StorPool storPool : LayerVlmUtils.getStorPools(rsc, workerCtx))
-        {
-            prioProps.addProps(storPool.getProps(workerCtx));
-        }
-        prioProps.addProps(
-            rsc.getNode().getProps(workerCtx),
-            rsc.getResourceDefinition().getProps(workerCtx),
-            stltCfgAccessor.getReadonlyProps()
-        );
-
-        return ApiConsts.VAL_TRUE
-            .equals(prioProps.getProp(ApiConsts.KEY_DRBD_SKIP_DISK, ApiConsts.NAMESPC_DRBD_OPTIONS));
     }
 
     @Override

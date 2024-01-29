@@ -1,14 +1,22 @@
 package com.linbit.linstor.storage.data.adapter.drbd;
 
+import com.linbit.linstor.PriorityProps;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.pojo.DrbdRscPojo;
 import com.linbit.linstor.api.pojo.DrbdRscPojo.DrbdVlmPojo;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.AbsResource;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -19,6 +27,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
+import com.linbit.linstor.utils.layer.LayerVlmUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -324,6 +333,43 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
             promotionScore,
             mayPromote,
             ignoreReason.get()
+        );
+    }
+
+    /**
+     * Builds a PriorityProps and checks if "DrbdOptions/SkipDisk" is {@code "True"}. Priority of properties:
+     * <ul>
+     * <li>{@link AbsResource} (i.e. {@link Resource} or {@link Snapshot})</li>
+     * <li>all participating {@link StorPool}s. The order is depending on
+     * {@link LayerVlmUtils#getStorPools(AbsResource, AccessContext)}</li>
+     * <li>{@link Node}</li>
+     * <li>{@link ResourceDefinition}</li>
+     * <li>Satellite props (from parameter)</li>
+     * </ul>
+     *
+     * @param apiCtxRef
+     * @param stltProps
+     *
+     * @return true if "DrbdOptions/SkipDisk" is "True" (ignoring case). False otherwise
+     *
+     * @throws AccessDeniedException
+     */
+    public boolean isSkipDiskEnabled(AccessContext apiCtxRef, Props stltProps) throws AccessDeniedException
+    {
+        RSC rsc = getAbsResource();
+        PriorityProps prioProps = new PriorityProps(rsc.getProps(apiCtxRef));
+        for (StorPool storPool : LayerVlmUtils.getStorPools(rsc, apiCtxRef))
+        {
+            prioProps.addProps(storPool.getProps(apiCtxRef));
+        }
+        prioProps.addProps(
+            rsc.getNode().getProps(apiCtxRef),
+            rsc.getResourceDefinition().getProps(apiCtxRef),
+            stltProps
+        );
+
+        return ApiConsts.VAL_TRUE.equalsIgnoreCase(
+            prioProps.getProp(ApiConsts.KEY_DRBD_SKIP_DISK, ApiConsts.NAMESPC_DRBD_OPTIONS)
         );
     }
 }
