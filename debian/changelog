@@ -1,3 +1,10 @@
+linstor-server (1.26.0-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Exos: Deprecate APIs and add changelog entry
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Mon, 29 Jan 2024 08:14:06 +0000
+
 linstor-server (1.26.0~rc.1-1) experimental; urgency=medium
 
   [ Rene Peinthor ]
