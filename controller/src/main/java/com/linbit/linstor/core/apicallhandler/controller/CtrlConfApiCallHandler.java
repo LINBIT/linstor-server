@@ -1508,9 +1508,10 @@ public class CtrlConfApiCallHandler
             {
                 ResponseUtils.reportStatic(
                     null,
-                    EncryptionHelper.NAMESPACE_ENCRYPTED + " namespace is empty",
+                    EncryptionHelper.NAMESPACE_ENCRYPTED + " namespace is empty, you need to set a passphrase first",
                     ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
-                    null, // objRefs
+                    null,
+                    true,
                     apiCallRc,
                     errorReporter,
                     peerAccCtx.get(),
@@ -1547,6 +1548,7 @@ public class CtrlConfApiCallHandler
                 ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
                 null, // objRefs
                 null, // errorId
+                false,
                 apiCallRc
             );
         }
@@ -1560,6 +1562,7 @@ public class CtrlConfApiCallHandler
                 "Hardcoded namespace or property key invalid",
                 ApiConsts.FAIL_IMPL_ERROR,
                 null,
+                false,
                 apiCallRc,
                 errorReporter,
                 peerAccCtx.get(),
@@ -1579,6 +1582,7 @@ public class CtrlConfApiCallHandler
                 ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                 null, // objectRefs
                 null, // errorId
+                true,
                 apiCallRc
             );
         }
@@ -1592,6 +1596,7 @@ public class CtrlConfApiCallHandler
                 ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                 null, // objectRefs
                 null, // errorId
+                true,
                 apiCallRc
             );
         }
@@ -1602,6 +1607,7 @@ public class CtrlConfApiCallHandler
                 "Unknown error occurred while validating the passphrase",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
                 null,
+                false,
                 apiCallRc,
                 errorReporter,
                 peerAccCtx.get(),
@@ -1669,13 +1675,14 @@ public class CtrlConfApiCallHandler
                 else
                 {
                     ResponseUtils.addAnswerStatic(
-                        "Coult not create new crypt passphrase as it already exists",
+                        "Could not create new crypt passphrase as it already exists",
                         "A passphrase was already defined",
                         null,
                         "Use the crypt-modify-passphrase command instead of crypt-create-passphrase",
                         mask | ApiConsts.FAIL_EXISTS_CRYPT_PASSPHRASE,
                         new HashMap<>(),
                         null, // errorId
+                        true,
                         apiCallRc
                     );
                 }
@@ -1686,13 +1693,14 @@ public class CtrlConfApiCallHandler
                 if (namespace == null || namespace.isEmpty())
                 {
                     ResponseUtils.addAnswerStatic(
-                        "Coult not modify crypt passphrase as it does not exist",
+                        "Could not modify crypt passphrase as it does not exist",
                         "No passphrase was defined yet",
                         null,
                         "Use the crypt-create-passphrase command instead of crypt-modify-passphrase",
                         mask | ApiConsts.FAIL_EXISTS_CRYPT_PASSPHRASE,
                         new HashMap<>(),
                         null, // errorId
+                        true,
                         apiCallRc
                     );
                 }
@@ -1728,6 +1736,7 @@ public class CtrlConfApiCallHandler
                 "Hardcoded namespace or property key invalid",
                 ApiConsts.FAIL_IMPL_ERROR,
                 null,
+                false,
                 apiCallRc,
                 errorReporter,
                 peerAccCtx.get(),
@@ -1741,6 +1750,7 @@ public class CtrlConfApiCallHandler
                 ResponseUtils.getAccDeniedMsg(peerAccCtx.get(), "access the controller properties"),
                 ApiConsts.FAIL_ACC_DENIED_CTRL_CFG,
                 null, // objects
+                false,
                 apiCallRc,
                 errorReporter,
                 peerAccCtx.get(),
@@ -1754,6 +1764,7 @@ public class CtrlConfApiCallHandler
                 "Generated key could not be stored as property",
                 ApiConsts.FAIL_IMPL_ERROR,
                 null,
+                false,
                 apiCallRc,
                 errorReporter,
                 peerAccCtx.get(),
@@ -1767,6 +1778,7 @@ public class CtrlConfApiCallHandler
                 ResponseUtils.getSqlMsg("storing the generated and encrypted master key"),
                 ApiConsts.FAIL_SQL,
                 null,
+                false,
                 apiCallRc,
                 errorReporter,
                 peerAccCtx.get(),
@@ -1786,6 +1798,7 @@ public class CtrlConfApiCallHandler
                 ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                 null, // objectRefs
                 null, // errorId
+                false,
                 apiCallRc
             );
         }
@@ -1799,6 +1812,7 @@ public class CtrlConfApiCallHandler
                 ApiConsts.MASK_MOD | ApiConsts.MASK_CTRL_CONF | ApiConsts.FAIL_MISSING_PROPS,
                 null, // objectRefs
                 null, // errorId
+                true,
                 apiCallRc
             );
         }
@@ -1809,6 +1823,7 @@ public class CtrlConfApiCallHandler
                 "An unknown exception occurred while setting the passphrase",
                 ApiConsts.FAIL_UNKNOWN_ERROR,
                 null,
+                false,
                 apiCallRc,
                 errorReporter,
                 peerAccCtx.get(),

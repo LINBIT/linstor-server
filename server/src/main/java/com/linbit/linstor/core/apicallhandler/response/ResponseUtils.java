@@ -9,6 +9,8 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 
+import javax.annotation.Nullable;
+
 import java.util.Map;
 
 public class ResponseUtils
@@ -28,11 +30,12 @@ public class ResponseUtils
      * @param errorReporter
      * @param peer
      */
-    public static final void reportStatic(
+    public static void reportStatic(
         Throwable throwableRef,
         String errorMsg,
         long retCode,
-        Map<String, String> objRefsRef,
+        @Nullable Map<String, String> objRefsRef,
+        boolean skipErrorReport,
         ApiCallRcImpl apiCallRcRef,
         ErrorReporter errorReporter,
         AccessContext accCtx,
@@ -47,6 +50,7 @@ public class ResponseUtils
             null,
             retCode,
             objRefsRef,
+            skipErrorReport,
             apiCallRcRef,
             errorReporter,
             accCtx,
@@ -66,17 +70,19 @@ public class ResponseUtils
      * @param retCode
      * @param objRefsRef
      * @param apiCallRcRef
+     * @param skipErrorReport
      * @param accCtx
      * @param peer
      */
-    public static final void reportStatic(
-        Throwable throwableRef,
+    public static void reportStatic(
+        @Nullable Throwable throwableRef,
         String errorMsg,
         String causeMsg,
         String detailsMsg,
         String correctionMsg,
         long retCode,
-        Map<String, String> objRefsRef,
+        @Nullable Map<String, String> objRefsRef,
+        boolean skipErrorReport,
         ApiCallRcImpl apiCallRcRef,
         ErrorReporter errorReporter,
         AccessContext accCtx,
@@ -88,12 +94,16 @@ public class ResponseUtils
         {
             throwable = new LinStorException(errorMsg);
         }
-        String errorId = errorReporter.reportError(
-            throwable,
-            accCtx,
-            peer,
-            errorMsg
-        );
+        @Nullable String errorId = null;
+        if (!skipErrorReport)
+        {
+            errorId = errorReporter.reportError(
+                throwable,
+                accCtx,
+                peer,
+                errorMsg
+            );
+        }
         addAnswerStatic(
             errorMsg,
             causeMsg,
@@ -102,6 +112,7 @@ public class ResponseUtils
             retCode,
             objRefsRef,
             errorId,
+            skipErrorReport,
             apiCallRcRef
         );
     }
@@ -122,15 +133,17 @@ public class ResponseUtils
      * @param retCode
      * @param objRefsRef
      * @param errorId
+     * @param skipErrorReport Do not create an error-report
      */
-    public static final void addAnswerStatic(
+    public static void addAnswerStatic(
         String msg,
         String cause,
         String details,
         String correction,
         long retCode,
-        Map<String, String> objRefsRef,
-        String errorId,
+        @Nullable Map<String, String> objRefsRef,
+        @Nullable String errorId,
+        boolean skipErrorReport,
         ApiCallRcImpl apiCallRcRef
     )
     {
@@ -141,6 +154,7 @@ public class ResponseUtils
         entry.setCause(cause);
         entry.setDetails(details);
         entry.setCorrection(correction);
+        entry.setSkipErrorReport(skipErrorReport);
 
         if (objRefsRef != null)
         {
@@ -159,9 +173,9 @@ public class ResponseUtils
         String msg,
         String details,
         long retCode,
-        ApiCallRcImpl apiCallRcRef,
-        Map<String, String> objsRef,
-        ErrorReporter errorReporter
+        @Nullable ApiCallRcImpl apiCallRcRef,
+        @Nullable Map<String, String> objsRef,
+        @Nullable ErrorReporter errorReporter
     )
     {
         if (apiCallRcRef != null)
@@ -174,6 +188,7 @@ public class ResponseUtils
                 retCode,
                 objsRef,
                 null, // errorId
+                true,
                 apiCallRcRef
             );
         }

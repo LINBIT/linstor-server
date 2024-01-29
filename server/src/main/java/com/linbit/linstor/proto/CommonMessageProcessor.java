@@ -611,6 +611,7 @@ public class CommonMessageProcessor implements MessageProcessor
             exc.getMessage(),
             ApiConsts.FAIL_SQL,
             null,
+            false,
             responses,
             errorLog,
             peer.getAccessContext(),
