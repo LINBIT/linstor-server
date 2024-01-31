@@ -35,6 +35,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -489,7 +490,7 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     }
 
     @Override
-    protected long getExtentSize(EbsData<Resource> vlmDataRef) throws StorageException, AccessDeniedException
+    protected long getExtentSize(AbsStorageVlmData<?> vlmDataRef)
     {
         return SizeConv.convert(1, SizeUnit.UNIT_GiB, SizeUnit.UNIT_KiB);
     }

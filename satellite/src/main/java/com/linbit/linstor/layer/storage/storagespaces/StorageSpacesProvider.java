@@ -32,6 +32,7 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageSpacesInfo;
 import com.linbit.linstor.storage.StorageUtils;
+import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.storagespaces.StorageSpacesData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -649,12 +650,14 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     {
     }
 
-    protected long getExtentSize(StorageSpacesData<Resource> vlmDataRef) throws StorageException
+    @Override
+    protected long getExtentSize(AbsStorageVlmData<?> vlmDataRef)
     {
-            /* This is the extent size of the partition not
-             * the one of storage spaces itself. The storage
-             * spaces extent size would be 256*1024*1024 bytes.
-             */
+        /*
+         * This is the extent size of the partition not
+         * the one of storage spaces itself. The storage
+         * spaces extent size would be 256*1024*1024 bytes.
+         */
         return WORST_CASE_GRANULARITY;
     }
 

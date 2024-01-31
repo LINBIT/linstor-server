@@ -40,6 +40,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -805,7 +806,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    protected long getExtentSize(FileData<Resource> vlmDataRef) throws StorageException, AccessDeniedException
+    protected long getExtentSize(AbsStorageVlmData<?> vlmDataRef)
     {
         /*
          * losetup wants to round to 512 bytes (1 sector), but linstor calculates in KiB

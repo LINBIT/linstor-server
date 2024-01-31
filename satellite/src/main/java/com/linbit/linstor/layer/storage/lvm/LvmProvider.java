@@ -43,6 +43,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -836,7 +837,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    protected long getExtentSize(LvmData<Resource> vlmDataRef) throws StorageException
+    protected long getExtentSize(AbsStorageVlmData<?> vlmDataRef) throws StorageException
     {
         String vlmGrp = getVolumeGroup(vlmDataRef.getStorPool());
         Map<String, Long> extentSizes = LvmUtils.getExtentSize(

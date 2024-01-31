@@ -40,6 +40,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.spdk.SpdkData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -578,12 +579,25 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
         snapVlmRef.setExists(false);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    protected long getExtentSize(SpdkData<Resource> vlmDataRef) throws StorageException, AccessDeniedException
+    protected long getExtentSize(AbsStorageVlmData<?> vlmDataRef) throws StorageException, AccessDeniedException
     {
+        Collection<SpdkData<Resource>> vlmDataList;
+        Collection<SpdkData<Snapshot>> snapVlms;
+        if (vlmDataRef.getVolume() instanceof Volume)
+        {
+            vlmDataList = Collections.singleton((SpdkData<Resource>) vlmDataRef);
+            snapVlms = Collections.emptyList();
+        }
+        else
+        {
+            vlmDataList = Collections.emptyList();
+            snapVlms = Collections.singleton((SpdkData<Snapshot>) vlmDataRef);
+        }
         Set<String> affectedVolumeGroups = getAffectedVolumeGroups(
-            Collections.singleton(vlmDataRef),
-            Collections.emptyList()
+            vlmDataList,
+            snapVlms
         );
         if (affectedVolumeGroups.size() != 1)
         {

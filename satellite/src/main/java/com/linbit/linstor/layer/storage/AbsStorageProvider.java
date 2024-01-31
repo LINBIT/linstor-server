@@ -887,6 +887,11 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     {
                         try
                         {
+                            updateGrossSize(snapVlm); // this should round snapshots up to the ALLOCATION_GRANULARITY
+                            // that is needed if a backup was created / uploaded with a larger ALLOCATION_GRANULARITY
+                            // than we have here locally. The controller should have already re-calculated the property
+                            // so we only need to apply and use it.
+
                             createLvForBackupIfNeeded(snapVlm);
                             waitForSnapIfNeeded(snapVlm);
                             startBackupRestore(snapVlm);
@@ -1500,7 +1505,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     @SuppressWarnings("unchecked")
-    public void updateGrossSize(VlmProviderObject<Resource> vlmData)
+    public void updateGrossSize(VlmProviderObject<?> vlmData)
         throws AccessDeniedException, DatabaseException, StorageException
     {
         /*
@@ -1729,14 +1734,24 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         );
     }
 
-    protected long getExtentSizeFromVlmDfn(VlmProviderObject<Resource> vlmDataRef) throws AccessDeniedException
+    protected long getExtentSizeFromVlmDfn(VlmProviderObject<?> vlmDataRef) throws AccessDeniedException
     {
-        VolumeDefinition vlmDfn = vlmDataRef.getVolume().getVolumeDefinition();
-        String allocGran = vlmDfn.getProps(storDriverAccCtx)
-            .getProp(
-                InternalApiConsts.ALLOCATION_GRANULARITY,
-                StorageConstants.NAMESPACE_INTERNAL
-            );
+        AbsVolume<?> volume = vlmDataRef.getVolume();
+        Props props;
+        if (volume instanceof Volume)
+        {
+            VolumeDefinition vlmDfn = volume.getVolumeDefinition();
+            props = vlmDfn.getProps(storDriverAccCtx);
+        }
+        else
+        {
+            SnapshotVolumeDefinition snapVlmDfn = ((SnapshotVolume) volume).getSnapshotVolumeDefinition();
+            props = snapVlmDfn.getProps(storDriverAccCtx);
+        }
+        String allocGran = props.getProp(
+            InternalApiConsts.ALLOCATION_GRANULARITY,
+            StorageConstants.NAMESPACE_INTERNAL
+        );
         long ret;
         if (allocGran == null)
         {
@@ -1795,7 +1810,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected abstract void setExpectedUsableSize(LAYER_DATA vlmData, long size)
         throws DatabaseException, StorageException;
 
-    protected abstract long getExtentSize(LAYER_DATA vlmDataRef) throws StorageException, AccessDeniedException;
+    protected abstract long getExtentSize(AbsStorageVlmData<?> vlmDataRef)
+        throws StorageException, AccessDeniedException;
 
     public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
     {

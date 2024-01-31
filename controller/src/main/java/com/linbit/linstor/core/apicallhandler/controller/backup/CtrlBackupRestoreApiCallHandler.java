@@ -68,6 +68,7 @@ import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.RemoteRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.LayerSizeHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
@@ -77,6 +78,7 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -91,6 +93,7 @@ import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.MathUtils;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
@@ -152,6 +155,7 @@ public class CtrlBackupRestoreApiCallHandler
     private final CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandler;
     private final CtrlBackupApiCallHandler backupApiCallHandler;
     private final BackupShippingRestClient backupShippingRestClient;
+    private final LayerSizeHelper layerSizeHelper;
 
     @Inject
     public CtrlBackupRestoreApiCallHandler(
@@ -180,7 +184,8 @@ public class CtrlBackupRestoreApiCallHandler
         CtrlSnapshotRestoreApiCallHandler ctrlSnapRestoreApiCallHandlerRef,
         CtrlSnapshotDeleteApiCallHandler ctrlSnapDeleteApiCallHandlerRef,
         CtrlBackupApiCallHandler backupApiCallHandlerRef,
-        BackupShippingRestClient backupShippingRestClientRef
+        BackupShippingRestClient backupShippingRestClientRef,
+        LayerSizeHelper layerSizeHelperRef
     )
     {
         freeCapacityFetcher = freeCapacityFetcherRef;
@@ -209,6 +214,7 @@ public class CtrlBackupRestoreApiCallHandler
         ctrlSnapDeleteApiCallHandler = ctrlSnapDeleteApiCallHandlerRef;
         backupApiCallHandler = backupApiCallHandlerRef;
         backupShippingRestClient = backupShippingRestClientRef;
+        layerSizeHelper = layerSizeHelperRef;
     }
 
     public Flux<ApiCallRc> restoreBackup(
@@ -751,7 +757,7 @@ public class CtrlBackupRestoreApiCallHandler
     }
 
     /**
-     * Pre version 1.26.0 (where storpool-mixing was introduce), backups had no
+     * Pre version 1.26.0 (where storpool-mixing was introduced), backups had no
      * "StorDriver/internal/AllocationGranularity" property on VlmDfn.
      * If those backups had a non-default extent-size, new peers (additional to the one that we might restore shortly)
      * will create themselves with a possibly too small disk, leading to Standalone scenario on DRBD level.
@@ -764,14 +770,45 @@ public class CtrlBackupRestoreApiCallHandler
      * From vds we need to calculate the additional sizes for metadata (DRBD, LUKS, etc..), which gives us the minimum
      * usable size on STORAGE layer. Since we have the minimum usable size as well as the actual usable size, we can
      * calculate a granularity G that matches the actual size (and is >= minimum size). That G value needs to be stored
-     * on the SnapshotVolumeDefinition's property for future usage. *
+     * on the SnapshotVolumeDefinition's property for future usage.
      *
      * @param snapVlmRef
+     *
+     * @throws AccessDeniedException
+     * @throws InvalidValueException
+     * @throws DatabaseException
+     * @throws InvalidKeyException
      */
     private void recalculateCommonAllocationGranularityIfNeeded(SnapshotVolume snapVlmRef)
+        throws AccessDeniedException, InvalidKeyException, DatabaseException, InvalidValueException
     {
-        // TODO implement this method. Currently the metadata calculations are only available on the satellite
+        SnapshotVolumeDefinition snapVlmDfn = snapVlmRef.getSnapshotVolumeDefinition();
+        Props snapVlmDfnProps = snapVlmDfn.getProps(sysCtx);
+        String allocGranPropValue = snapVlmDfnProps.getProp(
+            InternalApiConsts.ALLOCATION_GRANULARITY,
+            ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + InternalApiConsts.NAMESPC_INTERNAL
+        );
+        if (allocGranPropValue == null)
+        {
+            Set<AbsRscLayerObject<Snapshot>> snapStorageVlmSet = LayerRscUtils.getRscDataByLayer(
+                snapVlmRef.getAbsResource().getLayerData(sysCtx),
+                DeviceLayerKind.STORAGE,
+                RscLayerSuffixes.SUFFIX_DATA::equals
+            );
+            if (snapStorageVlmSet.size() == 1)
+            {
+                long bds = snapStorageVlmSet.iterator().next()
+                    .getVlmProviderObject(snapVlmDfn.getVolumeNumber())
+                    .getUsableSize();
+                long minimumSize = layerSizeHelper.calculateSize(sysCtx, snapVlmRef, RscLayerSuffixes.SUFFIX_DATA);
+                long recalcAllocGran = MathUtils.longCeilingPowerTwo(bds - minimumSize);
 
+                snapVlmDfnProps.setProp(InternalApiConsts.ALLOCATION_GRANULARITY,
+                    Long.toString(recalcAllocGran),
+                    StorageConstants.NAMESPACE_INTERNAL
+                );
+            }
+        }
     }
 
     /**

@@ -5,11 +5,12 @@ import com.linbit.SizeConv.SizeUnit;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.ResourceGroup;
+import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -31,7 +32,7 @@ public class ZfsPropsUtils
     }
 
     public static long extractZfsVolBlockSizePrivileged(
-        VlmProviderObject<Resource> vlmDataRef,
+        VlmProviderObject<?> vlmDataRef,
         @SystemContext AccessContext sysCtx,
         Props stltProps
     )
@@ -39,19 +40,38 @@ public class ZfsPropsUtils
     {
         long extentSize = DEFAULT_ZFS_EXTENT_SIZE;
 
-        Volume vlm = (Volume) vlmDataRef.getVolume();
-        Resource rsc = vlm.getAbsResource();
-        ResourceDefinition rscDfn = vlm.getResourceDefinition();
-        ResourceGroup rscGrp = rscDfn.getResourceGroup();
-        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+        AbsVolume<?> absVlm = vlmDataRef.getVolume();
+        Props absVlmProps;
+        Props absRscProps;
+        Props vlmDfnProps;
+        Props rscDfnProps;
+        if (absVlm instanceof Volume)
+        {
+            Volume vlm = (Volume) vlmDataRef.getVolume();
+            Resource rsc = vlm.getAbsResource();
+            absVlmProps = vlm.getProps(sysCtx);
+            absRscProps = rsc.getProps(sysCtx);
+            vlmDfnProps = vlm.getVolumeDefinition().getProps(sysCtx);
+            rscDfnProps = rsc.getResourceDefinition().getProps(sysCtx);
+        }
+        else
+        {
+            SnapshotVolume snapVlm = (SnapshotVolume) vlmDataRef.getVolume();
+            Snapshot snap = snapVlm.getAbsResource();
+            absVlmProps = snapVlm.getProps(sysCtx);
+            absRscProps = snap.getProps(sysCtx);
+            vlmDfnProps = snapVlm.getSnapshotVolumeDefinition().getProps(sysCtx);
+            rscDfnProps = snap.getSnapshotDefinition().getProps(sysCtx);
+        }
+        ResourceGroup rscGrp = absVlm.getAbsResource().getResourceDefinition().getResourceGroup();
         PriorityProps prioProp = new PriorityProps(
-            vlm.getProps(sysCtx),
-            rsc.getProps(sysCtx),
+            absVlmProps,
+            absRscProps,
             vlmDataRef.getStorPool().getProps(sysCtx),
-            rsc.getNode().getProps(sysCtx),
-            vlmDfn.getProps(sysCtx),
-            rscDfn.getProps(sysCtx),
-            rscGrp.getVolumeGroupProps(sysCtx, vlmDfn.getVolumeNumber()),
+            absVlm.getAbsResource().getNode().getProps(sysCtx),
+            vlmDfnProps,
+            rscDfnProps,
+            rscGrp.getVolumeGroupProps(sysCtx, absVlm.getVolumeNumber()),
             rscGrp.getProps(sysCtx),
             stltProps
         );
