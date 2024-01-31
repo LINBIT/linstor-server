@@ -27,7 +27,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeRscData;
 import com.linbit.linstor.storage.data.adapter.nvme.NvmeVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import static com.linbit.linstor.layer.nvme.NvmeUtils.NVME_SUBSYSTEMS_PATH;
 import static com.linbit.linstor.layer.nvme.NvmeUtils.NVME_SUBSYSTEM_PREFIX;
@@ -303,36 +302,6 @@ public class NvmeLayer implements DeviceLayer
                 }
             }
         }
-    }
-
-    @Override
-    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        NvmeVlmData<Resource> nvmeVlmData = (NvmeVlmData<Resource>) vlmData;
-
-        // basically no-op. gross == net for NVMe
-        long size = nvmeVlmData.getUsableSize();
-        nvmeVlmData.setAllocatedSize(size);
-
-        VlmProviderObject<Resource> childVlmData = nvmeVlmData.getSingleChild();
-        childVlmData.setUsableSize(size);
-        resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(childVlmData);
-    }
-
-    @Override
-    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        NvmeVlmData<Resource> nvmeVlmData = (NvmeVlmData<Resource>) vlmData;
-
-        // basically no-op. gross == net for NVMe
-        long size = nvmeVlmData.getAllocatedSize();
-        nvmeVlmData.setUsableSize(size);
-
-        VlmProviderObject<Resource> childVlmData = nvmeVlmData.getSingleChild();
-        childVlmData.setAllocatedSize(size);
-        resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(childVlmData);
     }
 
     @Override

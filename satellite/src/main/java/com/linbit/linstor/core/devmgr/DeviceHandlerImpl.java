@@ -28,7 +28,6 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
@@ -38,6 +37,7 @@ import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.AbortLayerProcessingException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.LayerFactory;
+import com.linbit.linstor.layer.LayerSizeHelper;
 import com.linbit.linstor.layer.storage.StorageLayer;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -107,6 +107,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     private Props localNodeProps;
     private final BackupShippingMgr backupShippingManager;
     private final SuspendManager suspendMgr;
+    private final LayerSizeHelper layerSizeHelper;
 
     @Inject
     public DeviceHandlerImpl(
@@ -124,7 +125,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         SnapshotShippingService snapshotShippingManagerRef,
         StltExternalFileHandler extFileHandlerRef,
         BackupShippingMgr backupShippingManagerRef,
-        SuspendManager suspendMgrRef
+        SuspendManager suspendMgrRef,
+        LayerSizeHelper layerSizeHelperRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -143,6 +145,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         extFileHandler = extFileHandlerRef;
         backupShippingManager = backupShippingManagerRef;
         suspendMgr = suspendMgrRef;
+        layerSizeHelper = layerSizeHelperRef;
 
         suspendMgrRef.setExceptionHandler(this::handleException);
 
@@ -254,53 +257,15 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             for (Resource rsc : resources)
             {
-                try
+                AbsRscLayerObject<Resource> rscData = rsc.getLayerData(wrkCtx);
+                for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
                 {
-                    AbsRscLayerObject<Resource> rscData = rsc.getLayerData(wrkCtx);
-                    for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
-                    {
-                        long vlmDfnSize = vlmData.getVolume().getVolumeSize(wrkCtx);
-                        boolean calculateNetSizes = vlmData.getVolume().getVolumeDefinition().getFlags()
-                            .isSet(wrkCtx, VolumeDefinition.Flags.GROSS_SIZE);
-
-                        if (calculateNetSizes)
-                        {
-                            vlmData.setAllocatedSize(vlmDfnSize);
-                            updateUsableSizeFromAllocatedSize(vlmData);
-                            vlmData.setOriginalSize(vlmDfnSize);
-                        }
-                        else
-                        {
-                            vlmData.setUsableSize(vlmDfnSize);
-                            updateAllocatedSizeFromUsableSize(vlmData);
-                            vlmData.setOriginalSize(vlmDfnSize);
-                        }
-                    }
-                    rscs.add(rsc);
+                    layerSizeHelper.calculateSize(wrkCtx, vlmData);
                 }
-                catch (StorageException exc)
-                {
-                    String errorId = errorReporter.reportError(
-                        exc,
-                        null,
-                        null,
-                        "An error occurred while calculating gross size of resource '" + rsc + "'"
-                    );
-                    ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
-                        ApiCallRcImpl
-                            .entryBuilder(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage())
-                            .setCause(exc.getCauseText())
-                            .setCorrection(exc.getCorrectionText())
-                            .setDetails(exc.getDetailsText())
-                            .addErrorId(errorId)
-                            .build()
-                    );
-
-                    notificationListener.get().notifyResourceFailed(rsc, apiCallRc);
-                }
+                rscs.add(rsc);
             }
         }
-        catch (AccessDeniedException | DatabaseException exc)
+        catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
         }
@@ -961,58 +926,6 @@ public class DeviceHandlerImpl implements DeviceHandler
             "Layer '%s' finished processing resource '%s'",
             nextLayer.getName(),
             rscLayerData.getSuffixedResourceName()
-        );
-    }
-
-    @Override
-    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        DeviceLayer nextLayer = layerFactory.getDeviceLayer(vlmData.getLayerKind());
-
-        errorReporter.logTrace(
-            "Layer '%s' updating gross size of volume '%s/%d' (usable: %d)",
-            nextLayer.getName(),
-            vlmData.getRscLayerObject().getSuffixedResourceName(),
-            vlmData.getVlmNr().value,
-            vlmData.getUsableSize()
-        );
-
-        nextLayer.updateAllocatedSizeFromUsableSize(vlmData);
-
-        errorReporter.logTrace(
-            "Layer '%s' finished calculating sizes of volume '%s/%d'. Allocated: %d, usable: %d",
-            nextLayer.getName(),
-            vlmData.getRscLayerObject().getSuffixedResourceName(),
-            vlmData.getVlmNr().value,
-            vlmData.getAllocatedSize(),
-            vlmData.getUsableSize()
-        );
-    }
-
-    @Override
-    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        DeviceLayer nextLayer = layerFactory.getDeviceLayer(vlmData.getLayerKind());
-
-        errorReporter.logTrace(
-            "Layer '%s' updating net size of volume '%s/%d' (allocated: %d)",
-            nextLayer.getName(),
-            vlmData.getRscLayerObject().getSuffixedResourceName(),
-            vlmData.getVlmNr().value,
-            vlmData.getAllocatedSize()
-        );
-
-        nextLayer.updateUsableSizeFromAllocatedSize(vlmData);
-
-        errorReporter.logTrace(
-            "Layer '%s' finished calculating sizes of volume '%s/%d'. Allocated: %d, usable: %d",
-            nextLayer.getName(),
-            vlmData.getRscLayerObject().getSuffixedResourceName(),
-            vlmData.getVlmNr().value,
-            vlmData.getAllocatedSize(),
-            vlmData.getUsableSize()
         );
     }
 

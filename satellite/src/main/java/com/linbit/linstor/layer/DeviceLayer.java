@@ -22,7 +22,6 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
 import java.util.List;
 import java.util.Map;
@@ -47,35 +46,6 @@ public interface DeviceLayer
         Set<AbsRscLayerObject<Snapshot>> snapObjList
     )
         throws StorageException, AccessDeniedException, DatabaseException;
-
-    /**
-     * The layer implementing this method can assume that its usable size is already set.
-     * The implementation is expected to update its own allocated size.
-     * The implementation is expected to call an update*Size method for the next layer
-     *
-     * @param vlmData
-     *
-     * @throws AccessDeniedException
-     * @throws DatabaseException
-     * @throws StorageException
-     */
-    void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException;
-
-    /**
-     * The layer implementing this method can assume that its allocated size is already set.
-     * The implementation is expected to update its own usable size.
-     * The implementation might lower its allocated size if the layer below provides less usable size.
-     * The implementation is expected to call an update*Size method for the next layer
-     *
-     * @param vlmData
-     *
-     * @throws AccessDeniedException
-     * @throws DatabaseException
-     * @throws StorageException
-     */
-    void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException;
 
     /**
      * @param rscLayerData The current layer's data. This is an explicit parameter in case we

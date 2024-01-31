@@ -2,6 +2,7 @@ package com.linbit.linstor.core;
 
 import com.linbit.GuiceConfigModule;
 import com.linbit.ImplementationError;
+import com.linbit.PlatformStlt;
 import com.linbit.SatelliteLinstorModule;
 import com.linbit.ServiceName;
 import com.linbit.SystemService;
@@ -33,6 +34,7 @@ import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ConnectionStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
+import com.linbit.linstor.layer.LayerSizeCalculatorModule;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventPublisher;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventService;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdStateModule;
@@ -54,7 +56,6 @@ import com.linbit.linstor.systemstarter.StartupInitializer;
 import com.linbit.linstor.timer.CoreTimer;
 import com.linbit.linstor.timer.CoreTimerModule;
 import com.linbit.linstor.transaction.manager.SatelliteTransactionMgrModule;
-import com.linbit.PlatformStlt;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -464,7 +465,8 @@ public final class Satellite
                     new DebugModule(),
                     new SatelliteDebugModule(),
                     new SatelliteTransactionMgrModule(),
-                    new SatelliteNumberPoolModule()
+                    new SatelliteNumberPoolModule(),
+                    new LayerSizeCalculatorModule()
                 )
             );
             LinStor.loadModularCrypto(injModList, errorLog, haveFipsInit);

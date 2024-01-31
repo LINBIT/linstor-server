@@ -28,7 +28,6 @@ import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.utils.DeviceUtils;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -62,12 +61,6 @@ public class BCacheLayer implements DeviceLayer
     private static final int WAIT_TIMEOUT_AFTER_ATTACH_MILLIS = 500;
     private static final long WAIT_FOR_BCACHE_TIMEOUT_MS = 100;
     private static final long WAIT_FOR_BCACHE_RETRY_COUNT = 20;
-
-    private static final long BCACHE_METADATA_SIZE_IN_KIB = 8;
-
-    private static final String DFLT_CACHE_SIZE = "5%";
-    private static final long MIN_CACHE_SIZE_IN_KIB = 512 * 1024; // 512MB
-
     private final ErrorReporter errorReporter;
     private final AccessContext storDriverAccCtx;
     private final ExtCmdFactory extCmdFactory;
@@ -114,7 +107,6 @@ public class BCacheLayer implements DeviceLayer
         return this.getClass().getSimpleName();
     }
 
-
     @Override
     public void prepare(Set<AbsRscLayerObject<Resource>> rscObjListRef, Set<AbsRscLayerObject<Snapshot>> snapObjListRef)
         throws StorageException, AccessDeniedException, DatabaseException
@@ -132,7 +124,6 @@ public class BCacheLayer implements DeviceLayer
                 if (identifier == null)
                 {
                     // uninitialized
-                    identifier = null;
                     errorReporter.logTrace(
                         "BCache: device not found. Will be created for %s",
                         toString(vlmData)
@@ -151,85 +142,6 @@ public class BCacheLayer implements DeviceLayer
 
             }
         }
-    }
-
-    @Override
-    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        updateSize((BCacheVlmData<Resource>) vlmData, true);
-    }
-
-    @Override
-    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        updateSize((BCacheVlmData<Resource>) vlmData, false);
-    }
-
-    /*
-     * TODO: method mostly copied from WritecacheLayer. Most certainly also quite similar to CacheLayer's calculation
-     * We should think about refactoring those three into one..
-     */
-    private void updateSize(BCacheVlmData<Resource> vlmData, boolean fromUsable)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        VlmProviderObject<Resource> dataChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-        VlmProviderObject<Resource> cacheChildVlmData = vlmData.getChildBySuffix(
-            RscLayerSuffixes.SUFFIX_BCACHE_CACHE
-        );
-
-        if (fromUsable)
-        {
-            dataChildVlmData.setUsableSize(vlmData.getUsableSize() + BCACHE_METADATA_SIZE_IN_KIB);
-            resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChildVlmData);
-        }
-        else
-        {
-            dataChildVlmData.setAllocatedSize(vlmData.getAllocatedSize() + BCACHE_METADATA_SIZE_IN_KIB);
-            resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(dataChildVlmData);
-        }
-
-        long cacheSize;
-        if (cacheChildVlmData != null)
-        {
-            // null if we are above an NVMe target
-            String cacheSizeStr = getCacheSize(vlmData.getVolume());
-            if (cacheSizeStr.endsWith("%"))
-            {
-                String cacheSizePercent = cacheSizeStr.substring(0, cacheSizeStr.length() - 1);
-                double percent = Double.parseDouble(cacheSizePercent) / 100;
-                cacheSize = Math.round(percent * vlmData.getUsableSize() + 0.5);
-            }
-            else
-            {
-                cacheSize = Long.parseLong(cacheSizeStr);
-            }
-
-            if (cacheSize < MIN_CACHE_SIZE_IN_KIB)
-            {
-                errorReporter.logDebug(
-                    "BCache: size %dKiB was too small. Rounded up to %dKiB",
-                    cacheSize,
-                    MIN_CACHE_SIZE_IN_KIB
-                );
-                cacheSize = MIN_CACHE_SIZE_IN_KIB;
-            }
-
-            // even if we are updating fromAllocated, cache device still need to be calculated fromUsable
-            cacheChildVlmData.setUsableSize(cacheSize);
-            resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(cacheChildVlmData);
-        }
-        else
-        {
-            cacheSize = 0;
-        }
-
-        if (!fromUsable)
-        {
-            vlmData.setUsableSize(vlmData.getAllocatedSize());
-        }
-        vlmData.setAllocatedSize(vlmData.getUsableSize() + cacheSize + BCACHE_METADATA_SIZE_IN_KIB);
     }
 
     @Override
@@ -683,15 +595,6 @@ public class BCacheLayer implements DeviceLayer
             sb.append(" Suffix: ").append(rscNameSuffix);
         }
         return sb.toString();
-    }
-
-    private String getCacheSize(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException
-    {
-        return getPrioProps(vlmRef).getProp(
-            ApiConsts.KEY_BCACHE_SIZE,
-            ApiConsts.NAMESPC_BCACHE,
-            DFLT_CACHE_SIZE
-        ).trim();
     }
 
     private PriorityProps getPrioProps(AbsVolume<Resource> vlmRef) throws AccessDeniedException

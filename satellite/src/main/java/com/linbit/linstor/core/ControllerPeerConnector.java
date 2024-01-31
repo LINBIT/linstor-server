@@ -4,7 +4,6 @@ import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.UUID;
@@ -25,9 +24,9 @@ public interface ControllerPeerConnector
      */
     void setControllerPeer(
         @Nullable UUID ctrlUuidRef,
-        @Nonnull Peer controllerPeerRef,
-        @Nonnull UUID nodeUuid,
-        @Nonnull String nodeName
+        Peer controllerPeerRef,
+        UUID nodeUuid,
+        String nodeName
     );
 
     void setControllerPeerToCurrentLocalNode();

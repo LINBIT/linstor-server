@@ -42,6 +42,7 @@ import com.linbit.linstor.event.serializer.EventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ConnectionStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.ResourceStateEventSerializer;
 import com.linbit.linstor.event.serializer.protobuf.common.VolumeDiskStateEventSerializer;
+import com.linbit.linstor.layer.LayerSizeCalculatorModule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.LoggingModule;
 import com.linbit.linstor.logging.StdErrorReporter;
@@ -590,7 +591,8 @@ public final class Controller
                     new DebugModule(),
                     new ControllerDebugModule(),
                     new ControllerTransactionMgrModule(dbType),
-                    new NameShortenerModule()
+                    new NameShortenerModule(),
+                    new LayerSizeCalculatorModule()
                 )
             );
             LinStor.loadModularCrypto(injModList, errorLog, haveFipsInit);

@@ -6,6 +6,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.interfaces.serializer.CommonSerializer;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
+import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.NodeSatelliteFactory;
@@ -18,7 +19,6 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -57,6 +57,8 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     private Peer controllerPeer;
     private final Provider<StltApiCallHandlerUtils> stltApiCallHandlerUtils;
 
+    private final StltExtToolsChecker stltExtToolsChecker;
+
     @Inject
     public ControllerPeerConnectorImpl(
         CoreModule.NodesMap nodesMapRef,
@@ -70,7 +72,8 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         Provider<TransactionMgr> transMgrProviderRef,
         CommonSerializer commonSerializerRef,
         StltConnTracker stltConnTracker,
-        Provider<StltApiCallHandlerUtils> stltApiCallHandlerUtilsProviderRef
+        Provider<StltApiCallHandlerUtils> stltApiCallHandlerUtilsProviderRef,
+        StltExtToolsChecker stltExtToolsCheckerRef
     )
     {
         nodesMap = nodesMapRef;
@@ -84,6 +87,7 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         transMgrProvider = transMgrProviderRef;
         commonSerializer = commonSerializerRef;
         stltApiCallHandlerUtils = stltApiCallHandlerUtilsProviderRef;
+        stltExtToolsChecker = stltExtToolsCheckerRef;
 
         offlineCtrlPeer = new PeerOffline(errorReporterRef, "controller", null);
         controllerPeer = offlineCtrlPeer;
@@ -121,9 +125,9 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
     @Override
     public void setControllerPeer(
         @Nullable UUID ctrlUuidRef,
-        @Nonnull Peer controllerPeerRef,
-        @Nonnull UUID nodeUuid,
-        @Nonnull String nodeName
+        Peer controllerPeerRef,
+        UUID nodeUuid,
+        String nodeName
     )
     {
         try
@@ -208,6 +212,16 @@ public class ControllerPeerConnectorImpl implements ControllerPeerConnector
         try
         {
             nodesMap.get(localNodeName).setPeer(sysCtx, controllerPeer);
+            /*
+             * Initialize local node's extToolsList so that methods in the server project can also use the
+             * localNode.get...getExtToolsMgr to check for external tools versions and support (like the
+             * LuksLayerSizeCalculator does)
+             */
+            // we can also use the cached versions, since authentication re-caches everything, that should be good
+            // enough for us
+            controllerPeer.getExtToolsManager()
+                .updateExternalToolsInfo(
+                    stltExtToolsChecker.getExternalTools(false).values());
         }
         catch (AccessDeniedException exc)
         {

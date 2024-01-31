@@ -50,8 +50,6 @@ public class CacheLayer implements DeviceLayer
     private static final String FORMAT_DM_NAME = "linstor_cache_%s%s_%05d";
     private static final String FORMAT_DEV_PATH = "/dev/mapper/%s";
 
-    private static final String DFLT_CACHE_SIZE = "5%";
-    private static final String DFLT_META_SIZE = "12288"; // 12M
     private static final String DFLT_BLOCK_SIZE = "4096";
     private static final String DFLT_FEATURE = "writethrough";
     private static final String DFLT_POLICY = "smq";
@@ -146,89 +144,6 @@ public class CacheLayer implements DeviceLayer
             rscData.getResourceNameSuffix(),
             vlmDataRef.getVlmNr().value
         );
-    }
-
-    @Override
-    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        updateSize((CacheVlmData<Resource>) vlmData, true);
-    }
-
-    @Override
-    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        updateSize((CacheVlmData<Resource>) vlmData, false);
-    }
-
-    private void updateSize(
-        CacheVlmData<Resource> vlmData,
-        boolean fromUsable
-    )
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        VlmProviderObject<Resource> dataChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-        VlmProviderObject<Resource> cacheChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);
-        VlmProviderObject<Resource> metaChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_META);
-
-        if (fromUsable)
-        {
-            dataChildVlmData.setUsableSize(vlmData.getUsableSize());
-            resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChildVlmData);
-        }
-        else
-        {
-            dataChildVlmData.setAllocatedSize(vlmData.getAllocatedSize());
-            resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(dataChildVlmData);
-        }
-
-        long cacheSize;
-        long metaSize;
-        if (!fromUsable)
-        {
-            // this should be done before using calcSize since that method is based on our usable size
-            vlmData.setUsableSize(vlmData.getAllocatedSize());
-        }
-        if (cacheChildVlmData != null && metaChildVlmData != null)
-        {
-            // null if we are above an NVMe target
-            String cacheSizeStr = getCacheSize(vlmData.getVolume());
-            cacheSize = calcSize(vlmData, cacheSizeStr);
-
-            String metaSizeStr = getMetaSize(vlmData.getVolume());
-            metaSize = calcSize(vlmData, metaSizeStr);
-
-            // even if we are updating fromAllocated, cache device still need to be calculated fromUsable
-            cacheChildVlmData.setUsableSize(cacheSize);
-            resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(cacheChildVlmData);
-
-            metaChildVlmData.setUsableSize(cacheSize);
-            resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(metaChildVlmData);
-        }
-        else
-        {
-            cacheSize = 0;
-            metaSize = 0;
-        }
-
-        vlmData.setAllocatedSize(vlmData.getUsableSize() + cacheSize + metaSize);
-    }
-
-    private long calcSize(CacheVlmData<Resource> vlmData, String sizeStr)
-    {
-        long cacheSize;
-        if (sizeStr.endsWith("%"))
-        {
-            String cacheSizePercent = sizeStr.substring(0, sizeStr.length() - 1);
-            double percent = Double.parseDouble(cacheSizePercent) / 100;
-            cacheSize = Math.round(percent * vlmData.getUsableSize() + 0.5);
-        }
-        else
-        {
-            cacheSize = Long.parseLong(sizeStr);
-        }
-        return cacheSize;
     }
 
     @Override
@@ -456,24 +371,6 @@ public class CacheLayer implements DeviceLayer
             }
         }
         return resourceReadySent;
-    }
-
-    private String getCacheSize(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException
-    {
-        return getProp(
-            vlmRef,
-            ApiConsts.KEY_CACHE_CACHE_SIZE,
-            DFLT_CACHE_SIZE
-        );
-    }
-
-    private String getMetaSize(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException
-    {
-        return getProp(
-            vlmRef,
-            ApiConsts.KEY_CACHE_META_SIZE,
-            DFLT_META_SIZE
-        );
     }
 
     private long getBlocksize(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException

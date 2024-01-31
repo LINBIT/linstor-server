@@ -5,13 +5,6 @@ import com.linbit.ImplementationError;
 import com.linbit.Platform;
 import com.linbit.PlatformStlt;
 import com.linbit.drbd.DrbdVersion;
-import com.linbit.drbd.md.AlStripesException;
-import com.linbit.drbd.md.MaxAlSizeException;
-import com.linbit.drbd.md.MaxSizeException;
-import com.linbit.drbd.md.MetaData;
-import com.linbit.drbd.md.MinAlSizeException;
-import com.linbit.drbd.md.MinSizeException;
-import com.linbit.drbd.md.PeerCountException;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
@@ -123,14 +116,6 @@ public class DrbdLayer implements DeviceLayer
     private final PlatformStlt platformStlt;
     private final HashFunction hashFunction;
 
-    // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
-    // resource definition, a property of the volume definition, or otherwise a system-wide default
-    public static final int FIXME_AL_STRIPES = 1;
-
-    // Number of activity log stripes; this should be replaced with a property of the resource definition,
-    // a property of the volume definition, or or otherwise a system-wide default
-    public static final long FIXME_AL_STRIPE_SIZE = 32;
-
     // This maps stores the resource_suffix name and its last conffilebuilder string hash
     // it is used to check if a file needs to be written to disk because changes happened.
     private final Map<String, HashCode> lastConfFileHashMap = new HashMap<>();
@@ -217,172 +202,6 @@ public class DrbdLayer implements DeviceLayer
             throw new ImplementationError(exc);
         }
         return resourceReadySent;
-    }
-
-    @Override
-    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmData;
-        DrbdRscData<Resource> drbdRscData = drbdVlmData.getRscLayerObject();
-        short peerSlots = drbdRscData.getPeerSlots();
-
-        try
-        {
-            StateFlags<Flags> rscFlags = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags();
-            boolean isDiskless = rscFlags.isSet(workerCtx, Resource.Flags.DRBD_DISKLESS) &&
-                !rscFlags.isSomeSet(workerCtx, Resource.Flags.DISK_ADD_REQUESTED, Resource.Flags.DISK_ADDING);
-            if (!isDiskless && !drbdRscData.isSkipDiskEnabled(workerCtx, stltCfgAccessor.getReadonlyProps()))
-            {
-                long netSize = drbdVlmData.getUsableSize();
-
-                VlmProviderObject<Resource> dataChild = drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-                if (drbdVlmData.isUsingExternalMetaData())
-                {
-                    dataChild.setUsableSize(netSize);
-                    resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChild);
-
-                    /*
-                     * Layers below us will update our dataChild's usable size.
-                     * We need to take that updated size for further calculations.
-                     *
-                     * The reason for this is that if the external-md size would exactly match the extent size
-                     * of the storage, but our data size would not, our data size would need to be rounded
-                     * up. But that also needs to be considered for the external-md size as well.
-                     */
-                    netSize = dataChild.getUsableSize();
-
-                    long extMdSize = new MetaData().getExternalMdSize(
-                        netSize,
-                        peerSlots,
-                        DrbdLayer.FIXME_AL_STRIPES,
-                        DrbdLayer.FIXME_AL_STRIPE_SIZE
-                    );
-
-
-                    VlmProviderObject<Resource> metaChild = drbdVlmData
-                        .getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META);
-                    if (metaChild != null)
-                    {
-                        // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
-                        metaChild.setUsableSize(extMdSize);
-                        resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(metaChild);
-                    }
-
-                    drbdVlmData.setAllocatedSize(netSize + extMdSize); // rough estimation
-                }
-                else
-                {
-                    long grossSize = new MetaData().getGrossSize(
-                        netSize,
-                        peerSlots,
-                        DrbdLayer.FIXME_AL_STRIPES,
-                        DrbdLayer.FIXME_AL_STRIPE_SIZE
-                    );
-                    dataChild.setUsableSize(grossSize);
-                    resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChild);
-
-                    /*
-                     * Layers below us will update our dataChild's usable size.
-                     * We need to take that updated size for further calculations.
-                     */
-                    netSize = new MetaData().getNetSize(
-                        dataChild.getUsableSize(),
-                        peerSlots,
-                        DrbdLayer.FIXME_AL_STRIPES,
-                        DrbdLayer.FIXME_AL_STRIPE_SIZE
-                    );
-
-                    drbdVlmData.setAllocatedSize(grossSize);
-                }
-
-                // we need to update the usable size once again since the layers below us
-                // might have given us more data than we asked for.
-                drbdVlmData.setUsableSize(netSize);
-            }
-        }
-        catch (
-            InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException |
-            MinAlSizeException | MaxAlSizeException | AlStripesException | PeerCountException exc
-        )
-        {
-            throw new ImplementationError(exc);
-        }
-
-    }
-
-    @Override
-    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        DrbdVlmData<Resource> drbdVlmData = (DrbdVlmData<Resource>) vlmData;
-        DrbdRscData<Resource> drbdRscData = drbdVlmData.getRscLayerObject();
-        short peerSlots = drbdRscData.getPeerSlots();
-
-        try
-        {
-            boolean isDiskless = drbdVlmData.getRscLayerObject().getAbsResource().getStateFlags()
-                .isSet(workerCtx, Resource.Flags.DRBD_DISKLESS);
-            if (!isDiskless && !drbdRscData.isSkipDiskEnabled(workerCtx, stltCfgAccessor.getReadonlyProps()))
-            {
-                // let next layer calculate
-                VlmProviderObject<Resource> dataChildVlmData = drbdVlmData.getChildBySuffix(
-                    RscLayerSuffixes.SUFFIX_DATA
-                );
-                dataChildVlmData.setAllocatedSize(drbdVlmData.getAllocatedSize());
-                resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(dataChildVlmData);
-
-                long grossSize = dataChildVlmData.getUsableSize();
-
-                if (drbdVlmData.isUsingExternalMetaData())
-                {
-                    // calculate extMetaSize
-                    long extMdSize;
-
-                    VlmProviderObject<Resource> metaChild = drbdVlmData.getChildBySuffix(
-                        RscLayerSuffixes.SUFFIX_DRBD_META
-                    );
-                    if (metaChild != null)
-                    {
-                        // is null if we are nvme-traget while the drbd-ext-metadata stays on the initiator side
-                        extMdSize = new MetaData().getExternalMdSize(
-                            grossSize,
-                            peerSlots,
-                            DrbdLayer.FIXME_AL_STRIPES,
-                            DrbdLayer.FIXME_AL_STRIPE_SIZE
-                        );
-
-                        // even if we are updating fromAllocated, extMetaData still needs to be calculated fromUsable
-                        metaChild.setUsableSize(extMdSize);
-                        resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(metaChild);
-                    }
-                    else
-                    {
-                        extMdSize = 0;
-                    }
-                    drbdVlmData.setUsableSize(grossSize);
-                    drbdVlmData.setAllocatedSize(grossSize + extMdSize);
-                }
-                else
-                {
-                    long netSize = new MetaData().getNetSize(
-                        grossSize,
-                        peerSlots,
-                        DrbdLayer.FIXME_AL_STRIPES,
-                        DrbdLayer.FIXME_AL_STRIPE_SIZE
-                    );
-                    drbdVlmData.setUsableSize(netSize);
-                    drbdVlmData.setAllocatedSize(grossSize);
-                }
-            }
-        }
-        catch (
-            InvalidKeyException | IllegalArgumentException | MinSizeException | MaxSizeException | MinAlSizeException |
-            MaxAlSizeException | AlStripesException | PeerCountException exc
-        )
-        {
-            throw new ImplementationError(exc);
-        }
     }
 
     @Override

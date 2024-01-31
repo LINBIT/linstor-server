@@ -10,7 +10,6 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
-import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -25,7 +24,6 @@ import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.dmsetup.DmSetupUtils;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -58,7 +56,6 @@ public class WritecacheLayer implements DeviceLayer
      * Maps the ApiConsts.KEY_WRITECACHE_OPTS* to the actual argument keys
      */
     private static final Map<String, String> OPTS_LUT;
-    private static final String DFLT_CACHE_SIZE = "5%";
 
     private final ErrorReporter errorReporter;
     private final AccessContext storDriverAccCtx;
@@ -163,73 +160,6 @@ public class WritecacheLayer implements DeviceLayer
             rscData.getResourceNameSuffix(),
             vlmDataRef.getVlmNr().value
         );
-    }
-
-    @Override
-    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        updateSize((WritecacheVlmData<Resource>) vlmData, true);
-
-    }
-
-    @Override
-    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        updateSize((WritecacheVlmData<Resource>) vlmData, false);
-    }
-
-    private void updateSize(WritecacheVlmData<Resource> vlmData, boolean fromUsable)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        VlmProviderObject<Resource> dataChildVlmData = vlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-        VlmProviderObject<Resource> cacheChildVlmData = vlmData.getChildBySuffix(
-            RscLayerSuffixes.SUFFIX_WRITECACHE_CACHE
-        );
-
-        if (fromUsable)
-        {
-            dataChildVlmData.setUsableSize(vlmData.getUsableSize());
-            resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(dataChildVlmData);
-        }
-        else
-        {
-            dataChildVlmData.setAllocatedSize(vlmData.getAllocatedSize());
-            resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(dataChildVlmData);
-        }
-
-        long cacheSize;
-        if (!fromUsable)
-        {
-            // this should be done before using calcSize since that method is based on our usable size
-            vlmData.setUsableSize(vlmData.getAllocatedSize());
-        }
-        if (cacheChildVlmData != null)
-        {
-            // null if we are above an NVMe target
-            String cacheSizeStr = getCacheSize(vlmData.getVolume());
-            if (cacheSizeStr.endsWith("%"))
-            {
-                String cacheSizePercent = cacheSizeStr.substring(0, cacheSizeStr.length() - 1);
-                double percent = Double.parseDouble(cacheSizePercent) / 100;
-                cacheSize = Math.round(percent * vlmData.getUsableSize() + 0.5);
-            }
-            else
-            {
-                cacheSize = Long.parseLong(cacheSizeStr);
-            }
-
-            // even if we are updating fromAllocated, cache device still need to be calculated fromUsable
-            cacheChildVlmData.setUsableSize(cacheSize);
-            resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(cacheChildVlmData);
-        }
-        else
-        {
-            cacheSize = 0;
-        }
-
-        vlmData.setAllocatedSize(vlmData.getUsableSize() + cacheSize);
     }
 
     @Override
@@ -545,28 +475,5 @@ public class WritecacheLayer implements DeviceLayer
             }
         }
         return resourceReadySent;
-    }
-
-    private String getCacheSize(AbsVolume<Resource> vlmRef) throws InvalidKeyException, AccessDeniedException
-    {
-        return getPrioProps(vlmRef).getProp(
-            ApiConsts.KEY_WRITECACHE_SIZE, ApiConsts.NAMESPC_WRITECACHE, DFLT_CACHE_SIZE
-        ).trim();
-    }
-
-    private PriorityProps getPrioProps(AbsVolume<Resource> vlmRef) throws AccessDeniedException
-    {
-        VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
-        ResourceDefinition rscDfn = vlmRef.getResourceDefinition();
-        ResourceGroup rscGrp = rscDfn.getResourceGroup();
-        Resource rsc = vlmRef.getAbsResource();
-        return new PriorityProps(
-            vlmDfn.getProps(storDriverAccCtx),
-            rscGrp.getVolumeGroupProps(storDriverAccCtx, vlmDfn.getVolumeNumber()),
-            rsc.getProps(storDriverAccCtx),
-            rscDfn.getProps(storDriverAccCtx),
-            rscGrp.getProps(storDriverAccCtx),
-            rsc.getNode().getProps(storDriverAccCtx)
-        );
     }
 }

@@ -26,11 +26,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
-import com.linbit.linstor.storage.kinds.ExtTools;
-import com.linbit.linstor.storage.kinds.ExtToolsInfo;
-import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.linstor.storage.utils.Commands;
 
 import javax.inject.Inject;
@@ -46,19 +42,11 @@ public class LuksLayer implements DeviceLayer
 {
     private static final String LUKS_IDENTIFIER_FORMAT = "%s_%05d";
 
-    // linstor calculates in KiB
-    private static final int MIB = 1024;
-
-    private static final int LUKS1_HEADER_SIZE = 2 * MIB;
-    private static final int LUKS2_HEADER_SIZE = 16 * MIB;
-
     private final AccessContext sysCtx;
     private final CryptSetupCommands cryptSetup;
     private final Provider<DeviceHandler> resourceProcessorProvider;
     private final ExtCmdFactory extCmdFactory;
     private final ErrorReporter errorReporter;
-
-    private final long luksHeaderSize;
 
     @Inject
     public LuksLayer(
@@ -75,23 +63,6 @@ public class LuksLayer implements DeviceLayer
         extCmdFactory = extCmdFactoryRef;
         resourceProcessorProvider = resourceProcessorRef;
         errorReporter = errorReporterRef;
-
-        ExtToolsInfo cryptSetupInfo = extToolsCheckerRef.getExternalTools(false).get(ExtTools.CRYPT_SETUP);
-        if (cryptSetupInfo != null && cryptSetupInfo.isSupported())
-        {
-            if (cryptSetupInfo.hasVersionOrHigher(new Version(2, 1)))
-            {
-                luksHeaderSize = LUKS2_HEADER_SIZE;
-            }
-            else
-            {
-                luksHeaderSize = LUKS1_HEADER_SIZE;
-            }
-        }
-        else
-        {
-            luksHeaderSize = -1;
-        }
     }
 
     @Override
@@ -137,50 +108,6 @@ public class LuksLayer implements DeviceLayer
             );
         }
         return true;
-    }
-
-    @Override
-    public void updateAllocatedSizeFromUsableSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        LuksVlmData<Resource> luksData = (LuksVlmData<Resource>) vlmData;
-        long grossSize = luksData.getUsableSize() + luksHeaderSize;
-        luksData.setAllocatedSize(grossSize);
-
-        VlmProviderObject<Resource> childVlmData = luksData.getSingleChild();
-        childVlmData.setUsableSize(grossSize);
-        resourceProcessorProvider.get().updateAllocatedSizeFromUsableSize(childVlmData);
-
-        /*
-         * Layers below us will update our dataChild's usable size.
-         * We need to take that updated size for further calculations.
-         */
-        long usableSizeChild = childVlmData.getUsableSize();
-        luksData.setAllocatedSize(usableSizeChild);
-        luksData.setUsableSize(usableSizeChild - luksHeaderSize);
-    }
-
-    @Override
-    public void updateUsableSizeFromAllocatedSize(VlmProviderObject<Resource> vlmData)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        LuksVlmData<Resource> luksData = (LuksVlmData<Resource>) vlmData;
-        long grossSize = luksData.getAllocatedSize();
-        long netSize = grossSize - luksHeaderSize;
-
-        luksData.setUsableSize(netSize);
-
-        VlmProviderObject<Resource> childVlmData = luksData.getSingleChild();
-        childVlmData.setAllocatedSize(grossSize);
-        resourceProcessorProvider.get().updateUsableSizeFromAllocatedSize(childVlmData);
-
-        /*
-         * Layers below us will update our dataChild's usable size.
-         * We need to take that updated size for further calculations.
-         */
-        long usableSizeChild = childVlmData.getUsableSize();
-        luksData.setAllocatedSize(usableSizeChild);
-        luksData.setUsableSize(usableSizeChild - luksHeaderSize);
     }
 
     @Override

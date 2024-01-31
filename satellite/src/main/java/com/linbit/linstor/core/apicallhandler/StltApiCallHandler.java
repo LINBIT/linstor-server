@@ -53,6 +53,7 @@ import com.linbit.linstor.proto.common.StltConfigOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
 
@@ -63,6 +64,7 @@ import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -95,7 +97,7 @@ public class StltApiCallHandler
     private final StltSnapshotApiCallHandler snapshotHandler;
     private final StltExternalFilesApiCallHandler extFilesHandler;
     private final StltRemoteApiCallHandler remoteHandler;
-    private final StltExtToolsChecker deviceLayerChecker;
+    private final StltExtToolsChecker stltExtToolsChecker;
 
     private final CtrlStltSerializer interComSerializer;
 
@@ -142,7 +144,7 @@ public class StltApiCallHandler
         StltSnapshotApiCallHandler snapshotHandlerRef,
         StltExternalFilesApiCallHandler extFilesHandlerRef,
         StltRemoteApiCallHandler remoteHandlerRef,
-        StltExtToolsChecker deviceLayerCheckerRef,
+        StltExtToolsChecker stltExtToolsCheckerRef,
         CtrlStltSerializer interComSerializerRef,
         @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
@@ -181,7 +183,7 @@ public class StltApiCallHandler
         snapshotHandler = snapshotHandlerRef;
         extFilesHandler = extFilesHandlerRef;
         remoteHandler = remoteHandlerRef;
-        deviceLayerChecker = deviceLayerCheckerRef;
+        stltExtToolsChecker = stltExtToolsCheckerRef;
         interComSerializer = interComSerializerRef;
         reconfigurationLock = reconfigurationLockRef;
         nodesMapLock = nodesMapLockRef;
@@ -223,6 +225,9 @@ public class StltApiCallHandler
             // that means, everything in this map is out-dated data + we should receive a full sync next.
         }
 
+        // re-cache external tools before calling "setControllerPeer", since that also initializes the peer's
+        // ExtToosManager with the cached values of the stltExtToolChecker
+        Collection<ExtToolsInfo> extToolsInfoList = stltExtToolsChecker.getExternalTools(true).values();
         controllerPeerConnector.setControllerPeer(
             ctrlUuid,
             controllerPeer,
@@ -259,7 +264,7 @@ public class StltApiCallHandler
             transMgrProvider.get().commit();
 
             authResult = new AuthenticationResult(
-                deviceLayerChecker.getExternalTools(true).values(),
+                extToolsInfoList,
                 ApiCallRcImpl.singletonApiCallRc(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.CREATED | ApiConsts.MASK_NODE,
