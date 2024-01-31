@@ -776,7 +776,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     protected void setExpectedUsableSize(ZfsData<Resource> vlmData, long size)
         throws DatabaseException, StorageException
     {
-        vlmData.setExepectedSize(size);
+        vlmData.setExpectedSize(size);
     }
 
     @Override

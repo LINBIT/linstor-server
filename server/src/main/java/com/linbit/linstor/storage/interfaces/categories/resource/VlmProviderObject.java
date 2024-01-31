@@ -111,6 +111,10 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
 
     void setDiscGran(long discGranRef) throws DatabaseException;
 
+    long getExpectedSize();
+
+    void setExpectedSize(long expectedSizeRef);
+
     default void setActive(boolean activeRef)
     {
         // ignored (unless overridden) as this layer only considers Resource.Flags.INACTIVE, not per-vlmData

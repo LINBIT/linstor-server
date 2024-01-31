@@ -828,7 +828,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     @Override
     protected void setExpectedUsableSize(FileData<Resource> vlmData, long size)
     {
-        vlmData.setExepectedSize(size);
+        vlmData.setExpectedSize(size);
     }
 
     @Override

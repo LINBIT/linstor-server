@@ -173,11 +173,13 @@ public abstract class AbsStorageVlmData<RSC extends AbsResource<RSC>>
         identifier = identifierRef;
     }
 
-    public void setExepectedSize(long size)
+    @Override
+    public void setExpectedSize(long size)
     {
         expectedSize = size;
     }
 
+    @Override
     public long getExpectedSize()
     {
         return expectedSize;

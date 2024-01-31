@@ -629,7 +629,7 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     @Override
     protected void setExpectedUsableSize(StorageSpacesData<Resource> vlmData, long size)
     {
-        vlmData.setExepectedSize(size);
+        vlmData.setExpectedSize(size);
     }
 
     @Override

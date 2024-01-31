@@ -140,6 +140,18 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
     }
 
     @Override
+    public void setExpectedSize(long expectedSizeRef)
+    {
+        throw new ImplementationError("This method should only be called for STORAGE volumes");
+    }
+
+    @Override
+    public long getExpectedSize()
+    {
+        throw new ImplementationError("This method should only be called for STORAGE volumes");
+    }
+
+    @Override
     public int hashCode()
     {
         return Objects.hash(rscData.getRscLayerId(), vlm.getVolumeNumber());

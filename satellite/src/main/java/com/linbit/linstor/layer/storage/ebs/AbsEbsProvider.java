@@ -346,7 +346,7 @@ public abstract class AbsEbsProvider<INFO> extends AbsStorageProvider<INFO, EbsD
     protected void setExpectedUsableSize(EbsData<Resource> vlmDataRef, long sizeRef)
         throws DatabaseException, StorageException
     {
-        vlmDataRef.setExepectedSize(sizeRef);
+        vlmDataRef.setExpectedSize(sizeRef);
     }
 
     @Override

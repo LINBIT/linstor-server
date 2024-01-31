@@ -619,7 +619,7 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     @Override
     protected void setExpectedUsableSize(SpdkData<Resource> vlmData, long size)
     {
-        vlmData.setExepectedSize(size);
+        vlmData.setExpectedSize(size);
     }
 
     @Override

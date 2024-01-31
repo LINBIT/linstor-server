@@ -826,7 +826,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     @Override
     protected void setExpectedUsableSize(LvmData<Resource> vlmData, long size)
     {
-        vlmData.setExepectedSize(size);
+        vlmData.setExpectedSize(size);
     }
 
     @Override

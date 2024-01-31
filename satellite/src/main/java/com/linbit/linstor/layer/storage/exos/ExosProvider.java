@@ -1193,7 +1193,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     @Override
     protected void setExpectedUsableSize(ExosData<Resource> vlmData, long size)
     {
-        vlmData.setExepectedSize(size);
+        vlmData.setExpectedSize(size);
     }
 
     @Override
