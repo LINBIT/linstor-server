@@ -69,9 +69,6 @@ public interface DeviceProvider
 
     Collection<StorPool> getChangedStorPools();
 
-    void updateGrossSize(VlmProviderObject<Resource> vlmObj)
-        throws AccessDeniedException, DatabaseException, StorageException;
-
     void updateAllocatedSize(VlmProviderObject<Resource> vlmObj)
         throws AccessDeniedException, DatabaseException, StorageException;
 

@@ -1500,7 +1500,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     @SuppressWarnings("unchecked")
-    @Override
     public void updateGrossSize(VlmProviderObject<Resource> vlmData)
         throws AccessDeniedException, DatabaseException, StorageException
     {
