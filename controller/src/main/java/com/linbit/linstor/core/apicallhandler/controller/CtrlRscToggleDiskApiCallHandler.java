@@ -41,6 +41,7 @@ import com.linbit.linstor.core.objects.utils.MixedStorPoolHelper;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventWaiter;
 import com.linbit.linstor.event.ObjectIdentifier;
+import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
@@ -89,6 +90,7 @@ import java.util.Set;
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.util.function.Tuple2;
 
 /**
  * Adds disks to a diskless resource or removes disks to make a resource diskless.
@@ -992,15 +994,24 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         NodeName migrateFromNodeName
     )
     {
-        return Mono.fromRunnable(() -> backgroundRunner.runInBackground(
-            "Migrate '" + rscName + "' from '" + migrateFromNodeName + "' to '" + nodeName + "'",
-            eventWaiter
-                .waitForStream(
+        Mono<Tuple2<ResourceState, ResourceState>> migratedAndNotInUse = Mono.zip(
+            eventWaiter.waitForStream(
                     resourceStateEvent.get(),
                     ObjectIdentifier.resource(nodeName, rscName)
                 )
                 .skipUntil(usageState -> usageState.getUpToDate() != null && usageState.getUpToDate())
+                .next(),
+            eventWaiter.waitForStream(
+                    resourceStateEvent.get(),
+                    ObjectIdentifier.resource(migrateFromNodeName, rscName)
+                )
+                .skipUntil(usageState -> usageState.getInUse() != null && !usageState.getInUse())
                 .next()
+        );
+
+        return Mono.fromRunnable(() -> backgroundRunner.runInBackground(
+            "Migrate '" + rscName + "' from '" + migrateFromNodeName + "' to '" + nodeName + "'",
+            migratedAndNotInUse
                 .thenMany(scopeRunner.fluxInTransactionalScope(
                     "Delete after migrate",
                     lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.RSC_DFN_MAP),

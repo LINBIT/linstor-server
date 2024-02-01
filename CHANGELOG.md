@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Node/Restore: Fixed node not connected on node restore
 - Luks: Allow deletion without entered master-passphrase
 - SysFs: Warn if /sys/fs/cgroup/blkio does not exist
+- When evacuating or migrating an InUse resources, wait until the resource is no longer in-use to remove resource.
 
 ## [1.26.0] - 2024-01-29
 
