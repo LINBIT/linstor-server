@@ -26,7 +26,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
-import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
+import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
@@ -130,7 +130,7 @@ class CtrlVlmDfnApiCallHandler
 
     Flux<ApiCallRc> createVolumeDefinitions(
         String rscNameStr,
-        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiList
+        List<VolumeDefinitionWithCreationPayload> vlmDfnWithPayloadApiList
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -158,7 +158,7 @@ class CtrlVlmDfnApiCallHandler
     private Flux<ApiCallRc> createVlmDfnsInTransaction(
         ResponseContext context,
         String rscNameStr,
-        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiList
+        List<VolumeDefinitionWithCreationPayload> vlmDfnWithPayloadApiList
     )
     {
         Flux<ApiCallRc> flux = Flux.empty();
@@ -243,11 +243,11 @@ class CtrlVlmDfnApiCallHandler
     List<VolumeDefinition> createVlmDfns(
         ApiCallRcImpl responses,
         ResourceDefinition rscDfn,
-        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiListRef
+        List<VolumeDefinitionWithCreationPayload> vlmDfnWithPayloadApiListRef
     )
     {
         List<VolumeDefinition> vlmDfns = new ArrayList<>();
-        for (VolumeDefinitionWtihCreationPayload vlmDfnApi : vlmDfnWithPayloadApiListRef)
+        for (VolumeDefinitionWithCreationPayload vlmDfnApi : vlmDfnWithPayloadApiListRef)
         {
             vlmDfns.add(createVlmDfn(responses, rscDfn, vlmDfnApi));
         }
@@ -260,7 +260,7 @@ class CtrlVlmDfnApiCallHandler
     VolumeDefinition createVlmDfn(
         ApiCallRcImpl responses,
         ResourceDefinition rscDfn,
-        VolumeDefinitionWtihCreationPayload vlmDfnApiRef
+        VolumeDefinitionWithCreationPayload vlmDfnApiRef
     )
     {
         VolumeNumber volNr = getOrGenerateVlmNr(

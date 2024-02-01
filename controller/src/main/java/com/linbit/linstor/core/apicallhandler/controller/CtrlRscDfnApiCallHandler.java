@@ -41,7 +41,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
-import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
+import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -231,7 +231,7 @@ public class CtrlRscDfnApiCallHandler
         String rscNameStr,
         @Nullable byte[] extName,
         Map<String, String> props,
-        List<VolumeDefinitionWtihCreationPayload> volDescrMap,
+        List<VolumeDefinitionWithCreationPayload> volDescrMap,
         List<String> layerStackStrList,
         @Nullable LayerPayload payloadPrm,
         String rscGrpNameStr,

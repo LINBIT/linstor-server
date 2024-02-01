@@ -12,7 +12,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnDeleteApiCall
 import com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnModifyApiCallHandler;
 import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
-import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
+import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -126,7 +126,7 @@ public class VolumeDefinitions
         }, false);
     }
 
-    private static class VlmDfnCreationWithPayload implements VolumeDefinitionWtihCreationPayload
+    private static class VlmDfnCreationWithPayload implements VolumeDefinitionWithCreationPayload
     {
         JsonGenTypes.VolumeDefinitionCreate vlmCreateData;
 
@@ -164,7 +164,7 @@ public class VolumeDefinitions
                 JsonGenTypes.VolumeDefinitionCreate.class
             );
 
-            List<VolumeDefinitionWtihCreationPayload> vlmList = new ArrayList<>();
+            List<VolumeDefinitionWithCreationPayload> vlmList = new ArrayList<>();
             vlmList.add(new VlmDfnCreationWithPayload(vlmDfnData));
 
             Flux<ApiCallRc> flux = ctrlApiCallHandler.createVlmDfns(rscName, vlmList).contextWrite(

@@ -1,6 +1,6 @@
 package com.linbit.linstor.core.apis;
 
-public interface VolumeDefinitionWtihCreationPayload
+public interface VolumeDefinitionWithCreationPayload
 {
     VolumeDefinitionApi getVlmDfn();
     Integer getDrbdMinorNr();

@@ -42,7 +42,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.apis.ResourceGroupApi;
-import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
+import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.ResourceGroupName;
 import com.linbit.linstor.core.identifier.StorPoolName;
@@ -963,7 +963,7 @@ public class CtrlRscGrpApiCallHandler
                 }
             }
 
-            List<VolumeDefinitionWtihCreationPayload> vlmDfnCrtList = new ArrayList<>();
+            List<VolumeDefinitionWithCreationPayload> vlmDfnCrtList = new ArrayList<>();
 
             List<VolumeGroup> vlmGrps = rscGrp.getVolumeGroups(peerCtx);
 
@@ -1108,7 +1108,7 @@ public class CtrlRscGrpApiCallHandler
 
     }
 
-    private VolumeDefinitionWtihCreationPayload createVlmDfnWithCreationPayload(
+    private VolumeDefinitionWithCreationPayload createVlmDfnWithCreationPayload(
         Integer vlmNr,
         long vlmSizeRef,
         long vlmGrpFlags

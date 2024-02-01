@@ -24,7 +24,7 @@ import com.linbit.linstor.core.apis.ResourceGroupApi;
 import com.linbit.linstor.core.apis.SnapshotDefinitionListItemApi;
 import com.linbit.linstor.core.apis.SnapshotShippingListItemApi;
 import com.linbit.linstor.core.apis.StorPoolDefinitionApi;
-import com.linbit.linstor.core.apis.VolumeDefinitionWtihCreationPayload;
+import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
 import com.linbit.linstor.core.apis.VolumeGroupApi;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -222,7 +222,7 @@ public class CtrlApiCallHandler
         String resourceName,
         byte[] extName,
         Map<String, String> propsRef,
-        List<VolumeDefinitionWtihCreationPayload> vlmDescrMapRef,
+        List<VolumeDefinitionWithCreationPayload> vlmDescrMapRef,
         List<String> layerStackRef,
         LayerPayload payloadRef,
         String rscGrpNameRef
@@ -234,7 +234,7 @@ public class CtrlApiCallHandler
         {
             props = Collections.emptyMap();
         }
-        List<VolumeDefinitionWtihCreationPayload> vlmDescrMap = vlmDescrMapRef;
+        List<VolumeDefinitionWithCreationPayload> vlmDescrMap = vlmDescrMapRef;
         if (vlmDescrMap == null)
         {
             vlmDescrMap = Collections.emptyList();
@@ -354,11 +354,11 @@ public class CtrlApiCallHandler
      */
     public Flux<ApiCallRc> createVlmDfns(
         String rscName,
-        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithCrtPayloadApiList
+        List<VolumeDefinitionWithCreationPayload> vlmDfnWithCrtPayloadApiList
     )
     {
         Flux<ApiCallRc> flux;
-        List<VolumeDefinitionWtihCreationPayload> vlmDfnWithPayloadApiList = vlmDfnWithCrtPayloadApiList;
+        List<VolumeDefinitionWithCreationPayload> vlmDfnWithPayloadApiList = vlmDfnWithCrtPayloadApiList;
         if (vlmDfnWithPayloadApiList == null)
         {
             vlmDfnWithPayloadApiList = Collections.emptyList();
