@@ -188,10 +188,12 @@ public class CtrlSatelliteUpdateCaller
             while (rscIterator.hasNext())
             {
                 Resource currentRsc = rscIterator.next();
+                if (!currentRsc.getNode().isEvicted(apiCtx))
+                {
+                    Flux<ApiCallRc> response = updateResource(currentRsc, notConnectedHandler, nextStep);
 
-                Flux<ApiCallRc> response = updateResource(currentRsc, notConnectedHandler, nextStep);
-
-                responses.add(Tuples.of(currentRsc.getNode().getName(), response));
+                    responses.add(Tuples.of(currentRsc.getNode().getName(), response));
+                }
             }
         }
         catch (AccessDeniedException implError)

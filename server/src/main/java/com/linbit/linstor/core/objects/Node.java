@@ -778,6 +778,14 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
         getFlags().disableFlags(accCtx, Flags.EVICTED);
     }
 
+    public boolean isEvicted(AccessContext accessCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accessCtx, AccessType.VIEW);
+        // We can't use isUnset here, because EVICTED contains DELETE
+        return getFlags().isSet(accessCtx, Flags.EVICTED);
+    }
+
     public NodePojo getApiData(AccessContext accCtx, Long fullSyncId, Long updateId)
         throws AccessDeniedException
     {
