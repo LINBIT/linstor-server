@@ -35,6 +35,7 @@ import com.linbit.linstor.core.apicallhandler.controller.helpers.StorPoolHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
@@ -66,6 +67,7 @@ import com.linbit.linstor.core.types.LsIpAddress;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.core.utils.ResourceUtils;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
@@ -156,6 +158,7 @@ public class CtrlNodeApiCallHandler
     private final CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandler;
     private final CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandler;
     private final CtrlRscAutoHelper ctrlRscAutoHelper;
+    private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
 
     @Inject
     public CtrlNodeApiCallHandler(
@@ -192,7 +195,8 @@ public class CtrlNodeApiCallHandler
         Provider<CtrlNodeCrtApiCallHandler> ctrlNodeCrtApiCallHandlerProviderRef,
         CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef,
         CtrlBackupQueueInternalCallHandler ctrlBackupQueueHandlerRef,
-        CtrlRscAutoHelper ctrlRscAutoHelperRef
+        CtrlRscAutoHelper ctrlRscAutoHelperRef,
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef
     )
     {
         apiCtx = apiCtxRef;
@@ -229,6 +233,7 @@ public class CtrlNodeApiCallHandler
         ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
         ctrlBackupQueueHandler = ctrlBackupQueueHandlerRef;
         ctrlRscAutoHelper = ctrlRscAutoHelperRef;
+        ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
     }
 
     Node createNodeImpl(
@@ -1332,6 +1337,8 @@ public class CtrlNodeApiCallHandler
                                 flags.disableFlags(peerCtx, Resource.Flags.EVACUATE);
                                 updateSatellite = true;
                             }
+
+                            ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
 
                             if (updateSatellite)
                             {

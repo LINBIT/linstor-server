@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Do not update satellites that are evicted
+- Node/Restore: Fixed resource kept in inactive state until controller restart
 
 ## [1.26.0] - 2024-01-29
 
