@@ -1343,7 +1343,10 @@ public class CtrlNodeApiCallHandler
                             if (updateSatellite)
                             {
                                 flux = flux.concatWith(
-                                    ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty())
+                                    ctrlSatelliteUpdateCaller.updateSatellites(
+                                            rsc.getResourceDefinition(),
+                                            CtrlSatelliteUpdateCaller.notConnectedIgnoreIf(node.getName()),
+                                            Flux.empty())
                                         .transform(
                                             responses -> CtrlResponseUtils.combineResponses(
                                                 responses,
