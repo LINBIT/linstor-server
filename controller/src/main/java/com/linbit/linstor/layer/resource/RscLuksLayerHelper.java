@@ -334,9 +334,15 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         throws AccessDeniedException, DatabaseException
     {
         boolean changed = false;
-        if (!secObjs.areAllSet())
+
+        boolean isRscInactiveOrDeleting = rscDataRef.getAbsResource()
+            .getStateFlags()
+            .isSomeSet(apiCtx, Resource.Flags.DELETE, Resource.Flags.INACTIVE);
+        if (!secObjs.areAllSet() && !isRscInactiveOrDeleting)
         {
-            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_LUKS_MISSING_KEY, true, false, false);
+            // we do not need to ignore all layers above LUKS if we want to delete everything (and including) the luks
+            // layer
+            changed = setIgnoreReason(rscDataRef, IGNORE_REASON_LUKS_MISSING_KEY, true, true, false);
         }
         return changed;
     }

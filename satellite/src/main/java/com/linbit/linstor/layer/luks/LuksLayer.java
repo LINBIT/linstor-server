@@ -242,90 +242,47 @@ public class LuksLayer implements DeviceLayer
         boolean deleteRsc = flags.isSet(sysCtx, Resource.Flags.DELETE);
         boolean deactivateRsc = flags.isSet(sysCtx, Resource.Flags.INACTIVE);
 
-        boolean allVolumeKeysDecrypted = true;
+        boolean failedMissingDecryptedPassphrase = false;
+
         for (LuksVlmData<Resource> vlmData : luksRscData.getVlmLayerObjects().values())
         {
-            if (vlmData.getDecryptedPassword() == null)
+            boolean deleteVlm = deleteRsc ||
+                ((Volume) vlmData.getVolume()).getFlags()
+                    .isSomeSet(
+                        sysCtx,
+                        Volume.Flags.DELETE,
+                        Volume.Flags.CLONING
+                    );
+            byte[] decryptedPassphrase = vlmData.getDecryptedPassword();
+            if (deleteVlm || deactivateRsc)
             {
-                allVolumeKeysDecrypted = false;
-                break;
-            }
-        }
+                /*
+                 * checking if the luks device is open or to close it does *not* require the volume's (decrypted)
+                 * passphrase to be set. We can freely run those operations.
+                 */
+                String identifier = getIdentifier(vlmData);
 
-        if (allVolumeKeysDecrypted) // otherwise do not even process children.
-        {
-            for (LuksVlmData<Resource> vlmData : luksRscData.getVlmLayerObjects().values())
-            {
-                boolean deleteVlm = deleteRsc ||
-                    ((Volume) vlmData.getVolume()).getFlags()
-                        .isSomeSet(
-                            sysCtx,
-                            Volume.Flags.DELETE,
-                            Volume.Flags.CLONING
-                        );
-                if (deleteVlm || deactivateRsc)
+                if (cryptSetup.isOpen(identifier))
                 {
-                    String identifier = getIdentifier(vlmData);
+                    cryptSetup.closeLuksDevice(identifier);
+                    vlmData.setOpened(false);
+                    vlmData.setExists(false);
 
-                    if (cryptSetup.isOpen(identifier))
+                    if (deleteVlm)
                     {
-                        cryptSetup.closeLuksDevice(identifier);
-                        vlmData.setOpened(false);
-                        vlmData.setExists(false);
-
-                        if (deleteVlm)
-                        {
-                            cryptSetup.deleteHeaders(vlmData.getDataDevice());
-                        }
-                        else
-                        {
-                            vlmData.setDevicePath(null);
-                        }
+                        cryptSetup.deleteHeaders(vlmData.getDataDevice());
                     }
-                }
-                else
-                {
-                    // shrink if necessary
-                    if (
-                        ((Volume) vlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.RESIZE) &&
-                            vlmData.getSizeState().equals(Size.TOO_LARGE)
-                    )
+                    else
                     {
-                        String identifier = getIdentifier(vlmData);
-
-                        boolean isOpen = cryptSetup.isOpen(identifier);
-
-                        vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
-
-                        boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
-
-                        if (isOpen && alreadyLuks)
-                        {
-                            cryptSetup.shrink(vlmData, vlmData.getDecryptedPassword());
-                            // do not set Size.AS_EXPECTED as we will need to grow as much as we can
-                            // once the layers below us are done shrinking
-                            // vlmData.setSizeState(Size.AS_EXPECTED);
-                        }
+                        vlmData.setDevicePath(null);
                     }
                 }
             }
-
-            resourceProcessorProvider.get().process(
-                rscData.getSingleChild(),
-                snapshotList,
-                apiCallRc
-            );
-
-            for (LuksVlmData<Resource> vlmData : luksRscData.getVlmLayerObjects().values())
+            else
             {
-                boolean deleteVlm = deleteRsc ||
-                    ((Volume) vlmData.getVolume()).getFlags()
-                        .isSomeSet(
-                            sysCtx,
-                            Volume.Flags.DELETE,
-                            Volume.Flags.CLONING
-                        );
-                if (!deleteVlm && !deactivateRsc)
+                // shrink if necessary
+                if (((Volume) vlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.RESIZE) &&
+                    vlmData.getSizeState().equals(Size.TOO_LARGE))
                 {
                     String identifier = getIdentifier(vlmData);
 
@@ -335,7 +292,56 @@ public class LuksLayer implements DeviceLayer
 
                     boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
 
-                    if (!alreadyLuks)
+                    if (isOpen && alreadyLuks)
+                    {
+                        if (decryptedPassphrase != null)
+                        {
+                            cryptSetup.shrink(vlmData, vlmData.getDecryptedPassword());
+                            // do not set Size.AS_EXPECTED as we will need to grow as much as we can
+                            // once the layers below us are done shrinking
+                            // vlmData.setSizeState(Size.AS_EXPECTED);
+                        }
+                        else
+                        {
+                            failedMissingDecryptedPassphrase = true;
+                            vlmData.setFailed(true);
+                        }
+                    }
+                }
+            }
+        }
+
+        resourceProcessorProvider.get()
+            .process(
+                rscData.getSingleChild(),
+                snapshotList,
+                apiCallRc
+            );
+
+        for (LuksVlmData<Resource> vlmData : luksRscData.getVlmLayerObjects().values())
+        {
+            boolean deleteVlm = deleteRsc ||
+                ((Volume) vlmData.getVolume()).getFlags()
+                    .isSomeSet(
+                        sysCtx,
+                        Volume.Flags.DELETE,
+                        Volume.Flags.CLONING
+                    );
+            byte[] decryptedPassphrase = vlmData.getDecryptedPassword();
+
+            if (!deleteVlm && !deactivateRsc)
+            {
+                String identifier = getIdentifier(vlmData);
+
+                boolean isOpen = cryptSetup.isOpen(identifier);
+
+                vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
+
+                boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
+
+                if (!alreadyLuks)
+                {
+                    if (decryptedPassphrase != null)
                     {
                         String providedDev = cryptSetup.createLuksDevice(
                             vlmData.getDataDevice(),
@@ -349,16 +355,24 @@ public class LuksLayer implements DeviceLayer
                     }
                     else
                     {
-                        /*
-                         * TODO: this step should not be necessary
-                         * currently it is, because LayeredResourceHelper re-creates the LuksVlmData
-                         * in every iteration. Once those data live longer (or are restored from props)
-                         * the next command can be removed
-                         */
-                        vlmData.setDevicePath(cryptSetup.getLuksVolumePath(identifier));
+                        failedMissingDecryptedPassphrase = true;
+                        vlmData.setFailed(true);
                     }
+                }
+                else
+                {
+                    /*
+                     * TODO: this step should not be necessary
+                     * currently it is, because LayeredResourceHelper re-creates the LuksVlmData
+                     * in every iteration. Once those data live longer (or are restored from props)
+                     * the next command can be removed
+                     */
+                    vlmData.setDevicePath(cryptSetup.getLuksVolumePath(identifier));
+                }
 
-                    if (!isOpen)
+                if (!isOpen)
+                {
+                    if (decryptedPassphrase != null)
                     {
                         cryptSetup.openLuksDevice(
                             vlmData.getDataDevice(),
@@ -366,44 +380,53 @@ public class LuksLayer implements DeviceLayer
                             vlmData.getDecryptedPassword()
                         );
                     }
+                    else
+                    {
+                        failedMissingDecryptedPassphrase = true;
+                        vlmData.setFailed(true);
+                    }
+                }
 
-                    if (((Volume) vlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.RESIZE) &&
-                        !vlmData.getSizeState().equals(Size.AS_EXPECTED))
+                if (((Volume) vlmData.getVolume()).getFlags().isSet(sysCtx, Volume.Flags.RESIZE) &&
+                    !vlmData.getSizeState().equals(Size.AS_EXPECTED))
+                {
+                    if (decryptedPassphrase != null)
                     {
                         cryptSetup.grow(vlmData, vlmData.getDecryptedPassword());
                     }
-
-                    vlmData.setAllocatedSize(
-                        Commands.getBlockSizeInKib(
-                            extCmdFactory.create(),
-                            vlmData.getDataDevice()
-                        )
-                    );
-                    vlmData.setUsableSize(
-                        Commands.getBlockSizeInKib(
-                            extCmdFactory.create(),
-                            vlmData.getDevicePath()
-                        )
-                    );
-                    vlmData.setSizeState(Size.AS_EXPECTED);
-
-                    vlmData.setOpened(true);
-                    vlmData.setFailed(false);
+                    else
+                    {
+                        failedMissingDecryptedPassphrase = true;
+                        vlmData.setFailed(true);
+                    }
                 }
+
+                vlmData.setAllocatedSize(
+                    Commands.getBlockSizeInKib(
+                        extCmdFactory.create(),
+                        vlmData.getDataDevice()
+                    )
+                );
+                vlmData.setUsableSize(
+                    Commands.getBlockSizeInKib(
+                        extCmdFactory.create(),
+                        vlmData.getDevicePath()
+                    )
+                );
+                vlmData.setSizeState(Size.AS_EXPECTED);
+
+                vlmData.setOpened(true);
+                vlmData.setFailed(false);
             }
         }
-        else
+        if (failedMissingDecryptedPassphrase)
         {
-            for (LuksVlmData<Resource> vlmData : luksRscData.getVlmLayerObjects().values())
-            {
-                vlmData.setFailed(true);
-            }
             throw new AbortLayerProcessingException(
-                luksRscData,
+                rscData,
                 String.format(
                     "Luks layer cannot process resource '%s' because some volumes " +
                         "are missing the decrypted key. Is the master key set?",
-                    luksRscData.getSuffixedResourceName()
+                    rscData.getSuffixedResourceName()
                 )
             );
         }

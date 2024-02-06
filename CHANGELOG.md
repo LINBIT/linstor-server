@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Do not update satellites that are evicted
 - Node/Restore: Fixed resource kept in inactive state until controller restart
 - Node/Restore: Fixed node not connected on node restore
+- Luks: Allow deletion without entered master-passphrase
 
 ## [1.26.0] - 2024-01-29
 
