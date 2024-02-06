@@ -147,6 +147,11 @@ public class LvmUtils
         {
             sb.append("'a|").append(pv).append("|',");
         }
+        /*
+         * Although we do not add a "trailing accept everything else" (see LvmCommands#LVM_CONF_IGNORE_DRBD_DEVICES),
+         * here we DO want to have a "trailing reject everything else", since we only want to include our whitelisted
+         * paths
+         */
         sb.append("'r|.*|'] }");
         return sb.toString();
     }

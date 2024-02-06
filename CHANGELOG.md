@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- LVM: Removed trailing 'a|.*|' from LVM filter
+
 ## [1.26.0] - 2024-01-29
 
 ## [1.26.0-rc.1] - 2024-01-22

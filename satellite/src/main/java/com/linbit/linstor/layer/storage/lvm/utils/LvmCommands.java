@@ -20,7 +20,15 @@ import java.util.Set;
 
 public class LvmCommands
 {
-    private static final String LVM_CONF_IGNORE_DRBD_DEVICES = "devices { filter=['r|/dev/drbd.*|','a|.*|'] }";
+    /*
+     * DO NOT add "'a|.*|'" at the end of the filter list. If a block device has multiple paths (symlinks) the device is
+     * accepted if ANY of the paths matches. Only if all paths either have a reject first of are undecided, the device
+     * is rejected.
+     *
+     * We had cases where we rejected "/dev/drbd" but LVM still found (the suspended) DRBD device via
+     * /dev/block/147:1000. The reason LVM took that path is because we allowed "everything else" (using "'a|.*|'")
+     */
+    private static final String LVM_CONF_IGNORE_DRBD_DEVICES = "devices { filter=[\"r|^/dev/drbd.*|\"] }";
 
     public static final int LVS_COL_IDENTIFIER = 0;
     public static final int LVS_COL_PATH = 1;
