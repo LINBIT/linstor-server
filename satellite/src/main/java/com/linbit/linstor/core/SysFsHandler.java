@@ -1,10 +1,12 @@
 package com.linbit.linstor.core;
 
-import com.linbit.ImplementationError;
+import com.linbit.SizeConv;
+import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
+import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
@@ -41,11 +43,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -53,15 +55,31 @@ import java.util.regex.Pattern;
 @Singleton
 public class SysFsHandler
 {
+    private static final int RETRY_STAT_SLEEP_IN_MS = 100;
+
     private static final int BASE_HEX = 16;
 
     private static final String SYS_FS = "/sys/fs";
     private static final String CGROUP_BLKIO = SYS_FS + "/cgroup/blkio";
 
-    private static final String THROTTLE_READ_BPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.read_bps_device";
-    private static final String THROTTLE_WRITE_BPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.write_bps_device";
-    private static final String THROTTLE_READ_IOPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.read_iops_device";
-    private static final String THROTTLE_WRITE_IOPS_DEVICE = CGROUP_BLKIO + "/blkio.throttle.write_iops_device";
+    private static final ThrottleConfig[] THROTTLE_CFGS = new ThrottleConfig[] {
+        new ThrottleConfig(
+            CGROUP_BLKIO + "/blkio.throttle.read_bps_device",
+            ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ
+        ),
+        new ThrottleConfig(
+            CGROUP_BLKIO + "/blkio.throttle.write_bps_device",
+            ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE
+        ),
+        new ThrottleConfig(
+            CGROUP_BLKIO + "/blkio.throttle.read_iops_device",
+            ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ_IOPS
+        ),
+        new ThrottleConfig(
+            CGROUP_BLKIO + "/blkio.throttle.write_iops_device",
+            ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE_IOPS
+        )
+    };
 
     private static final String SPDK_THROTTLE_READ_MBPS = "--r_mbytes_per_sec";
     private static final String SPDK_THROTTLE_WRITE_MBPS = "--w_mbytes_per_sec";
@@ -75,10 +93,6 @@ public class SysFsHandler
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ExtCmdFactory extCmdFactory;
-    private final Map<String, String> cgroupBlkioThrottleReadBpsDeviceMap;
-    private final Map<String, String> cgroupBlkioThrottleWriteBpsDeviceMap;
-    private final Map<String, String> cgroupBlkioThrottleReadIopsDeviceMap;
-    private final Map<String, String> cgroupBlkioThrottleWriteIopsDeviceMap;
     private final Map<VlmProviderObject<Resource>, String> deviceMajorMinorMap;
     private final Props satelliteProps;
 
@@ -99,38 +113,122 @@ public class SysFsHandler
         apiCtx = apiCtxRef;
         extCmdFactory =  extCmdFactoryRef;
         satelliteProps = satellitePropsRef;
-        cgroupBlkioThrottleReadBpsDeviceMap = new TreeMap<>();
-        cgroupBlkioThrottleWriteBpsDeviceMap = new TreeMap<>();
-        cgroupBlkioThrottleReadIopsDeviceMap = new TreeMap<>();
-        cgroupBlkioThrottleWriteIopsDeviceMap = new TreeMap<>();
+
         deviceMajorMinorMap = new HashMap<>();
     }
 
-    public void updateSysFsSettings(Collection<Resource> updateList, Collection<Resource> deleteList)
+    /**
+     * Updates the /sys/fs/cgroup/blkio/* entries if the properties have changed. If the affected devices are already in
+     * the expected state, no update will be executed.
+     *
+     * If /sys/fs/cgroup/blkio/* does not exist, a WARNING is logged and added to the {@code apiCallRcRef}.
+     *
+     * It is advised to call {@link #cleanup(Resource)} once the given resource is deleted to properly cleanup the
+     * datastructures tracking the /sys/fs/cgroup/blkio/* settings
+     */
+    public void update(Resource rsc, ApiCallRcImpl apiCallRcRef)
+        throws StorageException, AccessDeniedException, InvalidKeyException
     {
-        try
+        List<BiExecutor<VlmProviderObject<Resource>, String>> consumers = new ArrayList<>();
+        for (ThrottleConfig cfg : THROTTLE_CFGS)
         {
-            updateCgroupBlkioThrottleReadBpsDevice(updateList);
-            updateCgroupBlkioThrottleReadIopsDevice(updateList);
-            cleanupCaches(deleteList);
+            if (cfg.deviceExists())
+            {
+                consumers.add((vlmData, identifier) ->
+                    setThrottle(
+                        vlmData,
+                        identifier,
+                        cfg
+                    )
+                );
+            }
+            else
+            {
+                errorReporter.logWarning("%s does not exist. Skipping.", cfg.device);
+                apiCallRcRef.add(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.WARN_NOT_FOUND,
+                        String.format("%s does not exist. Skipping QoS setting for resource: %s",
+                            cfg.device,
+                            rsc.getResourceDefinition().getName()
+                        )
+                    )
+                );
+            }
         }
-        catch (AccessDeniedException | StorageException | InvalidKeyException exc)
+        if (!consumers.isEmpty())
         {
-            throw new ImplementationError(exc);
+            execForAllLowestLocalVlmData(rsc, (vlmData, identifier) ->
+            {
+                for (BiExecutor<VlmProviderObject<Resource>, String> consumer : consumers)
+                {
+                    consumer.exec(vlmData, identifier);
+                }
+            });
         }
     }
 
-    private void cleanupCaches(Collection<Resource> deleteListRef)
+    /**
+     * Cleans up internal datastructures that were used to track the current QoS settings for the given resource and its
+     * devices.
+     * This method does *not* attempt to reset the QoS setting, since it assumes that the devices are already deleted.
+     */
+    public void cleanup(Resource rsc)
+        throws StorageException, AccessDeniedException, InvalidKeyException
+    {
+        execForAllVlmData(
+            rsc.getLayerData(apiCtx),
+            vlmData ->
+            {
+                String identifier;
+                if (vlmData instanceof SpdkData)
+                {
+                    identifier = vlmData.getDevicePath();
+                }
+                else
+                {
+                    identifier = getMajorMinor(vlmData);
+                }
+
+                if (identifier != null)
+                {
+                    // cleaning up throttle caches
+                    for (ThrottleConfig cfg : THROTTLE_CFGS)
+                    {
+                        cfg.map.remove(identifier);
+                    }
+                    deviceMajorMinorMap.remove(vlmData);
+                }
+            }
+        );
+    }
+
+    private void execForAllLowestLocalVlmData(
+        Resource rsc,
+        BiExecutor<VlmProviderObject<Resource>, String> consumer
+    )
         throws AccessDeniedException, InvalidKeyException, StorageException
     {
-        for (Resource rsc : deleteListRef)
-        {
-            AbsRscLayerObject<Resource> rscLayerData = rsc.getLayerData(apiCtx);
-            execForAllVlmData(
-                rscLayerData,
-                true,
-                vlmData ->
+        execForAllVlmData(
+            rsc.getLayerData(apiCtx),
+            vlmData ->
+            {
+                AbsRscLayerObject<Resource> rscLayerObject = vlmData.getRscLayerObject();
+                if (rscLayerObject.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
                 {
+                    boolean isLowestLocalDevices = true;
+                    if (!vlmData.getRscLayerObject().getChildren().isEmpty())
+                    {
+                        VlmProviderObject<Resource> childVlmData = vlmData.getRscLayerObject()
+                            .getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+                            .getVlmProviderObject(vlmData.getVlmNr());
+                        if (childVlmData != null &&
+                            childVlmData.getDevicePath() != null &&
+                            !childVlmData.getDevicePath().trim().isEmpty())
+                        {
+                            isLowestLocalDevices = false;
+                        }
+                    }
                     String identifier;
                     if (vlmData instanceof SpdkData)
                     {
@@ -141,124 +239,19 @@ public class SysFsHandler
                         identifier = getMajorMinor(vlmData);
                     }
 
-                    if (identifier != null)
+                    if (identifier != null && isLowestLocalDevices)
                     {
-                        // cleaning up throttle caches
-                        cgroupBlkioThrottleReadBpsDeviceMap.remove(identifier);
-                        cgroupBlkioThrottleWriteBpsDeviceMap.remove(identifier);
-
-                        cgroupBlkioThrottleReadIopsDeviceMap.remove(identifier);
-                        cgroupBlkioThrottleWriteIopsDeviceMap.remove(identifier);
-
-                        deviceMajorMinorMap.remove(vlmData);
+                        consumer.exec(vlmData, identifier);
                     }
                 }
-            );
-        }
-    }
-
-    private void updateCgroupBlkioThrottleReadBpsDevice(Collection<Resource> updateList)
-        throws AccessDeniedException, StorageException, InvalidKeyException
-    {
-        execForAllLowestLocalVlmData(updateList, (vlmData, identifier) ->
-        {
-            setThrottle(
-                vlmData,
-                identifier,
-                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
-                cgroupBlkioThrottleReadBpsDeviceMap,
-                THROTTLE_READ_BPS_DEVICE
-            );
-            setThrottle(
-                vlmData,
-                identifier,
-                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE,
-                cgroupBlkioThrottleWriteBpsDeviceMap,
-                THROTTLE_WRITE_BPS_DEVICE
-            );
-        });
-    }
-
-    private void updateCgroupBlkioThrottleReadIopsDevice(Collection<Resource> updateList)
-        throws AccessDeniedException, StorageException, InvalidKeyException
-    {
-        execForAllLowestLocalVlmData(updateList, (vlmData, identifier) ->
-        {
-            setThrottle(
-                vlmData,
-                identifier,
-                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ_IOPS,
-                cgroupBlkioThrottleReadIopsDeviceMap,
-                THROTTLE_READ_IOPS_DEVICE
-            );
-            setThrottle(
-                vlmData,
-                identifier,
-                ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_WRITE_IOPS,
-                cgroupBlkioThrottleWriteIopsDeviceMap,
-                THROTTLE_WRITE_IOPS_DEVICE
-            );
-        });
-    }
-
-    private void execForAllLowestLocalVlmData(
-        Collection<Resource> updateList,
-        BiExecutor<VlmProviderObject<Resource>, String> consumer
-    )
-        throws AccessDeniedException, InvalidKeyException, StorageException
-    {
-        for (Resource rsc : updateList)
-        {
-            AbsRscLayerObject<Resource> rscLayerData = rsc.getLayerData(apiCtx);
-            execForAllVlmData(
-                rscLayerData,
-                true,
-                vlmData ->
-                {
-                    AbsRscLayerObject<Resource> rscLayerObject = vlmData.getRscLayerObject();
-                    if (rscLayerObject.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
-                    {
-                        boolean isLowestLocalDevices = true;
-                        if (!vlmData.getRscLayerObject().getChildren().isEmpty())
-                        {
-                            VlmProviderObject<Resource> childVlmData = vlmData.getRscLayerObject()
-                                .getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
-                                .getVlmProviderObject(vlmData.getVlmNr());
-                            if (
-                                childVlmData != null &&
-                                    childVlmData.getDevicePath() != null &&
-                                    !childVlmData.getDevicePath().trim().isEmpty()
-                            )
-                            {
-                                isLowestLocalDevices = false;
-                            }
-                        }
-                        String identifier;
-                        if (vlmData instanceof SpdkData)
-                        {
-                            identifier = vlmData.getDevicePath();
-                        }
-                        else
-                        {
-                            identifier = getMajorMinor(vlmData);
-                        }
-
-                        if (identifier != null && isLowestLocalDevices)
-                        {
-                            consumer.exec(vlmData, identifier);
-                        }
-                    }
-                }
-            );
-        }
+            }
+        );
     }
 
     private void setThrottle(
         VlmProviderObject<Resource> vlmDataRef,
         String identifier,
-        String apiKey,
-        Map<String, String> deviceThrottleMap,
-        String sysFsPath
+        ThrottleConfig cfg
     )
         throws AccessDeniedException, InvalidKeyException, StorageException
     {
@@ -283,6 +276,10 @@ public class SysFsHandler
 
         priorityProps.addProps(rsc.getNode().getProps(apiCtx));
         priorityProps.addProps(satelliteProps);
+
+        String apiKey = cfg.propKey;
+        Map<String, String> deviceThrottleMap = cfg.map;
+        String sysFsPath = cfg.device;
 
         String expectedThrottle = priorityProps.getProp(
             apiKey,
@@ -318,22 +315,23 @@ public class SysFsHandler
             }
             deviceThrottleMap.put(identifier, expectedThrottle);
         }
-        else
-        {
-            errorReporter.logTrace(
-                "SysFs: '%s' for %s already has expected value of %s", sysFsPath, identifier, expectedThrottle
-            );
-        }
     }
 
-    private String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws StorageException, AccessDeniedException
+    private String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws AccessDeniedException
     {
         String majMin = deviceMajorMinorMap.get(vlmDataRef);
         if (vlmDataRef.exists() && !((Volume) vlmDataRef.getVolume()).getFlags().isSet(apiCtx, Volume.Flags.CLONING))
         {
             if (majMin == null)
             {
-                majMin = queryMajMin(extCmdFactory, vlmDataRef.getDevicePath());
+                try
+                {
+                    majMin = queryMajMin(extCmdFactory, vlmDataRef.getDevicePath());
+                }
+                catch (StorageException exc)
+                {
+                    errorReporter.reportError(exc);
+                }
                 deviceMajorMinorMap.put(vlmDataRef, majMin);
             }
         }
@@ -347,7 +345,6 @@ public class SysFsHandler
 
     private void execForAllVlmData(
         AbsRscLayerObject<Resource> rscLayerData,
-        boolean recursive,
         Executor<VlmProviderObject<Resource>> consumer
     )
         throws StorageException, AccessDeniedException, InvalidKeyException
@@ -356,12 +353,9 @@ public class SysFsHandler
         {
             consumer.exec(vlmData);
         }
-        if (recursive)
+        for (AbsRscLayerObject<Resource> childRscData : rscLayerData.getChildren())
         {
-            for (AbsRscLayerObject<Resource> childRscData : rscLayerData.getChildren())
-            {
-                execForAllVlmData(childRscData, recursive, consumer);
-            }
+            execForAllVlmData(childRscData, consumer);
         }
     }
 
@@ -374,7 +368,7 @@ public class SysFsHandler
         }
         catch (IOException exc)
         {
-            throw new StorageException("Failed to write '" + data + "' to path " + path);
+            throw new StorageException("Failed to write '" + data + "' to path " + path, exc);
         }
     }
 
@@ -394,7 +388,8 @@ public class SysFsHandler
                     "set_bdev_qos_limit",
                     path.split(SPDK_PATH_PREFIX)[1],
                     parameter,
-                    String.valueOf(Integer.valueOf(data) / 1024 / 1024) // bytes to megabytes
+                    // convert String to long, bytes to megabytes and back to String
+                    Long.toString(SizeConv.convert(Long.valueOf(data), SizeUnit.UNIT_B, SizeUnit.UNIT_MiB))
                 },
                 "Failed to set " + key + " of device " + path,
                 "Failed to set " + key + " of device " + path
@@ -435,7 +430,7 @@ public class SysFsHandler
                             --retryCount;
                             try
                             {
-                                Thread.sleep(100);
+                                Thread.sleep(RETRY_STAT_SLEEP_IN_MS);
                             }
                             catch (InterruptedException ignored)
                             {
@@ -557,6 +552,28 @@ public class SysFsHandler
         public FileVisitResult visitFile(Path fileRef, BasicFileAttributes attrsRef) throws IOException
         {
             return fct.accept(fileRef, attrsRef);
+        }
+    }
+
+    private static class ThrottleConfig
+    {
+        private final String device;
+        private final String propKey;
+
+        private final Path pathOfDevice;
+        private final Map<String, String> map;
+
+        ThrottleConfig(String deviceRef, String propKeyRef)
+        {
+            device = deviceRef;
+            propKey = propKeyRef;
+            pathOfDevice = Paths.get(device);
+            map = new HashMap<>();
+        }
+
+        public boolean deviceExists()
+        {
+            return Files.exists(pathOfDevice);
         }
     }
 }

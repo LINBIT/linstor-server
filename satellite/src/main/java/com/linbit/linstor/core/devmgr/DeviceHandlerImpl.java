@@ -461,13 +461,16 @@ public class DeviceHandlerImpl implements DeviceHandler
                         resourceFinished(firstNonIgnoredRscData);
                     }
 
-                    if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE))
+                    if (Platform.isLinux())
                     {
-                        sysFsUpdateList.add(rsc);
-                    }
-                    else
-                    {
-                        sysFsDeleteList.add(rsc);
+                        if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE))
+                        {
+                            sysFsHandler.update(rsc, apiCallRc);
+                        }
+                        else
+                        {
+                            sysFsHandler.cleanup(rsc);
+                        }
                     }
                 }
                 catch (AccessDeniedException | DatabaseException exc)
@@ -480,10 +483,6 @@ public class DeviceHandlerImpl implements DeviceHandler
                 }
             }
             notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
-        }
-        if (Platform.isLinux())
-        {
-            sysFsHandler.updateSysFsSettings(sysFsUpdateList, sysFsDeleteList);
         }
     }
 
