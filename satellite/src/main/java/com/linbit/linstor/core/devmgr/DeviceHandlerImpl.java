@@ -1031,6 +1031,9 @@ public class DeviceHandlerImpl implements DeviceHandler
             extFileHandler.clear();
             extFileHandler.rebuildExtFilesToRscDfnMaps(localNode);
 
+            errorReporter.logInfo("Clearing layer connection session caches...");
+            layerFactory.streamDeviceHandlers().forEach(DeviceLayer::clearConnectionSessionCache);
+
             backupShippingManager.killAllShipping();
             snapshotShippingManager.killAllShipping();
         }

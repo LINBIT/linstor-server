@@ -80,17 +80,24 @@ import javax.inject.Singleton;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.google.common.hash.HashCode;
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 
 @Singleton
 public class DrbdLayer implements DeviceLayer
@@ -117,6 +124,7 @@ public class DrbdLayer implements DeviceLayer
     private final DrbdVersion drbdVersion;
     private final WindowsFirewall windowsFirewall;
     private final PlatformStlt platformStlt;
+    private final HashFunction hashFunction;
 
     // Number of activity log stripes for DRBD meta data; this should be replaced with a property of the
     // resource definition, a property of the volume definition, or otherwise a system-wide default
@@ -125,6 +133,10 @@ public class DrbdLayer implements DeviceLayer
     // Number of activity log stripes; this should be replaced with a property of the resource definition,
     // a property of the volume definition, or or otherwise a system-wide default
     public static final long FIXME_AL_STRIPE_SIZE = 32;
+
+    // This maps stores the resource_suffix name and its last conffilebuilder string hash
+    // it is used to check if a file needs to be written to disk because changes happened.
+    private final Map<String, HashCode> lastConfFileHashMap = new HashMap<>();
 
     @Inject
     public DrbdLayer(
@@ -158,6 +170,8 @@ public class DrbdLayer implements DeviceLayer
         drbdVersion = drbdVersionRef;
         windowsFirewall = windowsFirewallRef;
         platformStlt = platformStltRef;
+
+        hashFunction = Hashing.murmur3_32_fixed();
     }
 
     @Override
@@ -1642,10 +1656,10 @@ public class DrbdLayer implements DeviceLayer
     {
         Path resFile = asResourceFile(drbdRscData, false, false);
 
-            /* On Linux this will be the same as resFile above.
-             * On Windows it has the format /cygdrive/c/WinDRBD/var/lib/linstor
-             * We need it for drbdadm's --config-to-exclude parameter.
-             */
+        /* On Linux this will be the same as resFile above.
+         * On Windows it has the format /cygdrive/c/WinDRBD/var/lib/linstor
+         * We need it for drbdadm's --config-to-exclude parameter.
+         */
         Path resFileCygwin = asResourceFile(drbdRscData, false, true);
         Path tmpResFile = asResourceFile(drbdRscData, true, false);
 
@@ -1669,70 +1683,77 @@ public class DrbdLayer implements DeviceLayer
             drbdVersion
         ).build();
 
-        try (FileOutputStream resFileOut = new FileOutputStream(tmpResFile.toFile()))
+        var contentHash = hashFunction.hashString(content, StandardCharsets.UTF_8);
+        HashCode lastContentHash = lastConfFileHashMap.get(drbdRscData.getSuffixedResourceName());
+
+        if (!Objects.equals(contentHash, lastContentHash) || !drbdRscData.resFileExists())
         {
-            resFileOut.write(content.getBytes());
-        }
-        catch (IOException ioExc)
-        {
-            String ioErrorMsg = ioExc.getMessage();
-            if (ioErrorMsg == null)
+            try (FileOutputStream resFileOut = new FileOutputStream(tmpResFile.toFile()))
             {
-                ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
-                    "the I/O error";
+                resFileOut.write(content.getBytes());
             }
-            throw new StorageException(
-                "Creation of the DRBD configuration file for resource '" + drbdRscData.getSuffixedResourceName() +
-                    "' failed due to an I/O error",
-                getAbortMsg(drbdRscData),
-                "Creation of the DRBD configuration file failed due to an I/O error",
-                "- Check whether enough free space is available for the creation of the file\n" +
-                    "- Check whether the application has write access to the target directory\n" +
-                    "- Check whether the storage is operating flawlessly",
-                "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                ioExc
-            );
-        }
+            catch (IOException ioExc)
+            {
+                String ioErrorMsg = ioExc.getMessage();
+                if (ioErrorMsg == null)
+                {
+                    ioErrorMsg = "The runtime environment or operating system did not provide a description of " +
+                        "the I/O error";
+                }
+                throw new StorageException(
+                    "Creation of the DRBD configuration file for resource '" + drbdRscData.getSuffixedResourceName() +
+                        "' failed due to an I/O error",
+                    getAbortMsg(drbdRscData),
+                    "Creation of the DRBD configuration file failed due to an I/O error",
+                    "- Check whether enough free space is available for the creation of the file\n" +
+                        "- Check whether the application has write access to the target directory\n" +
+                        "- Check whether the storage is operating flawlessly",
+                    "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                    ioExc
+                );
+            }
 
-        try
-        {
-            drbdUtils.checkResFile(tmpResFile, resFileCygwin);
-        }
-        catch (ExtCmdFailedException exc)
-        {
-            String errMsg = exc.getMessage();
-            throw new StorageException(
-                "Generated resource file for resource '" + drbdRscData.getSuffixedResourceName() + "' is invalid.",
-                getAbortMsg(drbdRscData),
-                "Verification of resource file failed",
-                null,
-                "The error reported by the runtime environment or operating system is:\n" + errMsg,
-                exc
-            );
-        }
+            try
+            {
+                drbdUtils.checkResFile(tmpResFile, resFileCygwin);
+            }
+            catch (ExtCmdFailedException exc)
+            {
+                String errMsg = exc.getMessage();
+                throw new StorageException(
+                    "Generated resource file for resource '" + drbdRscData.getSuffixedResourceName() + "' is invalid.",
+                    getAbortMsg(drbdRscData),
+                    "Verification of resource file failed",
+                    null,
+                    "The error reported by the runtime environment or operating system is:\n" + errMsg,
+                    exc
+                );
+            }
 
-        try
-        {
-            Files.move(
-                tmpResFile,
-                resFile,
-                StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
-            );
-            drbdRscData.setResFileExists(true);
-        }
-        catch (IOException ioExc)
-        {
-            String ioErrorMsg = ioExc.getMessage();
-            throw new StorageException(
-                "Unable to move temporary DRBD resource file '" + tmpResFile.toString() + "' to resource directory.",
-                getAbortMsg(drbdRscData),
-                "Unable to move temporary DRBD resource file due to an I/O error",
-                "- Check whether enough free space is available for moving the file\n" +
-                    "- Check whether the application has write access to the target directory\n" +
-                    "- Check whether the storage is operating flawlessly",
-                "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
-                ioExc
-            );
+            try
+            {
+                Files.move(
+                    tmpResFile,
+                    resFile,
+                    StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
+                );
+                drbdRscData.setResFileExists(true);
+            }
+            catch (IOException ioExc)
+            {
+                String ioErrorMsg = ioExc.getMessage();
+                throw new StorageException(
+                    "Unable to move temporary DRBD resource file '" + tmpResFile + "' to resource directory.",
+                    getAbortMsg(drbdRscData),
+                    "Unable to move temporary DRBD resource file due to an I/O error",
+                    "- Check whether enough free space is available for moving the file\n" +
+                        "- Check whether the application has write access to the target directory\n" +
+                        "- Check whether the storage is operating flawlessly",
+                    "The error reported by the runtime environment or operating system is:\n" + ioErrorMsg,
+                    ioExc
+                );
+            }
+            lastConfFileHashMap.put(drbdRscData.getSuffixedResourceName(), contentHash);
         }
     }
 
@@ -2055,5 +2076,11 @@ public class DrbdLayer implements DeviceLayer
 
         return ApiConsts.VAL_TRUE
             .equals(prioProps.getProp(ApiConsts.KEY_DRBD_SKIP_DISK, ApiConsts.NAMESPC_DRBD_OPTIONS));
+    }
+
+    @Override
+    public void clearConnectionSessionCache()
+    {
+        lastConfFileHashMap.clear();
     }
 }
