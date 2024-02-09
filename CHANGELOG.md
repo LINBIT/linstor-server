@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - LVM-Thin snapshots are set to read-only now
+- Cache drbdsetup status output for the device manager run
 
 ### Fixed
 
@@ -42,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Snapshot rollback now allows and restores snapshots on nodes that don't have a local snapshot (with DRBD)
+- DevMgr: Do not conf-test the new resource file, but instead restore the backup on failure
 
 ### Fixed
 

@@ -637,6 +637,39 @@ public class DrbdAdm
         );
     }
 
+    public String drbdSetupStatus() throws StorageException
+    {
+        try
+        {
+            OutputData drbdStatusCmd = extCmdFactory.create()
+                .exec("drbdsetup", "status");
+            if (drbdStatusCmd.exitCode != 0)
+            {
+                throw new StorageException(
+                    "Checking drbd state failed: " + new String(drbdStatusCmd.stderrData));
+            }
+            return new String(drbdStatusCmd.stdoutData);
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException("Checking drbd state failed", exc);
+        }
+    }
+
+    public boolean drbdSetupStatusRscIsUp(String rscName) throws StorageException
+    {
+        try
+        {
+            OutputData output = extCmdFactory.create()
+                .exec("drbdsetup", "status", rscName);
+            return output.exitCode == 0;
+        }
+        catch (ChildProcessTimeoutException | IOException exc)
+        {
+            throw new StorageException("Checking drbd state failed", exc);
+        }
+    }
+
     private void simpleSetupCommand(
         DrbdRscData<Resource> drbdRscData,
         @Nullable VolumeNumber vlmNr,

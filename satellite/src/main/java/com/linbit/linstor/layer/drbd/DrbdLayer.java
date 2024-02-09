@@ -1,11 +1,9 @@
 package com.linbit.linstor.layer.drbd;
 
-import com.linbit.ChildProcessTimeoutException;
 import com.linbit.ImplementationError;
 import com.linbit.Platform;
 import com.linbit.PlatformStlt;
 import com.linbit.drbd.DrbdVersion;
-import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
 import com.linbit.linstor.InternalApiConsts;
@@ -67,6 +65,7 @@ import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.AccessUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -112,6 +111,7 @@ public class DrbdLayer implements DeviceLayer
     private final WindowsFirewall windowsFirewall;
     private final PlatformStlt platformStlt;
 
+    @Nullable private static String drbdSetupStatusOutput;
 
     @Inject
     public DrbdLayer(
@@ -160,7 +160,10 @@ public class DrbdLayer implements DeviceLayer
     )
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        // no-op
+        if (drbdSetupStatusOutput == null)
+        {
+            drbdSetupStatusOutput = drbdUtils.drbdSetupStatus();
+        }
     }
 
     @Override
@@ -198,7 +201,7 @@ public class DrbdLayer implements DeviceLayer
     @Override
     public void clearCache()
     {
-        // no-op
+        drbdSetupStatusOutput = null;
     }
 
     @Override
@@ -228,7 +231,7 @@ public class DrbdLayer implements DeviceLayer
             deleteDrbd(drbdRscData, apiCallRc);
             if (processChild(drbdRscData, apiCallRc))
             {
-                adjustDrbd(drbdRscData, apiCallRc, true);
+                adjustDrbd(drbdRscData, apiCallRc, true, null);
 
                 // this should not be executed if adjusting the drbd resource fails
                 copyResFileToBackup(drbdRscData);
@@ -247,7 +250,7 @@ public class DrbdLayer implements DeviceLayer
             }
             else
             {
-                if (adjustDrbd(drbdRscData, apiCallRc, false))
+                if (adjustDrbd(drbdRscData, apiCallRc, false, drbdSetupStatusOutput))
                 {
                     addAdjustedMsg(drbdRscData, apiCallRc);
 
@@ -437,7 +440,8 @@ public class DrbdLayer implements DeviceLayer
     private boolean adjustDrbd(
         DrbdRscData<Resource> drbdRscData,
         ApiCallRcImpl apiCallRc,
-        boolean childAlreadyProcessed
+        boolean childAlreadyProcessed,
+        @Nullable String drbdSetupStatus
     )
         throws AccessDeniedException, StorageException, DatabaseException,
             ResourceException, VolumeException
@@ -516,7 +520,7 @@ public class DrbdLayer implements DeviceLayer
                     for (DrbdVlmData<Resource> drbdVlmData : checkMetaData)
                     {
                         if (
-                            !hasMetaData(drbdVlmData) || needsNewMetaData(drbdVlmData)
+                            !hasMetaData(drbdVlmData) || needsNewMetaData(drbdVlmData, drbdSetupStatus)
                         )
                         {
                             createMetaData.add(drbdVlmData);
@@ -813,20 +817,12 @@ public class DrbdLayer implements DeviceLayer
         );
     }
 
-    private boolean needsNewMetaData(DrbdVlmData<Resource> drbdVlmData) throws AccessDeniedException,
-        StorageException
+    private boolean needsNewMetaData(DrbdVlmData<Resource> drbdVlmData, @Nullable String drbdSetupStatusOut)
+        throws AccessDeniedException, StorageException
     {
-        boolean isRscUp;
-        try
-        {
-            OutputData output = extCmdFactory.create()
-                .exec("drbdsetup", "status", drbdVlmData.getRscLayerObject().getSuffixedResourceName());
-            isRscUp = output.exitCode == 0;
-        }
-        catch (ChildProcessTimeoutException | IOException exc)
-        {
-            throw new StorageException("Checking drbd state failed", exc);
-        }
+        boolean isRscUp = drbdSetupStatusOut != null ?
+            drbdSetupStatusOut.contains(drbdVlmData.getRscLayerObject().getSuffixedResourceName() + " role:") :
+            drbdUtils.drbdSetupStatusRscIsUp(drbdVlmData.getRscLayerObject().getSuffixedResourceName());
         StateFlags<DrbdRscFlags> flags = drbdVlmData.getRscLayerObject().getFlags();
         return flags.isUnset(workerCtx, DrbdRscFlags.INITIALIZED) &&
             flags.isSet(workerCtx, DrbdRscFlags.FORCE_NEW_METADATA) &&
