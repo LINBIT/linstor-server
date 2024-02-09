@@ -662,7 +662,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
         while (!shutdownFlag.get())
         {
-            errLog.logDebug("Begin DeviceManager cycle %d", cycleNr);
             synchronized (sched)
             {
                 boolean printMsg = true;
@@ -670,7 +669,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 {
                     if (printMsg)
                     {
-                        errLog.logDebug("DeviceManager waiting for service-condition");
+                        errLog.logInfo("DeviceManager waiting for service-condition");
                         printMsg = false;
                     }
                     try
@@ -683,6 +682,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 }
             }
 
+            errLog.logInfo("Begin DeviceManager cycle %d", cycleNr);
             try
             {
                 boolean fullSyncApplied = fullSyncFlag.getAndSet(false);
@@ -829,7 +829,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             }
             finally
             {
-                errLog.logDebug("End DeviceManager cycle %d", cycleNr);
+                errLog.logInfo("End DeviceManager cycle %d", cycleNr);
 
                 Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
                 synchronized (sched)
