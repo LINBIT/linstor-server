@@ -250,15 +250,17 @@ public class AutoSelectorConfig extends BaseTransactionObject
     {
         return new AutoSelectFilterBuilder()
             .setPlaceCount(replicaCount.get())// no "additional" placeCounts for rscGrps
-            .setNodeNameList(nodeNameList)
-            .setStorPoolNameList(Collections.unmodifiableList(storPoolNameList))
-            .setStorPoolDisklessNameList(Collections.unmodifiableList(storPoolDisklessNameList))
-            .setDoNotPlaceWithRscList(Collections.unmodifiableList(doNotPlaceWithRscList))
+            // copy the lists to avoid showing "TransactionList[...]" in the client. Otherwise we could simply use
+            // Collections.unmodifiableList(...)
+            .setNodeNameList(new ArrayList<>(nodeNameList))
+            .setStorPoolNameList(new ArrayList<>(storPoolNameList))
+            .setStorPoolDisklessNameList(new ArrayList<>(storPoolDisklessNameList))
+            .setDoNotPlaceWithRscList(new ArrayList<>(doNotPlaceWithRscList))
             .setDoNotPlaceWithRegex(doNotPlaceWithRscRegex.get())
-            .setReplicasOnSameList(Collections.unmodifiableList(replicasOnSameList))
-            .setReplicasOnDifferentList(Collections.unmodifiableList(replicasOnDifferentList))
-            .setLayerStackList(Collections.unmodifiableList(layerStack))
-            .setDeviceProviderKinds(Collections.unmodifiableList(allowedProviderList))
+            .setReplicasOnSameList(new ArrayList<>(replicasOnSameList))
+            .setReplicasOnDifferentList(new ArrayList<>(replicasOnDifferentList))
+            .setLayerStackList(new ArrayList<>(layerStack))
+            .setDeviceProviderKinds(new ArrayList<>(allowedProviderList))
             .setDisklessOnRemaining(disklessOnRemaining.get())
             .build();
     }
