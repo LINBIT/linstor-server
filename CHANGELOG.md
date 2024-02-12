@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LVM: Removed trailing 'a|.*|' from LVM filter
 - Do not write/check drbd resource files if nothing changed
 - RG spawn: No longer display "TransactionList" when spawn fails
+- Sp,Props: Do not trigger a DevMgrRun for certain property changes
 
 ### Fixed
 

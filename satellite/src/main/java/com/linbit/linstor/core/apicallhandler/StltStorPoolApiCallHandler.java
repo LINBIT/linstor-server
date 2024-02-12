@@ -34,6 +34,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -42,6 +43,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -54,6 +56,17 @@ import java.util.UUID;
 @Singleton
 class StltStorPoolApiCallHandler
 {
+    private static final Set<String> PROP_KEYS_THAT_DO_NOT_COUNT_AS_CHANGE = new HashSet<>();
+
+    static
+    {
+        PROP_KEYS_THAT_DO_NOT_COUNT_AS_CHANGE.addAll(
+            Arrays.asList(
+                StorageConstants.NAMESPACE_INTERNAL + StorageConstants.KEY_INT_THIN_POOL_METADATA_PERCENT
+            )
+        );
+    }
+
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final DeviceManager deviceManager;
@@ -165,6 +178,8 @@ class StltStorPoolApiCallHandler
             boolean storPoolExists = storPool != null;
             if (storPoolExists)
             {
+                boolean storPoolChanged = false;
+
                 checkUuid(storPool, storPoolRaw);
                 checkUuid(storPool.getDefinition(apiCtx), storPoolRaw);
 
@@ -184,6 +199,7 @@ class StltStorPoolApiCallHandler
                             String oldPass = decryptionHelper.decryptB64ToString(masterKey, oldPassEnc);
                             String newPass = decryptionHelper.decryptB64ToString(masterKey, newPassEnc);
                             SEDUtils.changeSEDPassword(extCmdFactory, errorReporter, sedDevice, oldPass, newPass);
+                            storPoolChanged = true;
                         }
                         else
                         {
@@ -191,24 +207,28 @@ class StltStorPoolApiCallHandler
                         }
                     }
                 }
-                storPoolProps.map().putAll(storPoolRaw.getStorPoolProps());
-                storPoolProps.keySet().retainAll(storPoolRaw.getStorPoolProps().keySet());
-
-                Collection<VlmProviderObject<Resource>> vlmDataCol = storPool.getVolumes(apiCtx);
-                for (VlmProviderObject<Resource> vlmData : vlmDataCol)
+                if (mergeProps(storPoolProps, storPoolRaw.getStorPoolProps()))
                 {
-                    ResourceDefinition rscDfn = vlmData.getVolume().getResourceDefinition();
-                    changedResources.add(rscDfn.getName());
+                    storPoolChanged = true;
                 }
 
-                Collection<VlmProviderObject<Snapshot>> snapVlmDataCol = storPool
-                    .getSnapVolumes(apiCtx);
-                for (VlmProviderObject<Snapshot> snapVlmData : snapVlmDataCol)
+                if (storPoolChanged)
                 {
-                    SnapshotVolume vlm = (SnapshotVolume) snapVlmData.getVolume();
-                    changedResources.add(vlm.getResourceName()); // TODO maybe introduce a
-                                                                 // changedSnapshot? if that is even
-                                                                 // possible..
+                    Collection<VlmProviderObject<Resource>> vlmDataCol = storPool.getVolumes(apiCtx);
+                    for (VlmProviderObject<Resource> vlmData : vlmDataCol)
+                    {
+                        ResourceDefinition rscDfn = vlmData.getVolume().getResourceDefinition();
+                        changedResources.add(rscDfn.getName());
+                    }
+
+                    Collection<VlmProviderObject<Snapshot>> snapVlmDataCol = storPool
+                        .getSnapVolumes(apiCtx);
+                    for (VlmProviderObject<Snapshot> snapVlmData : snapVlmDataCol)
+                    {
+                        SnapshotVolume vlm = (SnapshotVolume) snapVlmData.getVolume();
+                        // TODO maybe introduce a changedSnapshot? if that is even possible..
+                        changedResources.add(vlm.getResourceName());
+                    }
                 }
             }
             else
@@ -318,6 +338,27 @@ class StltStorPoolApiCallHandler
         deviceManager.storPoolUpdateApplied(storPoolSet, changedResources, responses);
 
         return changedData;
+    }
+
+    private boolean mergeProps(Props storPoolPropsRef, Map<String, String> storPoolApiPropsRef)
+    {
+        boolean propsChanged = false;
+        HashMap<String, String> oldProps = new HashMap<>(storPoolPropsRef.map());
+        // just copy the map so we can compare the filtered props for changes
+        HashMap<String, String> newProps = new HashMap<>(storPoolApiPropsRef);
+        for (String keyThatShouldNotCountAsChange : PROP_KEYS_THAT_DO_NOT_COUNT_AS_CHANGE)
+        {
+            oldProps.remove(keyThatShouldNotCountAsChange);
+            newProps.remove(keyThatShouldNotCountAsChange);
+        }
+        propsChanged = !oldProps.equals(newProps);
+
+        // even if the "changes" should not count as such (i.e. should not cause a DevMgrRun),
+        // we still need to apply them.
+        storPoolPropsRef.map().putAll(storPoolApiPropsRef);
+        storPoolPropsRef.keySet().retainAll(storPoolApiPropsRef.keySet());
+
+        return propsChanged;
     }
 
     private void checkUuid(Node node, StorPoolPojo storPoolRaw)
