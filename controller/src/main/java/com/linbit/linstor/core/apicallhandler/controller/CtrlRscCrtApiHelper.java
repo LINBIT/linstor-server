@@ -1,8 +1,6 @@
 package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
-import com.linbit.SizeConv;
-import com.linbit.SizeConv.SizeUnit;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.LinstorParsingUtils;
@@ -58,7 +56,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -96,7 +93,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 
@@ -573,8 +569,6 @@ public class CtrlRscCrtApiHelper
             {
                 boolean hasThinStorPool = false;
                 boolean hasFatStorPool = false;
-                TreeSet<Long> supportedGranularities = new TreeSet<>();
-                supportedGranularities.add(8L); // take ZFS, unless we have at least one LVM
                 // only set true on ZFS, see internal gitlab issue 671 for details
                 boolean discardZerosIfAligned = false;
 
@@ -609,28 +603,8 @@ public class CtrlRscCrtApiHelper
                                     hasFatStorPool = true;
                                     break;
                                 case LVM_THIN:
-                                {
-                                    String granularity = storPool.getProps(apiCtx).getProp(
-                                        StorageConstants.KEY_INT_THIN_POOL_GRANULARITY,
-                                        StorageConstants.NAMESPACE_INTERNAL
-                                    );
-                                    if (granularity == null)
-                                    {
-                                        granularity = "64";
-                                        errorReporter.logWarning(
-                                            "StorPool %s of node %s unexpectedly does not have property %s. " +
-                                                "Using %sk as fallback.",
-                                            storPool.getName().displayValue,
-                                            storPool.getNode().getName().displayValue,
-                                            StorageConstants.KEY_INT_THIN_POOL_GRANULARITY,
-                                            granularity
-                                        );
-                                    }
-                                    supportedGranularities.add(Long.parseLong(granularity));
-
                                     hasThinStorPool = true;
                                     discardZerosIfAligned = true;
-                                }
                                     break;
                                 case ZFS:
                                     hasFatStorPool = true;
@@ -670,17 +644,6 @@ public class CtrlRscCrtApiHelper
                     rscDfn.getResourceGroup().getVolumeGroupProps(peerCtx, vlmRef.getVolumeNumber()),
                     rscDfn.getResourceGroup().getProps(peerCtx)
                 );
-                if (prioProps.getProp("rs-discard-granularity", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
-                {
-                    String granularity = Long.toString(
-                        SizeConv.convert(
-                            supportedGranularities.last(), // take the largest granularity from all storage pools
-                            SizeUnit.UNIT_KiB,
-                            SizeUnit.UNIT_B
-                        )
-                    );
-                    vlmDfnProps.setProp("rs-discard-granularity", granularity,  ApiConsts.NAMESPC_DRBD_DISK_OPTIONS);
-                }
                 if (prioProps.getProp("discard-zeroes-if-aligned", ApiConsts.NAMESPC_DRBD_DISK_OPTIONS) == null)
                 {
                     vlmDfnProps.setProp(
