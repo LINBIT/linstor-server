@@ -37,14 +37,9 @@ import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
-import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscDfnData;
-import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.RscDfnLayerObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
-import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
 
@@ -383,21 +378,10 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 
     private boolean shouldTieBreakerExist(ResourceDefinition rscDfn) throws AccessDeniedException
     {
-        boolean hasEveryoneEnoughPeerSlots = true;
         long diskfulDrbdCount = 0;
         long disklessDrbdCount = 0;
 
         AccessContext peerAccCtx = peerCtx.get();
-        int currentCount = rscDfn.getResourceCount();
-
-        for (RscDfnLayerObject rscDfnData : rscDfn.getLayerData(peerAccCtx, DeviceLayerKind.DRBD).values())
-        {
-            if (((DrbdRscDfnData<Resource>) rscDfnData).getPeerSlots() <= currentCount)
-            {
-                hasEveryoneEnoughPeerSlots = false;
-                break;
-            }
-        }
 
         if (CtrlRscAutoQuorumHelper.isAutoQuorumEnabled(getPrioProps(rscDfn)))
         {
@@ -430,27 +414,13 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         diskfulDrbdCount++;
                     }
                 }
-
-                AbsRscLayerObject<Resource> layerData = rsc.getLayerData(peerAccCtx);
-                Set<AbsRscLayerObject<Resource>> drbdDataSet = LayerRscUtils.getRscDataByLayer(
-                    layerData,
-                    DeviceLayerKind.DRBD
-                );
-                for (AbsRscLayerObject<Resource> rlo : drbdDataSet)
-                {
-                    if (((DrbdRscData<Resource>) rlo).getPeerSlots() <= currentCount)
-                    {
-                        hasEveryoneEnoughPeerSlots = false;
-                        break;
-                    }
-                }
             }
         }
-        // TODO: maybe change to something like diskful % 2==0 && diskless % 2==0 && diskful > 0
-        return hasEveryoneEnoughPeerSlots && diskfulDrbdCount == 2 && disklessDrbdCount == 0;
+        return diskfulDrbdCount >= 2 && diskfulDrbdCount % 2 == 0 && disklessDrbdCount == 0;
     }
 
-    private Predicate<StorPool> getEligibleTieBreakerStorPoolPredicate(ResourceDefinition rscDfn) throws AccessDeniedException
+    private Predicate<StorPool> getEligibleTieBreakerStorPoolPredicate(ResourceDefinition rscDfn)
+        throws AccessDeniedException
     {
         List<Node> alreadyDeployedDiskfulNodes = new ArrayList<>();
 

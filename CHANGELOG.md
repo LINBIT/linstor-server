@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Do not write/check drbd resource files if nothing changed
 - RG spawn: No longer display "TransactionList" when spawn fails
 - Sp,Props: Do not trigger a DevMgrRun for certain property changes
+- Tiebreaker: Allow in all even-numbered (>0) diskful and 0 diskless setups
 
 ### Fixed
 
