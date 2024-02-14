@@ -139,22 +139,23 @@ public class CtrlSosReportApiCallHandler
 
     /**
      * Overall workflow is as follows:
-     *
+     * <p>
      * First, the controller sends out requests to all satellite for a file-list (name, size and length; no content).
      * We simply assume that this file-list is per satellite smaller than 16MB.
-     *
+     * </p><p>
      * Next, in order to not exceed that 16MB limit, the controller requests the first files per list that sum of sizes
      * do not exceed 10MB.
      * The rest of the 16MB is a (hopefully more than generous) buffer for the overhead from Linstor-protocol and
      * protobuf, and others.
-     *
+     * </p><p>
      * The responses to those requests are stored on the controller directly in the destination files.
-     *
+     *</p><p>
      * Once all satellites finished the responses, the controller tar.gz's the collected files and sends a
      * cleanup-message to the satellites
      * (which deletes their temporary sos-directories).
-     *
+     * </p><p>
      * The resulting String in the flux is the name of the SOS-report.
+     * </p>
      */
     public Flux<String> getSosReport(
         Set<String> nodes,
@@ -459,10 +460,11 @@ public class CtrlSosReportApiCallHandler
     /**
      * Processes the requested batch (writes the content to the corresponding files) and calls the previous method
      * (<code>requestNextBatch</code>) for the next batch.
-     *
+     * <p>
      * If a processed file starts with /var/lib/linstor.d/sos-report/$currentSosName/, instead of creating a
      * satellite-local directory with that name, we simplycreate the file into the satellite-root directory. In other
      * words all '$stlt/var/lib/linstor.d/sos-report/$currentSosName/*' files are going to land in '$stlt/*'.
+     * </p>
      */
     private Flux<ByteArrayInputStream> handleReceivedFiles(
         Path tmpDirRef,
@@ -631,7 +633,7 @@ public class CtrlSosReportApiCallHandler
 
     /**
      * Collects all controller-based information (see list below) into the given <code>$tmpDir/_Controller</code>.
-     *
+     * <p>
      * Collected files/info:
      * <table>
      * <style>table tr td { padding-right: 10px; }</style>
@@ -644,6 +646,7 @@ public class CtrlSosReportApiCallHandler
      * <tr><td>log-messages</td><td>'cp -p /var/log/messages $sosdir/log-messages'</td></tr>
      * <tr><td>release</td><td>'cat /etc/redhat-release /etc/lsb-release /etc/os-release'</td></tr>
      * </table>
+     * </p>
      */
     private void createControllerFilesInto(Path tmpDir, String sosReportName, Date since) throws IOException
     {
@@ -687,21 +690,21 @@ public class CtrlSosReportApiCallHandler
                 sosDir.resolve("log-syslog"),
                 new String[]
                 {
-                    "cp", "-p", "/var/log/syslog", sosDir.toString() + "/log-syslog"
+                    "cp", "-p", "/var/log/syslog", sosDir + "/log-syslog"
                 }
             ),
             new CommandHelper(
                 sosDir.resolve("log-kern.log"),
                 new String[]
                 {
-                    "cp", "-p", "/var/log/kern.log", sosDir.toString() + "/log-kern.log"
+                    "cp", "-p", "/var/log/kern.log", sosDir + "/log-kern.log"
                 }
             ),
             new CommandHelper(
                 sosDir.resolve("log-messages"),
                 new String[]
                 {
-                    "cp", "-p", "/var/log/messages", sosDir.toString() + "/log-messages"
+                    "cp", "-p", "/var/log/messages", sosDir + "/log-messages"
                 }
             ),
             new CommandHelper(
@@ -749,12 +752,13 @@ public class CtrlSosReportApiCallHandler
     /**
      * Runs the given command and stores the stdOut in the given file.
      * The given file's lastModified date is set in the end.
-     *
+     * <p>
      * If a problem occurs, a new file with the additional ".err" is created with the content of the stdErr.
      * Another such special file is created for ".ioexc" (containing the stacktrace).
-     *
+     * </p><p>
      * If there is neither stdOut nor stdErr (and no exception) no files will be created at all (in case of a 'cp ...'
      * command for example)
+     * </p>
      */
     private void makeFileFromCmdNoFailed(Path filePath, long timestamp, String... command)
     {
@@ -940,7 +944,7 @@ public class CtrlSosReportApiCallHandler
         throws IOException, ExtCmdFailedException, ChildProcessTimeoutException
     {
         ExtCmd extCommand = extCmdFactory.create();
-        extCommand.setTimeout(ChildProcessHandler.TimeoutType.WAIT, 4*60*1000);
+        extCommand.setTimeout(ChildProcessHandler.TimeoutType.WAIT, 4 * 60 * 1000);
         List<String> cmd = new ArrayList<>();
         cmd.add("tar");
         cmd.add("-C");

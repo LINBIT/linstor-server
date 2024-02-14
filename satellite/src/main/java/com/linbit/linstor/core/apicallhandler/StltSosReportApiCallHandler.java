@@ -2,7 +2,6 @@ package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ChildProcessHandler;
-import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.SosReportType;
 import com.linbit.linstor.SosReportType.SosCommandType;
 import com.linbit.linstor.SosReportType.SosFileType;
@@ -49,18 +48,15 @@ public class StltSosReportApiCallHandler
 
     private final ErrorReporter errorReporter;
     private final StltConfig stltCfg;
-    private final ExtCmdFactory extCmdFactory;
 
     @Inject
     public StltSosReportApiCallHandler(
         final ErrorReporter errorReporterRef,
-        final StltConfig stltCfgRef,
-        final ExtCmdFactory extCmdFactoryRef
+        final StltConfig stltCfgRef
     )
     {
         errorReporter = errorReporterRef;
         stltCfg = stltCfgRef;
-        extCmdFactory = extCmdFactoryRef;
     }
 
     /**
