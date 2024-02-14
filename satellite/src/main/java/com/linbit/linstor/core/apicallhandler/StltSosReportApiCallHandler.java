@@ -484,6 +484,15 @@ public class StltSosReportApiCallHandler
                 "/etc/os-release"
             )
         );
+        reportTypes.add(new SosCommandType("daemon.log", now, "cat", "/var/log/daemon.log"));
+        reportTypes.add(new SosCommandType("uptime", now, "uptime"));
+        reportTypes.add(new SosCommandType("lsblk", now, "lsblk"));
+        reportTypes.add(new SosCommandType("lvs", now, "lvs"));
+        reportTypes.add(new SosCommandType("vgs", now, "vgs"));
+        reportTypes.add(new SosCommandType("pvs", now, "pvs"));
+        reportTypes.add(new SosCommandType("zfs-list", now, "zfs", "list"));
+        reportTypes.add(new SosCommandType("zpool-list", now, "zpool", "list"));
+        reportTypes.add(new SosCommandType("zpool-status", now, "zpool", "status"));
 
 
         String linstorDDir = LinStor.CONFIG_PATH;
