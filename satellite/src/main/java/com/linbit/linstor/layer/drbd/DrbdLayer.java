@@ -55,10 +55,8 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
-import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
-import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
@@ -1135,36 +1133,7 @@ public class DrbdLayer implements DeviceLayer
             );
             drbdVlmData.setMetaDataIsNew(true);
 
-            boolean skipInitSync;
-            if (DrbdLayerUtils.isForceInitialSyncSet(workerCtx, drbdVlmData.getRscLayerObject()))
-            {
-                skipInitSync = false;
-            }
-            else
-            {
-                skipInitSync = VolumeUtils.isVolumeThinlyBacked(drbdVlmData, true);
-
-                if (!skipInitSync)
-                {
-                    skipInitSync = VolumeUtils.getStorageDevices(
-                        drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
-                    )
-                        .stream()
-                        .map(VlmProviderObject::getProviderKind)
-                        .allMatch(kind -> kind == DeviceProviderKind.ZFS_THIN);
-
-                    if (!skipInitSync)
-                    {
-                        skipInitSync = VolumeUtils.getStorageDevices(
-                            drbdVlmData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
-                        )
-                            .stream()
-                            .allMatch(prov -> prov.getStorPool().isVDO());
-                    }
-                }
-            }
-
-            if (skipInitSync)
+            if (DrbdLayerUtils.skipInitSync(workerCtx, drbdVlmData))
             {
                 String currentGi = getCurrentGiFromVlmDfnProp(drbdVlmData);
 

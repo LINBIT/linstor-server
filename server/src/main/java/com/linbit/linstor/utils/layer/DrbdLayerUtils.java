@@ -8,11 +8,14 @@ import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
+import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.utils.VolumeUtils;
 
 import java.util.Set;
 
@@ -100,5 +103,39 @@ public class DrbdLayerUtils
             .getProps(accCtx)
             .getProp(InternalApiConsts.KEY_FORCE_INITIAL_SYNC_PERMA, ApiConsts.NAMESPC_DRBD_OPTIONS);
         return forceSync != null && Boolean.parseBoolean(forceSync);
+    }
+
+    public static boolean skipInitSync(AccessContext accCtxRef, DrbdVlmData<Resource> drbdVlmDataRef)
+        throws AccessDeniedException
+    {
+        boolean skipInitSync;
+        if (DrbdLayerUtils.isForceInitialSyncSet(accCtxRef, drbdVlmDataRef.getRscLayerObject()))
+        {
+            skipInitSync = false;
+        }
+        else
+        {
+            skipInitSync = VolumeUtils.isVolumeThinlyBacked(drbdVlmDataRef, true);
+
+            if (!skipInitSync)
+            {
+                skipInitSync = VolumeUtils.getStorageDevices(
+                    drbdVlmDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+                )
+                    .stream()
+                    .map(VlmProviderObject::getProviderKind)
+                    .allMatch(kind -> kind == DeviceProviderKind.ZFS || kind == DeviceProviderKind.ZFS_THIN);
+
+                if (!skipInitSync)
+                {
+                    skipInitSync = VolumeUtils.getStorageDevices(
+                        drbdVlmDataRef.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+                    )
+                        .stream()
+                        .allMatch(prov -> prov.getStorPool().isVDO());
+                }
+            }
+        }
+        return skipInitSync;
     }
 }
