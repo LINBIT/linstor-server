@@ -236,6 +236,20 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         return resourceMap.size();
     }
 
+    public int getDiskfulCount(AccessContext accCtx) throws AccessDeniedException
+    {
+        return getDiskfulResources(accCtx).size();
+    }
+
+    public List<Resource> getDiskfulResources(AccessContext accCtx) throws AccessDeniedException
+    {
+        return getResourcesWithUnsetFlags(
+            accCtx,
+            Resource.Flags.DRBD_DISKLESS,
+            Resource.Flags.NVME_INITIATOR
+        );
+    }
+
     public int getNotDeletedDiskfulCount(AccessContext accCtx) throws AccessDeniedException
     {
         return getNotDeletedDiskful(accCtx).size();
@@ -243,20 +257,26 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
 
     public List<Resource> getNotDeletedDiskful(AccessContext accCtx) throws AccessDeniedException
     {
+        return getResourcesWithUnsetFlags(
+            accCtx,
+            Resource.Flags.DELETE,
+            Resource.Flags.DRBD_DELETE,
+            Resource.Flags.DRBD_DISKLESS,
+            Resource.Flags.NVME_INITIATOR
+        );
+    }
+
+    private List<Resource> getResourcesWithUnsetFlags(AccessContext accCtx, Resource.Flags... unsetFlags)
+        throws AccessDeniedException
+    {
         checkDeleted();
         var dfResources = new ArrayList<Resource>();
-        for (Resource rsc : streamResource(accCtx).collect(Collectors.toList()))
+        Iterator<Resource> rscIt = iterateResource(accCtx);
+        while (rscIt.hasNext())
         {
+            Resource rsc = rscIt.next();
             StateFlags<Resource.Flags> stateFlags = rsc.getStateFlags();
-            if (
-                stateFlags.isUnset(
-                    accCtx,
-                    Resource.Flags.DELETE,
-                    Resource.Flags.DRBD_DELETE,
-                    Resource.Flags.DRBD_DISKLESS,
-                    Resource.Flags.NVME_INITIATOR
-                )
-            )
+            if (stateFlags.isUnset(accCtx, unsetFlags))
             {
                 dfResources.add(rsc);
             }

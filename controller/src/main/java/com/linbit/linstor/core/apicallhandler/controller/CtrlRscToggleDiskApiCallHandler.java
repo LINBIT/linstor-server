@@ -84,7 +84,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.reactivestreams.Publisher;
@@ -342,10 +344,12 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             ));
         }
 
+        ResourceDefinition rscDfn = rsc.getResourceDefinition();
+        AccessContext peerCtx = peerAccCtx.get();
         if (removeDisk)
         {
             // Prevent removal of the last disk
-            int haveDiskCount = countDisksAndIsOnline(rsc.getResourceDefinition());
+            int haveDiskCount = countDisksAndIsOnline(rscDfn);
             if (haveDiskCount <= 1)
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
@@ -355,7 +359,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 ));
             }
 
-            if (!LayerUtils.hasLayer(getLayerData(peerAccCtx.get(), rsc), DeviceLayerKind.DRBD))
+            if (!LayerUtils.hasLayer(getLayerData(peerCtx, rsc), DeviceLayerKind.DRBD))
             {
                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_INVLD_LAYER_STACK,
@@ -363,6 +367,10 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     true
                 ));
             }
+        }
+        else
+        {
+            ensureAllPeersHavePeerSlotLeft(rscDfn);
         }
 
         // Save the requested storage pool in the resource properties.
@@ -476,7 +484,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     );
                 deactivateFlux = ctrlRscActivateApiCallHandler.deactivateRsc(
                     rsc.getNode().getName().displayValue,
-                    rsc.getResourceDefinition().getName().displayValue
+                    rscDfn.getName().displayValue
                 );
 
                 /*
@@ -495,12 +503,12 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
              */
             removeLayerData(rsc);
             List<DeviceLayerKind> layerList = CtrlRscCrtApiHelper.getLayerstackOrBuildDefault(
-                peerAccCtx.get(),
+                peerCtx,
                 ctrlLayerStackHelper,
                 errorReporter,
                 layerListStr,
                 responses,
-                rsc.getResourceDefinition()
+                rscDfn
             );
 
             ctrlLayerStackHelper.ensureStackDataExists(rsc, layerList, payload);
@@ -510,7 +518,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         try
         {
-            List<DeviceLayerKind> unsupportedLayers = CtrlRscCrtApiHelper.getUnsupportedLayers(peerAccCtx.get(), rsc);
+            List<DeviceLayerKind> unsupportedLayers = CtrlRscCrtApiHelper.getUnsupportedLayers(peerCtx, rsc);
             if (!unsupportedLayers.isEmpty())
             {
                 throw new ApiRcException(
@@ -526,7 +534,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             throw new ApiAccessDeniedException(
                 accDeniedExc,
-                "toggle disk resource " + rsc.getResourceDefinition().getName().displayValue + " on node " +
+                "toggle disk resource " + rscDfn.getName().displayValue + " on node " +
                     rsc.getNode().getName(),
                 ApiConsts.FAIL_ACC_DENIED_RSC
             );
@@ -537,7 +545,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String action = removeDisk ? "Removal of disk from" : "Addition of disk to";
         responses.addEntry(ApiCallRcImpl.simpleEntry(
             ApiConsts.MODIFIED,
-            action + " resource '" + rsc.getResourceDefinition().getName().displayValue + "' " +
+            action + " resource '" + rscDfn.getName().displayValue + "' " +
                 "on node '" + rsc.getNode().getName().displayValue + "' registered"
         ));
 
@@ -545,7 +553,76 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             .<ApiCallRc>just(responses)
             .concatWith(deactivateFlux)
             .concatWith(updateAndAdjustDisk(nodeName, rscName, removeDisk, toggleIntoTiebreakerRef, context))
-            .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rsc.getResourceDefinition()));
+            .concatWith(ctrlRscDfnApiCallHandler.get().updateProps(rscDfn));
+    }
+
+    private void ensureAllPeersHavePeerSlotLeft(ResourceDefinition rscDfnRef)
+    {
+        try
+        {
+            AccessContext peerCtx = peerAccCtx.get();
+            List<Resource> diskfulRscList = rscDfnRef.getDiskfulResources(peerCtx);
+
+            /*
+             * usually we need one peer slot less than we have diskful resources, but we are about to toggle disk a
+             * resource so the "new" diskful resource count will be +1. Therefore the -1 and +1 eliminate each other.
+             */
+            int requiredPeerSlots = diskfulRscList.size();
+
+            LinkedHashMap<Resource, Short> rscListWithInsufficientPeerSlots = new LinkedHashMap<>();
+            for (Resource rsc : diskfulRscList)
+            {
+                Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
+                    getLayerData(apiCtx, rsc),
+                    DeviceLayerKind.DRBD
+                );
+                if (drbdRscDataSet.size() >= 2)
+                {
+                    throw new ImplementationError("Unexpected layer tree");
+                }
+                if (!drbdRscDataSet.isEmpty())
+                {
+                    DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) drbdRscDataSet.iterator().next();
+                    if (drbdRscData.getPeerSlots() < requiredPeerSlots)
+                    {
+                        rscListWithInsufficientPeerSlots.put(rsc, drbdRscData.getPeerSlots());
+                    }
+                }
+            }
+            if (!rscListWithInsufficientPeerSlots.isEmpty())
+            {
+                StringBuilder detailsBuilder = new StringBuilder("Resources with insufficient peer slots (")
+                    .append(requiredPeerSlots)
+                    .append(" required): \n");
+                for (Entry<Resource, Short> entry : rscListWithInsufficientPeerSlots.entrySet())
+                {
+                    detailsBuilder.append(" * ")
+                        .append(entry.getKey().toString())
+                        .append(" has peer slots: ")
+                        .append(entry.getValue())
+                        .append("\n");
+                }
+                detailsBuilder.setLength(detailsBuilder.length() - 1);
+
+                throw new ApiRcException(
+                    ApiCallRcImpl.entryBuilder(
+                        ApiConsts.FAIL_INSUFFICIENT_PEER_SLOTS,
+                        "Existing resources do not have enough peer slots"
+                    )
+                        .setDetails(detailsBuilder.toString())
+                        .setAppendObjectDescriptionToDetails(false)
+                        .build()
+                );
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "check rscDfn for resources with insufficient peer slots",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
     }
 
     /**
