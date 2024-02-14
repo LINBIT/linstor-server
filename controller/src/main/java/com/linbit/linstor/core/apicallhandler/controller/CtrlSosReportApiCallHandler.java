@@ -775,7 +775,9 @@ public class CtrlSosReportApiCallHandler
             running = false;
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            exc.printStackTrace(new PrintWriter(baos));
+            PrintWriter pw = new PrintWriter(baos);
+            exc.printStackTrace(pw);
+            pw.flush();
             byte[] data = baos.toByteArray();
 
             append(addExtension(filePath, ".ioexc"), data, timestamp, command);
@@ -812,7 +814,9 @@ public class CtrlSosReportApiCallHandler
                     running = false;
 
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    ((ExceptionEvent) event).exc.printStackTrace(new PrintWriter(baos));
+                    PrintWriter pw = new PrintWriter(baos);
+                    ((ExceptionEvent) event).exc.printStackTrace(pw);
+                    pw.flush();
                     data = baos.toByteArray();
 
                     file = addExtension(filePath, ".exc");

@@ -282,6 +282,7 @@ public class StltSosReportApiCallHandler
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         exc.printStackTrace(pw);
+        pw.flush();
         return sw.toString();
     }
 
