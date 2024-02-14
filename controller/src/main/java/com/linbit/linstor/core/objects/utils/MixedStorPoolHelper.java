@@ -21,6 +21,8 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
+import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -29,6 +31,7 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.ZfsPropsUtils;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
+import com.linbit.linstor.utils.layer.DrbdLayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.utils.MathUtils;
@@ -62,7 +65,7 @@ public class MixedStorPoolHelper
         VolumeDefinition vlmDfn = vlmRef.getVolumeDefinition();
         ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
         Set<StorPool> storPoolSet = getAllStorPools(rscDfn);
-        if (hasMixedStoragePools(storPoolSet))
+        if (hasMixedStoragePools(rscDfn, storPoolSet))
         {
             ensureAllStltsHaveDrbdVersion(storPoolSet);
             ensureNoGrossSize(vlmDfn);
@@ -177,31 +180,28 @@ public class MixedStorPoolHelper
         return ret;
     }
 
-    private boolean hasMixedStoragePools(Set<StorPool> storagePoolsRef)
+    private boolean hasMixedStoragePools(ResourceDefinition rscDfnRef, Set<StorPool> storPoolSetRef)
     {
-        boolean usesThick = false;
-        boolean usesThin = false;
+        boolean usesMixedSkipInitSync;
 
         Set<String> allocationGranularities = new HashSet<>();
         try
         {
-            for (StorPool sp : storagePoolsRef)
+            usesMixedSkipInitSync = usesMixedSkipInitialSync(rscDfnRef);
+
+            // no need to go through storage pools if the result of this method will already be true at this point
+            if (!usesMixedSkipInitSync)
             {
-                DeviceProviderKind kind = sp.getDeviceProviderKind();
-                if (!kind.equals(DeviceProviderKind.DISKLESS))
+                for (StorPool sp : storPoolSetRef)
                 {
-                    if (kind.usesThinProvisioning())
+                    DeviceProviderKind kind = sp.getDeviceProviderKind();
+                    if (!kind.equals(DeviceProviderKind.DISKLESS))
                     {
-                        usesThin = true;
+                        allocationGranularities.add(
+                            sp.getProps(sysCtx)
+                                .getProp(InternalApiConsts.ALLOCATION_GRANULARITY, StorageConstants.NAMESPACE_INTERNAL)
+                        );
                     }
-                    else
-                    {
-                        usesThick = true;
-                    }
-                    allocationGranularities.add(
-                        sp.getProps(sysCtx)
-                            .getProp(InternalApiConsts.ALLOCATION_GRANULARITY, StorageConstants.NAMESPACE_INTERNAL)
-                    );
                 }
             }
         }
@@ -209,7 +209,41 @@ public class MixedStorPoolHelper
         {
             throw new ImplementationError(exc);
         }
-        return (usesThick && usesThin) || allocationGranularities.size() > 1;
+        return usesMixedSkipInitSync || allocationGranularities.size() > 1;
+    }
+
+    private boolean usesMixedSkipInitialSync(ResourceDefinition rscDfnRef) throws AccessDeniedException
+    {
+        boolean doesNotUseSkipInitSync = false;
+        boolean usesSkipInitSync = false;
+        Iterator<Resource> rscIt = rscDfnRef.iterateResource(sysCtx);
+        while (rscIt.hasNext())
+        {
+            Resource rsc = rscIt.next();
+            if (!rsc.getStateFlags().isSet(sysCtx, Resource.Flags.DRBD_DISKLESS))
+            {
+                Set<AbsRscLayerObject<Resource>> drbdRscDataSet = LayerRscUtils.getRscDataByLayer(
+                    rsc.getLayerData(sysCtx),
+                    DeviceLayerKind.DRBD
+                );
+                for (AbsRscLayerObject<Resource> rscData : drbdRscDataSet)
+                {
+                    DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) rscData;
+                    for (DrbdVlmData<Resource> drbdVlmData : drbdRscData.getVlmLayerObjects().values())
+                    {
+                        if (DrbdLayerUtils.skipInitSync(sysCtx, drbdVlmData))
+                        {
+                            usesSkipInitSync = true;
+                        }
+                        else
+                        {
+                            doesNotUseSkipInitSync = true;
+                        }
+                    }
+                }
+            }
+        }
+        return usesSkipInitSync && doesNotUseSkipInitSync;
     }
 
     private long getLeastCommonExtentSizeInKib(Volume vlmRef)
