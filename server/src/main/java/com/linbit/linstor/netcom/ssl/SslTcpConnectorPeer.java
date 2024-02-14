@@ -1222,29 +1222,40 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
     )
     {
         final ErrorReporter debugLog = this.getErrorReporter();
-        final byte[] data = buffer.array();
-        if (data != null)
+        byte[] data;
+        try
         {
-            final int safeLength = data.length > length ? length : data.length;
-            if (data.length == safeLength)
-            {
-                final byte[] dumpData = data;
-            }
-            else
-            {
-                final byte[] dumpData = new byte[safeLength];
-                System.arraycopy(data, 0, dumpData, 0, safeLength);
-            }
-            final String hexDump = HexViewer.binaryToHexDump(data);
-            debugLog.logInfo("%s\n%s", getClass().getName() + ": DEBUG: " + logMsg, hexDump);
+            data = buffer.array();
+        }
+        catch (UnsupportedOperationException exc)
+        { // Handle read-only buffer
+            final int savedLimit = buffer.limit();
+            final int savedPosition = buffer.position();
+            final int capacity = buffer.capacity();
+
+            // Modify buffer position and limit to prepare for copying the entire buffer contents
+            buffer.position(0);
+            buffer.limit(capacity);
+            data = new byte[capacity];
+
+            // Copy buffer contents to the byte array
+            buffer.get(data);
+
+            // Restore original buffer position and limit
+            buffer.position(savedPosition);
+            buffer.limit(savedLimit);
+        }
+        final int safeLength = data.length > length ? length : data.length;
+        if (data.length == safeLength)
+        {
+            final byte[] dumpData = data;
         }
         else
         {
-            debugLog.logError(
-                "%s", getClass().getName() +
-                ": Debug logging: Cannot log buffer contents, byte array of the ByteBuffer is inaccessible " +
-                "(null)"
-            );
+            final byte[] dumpData = new byte[safeLength];
+            System.arraycopy(data, 0, dumpData, 0, safeLength);
         }
+        final String hexDump = HexViewer.binaryToHexDump(data);
+        debugLog.logInfo("%s\n%s", getClass().getName() + ": DEBUG: " + logMsg, hexDump);
     }
 }
