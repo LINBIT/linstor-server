@@ -125,6 +125,11 @@ public interface ApiCallRc extends List<ApiCallRc.RcEntry>
         String getDetails();
 
         /**
+         * If set to true, the details-section will be appended with the object description
+         */
+        boolean appendObjectDescrptionToDetails();
+
+        /**
          * @return Date the apicallrc was created
          */
         ZonedDateTime getDateTime();

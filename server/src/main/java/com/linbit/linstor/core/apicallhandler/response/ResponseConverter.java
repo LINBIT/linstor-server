@@ -200,7 +200,7 @@ public class ResponseConverter
         {
             detailsJoiner.add(sourceEntry.getDetails());
         }
-        if (appendDetail)
+        if (appendDetail && sourceEntry.appendObjectDescrptionToDetails())
         {
             detailsJoiner.add(context.getObjectDescription());
         }

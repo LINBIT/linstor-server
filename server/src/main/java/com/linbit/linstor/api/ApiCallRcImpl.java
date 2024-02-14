@@ -114,6 +114,7 @@ public class ApiCallRcImpl implements ApiCallRc
         entryBuilder.putAllObjRefs(source.getObjRefs());
         entryBuilder.addAllErrorIds(source.getErrorIds());
         entryBuilder.setSkipErrorReport(source.skipErrorReport());
+        entryBuilder.setAppendObjectDescriptionToDetails(source.appendObjectDescrptionToDetails());
         return entryBuilder;
     }
 
@@ -181,6 +182,7 @@ public class ApiCallRcImpl implements ApiCallRc
         private boolean skipErrorReport = false;
         @JsonProperty("dateTime")
         private final ZonedDateTime createdAt;
+        private boolean appendObjectDescriptionToDetails = true;
 
         private static final Map<Long, LinstorObj> POSSIBLE_OBJS = Map.ofEntries(
             new AbstractMap.SimpleEntry<>(ApiConsts.MASK_SCHEDULE, LinstorObj.SCHEDULE),
@@ -344,6 +346,12 @@ public class ApiCallRcImpl implements ApiCallRc
             return this;
         }
 
+        public ApiCallRcEntry setAppendObjectDescriptionToDetails(boolean appendObjectDescriptionToDetailsRef)
+        {
+            appendObjectDescriptionToDetails = appendObjectDescriptionToDetailsRef;
+            return this;
+        }
+
         @Override
         public long getReturnCode()
         {
@@ -384,6 +392,13 @@ public class ApiCallRcImpl implements ApiCallRc
         public Set<String> getErrorIds()
         {
             return errorIds;
+        }
+
+        @Override
+        @JsonIgnore
+        public boolean appendObjectDescrptionToDetails()
+        {
+            return appendObjectDescriptionToDetails;
         }
 
         @Override
@@ -432,6 +447,7 @@ public class ApiCallRcImpl implements ApiCallRc
 
         private String details;
         private boolean skipErrorReport = false;
+        private boolean appendObjectDescriptionToDetails = true;
 
         private final Map<String, String> objRefs = new TreeMap<>();
 
@@ -494,6 +510,12 @@ public class ApiCallRcImpl implements ApiCallRc
             return this;
         }
 
+        public EntryBuilder setAppendObjectDescriptionToDetails(boolean appendRef)
+        {
+            appendObjectDescriptionToDetails = appendRef;
+            return this;
+        }
+
         public ApiCallRcEntry build()
         {
             ApiCallRcImpl.ApiCallRcEntry entry = new ApiCallRcImpl.ApiCallRcEntry();
@@ -505,6 +527,7 @@ public class ApiCallRcImpl implements ApiCallRc
             entry.putAllObjRef(objRefs);
             entry.addAllErrorIds(errorIds);
             entry.setSkipErrorReport(skipErrorReport);
+            entry.setAppendObjectDescriptionToDetails(appendObjectDescriptionToDetails);
             return entry;
         }
     }
