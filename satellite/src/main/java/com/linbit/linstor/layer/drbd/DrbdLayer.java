@@ -68,24 +68,17 @@ import javax.inject.Singleton;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import com.google.common.hash.HashCode;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
 
 @Singleton
 public class DrbdLayer implements DeviceLayer
@@ -112,11 +105,7 @@ public class DrbdLayer implements DeviceLayer
     private final DrbdVersion drbdVersion;
     private final WindowsFirewall windowsFirewall;
     private final PlatformStlt platformStlt;
-    private final HashFunction hashFunction;
 
-    // This maps stores the resource_suffix name and its last conffilebuilder string hash
-    // it is used to check if a file needs to be written to disk because changes happened.
-    private final Map<String, HashCode> lastConfFileHashMap = new HashMap<>();
 
     @Inject
     public DrbdLayer(
@@ -150,8 +139,6 @@ public class DrbdLayer implements DeviceLayer
         drbdVersion = drbdVersionRef;
         windowsFirewall = windowsFirewallRef;
         platformStlt = platformStltRef;
-
-        hashFunction = Hashing.murmur3_32_fixed();
     }
 
     @Override
@@ -1436,9 +1423,23 @@ public class DrbdLayer implements DeviceLayer
         }
     }
 
-    private void regenerateResFile(DrbdRscData<Resource> drbdRscData)
+    private String readResFile(Path resFilePath) throws IOException
+    {
+        return Files.readString(resFilePath);
+    }
+
+    /**
+     * Writes a new resfile if the content really changed.
+     *
+     * @param drbdRscData
+     * @return True if a new res file was written otherwise false.
+     * @throws AccessDeniedException
+     * @throws StorageException
+     */
+    private boolean regenerateResFile(DrbdRscData<Resource> drbdRscData)
         throws AccessDeniedException, StorageException
     {
+        boolean fileWritten = false;
         Path resFile = asResourceFile(drbdRscData, false, false);
 
         /* On Linux this will be the same as resFile above.
@@ -1468,10 +1469,20 @@ public class DrbdLayer implements DeviceLayer
             drbdVersion
         ).build();
 
-        var contentHash = hashFunction.hashString(content, StandardCharsets.UTF_8);
-        HashCode lastContentHash = lastConfFileHashMap.get(drbdRscData.getSuffixedResourceName());
+        String onDiskContent = "";
+        if (drbdRscData.resFileExists())
+        {
+            try
+            {
+                onDiskContent = readResFile(resFile);
+            }
+            catch (IOException exc)
+            {
+                errorReporter.reportError(exc);
+            }
+        }
 
-        if (!Objects.equals(contentHash, lastContentHash) || !drbdRscData.resFileExists())
+        if (!onDiskContent.equals(content))
         {
             try (FileOutputStream resFileOut = new FileOutputStream(tmpResFile.toFile()))
             {
@@ -1523,6 +1534,7 @@ public class DrbdLayer implements DeviceLayer
                     StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE
                 );
                 drbdRscData.setResFileExists(true);
+                fileWritten = true;
             }
             catch (IOException ioExc)
             {
@@ -1538,8 +1550,8 @@ public class DrbdLayer implements DeviceLayer
                     ioExc
                 );
             }
-            lastConfFileHashMap.put(drbdRscData.getSuffixedResourceName(), contentHash);
         }
+        return fileWritten;
     }
 
     private void copyResFileToBackup(DrbdRscData<Resource> drbdRscData) throws StorageException
@@ -1843,11 +1855,5 @@ public class DrbdLayer implements DeviceLayer
     {
         // ignored
         return null;
-    }
-
-    @Override
-    public void clearConnectionSessionCache()
-    {
-        lastConfFileHashMap.clear();
     }
 }

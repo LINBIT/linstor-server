@@ -69,14 +69,6 @@ public interface DeviceLayer
 
     void clearCache() throws StorageException;
 
-    /**
-     * This method is triggered for every layer after a full sync was applied.
-     * While this is called a Reconfiguration WRITE lock is acquired.
-     */
-    default void clearConnectionSessionCache()
-    {
-    }
-
     LocalPropsChangePojo setLocalNodeProps(Props localNodeProps) throws StorageException, AccessDeniedException;
 
     boolean resourceFinished(AbsRscLayerObject<Resource> layerDataRef) throws AccessDeniedException;

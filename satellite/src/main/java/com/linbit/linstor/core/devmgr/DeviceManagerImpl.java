@@ -716,18 +716,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                         pendingDispatchRscs.clear();
                         pendingDispatchRscs.putAll(dispatchRscs);
                     }
-
-                    Lock rcfgWLock = reconfigurationLock.writeLock();
-
-                    try
-                    {
-                        rcfgWLock.lock();
-                        devHandler.fullSyncApplied(controllerPeerConnector.getLocalNode());
-                    }
-                    finally
-                    {
-                        rcfgWLock.unlock();
-                    }
+                    devHandler.fullSyncApplied(controllerPeerConnector.getLocalNode());
 
                     deleteOldResFiles(); // new res files should be generated in the now starting devMgrCycle
                 }
