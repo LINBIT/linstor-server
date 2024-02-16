@@ -1,6 +1,5 @@
 package com.linbit.linstor.logging;
 
-import com.linbit.AutoIndent;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
@@ -96,7 +95,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
         String contextInfo
     )
     {
-        return reportErrorImpl(Level.ERROR, errorInfo, accCtx, client, contextInfo);
+        return reportImpl(Level.ERROR, errorInfo, accCtx, client, contextInfo, true);
     }
 
     @Override
@@ -108,7 +107,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
         String contextInfo
     )
     {
-        return reportErrorImpl(logLevel, errorInfo, accCtx, client, contextInfo);
+        return reportImpl(logLevel, errorInfo, accCtx, client, contextInfo, true);
     }
 
     @Override
@@ -120,19 +119,21 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
         String contextInfo
     )
     {
-        return reportProblemImpl(logLevel, errorInfo, accCtx, client, contextInfo);
+        return reportImpl(logLevel, errorInfo, accCtx, client, contextInfo, false);
     }
 
-    private String reportErrorImpl(
+    private String reportImpl(
         Level logLevel,
         Throwable errorInfoRef,
         AccessContext accCtx,
         Peer client,
-        String contextInfo
+        String contextInfo,
+        boolean includeStackTrace
     )
     {
         PrintStream output = System.err;
         String logName = null;
+        final Date errorTime = new Date();
         try
         {
             long reportNr = errorNr.getAndIncrement();
@@ -146,135 +147,26 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
             }
 
             // Error report header
-            reportHeader(output, reportNr, client, new Date());
+            ErrorReportRenderer errRepRenderer = new ErrorReportRenderer();
 
-            // Report the error and any nested errors
-            int loopCtr = 0;
-            for (Throwable curErrorInfo = errorInfo; curErrorInfo != null; curErrorInfo = curErrorInfo.getCause())
-            {
-                if (loopCtr <= 0)
-                {
-                    output.println("Reported error:\n===============\n");
-                }
-                else
-                {
-                    output.println("Caused by:\n==========\n");
-                }
+            renderReport(
+                errRepRenderer,
+                reportNr,
+                accCtx,
+                client,
+                errorInfo,
+                errorTime,
+                contextInfo,
+                includeStackTrace
+            );
 
-                reportExceptionDetails(output, curErrorInfo, loopCtr == 0 ? contextInfo : null);
+            String renderedReport = errRepRenderer.getErrorReport();
 
-                ++loopCtr;
-            }
-
-            output.println("\nEND OF ERROR REPORT.");
+            output.print(renderedReport);
         }
         catch (Exception exc)
         {
             exc.printStackTrace(System.err);
-        }
-        return logName;
-    }
-
-    private String reportProblemImpl(
-        Level logLevel,
-        LinStorException errorInfo,
-        AccessContext accCtx,
-        Peer client,
-        String contextInfo
-    )
-    {
-        PrintStream output = System.err;
-        String logName = null;
-        long reportNr = errorNr.getAndIncrement();
-
-        // If no description of the problem is available, log the technical details of the exception
-        // as an error report instead.
-        String message = errorInfo.getMessage();
-        String descriptionMsg = errorInfo.getDescriptionText();
-        if (descriptionMsg == null)
-        {
-            if (message == null)
-            {
-                reportError(errorInfo, accCtx, client, contextInfo);
-            }
-            else
-            {
-                descriptionMsg = message;
-            }
-        }
-
-        if (descriptionMsg != null)
-        {
-            // Error report header
-            reportHeader(output, reportNr, client, new Date());
-
-            // Error description/cause/correction/details report
-            String causeMsg = errorInfo.getCauseText();
-            String correctionMsg = errorInfo.getCorrectionText();
-            String detailsMsg = errorInfo.getDetailsText();
-
-            output.println("Description:");
-            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, descriptionMsg);
-
-            if (causeMsg != null)
-            {
-                output.println("Cause:");
-                AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, causeMsg);
-            }
-
-            if (correctionMsg != null)
-            {
-                output.println("Correction:");
-                AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, correctionMsg);
-            }
-
-            output.println();
-
-            if (contextInfo != null)
-            {
-                output.println("Error context:");
-                AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, contextInfo);
-                output.println();
-            }
-
-            if (accCtx != null)
-            {
-                reportAccessContext(output, accCtx);
-            }
-
-            if (client != null)
-            {
-                reportPeer(output, client);
-            }
-
-            // Report the error and any nested errors
-            int loopCtr = 0;
-            for (Throwable nestedErrorInfo = errorInfo.getCause();
-                nestedErrorInfo != null;
-                nestedErrorInfo = nestedErrorInfo.getCause())
-            {
-                output.println("Caused by:\n==========\n");
-
-                if (nestedErrorInfo instanceof LinStorException)
-                {
-                    boolean detailsAvailable = reportLinStorException(
-                        output, (LinStorException) nestedErrorInfo
-                    );
-                    if (!detailsAvailable)
-                    {
-                        reportExceptionDetails(output, nestedErrorInfo, loopCtr == 0 ? contextInfo : null);
-                    }
-                }
-                else
-                {
-                    // FIXME: If a message is available, report the message,
-                    //        else report as error
-                }
-
-                ++loopCtr;
-            }
-
-            output.println("\nEND OF ERROR REPORT.\n");
         }
         return logName;
     }

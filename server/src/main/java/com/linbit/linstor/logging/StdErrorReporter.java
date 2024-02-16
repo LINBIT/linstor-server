@@ -1,6 +1,5 @@
 package com.linbit.linstor.logging;
 
-import com.linbit.AutoIndent;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinStorRuntimeException;
@@ -16,14 +15,11 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -253,157 +249,24 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
     @Override
     public String reportError(
         Throwable errorInfo,
-        AccessContext accCtx,
-        Peer client,
-        String contextInfo
+        @Nullable AccessContext accCtx,
+        @Nullable Peer client,
+        @Nullable String contextInfo
     )
     {
-        return reportErrorImpl(Level.ERROR, errorInfo, accCtx, client, contextInfo);
+        return reportImpl(Level.ERROR, errorInfo, accCtx, client, contextInfo, true);
     }
 
     @Override
     public String reportError(
         Level logLevel,
         Throwable errorInfo,
-        AccessContext accCtx,
-        Peer client,
-        String contextInfo
+        @Nullable AccessContext accCtx,
+        @Nullable Peer client,
+        @Nullable String contextInfo
     )
     {
-        return reportErrorImpl(logLevel, errorInfo, accCtx, client, contextInfo);
-    }
-
-    private String reportErrorImpl(
-        Level logLevel,
-        Throwable errorInfo,
-        AccessContext accCtx,
-        Peer client,
-        String contextInfo
-    )
-    {
-        PrintStream output = null;
-        long reportNr = errorNr.getAndIncrement();
-        final String logName = getLogName(reportNr);
-        final Date errorTime = new Date();
-        try
-        {
-            output = openReportFile(logName);
-
-            writeErrorReport(output, reportNr, client, errorInfo, errorTime, contextInfo);
-
-            // write to h2 error database
-            {
-                final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                final String utf8 = StandardCharsets.UTF_8.name();
-                try (PrintStream ps = new PrintStream(baos, true, utf8))
-                {
-                    writeErrorReport(ps, reportNr, client, errorInfo, errorTime, contextInfo);
-                }
-                catch (UnsupportedEncodingException exc)
-                {
-                    logError(exc.getMessage());
-                }
-                h2ErrorReporter.writeErrorReportToDB(
-                    reportNr,
-                    client,
-                    errorInfo,
-                    instanceEpoch,
-                    errorTime,
-                    nodeName,
-                    dmModule,
-                    baos.toByteArray());
-            }
-
-            final String logMsg = formatLogMsg(reportNr, errorInfo);
-            switch (logLevel)
-            {
-                case ERROR:
-                    logError("%s", logMsg);
-                    break;
-                case WARN:
-                    logWarning("%s", logMsg);
-                    break;
-                case INFO:
-                    logInfo("%s", logMsg);
-                    break;
-                case DEBUG:
-                    logDebug("%s", logMsg);
-                    break;
-                case TRACE:
-                    logTrace("%s", logMsg);
-                    break;
-                default:
-                    logError("%s", logMsg);
-                    reportError(
-                        new IllegalArgumentException(
-                            String.format(
-                                "Missing case label for enumeration value '%s'",
-                                logLevel.name()
-                            )
-                        )
-                    );
-                    break;
-            }
-
-            Sentry.captureException(errorInfo);
-        }
-        finally
-        {
-            closeReportFile(output);
-        }
-        return logName;
-    }
-
-    private void writeErrorReport(
-            PrintStream output,
-            long reportNr,
-            Peer client,
-            Throwable errorInfo,
-            Date errorTime,
-            String contextInfo)
-    {
-        // Error report header
-        reportHeader(output, reportNr, client, errorTime);
-
-        // Generate and report a null pointer exception if this
-        // method is called with a null argument
-        final Throwable checkedErrorInfo = errorInfo == null ? new NullPointerException() : errorInfo;
-
-        // Report the error and any nested errors
-        int loopCtr = 0;
-        for (
-                Throwable curErrorInfo = checkedErrorInfo;
-                curErrorInfo != null;
-                curErrorInfo = curErrorInfo.getCause()
-        )
-        {
-            if (loopCtr <= 0)
-            {
-                output.println("Reported error:\n===============\n");
-            }
-            else
-            {
-                output.println("Caused by:\n==========\n");
-            }
-
-            reportExceptionDetails(output, curErrorInfo, loopCtr == 0 ? contextInfo : null);
-
-            Throwable[] suppressedExceptions = curErrorInfo.getSuppressed();
-            for (int supIdx = 0; supIdx < suppressedExceptions.length; ++supIdx)
-            {
-                output.printf(
-                        "Suppressed exception %d of %d:\n===============\n",
-                        supIdx + 1,
-                        suppressedExceptions.length
-                );
-
-                reportExceptionDetails(output, suppressedExceptions[supIdx], loopCtr == 0 ? contextInfo : null);
-            }
-
-            ++loopCtr;
-        }
-
-        output.println("\nEND OF ERROR REPORT.");
+        return reportImpl(logLevel, errorInfo, accCtx, client, contextInfo, true);
     }
 
     @Override
@@ -415,146 +278,101 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         String contextInfo
     )
     {
-        return reportProblemImpl(logLevel, errorInfo, accCtx, client, contextInfo);
+        return reportImpl(logLevel, errorInfo, accCtx, client, contextInfo, false);
     }
 
-    private String reportProblemImpl(
+    private String reportImpl(
         Level logLevel,
-        LinStorException errorInfo,
-        AccessContext accCtx,
-        Peer client,
-        String contextInfo
+        Throwable errorInfo,
+        @Nullable AccessContext accCtxRef,
+        @Nullable Peer client,
+        @Nullable String contextInfo,
+        boolean includeStackTrace
     )
     {
         PrintStream output = null;
-        String logName = null;
+        long reportNr = errorNr.getAndIncrement();
+        final String logName = getLogName(reportNr);
+        final Date errorTime = new Date();
         try
         {
-            long reportNr = errorNr.getAndIncrement();
+            output = openReportFile(logName);
 
-            // If no description of the problem is available, log the technical details of the exception
-            // as an error report instead.
-            String message = errorInfo.getMessage();
-            String descriptionMsg = errorInfo.getDescriptionText();
-            if (descriptionMsg == null)
-            {
-                if (message == null)
-                {
-                    reportError(errorInfo, accCtx, client, contextInfo);
-                }
-                else
-                {
-                    descriptionMsg = message;
-                }
-            }
+            // since we also want to include the report in the database, we should not directly write to our
+            // output-PrintStream, but first render the report as a String and afterwards write the same string in the
+            // output-PrintStream as well as give the byte[] of the String to the H2 error reporter
+            ErrorReportRenderer errRepRenderer = new ErrorReportRenderer();
 
-            if (descriptionMsg != null)
-            {
-                logName = getLogName(reportNr);
-                output = openReportFile(logName);
+            renderReport(
+                errRepRenderer,
+                reportNr,
+                accCtxRef,
+                client,
+                errorInfo,
+                errorTime,
+                contextInfo,
+                includeStackTrace
+            );
 
-                // Error report header
-                reportHeader(output, reportNr, client, new Date());
+            String renderedReport = errRepRenderer.getErrorReport();
+            // write to PrintStream
+            output.print(renderedReport);
 
-                reportLinStorException(output, errorInfo);
+            // write to H2
+            h2ErrorReporter.writeErrorReportToDB(
+                reportNr,
+                client,
+                errorInfo,
+                instanceEpoch,
+                errorTime,
+                nodeName,
+                dmModule,
+                renderedReport.getBytes()
+            );
 
-                if (contextInfo != null)
-                {
-                    output.println("Error context:");
-                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, contextInfo);
-                    output.println();
-                }
+            logReport(reportNr, errorInfo, logLevel);
 
-                if (accCtx != null)
-                {
-                    reportAccessContext(output, accCtx);
-                }
-
-                if (client != null)
-                {
-                    reportPeer(output, client);
-                }
-
-                // Report the error and any nested errors
-                if (errorInfo.getCause() != null && printStackTraces)
-                {
-                    errorInfo.getCause().printStackTrace();
-                }
-                int loopCtr = 0;
-                for (
-                    Throwable nestedErrorInfo = errorInfo.getCause();
-                    nestedErrorInfo != null;
-                    nestedErrorInfo = nestedErrorInfo.getCause()
-                )
-                {
-                    output.println("Caused by:\n==========\n");
-
-                    if (nestedErrorInfo instanceof LinStorException)
-                    {
-                        boolean detailsAvailable = reportLinStorException(
-                            output, (LinStorException) nestedErrorInfo
-                        );
-                        if (!detailsAvailable)
-                        {
-                            reportExceptionDetails(output, nestedErrorInfo, loopCtr == 0 ? contextInfo : null);
-                        }
-                    }
-                    else
-                    {
-                        descriptionMsg = nestedErrorInfo.getMessage();
-                        if (descriptionMsg != null)
-                        {
-                            output.println("Description:");
-                            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, descriptionMsg);
-                            output.println();
-                        }
-                        reportExceptionDetails(output, nestedErrorInfo, loopCtr == 0 ? contextInfo : null);
-                    }
-
-                    ++loopCtr;
-                }
-
-                String logMsg = formatLogMsg(reportNr, errorInfo);
-                switch (logLevel)
-                {
-                    case ERROR:
-                        logError("%s", logMsg);
-                        break;
-                    case WARN:
-                        logWarning("%s", logMsg);
-                        break;
-                    case INFO:
-                        logInfo("%s", logMsg);
-                        break;
-                    case DEBUG:
-                        logDebug("%s", logMsg);
-                        break;
-                    case TRACE:
-                        logTrace("%s", logMsg);
-                        break;
-                    default:
-                        logError("%s", logMsg);
-                        reportError(
-                            new IllegalArgumentException(
-                                String.format(
-                                    "Missing case label for enumeration value '%s'",
-                                    logLevel.name()
-                                )
-                            )
-                        );
-                        break;
-                }
-
-                output.println("\nEND OF ERROR REPORT.\n");
-
-                Sentry.captureException(errorInfo);
-            }
+            Sentry.captureException(errorInfo);
         }
         finally
         {
             closeReportFile(output);
         }
         return logName;
+    }
+
+    private void logReport(long reportNrRef, Throwable errorInfoRef, Level logLevelRef)
+    {
+        final String logMsg = formatLogMsg(reportNrRef, errorInfoRef);
+        switch (logLevelRef)
+        {
+            case ERROR:
+                logError("%s", logMsg);
+                break;
+            case WARN:
+                logWarning("%s", logMsg);
+                break;
+            case INFO:
+                logInfo("%s", logMsg);
+                break;
+            case DEBUG:
+                logDebug("%s", logMsg);
+                break;
+            case TRACE:
+                logTrace("%s", logMsg);
+                break;
+            default:
+                logError("%s", logMsg);
+                reportError(
+                    new IllegalArgumentException(
+                        String.format(
+                            "Missing case label for enumeration value '%s'",
+                            logLevelRef.name()
+                        )
+                    )
+                );
+                break;
+        }
     }
 
     private String getLogName(long reportNr)
@@ -602,6 +420,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             }
             catch (IOException ignored)
             {
+                // ignored
             }
         }
     }
@@ -639,6 +458,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         }
         catch (IOException ignored)
         {
+            // ignored
         }
         return basicFileAttributes;
     }

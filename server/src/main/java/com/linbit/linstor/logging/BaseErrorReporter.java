@@ -1,13 +1,13 @@
 package com.linbit.linstor.logging;
 
-import com.linbit.AutoIndent;
 import com.linbit.linstor.ErrorContextSupplier;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 
-import java.io.PrintStream;
+import javax.annotation.Nullable;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
@@ -102,7 +102,81 @@ public abstract class BaseErrorReporter
         return logMsg;
     }
 
-    void reportAccessContext(PrintStream output, AccessContext accCtx)
+    void renderReport(
+        ErrorReportRenderer outputRef,
+        long reportNr,
+        @Nullable AccessContext accCtxRef,
+        @Nullable Peer client,
+        @Nullable Throwable errorInfo,
+        Date errorTime,
+        @Nullable String contextInfo,
+        boolean includeStackTraceRef
+    )
+    {
+        // Error report header
+        reportHeader(outputRef, reportNr, accCtxRef, client, errorTime);
+
+        // Generate and report a null pointer exception if this
+        // method is called with a null argument
+        final Throwable checkedErrorInfo = errorInfo == null ? new NullPointerException() : errorInfo;
+
+        // Report the error and any nested errors
+        int loopCtr = 0;
+        for (Throwable curErrorInfo = checkedErrorInfo; curErrorInfo != null; curErrorInfo = curErrorInfo.getCause())
+        {
+            if (loopCtr <= 0)
+            {
+                if (includeStackTraceRef)
+                {
+                    outputRef.println("Reported error:\n===============\n");
+                }
+                else
+                {
+                    outputRef.println("Reported problem:\n===============\n");
+                }
+            }
+            else
+            {
+                outputRef.println("Caused by:\n==========\n");
+            }
+
+            if (includeStackTraceRef)
+            {
+                reportExceptionDetails(outputRef, curErrorInfo, loopCtr == 0 ? contextInfo : null);
+
+                Throwable[] suppressedExceptions = curErrorInfo.getSuppressed();
+                for (int supIdx = 0; supIdx < suppressedExceptions.length; ++supIdx)
+                {
+                    outputRef.println(
+                        "Suppressed exception %d of %d:\n===============",
+                        supIdx + 1,
+                        suppressedExceptions.length
+                    );
+
+                    reportExceptionDetails(outputRef, suppressedExceptions[supIdx], loopCtr == 0 ? contextInfo : null);
+                }
+            }
+            else
+            {
+                if (curErrorInfo.getMessage() != null)
+                {
+                    outputRef.println(ERROR_FIELD_FORMAT, "Error message:", curErrorInfo.getMessage());
+                }
+                if (curErrorInfo instanceof LinStorException)
+                {
+                    LinStorException linStorException = (LinStorException) curErrorInfo;
+                    if (linStorException.hasErrorContext())
+                    {
+                        outputRef.println(linStorException.getErrorContext());
+                    }
+                }
+            }
+            ++loopCtr;
+        }
+        outputRef.println("\nEND OF ERROR REPORT.");
+    }
+
+    void reportAccessContext(ErrorReportRenderer output, AccessContext accCtx)
     {
         output.println("Access context information\n");
         output.printf(ERROR_FIELD_FORMAT, "Identity:", accCtx.subjectDomain.name.displayValue);
@@ -111,7 +185,7 @@ public abstract class BaseErrorReporter
         output.println();
     }
 
-    void reportPeer(PrintStream output, Peer client)
+    void reportPeer(ErrorReportRenderer output, Peer client)
     {
         String peerAddress = null;
         int peerPort = 0;
@@ -143,9 +217,15 @@ public abstract class BaseErrorReporter
         }
     }
 
-    void reportHeader(PrintStream output, long reportNr, Peer client, Date errorTime)
+    void reportHeader(
+        ErrorReportRenderer output,
+        long reportNr,
+        @Nullable AccessContext accCtxRef,
+        @Nullable Peer client,
+        Date errorTime
+    )
     {
-        output.print(String.format("ERROR REPORT %s-%06d\n\n", instanceId, reportNr));
+        output.printf("ERROR REPORT %s-%06d\n\n", instanceId, reportNr);
         output.println(SECTION_SEPARATOR);
         output.println();
         output.printf(ERROR_FIELD_FORMAT, "Application:", LinStor.SOFTWARE_CREATOR + " " + LinStor.PROGRAM);
@@ -155,16 +235,20 @@ public abstract class BaseErrorReporter
         output.printf(ERROR_FIELD_FORMAT, "Build time:", LinStor.VERSION_INFO_PROVIDER.getBuildTime());
         output.printf(ERROR_FIELD_FORMAT, "Error time:", TIMESTAMP_FORMAT.format(errorTime));
         output.printf(ERROR_FIELD_FORMAT, "Node:", nodeName);
+        output.printf(ERROR_FIELD_FORMAT, "Thread:", Thread.currentThread().getName());
+        if (accCtxRef != null)
+        {
+            reportAccessContext(output, accCtxRef);
+        }
         if (client != null)
         {
             output.printf(ERROR_FIELD_FORMAT, "Peer:", client.toString());
         }
         output.println();
-        output.println(SECTION_SEPARATOR);
-        output.println();
+        output.print(SECTION_SEPARATOR).print("\n\n");
     }
 
-    boolean reportLinStorException(PrintStream output, LinStorException lsExc)
+    boolean reportLinStorException(ErrorReportRenderer output, LinStorException lsExc)
     {
         boolean detailsAvailable = false;
 
@@ -182,28 +266,28 @@ public abstract class BaseErrorReporter
         {
             detailsAvailable = true;
             output.println("Description:");
-            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, descriptionMsg);
+            output.printlnWithIndent(descriptionMsg);
         }
 
         if (causeMsg != null)
         {
             detailsAvailable = true;
             output.println("Cause:");
-            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, causeMsg);
+            output.printlnWithIndent(causeMsg);
         }
 
         if (correctionMsg != null)
         {
             detailsAvailable = true;
             output.println("Correction:");
-            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, correctionMsg);
+            output.printlnWithIndent(correctionMsg);
         }
 
         if (detailsMsg != null)
         {
             detailsAvailable = true;
             output.println("Additional information:");
-            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, detailsMsg);
+            output.printlnWithIndent(detailsMsg);
         }
 
         if (detailsAvailable)
@@ -214,15 +298,12 @@ public abstract class BaseErrorReporter
         return detailsAvailable;
     }
 
-    void reportExceptionDetails(PrintStream output, Throwable errorInfo, String contextInfo)
+    void reportExceptionDetails(ErrorReportRenderer output, Throwable errorInfo, String contextInfo)
     {
         String category;
         if (errorInfo instanceof LinStorException)
         {
             category = "LinStorException";
-
-            // Error description/cause/correction/details report
-            reportLinStorException(output, (LinStorException) errorInfo);
         }
         else
         if (errorInfo instanceof RuntimeException)
@@ -322,10 +403,10 @@ public abstract class BaseErrorReporter
         }
 
         // Report information about the exception
-        output.print(String.format(ERROR_FIELD_FORMAT, "Category:", category));
-        output.print(String.format(ERROR_FIELD_FORMAT, "Class name:", tClassName));
-        output.print(String.format(ERROR_FIELD_FORMAT, "Class canonical name:", tFullClassName));
-        output.print(String.format(ERROR_FIELD_FORMAT, "Generated at:", tGeneratedAt));
+        output.printf(ERROR_FIELD_FORMAT, "Category:", category);
+        output.printf(ERROR_FIELD_FORMAT, "Class name:", tClassName);
+        output.printf(ERROR_FIELD_FORMAT, "Class canonical name:", tFullClassName);
+        output.printf(ERROR_FIELD_FORMAT, "Generated at:", tGeneratedAt);
 
         output.println();
 
@@ -335,7 +416,7 @@ public abstract class BaseErrorReporter
             String msg = errorInfo.getMessage();
             if (msg != null)
             {
-                output.print(String.format(ERROR_FIELD_FORMAT, "Error message:", msg));
+                output.printf(ERROR_FIELD_FORMAT, "Error message:", msg);
             }
         }
         catch (Exception ignored)
@@ -347,7 +428,9 @@ public abstract class BaseErrorReporter
         if (contextInfo != null)
         {
             output.println("Error context:");
-            AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, contextInfo);
+            output.increaseIndent();
+            output.print(contextInfo);
+            output.decreaseIndent();
             output.println();
         }
 
@@ -364,6 +447,7 @@ public abstract class BaseErrorReporter
         if (allSuppressed != null && allSuppressed.length > 0)
         {
             output.println("Asynchronous stage backtrace:");
+            output.increaseIndent();
             for (Throwable suppressed : allSuppressed)
             {
                 // Strip away reactor 'light checkpoint' details
@@ -372,18 +456,19 @@ public abstract class BaseErrorReporter
                     Matcher matcher = LIGHT_CHECKPOINT_PATTERN.matcher(suppressed.getMessage());
                     if (matcher.find())
                     {
-                        AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, matcher.group(1));
+                        output.println(matcher.group(1));
                     }
                     else
                     {
-                        AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, suppressed.getMessage());
+                        output.println(suppressed.getMessage());
                     }
                 }
                 else
                 {
-                    AutoIndent.printWithIndent(output, AutoIndent.DEFAULT_INDENTATION, "null");
+                    output.println("null");
                 }
             }
+            output.decreaseIndent();
             output.println();
         }
 
@@ -391,7 +476,7 @@ public abstract class BaseErrorReporter
         reportBacktrace(output, errorInfo);
     }
 
-    void reportBacktrace(PrintStream output, Throwable errorInfo)
+    void reportBacktrace(ErrorReportRenderer output, Throwable errorInfo)
     {
         StackTraceElement[] trace = errorInfo.getStackTrace();
         if (printStackTraces)
@@ -415,9 +500,9 @@ public abstract class BaseErrorReporter
         }
         else
         {
-            output.printf(
+            output.println(
                 "Call backtrace:\n\n" +
-                "    %-40s %-6s %s\n",
+                    "    %-40s %-6s %s",
                 "Method", "Native", "Class:Line number"
             );
             for (StackTraceElement traceItem : trace)
@@ -437,8 +522,8 @@ public abstract class BaseErrorReporter
                     lineNr = "unknown";
                 }
 
-                output.printf(
-                    "    %-40s %-6s %s:%s\n",
+                output.println(
+                    "    %-40s %-6s %s:%s",
                     methodName, nativeCode ? "Y" : "N", className, lineNr
                 );
             }

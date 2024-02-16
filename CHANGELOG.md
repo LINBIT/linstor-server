@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tiebreaker: Allow in all even-numbered (>0) diskful and 0 diskless setups
 - Improved error message when FullSync fails due to missing external tools
 - SOS-report: add more information output (lvs, zfs list, client output....)
+- ProblemReports now also get added to the error-database (i.e. will show in up "err list")
 
 ### Fixed
 

@@ -95,4 +95,10 @@ public class ApiRcException extends ApiException implements ErrorContextSupplier
 
         return null;
     }
+
+    @Override
+    public boolean hasErrorContext()
+    {
+        return !getApiCallRc().isEmpty();
+    }
 }

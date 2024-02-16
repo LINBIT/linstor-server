@@ -148,7 +148,7 @@ public class LinStorException extends Exception implements ErrorContextSupplier
     @Override
     public String getErrorContext()
     {
-        StringBuilder sb = new StringBuilder("ErrorContext: ");
+        StringBuilder sb = new StringBuilder("ErrorContext:\n");
         if (excDescription != null)
         {
             sb.append("  Description: ").append(excDescription).append("\n");
@@ -167,9 +167,16 @@ public class LinStorException extends Exception implements ErrorContextSupplier
         }
         if (excNumericCode != null)
         {
-            sb.append("  NumericCode:  ").append(excNumericCode).append("\n");
+            sb.append("  NumericCode: ").append(excNumericCode).append("\n");
         }
         sb.append("\n");
         return sb.toString();
+    }
+
+    @Override
+    public boolean hasErrorContext()
+    {
+        return excDescription != null || excCause != null || excCorrection != null || excDetails != null ||
+            excNumericCode != null;
     }
 }

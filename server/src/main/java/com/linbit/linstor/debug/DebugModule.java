@@ -38,6 +38,7 @@ public class DebugModule extends AbstractModule
         commandsBinder.addBinding().to(CmdDisplayReport.class);
         commandsBinder.addBinding().to(CmdDisplayReportList.class);
         commandsBinder.addBinding().to(CmdTestErrorLog.class);
+        commandsBinder.addBinding().to(CmdTestProblemLog.class);
         commandsBinder.addBinding().to(CmdShutdown.class);
     }
 }

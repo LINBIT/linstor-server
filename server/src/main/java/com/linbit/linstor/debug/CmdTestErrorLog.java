@@ -1,10 +1,12 @@
 package com.linbit.linstor.debug;
 
+import com.linbit.linstor.LinStorException;
+import com.linbit.linstor.security.AccessContext;
+
 import javax.inject.Inject;
+
 import java.io.PrintStream;
 import java.util.Map;
-
-import com.linbit.linstor.security.AccessContext;
 
 /**
  * Throws a test exception to test exception handling and reporting
@@ -42,16 +44,45 @@ public class CmdTestErrorLog extends BaseDebugCmd
             CmdTestErrorLog.class.getName() + " class for testing purposes",
             new TestException(
                 "Nested " + TestException.class.getName() + " instance",
+                "dummy description",
+                "dummy cause",
+                "dummy correction",
+                "dummy details",
+                1L,
                 null
             )
         );
     }
 
-    public static class TestException extends Exception
+    public static class TestException extends LinStorException
     {
+        private static final long serialVersionUID = 362631327796557839L;
+
         TestException(String message, Throwable cause)
         {
             super(message, cause);
+        }
+
+        public TestException(
+            String messageRef,
+            String descriptionTextRef,
+            String causeTextRef,
+            String correctionTextRef,
+            String detailsTextRef,
+            Long numericCodeRef,
+            Throwable causeRef
+        )
+        {
+            super(
+                messageRef,
+                descriptionTextRef,
+                causeTextRef,
+                correctionTextRef,
+                detailsTextRef,
+                numericCodeRef,
+                causeRef
+            );
+            // TODO Auto-generated constructor stub
         }
     }
 }

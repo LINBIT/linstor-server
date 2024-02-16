@@ -167,4 +167,11 @@ public class LinStorRuntimeException extends RuntimeException implements ErrorCo
         sb.append("\n");
         return sb.toString();
     }
+
+    @Override
+    public boolean hasErrorContext()
+    {
+        return excDescription != null || excCause != null || excCorrection != null || excDetails != null ||
+            excNumericCode != null;
+    }
 }
