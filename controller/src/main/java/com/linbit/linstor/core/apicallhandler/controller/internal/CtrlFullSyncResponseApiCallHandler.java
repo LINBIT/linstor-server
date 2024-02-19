@@ -153,7 +153,7 @@ public class CtrlFullSyncResponseApiCallHandler
         return Flux.merge(fluxes);
     }
 
-    public Flux<?> fullSyncFailed(Peer satellitePeerRef)
+    public Flux<?> fullSyncFailed(Peer satellitePeerRef, ApiConsts.ConnectionStatus connectionStatusRef)
     {
         return scopeRunner.fluxInTransactionlessScope(
             "Handle full sync failed",
@@ -161,13 +161,13 @@ public class CtrlFullSyncResponseApiCallHandler
                 nodesMapLock.writeLock(),
                 rscDfnMapLock.readLock()
             ),
-            () -> fullSyncFailedInScope(satellitePeerRef)
+            () -> fullSyncFailedInScope(satellitePeerRef, connectionStatusRef)
         );
     }
 
-    private Flux<?> fullSyncFailedInScope(Peer satellitePeerRef)
+    private Flux<?> fullSyncFailedInScope(Peer satellitePeerRef, ApiConsts.ConnectionStatus connectionStatusRef)
     {
-        satellitePeerRef.fullSyncFailed();
+        satellitePeerRef.fullSyncFailed(connectionStatusRef);
         return Flux.empty();
     }
 }

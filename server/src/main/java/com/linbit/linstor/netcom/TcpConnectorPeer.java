@@ -15,6 +15,7 @@ import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 import com.linbit.utils.OrderingFlux;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
@@ -843,13 +844,20 @@ public class TcpConnectorPeer implements Peer
     }
 
     @Override
-    public void fullSyncFailed()
+    public void fullSyncFailed(@Nullable ApiConsts.ConnectionStatus suggestedConnStatusRef)
     {
         fullSyncFailed = true;
         // just to be sure, that even if some component still sends an update, it should be
         // an invalid one. -1 will make it look like an out-dated update for the satellite.
         fullSyncId = -1;
-        connectionStatus = ApiConsts.ConnectionStatus.FULL_SYNC_FAILED;
+        if (suggestedConnStatusRef == null)
+        {
+            connectionStatus = ApiConsts.ConnectionStatus.FULL_SYNC_FAILED;
+        }
+        else
+        {
+            connectionStatus = suggestedConnStatusRef;
+        }
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiModule;
+import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.EbsRemotePojo;
 import com.linbit.linstor.api.pojo.ExternalFilePojo;
@@ -17,6 +18,8 @@ import com.linbit.linstor.api.pojo.SnapshotPojo;
 import com.linbit.linstor.api.pojo.StltRemotePojo;
 import com.linbit.linstor.api.pojo.StorPoolPojo;
 import com.linbit.linstor.api.prop.WhitelistPropsReconfigurator;
+import com.linbit.linstor.api.protobuf.FullSync;
+import com.linbit.linstor.api.protobuf.FullSync.FullSyncResult;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.core.ApplicationLifecycleManager;
 import com.linbit.linstor.core.ControllerPeerConnector;
@@ -53,6 +56,8 @@ import com.linbit.linstor.proto.common.StltConfigOuterClass;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.locks.LockGuard;
@@ -282,7 +287,7 @@ public class StltApiCallHandler
         return authResult;
     }
 
-    public boolean applyFullSync(
+    public FullSyncResult applyFullSync(
         Map<String, String> satelliteProps,
         Set<NodePojo> nodes,
         Set<StorPoolPojo> storPools,
@@ -298,7 +303,7 @@ public class StltApiCallHandler
         byte[] encCryptKey
     )
     {
-        boolean success = false;
+        FullSync.FullSyncResult success;
         try (
             LockGuard ls = LockGuard.createLocked(
                 reconfigurationLock.writeLock(),
@@ -348,6 +353,14 @@ public class StltApiCallHandler
 
                 for (RscPojo rsc : resources)
                 {
+                    /*
+                     * usually the controller already runs checks before sending the data to the satellite, which is why
+                     * we only need this check during a fullsync, not during a regular applyResource.
+                     *
+                     * The external tools might have changed since the last connection (i.e. kernel upgrade with
+                     * unintentional DRBD downgrade)
+                     */
+                    checkLayersForExtToolsSupport(rsc.getLayerData());
                     rscHandler.applyChanges(rsc);
                 }
 
@@ -448,13 +461,20 @@ public class StltApiCallHandler
                     updateMonitor.getCurrentFullSyncId()
                 );
             }
-            success = true;
+            success = FullSync.FullSyncResult.SUCCESS;
         }
         catch (Exception | ImplementationError exc)
         {
+            if (exc instanceof MissingRequiredExtToolsStorageException)
+            {
+                success = FullSync.FullSyncResult.FAIL_MISSING_REQUIRED_EXT_TOOLS;
+            }
+            else
+            {
+                success = FullSync.FullSyncResult.FAIL_UNKNOWN;
+            }
             errorReporter.reportError(exc);
 
-            success = false;
             // this method returning false should trigger a stlt->ctrl message that the full sync failed
 
             // sending that message should tell the controller to not send us any further data, as
@@ -572,6 +592,27 @@ public class StltApiCallHandler
         catch (InvalidKeyException | InvalidValueException exc)
         {
             throw new ImplementationError(exc);
+        }
+    }
+
+    private void checkLayersForExtToolsSupport(RscLayerDataApi layerData) throws MissingRequiredExtToolsStorageException
+    {
+        DeviceLayerKind layerKind = layerData.getLayerKind();
+        for (ExtTools reqExtTool : layerKind.getExtToolDependencies())
+        {
+            if (!stltExtToolsChecker.getExternalTools(false).get(reqExtTool).isSupported())
+            {
+                throw new MissingRequiredExtToolsStorageException(
+                    "Received a resource that requires " + reqExtTool.name() +
+                        " but that external tool is not supported on this satellite"
+                    );
+            }
+        }
+
+        // recursive check for all children
+        for (RscLayerDataApi childData : layerData.getChildren())
+        {
+            checkLayersForExtToolsSupport(childData);
         }
     }
 
@@ -1385,4 +1426,15 @@ public class StltApiCallHandler
             }
         }
     }
+
+    public static class MissingRequiredExtToolsStorageException extends StorageException
+    {
+        private static final long serialVersionUID = 5817885610287768097L;
+
+        public MissingRequiredExtToolsStorageException(String messageRef)
+        {
+            super(messageRef);
+        }
+    }
+
 }

@@ -28,6 +28,7 @@ import com.linbit.linstor.proto.javainternal.c2s.IntS3RemoteOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntSnapshotOuterClass;
 import com.linbit.linstor.proto.javainternal.c2s.IntStorPoolOuterClass.IntStorPool;
 import com.linbit.linstor.proto.javainternal.c2s.MsgIntApplyFullSyncOuterClass.MsgIntApplyFullSync;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass.MsgIntFullSyncResponse;
 import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.utils.Base64;
@@ -110,7 +111,7 @@ public class FullSync implements ApiCall
             asEbsRemote(applyFullSync.getEbsRemotesList(), fullSyncId, updateId)
         );
 
-        boolean success = apiCallHandler.applyFullSync(
+        FullSyncResult success = apiCallHandler.applyFullSync(
             msgIntControllerData.getPropsMap(),
             nodes,
             storPools,
@@ -127,8 +128,29 @@ public class FullSync implements ApiCall
         );
 
         MsgIntFullSyncResponse.Builder builder = MsgIntFullSyncResponse.newBuilder();
-        builder.setSuccess(success);
-        if (success)
+        if (success == null)
+        {
+            success = FullSyncResult.FAIL_UNKNOWN;
+        }
+        switch (success)
+        {
+            case FAIL_MISSING_REQUIRED_EXT_TOOLS:
+                builder.setFullSyncResult(
+                    MsgIntFullSyncResponseOuterClass.FullSyncResult.FAIL_MISSING_REQUIRED_EXT_TOOLS
+                );
+                break;
+            case FAIL_UNKNOWN:
+                builder.setFullSyncResult(MsgIntFullSyncResponseOuterClass.FullSyncResult.FAIL_UNKNOWN);
+                break;
+            case SUCCESS:
+                builder.setFullSyncResult(MsgIntFullSyncResponseOuterClass.FullSyncResult.SUCCESS);
+                break;
+            default:
+                builder.setFullSyncResult(MsgIntFullSyncResponseOuterClass.FullSyncResult.FAIL_UNKNOWN);
+                break;
+
+        }
+        if (success == FullSyncResult.SUCCESS)
         {
             List<ProcCryptoEntry> cryptoEntries = ProcCryptoUtils.parseProcCrypto();
             for (ProcCryptoEntry procCryptoEntry : cryptoEntries)
@@ -255,4 +277,10 @@ public class FullSync implements ApiCall
         return ret;
     }
 
+    public enum FullSyncResult
+    {
+        SUCCESS,
+        FAIL_MISSING_REQUIRED_EXT_TOOLS,
+        FAIL_UNKNOWN;
+    }
 }

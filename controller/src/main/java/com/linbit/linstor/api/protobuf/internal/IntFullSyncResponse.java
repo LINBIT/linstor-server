@@ -1,7 +1,9 @@
 package com.linbit.linstor.api.protobuf.internal;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallReactive;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.pojo.CapacityInfoPojo;
 import com.linbit.linstor.api.protobuf.ProtoDeserializationUtils;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
@@ -15,6 +17,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
+import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFullSyncResponseOuterClass.MsgIntFullSyncResponse;
 import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.locks.LockGuard;
@@ -94,7 +97,7 @@ public class IntFullSyncResponse implements ApiCallReactive
         MsgIntFullSyncResponse msgIntFullSyncResponse = MsgIntFullSyncResponse.parseDelimitedFrom(msgDataIn);
 
         Flux<byte[]> flux;
-        if (msgIntFullSyncResponse.getSuccess())
+        if (msgIntFullSyncResponse.getFullSyncResult() == MsgIntFullSyncResponseOuterClass.FullSyncResult.SUCCESS)
         {
             List<CapacityInfoPojo> capacityInfoPojoList = new ArrayList<>();
             for (StorPoolFreeSpace protoFreeSpace : msgIntFullSyncResponse.getFreeSpaceList())
@@ -134,7 +137,26 @@ public class IntFullSyncResponse implements ApiCallReactive
         }
         else
         {
-            flux = ctrlFullSyncApiCallHandler.fullSyncFailed(satellitePeerRef)
+            ApiConsts.ConnectionStatus connectionStatus;
+            switch (msgIntFullSyncResponse.getFullSyncResult())
+            {
+                case FAIL_MISSING_REQUIRED_EXT_TOOLS:
+                    connectionStatus = ApiConsts.ConnectionStatus.MISSING_EXT_TOOLS;
+                    break;
+                case SUCCESS:
+                    throw new ImplementationError(
+                        "unexpected enum type: " + msgIntFullSyncResponse.getFullSyncResult()
+                    );
+                case UNRECOGNIZED:
+                case FAIL_UNKNOWN:
+                default:
+                    connectionStatus = ApiConsts.ConnectionStatus.FULL_SYNC_FAILED;
+                    break;
+            }
+            flux = ctrlFullSyncApiCallHandler.fullSyncFailed(
+                satellitePeerRef,
+                connectionStatus
+            )
                 .thenMany(Flux.empty());
         }
         return flux;

@@ -8,10 +8,17 @@ import "common/CryptoEntry.proto";
 // If the full sync was successful, this message will also contain the free space for each storage pool of the satellite
 message MsgIntFullSyncResponse
 {
-    bool success = 1;
+    FullSyncResult full_sync_result = 1;
 
     // A List of FreeSpace messages. Empty if full sync failed
     repeated common.StorPoolFreeSpace free_space = 2;
 
     repeated common.CryptoEntry crypto_entries = 3;
+}
+
+enum FullSyncResult
+{
+    SUCCESS = 0;
+    FAIL_MISSING_REQUIRED_EXT_TOOLS = 1;
+    FAIL_UNKNOWN = 99;
 }

@@ -12,6 +12,7 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.utils.externaltools.ExtToolsManager;
 
+import javax.annotation.Nullable;
 import javax.net.ssl.SSLException;
 
 import java.io.ByteArrayInputStream;
@@ -348,17 +349,27 @@ public interface Peer
     long getNextSerializerId();
 
     /**
+     * @see #fullSyncFailed(com.linbit.linstor.api.ApiConsts.ConnectionStatus)
+     */
+    default void fullSyncFailed()
+    {
+        fullSyncFailed(null);
+    }
+    /**
      * The satellite failed to apply our fullSync. This method should set internal flags
      * to prevent sending any further updates or fullSyncs to the satellite, as those will most
      * likely also cause the same exception on the satellite.
-     *
      * However, not all communication should be prevented to the satellite.
      * E.g. Ping/Pong and client-proxy messages should still work / forwarded.
+     *
+     * @param suggestedConnStatusRef the connection status. If null, ApiConsts.ConnectionStatus.FULL_SYNC_FAILED is
+     *     used
      */
-    void fullSyncFailed();
+    void fullSyncFailed(@Nullable ApiConsts.ConnectionStatus suggestedConnStatusRef);
 
     /**
      * Returns true if the method {@link #fullSyncFailed()} was already called, false otherwise.
+     *
      * @return
      */
     boolean hasFullSyncFailed();

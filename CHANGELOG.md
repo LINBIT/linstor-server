@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RG spawn: No longer display "TransactionList" when spawn fails
 - Sp,Props: Do not trigger a DevMgrRun for certain property changes
 - Tiebreaker: Allow in all even-numbered (>0) diskful and 0 diskless setups
+- Improved error message when FullSync fails due to missing external tools
 
 ### Fixed
 

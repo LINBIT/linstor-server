@@ -328,7 +328,7 @@ public class PeerOffline implements Peer
     }
 
     @Override
-    public void fullSyncFailed()
+    public void fullSyncFailed(ApiConsts.ConnectionStatus ignored)
     {
     }
 

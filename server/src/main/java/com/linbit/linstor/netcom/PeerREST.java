@@ -320,7 +320,7 @@ public class PeerREST implements Peer
     }
 
     @Override
-    public void fullSyncFailed()
+    public void fullSyncFailed(ApiConsts.ConnectionStatus ignored)
     {
     }
 
