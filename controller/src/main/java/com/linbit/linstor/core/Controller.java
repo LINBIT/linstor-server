@@ -113,6 +113,7 @@ public final class Controller
 {
     private static final String PROPSCON_KEY_NETCOM = "netcom";
     public static final String SPC_TRK_MODULE_NAME = "com.linbit.linstor.spacetracking.ControllerSpaceTrackingModule";
+    public static final String SPC_TRK_MODULE_NAME_NOOP = "com.linbit.linstor.spacetracking.DefaultSpaceTrackingModule";
 
     public static final int API_VERSION = 4;
     public static final int API_MIN_VERSION = API_VERSION;
@@ -312,10 +313,17 @@ public final class Controller
                 spaceTrackingService = injector.getInstance(
                     Key.get(SystemService.class, Names.named(Controller.SPC_TRK_MODULE_NAME))
                 );
-                systemServicesMap.put(spaceTrackingService.getInstanceName(), spaceTrackingService);
-                errorReporter.logInfo("%s", "SpaceTrackingService: Instance added as a system service");
+                if (spaceTrackingService != null)
+                {
+                    systemServicesMap.put(spaceTrackingService.getInstanceName(), spaceTrackingService);
+                    errorReporter.logInfo("%s", "SpaceTrackingService: Instance added as a system service");
+                }
             }
             catch (ConfigurationException | ProvisionException injExc)
+            {
+                // ignored, debug log will be printed outside of try/catch block
+            }
+            if (spaceTrackingService == null)
             {
                 errorReporter.logDebug("%s", "SpaceTrackingService: No instance available to add as a system service");
             }
@@ -596,7 +604,10 @@ public final class Controller
                 )
             );
             LinStor.loadModularCrypto(injModList, errorLog, haveFipsInit);
-            InjectorLoader.dynLoadInjModule(SPC_TRK_MODULE_NAME, injModList, errorLog, dbType);
+            if (!InjectorLoader.dynLoadInjModule(SPC_TRK_MODULE_NAME, injModList, errorLog, dbType))
+            {
+                InjectorLoader.dynLoadInjModule(SPC_TRK_MODULE_NAME_NOOP, injModList, errorLog, dbType);
+            }
             final Injector injector = Guice.createInjector(injModList);
 
             errorLog.logInfo(

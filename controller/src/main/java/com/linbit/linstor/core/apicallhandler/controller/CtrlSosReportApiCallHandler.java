@@ -22,11 +22,16 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.api.pojo.RequestFilePojo;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
+import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
+import com.linbit.linstor.api.rest.v1.serializer.JsonSpaceTracking;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceList;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.core.cfg.LinstorConfig;
 import com.linbit.linstor.core.identifier.NodeName;
@@ -45,6 +50,7 @@ import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.FileIn
 import com.linbit.linstor.proto.responses.MsgSosReportListReplyOuterClass.MsgSosReportListReply;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
+import com.linbit.linstor.spacetracking.SpaceTrackingService;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.utils.FileUtils;
@@ -55,6 +61,7 @@ import com.linbit.utils.FileCollector;
 import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
@@ -67,9 +74,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
+import java.security.DigestException;
+import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -81,7 +91,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.inject.Inject;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import reactor.core.publisher.Flux;
 
 @Singleton
@@ -103,6 +114,11 @@ public class CtrlSosReportApiCallHandler
     private final LockGuardFactory lockGuardFactory;
     private final NodeRepository nodeRepository;
     private final ResourceDefinitionRepository rscDfnRepo;
+    private final ObjectMapper objectMapper;
+    private final CtrlApiCallHandler ctrlApiCallHandler;
+    private final CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandler;
+    private final CtrlVlmListApiCallHandler ctrlVlmListApiCallHandler;
+    private final Provider<SpaceTrackingService> spaceTrackingServiceProvider;
     private final CtrlStltSerializer stltComSerializer;
     private final ErrorReporter errorReporter;
     private final ExtCmdFactory extCmdFactory;
@@ -118,6 +134,10 @@ public class CtrlSosReportApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         NodeRepository nodeRepositoryRef,
         ResourceDefinitionRepository rscDfnRepoRef,
+        CtrlApiCallHandler ctrlApiCallHandlerRef,
+        CtrlStorPoolListApiCallHandler ctrlStorPoolListApiCallHandlerRef,
+        CtrlVlmListApiCallHandler ctrlVlmListApiCallHandlerRef,
+        Provider<SpaceTrackingService> spaceTrackingServiceProviderRef,
         CtrlStltSerializer clientComSerializerRef,
         ExtCmdFactory extCmdFactoryRef,
         CtrlConfig ctrlCfgRef,
@@ -130,11 +150,17 @@ public class CtrlSosReportApiCallHandler
         lockGuardFactory = lockGuardFactoryRef;
         nodeRepository = nodeRepositoryRef;
         rscDfnRepo = rscDfnRepoRef;
+        ctrlApiCallHandler = ctrlApiCallHandlerRef;
+        ctrlStorPoolListApiCallHandler = ctrlStorPoolListApiCallHandlerRef;
+        ctrlVlmListApiCallHandler = ctrlVlmListApiCallHandlerRef;
+        spaceTrackingServiceProvider = spaceTrackingServiceProviderRef;
         stltComSerializer = clientComSerializerRef;
         extCmdFactory = extCmdFactoryRef;
         ctrlCfg = ctrlCfgRef;
         db = dbRef;
         sdfUtc.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+        objectMapper = new ObjectMapper();
     }
 
     /**
@@ -188,6 +214,7 @@ public class CtrlSosReportApiCallHandler
                 // now we need to prepare for the answer to the satellite, which expects a single string of the sos
                 // report name
                 ignore -> ignore.thenMany(Flux.<String>empty())
+            ).concatWith(gatherControllerJsonInfo(tmpDir, sosReportName)
             ).concatWith(
                 scopeRunner.fluxInTransactionalScope(
                     "Finishing SOS report",
@@ -586,6 +613,118 @@ public class CtrlSosReportApiCallHandler
         }
 
         return ret.thenMany(Flux.just(fileName));
+    }
+
+    private Flux<String> gatherControllerJsonInfo(Path tmpDir, String sosReportName)
+    {
+        String nodeName = "_" + LinStor.CONTROLLER_MODULE;
+        Path sosDir = tmpDir.resolve(sosReportName + "/" + nodeName);
+
+        Flux<String> fluxFromSatellites = storpoolListJson(sosDir)
+            .concatWith(viewResourcesJson(sosDir));
+
+        return fluxFromSatellites.concatWith(scopeRunner.fluxInTransactionalScope(
+                "sos-json-lists-local",
+                lockGuardFactory.buildDeferred(
+                    LockType.READ, LockObj.NODES_MAP, LockObj.RSC_GRP_MAP),
+                () -> {
+                    nodeListJson(sosDir);
+                    resourceGroupListJson(sosDir);
+                    spaceReportingQuery(sosDir);
+                    return Flux.empty();
+                }));
+    }
+
+    private void appendJSON(Path file, Object content)
+    {
+        try
+        {
+            append(
+                file,
+                objectMapper.writeValueAsBytes(content),
+                System.currentTimeMillis());
+        }
+        catch (JsonProcessingException jexc)
+        {
+            errorReporter.reportError(jexc);
+        }
+    }
+
+    private void nodeListJson(Path sosDir)
+    {
+        List<JsonGenTypes.Node> nodeDataList = ctrlApiCallHandler.listNodes(
+                Collections.emptyList(),
+                Collections.emptyList()).stream()
+            .map(Json::apiToNode)
+            .collect(Collectors.toList());
+
+        appendJSON(sosDir.resolve("node-list.json"), nodeDataList);
+    }
+
+    private Flux<String> storpoolListJson(Path sosDir)
+    {
+        Flux<List<StorPoolApi>> flux = ctrlStorPoolListApiCallHandler
+            .listStorPools(Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), true);
+
+        return flux.flatMap(storPoolApis -> {
+            List<JsonGenTypes.StoragePool> storPoolDataList = storPoolApis.stream()
+                .map(Json::storPoolApiToStoragePool)
+                .collect(Collectors.toList());
+
+            appendJSON(sosDir.resolve("stor-pool-list.json"), storPoolDataList);
+
+            return Flux.empty();
+        });
+    }
+
+    private void resourceGroupListJson(Path sosDir)
+    {
+        var resGrpList = ctrlApiCallHandler
+                .listResourceGroups(Collections.emptyList(), Collections.emptyList()).stream()
+            .map(Json::apiToResourceGroup)
+            .collect(Collectors.toList());
+
+        appendJSON(sosDir.resolve("resource-group-list.json"), resGrpList);
+    }
+
+    private Flux<String> viewResourcesJson(Path sosDir)
+    {
+        Flux<ResourceList> flux = ctrlVlmListApiCallHandler.listVlms(
+                Collections.emptyList(), Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+
+        return flux.flatMap(resourceList -> {
+            final List<JsonGenTypes.Resource> rscs = resourceList.getResources().stream()
+                .map(rscApi -> Json.apiToResourceWithVolumes(rscApi, resourceList.getSatelliteStates(), true))
+                .collect(Collectors.toList());
+
+            appendJSON(sosDir.resolve("view-resources.json"), rscs);
+
+            return Flux.empty();
+        });
+    }
+
+    private void spaceReportingQuery(Path sosDir)
+    {
+        JsonSpaceTracking.SpaceReport jsonReportText = new JsonSpaceTracking.SpaceReport();
+        try
+        {
+            SpaceTrackingService stSvc = spaceTrackingServiceProvider.get();
+            if (stSvc != null)
+            {
+                jsonReportText.reportText = stSvc.querySpaceReport(null);
+            }
+            else
+            {
+                jsonReportText.reportText = "The SpaceTracking service is not installed.";
+            }
+        }
+        catch (DatabaseException | NoSuchAlgorithmException | DigestException exc)
+        {
+            jsonReportText.reportText = exc.getMessage();
+            errorReporter.reportError(exc);
+        }
+
+        appendJSON(sosDir.resolve("space-reporting-query.json"), jsonReportText);
     }
 
     /**
