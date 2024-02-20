@@ -8,6 +8,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.spacetracking.SpaceTrackingService;
 
 import javax.inject.Inject;
+import javax.inject.Provider;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -26,12 +27,12 @@ import org.glassfish.grizzly.http.server.Request;
 @Produces(MediaType.APPLICATION_JSON)
 public class SpaceTracking
 {
-    private final SpaceTrackingService spcTrkSvc;
+    private final Provider<SpaceTrackingService> spcTrkSvc;
     private final ObjectMapper objectMapper;
     private final RequestHelper requestHelper;
 
     @Inject
-    public SpaceTracking(RequestHelper requestHelperRef, SpaceTrackingService spcTrkSvcRef)
+    public SpaceTracking(RequestHelper requestHelperRef, Provider<SpaceTrackingService> spcTrkSvcRef)
     {
         requestHelper = requestHelperRef;
         spcTrkSvc = spcTrkSvcRef;
@@ -51,9 +52,9 @@ public class SpaceTracking
                 try
                     {
                     JsonSpaceTracking.SpaceReport jsonReportText = new JsonSpaceTracking.SpaceReport();
-                    if (spcTrkSvc != null)
+                    if (spcTrkSvc != null && spcTrkSvc.get() != null)
                     {
-                        jsonReportText.reportText = spcTrkSvc.querySpaceReport(null);
+                        jsonReportText.reportText = spcTrkSvc.get().querySpaceReport(null);
                     }
                     else
                     {
