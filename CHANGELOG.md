@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved error message when FullSync fails due to missing external tools
 - SOS-report: add more information output (lvs, zfs list, client output....)
 - ProblemReports now also get added to the error-database (i.e. will show in up "err list")
+- Snapshots: allow taking snapshot if at least one diskfull node is online
 
 ### Fixed
 

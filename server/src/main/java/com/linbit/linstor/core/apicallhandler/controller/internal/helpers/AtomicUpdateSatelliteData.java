@@ -25,7 +25,7 @@ public class AtomicUpdateSatelliteData
     {
     }
 
-    public Collection<Node> getInvolvedNodes(AccessContext accCtx) throws AccessDeniedException
+    public Collection<Node> getInvolvedOnlineNodes(AccessContext accCtx) throws AccessDeniedException
     {
         Set<Node> nodes = new HashSet<>();
         for (ResourceDefinition rscDfn : rscDfnsToUpdate)
@@ -34,7 +34,11 @@ public class AtomicUpdateSatelliteData
             while (rscIt.hasNext())
             {
                 Resource rsc = rscIt.next();
-                nodes.add(rsc.getNode());
+                Node node = rsc.getNode();
+                if (node.getPeer(accCtx).isOnline())
+                {
+                    nodes.add(rsc.getNode());
+                }
             }
         }
         for (SnapshotDefinition snapDfn : snapDfnsToUpdate)

@@ -60,6 +60,13 @@ public class CtrlSnapshotHelper
         return rscIter;
     }
 
+    public boolean satelliteConnected(Resource rsc)
+    {
+        Node node = rsc.getNode();
+        Peer currentPeer = getPeer(node);
+        return currentPeer.isOnline();
+    }
+
     public void ensureSatelliteConnected(Resource rsc, String details)
     {
         Node node = rsc.getNode();

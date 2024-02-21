@@ -155,6 +155,10 @@ public class CtrlSnapshotCrtHelper
                     {
                         warnNodeEvacuating(rscNameStr, responses, rsc.getNode().getName().displayValue);
                     }
+                    else if (!isNodeOnline(rsc))
+                    {
+                        warnNodeOffline(rscNameStr, responses, rsc.getNode().getName().displayValue);
+                    }
                     else
                     {
                         Snapshot snap = createSnapshotOnNode(snapshotDfn, snapshotVolumeDefinitions, rsc);
@@ -210,6 +214,17 @@ public class CtrlSnapshotCrtHelper
         }
 
         return snapshotDfn;
+    }
+
+    private void warnNodeOffline(String rscNameStr, ApiCallRcImpl responses, String nodeNameStr)
+    {
+        responses.addEntry(
+            ApiCallRcImpl.simpleEntry(
+                ApiConsts.MASK_WARN,
+                "Snapshot for resource '" + rscNameStr + "' will not be created on node '" + nodeNameStr +
+                    "' because that node is currently offline."
+            )
+        );
     }
 
     private void warnNodeEvacuating(String rscNameStr, ApiCallRcImpl responses, String nodeNameStr)
@@ -311,13 +326,26 @@ public class CtrlSnapshotCrtHelper
     private void ensureSnapshotsViable(ResourceDefinition rscDfn)
     {
         Iterator<Resource> rscIterator = ctrlSnapshotHelper.iterateResource(rscDfn);
+        int diskFullConnected = 0;
         while (rscIterator.hasNext())
         {
             Resource currentRsc = rscIterator.next();
             ensureDriversSupportSnapshots(currentRsc);
-            ctrlSnapshotHelper.ensureSatelliteConnected(
-                currentRsc,
-                "Snapshots cannot be created when the corresponding satellites are not connected."
+            if (!isDisklessPrivileged(currentRsc) && ctrlSnapshotHelper.satelliteConnected(currentRsc))
+            {
+                diskFullConnected++;
+            }
+        }
+
+        if (diskFullConnected == 0)
+        {
+            throw new ApiRcException(ApiCallRcImpl
+                .entryBuilder(
+                    ApiConsts.FAIL_NOT_CONNECTED,
+                    "No diskful connected satellite for snapshot."
+                )
+                .setDetails("Snapshots need at least one diskful online satellite.")
+                .build()
             );
         }
     }
@@ -382,6 +410,11 @@ public class CtrlSnapshotCrtHelper
             throw new ImplementationError(implError);
         }
         return isDiskless;
+    }
+
+    private boolean isNodeOnline(Resource rsc)
+    {
+        return ctrlSnapshotHelper.satelliteConnected(rsc);
     }
 
     private boolean isEvacuatingPrivileged(Resource rsc)

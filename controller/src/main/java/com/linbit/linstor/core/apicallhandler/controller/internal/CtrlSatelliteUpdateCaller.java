@@ -550,7 +550,7 @@ public class CtrlSatelliteUpdateCaller
         try
         {
             return updateSatellites(
-                atomicUpdateDataRef.getInvolvedNodes(apiCtx),
+                atomicUpdateDataRef.getInvolvedOnlineNodes(apiCtx),
                 atomicUpdateDataRef,
                 notConnectedErrorRef
             );
