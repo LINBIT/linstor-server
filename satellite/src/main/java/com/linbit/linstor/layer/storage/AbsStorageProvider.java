@@ -64,7 +64,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.AccessUtils;
 import com.linbit.utils.ExceptionThrowingSupplier;
-import com.linbit.utils.Pair;
 
 import javax.annotation.Nonnull;
 import javax.inject.Provider;
@@ -250,8 +249,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 )
             );
 
-        Map<Pair<String, VolumeNumber>, LAYER_DATA> volumesLut = new HashMap<>();
-
         List<LAYER_DATA> vlmsToCreate = new ArrayList<>();
         List<LAYER_DATA> vlmsToDelete = new ArrayList<>();
         List<LAYER_DATA> vlmsToDeactivate = new ArrayList<>();
@@ -263,14 +260,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             // Whatever happens, we have to report the free space of these storage pools even if no layer
             // actually changed anything. The controller simply expects a report of free sizes
             addChangedStorPool(vlmData.getStorPool());
-
-            volumesLut.put(
-                new Pair<>(
-                    vlmData.getRscLayerObject().getSuffixedResourceName(),
-                    vlmData.getVlmNr()
-                ),
-                vlmData
-            );
 
             boolean vlmShouldExist = !((Volume) vlmData.getVolume()).getFlags().isSet(
                 storDriverAccCtx,
@@ -404,22 +393,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(false);
         List<LAYER_SNAP_DATA> snapDataToKeepOrCreate = (List<LAYER_SNAP_DATA>) typeErasedList;
 
-        deleteSnapshots(
-            volumesLut,
-            snapDataToDelete,
-            apiCallRc
-        );
+        deleteSnapshots(snapDataToDelete, apiCallRc);
 
         createVolumes(vlmsToCreate, snapDataToKeepOrCreate, apiCallRc);
         resizeVolumes(vlmsToResize, apiCallRc);
         deleteVolumes(vlmsToDelete, apiCallRc);
         deactivateVolumes(vlmsToDeactivate, apiCallRc);
 
-        takeSnapshots(
-            volumesLut,
-            snapDataToKeepOrCreate,
-            apiCallRc
-        );
+        takeSnapshots(snapDataToKeepOrCreate, apiCallRc);
 
         handleRollbacks(vlmsToCheckForRollback, apiCallRc);
 
@@ -802,7 +783,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void deleteSnapshots(
-        Map<Pair<String, VolumeNumber>, LAYER_DATA> vlmDataLut,
         List<LAYER_SNAP_DATA> snapVlmsDataList,
         ApiCallRcImpl apiCallRc
     )
@@ -850,7 +830,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     private void takeSnapshots(
-        Map<Pair<String, VolumeNumber>, LAYER_DATA> vlmDataLut,
         List<LAYER_SNAP_DATA> listRef,
         ApiCallRcImpl apiCallRc
     )
@@ -858,12 +837,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         for (LAYER_SNAP_DATA snapVlm : listRef)
         {
-            LAYER_DATA vlmData = vlmDataLut.get(
-                new Pair<>(
-                    snapVlm.getRscLayerObject().getSuffixedResourceName(),
-                    snapVlm.getVlmNr()
-                )
-            );
+            LAYER_DATA vlmData = getVlmData(snapVlm);
             Snapshot snap = snapVlm.getVolume().getAbsResource();
             StateFlags<Snapshot.Flags> snapFlags = snap.getFlags();
             StateFlags<SnapshotDefinition.Flags> snapDfnFlags = snap.getSnapshotDefinition().getFlags();
@@ -995,6 +969,39 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 }
             }
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private LAYER_DATA getVlmData(LAYER_SNAP_DATA snapVlmRef) throws AccessDeniedException
+    {
+        Snapshot snap = snapVlmRef.getRscLayerObject().getAbsResource();
+        Resource rsc = snap.getResourceDefinition().getResource(storDriverAccCtx, snap.getNodeName());
+        AbsRscLayerObject<Resource> rscLayerData = rsc.getLayerData(storDriverAccCtx);
+        // since we are in the STORAGE layer...
+        Set<AbsRscLayerObject<Resource>> storageRscLayerDataSet = LayerRscUtils.getRscDataByLayer(
+            rscLayerData,
+            DeviceLayerKind.STORAGE,
+            snapVlmRef.getRscLayerObject().getResourceNameSuffix()::equals
+        );
+
+        LAYER_DATA ret;
+        if (storageRscLayerDataSet.isEmpty())
+        {
+            ret = null;
+        }
+        else if (storageRscLayerDataSet.size() > 1)
+        {
+            throw new ImplementationError(
+                "Unexpected number of storage data for: " + snapVlmRef.getRscLayerObject().getSuffixedResourceName() +
+                    "/" + snapVlmRef.getVlmNr()
+            );
+        }
+        else
+        {
+            AbsRscLayerObject<Resource> storRscData = storageRscLayerDataSet.iterator().next();
+            ret = (LAYER_DATA) storRscData.getVlmLayerObjects().get(snapVlmRef.getVlmNr());
+        }
+        return ret;
     }
 
     protected void createLvForBackupIfNeeded(LAYER_SNAP_DATA snapVlm) throws StorageException
