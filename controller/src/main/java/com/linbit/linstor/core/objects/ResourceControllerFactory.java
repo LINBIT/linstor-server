@@ -5,6 +5,7 @@ import com.linbit.linstor.LinStorDataAlreadyExistsException;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -200,6 +201,8 @@ public class ResourceControllerFactory
                 {
                     vlm.getFlags().disableFlags(accCtx, Volume.Flags.DELETE, Volume.Flags.DRBD_DELETE);
                 }
+
+                ResourceDataUtils.recalculateVolatileRscData(layerStackHelper, rsc);
             }
             else
             {

@@ -17,6 +17,7 @@ import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -278,6 +279,8 @@ public class CtrlRscMakeAvailableApiCallHandler
                     );
                 }
             }
+            ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
+
             ctrlTransactionHelper.commit();
         }
         else

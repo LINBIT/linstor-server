@@ -280,6 +280,9 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 vlm.getFlags().disableFlags(accCtx, Volume.Flags.DRBD_DELETE, Volume.Flags.DELETE);
             }
 
+            // just to be sure
+            ResourceDataUtils.recalculateVolatileRscData(layerDataHelper, rsc);
+
             if (flags.isSet(accCtx, Resource.Flags.DRBD_DISKLESS))
             {
                 ctx.additionalFluxList.add(setTiebreakerFlag(rsc));

@@ -181,6 +181,9 @@ public class LuksLayer implements DeviceLayer
                         Volume.Flags.CLONING
                     );
             byte[] decryptedPassphrase = vlmData.getDecryptedPassword();
+
+            vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
+
             if (deleteVlm || deactivateRsc)
             {
                 /*
@@ -214,8 +217,6 @@ public class LuksLayer implements DeviceLayer
                     String identifier = getIdentifier(vlmData);
 
                     boolean isOpen = cryptSetup.isOpen(identifier);
-
-                    vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
 
                     boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
 
@@ -256,13 +257,15 @@ public class LuksLayer implements DeviceLayer
                     );
             byte[] decryptedPassphrase = vlmData.getDecryptedPassword();
 
+            // re-set the devicePath in case we just created the child-layer
+            // or the child-layer did not provide a dataDevice until now...
+            vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
+
             if (!deleteVlm && !deactivateRsc)
             {
                 String identifier = getIdentifier(vlmData);
 
                 boolean isOpen = cryptSetup.isOpen(identifier);
-
-                vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
 
                 boolean alreadyLuks = cryptSetup.hasLuksFormat(vlmData);
 

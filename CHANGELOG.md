@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Luks: Properly cleanup LVs when deleting without having entered the passphrase
+
 ## [1.26.1] - 2024-02-22
 
 ### Changed

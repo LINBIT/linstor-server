@@ -9,6 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -25,6 +26,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -72,6 +74,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
     private final CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandler;
     private final CtrlRscDeleteApiHelper ctrlRscDeleteApiHelper;
     private final CtrlResyncAfterHelper ctrlResyncAfterHelper;
+    private final CtrlRscLayerDataFactory ctrlRscLayerDataFactory;
 
     @Inject
     public CtrlRscDfnDeleteApiCallHandler(
@@ -89,7 +92,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         ScheduleBackupService scheduleServiceRef,
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
-        CtrlResyncAfterHelper ctrlResyncAfterHelperRef
+        CtrlResyncAfterHelper ctrlResyncAfterHelperRef,
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef
     )
     {
         apiCtx = apiCtxRef;
@@ -107,6 +111,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
         ctrlResyncAfterHelper = ctrlResyncAfterHelperRef;
+        ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
     }
 
     @Override
@@ -525,6 +530,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                 Volume vlm = volumesIterator.next();
                 vlm.markDeleted(apiCtx);
             }
+            ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
         }
         catch (AccessDeniedException accDeniedExc)
         {

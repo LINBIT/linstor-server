@@ -21,6 +21,7 @@ import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceCreateCheck;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -477,6 +478,8 @@ public class CtrlRscCrtApiHelper
         if (isFlagSet(rsc, Resource.Flags.DELETE) || isFlagSet(rsc, Resource.Flags.DRBD_DELETE))
         {
             disableFlags(rsc, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE);
+
+            ResourceDataUtils.recalculateVolatileRscData(layerDataHelper, rsc);
         }
 
         if (!isFlagSet(rsc, Resource.Flags.INACTIVE) && !sharedRscMgr.isActivationAllowed(rsc))
