@@ -1,3 +1,53 @@
+linstor-server (1.26.1-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * LvmCommands: Remove the trailing "accept everything else" from filter
+  * Luks: Allow deletion without master passphrase
+  * SysFs: Reworked processing
+  * RscGrp,spawn: Hide "TransactionList" in client response
+  * Sp,Props: Do not run DevMgrRun for certain prop-changes
+  * Checkstyle: Ignore 100 as magic number
+  * MathUtils: Add longCeilingPowerTwo and longFloorPowerTwo methods.
+  * DrbdRscData: Moved method isSkipDiskEnabled into DrbdRscData
+  * VlmProviderObj: Added get/setExpectedSize
+  * Layers: Extract LayerSizeCalculator
+  * Remove unused method from interface
+  * Backup,restore: Recalculate missing AllocationGranularity
+  * Tiebreaker: also allow for 4 diskful + tiebreaker
+  * ApiCallRcEntry: Only append obj descr to details if wanted
+  * Rsc,td: Add peerSlot check
+  * DrbdLayer: Extract skipInitSync to DrbdLayerUtils
+  * SpMixing: Do not consider ZFS<->ZFSTHIN as mixed setup
+  * FullSync: Improve error message when ext tool is missing
+  * ErrRep: Unified Error and Problem Report rendering
+  * Rs-discard-gran: Deleted old prop handler
+
+  [ Rene Peinthor ]
+  * satelliteupdater: Do not update satellites that are in deleting or evicted
+  * evict/restore: recalculateVolatileRscData on node restore
+  * evict/restore: Do not error because evict node not connected yet
+  * devmgr: info log devmanager cycles
+  * drbdlayer: only write and check res file if it actually changed
+  * drbdlayer: partially revert f71551e1b6bb08c3289a1ab96b6e778e4d60b775
+  * sos-report: fix missing io exception stack trace
+  * sos-report: code cleanup
+  * sos-report: add more commands for info output
+  * sos-report: Gather additional json data of current state
+  * space-report: do not http 503 error if space-tracking not installed
+  * snapshot: allow to create snapshots if at least one diskfull node online
+  * encryption: Fix error messages and skip error-reports on user errors
+  * VolumeDefinitionWithCreationPayload: Fix Typo
+
+  [ Moritz Wanzenböck ]
+  * evacuate/migrate: wait until resource is not InUse before removal
+  * docker: update k8s-await-election
+  * docker: add option to force hostname for linstor
+
+  [ Robert Altnoeder ]
+  * Update test problem log command name, description, report text
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 22 Feb 2024 05:26:28 +0000
+
 linstor-server (1.26.0-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
