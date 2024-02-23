@@ -3,6 +3,8 @@
 All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
 ## [Unreleased]
+  - Added volume_passphrases to resource-group spawn
+  - Added passphrase to volume-definition create
 
 ## [1.21.0]
   - Removed everything OpenFlex related (entry-points, schemas, etc..)

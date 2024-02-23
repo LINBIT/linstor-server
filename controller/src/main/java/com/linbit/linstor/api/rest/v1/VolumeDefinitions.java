@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apis.ResourceDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionApi;
 import com.linbit.linstor.core.apis.VolumeDefinitionWithCreationPayload;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -145,6 +146,12 @@ public class VolumeDefinitions
         public Integer getDrbdMinorNr()
         {
             return vlmCreateData.drbd_minor_number;
+        }
+
+        @Override
+        public @Nullable String passphrase()
+        {
+            return vlmCreateData.passphrase;
         }
     }
 

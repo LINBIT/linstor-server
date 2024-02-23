@@ -9,6 +9,8 @@ import com.linbit.crypto.SecretGenerator;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
+import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.SharedResourceManager;
@@ -41,6 +43,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.LayerDataFactory;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.utils.Base64;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -70,6 +73,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
 
     ModularCryptoProvider cryptoProvider;
     private final EncryptionHelper encryptionHelper;
+    private final DecryptionHelper decryptionHelper;
 
     private final RemoteMap remoteMap;
 
@@ -85,6 +89,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,
         SharedResourceManager sharedRscMgrRef,
         EncryptionHelper encryptionHelperRef,
+        DecryptionHelper decryptionHelperRef,
         RemoteMap remoteMapRef
     )
     {
@@ -105,6 +110,7 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         nvmeHelperProvider = nvmeHelperProviderRef;
         sharedRscMgr = sharedRscMgrRef;
         encryptionHelper = encryptionHelperRef;
+        decryptionHelper = decryptionHelperRef;
         remoteMap = remoteMapRef;
     }
 
@@ -194,10 +200,9 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         LayerPayload payload,
         List<DeviceLayerKind> layerListRef
     )
-        throws AccessDeniedException, DatabaseException, ValueOutOfRangeException, ExhaustedPoolException,
-        ValueInUseException, LinStorException, InvalidNameException
+        throws LinStorException, InvalidNameException
     {
-        byte[] encryptedVlmKey = null;
+        @Nullable byte[] encryptedVlmKey = null;
 
         Resource rsc = vlm.getAbsResource();
         boolean isNvmeBelow = layerListRef.contains(DeviceLayerKind.NVME);
@@ -295,9 +300,20 @@ class RscLuksLayerHelper extends AbsRscLayerHelper<
         // encrypted key was not copied from *-target or sharedRsc.. create new one
         if (encryptedVlmKey == null)
         {
-            errorReporter.logTrace("creating new encryptedVlmKey");
-            final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
-            encryptedVlmKey = encryptionHelper.encrypt(secretGen.generateSecretString(SECRET_KEY_BYTES));
+            var vlmDfnProps = vlm.getVolumeDefinition().getProps(apiCtx);
+            @Nullable String b64EncPassphrase = vlmDfnProps.getProp(
+                ApiConsts.KEY_PASSPHRASE, ApiConsts.NAMESPC_ENCRYPTION);
+            if (b64EncPassphrase == null)
+            {
+                errorReporter.logDebug("Luks: creating new encryptedVlmKey");
+                final SecretGenerator secretGen = cryptoProvider.createSecretGenerator();
+                encryptedVlmKey = encryptionHelper.encrypt(secretGen.generateSecretString(SECRET_KEY_BYTES));
+            }
+            else
+            {
+                errorReporter.logDebug("Luks: using user provided encryption key %s", b64EncPassphrase);
+                encryptedVlmKey = Base64.decode(b64EncPassphrase);
+            }
         }
 
         return layerDataFactory.createLuksVlmData(

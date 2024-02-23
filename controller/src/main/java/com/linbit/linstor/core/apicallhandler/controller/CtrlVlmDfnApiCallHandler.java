@@ -17,8 +17,8 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
-import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
@@ -45,6 +45,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCal
 import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -74,7 +75,6 @@ class CtrlVlmDfnApiCallHandler
     private final CtrlVlmCrtApiHelper ctrlVlmCrtApiHelper;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final CtrlSecurityObjects secObjs;
-    private final CtrlSatelliteUpdater ctrlSatelliteUpdater;
     private final ResponseConverter responseConverter;
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
@@ -83,6 +83,7 @@ class CtrlVlmDfnApiCallHandler
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
+    private final EncryptionHelper encryptionHelper;
 
     private final BackupInfoManager backupInfoMgr;
 
@@ -97,7 +98,7 @@ class CtrlVlmDfnApiCallHandler
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         CtrlSecurityObjects secObjsRef,
-        CtrlSatelliteUpdater ctrlSatelliteUpdaterRef,
+        EncryptionHelper encryptionHelperRef,
         ResponseConverter responseConverterRef,
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
@@ -116,7 +117,7 @@ class CtrlVlmDfnApiCallHandler
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         secObjs = secObjsRef;
-        ctrlSatelliteUpdater = ctrlSatelliteUpdaterRef;
+        encryptionHelper = encryptionHelperRef;
         responseConverter = responseConverterRef;
         peer = peerRef;
         peerAccCtx = peerAccCtxRef;
@@ -296,6 +297,16 @@ class CtrlVlmDfnApiCallHandler
 
             List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
             prefixesIgnoringWhitelistCheck.add(ApiConsts.NAMESPC_EBS + "/" + ApiConsts.NAMESPC_TAGS + "/");
+
+            @Nullable String clearPassphrase = vlmDfnApiRef.passphrase();
+            // store user passphrase encrypted in properties
+            @Nullable String encPassphrase = clearPassphrase != null ?
+                Base64.encode(encryptionHelper.encrypt(clearPassphrase)) : null;
+
+            if (encPassphrase != null)
+            {
+                propsMap.put(ApiConsts.NAMESPC_ENCRYPTION + "/" + ApiConsts.KEY_PASSPHRASE, encPassphrase);
+            }
 
             ctrlPropsHelper.fillProperties(
                 responses,

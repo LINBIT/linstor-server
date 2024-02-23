@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 public class JsonGenTypes
 {
-    public static final String REST_API_VERSION = "1.21.0";
+    public static final String REST_API_VERSION = "1.22.0";
 
     /**
      * Common api reply structure
@@ -331,6 +331,10 @@ public class JsonGenTypes
     {
         public VolumeDefinition volume_definition = new VolumeDefinition();
         public Integer drbd_minor_number;
+        /**
+         * optional passphrase for encrypted volumes
+         */
+        public String passphrase;
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
@@ -733,6 +737,10 @@ public class JsonGenTypes
          */
         public boolean definitions_only = false;
         public Integer peer_slots;
+        /**
+         * For volumes with encryption's, you can provide your own passphrases here.
+         */
+        public List<String> volume_passphrases = Collections.emptyList();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

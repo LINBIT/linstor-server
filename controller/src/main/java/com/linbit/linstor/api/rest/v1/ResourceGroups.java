@@ -271,7 +271,8 @@ public class ResourceGroups
                 spawnAutoSelectFilter,
                 rscGrpSpwn.partial,
                 rscGrpSpwn.definitions_only,
-                parsePeerSlots(rscGrpSpwn.peer_slots)
+                parsePeerSlots(rscGrpSpwn.peer_slots),
+                rscGrpSpwn.volume_passphrases
             )
                 .contextWrite(requestHelper.createContext(ApiConsts.API_SPAWN_RSC_DFN, request));
 

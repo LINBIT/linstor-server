@@ -8,9 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+### Added
+
+- Allow users to provide their own encryption passphrase for volumes
+
+- ### Changed
 
 - Default configuration directory for linstor-database utility (export-db and import-db) is now "/etc/linstor"
+
 
 ## [1.26.2] - 2024-02-28
 

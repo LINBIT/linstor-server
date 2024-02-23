@@ -18,7 +18,7 @@ info:
     ```
 
     After setting this properties restart the controller and the new values should be used.
-  version: 1.21.0
+  version: 1.22.0
   title: Linstor REST API
   contact:
     email: rene.peinthor@linbit.com
@@ -6635,6 +6635,9 @@ components:
         drbd_minor_number:
           type: integer
           format: int32
+        passphrase:
+          type: string
+          description: optional passphrase for encrypted volumes
     VolumeDefinitionModify:
       type: object
       properties:
@@ -7178,6 +7181,11 @@ components:
         peer_slots:
           type: integer
           format: int32
+        volume_passphrases:
+          type: array
+          items:
+            type: string
+          description: For volumes with encryption's, you can provide your own passphrases here.
     VolumeGroup:
       type: object
       properties:

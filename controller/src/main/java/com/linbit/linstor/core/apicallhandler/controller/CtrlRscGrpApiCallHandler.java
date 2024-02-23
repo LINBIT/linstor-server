@@ -29,12 +29,14 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.CoreModule.StorPoolDefinitionMap;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdater;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDefinitionUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
+import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.ApiSuccessUtils;
@@ -76,6 +78,7 @@ import com.linbit.linstor.tasks.AutoSnapshotTask;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
 
@@ -92,6 +95,7 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -135,6 +139,7 @@ public class CtrlRscGrpApiCallHandler
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
     private final CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelper;
     private final CtrlRscAutoQuorumHelper ctrlRscAutoQuorumHelper;
+    private final EncryptionHelper encryptionHelper;
 
     @Inject
     public CtrlRscGrpApiCallHandler(
@@ -165,7 +170,8 @@ public class CtrlRscGrpApiCallHandler
         SystemConfRepository systemConfRepositoryRef,
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
         CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelperRef,
-        CtrlRscAutoQuorumHelper ctrlRscAutoQuorumHelperRef
+        CtrlRscAutoQuorumHelper ctrlRscAutoQuorumHelperRef,
+        EncryptionHelper encryptionHelperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -196,6 +202,7 @@ public class CtrlRscGrpApiCallHandler
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
         ctrlRscAutoTiebreakerHelper = ctrlRscAutoTiebreakerHelperRef;
         ctrlRscAutoQuorumHelper = ctrlRscAutoQuorumHelperRef;
+        encryptionHelper = encryptionHelperRef;
     }
 
     List<ResourceGroupApi> listResourceGroups(List<String> rscGrpNames, List<String> propFilters)
@@ -887,7 +894,8 @@ public class CtrlRscGrpApiCallHandler
         AutoSelectFilterApi spawnAutoSelectFilterRef,
         boolean partialRef,
         boolean definitionsOnlyRef,
-        @Nullable Short peerSlotsRef
+        @Nullable Short peerSlotsRef,
+        @Nullable List<String> volumePassphrases
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -920,6 +928,7 @@ public class CtrlRscGrpApiCallHandler
                     partialRef,
                     definitionsOnlyRef,
                     peerSlotsRef,
+                    volumePassphrases,
                     context
                 )
             )
@@ -935,6 +944,7 @@ public class CtrlRscGrpApiCallHandler
         boolean partialRef,
         boolean definitionsOnlyRef,
         @Nullable Short peerSlotsRef,
+        @Nullable List<String> volumePassphrases,
         ResponseContext contextRef
     )
     {
@@ -974,9 +984,23 @@ public class CtrlRscGrpApiCallHandler
                     ApiConsts.MASK_INFO | ApiConsts.MASK_RSC_GRP,
                     "Resource-group doesn't have any volume-groups, automatically assume partial mode."));
             }
+
             final boolean isPartial = vlmGrps.isEmpty() || partialRef;
             final int vlmSizeLen = vlmSizesRef.size();
             final int vlmGrpLen = vlmGrps.size();
+
+            if (volumePassphrases != null && !volumePassphrases.isEmpty() && vlmSizeLen != volumePassphrases.size())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_REQUEST,
+                            "Volume passphrase count doesn't match specified volume count."
+                        )
+                        .setCorrection(
+                            "Please provide the same amount of volume passphrases as volumes for this resource-group")
+                        .setSkipErrorReport(true));
+            }
+
             if (vlmSizeLen == vlmGrpLen || isPartial)
             {
                 for (int idx = 0; idx < vlmSizeLen; ++idx)
@@ -991,11 +1015,18 @@ public class CtrlRscGrpApiCallHandler
                     }
 
                     long vlmSize = vlmSizesRef.get(idx);
+                    @Nullable String clearPassphrase = volumePassphrases != null && idx < volumePassphrases.size() ?
+                        volumePassphrases.get(idx) : null;
+                    // store passphrase encrypted in properties
+                    @Nullable String encPassphrase = clearPassphrase != null ?
+                        Base64.encode(encryptionHelper.encrypt(clearPassphrase)) : null;
+
                     vlmDfnCrtList.add(
                         createVlmDfnWithCreationPayload(
                             vlmNr,
                             vlmSize,
-                            flags
+                            flags,
+                            encPassphrase
                         )
                     );
                 }
@@ -1102,6 +1133,10 @@ public class CtrlRscGrpApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_GRP
             );
         }
+        catch (LinStorException exc)
+        {
+            throw new ApiException(exc);
+        }
         return Flux
             .<ApiCallRc>just(apiCallRc)
             .concatWith(deployedResources);
@@ -1111,9 +1146,15 @@ public class CtrlRscGrpApiCallHandler
     private VolumeDefinitionWithCreationPayload createVlmDfnWithCreationPayload(
         Integer vlmNr,
         long vlmSizeRef,
-        long vlmGrpFlags
+        long vlmGrpFlags,
+        @Nullable String encryptedPassphrase
     )
     {
+        var props = new HashMap<String, String>();
+        if (encryptedPassphrase != null)
+        {
+            props.put(ApiConsts.NAMESPC_ENCRYPTION + "/" + ApiConsts.KEY_PASSPHRASE, encryptedPassphrase);
+        }
         return new VlmDfnWithCreationPayloadPojo(
             new VlmDfnPojo(
                 null,
@@ -1123,7 +1164,7 @@ public class CtrlRscGrpApiCallHandler
                     VolumeDefinition.Flags.class,
                     FlagsHelper.toStringList(VolumeGroup.Flags.class, vlmGrpFlags)
                 ),
-                Collections.emptyMap(),
+                props,
                 Collections.emptyList()
             ),
             null
