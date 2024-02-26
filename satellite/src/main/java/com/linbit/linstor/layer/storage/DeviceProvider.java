@@ -36,11 +36,10 @@ public interface DeviceProvider
     void prepare(List<VlmProviderObject<Resource>> vlmDataList, List<VlmProviderObject<Snapshot>> snapVlms)
         throws StorageException, AccessDeniedException, DatabaseException;
 
-    void process(
-        List<VlmProviderObject<Resource>> vlmDataList,
-        List<VlmProviderObject<Snapshot>> snapVlmDataList,
-        ApiCallRcImpl apiCallRc
-    )
+    void processVolumes(List<VlmProviderObject<Resource>> vlmDataList, ApiCallRcImpl apiCallRc)
+        throws AccessDeniedException, DatabaseException, StorageException;
+
+    void processSnapshotVolumes(List<VlmProviderObject<Snapshot>> snapVlmDataList, ApiCallRcImpl apiCallRc)
         throws AccessDeniedException, DatabaseException, StorageException;
 
     /**

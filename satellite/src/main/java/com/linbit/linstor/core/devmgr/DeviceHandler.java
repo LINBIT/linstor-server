@@ -16,7 +16,6 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 
 import java.util.Collection;
-import java.util.List;
 
 public interface DeviceHandler
 {
@@ -25,9 +24,15 @@ public interface DeviceHandler
         Collection<Snapshot> snapshots
     );
 
-    void process(
+    void processResource(
         AbsRscLayerObject<Resource> rscLayerData,
-        List<Snapshot> snapshotList,
+        ApiCallRcImpl apiCallRc
+    )
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException,
+        DatabaseException;
+
+    void processSnapshot(
+        AbsRscLayerObject<Snapshot> snapLayerData,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException,

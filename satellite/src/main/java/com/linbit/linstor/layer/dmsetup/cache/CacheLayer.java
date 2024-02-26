@@ -41,7 +41,6 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -174,9 +173,8 @@ public class CacheLayer implements DeviceLayer
     }
 
     @Override
-    public void process(
+    public void processResource(
         AbsRscLayerObject<Resource> rscLayerDataRef,
-        List<Snapshot> snapshotListRef,
         ApiCallRcImpl apiCallRcRef
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
@@ -222,9 +220,8 @@ public class CacheLayer implements DeviceLayer
             }
         }
 
-        resourceProcessorProvider.get().process(
+        resourceProcessorProvider.get().processResource(
             rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
-            snapshotListRef,
             apiCallRcRef
         );
         AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_CACHE_CACHE);
@@ -236,14 +233,12 @@ public class CacheLayer implements DeviceLayer
         }
         else
         {
-            resourceProcessorProvider.get().process(
+            resourceProcessorProvider.get().processResource(
                 cacheRscChild,
-                snapshotListRef,
                 apiCallRcRef
             );
-            resourceProcessorProvider.get().process(
+            resourceProcessorProvider.get().processResource(
                 metaRscChild,
-                snapshotListRef,
                 apiCallRcRef
             );
         }

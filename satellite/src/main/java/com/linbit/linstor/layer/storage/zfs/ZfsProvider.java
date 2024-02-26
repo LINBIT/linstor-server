@@ -415,7 +415,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected void deleteSnapshot(ZfsData<Snapshot> snapVlmRef)
+    protected void deleteSnapshotImpl(ZfsData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         ZfsCommands.delete(

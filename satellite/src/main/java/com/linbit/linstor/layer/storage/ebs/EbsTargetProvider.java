@@ -634,7 +634,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     }
 
     @Override
-    protected void deleteSnapshot(EbsData<Snapshot> snapVlmRef)
+    protected void deleteSnapshotImpl(EbsData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         EbsRemote remote = getEbsRemote(snapVlmRef.getStorPool());

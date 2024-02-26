@@ -422,7 +422,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    protected void deleteSnapshot(FileData<Snapshot> snapVlmRef)
+    protected void deleteSnapshotImpl(FileData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         Path storageDirectory = getStorageDirectory(snapVlmRef.getStorPool());

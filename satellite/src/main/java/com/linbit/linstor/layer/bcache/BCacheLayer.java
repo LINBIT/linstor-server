@@ -48,7 +48,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -173,9 +172,8 @@ public class BCacheLayer implements DeviceLayer
 
 
     @Override
-    public void process(
+    public void processResource(
         AbsRscLayerObject<Resource> rscLayerDataRef,
-        List<Snapshot> snapshotListRef,
         ApiCallRcImpl apiCallRcRef
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException,
@@ -232,9 +230,8 @@ public class BCacheLayer implements DeviceLayer
             }
         }
 
-        resourceProcessorProvider.get().process(
+        resourceProcessorProvider.get().processResource(
             rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA),
-            snapshotListRef,
             apiCallRcRef
         );
         AbsRscLayerObject<Resource> cacheRscChild = rscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_BCACHE_CACHE);
@@ -245,9 +242,8 @@ public class BCacheLayer implements DeviceLayer
         }
         else
         {
-            resourceProcessorProvider.get().process(
+            resourceProcessorProvider.get().processResource(
                 cacheRscChild,
-                snapshotListRef,
                 apiCallRcRef
             );
         }
@@ -395,7 +391,6 @@ public class BCacheLayer implements DeviceLayer
             }
         }
     }
-
 
     private void waitForCacheDevice(UUID cacheUuidRef) throws StorageException
     {

@@ -6,6 +6,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -61,11 +62,17 @@ public class DisklessProvider implements DeviceProvider
     }
 
     @Override
-    public void process(
+    public void processVolumes(
         List<VlmProviderObject<Resource>> vlmDataListRef,
-        List<VlmProviderObject<Snapshot>> snapVlmDataListRef,
         ApiCallRcImpl apiCallRcRef
     )
+    {
+        // no-op
+    }
+
+    @Override
+    public void processSnapshotVolumes(List<VlmProviderObject<Snapshot>> snapVlmDataListRef, ApiCallRcImpl apiCallRcRef)
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         // no-op
     }

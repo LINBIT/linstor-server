@@ -275,7 +275,7 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void deleteSnapshot(LvmData<Snapshot> snapVlm)
+    protected void deleteSnapshotImpl(LvmData<Snapshot> snapVlm)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         LvmUtils.execWithRetry(

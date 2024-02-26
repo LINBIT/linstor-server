@@ -571,7 +571,7 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     }
 
     @Override
-    protected void deleteSnapshot(SpdkData<Snapshot> snapVlmRef)
+    protected void deleteSnapshotImpl(SpdkData<Snapshot> snapVlmRef)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         // no difference between snapshot and volume on SPDK level

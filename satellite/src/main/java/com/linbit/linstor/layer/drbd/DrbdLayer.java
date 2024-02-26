@@ -202,9 +202,8 @@ public class DrbdLayer implements DeviceLayer
     }
 
     @Override
-    public void process(
+    public void processResource(
         AbsRscLayerObject<Resource> rscLayerData,
-        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
@@ -221,9 +220,9 @@ public class DrbdLayer implements DeviceLayer
              *  - start drbd
              */
             deleteDrbd(drbdRscData, apiCallRc);
-            if (processChild(drbdRscData, snapshotList, apiCallRc))
+            if (processChild(drbdRscData, apiCallRc))
             {
-                adjustDrbd(drbdRscData, snapshotList, apiCallRc, true);
+                adjustDrbd(drbdRscData, apiCallRc, true);
 
                 // this should not be executed if adjusting the drbd resource fails
                 copyResFileToBackup(drbdRscData);
@@ -241,14 +240,14 @@ public class DrbdLayer implements DeviceLayer
             {
                 deleteDrbd(drbdRscData, apiCallRc);
 
-                processChild(drbdRscData, snapshotList, apiCallRc);
+                processChild(drbdRscData, apiCallRc);
 
                 // this should not be executed if deleting the drbd resource fails
                 deleteBackupResFile(drbdRscData);
             }
             else
             {
-                if (adjustDrbd(drbdRscData, snapshotList, apiCallRc, false))
+                if (adjustDrbd(drbdRscData, apiCallRc, false))
                 {
                     addAdjustedMsg(drbdRscData, apiCallRc);
 
@@ -303,7 +302,6 @@ public class DrbdLayer implements DeviceLayer
 
     private boolean processChild(
         DrbdRscData<Resource> drbdRscData,
-        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws AccessDeniedException, StorageException, ResourceException, VolumeException, DatabaseException
@@ -322,20 +320,12 @@ public class DrbdLayer implements DeviceLayer
         if (processChildren)
         {
             AbsRscLayerObject<Resource> dataChild = drbdRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA);
-            resourceProcessorProvider.get().process(
-                dataChild,
-                snapshotList,
-                apiCallRc
-            );
+            resourceProcessorProvider.get().processResource(dataChild, apiCallRc);
 
             AbsRscLayerObject<Resource> metaChild = drbdRscData.getChildBySuffix(RscLayerSuffixes.SUFFIX_DRBD_META);
             if (metaChild != null)
             {
-                resourceProcessorProvider.get().process(
-                    metaChild,
-                    snapshotList,
-                    apiCallRc
-                );
+                resourceProcessorProvider.get().processResource(metaChild, apiCallRc);
             }
 
             contProcess = true;
@@ -416,7 +406,6 @@ public class DrbdLayer implements DeviceLayer
      */
     private boolean adjustDrbd(
         DrbdRscData<Resource> drbdRscData,
-        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc,
         boolean childAlreadyProcessed
     )
@@ -455,7 +444,7 @@ public class DrbdLayer implements DeviceLayer
 
             if (!childAlreadyProcessed && !skipDisk)
             {
-                contProcess = processChild(drbdRscData, snapshotList, apiCallRc);
+                contProcess = processChild(drbdRscData, apiCallRc);
             }
 
             if (contProcess)

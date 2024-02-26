@@ -58,6 +58,7 @@ import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.utils.SetUtils;
 import com.linbit.utils.Either;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -71,13 +72,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 @Singleton
 public class DeviceHandlerImpl implements DeviceHandler
@@ -88,7 +88,7 @@ public class DeviceHandlerImpl implements DeviceHandler
 
     private final AccessContext wrkCtx;
     private final ErrorReporter errorReporter;
-    private final Provider<NotificationListener> notificationListener;
+    private final Provider<NotificationListener> notificationListenerProvider;
 
     private final ControllerPeerConnector controllerPeerConnector;
     private final CtrlStltSerializer interComSerializer;
@@ -133,7 +133,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         errorReporter = errorReporterRef;
         controllerPeerConnector = controllerPeerConnectorRef;
         interComSerializer = interComSerializerRef;
-        notificationListener = notificationListenerRef;
+        notificationListenerProvider = notificationListenerRef;
 
         layerFactory = layerFactoryRef;
         storageLayer = storageLayerRef;
@@ -159,41 +159,80 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public void dispatchResources(Collection<Resource> rscsRef, Collection<Snapshot> snapshots)
+    public void dispatchResources(Collection<Resource> rscsRef, Collection<Snapshot> snapsRef)
     {
         Collection<Resource> resources = calculateGrossSizes(rscsRef);
 
         Map<DeviceLayer, Set<AbsRscLayerObject<Resource>>> rscByLayer = groupByLayer(resources);
-        Map<DeviceLayer, Set<AbsRscLayerObject<Snapshot>>> snapByLayer = groupByLayer(snapshots);
+        Map<DeviceLayer, Set<AbsRscLayerObject<Snapshot>>> snapByLayer = groupByLayer(snapsRef);
 
         boolean prepareSuccess = prepareLayers(rscByLayer, snapByLayer);
 
         if (prepareSuccess)
         {
-            List<Snapshot> unprocessedSnapshots = new ArrayList<>(snapshots);
+            List<Snapshot> nonDeletingSnapshots = new ArrayList<>();
+            List<Snapshot> deletingSnapshots = new ArrayList<>();
+            try
+            {
+                for (Snapshot snap : snapsRef)
+                {
+                    if (snap.getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE))
+                    {
+                        deletingSnapshots.add(snap);
+                    }
+                    else
+                    {
+                        nonDeletingSnapshots.add(snap);
+                    }
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
 
             List<Resource> rscListNotifyApplied = new ArrayList<>();
             List<Resource> rscListNotifyDelete = new ArrayList<>();
             List<Volume> vlmListNotifyDelete = new ArrayList<>();
+            List<Snapshot> snapListNotifyApplied = new ArrayList<>();
             List<Snapshot> snapListNotifyDelete = new ArrayList<>();
 
-            processResourcesAndSnapshots(
+            HashMap<Resource, ApiCallRcImpl> failedRscs = new HashMap<>();
+
+            /*
+             * first we need to handle snapshots in DELETING state
+             *
+             * this should prevent the following error-scenario:
+             * deleting a zfs resource still having a snapshot will fail.
+             * if the user then tries to delete the snapshot, and this snapshot-deletion is not executed
+             * before the resource-deletion, the snapshot will never gets deleted because the resource-deletion
+             * will fail before the snapshot-deletion-attempt.
+             */
+            processSnapshots(
+                deletingSnapshots,
+                snapListNotifyApplied,
+                snapListNotifyDelete,
+                failedRscs
+            );
+            processResources(
                 resources,
-                snapshots,
-                unprocessedSnapshots,
                 rscListNotifyApplied,
                 rscListNotifyDelete,
                 vlmListNotifyDelete,
-                snapListNotifyDelete
+                failedRscs
             );
-            processUnprocessedSnapshots(
-                unprocessedSnapshots,
-                snapListNotifyDelete
+            // now, also process non-deleting snapshots
+            processSnapshots(
+                nonDeletingSnapshots,
+                snapListNotifyApplied,
+                snapListNotifyDelete,
+                failedRscs
             );
 
             notifyResourcesApplied(rscListNotifyApplied);
+            // no "notifySnapshotApplied" for now - might be added in the future
 
-            NotificationListener listener = notificationListener.get();
+            NotificationListener listener = notificationListenerProvider.get();
             for (Volume vlm : vlmListNotifyDelete)
             {
                 listener.notifyVolumeDeleted(vlm);
@@ -304,48 +343,31 @@ public class DeviceHandlerImpl implements DeviceHandler
         return prepareSuccess;
     }
 
-    private void processResourcesAndSnapshots(
+    private void processResources(
         Collection<Resource> resourceList,
-        Collection<Snapshot> snapshotsRef,
-        List<Snapshot> unprocessedSnapshotsRef,
         List<Resource> rscListNotifyApplied,
         List<Resource> rscListNotifyDelete,
         List<Volume> vlmListNotifyDelete,
-        List<Snapshot> snapListNotifyDelete
+        HashMap<Resource, ApiCallRcImpl> failedRscs
+
     )
         throws ImplementationError
     {
-        Map<ResourceName, List<Snapshot>> snapshotsByRscName = snapshotsRef.stream()
-            .collect(Collectors.groupingBy(Snapshot::getResourceName));
+        failedRscs.putAll(suspendMgr.manageSuspendIo(resourceList, false));
 
-        List<Resource> sysFsUpdateList = new ArrayList<>();
-        List<Resource> sysFsDeleteList = new ArrayList<>();
-
-        HashMap<Resource, ApiCallRcImpl> failedRscs = suspendMgr.manageSuspendIo(resourceList, false);
-
+        final NotificationListener notificationListener = notificationListenerProvider.get();
         for (Resource rsc : resourceList)
         {
             ResourceName rscName = rsc.getResourceDefinition().getName();
-
             ApiCallRcImpl apiCallRc = failedRscs.get(rsc);
             if (apiCallRc == null)
             {
                 apiCallRc = new ApiCallRcImpl();
                 try
                 {
-                    List<Snapshot> snapshots = snapshotsByRscName.get(rscName);
-                    if (snapshots == null)
-                    {
-                        snapshots = Collections.emptyList();
-                    }
-                    unprocessedSnapshotsRef.removeAll(snapshots);
 
                     AbsRscLayerObject<Resource> rscLayerObject = rsc.getLayerData(wrkCtx);
-                    process(
-                        rscLayerObject,
-                        snapshots,
-                        apiCallRc
-                    );
+                    processResource(rscLayerObject, apiCallRc);
 
                     StateFlags<Flags> rscFlags = rsc.getStateFlags();
                     if (rscFlags.isUnset(wrkCtx, Resource.Flags.DELETE) &&
@@ -356,20 +378,6 @@ public class DeviceHandlerImpl implements DeviceHandler
                             MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, wrkCtx, rsc);
                         }
                         updateDiscGran(rscLayerObject);
-                    }
-                    for (Snapshot snapshot : snapshots)
-                    {
-                        if (snapshot.getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE))
-                        {
-                            snapListNotifyDelete.add(snapshot);
-                            // snapshot.delete is done by the deviceManager
-                        }
-                        else
-                        {
-                            // start the snapshot-shipping-daemons and backup-shipping-daemons if necessary
-                            snapshotShippingManager.allSnapshotPartsRegistered(snapshot);
-                            backupShippingManager.allBackupPartsRegistered(snapshot);
-                        }
                     }
 
                     /*
@@ -383,7 +391,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     if (rscFlags.isSet(wrkCtx, Resource.Flags.DELETE))
                     {
                         rscListNotifyDelete.add(rsc);
-                        notificationListener.get().notifyResourceDeleted(rsc);
+                        notificationListener.notifyResourceDeleted(rsc);
                         // rsc.delete is done by the deviceManager
                     }
                     else
@@ -447,7 +455,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                     apiCallRc = handleException(rsc, exc);
                 }
             }
-            notificationListener.get().notifyResourceDispatchResponse(rscName, apiCallRc);
+            notificationListener.notifyResourceDispatchResponse(rscName, apiCallRc);
         }
     }
 
@@ -534,7 +542,7 @@ public class DeviceHandlerImpl implements DeviceHandler
             .build()
         );
 
-        notificationListener.get().notifyResourceFailed(rsc, apiCallRc);
+        notificationListenerProvider.get().notifyResourceFailed(rsc, apiCallRc);
         return apiCallRc;
     }
 
@@ -568,45 +576,50 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
     }
 
-    private void processUnprocessedSnapshots(
-        List<Snapshot> unprocessedSnapshots,
-        List<Snapshot> snapListNotifyDelete
+    private void processSnapshots(
+        List<Snapshot> snapshots,
+        List<Snapshot> snapListNotifyApplied,
+        List<Snapshot> snapListNotifyDelete,
+        HashMap<Resource, ApiCallRcImpl> failedRscs
     )
         throws ImplementationError
     {
-        Map<ResourceName, List<Snapshot>> snapshotsByResourceName = unprocessedSnapshots.stream()
-            .collect(Collectors.groupingBy(Snapshot::getResourceName));
-        /*
-         *  We cannot use the .process(Resource, List<Snapshot>, ApiCallRc) method as we do not have a
-         *  resource. The resource is used for determining which DeviceLayer to use, thus would result in
-         *  a NPE.
-         *  However, actually we know that there are no resources "based" on these snapshots (else the
-         *  DeviceManager would have found them and called the previous case, such that those snapshots
-         *  would have been processed already).
-         *  That means, we can skip all layers and go directory to the StorageLayer, which, fortunately,
-         *  does not need a resource for processing snapshots.
-         */
-        for (Entry<ResourceName, List<Snapshot>> entry : snapshotsByResourceName.entrySet())
+        for (Snapshot snap : snapshots)
         {
-            ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            @Nullable ApiCallRcImpl apiCallRc;
             try
             {
-                storageLayer.process(
-                    null, // no resource, no rscLayerData
-                    entry.getValue(), // list of snapshots
-                    apiCallRc
-                );
-
-                for (Snapshot snapshot : entry.getValue())
+                Resource rsc = snap.getResourceDefinition().getResource(wrkCtx, snap.getNodeName());
+                apiCallRc = failedRscs.get(rsc);
+                boolean process;
+                if (apiCallRc == null)
                 {
-                    if (snapshot.getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE))
+                    process = true;
+                    apiCallRc = new ApiCallRcImpl();
+                }
+                else
+                {
+                    // The deviceHandler processes first deleting snapshots, then resources and at last also
+                    // non-deleting snapshots.
+                    // That means, that deleting snapshots cannot get into this "else" case, since the resources were
+                    // not processed yet and thus had no chance to write anything into "failedRscs".
+                    process = !apiCallRc.hasErrors();
+                }
+                if (process)
+                {
+                    processSnapshot(snap.getLayerData(wrkCtx), apiCallRc);
+
+                    if (snap.getFlags().isSet(wrkCtx, Snapshot.Flags.DELETE))
                     {
-                        snapListNotifyDelete.add(snapshot);
+                        snapListNotifyDelete.add(snap);
                         // snapshot.delete is done by the deviceManager
                     }
                     else
                     {
-                        backupShippingManager.allBackupPartsRegistered(snapshot);
+                        // start the snapshot-shipping-daemons and backup-shipping-daemons if necessary
+                        snapshotShippingManager.allSnapshotPartsRegistered(snap);
+                        snapListNotifyApplied.add(snap);
+                        backupShippingManager.allBackupPartsRegistered(snap);
                     }
                 }
             }
@@ -621,20 +634,22 @@ public class DeviceHandlerImpl implements DeviceHandler
                     exc,
                     null,
                     null,
-                    "An error occurred while processing resource '" + entry.getKey() + "'"
+                    "An error occurred while processing snapshot '" + snap.getSnapshotName() + "' of resource '" +
+                        snap.getResourceName() + "'"
                 );
 
-                apiCallRc = ApiCallRcImpl.singletonApiCallRc(ApiCallRcImpl
-                    .entryBuilder(
-                        // TODO maybe include a ret-code into the exception
-                        ApiConsts.FAIL_UNKNOWN_ERROR,
-                        exc.getMessage()
-                    )
-                    .setCause(exc.getCauseText())
-                    .setCorrection(exc.getCorrectionText())
-                    .setDetails(exc.getDetailsText())
-                    .addErrorId(errorId)
-                    .build()
+                apiCallRc = ApiCallRcImpl.singletonApiCallRc(
+                    ApiCallRcImpl
+                        .entryBuilder(
+                            // TODO maybe include a ret-code into the exception
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            exc.getMessage()
+                        )
+                        .setCause(exc.getCauseText())
+                        .setCorrection(exc.getCorrectionText())
+                        .setDetails(exc.getDetailsText())
+                        .addErrorId(errorId)
+                        .build()
                 );
             }
             catch (RuntimeException exc)
@@ -643,7 +658,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                     exc,
                     null,
                     null,
-                    "An error occurred while processing resource '" + entry.getKey() + "'"
+                    "An error occurred while processing snapshot '" + snap.getSnapshotName() + "' of resource '" +
+                        snap.getResourceName() + "'"
                 );
 
                 apiCallRc = ApiCallRcImpl.singletonApiCallRc(
@@ -657,7 +673,8 @@ public class DeviceHandlerImpl implements DeviceHandler
                         .build()
                 );
             }
-            notificationListener.get().notifyResourceDispatchResponse(entry.getKey(), apiCallRc);
+            notificationListenerProvider.get()
+                .notifySnapshotDispatchResponse(snap.getSnapshotDefinition().getSnapDfnKey(), apiCallRc);
         }
     }
 
@@ -712,6 +729,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     {
         Set<DeviceLayer> layers = SetUtils.mergeIntoHashSet(rscByLayer.keySet(), snapByLayer.keySet());
 
+        final NotificationListener notificationListener = notificationListenerProvider.get();
         for (DeviceLayer layer : layers)
         {
             try
@@ -733,7 +751,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 );
                 for (AbsRscLayerObject<Resource> rsc : rscByLayer.get(layer))
                 {
-                    notificationListener.get().notifyResourceDispatchResponse(
+                    notificationListener.notifyResourceDispatchResponse(
                         rsc.getResourceName(),
                         apiCallRc
                     );
@@ -797,9 +815,10 @@ public class DeviceHandlerImpl implements DeviceHandler
             ApiCallRcImpl apiCallRc = ApiCallRcImpl.singletonApiCallRc(
                 builder.build()
             );
+            final NotificationListener notificationListener = notificationListenerProvider.get();
             for (AbsRscLayerObject<Resource> failedResource : rscSet)
             {
-                notificationListener.get().notifyResourceFailed(
+                notificationListener.notifyResourceFailed(
                     failedResource.getAbsResource(),
                     apiCallRc
                 );
@@ -879,41 +898,73 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public void process(
-        AbsRscLayerObject<Resource> rscLayerData,
-        List<Snapshot> snapshotsRef,
-        ApiCallRcImpl apiCallRc
+    public void processResource(AbsRscLayerObject<Resource> rscLayerDataRef, ApiCallRcImpl apiCallRcRef)
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
+    {
+        processGeneric(
+            rscLayerDataRef,
+            apiCallRcRef,
+            (layer, layerData, apiCallRc) -> {
+                layer.processResource(layerData, apiCallRc);
+                return true;
+            },
+            layerData -> String.format("resource '%s'", layerData.getSuffixedResourceName())
+        );
+    }
+
+    @Override
+    public void processSnapshot(AbsRscLayerObject<Snapshot> snapLayerDataRef, ApiCallRcImpl apiCallRcRef)
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
+    {
+        processGeneric(
+            snapLayerDataRef,
+            apiCallRcRef,
+            DeviceLayer::processSnapshot,
+            layerData -> String.format(
+                "snapshot '%s' of resource '%s'",
+                layerData.getSnapName().displayValue,
+                layerData.getSuffixedResourceName()
+            )
+        );
+    }
+
+    private <RSC extends AbsResource<RSC>> void processGeneric(
+        AbsRscLayerObject<RSC> rscLayerData,
+        ApiCallRcImpl apiCallRc,
+        ProcessInterface<RSC> procFctRef,
+        Function<AbsRscLayerObject<RSC>, String> dataDescrFct
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
     {
+        boolean processedChildren = false;
         DeviceLayer nextLayer = layerFactory.getDeviceLayer(rscLayerData.getLayerKind());
 
         if (!rscLayerData.hasIgnoreReason())
         {
             errorReporter.logTrace(
-                "Layer '%s' processing resource '%s'",
+                "Layer '%s' processing %s",
                 nextLayer.getName(),
-                rscLayerData.getSuffixedResourceName()
+                dataDescrFct.apply(rscLayerData)
             );
-            nextLayer.process(rscLayerData, snapshotsRef, apiCallRc);
+            processedChildren = procFctRef.process(nextLayer, rscLayerData, apiCallRc);
         }
-        else
+        /*
+         * Even if the current rscLayerData was skipped due to ignoreReasons, we might need to process one of its
+         * children (i.e. an NVMe target rscData).
+         *
+         * Usually the order of processing children is important, but not if the current rscData is ignored.
+         */
+        if (!processedChildren)
         {
             errorReporter.logTrace(
-                "Ignoring layer '%s' for resource '%s' because '%s'",
+                "Ignoring layer '%s' for %s because '%s'",
                 nextLayer.getName(),
-                rscLayerData.getSuffixedResourceName(),
+                dataDescrFct.apply(rscLayerData),
                 rscLayerData.getIgnoreReason()
             );
-            for (AbsRscLayerObject<Resource> child : rscLayerData.getChildren())
+            for (AbsRscLayerObject<RSC> child : rscLayerData.getChildren())
             {
-                /*
-                 * Although the current rscLayerData should not be processed, we might need to process one of its
-                 * children (i.e. an NVMe target rscData).
-                 *
-                 * Usually the order of processing children is important, but not if the current rscData is ignored.
-                 */
-                process(child, snapshotsRef, apiCallRc);
+                processGeneric(child, apiCallRc, procFctRef, dataDescrFct);
             }
         }
 
@@ -1059,7 +1110,7 @@ public class DeviceHandlerImpl implements DeviceHandler
                 throw new ImplementationError(exc);
             }
         }
-        notificationListener.get().notifyFreeSpacesChanged(freeSpaces);
+        notificationListenerProvider.get().notifyFreeSpacesChanged(freeSpaces);
     }
 
     private void updateDeviceSymlinks(Volume vlmRef)
@@ -1172,5 +1223,12 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             vlmData.setDiscGran(VlmProviderObject.UNINITIALIZED_SIZE);
         }
+    }
+
+    private interface ProcessInterface<RSC extends AbsResource<RSC>>
+    {
+        boolean process(DeviceLayer layer, AbsRscLayerObject<RSC> layerData, ApiCallRcImpl apiCallRc)
+            throws StorageException, ResourceException, VolumeException, AccessDeniedException,
+            DatabaseException, AbortLayerProcessingException;
     }
 }

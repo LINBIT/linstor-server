@@ -129,9 +129,8 @@ public class NvmeLayer implements DeviceLayer
      *     ApiCallRcImpl responses, passed on to {@link DeviceHandler}
      */
     @Override
-    public void process(
+    public void processResource(
         AbsRscLayerObject<Resource> rscData,
-        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
@@ -220,7 +219,7 @@ public class NvmeLayer implements DeviceLayer
                 {
                     // delete target resource
                     nvmeUtils.deleteTargetRsc(nvmeRscData, sysCtx);
-                    resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshotList, apiCallRc);
+                    resourceProcessorProvider.get().processResource(nvmeRscData.getSingleChild(), apiCallRc);
                 }
                 else
                 {
@@ -271,7 +270,7 @@ public class NvmeLayer implements DeviceLayer
                             }
                         }
 
-                        resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshotList, apiCallRc);
+                        resourceProcessorProvider.get().processResource(nvmeRscData.getSingleChild(), apiCallRc);
 
                         for (NvmeVlmData<Resource> nvmeVlmData : newVolumes)
                         {
@@ -297,7 +296,7 @@ public class NvmeLayer implements DeviceLayer
                 else
                 {
                     // Create volumes
-                    resourceProcessorProvider.get().process(nvmeRscData.getSingleChild(), snapshotList, apiCallRc);
+                    resourceProcessorProvider.get().processResource(nvmeRscData.getSingleChild(), apiCallRc);
                     nvmeUtils.createTargetRsc(nvmeRscData, sysCtx);
                 }
             }

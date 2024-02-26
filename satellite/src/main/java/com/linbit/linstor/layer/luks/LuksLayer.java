@@ -34,7 +34,6 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 
 @Singleton
@@ -157,9 +156,8 @@ public class LuksLayer implements DeviceLayer
     }
 
     @Override
-    public void process(
+    public void processResource(
         AbsRscLayerObject<Resource> rscData,
-        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
@@ -239,12 +237,7 @@ public class LuksLayer implements DeviceLayer
             }
         }
 
-        resourceProcessorProvider.get()
-            .process(
-                rscData.getSingleChild(),
-                snapshotList,
-                apiCallRc
-            );
+        resourceProcessorProvider.get().processResource(rscData.getSingleChild(), apiCallRc);
 
         for (LuksVlmData<Resource> vlmData : luksRscData.getVlmLayerObjects().values())
         {

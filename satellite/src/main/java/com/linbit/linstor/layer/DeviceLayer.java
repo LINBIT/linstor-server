@@ -13,6 +13,7 @@ import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
@@ -23,7 +24,6 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,8 +49,8 @@ public interface DeviceLayer
 
     /**
      * @param rscLayerData The current layer's data. This is an explicit parameter in case we
-     * want to (in far future) allow multiple occurrences of the same layer in a given layerStack
-     * (could be useful in case of RAID)
+     *     want to (in far future) allow multiple occurrences of the same layer in a given layerStack
+     *     (could be useful in case of RAID)
      * @param apiCallRc Responses to the ApiCall
      *
      * @throws StorageException
@@ -58,14 +58,37 @@ public interface DeviceLayer
      * @throws VolumeException
      * @throws AccessDeniedException
      * @throws DatabaseException
+     * @throws AbortLayerProcessingException
      */
-    void process(
-        AbsRscLayerObject<Resource> rscLayerData,
-        List<Snapshot> snapshotList,
-        ApiCallRcImpl apiCallRc
-    )
+    void processResource(AbsRscLayerObject<Resource> rscLayerData, ApiCallRcImpl apiCallRc)
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException,
+        AbortLayerProcessingException;
+
+    /**
+     * Unlike the {@link #processResource(AbsRscLayerObject, ApiCallRcImpl)} method which has to make sure to properly
+     * call the next layer's processResource method, the processSnapshot method can just return false to indicate that
+     * it has not done anything with the snapshot at all, thus passing all of its children objects to the corresponding
+     * next layer(s).
+     *
+     * @param snapLayerData The current layer's data. This is an explicit parameter in case we
+     *     want to (in far future) allow multiple occurrences of the same layer in a given layerStack
+     *     (could be useful in case of RAID)
+     * @param apiCallRc Responses to the ApiCall
+     *
+     * @throws StorageException
+     * @throws ResourceException
+     * @throws VolumeException
+     * @throws AccessDeniedException
+     * @throws DatabaseException
+     * @throws AbortLayerProcessingException
+     */
+    default boolean processSnapshot(AbsRscLayerObject<Snapshot> snapLayerData, ApiCallRcImpl apiCallRc)
         throws StorageException, ResourceException, VolumeException, AccessDeniedException,
-        DatabaseException, AbortLayerProcessingException;
+        DatabaseException, AbortLayerProcessingException
+    {
+        // noop
+        return false;
+    }
 
     void clearCache() throws StorageException;
 
@@ -156,6 +179,8 @@ public interface DeviceLayer
     public interface NotificationListener
     {
         void notifyResourceDispatchResponse(ResourceName resourceName, ApiCallRc response);
+
+        void notifySnapshotDispatchResponse(SnapshotDefinition.Key snapDfnKeyRef, ApiCallRc responseRef);
 
         void notifyResourceApplied(Resource rsc);
 

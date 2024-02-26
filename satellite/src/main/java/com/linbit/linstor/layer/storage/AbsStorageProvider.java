@@ -62,10 +62,9 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
-import com.linbit.utils.AccessUtils;
-import com.linbit.utils.ExceptionThrowingSupplier;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.io.IOException;
@@ -79,7 +78,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmData<Resource>, LAYER_SNAP_DATA extends AbsStorageVlmData<Snapshot>>
     implements DeviceProvider
@@ -223,11 +221,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     @Override
     @SuppressWarnings("unchecked")
-    public void process(
-        List<VlmProviderObject<Resource>> rawVlmDataList,
-        List<VlmProviderObject<Snapshot>> snapshotVlms,
-        ApiCallRcImpl apiCallRc
-    )
+    public void processVolumes(List<VlmProviderObject<Resource>> rawVlmDataList, ApiCallRcImpl apiCallRc)
         throws AccessDeniedException, DatabaseException, StorageException
     {
         if (!prepared)
@@ -236,18 +230,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         }
         Object intentionalTypeErasure = rawVlmDataList;
         List<LAYER_DATA> vlmDataList = (List<LAYER_DATA>) intentionalTypeErasure;
-
-        Map<Boolean, List<VlmProviderObject<Snapshot>>> groupedSnapshotVolumesByDeletingFlag = snapshotVlms.stream()
-            .collect(
-                Collectors.partitioningBy(
-                    snapVlm -> AccessUtils.execPrivileged(
-                        // explicit cast to make eclipse compiler happy
-                        (ExceptionThrowingSupplier<Boolean, AccessDeniedException>)
-                        () -> snapVlm.getVolume().getAbsResource().getFlags()
-                            .isSet(storDriverAccCtx, Snapshot.Flags.DELETE)
-                    )
-                )
-            );
 
         List<LAYER_DATA> vlmsToCreate = new ArrayList<>();
         List<LAYER_DATA> vlmsToDelete = new ArrayList<>();
@@ -375,32 +357,10 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             }
         }
 
-        /*
-         * first we need to handle snapshots in DELETING state
-         *
-         * this should prevent the following error-scenario:
-         * deleting a zfs resource still having a snapshot will fail.
-         * if the user then tries to delete the snapshot, and this snapshot-deletion is not executed
-         * before the resource-deletion, the snapshot will never gets deleted because the resource-deletion
-         * will fail before the snapshot-deletion-attempt.
-         */
-
-        // intentional type erasure
-        Object typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(true);
-        List<LAYER_SNAP_DATA> snapDataToDelete = (List<LAYER_SNAP_DATA>) typeErasedList;
-
-        // intentional type erasure
-        typeErasedList = groupedSnapshotVolumesByDeletingFlag.get(false);
-        List<LAYER_SNAP_DATA> snapDataToKeepOrCreate = (List<LAYER_SNAP_DATA>) typeErasedList;
-
-        deleteSnapshots(snapDataToDelete, apiCallRc);
-
-        createVolumes(vlmsToCreate, snapDataToKeepOrCreate, apiCallRc);
+        createVolumes(vlmsToCreate, apiCallRc);
         resizeVolumes(vlmsToResize, apiCallRc);
         deleteVolumes(vlmsToDelete, apiCallRc);
         deactivateVolumes(vlmsToDeactivate, apiCallRc);
-
-        takeSnapshots(snapDataToKeepOrCreate, apiCallRc);
 
         handleRollbacks(vlmsToCheckForRollback, apiCallRc);
 
@@ -412,6 +372,28 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     Resource.Flags.INACTIVE))
             {
                 setDevicePath(vlmData, null);
+            }
+        }
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public void processSnapshotVolumes(List<VlmProviderObject<Snapshot>> snapVlmDataListRef, ApiCallRcImpl apiCallRcRef)
+        throws AccessDeniedException, DatabaseException, StorageException
+    {
+        for (VlmProviderObject<Snapshot> absSnapVlmData : snapVlmDataListRef)
+        {
+            LAYER_SNAP_DATA snapVlmData = (LAYER_SNAP_DATA) absSnapVlmData;
+            if (snapVlmData.getRscLayerObject()
+                .getAbsResource()
+                .getFlags()
+                .isSet(storDriverAccCtx, Snapshot.Flags.DELETE))
+            {
+                deleteSnapshot(snapVlmData, apiCallRcRef);
+            }
+            else
+            {
+                takeSnapshots(snapVlmData, apiCallRcRef);
             }
         }
     }
@@ -498,7 +480,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
 
     private void createVolumes(
         List<LAYER_DATA> vlmsToCreate,
-        List<LAYER_SNAP_DATA> snapVlmDataList,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, AccessDeniedException, DatabaseException
@@ -552,19 +533,28 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         /*
                          * and make a snapshot from it to behave similarly as usually creating a snapshot of a volume
                          */
-                        for (LAYER_SNAP_DATA snapVlmData : snapVlmDataList)
+                        AbsRscLayerObject<Snapshot> snapLayerData = snap.getLayerData(storDriverAccCtx);
+                        Set<AbsRscLayerObject<Snapshot>> storSnapLayerDataSet = LayerRscUtils.getRscDataByLayer(
+                            snapLayerData,
+                            DeviceLayerKind.STORAGE,
+                            rscData.getResourceNameSuffix()::equals
+                        );
+
+                        if (storSnapLayerDataSet.size() > 1)
                         {
-                            AbsRscLayerObject<Snapshot> snapRscDat = snapVlmData.getRscLayerObject();
-                            if (snapRscDat.getAbsResource().equals(snap) &&
-                                snapRscDat.getResourceNameSuffix().equals(rscData.getResourceNameSuffix()))
+                            throw new ImplementationError(
+                                "Unexpected count: " + storSnapLayerDataSet.size() + ". " + snap
+                            );
+                        }
+                        if (!storSnapLayerDataSet.isEmpty())
+                        {
+                            AbsRscLayerObject<Snapshot> storSnapLayerData = storSnapLayerDataSet.iterator().next();
+                            LAYER_SNAP_DATA snapVlmData = storSnapLayerData.getVlmProviderObject(vlmData.getVlmNr());
+                            if (!snapshotExists(snapVlmData))
                             {
-                                if (!snapshotExists(snapVlmData))
-                                {
-                                    createSnapshot(vlmData, snapVlmData);
-                                }
-                                copySizes(vlmData, snapVlmData);
-                                break;
+                                createSnapshot(vlmData, snapVlmData);
                             }
+                            copySizes(vlmData, snapVlmData);
                         }
                     }
                     else
@@ -782,184 +772,87 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         }
     }
 
-    private void deleteSnapshots(
-        List<LAYER_SNAP_DATA> snapVlmsDataList,
+    private void deleteSnapshot(
+        LAYER_SNAP_DATA snapVlm,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        for (LAYER_SNAP_DATA snapVlm : snapVlmsDataList)
+        if (!snapVlm.exists())
         {
-            if (!snapVlm.exists())
+            errorReporter.logTrace(
+                "Snapshot '%s' not found. Skipping deletion.",
+                snapVlm.toString()
+            );
+        }
+        else
+        {
+            Snapshot snap = snapVlm.getRscLayerObject().getAbsResource();
+            StateFlags<Flags> snapDfnFlags = snap.getSnapshotDefinition()
+                .getFlags();
+            if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT))
             {
-                errorReporter.logTrace(
-                    "Snapshot '%s' not found. Skipping deletion.",
-                    snapVlm.toString()
-                );
+                snapShipMgr.abort(snapVlm);
+                if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.BACKUP))
+                {
+                    AbsBackupShippingService backupShipService = backupShipMapper.getService(snapVlm);
+                    if (backupShipService != null)
+                    {
+                        backupShipService.abort(snapVlm, false);
+                    }
+                }
+            }
+
+            errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
+            if (snapshotExists(snapVlm))
+            {
+                deleteSnapshotImpl(snapVlm);
             }
             else
             {
-                Snapshot snap = snapVlm.getRscLayerObject().getAbsResource();
-                StateFlags<Flags> snapDfnFlags = snap.getSnapshotDefinition()
-                    .getFlags();
-                if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT))
-                {
-                    snapShipMgr.abort(snapVlm);
-                    if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.BACKUP))
-                    {
-                        AbsBackupShippingService backupShipService = backupShipMapper.getService(snapVlm);
-                        if (backupShipService != null)
-                        {
-                            backupShipService.abort(snapVlm, false);
-                        }
-                    }
-                }
-
-                errorReporter.logTrace("Deleting snapshot %s", snapVlm.toString());
-                if (snapshotExists(snapVlm))
-                {
-                    deleteSnapshot(snapVlm);
-                }
-                else
-                {
-                    errorReporter.logTrace("Snapshot '%s' already deleted", snapVlm.toString());
-                }
-                addSnapDeletedMsg(snapVlm, apiCallRc);
+                errorReporter.logTrace("Snapshot '%s' already deleted", snapVlm.toString());
             }
+            addSnapDeletedMsg(snapVlm, apiCallRc);
         }
     }
 
     private void takeSnapshots(
-        List<LAYER_SNAP_DATA> listRef,
+        LAYER_SNAP_DATA snapVlm,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        for (LAYER_SNAP_DATA snapVlm : listRef)
+        @Nullable LAYER_DATA vlmData = getVlmData(snapVlm);
+        Snapshot snap = snapVlm.getVolume().getAbsResource();
+        StateFlags<Snapshot.Flags> snapFlags = snap.getFlags();
+        StateFlags<SnapshotDefinition.Flags> snapDfnFlags = snap.getSnapshotDefinition().getFlags();
+        if (snapVlm.getVolume().getAbsResource().getTakeSnapshot(storDriverAccCtx))
         {
-            LAYER_DATA vlmData = getVlmData(snapVlm);
-            Snapshot snap = snapVlm.getVolume().getAbsResource();
-            StateFlags<Snapshot.Flags> snapFlags = snap.getFlags();
-            StateFlags<SnapshotDefinition.Flags> snapDfnFlags = snap.getSnapshotDefinition().getFlags();
-            if (snapVlm.getVolume().getAbsResource().getTakeSnapshot(storDriverAccCtx))
+            if (vlmData == null && !snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
             {
-                if (vlmData == null && !snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
-                {
-                    throw new StorageException(
-                        String.format(
-                            "Could not create snapshot '%s' as there is no corresponding volume.",
-                            snapVlm.toString()
-                        )
-                    );
-                }
-
-                if (!snapshotExists(snapVlm))
-                {
-                    errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
-                    if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                        snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
-                    {
-                        try
-                        {
-                            updateGrossSize(snapVlm); // this should round snapshots up to the ALLOCATION_GRANULARITY
-                            // that is needed if a backup was created / uploaded with a larger ALLOCATION_GRANULARITY
-                            // than we have here locally. The controller should have already re-calculated the property
-                            // so we only need to apply and use it.
-
-                            createLvForBackupIfNeeded(snapVlm);
-                            waitForSnapIfNeeded(snapVlm);
-                            startBackupRestore(snapVlm);
-                        }
-                        catch (InvalidNameException exc)
-                        {
-                            throw new ImplementationError(exc);
-                        }
-                    }
-                    else
-                    {
-                        createSnapshot(vlmData, snapVlm);
-                        copySizes(vlmData, snapVlm);
-
-                        addSnapCreatedMsg(snapVlm, apiCallRc);
-
-                        if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
-                            snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
-                        {
-                            waitForSnapIfNeeded(snapVlm);
-                            startReceiving(vlmData, snapVlm);
-                        }
-                    }
-                }
-                else
-                {
-                    try
-                    {
-                        if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_SOURCE_START) &&
-                            snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
-                        {
-                            startSending(snapVlm);
-                        }
-                        // else if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                        // snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
-                        // {
-                        // startBackupRestore(snapVlm);
-                        // }
-                    }
-                    catch (InvalidNameException exc)
-                    {
-                        throw new ImplementationError(exc);
-                    }
-                }
-                if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE) &&
-                    snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING) &&
-                    !snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPED))
-                {
-                    try
-                    {
-                        waitForSnapIfNeeded(snapVlm);
-                        startBackupShipping(snapVlm);
-                    }
-                    catch (InvalidNameException exc)
-                    {
-                        throw new ImplementationError(exc);
-                    }
-                }
+                throw new StorageException(
+                    String.format(
+                        "Could not create snapshot '%s' as there is no corresponding volume.",
+                        snapVlm.toString()
+                    )
+                );
             }
-            else
-            {
-                if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
-                    snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_CLEANUP)
-                )
-                {
-                    errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
-                    finishShipReceiving(vlmData, snapVlm);
-                }
 
-                /*
-                 * backupShippingService might be null if the snapshot does not have the
-                 * ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE
-                 * property set
-                 *
-                 * but in the cases where backupShippingService is null, the checked flags should
-                 * also be unset, preventing NPE
-                 */
-                AbsBackupShippingService backupShippingService = backupShipMapper.getService(snapVlm);
-                if (
-                    snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT) &&
-                        backupShippingService != null
-                )
-                {
-                    backupShippingService.abort(snapVlm, true);
-                }
-                if (snapshotExists(snapVlm) &&
-                    snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
-                    snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING) &&
-                    !backupShippingService.alreadyStarted(snapVlm) &&
-                    !backupShippingService.alreadyFinished(snapVlm)
-                )
+            if (!snapshotExists(snapVlm))
+            {
+                errorReporter.logTrace("Taking snapshot %s", snapVlm.toString());
+                if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                    snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
                 {
                     try
                     {
+                        updateGrossSize(snapVlm); // this should round snapshots up to the ALLOCATION_GRANULARITY
+                        // that is needed if a backup was created / uploaded with a larger ALLOCATION_GRANULARITY
+                        // than we have here locally. The controller should have already re-calculated the property
+                        // so we only need to apply and use it.
+
+                        createLvForBackupIfNeeded(snapVlm);
+                        waitForSnapIfNeeded(snapVlm);
                         startBackupRestore(snapVlm);
                     }
                     catch (InvalidNameException exc)
@@ -967,39 +860,147 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                         throw new ImplementationError(exc);
                     }
                 }
+                else
+                {
+                    createSnapshot(vlmData, snapVlm);
+                    copySizes(vlmData, snapVlm);
+
+                    addSnapCreatedMsg(snapVlm, apiCallRc);
+
+                    if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
+                        snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
+                    {
+                        waitForSnapIfNeeded(snapVlm);
+                        startReceiving(vlmData, snapVlm);
+                    }
+                }
+            }
+            else
+            {
+                try
+                {
+                    if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_SOURCE_START) &&
+                        snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
+                    {
+                        startSending(snapVlm);
+                    }
+                    // else if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                    // snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
+                    // {
+                    // startBackupRestore(snapVlm);
+                    // }
+                }
+                catch (InvalidNameException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+            }
+            if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_SOURCE) &&
+                snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING) &&
+                !snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPED))
+            {
+                try
+                {
+                    waitForSnapIfNeeded(snapVlm);
+                    startBackupShipping(snapVlm);
+                }
+                catch (InvalidNameException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+            }
+        }
+        else
+        {
+            if (snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.SHIPPING_TARGET) &&
+                snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_CLEANUP))
+            {
+                errorReporter.logTrace("Post shipping cleanup for snapshot %s", snapVlm.toString());
+                finishShipReceiving(vlmData, snapVlm);
+            }
+
+            /*
+             * backupShippingService might be null if the snapshot does not have the
+             * ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE
+             * property set
+             *
+             * but in the cases where backupShippingService is null, the checked flags should
+             * also be unset, preventing NPE
+             */
+            @Nullable AbsBackupShippingService backupShippingService = backupShipMapper.getService(snapVlm);
+            if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT) &&
+                backupShippingService != null)
+            {
+                backupShippingService.abort(snapVlm, true);
+            }
+            if (snapshotExists(snapVlm) &&
+                snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET) &&
+                snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING))
+            {
+                if (backupShippingService == null)
+                {
+                    throw new ImplementationError(
+                        "Backup shipping service unexpectedly null for Snapshot: " + snapVlm.getRscLayerObject()
+                            .getAbsResource()
+                            .getVolume(snapVlm.getVlmNr())
+                    );
+                }
+                else
+                {
+                    if (!backupShippingService.alreadyStarted(snapVlm) &&
+                        !backupShippingService.alreadyFinished(snapVlm))
+                    {
+                        try
+                        {
+                            startBackupRestore(snapVlm);
+                        }
+                        catch (InvalidNameException exc)
+                        {
+                            throw new ImplementationError(exc);
+                        }
+                    }
+                }
             }
         }
     }
 
     @SuppressWarnings("unchecked")
-    private LAYER_DATA getVlmData(LAYER_SNAP_DATA snapVlmRef) throws AccessDeniedException
+    private @Nullable LAYER_DATA getVlmData(LAYER_SNAP_DATA snapVlmRef) throws AccessDeniedException
     {
-        Snapshot snap = snapVlmRef.getRscLayerObject().getAbsResource();
-        Resource rsc = snap.getResourceDefinition().getResource(storDriverAccCtx, snap.getNodeName());
-        AbsRscLayerObject<Resource> rscLayerData = rsc.getLayerData(storDriverAccCtx);
-        // since we are in the STORAGE layer...
-        Set<AbsRscLayerObject<Resource>> storageRscLayerDataSet = LayerRscUtils.getRscDataByLayer(
-            rscLayerData,
-            DeviceLayerKind.STORAGE,
-            snapVlmRef.getRscLayerObject().getResourceNameSuffix()::equals
-        );
+        @Nullable LAYER_DATA ret;
 
-        LAYER_DATA ret;
-        if (storageRscLayerDataSet.isEmpty())
+        Snapshot snap = snapVlmRef.getRscLayerObject().getAbsResource();
+        @Nullable Resource rsc = snap.getResourceDefinition().getResource(storDriverAccCtx, snap.getNodeName());
+        if (rsc == null)
         {
             ret = null;
         }
-        else if (storageRscLayerDataSet.size() > 1)
-        {
-            throw new ImplementationError(
-                "Unexpected number of storage data for: " + snapVlmRef.getRscLayerObject().getSuffixedResourceName() +
-                    "/" + snapVlmRef.getVlmNr()
-            );
-        }
         else
         {
-            AbsRscLayerObject<Resource> storRscData = storageRscLayerDataSet.iterator().next();
-            ret = (LAYER_DATA) storRscData.getVlmLayerObjects().get(snapVlmRef.getVlmNr());
+            AbsRscLayerObject<Resource> rscLayerData = rsc.getLayerData(storDriverAccCtx);
+            // since we are in the STORAGE layer...
+            Set<AbsRscLayerObject<Resource>> storageRscLayerDataSet = LayerRscUtils.getRscDataByLayer(
+                rscLayerData,
+                DeviceLayerKind.STORAGE,
+                snapVlmRef.getRscLayerObject().getResourceNameSuffix()::equals
+            );
+
+            if (storageRscLayerDataSet.isEmpty())
+            {
+                ret = null;
+            }
+            else if (storageRscLayerDataSet.size() > 1)
+            {
+                throw new ImplementationError(
+                    "Unexpected number of storage data for: " + snapVlmRef.getRscLayerObject()
+                        .getSuffixedResourceName() + "/" + snapVlmRef.getVlmNr()
+                );
+            }
+            else
+            {
+                AbsRscLayerObject<Resource> storRscData = storageRscLayerDataSet.iterator().next();
+                ret = (LAYER_DATA) storRscData.getVlmLayerObjects().get(snapVlmRef.getVlmNr());
+            }
         }
         return ret;
     }
@@ -1630,7 +1631,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());
     }
 
-    protected void deleteSnapshot(LAYER_SNAP_DATA snapVlm)
+    protected void deleteSnapshotImpl(LAYER_SNAP_DATA snapVlm)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         throw new StorageException("Snapshots are not supported by " + getClass().getSimpleName());

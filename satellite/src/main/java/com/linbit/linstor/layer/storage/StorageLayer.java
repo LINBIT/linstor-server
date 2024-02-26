@@ -32,9 +32,6 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
-import com.linbit.linstor.storage.kinds.DeviceLayerKind;
-import com.linbit.linstor.utils.layer.LayerRscUtils;
-import com.linbit.utils.AccessUtils;
 import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 
@@ -251,9 +248,8 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public void process(
+    public void processResource(
         AbsRscLayerObject<Resource> rscLayerData,
-        List<Snapshot> snapshotList,
         ApiCallRcImpl apiCallRc
     )
         throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException
@@ -263,14 +259,7 @@ public class StorageLayer implements DeviceLayer
                 Collections.emptyMap() :
                 rscLayerData.streamVlmLayerObjects().collect(Collectors.groupingBy(this::getDevProviderByVlmObj));
 
-        Map<DeviceProvider, List<VlmProviderObject<Snapshot>>> groupedSnapshotVolumes = snapshotList.stream()
-            .flatMap(
-                snap -> LayerRscUtils.getRscDataByLayer(
-                    AccessUtils.execPrivileged(() -> snap.getLayerData(storDriverAccCtx)), DeviceLayerKind.STORAGE
-                ).stream()
-            )
-            .flatMap(snapData -> snapData.getVlmLayerObjects().values().stream())
-            .collect(Collectors.groupingBy(this::getDevProviderByVlmObj));
+
 
         Set<DeviceProvider> deviceProviders = new HashSet<>();
         deviceProviders.addAll(
@@ -279,57 +268,18 @@ public class StorageLayer implements DeviceLayer
                 .map(entry -> entry.getKey())
                 .collect(Collectors.toSet())
         );
-        deviceProviders.addAll(
-            groupedSnapshotVolumes.entrySet().stream()
-                .filter(entry -> !entry.getValue().isEmpty())
-                .map(entry -> entry.getKey())
-                .collect(Collectors.toSet())
-        );
+
 
         for (DeviceProvider devProvider : deviceProviders)
         {
             List<VlmProviderObject<Resource>> vlmDataList = groupedVolumes.get(devProvider);
-            List<VlmProviderObject<Snapshot>> snapVlmList = groupedSnapshotVolumes.get(devProvider);
 
             if (vlmDataList == null)
             {
                 vlmDataList = Collections.emptyList();
             }
-            if (snapVlmList == null)
-            {
-                snapVlmList = Collections.emptyList();
-            }
 
-            /*
-             * Issue:
-             * We might be in a path where we should take a snapshot of a DRBD resource.
-             * If this DRBD resource has external meta-data, we have the following problem:
-             * We are on one of two scenarios (might be more if combined with other layers):
-             * 1) we are in the ""-path (data)
-             * 2) we are in the ".meta"-path (meta-data)
-             * In whichever case we are, we also have the order to take a snapshot.
-             * The current snapVlmList will contain both, "" and ".meta" snapLayerData for both
-             * cases.
-             * That means that in the first case we only give the DeviceProvider the rscData of
-             * "", but the order to create snapshot of "" AND ".meta". The second case obviously
-             * also has a similar issue.
-             *
-             * As a first approach we filter here those snapLayerData which have a corresponding
-             * rscLayerData. This solves the above mentioned issue
-             *
-             * However, this alone is not good enough, because i.e. deleting a snapshot
-             * does not require any rscLayerData, which means the filtering from the mentioned
-             * approach will filter all snapLayerData which prevents us from deleting
-             * snapshots ever again.
-             *
-             * Therefore we add an exception. If the list of rscLayerData is empty, we do not
-             * filter anything, as those operations *should* only cause resource-independent
-             * operations, which are fine for all "*"-paths
-             */
-
-            snapVlmList = filterSnapVlms(vlmDataList, snapVlmList);
-
-            devProvider.process(vlmDataList, snapVlmList, apiCallRc);
+            devProvider.processVolumes(vlmDataList, apiCallRc);
 
             for (VlmProviderObject<Resource> vlmData : vlmDataList)
             {
@@ -347,34 +297,41 @@ public class StorageLayer implements DeviceLayer
         }
     }
 
-    private List<VlmProviderObject<Snapshot>> filterSnapVlms(
-        List<VlmProviderObject<Resource>> vlmDataListRef,
-        List<VlmProviderObject<Snapshot>> snapVlmListRef
-    )
+    @Override
+    public boolean processSnapshot(AbsRscLayerObject<Snapshot> snapLayerDataRef, ApiCallRcImpl apiCallRcRef)
+        throws StorageException, ResourceException, VolumeException, AccessDeniedException, DatabaseException,
+        AbortLayerProcessingException
     {
-        List<VlmProviderObject<Snapshot>> ret;
-        if (vlmDataListRef.isEmpty())
+        Map<DeviceProvider, List<VlmProviderObject<Snapshot>>> groupedSnapshotVolumes = new HashMap<>();
+        for (VlmProviderObject<Snapshot> storSnapVlmData : snapLayerDataRef.getVlmLayerObjects().values())
         {
-            // no filter
-            ret = snapVlmListRef;
+            groupedSnapshotVolumes.computeIfAbsent(
+                getDevProviderByVlmObj(storSnapVlmData),
+                ignored -> new ArrayList<>()
+            )
+                .add(storSnapVlmData);
         }
-        else
+
+        Set<DeviceProvider> deviceProviders = new HashSet<>();
+        deviceProviders.addAll(
+            groupedSnapshotVolumes.entrySet()
+                .stream()
+                .filter(entry -> !entry.getValue().isEmpty())
+                .map(entry -> entry.getKey())
+                .collect(Collectors.toSet())
+        );
+        for (DeviceProvider devProvider : deviceProviders)
         {
-            Set<String> suffixedRscNameSet = new HashSet<>();
-            for (VlmProviderObject<Resource> vlmData : vlmDataListRef)
+            List<VlmProviderObject<Snapshot>> snapVlmList = groupedSnapshotVolumes.get(devProvider);
+            if (snapVlmList == null)
             {
-                suffixedRscNameSet.add(vlmData.getRscLayerObject().getSuffixedResourceName());
+                snapVlmList = Collections.emptyList();
             }
-            ret = new ArrayList<>();
-            for (VlmProviderObject<Snapshot> snapVlmData : snapVlmListRef)
-            {
-                if (suffixedRscNameSet.contains(snapVlmData.getRscLayerObject().getSuffixedResourceName()))
-                {
-                    ret.add(snapVlmData);
-                }
-            }
+
+
+            devProvider.processSnapshotVolumes(snapVlmList, apiCallRcRef);
         }
-        return ret;
+        return true;
     }
 
     public Map<StorPool, Either<SpaceInfo, ApiRcException>> getFreeSpaceOfAccessedStoagePools()
