@@ -1,3 +1,17 @@
+linstor-server (1.26.2-1) experimental; urgency=medium
+
+  [ Gabor Hernadi ]
+  * Luks: Recalculate ignore-reasons when deleting RD or R
+  * AbsStorProvider: Delete unnecessary volumesLut
+  * DevHandler: Split processing of resources and snapshots
+
+  [ Robert Altnoeder ]
+  * Handle read-only buffers in debug code that dumps buffer contents
+  * Add some error handling code to SatelliteNetComInitializer
+  * HexViewer: Fix special characters initialization
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Wed, 28 Feb 2024 11:18:44 +0000
+
 linstor-server (1.26.1-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.26.2] - 2024-02-28
+
 ### Changed
 
 - Snapshots and resources are processed independently of each other
