@@ -986,24 +986,75 @@ public class TcpConnectorService implements Runnable, TcpConnector
         @SuppressWarnings("resource")
         SocketChannel channel = (SocketChannel) currentKey.channel();
         Peer peer = (Peer) currentKey.attachment();
-        try
+        if (peer != null)
         {
-            channel.finishConnect();
-            peer.connectionEstablished();
-            connObserver.outboundConnectionEstablished(peer);
+            try
+            {
+                channel.finishConnect();
+                peer.connectionEstablished();
+                connObserver.outboundConnectionEstablished(peer);
+            }
+            catch (ConnectException conExc)
+            {
+                String message = conExc.getMessage();
+                errorReporter.logTrace(
+                    "Outbound connection to " + peer +
+                    " failed" +
+                    (message != null ? ": " + message : "")
+                );
+            }
+            catch (NoRouteToHostException noRouteExc)
+            {
+                // ignore, Reconnector will retry later
+            }
         }
-        catch (ConnectException conExc)
+        else
         {
-            String message = conExc.getMessage();
-            errorReporter.logTrace(
-                "Outbound connection to " + peer +
-                " failed" +
-                (message != null ? ": " + message : "")
+            // The SocketChannel has no attached Peer object
+            final SocketAddress localAddr = channel.getLocalAddress();
+            final SocketAddress remoteAddr = channel.getRemoteAddress();
+
+            String localAddrText = null;
+            String remoteAddrText = null;
+
+            try
+            {
+                final InetSocketAddress localInetAddr = (InetSocketAddress) localAddr;
+                final InetAddress ipAddress = localInetAddr.getAddress();
+                if (ipAddress != null)
+                {
+                    localAddrText = ipAddress.getHostAddress();
+                }
+            }
+            catch (ClassCastException ignored)
+            {
+                // ignored
+            }
+
+            try
+            {
+                final InetSocketAddress remoteInetAddr = (InetSocketAddress) remoteAddr;
+                final InetAddress ipAddress = remoteInetAddr.getAddress();
+                if (ipAddress != null)
+                {
+                    remoteAddrText = ipAddress.getHostAddress();
+                }
+            }
+            catch (ClassCastException ignored)
+            {
+                // ignored
+            }
+
+            final String errorDescription =
+                this.getServiceName() + " connector: Connection " +
+                (localAddrText != null ? "from " + localAddrText + " " : "") +
+                (remoteAddrText != null ? "to " + remoteAddrText + " " : "") +
+                "has no Peer object attached";
+
+            errorReporter.reportError(
+                Level.ERROR,
+                new ImplementationError(errorDescription)
             );
-        }
-        catch (NoRouteToHostException noRouteExc)
-        {
-            // ignore, Reconnector will retry later
         }
     }
 
