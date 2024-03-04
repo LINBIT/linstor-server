@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Default configuration directory for linstor-database utility (export-db and import-db) is now "/etc/linstor"
 
+### Fixed
+
+- rscDfn-props are no longer reset through --download-only backup restore or if it has rscs deployed
+
 ## [1.26.2] - 2024-02-28
 
 ### Changed

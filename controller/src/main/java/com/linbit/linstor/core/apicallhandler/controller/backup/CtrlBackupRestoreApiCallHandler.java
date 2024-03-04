@@ -381,7 +381,8 @@ public class CtrlBackupRestoreApiCallHandler
         try
         {
             Snapshot nextBackup = null;
-            boolean resetData = true; // reset data based on the final snapshot
+            // reset data to props of final snapshot
+            boolean resetData = !downloadOnly && !hasTargetRscDfnResources(targetRscName);
             S3MetafileNameInfo currentMetaFile = toRestore;
             Map<StorPoolApi, List<BackupInfoVlmPojo>> storPoolInfo = new HashMap<>();
             List<Pair<S3MetafileNameInfo, BackupMetaDataPojo>> metadataChain = new ArrayList<>();
@@ -525,6 +526,17 @@ public class CtrlBackupRestoreApiCallHandler
         {
             throw new ImplementationError(exc);
         }
+    }
+
+    private boolean hasTargetRscDfnResources(String targetRscNameRef)
+    {
+        boolean ret = false;
+        ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(targetRscNameRef, false);
+        if (rscDfn != null)
+        {
+            ret = rscDfn.getResourceCount() > 0;
+        }
+        return ret;
     }
 
     /**
