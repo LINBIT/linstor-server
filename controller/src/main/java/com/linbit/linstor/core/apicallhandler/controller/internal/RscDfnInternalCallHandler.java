@@ -300,10 +300,10 @@ public class RscDfnInternalCallHandler
                         )
                     ).concatWith(
                         scopeRunner.fluxInTransactionalScope(
-                            "Finish clone update unset FORCE METADATA",
+                            "Finish clone update unset CLONING",
                             lockGuardFactory.create()
                                 .write(LockGuardFactory.LockObj.RSC_DFN_MAP).buildDeferred(),
-                            () -> disableForceMetadataFlagInTransaction(rscDfn)
+                            () -> disableCloningFlagInTransaction(rscDfn)
                         )
                     );
             }
@@ -320,7 +320,7 @@ public class RscDfnInternalCallHandler
         return flux;
     }
 
-    public Flux<ApiCallRc> disableForceMetadataFlagInTransaction(ResourceDefinition rscDfn)
+    public Flux<ApiCallRc> disableCloningFlagInTransaction(ResourceDefinition rscDfn)
     {
         try
         {
