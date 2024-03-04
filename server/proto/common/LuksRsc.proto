@@ -19,5 +19,6 @@ message LuksVlm
     optional bool           opened = 7;
     optional string         diskState = 8;
     optional int64          disc_gran = 9;
+    optional bytes          modify_password = 10;
 }
 

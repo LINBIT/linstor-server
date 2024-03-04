@@ -55,6 +55,8 @@ import com.linbit.linstor.proto.common.VlmDfnOuterClass.VlmDfnLayerData;
 import com.linbit.linstor.proto.common.WritecacheRscOuterClass.WritecacheVlm;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -472,6 +474,8 @@ public class ProtoLayerUtils
 
     private static LuksVlmPojo extractLuksVlm(LuksVlm protoLuksVlm)
     {
+        @Nullable byte[] modifyPassword = protoLuksVlm.hasModifyPassword() ?
+            ProtoDeserializationUtils.extractByteArray(protoLuksVlm.getModifyPassword()) : null;
         return new LuksVlmPojo(
             protoLuksVlm.getVlmNr(),
             ProtoDeserializationUtils.extractByteArray(protoLuksVlm.getEncryptedPassword()),
@@ -482,7 +486,8 @@ public class ProtoLayerUtils
             protoLuksVlm.getOpened(),
             protoLuksVlm.getDiskState(),
             protoLuksVlm.getDiscGran(),
-            false
+            false,
+            modifyPassword
         );
     }
 

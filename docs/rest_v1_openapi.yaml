@@ -8652,6 +8652,11 @@ components:
           description: |
             If true Zfs will not use send/recv to clone, but instead
             use a parent snapshot with clone, which cannot be deleted
+        volume_passphrases:
+          type: array
+          items:
+            type: string
+          description: For volumes with encryption's, you can provide your own passphrases here.
     ResourceDefinitionCloneStarted:
       type: object
       description: Clone request started object

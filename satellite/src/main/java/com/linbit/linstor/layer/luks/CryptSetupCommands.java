@@ -309,6 +309,52 @@ public class CryptSetupCommands implements Luks
         );
     }
 
+    public void changeKey(String dev, byte[] oldPassphrase, byte[] newPassphrase) throws StorageException
+    {
+        try
+        {
+            final ExtCmd extCommand = extCmdFactory.create();
+
+            // open cryptsetup
+            OutputStream outputStream = extCommand.exec(
+                ProcessBuilder.Redirect.PIPE,
+                null,
+                CRYPTSETUP, "luksChangeKey", "--tries", "1", dev, "-S", "0"
+            );
+            outputStream.write(oldPassphrase);
+            outputStream.write('\n');
+            outputStream.write(newPassphrase);
+            outputStream.write('\n');
+            outputStream.write(newPassphrase);
+            outputStream.write('\n');
+            outputStream.flush();
+
+            OutputData outputData = extCommand.syncProcess();
+            outputStream.close(); // just to be sure and get rid of the java warning
+
+            errorReporter.logInfo("cryptsetup changed key for " + dev);
+            ExtCmdUtils.checkExitCode(
+                outputData,
+                StorageException::new,
+                "Failed to change key on dm-crypt device '" + dev + "'"
+            );
+        }
+        catch (IOException ioExc)
+        {
+            throw new StorageException(
+                "Failed to change key on " + dev,
+                ioExc
+            );
+        }
+        catch (ChildProcessTimeoutException exc)
+        {
+            throw new StorageException(
+                "cryptsetup change key on " + dev + " timed out",
+                exc
+            );
+        }
+    }
+
     private void resize(LuksVlmData<Resource> vlmDataRef, Long sizeRef, byte[] passphraseRef) throws StorageException
     {
         ExtCmd extCmd = extCmdFactory.create();

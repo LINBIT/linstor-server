@@ -367,6 +367,7 @@ public class StltLayerRscDataMerger extends AbsLayerRscDataMerger<Resource>
             // in that case the resource should also have the REACTIVATE flag, which triggers
             // a new decryption of the new key
             luksVlmData.setEncryptedKey(vlmPojoRef.getEncryptedPassword());
+            luksVlmData.setModifyPassword(vlmPojoRef.getModifyPassword());
 
             // ignoring allocatedSize
             // ignoring backingDevice

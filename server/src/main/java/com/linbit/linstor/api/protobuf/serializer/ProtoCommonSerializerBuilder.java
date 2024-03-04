@@ -1887,6 +1887,10 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
             {
                 builder.setDiskState(luksVlmPojo.getDiskState());
             }
+            if (luksVlmPojo.getModifyPassword() != null)
+            {
+                builder.setModifyPassword(ByteString.copyFrom(luksVlmPojo.getModifyPassword()));
+            }
             return builder.build();
         }
 

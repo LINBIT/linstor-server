@@ -37,7 +37,11 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
     private boolean opened;
     private String identifier;
     private byte[] decryptedPassword = null;
-    private List<? extends State> unmodStates;
+    /**
+     * This field will be set, if we want to change the luks password on the satellite.
+     */
+    private @Nullable byte[] modifyPassword = null;
+    private final List<? extends State> unmodStates;
     private Size sizeState;
 
     // TODO maybe introduce States like "OPEN", "CLOSED", "UNINITIALIZED" or something...
@@ -188,6 +192,16 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
         decryptedPassword = decryptedPasswordRef;
     }
 
+    public @Nullable byte[] getModifyPassword()
+    {
+        return modifyPassword;
+    }
+
+    public void setModifyPassword(@Nullable byte[] modifyPasswordRef)
+    {
+        modifyPassword = modifyPasswordRef;
+    }
+
     @Override
     public String getIdentifier()
     {
@@ -212,7 +226,8 @@ public class LuksVlmData<RSC extends AbsResource<RSC>>
             opened,
             diskState,
             discGran.get(),
-            exists.get()
+            exists.get(),
+            modifyPassword
         );
     }
 }

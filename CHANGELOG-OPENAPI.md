@@ -4,6 +4,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
 ## [Unreleased]
   - Added volume_passphrases to resource-group spawn
+  - Added volume_passphrases to ResourceDefinitionCloneRequest
   - Added passphrase to volume-definition create
 
 ## [1.21.0]

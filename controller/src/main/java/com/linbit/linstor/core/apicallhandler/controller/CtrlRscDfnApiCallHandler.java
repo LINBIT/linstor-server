@@ -83,6 +83,8 @@ import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
+import com.linbit.utils.Base64;
+import com.linbit.utils.CollectionUtils;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
@@ -779,7 +781,8 @@ public class CtrlRscDfnApiCallHandler
         String srcRscName,
         String clonedRscName,
         byte[] clonedExtName,
-        Boolean useZfsClone)
+        Boolean useZfsClone,
+        @Nullable List<String> volumePassphrases)
     {
         ResponseContext context = makeResourceDefinitionContext(
             ApiOperation.makeCreateOperation(),
@@ -793,7 +796,8 @@ public class CtrlRscDfnApiCallHandler
                         "Clone resource-definition",
                         lockGuardFactory.buildDeferred(LockGuardFactory.LockType.WRITE, NODES_MAP, RSC_DFN_MAP),
                         () -> cloneRscDfnInTransaction(
-                            srcRscName, clonedRscName, clonedExtName, useZfsClone, context, thinFreeCapacities)
+                            srcRscName, clonedRscName, clonedExtName, useZfsClone,
+                            volumePassphrases, context, thinFreeCapacities)
                     )
                     .transform(responses -> responseConverter.reportingExceptions(context, responses)));
     }
@@ -910,11 +914,60 @@ public class CtrlRscDfnApiCallHandler
             );
     }
 
+    private void storeVolumePassphrasesToVlmDfn(ResourceDefinition rscDfn, @Nullable List<String> volumePassphrasesRef)
+        throws LinStorException, InvalidValueException
+    {
+        List<String> volumePassphrases = volumePassphrasesRef != null ?
+            new ArrayList<>(volumePassphrasesRef) : new ArrayList<>();
+
+        boolean hasLuks = rscDfn.getLayerStack(peerAccCtx.get()).contains(DeviceLayerKind.LUKS);
+        if (volumePassphrases.isEmpty() && hasLuks)
+        {
+            // generate new passwords anyway
+            for (int i = 0; i < rscDfn.getVolumeDfnCount(peerAccCtx.get()); i++)
+            {
+                volumePassphrases.add(encHelper.generateSecretString(16));
+            }
+        }
+
+        if (!CollectionUtils.isEmpty(volumePassphrases))
+        {
+            if (rscDfn.getVolumeDfnCount(peerAccCtx.get()) != volumePassphrases.size())
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_REQUEST,
+                            "Volume passphrase count doesn't match specified volume count."
+                        )
+                        .setCorrection(
+                            "Please provide the same amount of volume passphrases as volumes for this resource-group")
+                        .setSkipErrorReport(true));
+            }
+
+            Iterator<VolumeDefinition> itVlmDfn = rscDfn.iterateVolumeDfn(peerAccCtx.get());
+            int idx = 0;
+            while (itVlmDfn.hasNext())
+            {
+                VolumeDefinition vlmDfn = itVlmDfn.next();
+
+                String clearPassphrase = volumePassphrases.get(idx);
+                // store passphrase encrypted in properties
+                byte[] encPassphrase = encHelper.encrypt(clearPassphrase);
+                vlmDfn.getProps(peerAccCtx.get())
+                    .setProp(ApiConsts.NAMESPC_ENCRYPTION + "/" + ApiConsts.KEY_PASSPHRASE,
+                        Base64.encode(encPassphrase));
+
+                idx++;
+            }
+        }
+    }
+
     public Flux<ApiCallRc> cloneRscDfnInTransaction(
         String srcRscName,
         String clonedRscName,
         byte[] clonedExtName,
         Boolean useZfsClone,
+        @Nullable List<String> volumePassphrases,
         ResponseContext context,
         Map<StorPool.Key, Long> thinFreeCapacities)
     {
@@ -954,6 +1007,8 @@ public class CtrlRscDfnApiCallHandler
             resourceDefinitionRepository.put(apiCtx, clonedRscDfn);
 
             responses.addEntries(copyVlmDfn(srcRscDfn, clonedRscDfn));
+
+            storeVolumePassphrasesToVlmDfn(clonedRscDfn, volumePassphrases);
 
             Set<Resource> deployedResources = new TreeSet<>();
             List<Flux<ApiCallRc>> createClonedRscsFlux = new ArrayList<>();

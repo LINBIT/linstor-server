@@ -105,6 +105,7 @@ public class LuksRscPojo implements RscLayerDataApi
     {
         private final int vlmNr;
         private final byte[] encryptedPassword;
+        private final @Nullable byte[] modifyPassword;
         @JsonIgnore
         private final String devicePath;
         @JsonIgnore
@@ -132,7 +133,8 @@ public class LuksRscPojo implements RscLayerDataApi
             boolean isOpenRef,
             String diskStateRef,
             long discGranRef,
-            boolean existsRef
+            boolean existsRef,
+            @Nullable byte[] modifyPasswordRef
         )
         {
             vlmNr = vlmNrRef;
@@ -145,6 +147,7 @@ public class LuksRscPojo implements RscLayerDataApi
             diskState = diskStateRef;
             discGran = discGranRef;
             exists = existsRef;
+            modifyPassword = modifyPasswordRef;
         }
 
         @JsonCreator(mode = JsonCreator.Mode.PROPERTIES)
@@ -163,6 +166,7 @@ public class LuksRscPojo implements RscLayerDataApi
             diskState = null;
             discGran = VlmProviderObject.UNINITIALIZED_SIZE;
             exists = false;
+            modifyPassword = null;
         }
 
         @Override
@@ -226,6 +230,11 @@ public class LuksRscPojo implements RscLayerDataApi
         public DeviceLayerKind getLayerKind()
         {
             return DeviceLayerKind.LUKS;
+        }
+
+        public @Nullable byte[] getModifyPassword()
+        {
+            return modifyPassword;
         }
 
         @Override

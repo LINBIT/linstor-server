@@ -140,6 +140,11 @@ public class EncryptionHelper
         return secretGen.generateSecret(MASTER_KEY_BYTES);
     }
 
+    public String generateSecretString(int size)
+    {
+        return secretGen.generateSecretString(size);
+    }
+
     public boolean passphraseExists(AccessContext peerAccCtxRef) throws AccessDeniedException
     {
         Props namespace = getEncryptedNamespace(peerAccCtxRef);

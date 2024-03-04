@@ -349,7 +349,8 @@ public class ResourceDefinitions
             srcName,
             requestData.name,
             requestData.external_name != null ? requestData.external_name.getBytes(StandardCharsets.UTF_8) : null,
-            requestData.use_zfs_clone
+            requestData.use_zfs_clone,
+            requestData.volume_passphrases
         )
             .contextWrite(requestHelper.createContext(ApiConsts.API_CLONE_RSCDFN, request));
 

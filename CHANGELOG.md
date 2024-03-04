@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Allow users to provide their own encryption passphrase for volumes
+- Allow users to provide their own encryption passphrase after cloning
 
 - ### Changed
 

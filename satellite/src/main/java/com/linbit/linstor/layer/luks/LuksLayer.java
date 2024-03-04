@@ -2,8 +2,11 @@ package com.linbit.linstor.layer.luks;
 
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.DecryptionHelper;
+import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
@@ -33,6 +36,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
@@ -46,6 +50,8 @@ public class LuksLayer implements DeviceLayer
     private final Provider<DeviceHandler> resourceProcessorProvider;
     private final ExtCmdFactory extCmdFactory;
     private final ErrorReporter errorReporter;
+    private final StltSecurityObjects secObjs;
+    private final DecryptionHelper decryptionHelper;
 
     @Inject
     public LuksLayer(
@@ -54,7 +60,9 @@ public class LuksLayer implements DeviceLayer
         ExtCmdFactory extCmdFactoryRef,
         Provider<DeviceHandler> resourceProcessorRef,
         ErrorReporter errorReporterRef,
-        StltExtToolsChecker extToolsCheckerRef
+        StltExtToolsChecker extToolsCheckerRef,
+        StltSecurityObjects secObjsRef,
+        DecryptionHelper decryptionHelperRef
     )
     {
         sysCtx = sysCtxRef;
@@ -62,6 +70,8 @@ public class LuksLayer implements DeviceLayer
         extCmdFactory = extCmdFactoryRef;
         resourceProcessorProvider = resourceProcessorRef;
         errorReporter = errorReporterRef;
+        secObjs = secObjsRef;
+        decryptionHelper = decryptionHelperRef;
     }
 
     @Override
@@ -178,10 +188,33 @@ public class LuksLayer implements DeviceLayer
                         Volume.Flags.DELETE,
                         Volume.Flags.CLONING
                     );
-            byte[] decryptedPassphrase = vlmData.getDecryptedPassword();
-
             vlmData.setDataDevice(vlmData.getSingleChild().getDevicePath());
 
+            // if modify password is set, we are supposed to change the luks password to it.
+            if (vlmData.getModifyPassword() != null)
+            {
+                if (!Arrays.equals(vlmData.getModifyPassword(), vlmData.getEncryptedKey()))
+                {
+                    byte[] masterKey = secObjs.getCryptKey();
+                    try
+                    {
+                        byte[] plainModifyPassword = decryptionHelper.decrypt(masterKey, vlmData.getModifyPassword());
+                        cryptSetup.changeKey(
+                            vlmData.getDataDevice(), vlmData.getDecryptedPassword(), plainModifyPassword);
+
+                        vlmData.setEncryptedKey(vlmData.getModifyPassword());
+                        vlmData.setDecryptedPassword(plainModifyPassword);
+                    }
+                    catch (LinStorException exc)
+                    {
+                        throw new StorageException("Unable to decrypt modify password key.", exc);
+                    }
+                }
+
+                vlmData.setModifyPassword(null);
+            }
+
+            byte[] decryptedPassphrase = vlmData.getDecryptedPassword();
             if (deleteVlm || deactivateRsc)
             {
                 /*
