@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.NodeStorPool;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.NodeStorPoolSpec;
@@ -27,7 +26,7 @@ public class Migration_14_v1_19_1_CleanupFsmName extends BaseK8sCrdMigration
 
         // change SPs FSM name, replacing ":" with ";"
         Collection<NodeStorPool> fsmSPs = txFrom.<NodeStorPool, NodeStorPoolSpec>getCrd(
-            GeneratedDatabaseTables.NODE_STOR_POOL,
+            GenCrdV1_19_1.GeneratedDatabaseTables.NODE_STOR_POOL,
             crd -> crd.getSpec().freeSpaceMgrName.contains(":")
         ).values();
 
@@ -35,7 +34,7 @@ public class Migration_14_v1_19_1_CleanupFsmName extends BaseK8sCrdMigration
         {
             NodeStorPoolSpec spec = sp.getSpec();
             txTo.upsert(
-                GeneratedDatabaseTables.NODE_STOR_POOL,
+                GenCrdV1_19_1.GeneratedDatabaseTables.NODE_STOR_POOL,
                 GenCrdV1_19_1.createNodeStorPool(
                     spec.uuid,
                     spec.nodeName,

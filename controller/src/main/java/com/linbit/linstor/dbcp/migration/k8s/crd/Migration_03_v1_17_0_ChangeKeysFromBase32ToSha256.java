@@ -2,7 +2,6 @@ package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_17_0;
@@ -33,9 +32,13 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
     @Override
     public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
+        // We load entries from v1_15_0.ALL_TABLES, but will later write the corresponding v1_17_0 version of the same
+        // table.
+        HashMap<DatabaseTable, DatabaseTable> dbTableRemapping = getDbTableRemapping();
+
         // load data from database that needs to change
         HashMap<DatabaseTable, HashMap<String, LinstorCrd<LinstorSpec<?, ?>>>> loadedData = new HashMap<>();
-        for (DatabaseTable dbTable : GeneratedDatabaseTables.ALL_TABLES)
+        for (DatabaseTable dbTable : GenCrdV1_15_0.GeneratedDatabaseTables.ALL_TABLES)
         {
             HashMap<String, LinstorCrd<LinstorSpec<?, ?>>> crdMap;
             crdMap = (HashMap<String, LinstorCrd<LinstorSpec<?, ?>>>) txFrom.getCrd(dbTable);
@@ -70,8 +73,9 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
         ObjectMapper objMapper = new ObjectMapper();
         for (Entry<DatabaseTable, HashMap<String, LinstorCrd<LinstorSpec<?, ?>>>> oldEntries : loadedData.entrySet())
         {
-            DatabaseTable dbTable = oldEntries.getKey();
-            Class<LinstorSpec<?, ?>> v1_17_0SpecClass = GenCrdV1_17_0.databaseTableToSpecClass(dbTable);
+            DatabaseTable dbTableOldVersion = oldEntries.getKey();
+            DatabaseTable dbTableNewVersion = dbTableRemapping.get(dbTableOldVersion);
+            Class<LinstorSpec<?, ?>> v1_17_0SpecClass = GenCrdV1_17_0.databaseTableToSpecClass(dbTableNewVersion);
             HashMap<String, LinstorCrd<LinstorSpec<?, ?>>> oldCrds = oldEntries.getValue();
             for (LinstorCrd<LinstorSpec<?, ?>> oldCrd : oldCrds.values())
             {
@@ -91,7 +95,7 @@ public class Migration_03_v1_17_0_ChangeKeysFromBase32ToSha256 extends BaseK8sCr
                 );
 
                 // Use create here, as we previously removed all values from the DB.
-                txTo.create(dbTable, GenCrdV1_17_0.specToCrd(v1_17_0_spec));
+                txTo.create(dbTableNewVersion, GenCrdV1_17_0.specToCrd(v1_17_0_spec));
             }
         }
 

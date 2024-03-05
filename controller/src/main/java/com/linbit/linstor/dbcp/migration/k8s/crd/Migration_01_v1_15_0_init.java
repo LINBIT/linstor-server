@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_15_0;
 
 @K8sCrdMigration(
@@ -182,7 +181,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.SEC_CONFIGURATION,
+            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_CONFIGURATION,
             GenCrdV1_15_0.createSecConfiguration(entryKey, entryDspKey, entryValue)
         );
     }
@@ -197,7 +196,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.SEC_IDENTITIES,
+            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_IDENTITIES,
             GenCrdV1_15_0.createSecIdentities(identityName, identityDspName, passSalt, passHash, idEnabled, idLocked)
         );
     }
@@ -209,7 +208,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.SEC_TYPES,
+            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_TYPES,
             GenCrdV1_15_0.createSecTypes(typeName, typeDspName, typeEnabled)
         );
     }
@@ -223,7 +222,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.SEC_ROLES,
+            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_ROLES,
             GenCrdV1_15_0.createSecRoles(roleName, roleDspName, domainName, roleEnabled, rolePrivileges)
         );
     }
@@ -234,7 +233,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.SEC_ID_ROLE_MAP,
+            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_ID_ROLE_MAP,
             GenCrdV1_15_0.createSecIdRoleMap(
                 identityName,
                 roleName
@@ -248,7 +247,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.SEC_ACCESS_TYPES,
+            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_ACCESS_TYPES,
             GenCrdV1_15_0.createSecAccessTypes(
                 accessTypeName,
                 (short) accessTypeValue
@@ -263,7 +262,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.SEC_TYPE_RULES,
+            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_TYPE_RULES,
             GenCrdV1_15_0.createSecTypeRules(
                 domainName,
                 typeName,
@@ -278,7 +277,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.SEC_DFLT_ROLES,
+            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_DFLT_ROLES,
             GenCrdV1_15_0.createSecDfltRoles(
                 identityName,
                 roleName
@@ -294,7 +293,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.SEC_OBJECT_PROTECTION,
+            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_OBJECT_PROTECTION,
             GenCrdV1_15_0.createSecObjectProtection(
                 objectPath,
                 creatorIdentityName,
@@ -311,7 +310,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.SEC_ACL_MAP,
+            GenCrdV1_15_0.GeneratedDatabaseTables.SEC_ACL_MAP,
             GenCrdV1_15_0.createSecAclMap(
                 objectPath,
                 roleName,
@@ -327,7 +326,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.STOR_POOL_DEFINITIONS,
+            GenCrdV1_15_0.GeneratedDatabaseTables.STOR_POOL_DEFINITIONS,
             GenCrdV1_15_0.createStorPoolDefinitions(
                 uuid,
                 poolName,
@@ -355,7 +354,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.RESOURCE_GROUPS,
+            GenCrdV1_15_0.GeneratedDatabaseTables.RESOURCE_GROUPS,
             GenCrdV1_15_0.createResourceGroups(
                 uuid,
                 resourceGroupName,
@@ -383,7 +382,7 @@ public class Migration_01_v1_15_0_init extends BaseK8sCrdMigration
     )
     {
         txTo.create(
-            GeneratedDatabaseTables.PROPS_CONTAINERS,
+            GenCrdV1_15_0.GeneratedDatabaseTables.PROPS_CONTAINERS,
             GenCrdV1_15_0.createPropsContainers(
                 propsInstance,
                 propKey,

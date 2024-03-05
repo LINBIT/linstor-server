@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed snapshot-rollback more than once on a resource
 - Fixed re-/ordering issues within the AutoSnapshotTask
 - Fixed backup restore not working if one of the backup-parts already existed on the cluster
+- Fixed K8s migrations to use correct generated DB table instances
 
 ## [1.26.2] - 2024-02-28
 

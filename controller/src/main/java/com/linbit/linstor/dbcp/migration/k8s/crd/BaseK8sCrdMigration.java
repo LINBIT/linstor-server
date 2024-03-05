@@ -14,7 +14,6 @@ import com.linbit.linstor.transaction.K8sCrdMigrationContext;
 import com.linbit.linstor.transaction.K8sCrdTransaction;
 import com.linbit.timer.Delay;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.ArrayList;
@@ -35,9 +34,9 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 public abstract class BaseK8sCrdMigration extends AbsMigration
 {
     protected final int version;
-    protected final @Nonnull String description;
+    protected final String description;
     protected final @Nullable K8sCrdMigrationContext fromCtx;
-    protected final @Nonnull K8sCrdMigrationContext toCtx;
+    protected final K8sCrdMigrationContext toCtx;
 
     private KubernetesClient k8sClient;
 
@@ -46,7 +45,7 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
 
     protected boolean schemeUpgraded = false;
 
-    protected BaseK8sCrdMigration(@Nonnull K8sCrdMigrationContext fromToCtxRef)
+    protected BaseK8sCrdMigration(K8sCrdMigrationContext fromToCtxRef)
     {
         this(fromToCtxRef, fromToCtxRef);
         schemeUpgraded = true; // nothing changed
@@ -54,7 +53,7 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
 
     protected BaseK8sCrdMigration(
         @Nullable K8sCrdMigrationContext fromCtxRef,
-        @Nonnull K8sCrdMigrationContext toCtxRef
+        K8sCrdMigrationContext toCtxRef
     )
     {
         K8sCrdMigration k8sMigAnnot = this.getClass().getAnnotation(K8sCrdMigration.class);
@@ -317,6 +316,54 @@ public abstract class BaseK8sCrdMigration extends AbsMigration
     }
 
     public abstract MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception;
+
+    /**
+     * <p>
+     * Builds and returns a Map that contains all DatabaseTables as key from the "fromTx"'s ALL_TABLES and maps (if
+     * available)
+     * to the "toTx"'s ALL_TABLES instances. The reason for this is that when migrating from database version X to Y,
+     * the loaded instances are returned with a reference to GenCrd${X}.GeneratedDatabaseTables whereas when we later
+     * want to create the new versions we need to refer to GenCrd${Y}.GeneratedDatabaseTable's entries
+     * </p>
+     * <p>
+     * If a DatabaseTable was newly introduced or deleted, the returned map will not contain an entry for it. In other
+     * words, only entries that can bidirectionally be mapped are included in the returned map
+     * </p>
+     *
+     * @return
+     */
+    protected HashMap<DatabaseTable, DatabaseTable> getDbTableRemapping()
+    {
+        HashMap<DatabaseTable, DatabaseTable> ret = new HashMap<>();
+        // first, check if we indeed have different versions:
+        if (Objects.equals(fromCtx.txMgrContext.getCrdVersion(), toCtx.txMgrContext.getCrdVersion()))
+        {
+            // same version, so just return a map filled with identities
+            for (DatabaseTable fromDbTable : fromCtx.txMgrContext.getAllDatabaseTables())
+            {
+                ret.put(fromDbTable, fromDbTable);
+            }
+        }
+        else
+        {
+            // different versions.
+            HashMap<String, DatabaseTable> dbTblNameToTargetVersionDbTable = new HashMap<>();
+            for (DatabaseTable dbTable : toCtx.txMgrContext.getAllDatabaseTables())
+            {
+                dbTblNameToTargetVersionDbTable.put(dbTable.getName(), dbTable);
+            }
+
+            for (DatabaseTable fromDbTable : fromCtx.txMgrContext.getAllDatabaseTables())
+            {
+                DatabaseTable newDbTable = dbTblNameToTargetVersionDbTable.get(fromDbTable.getName());
+                if (newDbTable != null)
+                {
+                    ret.put(fromDbTable, newDbTable);
+                }
+            }
+        }
+        return ret;
+    }
 
     protected static class MigrationResult
     {

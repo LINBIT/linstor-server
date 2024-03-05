@@ -2,7 +2,6 @@ package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbcp.migration.Migration_2022_11_14_CleanupOrphanedObjects.SnapDfnKey;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.KeyValueStore;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.KeyValueStoreSpec;
@@ -53,10 +52,10 @@ public class Migration_10_v1_19_1_CleanupOrphanedObjects extends BaseK8sCrdMigra
     private void cleanupStorPoolDefinitions(ControllerK8sCrdDatabase k8sDbRef)
     {
         Collection<StorPoolDefinitionsSpec> storPoolDfns = txFrom.<StorPoolDefinitions, StorPoolDefinitionsSpec>getSpec(
-            GeneratedDatabaseTables.STOR_POOL_DEFINITIONS
+            GenCrdV1_19_1.GeneratedDatabaseTables.STOR_POOL_DEFINITIONS
         ).values();
         Collection<NodeStorPoolSpec> storPools = txFrom.<NodeStorPool, NodeStorPoolSpec>getSpec(
-            GeneratedDatabaseTables.NODE_STOR_POOL
+            GenCrdV1_19_1.GeneratedDatabaseTables.NODE_STOR_POOL
         ).values();
 
         Map<String, StorPoolDefinitionsSpec> storPoolNameToSpec = new HashMap<>();
@@ -74,22 +73,22 @@ public class Migration_10_v1_19_1_CleanupOrphanedObjects extends BaseK8sCrdMigra
 
         for (StorPoolDefinitionsSpec spdSpec : storPoolNameToSpec.values())
         {
-            txTo.delete(GeneratedDatabaseTables.STOR_POOL_DEFINITIONS, GenCrdV1_19_1.specToCrd(spdSpec));
+            txTo.delete(GenCrdV1_19_1.GeneratedDatabaseTables.STOR_POOL_DEFINITIONS, GenCrdV1_19_1.specToCrd(spdSpec));
         }
     }
 
     private void cleanupSnapDfnSecObjects(ControllerK8sCrdDatabase k8sDbRef)
     {
         Collection<ResourceDefinitionsSpec> snapDfns = txFrom.<ResourceDefinitions, ResourceDefinitionsSpec>getSpec(
-            GeneratedDatabaseTables.RESOURCE_DEFINITIONS,
+            GenCrdV1_19_1.GeneratedDatabaseTables.RESOURCE_DEFINITIONS,
             rd -> rd.getSpec().snapshotName != null && !rd.getSpec().snapshotName.isEmpty()
         ).values();
         Collection<SecObjectProtection> snapDfnSecObjProtPaths = txFrom.<SecObjectProtection, SecObjectProtectionSpec>getCrd(
-            GeneratedDatabaseTables.SEC_OBJECT_PROTECTION,
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_OBJECT_PROTECTION,
             objProt -> objProt.getSpec().objectPath.startsWith("/snapshotdefinitions/")
         ).values();
         Collection<SecAclMap> snapDfnSecAclObjPaths = txFrom.<SecAclMap, SecAclMapSpec>getCrd(
-            GeneratedDatabaseTables.SEC_ACL_MAP,
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_ACL_MAP,
             secAclMap -> secAclMap.getSpec().objectPath.startsWith("/snapshotdefinitions/")
         ).values();
 
@@ -111,11 +110,11 @@ public class Migration_10_v1_19_1_CleanupOrphanedObjects extends BaseK8sCrdMigra
 
         for (String secObjPathToDelete : getSecObjPathsToDelete(knownSnapDfns, pathToSecObjProt.keySet()))
         {
-            txTo.delete(GeneratedDatabaseTables.SEC_OBJECT_PROTECTION, pathToSecObjProt.get(secObjPathToDelete));
+            txTo.delete(GenCrdV1_19_1.GeneratedDatabaseTables.SEC_OBJECT_PROTECTION, pathToSecObjProt.get(secObjPathToDelete));
         }
         for (String secObjPathToDelete : getSecObjPathsToDelete(knownSnapDfns, pathToSecAclMap.keySet()))
         {
-            txTo.delete(GeneratedDatabaseTables.SEC_ACL_MAP, pathToSecAclMap.get(secObjPathToDelete));
+            txTo.delete(GenCrdV1_19_1.GeneratedDatabaseTables.SEC_ACL_MAP, pathToSecAclMap.get(secObjPathToDelete));
         }
     }
 
@@ -135,10 +134,10 @@ public class Migration_10_v1_19_1_CleanupOrphanedObjects extends BaseK8sCrdMigra
     private void cleanupEmptyKvs(ControllerK8sCrdDatabase k8sDbRef)
     {
         Collection<KeyValueStore> keyValueStores = txFrom.<KeyValueStore, KeyValueStoreSpec>getCrd(
-            GeneratedDatabaseTables.KEY_VALUE_STORE
+            GenCrdV1_19_1.GeneratedDatabaseTables.KEY_VALUE_STORE
         ).values();
         Collection<PropsContainers> propsContainers = txFrom.<PropsContainers, PropsContainersSpec>getCrd(
-            GeneratedDatabaseTables.PROPS_CONTAINERS,
+            GenCrdV1_19_1.GeneratedDatabaseTables.PROPS_CONTAINERS,
             propsCrd -> propsCrd.getSpec().propsInstance.startsWith("/keyvaluestores/")
         ).values();
 
@@ -154,7 +153,7 @@ public class Migration_10_v1_19_1_CleanupOrphanedObjects extends BaseK8sCrdMigra
         );
         for (String kvsNameToDelete : kvsToDelete)
         {
-            txTo.delete(GeneratedDatabaseTables.KEY_VALUE_STORE, kvsNameToInstance.get(kvsNameToDelete));
+            txTo.delete(GenCrdV1_19_1.GeneratedDatabaseTables.KEY_VALUE_STORE, kvsNameToInstance.get(kvsNameToDelete));
         }
     }
 }

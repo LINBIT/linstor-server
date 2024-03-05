@@ -2,7 +2,6 @@ package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.api.ApiConsts;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 
 @K8sCrdMigration(
@@ -24,7 +23,7 @@ public class Migration_12_v1_19_1_AddWinDRBDToAllowedVerifyAlgoList extends Base
     public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         txTo.upsert(
-            GeneratedDatabaseTables.PROPS_CONTAINERS,
+            GenCrdV1_19_1.GeneratedDatabaseTables.PROPS_CONTAINERS,
             GenCrdV1_19_1.createPropsContainers(
                 PROPS_INSTANCE,
                 KEY_AUTO_VERIFY_ALGO_ALLOWED_LIST,

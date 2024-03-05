@@ -3,7 +3,6 @@ package com.linbit.linstor.dbcp.migration.k8s.crd;
 import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbcp.migration.etcd.Migration_33_CleanupOrphanedAcls;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.EbsRemotes;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.EbsRemotesSpec;
@@ -52,73 +51,73 @@ public class Migration_17_v1_19_1_CleanupOrphanedAcls extends BaseK8sCrdMigratio
     public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         Collection<SecAclMap> crdList = txFrom.<SecAclMap, SecAclMapSpec>getCrd(
-            GeneratedDatabaseTables.SEC_ACL_MAP
+            GenCrdV1_19_1.GeneratedDatabaseTables.SEC_ACL_MAP
         ).values();
 
         TreeSet<String> neededObjPath = new TreeSet<>();
         neededObjPath.addAll(
             this.<Resources, ResourcesSpec>genericToObjPath(
-                GeneratedDatabaseTables.RESOURCES,
+                GenCrdV1_19_1.GeneratedDatabaseTables.RESOURCES,
                 rsc -> Migration_33_CleanupOrphanedAcls.objPathRsc(rsc.nodeName, rsc.resourceName)
             )
         );
         neededObjPath.addAll(
             this.<ResourceDefinitions, ResourceDefinitionsSpec>genericToObjPath(
-                GeneratedDatabaseTables.RESOURCE_DEFINITIONS,
+                GenCrdV1_19_1.GeneratedDatabaseTables.RESOURCE_DEFINITIONS,
                 rscDfn -> Migration_33_CleanupOrphanedAcls.objPathRscDfn(rscDfn.resourceName)
             )
         );
         neededObjPath.addAll(
             this.<ResourceGroups, ResourceGroupsSpec>genericToObjPath(
-                GeneratedDatabaseTables.RESOURCE_GROUPS,
+                GenCrdV1_19_1.GeneratedDatabaseTables.RESOURCE_GROUPS,
                 rscGrp -> Migration_33_CleanupOrphanedAcls.objPathRscGrp(rscGrp.resourceGroupName)
             )
         );
         neededObjPath.addAll(
             this.<Nodes, NodesSpec>genericToObjPath(
-                GeneratedDatabaseTables.NODES,
+                GenCrdV1_19_1.GeneratedDatabaseTables.NODES,
                 node -> Migration_33_CleanupOrphanedAcls.objPathNode(node.nodeName)
             )
         );
         neededObjPath.addAll(
             this.<StorPoolDefinitions, StorPoolDefinitionsSpec>genericToObjPath(
-                GeneratedDatabaseTables.STOR_POOL_DEFINITIONS,
+                GenCrdV1_19_1.GeneratedDatabaseTables.STOR_POOL_DEFINITIONS,
                 spd -> Migration_33_CleanupOrphanedAcls.objPathStorPoolDfn(spd.poolName)
             )
         );
         neededObjPath.addAll(
             this.<KeyValueStore, KeyValueStoreSpec>genericToObjPath(
-                GeneratedDatabaseTables.KEY_VALUE_STORE,
+                GenCrdV1_19_1.GeneratedDatabaseTables.KEY_VALUE_STORE,
                 kvs -> Migration_33_CleanupOrphanedAcls.objPathKvs(kvs.kvsName)
             )
         );
         neededObjPath.addAll(
             this.<Files, FilesSpec>genericToObjPath(
-                GeneratedDatabaseTables.FILES,
+                GenCrdV1_19_1.GeneratedDatabaseTables.FILES,
                 extFile -> Migration_33_CleanupOrphanedAcls.objPathExtFile(extFile.path)
             )
         );
         neededObjPath.addAll(
             this.<EbsRemotes, EbsRemotesSpec>genericToObjPath(
-                GeneratedDatabaseTables.EBS_REMOTES,
+                GenCrdV1_19_1.GeneratedDatabaseTables.EBS_REMOTES,
                 remote -> Migration_33_CleanupOrphanedAcls.objPathRemote(remote.name)
             )
         );
         neededObjPath.addAll(
             this.<LinstorRemotes, LinstorRemotesSpec>genericToObjPath(
-                GeneratedDatabaseTables.LINSTOR_REMOTES,
+                GenCrdV1_19_1.GeneratedDatabaseTables.LINSTOR_REMOTES,
                 remote -> Migration_33_CleanupOrphanedAcls.objPathRemote(remote.name)
             )
         );
         neededObjPath.addAll(
             this.<S3Remotes, S3RemotesSpec>genericToObjPath(
-                GeneratedDatabaseTables.S3_REMOTES,
+                GenCrdV1_19_1.GeneratedDatabaseTables.S3_REMOTES,
                 remote -> Migration_33_CleanupOrphanedAcls.objPathRemote(remote.name)
             )
         );
         neededObjPath.addAll(
             this.<Schedules, SchedulesSpec>genericToObjPath(
-                GeneratedDatabaseTables.SCHEDULES,
+                GenCrdV1_19_1.GeneratedDatabaseTables.SCHEDULES,
                 schedule -> Migration_33_CleanupOrphanedAcls.objPathSchedule(schedule.name)
             )
         );
@@ -128,7 +127,7 @@ public class Migration_17_v1_19_1_CleanupOrphanedAcls extends BaseK8sCrdMigratio
             SecAclMapSpec spec = crd.getSpec();
             if (!Migration_33_CleanupOrphanedAcls.isObjPathNeeded(spec.objectPath, neededObjPath))
             {
-                txTo.delete(GeneratedDatabaseTables.SEC_ACL_MAP, crd);
+                txTo.delete(GenCrdV1_19_1.GeneratedDatabaseTables.SEC_ACL_MAP, crd);
             }
         }
         return null;

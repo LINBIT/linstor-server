@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.KeyValueStore;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.KeyValueStoreSpec;
@@ -42,7 +41,7 @@ public class Migration_16_v1_19_1_RestoreInvisbleKvs extends BaseK8sCrdMigration
         HashSet<String> kvsFromProps = new HashSet<>();
 
         Collection<PropsContainers> propsCrdList = txFrom.<PropsContainers, PropsContainersSpec>getCrd(
-            GeneratedDatabaseTables.PROPS_CONTAINERS
+            GenCrdV1_19_1.GeneratedDatabaseTables.PROPS_CONTAINERS
         ).values();
 
         for (PropsContainers props : propsCrdList)
@@ -55,7 +54,7 @@ public class Migration_16_v1_19_1_RestoreInvisbleKvs extends BaseK8sCrdMigration
         }
 
         Collection<KeyValueStore> kvsCrdList = txFrom.<KeyValueStore, KeyValueStoreSpec>getCrd(
-            GeneratedDatabaseTables.KEY_VALUE_STORE
+            GenCrdV1_19_1.GeneratedDatabaseTables.KEY_VALUE_STORE
         ).values();
         for (KeyValueStore kvs : kvsCrdList)
         {
@@ -65,7 +64,7 @@ public class Migration_16_v1_19_1_RestoreInvisbleKvs extends BaseK8sCrdMigration
         for (String kvsToRestore : kvsFromProps)
         {
             txTo.create(
-                GeneratedDatabaseTables.KEY_VALUE_STORE,
+                GenCrdV1_19_1.GeneratedDatabaseTables.KEY_VALUE_STORE,
                 GenCrdV1_19_1.createKeyValueStore(
                     UUID.randomUUID().toString(),
                     kvsToRestore,

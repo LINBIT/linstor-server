@@ -70,7 +70,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
         Function<DatabaseTable, Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>>> dbTableToCrdClass = ctx
             .getDbTableToCrdClass();
         crdVersion = ctx.getCrdVersion();
-        for (DatabaseTable tbl : GeneratedDatabaseTables.ALL_TABLES)
+        for (DatabaseTable tbl : ctx.getAllDatabaseTables())
         {
             Class<? extends LinstorCrd<? extends LinstorSpec<?, ?>>> clazz = dbTableToCrdClass.apply(tbl);
             if (clazz != null)
@@ -190,8 +190,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
         HashMap<String, LinstorCrd<?>> changedCrds
     )
     {
-        K8sResourceClient<CRD> client = currentTransaction
-            .getClient(dbTableRef);
+        K8sResourceClient<CRD> client = currentTransaction.getClient(dbTableRef);
         for (LinstorCrd<?> linstorCrd : changedCrds.values())
         {
             client.create((CRD) linstorCrd);
@@ -231,7 +230,7 @@ public class ControllerK8sCrdTransactionMgr implements TransactionMgrK8sCrd
     {
         synchronized (SYNC_OBJ)
         {
-            ControllerK8sCrdRollbackMgr.rollback(currentTransaction);
+            ControllerK8sCrdRollbackMgr.rollback(currentTransaction, crdClientLut);
 
             transactionObjectCollection.rollbackAll();
 

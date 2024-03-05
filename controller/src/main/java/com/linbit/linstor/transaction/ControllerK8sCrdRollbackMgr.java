@@ -2,7 +2,6 @@ package com.linbit.linstor.transaction;
 
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DatabaseTable;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.K8sResourceClient;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
@@ -14,7 +13,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Supplier;
 
 import io.fabric8.kubernetes.api.model.GenericKubernetesResource;
 
@@ -117,17 +118,24 @@ public class ControllerK8sCrdRollbackMgr
     }
 
     public static <CRD extends LinstorCrd<SPEC>, SPEC extends LinstorSpec<CRD, SPEC>> void rollback(
-        K8sCrdTransaction currentTransactionRef
+        K8sCrdTransaction currentTransactionRef,
+        Map<DatabaseTable, Supplier<K8sResourceClient<?>>> crdClientLutRef
     )
     {
         List<RollbackCrd> rollbacks = currentTransactionRef.getRollbacks();
         if (rollbacks != null)
         {
+            Map<String, DatabaseTable> dbNamesToVersionedDatabaseTablesMap = new HashMap<>();
+            for (DatabaseTable dbTable : crdClientLutRef.keySet())
+            {
+                dbNamesToVersionedDatabaseTablesMap.put(dbTable.getName(), dbTable);
+            }
+
             for (RollbackCrd rollback : rollbacks)
             {
                 for (Entry<String, HashSet<String>> entry : rollback.getSpec().getDeleteMap().entrySet())
                 {
-                    DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
+                    DatabaseTable dbTable = dbNamesToVersionedDatabaseTablesMap.get(entry.getKey());
                     HashSet<String> keysToDelete = entry.getValue();
                     delete(currentTransactionRef, dbTable, keysToDelete);
                 }
@@ -135,7 +143,7 @@ public class ControllerK8sCrdRollbackMgr
                 for (Entry<String, ? extends HashMap<String, GenericKubernetesResource>> entry : rollback.getSpec()
                     .getRollbackMap().entrySet())
                 {
-                    DatabaseTable dbTable = GeneratedDatabaseTables.getByValue(entry.getKey());
+                    DatabaseTable dbTable = dbNamesToVersionedDatabaseTablesMap.get(entry.getKey());
                     ArrayList<GenericKubernetesResource> gkrList = new ArrayList<>(entry.getValue().values());
 
                     restoreData(

@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbcp.migration.k8s.crd;
 
 import com.linbit.linstor.ControllerK8sCrdDatabase;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.PropsContainers;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.PropsContainersSpec;
@@ -25,7 +24,7 @@ public class Migration_11_v1_19_1_DisableResyncAfter extends BaseK8sCrdMigration
     public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         Collection<PropsContainers> propsContainers = txFrom.<PropsContainers, PropsContainersSpec>getCrd(
-            GeneratedDatabaseTables.PROPS_CONTAINERS,
+            GenCrdV1_19_1.GeneratedDatabaseTables.PROPS_CONTAINERS,
             propsCont -> propsCont.getSpec().propsInstance.startsWith("/CTRLCFG") &&
                 propsCont.getSpec().propKey.equals(KEY_AUTO_RESYNC_AFTER)
         ).values();
@@ -33,7 +32,7 @@ public class Migration_11_v1_19_1_DisableResyncAfter extends BaseK8sCrdMigration
         if (propsContainers.isEmpty())
         {
             txTo.create(
-                GeneratedDatabaseTables.PROPS_CONTAINERS,
+                GenCrdV1_19_1.GeneratedDatabaseTables.PROPS_CONTAINERS,
                 GenCrdV1_19_1.createPropsContainers(
                     "/CTRLCFG",
                     KEY_AUTO_RESYNC_AFTER,

@@ -4,7 +4,6 @@ import com.linbit.linstor.ControllerK8sCrdDatabase;
 import com.linbit.linstor.dbcp.migration.Migration_2022_10_03_CleanupOrphanedSnapAndSnapVlmProps;
 import com.linbit.linstor.dbcp.migration.Migration_2022_10_03_CleanupOrphanedSnapAndSnapVlmProps.SnapshotKey;
 import com.linbit.linstor.dbcp.migration.Migration_2022_10_03_CleanupOrphanedSnapAndSnapVlmProps.SnapshotVolumeKey;
-import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.PropsContainers;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdV1_19_1.PropsContainersSpec;
@@ -36,13 +35,13 @@ public class Migration_08_v1_19_1_CleanupOrphanedSnapAndSnapVlmProps extends Bas
     public MigrationResult migrateImpl(ControllerK8sCrdDatabase k8sDbRef) throws Exception
     {
         Collection<ResourcesSpec> absResources = txFrom.<Resources, ResourcesSpec>getSpec(
-            GeneratedDatabaseTables.RESOURCES
+            GenCrdV1_19_1.GeneratedDatabaseTables.RESOURCES
         ).values();
         Collection<VolumesSpec> absVolumes = txFrom.<Volumes, VolumesSpec>getSpec(
-            GeneratedDatabaseTables.VOLUMES
+            GenCrdV1_19_1.GeneratedDatabaseTables.VOLUMES
         ).values();
         Collection<PropsContainersSpec> propsSpecs = txFrom.<PropsContainers, PropsContainersSpec>getSpec(
-            GeneratedDatabaseTables.PROPS_CONTAINERS
+            GenCrdV1_19_1.GeneratedDatabaseTables.PROPS_CONTAINERS
         ).values();
 
         Map<String, List<PropsContainersSpec>> propsInstances = new HashMap<>();
@@ -94,7 +93,10 @@ public class Migration_08_v1_19_1_CleanupOrphanedSnapAndSnapVlmProps extends Bas
         {
             for (PropsContainersSpec propsContainersSpec : propsInstances.get(propsInstanceToDelete))
             {
-                txTo.delete(GeneratedDatabaseTables.PROPS_CONTAINERS, GenCrdV1_19_1.specToCrd(propsContainersSpec));
+                txTo.delete(
+                    GenCrdV1_19_1.GeneratedDatabaseTables.PROPS_CONTAINERS,
+                    GenCrdV1_19_1.specToCrd(propsContainersSpec)
+                );
             }
         }
 
