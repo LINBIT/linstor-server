@@ -354,6 +354,12 @@ public class JsonGenTypes
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    public static class VolumeDefinitionModifyPassphrase
+    {
+        public String new_passphrase;
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public static class DrbdResource
     {
         public DrbdResourceDefinitionLayer drbd_resource_definition;

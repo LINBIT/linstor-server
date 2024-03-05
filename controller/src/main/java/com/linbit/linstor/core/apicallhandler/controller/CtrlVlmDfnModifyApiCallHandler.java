@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.drbd.md.MaxSizeException;
 import com.linbit.drbd.md.MinSizeException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -13,9 +14,11 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.PropsChangedListenerBuilder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.SatelliteResourceStateDrbdUtils;
@@ -46,12 +49,14 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
+import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.locks.LockGuard;
+import com.linbit.utils.Base64;
 import com.linbit.utils.Pair;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
@@ -80,6 +85,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import reactor.core.publisher.Flux;
@@ -103,6 +109,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     private final BackupInfoManager backupInfoMgr;
     private final EbsStatusManagerService ebsStatusMgr;
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
+    private final CtrlSecurityObjects secObjs;
+    private final EncryptionHelper encHelper;
 
     @Inject
     CtrlVlmDfnModifyApiCallHandler(
@@ -117,7 +125,9 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         BackupInfoManager backupInfoMgrRef,
         EbsStatusManagerService ebsStatusMgrRef,
-        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef
+        Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
+        CtrlSecurityObjects secObjsRef,
+        EncryptionHelper encryptionHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -132,6 +142,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         backupInfoMgr = backupInfoMgrRef;
         ebsStatusMgr = ebsStatusMgrRef;
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
+        secObjs = secObjsRef;
+        encHelper = encryptionHelperRef;
     }
 
     @Override
@@ -391,6 +403,88 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         return Flux.just((ApiCallRc) responses)
             .concatWith(updateResponses)
             .concatWith(Flux.merge(specialPropFluxes));
+    }
+
+    public Flux<ApiCallRc> modifyVlmDfnPassphrase(
+        String rscName,
+        int vlmNr,
+        String passphrase
+    )
+    {
+        ResponseContext context = makeVlmDfnContext(
+            ApiOperation.makeModifyOperation(),
+            rscName,
+            vlmNr
+        );
+
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Modify volume definition passphrase",
+                LockGuard.createDeferred(rscDfnMapLock.writeLock()),
+                () -> modifyVlmDfnPassphraseInTransaction(
+                    rscName,
+                    vlmNr,
+                    passphrase
+                )
+            )
+            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+    }
+
+    private Flux<ApiCallRc> modifyVlmDfnPassphraseInTransaction(
+        String rscNameStr,
+        int vlmNrInt,
+        String passphrase
+    )
+    {
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        ResourceName rscName = LinstorParsingUtils.asRscName(rscNameStr);
+        VolumeNumber vlmNr = LinstorParsingUtils.asVlmNr(vlmNrInt);
+        VolumeDefinition vlmDfn = ctrlApiDataLoader.loadVlmDfn(rscName, vlmNr, true);
+
+        Props vlmDfnProps = getVlmDfnProps(vlmDfn);
+
+        try
+        {
+            byte[] encPassphrase = encHelper.encrypt(passphrase);
+            vlmDfnProps.setProp(ApiConsts.NAMESPC_ENCRYPTION + "/" + ApiConsts.KEY_PASSPHRASE,
+                    Base64.encode(encPassphrase));
+
+            final List<Resource> rscs = vlmDfn.getResourceDefinition().streamResource(apiCtx)
+                .collect(Collectors.toList());
+
+            boolean passModified = false;
+            for (var rsc : rscs)
+            {
+                var luksRscLayerSet = LayerRscUtils.getRscDataByLayer(rsc.getLayerData(apiCtx), DeviceLayerKind.LUKS);
+                if (!luksRscLayerSet.isEmpty())
+                {
+                    passModified = true;
+                    for (var rscLayer : luksRscLayerSet)
+                    {
+                        LuksRscData<Resource> luksRscData = (LuksRscData<Resource>) rscLayer;
+                        var vlmLuksLayer = luksRscData.getVlmLayerObjects().get(vlmDfn.getVolumeNumber());
+                        vlmLuksLayer.setModifyPassword(encPassphrase);
+                    }
+                }
+            }
+            if (!passModified)
+            {
+                responses.addEntry("No resources have any luks layer, no passphrase has been changed.", ApiConsts.WARN_NOT_FOUND);
+            }
+        }
+        catch (LinStorException | InvalidValueException exc)
+        {
+            throw new ApiException(exc);
+        }
+
+        ctrlTransactionHelper.commit();
+
+        Flux<ApiCallRc> updateResponses = updateSatellites(rscName, vlmNr);
+
+        responses.addEntry(ApiSuccessUtils.defaultModifiedEntry(vlmDfn.getUuid(), getVlmDfnDescriptionInline(vlmDfn)));
+
+        return Flux.just((ApiCallRc) responses)
+            .concatWith(updateResponses);
     }
 
     private boolean propChangeCausingEbsAction(

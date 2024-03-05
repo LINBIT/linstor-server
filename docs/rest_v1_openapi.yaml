@@ -1940,6 +1940,28 @@ paths:
                   value: '(0 - 6000)'
                   dflt: '0'
                   unit: '1/10 seconds'
+  /v1/resource-definitions/{resource}/volume-definitions/{volume_number}/encryption-passphrase:
+    parameters:
+      - $ref: '#/components/parameters/Resource'
+      - $ref: '#/components/parameters/VolumeNumber'
+    put:
+      tags:
+        - developers
+      summary: modify encryption passphrase for a volume definition
+      operationId: volumeDefinitionModifyPassphrase
+      description: Sets a new user provied encryption passphrase
+      responses:
+        '200':
+          description: volume-definition passphrase modified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiCallRcList'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VolumeDefinitionModifyPassphrase'
   /v1/resource-definitions/{resource}/resources:
     parameters:
       - $ref: '#/components/parameters/Resource'
@@ -6663,6 +6685,14 @@ components:
               * GROSS_SIZE
           items:
             type: string
+    VolumeDefinitionModifyPassphrase:
+      type: object
+      required:
+        - new_passphrase
+      properties:
+        new_passphrase:
+          type: string
+          format: password
     DrbdResource:
       type: object
       properties:

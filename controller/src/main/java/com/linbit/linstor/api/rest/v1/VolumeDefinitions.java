@@ -255,4 +255,35 @@ public class VolumeDefinitions
             false
         );
     }
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Path("{vlmNr}/encryption-passphrase")
+    public void modifyVolumeDefinitionPassphrase(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        @PathParam("rscName") String rscName,
+        @PathParam("vlmNr") int vlmNr,
+        String dataJson
+    )
+    {
+        try
+        {
+            JsonGenTypes.VolumeDefinitionModifyPassphrase vlmDfnData = objectMapper
+                .readValue(dataJson, JsonGenTypes.VolumeDefinitionModifyPassphrase.class);
+
+            Flux<ApiCallRc> flux = ctrlVlmDfnModifyApiCallHandler.modifyVlmDfnPassphrase(
+                    rscName,
+                    vlmNr,
+                    vlmDfnData.new_passphrase
+                )
+                .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_VLM_DFN_PASS, request));
+
+            requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));
+        }
+        catch (IOException exc)
+        {
+            ApiCallRcRestUtils.handleJsonParseException(exc, asyncResponse);
+        }
+    }
 }
