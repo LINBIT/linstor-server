@@ -25,6 +25,9 @@ public class MathUtils
     // The maximum value that will not overflow a signed 64 bit field if squared
     private static final long LONG_SQRT_MAX     = 0xB504F333L;
 
+    // The maximum value that is a power of two and that can be represented by the long datatype
+    private static final long LONG_POWER2_MAX   = (1L << 62);
+
     // Selector that returns true if the value to probe for selection is less than the other value to compare with
     private static final Selector<Long> minSelector =
         (value, other) ->
@@ -40,71 +43,87 @@ public class MathUtils
         };
 
     /**
-     * Calculates the next higher (or equal) number that is a power of 2 from the given {@code num}. A few examples:
+     * Returns the smallest power of 2 greater than or equal to {@code num}.
+     *
+     * A few examples:
      *
      * <table border="1px"><tr><thead>Input</thead><thead>Output</thead></tr>
-     * <tr><td>0</td><td>1 (special case)</td></tr>
      * <tr><td>1</td><td>1</td></tr>
      * <tr><td>2</td><td>2</td></tr>
      * <tr><td>3</td><td>4</td></tr>
      * <tr><td>4</td><td>4</td></tr>
      * <tr><td>5</td><td>8</td></tr>
      * <tr><td>42</td><td>64</td></tr>
-     * <tr><td>9001</td><td>9216</td></tr>
+     * <tr><td>9001</td><td>16384</td></tr>
      * </table>
      *
-     * @param num
+     * @param num Input value; must be greater than or equal to 1 and less than or equal to 2 to the power of 62
      *
-     * @throws ArithmeticException for any negative number.
+     * @throws ArithmeticException If {@code num} is less than 1 or greater than 2 to the power of 62
      */
-    public static long longCeilingPowerTwo(long num) throws ArithmeticException
+    public static long longCeilingPowerTwo(final long num) throws ArithmeticException
     {
-        if (num < 0)
+        if (num < 1)
         {
-            throw new ArithmeticException("Only positive numbers are allowed");
+            throw new ArithmeticException(
+                "Calculation of power of 2 floor value for zero and for negative numbers is not supported"
+            );
         }
-        long ret = 1;
-        while (ret < num)
+        if (num > LONG_POWER2_MAX)
         {
-            ret <<= 1;
+            throw new ArithmeticException(
+                "Cannot calculate power of 2 greater than " + LONG_POWER2_MAX + ": Value is out of range"
+            );
         }
-        return ret;
+        long result = 0;
+        int shift = 0;
+        while (result < num)
+        {
+            result = 1L;
+            result <<= shift;
+            ++shift;
+        }
+        return result;
     }
 
     /**
-     * Calculates the next smaller (or equal) number that is a power of 2 from the given {@code num}. A few examples:
+     * Returns the largest power of 2 less than or equal to {@code num}.
+     *
+     * A few examples:
      *
      * <table border="1px"><tr><thead>Input</thead><thead>Output</thead></tr>
-     * <tr><td>0</td><td>1 (special case)</td></tr>
      * <tr><td>1</td><td>1</td></tr>
      * <tr><td>2</td><td>2</td></tr>
      * <tr><td>3</td><td>2</td></tr>
      * <tr><td>4</td><td>4</td></tr>
      * <tr><td>5</td><td>4</td></tr>
      * <tr><td>42</td><td>32</td></tr>
-     * <tr><td>9001</td><td>4098</td></tr>
+     * <tr><td>9001</td><td>8192</td></tr>
      * </table>
      *
-     * @param num
+     * @param num Input value; must be greater than or equal to 1
      *
-     * @throws ArithmeticException for any negative number.
+     * @throws ArithmeticException If {@code num} is less than 1
      */
-    public static long longFloorPowerTwo(long num)
+    public static long longFloorPowerTwo(final long num)
     {
-        long ret;
-        if (num == 0 || num == 1)
+        if (num < 1)
         {
-            ret = 1;
+            throw new ArithmeticException(
+                "Calculation of power of 2 floor values for zero and for negative numbers is not supported"
+            );
         }
-        else
+
+        // Invariant: num >= 1
+        long shift = 0;
+        long result = num;
+        while (result > 1)
         {
-            ret = longCeilingPowerTwo(num);
-            if (num < ret)
-            {
-                ret >>= 1;
-            }
+            ++shift;
+            result >>= 1;
         }
-        return ret;
+        result <<= shift;
+        return result;
     }
 
     /**
