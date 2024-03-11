@@ -854,20 +854,33 @@ public class CtrlBackupRestoreApiCallHandler
     }
 
     /**
+     * <p>
      * Pre version 1.26.0 (where storpool-mixing was introduced), backups had no
      * "StorDriver/internal/AllocationGranularity" property on VlmDfn.
+     * </p>
+     * <p>
      * If those backups had a non-default extent-size, new peers (additional to the one that we might restore shortly)
      * will create themselves with a possibly too small disk, leading to Standalone scenario on DRBD level.
-     *
      * If the property is missing, we cannot reconstruct the exact allocation-granularity here, but we can calculate a
      * "good enough" estimate of it, so that new peers will not be able to create too small devices. This is done with
      * the following calculation:
+     * </p>
+     * <p>
      * Let vds be the size from the volumeDefinition, bds the usable size of the snapshot (STORAGE layer of the
      * snapVlm).
+     * </p>
+     * <p>
      * From vds we need to calculate the additional sizes for metadata (DRBD, LUKS, etc..), which gives us the minimum
-     * usable size on STORAGE layer. Since we have the minimum usable size as well as the actual usable size, we can
-     * calculate a granularity G that matches the actual size (and is >= minimum size). That G value needs to be stored
-     * on the SnapshotVolumeDefinition's property for future usage.
+     * usable size on STORAGE layer if we would create the resource now as it is. Since we have the minimum usable size
+     * as well as the actual usable size of the snapshot (bds), we can calculate a granularity G. G is expected to be a
+     * value that, when applied in a new calculation of the usable size for the STORAGE layer, the new usable size would
+     * be equal or greater than the previous minimum size as well as equal or greater than bds. This new usable size
+     * would ensure that new peers would rather be a bit too large than too small, which is usually fine for DRBD
+     * setups.
+     * </p>
+     * <p>
+     * That G value needs to be stored on the SnapshotVolumeDefinition's property for future usage.
+     * </p>
      *
      * @param snapVlmRef
      *
@@ -898,7 +911,9 @@ public class CtrlBackupRestoreApiCallHandler
                     .getVlmProviderObject(snapVlmDfn.getVolumeNumber())
                     .getUsableSize();
                 long minimumSize = layerSizeHelper.calculateSize(sysCtx, snapVlmRef, RscLayerSuffixes.SUFFIX_DATA);
-                long recalcAllocGran = MathUtils.longCeilingPowerTwo(bds - minimumSize);
+                long diff = (bds > minimumSize ? bds - minimumSize : minimumSize - bds);
+                // make sure recalcAllocGran is always > 1
+                long recalcAllocGran = diff > 1 ? MathUtils.longCeilingPowerTwo(diff) : 1;
 
                 snapVlmDfnProps.setProp(InternalApiConsts.ALLOCATION_GRANULARITY,
                     Long.toString(recalcAllocGran),
