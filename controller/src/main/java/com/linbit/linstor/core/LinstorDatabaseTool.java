@@ -91,7 +91,7 @@ public class LinstorDatabaseTool
         @CommandLine.Option(names = {"-c", "--config-directory"},
             description = "Configuration directory for the controller"
         )
-        private String configurationDirectory = "./";
+        private String configurationDirectory = "/etc/linstor";
 
         @CommandLine.Parameters(description = "Path to the exported database file")
         private String dbExportPath;
@@ -121,7 +121,7 @@ public class LinstorDatabaseTool
         @CommandLine.Option(names = { "-c", "--config-directory" },
             description = "Configuration directory for the controller"
         )
-        private String configurationDirectory = "./";
+        private String configurationDirectory = "/etc/linstor";
 
         @CommandLine.Parameters(description = "Path to the exported database file")
         private String dbExportPath;
