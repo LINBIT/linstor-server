@@ -349,16 +349,32 @@ public class MathUtilsTest
     }
 
     @Test(expected = ArithmeticException.class)
-    public void testCeilingPowerTwoFail()
+    public void testCeilingPowerTwoFailNegative()
     {
         MathUtils.longCeilingPowerTwo(-1);
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testCeilingPowerTwoFailTypeWidth()
+    {
+        MathUtils.longCeilingPowerTwo((1L << 62) + 1);
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testCeilingPowerTwoFailZero()
+    {
+        MathUtils.longCeilingPowerTwo(0);
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testFloorPowerTwoFailZero()
+    {
+        MathUtils.longFloorPowerTwo(0);
     }
 
     @Test
     public void testCeilingPowerTwo()
     {
-        // 0 -> 1
-        assertEquals(1, MathUtils.longCeilingPowerTwo(0));
         // 1 -> 1
         assertEquals(1, MathUtils.longCeilingPowerTwo(1));
         // 2 -> 2
@@ -382,14 +398,14 @@ public class MathUtilsTest
             assertEquals(powTwo, MathUtils.longCeilingPowerTwo(powTwo));
             assertEquals(powTwo * 2, MathUtils.longCeilingPowerTwo(powTwo + 1));
         }
+
+        assertEquals((1L << 62), MathUtils.longCeilingPowerTwo((1L << 62) - 1));
+        assertEquals((1L << 62), MathUtils.longCeilingPowerTwo(1L << 62));
     }
 
     @Test
     public void testFloorPowerTwo()
     {
-        // special case: 0 is not a power of two...
-        // 0 -> 1
-        assertEquals(1, MathUtils.longFloorPowerTwo(0));
         // 1 -> 1
         assertEquals(1, MathUtils.longFloorPowerTwo(1));
         // 2 -> 2
@@ -413,6 +429,10 @@ public class MathUtilsTest
             assertEquals(powTwo, MathUtils.longFloorPowerTwo(powTwo));
             assertEquals(powTwo, MathUtils.longFloorPowerTwo(powTwo + 1));
         }
+
+        assertEquals((1L << 62), MathUtils.longFloorPowerTwo((1L << 62)));
+        assertEquals((1L << 62), MathUtils.longFloorPowerTwo((1L << 62) + 1));
+        assertEquals((1L << 62), MathUtils.longFloorPowerTwo(Long.MAX_VALUE));
     }
 
     static class BoundsData
