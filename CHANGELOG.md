@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - rscDfn-props are no longer reset through --download-only backup restore or if it has rscs deployed
 - Fixed snapshot-rollback more than once on a resource
 - Fixed re-/ordering issues within the AutoSnapshotTask
+- Fixed backup restore not working if one of the backup-parts already existed on the cluster
 
 ## [1.26.2] - 2024-02-28
 

@@ -115,6 +115,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -282,7 +283,7 @@ public class CtrlBackupRestoreApiCallHandler
         String srcSnapName,
         String backupId,
         Map<String, String> storPoolMap,
-        String nodeName,
+        String nodeNameStrRef,
         String targetRscName,
         String remoteName,
         String passphrase,
@@ -291,7 +292,8 @@ public class CtrlBackupRestoreApiCallHandler
     ) throws AccessDeniedException, InvalidNameException
     {
         // 1. Ensure node is ready
-        Node node = ctrlApiDataLoader.loadNode(nodeName, true);
+        String nodeNameStr = nodeNameStrRef;
+        Node node = ctrlApiDataLoader.loadNode(nodeNameStr, true);
         if (!node.getPeer(peerAccCtx.get()).isOnline())
         {
             throw new ApiRcException(
@@ -409,6 +411,54 @@ public class CtrlBackupRestoreApiCallHandler
             }
             while (currentMetaFile != null);
 
+            @Nullable ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(targetRscName, false);
+            if (rscDfn != null)
+            {
+                NodeName nodeName = node.getName();
+                int idx = 0;
+                boolean stop = false;
+                // This loop finds the first snapshot that has already been downloaded during a previous restore.
+                // In case that download happened on a different node, that node will be used instead.
+                for (Pair<S3MetafileNameInfo, BackupMetaDataPojo> metadata : metadataChain)
+                {
+                    @Nullable SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(
+                        rscDfn,
+                        new SnapshotName(metadata.objA.snapName),
+                        false
+                    );
+                    if (snapDfn != null)
+                    {
+                        @Nullable Snapshot snap = snapDfn.getSnapshot(peerAccCtx.get(), nodeName);
+                        Collection<Snapshot> allSnaps = snapDfn.getAllSnapshots(peerAccCtx.get());
+                        if (snap != null)
+                        {
+                            // this snap already exists, we don't need the chain from this point on
+                            stop = true;
+                        }
+                        else if (!allSnaps.isEmpty())
+                        {
+                            // ensure we are downloading on a node that has the snapshot
+                            node = allSnaps.iterator().next().getNode();
+                            nodeNameStr = node.getName().displayValue;
+                            stop = true;
+                        }
+                        else
+                        {
+
+                        }
+                    }
+                    if (stop)
+                    {
+                        break;
+                    }
+                    ++idx;
+                }
+                // the backup on idx already exists, therefore it has to contain the data of all backups before it,
+                // which means we don't need to download any backups in the chain after this point
+                // this can result in an empty list
+                metadataChain = metadataChain.subList(0, idx);
+            }
+
             // 3b. check if given storpools have enough space remaining for the restore
             boolean first = true;
             for (Pair<S3MetafileNameInfo, BackupMetaDataPojo> meta : metadataChain)
@@ -419,14 +469,14 @@ public class CtrlBackupRestoreApiCallHandler
                 first = false;
             }
             Map<String, Long> remainingFreeSpace = backupApiCallHandler
-                .getRemainingSize(storPoolInfo, storPoolMap, nodeName);
+                .getRemainingSize(storPoolInfo, storPoolMap, nodeNameStr);
             List<String> spTooFull = new ArrayList<>();
             for (Entry<String, Long> spaceEntry : remainingFreeSpace.entrySet())
             {
                 if (spaceEntry != null && spaceEntry.getValue() < 0)
                 {
                     spTooFull.add(
-                        ctrlApiDataLoader.loadStorPool(spaceEntry.getKey(), nodeName, true).getName().displayValue
+                        ctrlApiDataLoader.loadStorPool(spaceEntry.getKey(), nodeNameStr, true).getName().displayValue
                     );
                 }
             }
@@ -478,6 +528,17 @@ public class CtrlBackupRestoreApiCallHandler
                 nextBackup = snap;
             }
 
+            if (nextBackup == null)
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_EXISTS_SNAPSHOT | ApiConsts.MASK_BACKUP,
+                        "The requested backup has already been downloaded to this cluster. " +
+                            "Please use 'snapshot resource restore' to get a resource.",
+                        true
+                    )
+                );
+            }
             // 3d. nextBackup now points to the end of the chain, i.e. the full backup. Start restoring from here
             nextBackup.getFlags().enableFlags(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
             if (!backupInfoMgr.addAllRestoreEntries(
@@ -913,12 +974,19 @@ public class CtrlBackupRestoreApiCallHandler
     )
         throws AccessDeniedException, DatabaseException
     {
-        SnapshotDefinition snapDfn = snapshotCrtHelper.createSnapshotDfnData(
-            rscDfn,
-            snapName,
-            new SnapshotDefinition.Flags[]
-            {}
-        );
+        // if the snapDfn exists here, it can only be empty. While this should not be possible (since the delete of the
+        // last snap should also delete the snapDfn), we don't want to run into an exception in case this somehow
+        // happens anyways. Therefore we just treat the empty snapDfn as if it had just been created.
+        @Nullable SnapshotDefinition snapDfn = rscDfn.getSnapshotDfn(peerAccCtx.get(), snapName);
+        if (snapDfn == null)
+        {
+            snapDfn = snapshotCrtHelper.createSnapshotDfnData(
+                rscDfn,
+                snapName,
+                new SnapshotDefinition.Flags[]
+                {}
+            );
+        }
         snapDfn.getProps(peerAccCtx.get()).clear();
         snapDfn.getProps(peerAccCtx.get()).map().putAll(metadata.getRscDfn().getProps());
 
@@ -988,15 +1056,6 @@ public class CtrlBackupRestoreApiCallHandler
                     true,
                     apiCallRcs,
                     false
-                );
-            }
-            else if (rscDfn.getSnapshotDfn(peerAccCtx.get(), snapName) != null)
-            {
-                throw new ApiRcException(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.FAIL_EXISTS_SNAPSHOT_DFN | ApiConsts.MASK_BACKUP,
-                        "Snapshot " + snapName.displayValue + " already exists, please use snapshot restore instead."
-                    )
                 );
             }
             else if (backupInfoMgr.restoreContainsRscDfn(rscDfn))
