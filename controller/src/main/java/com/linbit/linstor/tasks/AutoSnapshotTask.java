@@ -23,7 +23,9 @@ import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -85,6 +87,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
     {
         try
         {
+            final long now = System.currentTimeMillis();
             for (ResourceDefinition rscDfn : rscDfnRepo.getMapForView(sysCtx).values())
             {
                 PriorityProps prioProps = new PriorityProps(
@@ -98,14 +101,13 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                 );
                 if (autoShipping != null)
                 {
-                    AutoSnapshotConfig cfg = new AutoSnapshotConfig(
+                    long runEveryInMs = Long.parseLong(autoShipping) * MIN_TO_MS;
+                    configSet.add(new AutoSnapshotConfig(
                         rscDfn.getName().displayValue,
-                        Long.parseLong(autoShipping) * MIN_TO_MS,
+                        runEveryInMs,
+                        now + runEveryInMs + TASK_TIMEOUT, // delay the first run to give the nodes some time to connect
                         true
-                    );
-                    configSet.add(cfg);
-                    // delay the first run to give the nodes some time to connect
-                    cfg.nextRerunAt += TASK_TIMEOUT;
+                    ));
                 }
 
                 String autoSnapshot = prioProps.getProp(
@@ -114,14 +116,14 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                 );
                 if (autoSnapshot != null)
                 {
+                    long runEveryInMs = Long.parseLong(autoSnapshot) * MIN_TO_MS;
                     AutoSnapshotConfig cfg = new AutoSnapshotConfig(
                         rscDfn.getName().displayValue,
-                        Long.parseLong(autoSnapshot) * MIN_TO_MS,
+                        runEveryInMs,
+                        now + runEveryInMs + TASK_TIMEOUT, // delay the first run to give the nodes some time to connect
                         false
                     );
                     configSet.add(cfg);
-                    // delay the first run to give the nodes some time to connect
-                    cfg.nextRerunAt += TASK_TIMEOUT;
                 }
             }
         }
@@ -162,17 +164,19 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         {
             synchronized (configSet)
             {
-                boolean found = false;
+                @Nullable Pair<AutoSnapshotConfig, AutoSnapshotConfig> cfgToReplace = null;
                 for (AutoSnapshotConfig cfg : configSet)
                 {
                     if (cfg.rscName.equalsIgnoreCase(rscNameRef) && cfg.shipping == shippingRef)
                     {
-                        cfg.setRunEvery(runEveryInMinRef * MIN_TO_MS);
-                        found = true;
+                        cfgToReplace = new Pair<>(
+                            cfg,
+                            new AutoSnapshotConfig(rscNameRef, runEveryInMinRef * MIN_TO_MS, shippingRef)
+                        );
                         break;
                     }
                 }
-                if (!found)
+                if (cfgToReplace == null)
                 {
                     AutoSnapshotConfig cfg = new AutoSnapshotConfig(
                         rscNameRef,
@@ -181,6 +185,11 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
                     );
                     ret = getFlux(cfg);
                     configSet.add(cfg);
+                }
+                else
+                {
+                    configSet.remove(cfgToReplace.objA);
+                    configSet.add(cfgToReplace.objB);
                 }
             }
         }
@@ -209,30 +218,43 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
 
     public void shippingFinished(String rscNameRef)
     {
-        AutoSnapshotConfig cfg = null;
+        AutoSnapshotConfig ret = null;
         boolean runNow = false;
         synchronized (configSet)
         {
-            for (AutoSnapshotConfig cfgTmp : configSet)
+            @Nullable Pair<AutoSnapshotConfig, AutoSnapshotConfig> cfgToReplace = null;
+            for (AutoSnapshotConfig cfg : configSet)
             {
-                if (cfgTmp.rscName.equalsIgnoreCase(rscNameRef))
+                if (cfg.rscName.equalsIgnoreCase(rscNameRef))
                 {
-                    cfg = cfgTmp;
+                    ret = cfg;
                     if (cfg.nextRerunAt < System.currentTimeMillis())
                     {
-                        runNow = true;
-                        cfg.nextRerunAt = Long.MAX_VALUE; // prevent concurrent reRun from the actual run() method
+                        cfgToReplace = new Pair<>(
+                            cfg,
+                            new AutoSnapshotConfig(
+                                rscNameRef,
+                                cfg.runEveryInMs,
+                                Long.MAX_VALUE, // prevent concurrent reRun from the actual run() method
+                                true
+                            )
+                        );
                         // however, DO NOT call run(cfg) within this synchronized block, as that could
                         // cause a deadlock
+                        runNow = true;
                     }
-                    cfg.shippingInProgress = false;
                     break;
                 }
+            }
+            if (cfgToReplace != null)
+            {
+                configSet.remove(cfgToReplace.objA);
+                configSet.add(cfgToReplace.objB);
             }
         }
         if (runNow)
         {
-            run(cfg);
+            run(ret);
         }
     }
 
@@ -282,8 +304,7 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
             // since we will change the ordering of the configSet, we must remove this entry from the
             // TreeSet and re-add it.
             configSet.remove(cfgRef);
-            cfgRef.nextRerunAt += cfgRef.runEveryInMs;
-            configSet.add(cfgRef);
+            configSet.add(cfgRef.next());
         }
     }
 
@@ -331,21 +352,37 @@ public class AutoSnapshotTask implements TaskScheduleService.Task
         private final String rscName;
         private final boolean shipping;
 
-        private long runEveryInMs;
-        private long nextRerunAt;
-        public boolean shippingInProgress = false;
+        /*
+         * We MUST NOT change runEveryInMs and nextRerunAt variables, since they are part of the compareTo method.
+         * Changing those variable would change the ordering within a sorted collection. However, without telling the
+         * sorted collection that this element needs to be reordered, we might run into issues that add/remove or even
+         * contains methods stop working properly.
+         *
+         * If we have to change these properties, simply create a new AutoSnapshotConfig instance, delete the old object
+         * from the sorted collection and add the new AutoSnapshotConfig instance.
+         */
+        private final long runEveryInMs;
+        private final long nextRerunAt;
+
+        private boolean shippingInProgress = false;
 
         private AutoSnapshotConfig(String rscNameRef, long runEveryInMsRef, boolean shippingRef)
         {
-            rscName = rscNameRef;
-            shipping = shippingRef;
-            setRunEvery(runEveryInMsRef);
+            this(rscNameRef, runEveryInMsRef, System.currentTimeMillis() + runEveryInMsRef, shippingRef);
         }
 
-        public void setRunEvery(long runEveryInMsRef)
+        public AutoSnapshotConfig next()
         {
+            return new AutoSnapshotConfig(rscName, runEveryInMs, nextRerunAt + runEveryInMs, shipping);
+        }
+
+        private AutoSnapshotConfig(String rscNameRef, long runEveryInMsRef, long nextRerunAtRef, boolean shippingRef)
+        {
+            rscName = rscNameRef;
+            shipping = shippingRef;
+
             runEveryInMs = runEveryInMsRef;
-            nextRerunAt = System.currentTimeMillis() + runEveryInMsRef;
+            nextRerunAt = nextRerunAtRef;
         }
 
         @Override
