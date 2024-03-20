@@ -7,7 +7,7 @@ import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.apicallhandler.controller.mgr.SnapshotRollbackManger;
+import com.linbit.linstor.core.apicallhandler.controller.mgr.SnapshotRollbackManager;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -40,7 +40,7 @@ public class SnapshotInternalCallHandler
     private final Provider<Peer> peer;
     private final Provider<AccessContext> peerAccCtx;
     private final LockGuardFactory lockGuardFactory;
-    private final SnapshotRollbackManger snapRollbackMgr;
+    private final SnapshotRollbackManager snapRollbackMgr;
 
     private final ReadWriteLock rscDfnMapLock;
 
@@ -54,7 +54,7 @@ public class SnapshotInternalCallHandler
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
         LockGuardFactory lockGuardFactoryRef,
-        SnapshotRollbackManger snapRollbackMgrRef
+        SnapshotRollbackManager snapRollbackMgrRef
     )
     {
         errorReporter = errorReporterRef;

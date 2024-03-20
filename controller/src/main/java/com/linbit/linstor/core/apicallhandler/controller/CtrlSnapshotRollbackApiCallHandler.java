@@ -9,7 +9,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
-import com.linbit.linstor.core.apicallhandler.controller.mgr.SnapshotRollbackManger;
+import com.linbit.linstor.core.apicallhandler.controller.mgr.SnapshotRollbackManager;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiOperation;
@@ -87,9 +87,9 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
     private final CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCaller;
     private final ResponseConverter responseConverter;
     private final Provider<AccessContext> peerAccCtx;
-    private LockGuardFactory lockGuardFactory;
+    private final LockGuardFactory lockGuardFactory;
     private final BackupInfoManager backupInfoMgr;
-    private final SnapshotRollbackManger snapRollbackMgr;
+    private final SnapshotRollbackManager snapRollbackMgr;
 
     @Inject
     public CtrlSnapshotRollbackApiCallHandler(
@@ -103,7 +103,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         BackupInfoManager backupInfoMgrRef,
-        SnapshotRollbackManger snapRollbackMgrRef
+        SnapshotRollbackManager snapRollbackMgrRef
     )
     {
         apiCtx = apiCtxRef;

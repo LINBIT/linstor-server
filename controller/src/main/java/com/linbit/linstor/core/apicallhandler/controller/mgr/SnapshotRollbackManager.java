@@ -43,7 +43,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.FluxSink;
 
 @Singleton
-public class SnapshotRollbackManger
+public class SnapshotRollbackManager
 {
     private final AccessContext apiCtx;
     private final ErrorReporter errorReporter;
@@ -55,7 +55,7 @@ public class SnapshotRollbackManger
     private final HashMap<ResourceName, SnapRollbackInfo> infoMap = new HashMap<>();
 
     @Inject
-    public SnapshotRollbackManger(
+    public SnapshotRollbackManager(
         @ApiContext AccessContext apiCtxRef,
         ErrorReporter errorReporterRef,
         LockGuardFactory lockGuardFactoryRef,
@@ -266,9 +266,9 @@ public class SnapshotRollbackManger
         }
         if (snapRollbackInfo != null)
         {
-            snapRollbackInfo.handle(nodeNameRef, successRef);
+            boolean allFinished = snapRollbackInfo.handle(nodeNameRef, successRef);
 
-            if (snapRollbackInfo.waitingForNodes.isEmpty())
+            if (allFinished)
             {
                 while (snapRollbackInfo.fluxSink == null)
                 {
@@ -283,6 +283,10 @@ public class SnapshotRollbackManger
                             errorReporter.reportError(exc);
                         }
                     }
+                }
+                synchronized (infoMap)
+                {
+                    infoMap.remove(rscNameRef);
                 }
                 snapRollbackInfo.fluxSink.complete();
             }

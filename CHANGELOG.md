@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - rscDfn-props are no longer reset through --download-only backup restore or if it has rscs deployed
+- Fixed snapshot-rollback more than once on a resource
 
 ## [1.26.2] - 2024-02-28
 
