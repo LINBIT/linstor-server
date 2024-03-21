@@ -25,6 +25,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -198,7 +199,9 @@ public class CtrlNodeLostApiCallHandler
         Collection<Snapshot> snapshots = new ArrayList<>(getSnapshotsPrivileged(node));
         for (Snapshot snapshot : snapshots)
         {
+            SnapshotDefinition snapDfn = snapshot.getSnapshotDefinition();
             deletePrivileged(snapshot);
+            deleteSnapDfnPrivilegedIfNeeded(snapDfn);
         }
 
         // If the node has no resources or snapshots, then there should not be any volumes referenced
@@ -264,6 +267,25 @@ public class CtrlNodeLostApiCallHandler
             .just(responses)
             .concatWith(satelliteUpdateResponses)
             .concatWith(operationContinuation.thenMany(Flux.empty()));
+    }
+
+    private void deleteSnapDfnPrivilegedIfNeeded(SnapshotDefinition snapDfn)
+    {
+        try
+        {
+            if (snapDfn.getAllSnapshots(apiCtx).isEmpty())
+            {
+                snapDfn.delete(apiCtx);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ImplementationError(accDeniedExc);
+        }
+        catch (DatabaseException sqlExc)
+        {
+            throw new ApiDatabaseException(sqlExc);
+        }
     }
 
     private void requireNodesMapChangeAccess()

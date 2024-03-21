@@ -444,7 +444,7 @@ public class CtrlBackupRestoreApiCallHandler
                         }
                         else
                         {
-
+                            throw new ImplementationError("Empty snapDfn " + snapDfn + " should not exists.");
                         }
                     }
                     if (stop)
