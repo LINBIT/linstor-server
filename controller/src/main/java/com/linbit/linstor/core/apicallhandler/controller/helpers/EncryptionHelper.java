@@ -32,6 +32,7 @@ import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
@@ -67,6 +68,7 @@ public class EncryptionHelper
 
     private static MessageDigest sha512;
 
+    private final ErrorReporter errorReporter;
     private final SystemConfRepository systemConfRepository;
     private final SecretGenerator secretGen;
     private final LengthPadding cryptoLenPad;
@@ -109,7 +111,8 @@ public class EncryptionHelper
         CtrlSatelliteUpdateCaller ctrlstltUpdateCallerRef,
         RemoteMap remoteMapRef,
         DecryptionHelper decryptionHelperRef,
-        EbsStatusManagerService ebsStatusMgrRef
+        EbsStatusManagerService ebsStatusMgrRef,
+        ErrorReporter errorReporterRef
     )
     {
         systemConfRepository = systemConfRepositoryRef;
@@ -127,6 +130,7 @@ public class EncryptionHelper
         ctrlStltSrzl = ctrlStltSrzlRef;
         nodesMap = nodesMapRef;
         apiCtx = apiCtxRef;
+        errorReporter = errorReporterRef;
     }
 
     public Props getEncryptedNamespace(AccessContext peerAccCtxRef) throws AccessDeniedException
@@ -324,6 +328,7 @@ public class EncryptionHelper
                             )
                                 .transform(
                                 updateResponses -> CtrlResponseUtils.combineResponses(
+                                    errorReporter,
                                     updateResponses,
                                     rscDfn.getName(),
                                     "Updated resource definition " + rscDfn.getName().displayValue

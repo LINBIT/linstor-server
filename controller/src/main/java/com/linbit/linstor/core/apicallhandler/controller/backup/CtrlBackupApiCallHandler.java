@@ -1134,6 +1134,7 @@ public class CtrlBackupApiCallHandler
         {
             flux = updateStlts.transform(
                 responses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     responses,
                     LinstorParsingUtils.asRscName(rscNameRef),
                     "Abort backups of {1} on {0} started"

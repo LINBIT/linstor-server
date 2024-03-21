@@ -177,6 +177,7 @@ public class CtrlRscDeleteApiHelper
             Flux<ApiCallRc> nextStep = deleteData(nodeNames, rscName);
             flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     updateResponses,
                     rscName,
                     nodeNames,

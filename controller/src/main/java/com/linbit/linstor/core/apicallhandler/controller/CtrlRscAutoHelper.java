@@ -19,6 +19,7 @@ import com.linbit.linstor.core.objects.Resource.Flags;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionProtectionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -40,6 +41,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlRscAutoHelper
 {
+    private final ErrorReporter errorReporter;
     private final CtrlApiDataLoader dataLoader;
     private final Provider<AccessContext> peerAccCtx;
     private final CtrlRscCrtApiHelper rscCrtHelper;
@@ -91,7 +93,8 @@ public class CtrlRscAutoHelper
         LockGuardFactory lockGuardFactoryRef,
         @SystemContext AccessContext sysCtxRef,
         ResourceDefinitionProtectionRepository rscDfnRepoRef,
-        CtrlTransactionHelper ctrlTxHelperRef
+        CtrlTransactionHelper ctrlTxHelperRef,
+        ErrorReporter errorReporterRef
     )
     {
         ctrlTxHelper = ctrlTxHelperRef;
@@ -115,6 +118,7 @@ public class CtrlRscAutoHelper
         sysCtx = sysCtxRef;
         rscDfnRepo = rscDfnRepoRef;
         resyncAfterHelper = resyncAfterHelperRef;
+        errorReporter = errorReporterRef;
     }
 
     public AutoHelperResult manage(ApiCallRcImpl apiCallRcImplRef, ResponseContext context, String rscNameStrRef)
@@ -205,6 +209,7 @@ public class CtrlRscAutoHelper
                 ctrlSatelliteUpdateCaller.updateSatellites(ctx.rscDfn, Flux.empty())
                     .transform(
                         updateResponses -> CtrlResponseUtils.combineResponses(
+                            errorReporter,
                             updateResponses,
                             ctx.rscDfn.getName(),
                             "Resource {1} updated on node {0}"

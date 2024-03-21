@@ -32,6 +32,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -68,6 +69,7 @@ import static java.util.stream.Collectors.toList;
 @Singleton
 public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionListener
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final Provider<CtrlSatelliteConnectionNotifier> ctrlSatelliteConnectionNotifier;
@@ -102,7 +104,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         EventNodeHandlerBridge eventNodeHandlerBridgeRef,
         SpecialSatelliteProcessManager specTargetProcMgrRef,
         @Named(NumberPoolModule.SPECIAL_SATELLTE_PORT_POOL) DynamicNumberPool specStltPortPoolRef,
-        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef
+        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -121,6 +124,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
         specTargetProcMgr = specTargetProcMgrRef;
         specStltPortPool = specStltPortPoolRef;
         ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -322,6 +326,7 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             Flux<ApiCallRc> nextStep = resourceDeleted(nodeName, rscName, context);
             responseFlux = ctrlSatelliteUpdateCaller.updateSatellites(rsc, nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     updateResponses,
                     rscName,
                     Collections.singleton(nodeName),

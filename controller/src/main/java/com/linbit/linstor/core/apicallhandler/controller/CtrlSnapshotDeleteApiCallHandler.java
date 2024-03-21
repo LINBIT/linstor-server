@@ -342,6 +342,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
             Flux<ApiCallRc> satelliteUpdateResponses =
                 ctrlSatelliteUpdateCaller.updateSatellites(snapshotDfn, CtrlSatelliteUpdateCaller.notConnectedWarn())
                     .transform(responses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         responses,
                         rscName,
                         nodeNamesToDelete,

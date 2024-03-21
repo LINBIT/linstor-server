@@ -289,6 +289,7 @@ public class CtrlRscCrtApiHelper
                         )
                             .transform(
                                 updateResponses -> CtrlResponseUtils.combineResponses(
+                                    errorReporter,
                                     updateResponses,
                                     rscDfn.getName(),
                                     Collections.singleton(tiebreakerNodeName),
@@ -848,6 +849,7 @@ public class CtrlRscCrtApiHelper
             // this is only true as long as there is no other flux concatenated after readyResponses
         )
             .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                errorReporter,
                 updateResponses,
                 rscName,
                 nodeNames,

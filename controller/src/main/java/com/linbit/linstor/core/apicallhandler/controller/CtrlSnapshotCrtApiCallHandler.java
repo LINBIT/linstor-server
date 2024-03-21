@@ -451,6 +451,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 .updateSatellites(reqRef, notConnectedError())
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         reqRef.getJoinedRscNames(),
                         "Suspended IO of {1} on {0} for snapshot"
@@ -576,6 +577,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 )
                 .transform(
                     responses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         responses,
                         rscName,
                         "Aborted snapshot and resumed IO of {1} on {0}"
@@ -646,6 +648,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 .updateSatellites(reqRef, notConnectedError())
                 .transform(
                     responses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         responses,
                         reqRef.getJoinedRscNames(),
                         "Took snapshot of {1} on {0}"
@@ -677,6 +680,7 @@ public class CtrlSnapshotCrtApiCallHandler
                 .updateSatellites(reqRef, notConnectedCannotAbort())
                 .transform(
                     responses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         responses,
                         reqRef.getJoinedRscNames(),
                         "Aborted snapshot of {1} on {0} and resumed IO"
@@ -769,6 +773,7 @@ public class CtrlSnapshotCrtApiCallHandler
             .updateSatellites(reqRef, notConnectedError())
             .transform(
                 responses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     responses,
                     reqRef.getJoinedRscNames(),
                     "Resumed IO of {1} on {0} after snapshot"

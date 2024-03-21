@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -50,6 +51,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlRscActivateApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final ResponseConverter responseConverter;
@@ -70,7 +72,8 @@ public class CtrlRscActivateApiCallHandler
         CtrlTransactionHelper ctrlTransactionHelperRef,
         CtrlApiDataLoader ctrlApiDataLoaderRef,
         SharedResourceManager sharedRscMgrRef,
-        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
+        ErrorReporter errorReporterRef
     )
     {
         sharedRscMgr = sharedRscMgrRef;
@@ -82,7 +85,7 @@ public class CtrlRscActivateApiCallHandler
         ctrlTransactionHelper = ctrlTransactionHelperRef;
         ctrlApiDataLoader = ctrlApiDataLoaderRef;
         ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
-
+        errorReporter = errorReporterRef;
     }
 
     public Flux<ApiCallRc> activateRsc(String nodeNameRef, String rscNameRef)
@@ -152,6 +155,7 @@ public class CtrlRscActivateApiCallHandler
                 ctrlTransactionHelper.commit();
                 ret = ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         rsc.getResourceDefinition().getName(),
                         Collections.singleton(rsc.getNode().getName()),
@@ -185,6 +189,7 @@ public class CtrlRscActivateApiCallHandler
 
                 ret = ctrlSatelliteUpdateCaller.updateSatellites(rsc, nextStep).transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         rsc.getResourceDefinition().getName(),
                         Collections.singleton(rsc.getNode().getName()),
@@ -222,6 +227,7 @@ public class CtrlRscActivateApiCallHandler
 
         return ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
             updateResponses -> CtrlResponseUtils.combineResponses(
+                errorReporter,
                 updateResponses,
                 rsc.getResourceDefinition().getName(),
                 Collections.singleton(rsc.getNode().getName()),
@@ -298,6 +304,7 @@ public class CtrlRscActivateApiCallHandler
 
         return ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty()).transform(
             updateResponses -> CtrlResponseUtils.combineResponses(
+                errorReporter,
                 updateResponses,
                 rsc.getResourceDefinition().getName(),
                 Collections.singleton(rsc.getNode().getName()),

@@ -463,6 +463,7 @@ public class CtrlBackupL2LDstApiCallHandler
                             CtrlSatelliteUpdateCaller.notConnectedWarn()
                         ).transform(
                             responses -> CtrlResponseUtils.combineResponses(
+                                errorReporter,
                                 responses,
                                 LinstorParsingUtils.asRscName(rscName),
                                 "Restarting receiving of backup ''" + snapName + "'' of {1} on {0}"

@@ -14,6 +14,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.locks.LockGuard;
 
@@ -33,6 +34,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlDrbdProxyEnableApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -53,7 +55,8 @@ public class CtrlDrbdProxyEnableApiCallHandler
         ResponseConverter responseConverterRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        CtrlDrbdProxyHelper drbdProxyHelperRef
+        CtrlDrbdProxyHelper drbdProxyHelperRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -65,6 +68,7 @@ public class CtrlDrbdProxyEnableApiCallHandler
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         drbdProxyHelper = drbdProxyHelperRef;
+        errorReporter = errorReporterRef;
     }
 
     public Flux<ApiCallRc> enableProxy(
@@ -125,6 +129,7 @@ public class CtrlDrbdProxyEnableApiCallHandler
 
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
             .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                errorReporter,
                 updateResponses,
                 rscDfn.getName(),
                 "Notified {0} of proxy connection for {1}"

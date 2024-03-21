@@ -203,6 +203,7 @@ public class CtrlRscAutoRePlaceRscHelper implements AutoHelper
                                         .updateSatellites(rscDfn, ignored -> Flux.empty(), Flux.empty());
                                     return updateFlux.transform(
                                         updateResponses -> CtrlResponseUtils.combineResponses(
+                                            errorReporter,
                                             updateResponses,
                                             rscDfn.getName(),
                                             nodeNameOfEvictedResources,

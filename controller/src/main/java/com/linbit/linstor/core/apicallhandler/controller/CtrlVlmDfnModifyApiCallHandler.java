@@ -14,7 +14,6 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlPropsHelper.PropertyChangedListener;
@@ -43,6 +42,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.VolumeDefinition.Flags;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.storage.ebs.EbsUtils;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
@@ -97,6 +97,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     private static final long EBS_DFLT_COOLDOWN_PERIOD_IN_SEC = TimeUnit.HOURS.toSeconds(6) +
         TimeUnit.MINUTES.toSeconds(5); // 6 hours and 5 min in sec
 
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -109,7 +110,6 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     private final BackupInfoManager backupInfoMgr;
     private final EbsStatusManagerService ebsStatusMgr;
     private final Provider<PropsChangedListenerBuilder> propsChangeListenerBuilder;
-    private final CtrlSecurityObjects secObjs;
     private final EncryptionHelper encHelper;
 
     @Inject
@@ -126,8 +126,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         BackupInfoManager backupInfoMgrRef,
         EbsStatusManagerService ebsStatusMgrRef,
         Provider<PropsChangedListenerBuilder> propsChangeListenerBuilderRef,
-        CtrlSecurityObjects secObjsRef,
-        EncryptionHelper encryptionHelperRef
+        EncryptionHelper encryptionHelperRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -142,8 +142,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         backupInfoMgr = backupInfoMgrRef;
         ebsStatusMgr = ebsStatusMgrRef;
         propsChangeListenerBuilder = propsChangeListenerBuilderRef;
-        secObjs = secObjsRef;
         encHelper = encryptionHelperRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -865,6 +865,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), nextStep)
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         rscName,
                         "Updated volume " + vlmNr + " of {1} on {0}"
@@ -943,6 +944,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), Flux.empty())
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         rscName,
                         getNodeNames(drbdResizeVlm),
@@ -992,6 +994,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), Flux.empty())
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         rscName,
                         nodeNames,

@@ -1719,6 +1719,7 @@ public class CtrlBackupRestoreApiCallHandler
                             CtrlSatelliteUpdateCaller.notConnectedWarn()
                         ).transform(
                             responses -> CtrlResponseUtils.combineResponses(
+                                errorReporter,
                                 responses,
                                 LinstorParsingUtils.asRscName(rscNameRef),
                                 "Finishing receiving of backup ''" + snapNameRef + "'' of {1} on {0}"
@@ -1884,6 +1885,7 @@ public class CtrlBackupRestoreApiCallHandler
                             CtrlSatelliteUpdateCaller.notConnectedWarn()
                         ).transform(
                             responses -> CtrlResponseUtils.combineResponses(
+                                errorReporter,
                                 responses,
                                 LinstorParsingUtils.asRscName(rscNameRef),
                                 "Removing remote property from snapshot '" + snapNameRef + "' of {1} on {0}"
@@ -1977,6 +1979,7 @@ public class CtrlBackupRestoreApiCallHandler
             CtrlSatelliteUpdateCaller.notConnectedWarn())
                 .transform(
                 responses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     responses,
                     snapRef.getResourceName(),
                     "Removing BACKUP_TARGET flag from snapshot '" + snapRef + "' of {1} on {0}"

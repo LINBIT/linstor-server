@@ -230,6 +230,7 @@ public class SnapshotShippingInternalApiCallHandler
                 CtrlSatelliteUpdateCaller.notConnectedWarn()
             ).transform(
                 responses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     responses,
                     LinstorParsingUtils.asRscName(rscNameRef),
                     "Finishing shpipping of snapshot''" + snapNameRef + "'' of {1} on {0}"
@@ -288,6 +289,7 @@ public class SnapshotShippingInternalApiCallHandler
                 CtrlSatelliteUpdateCaller.notConnectedWarn()
             ).transform(
                 responses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     responses,
                     LinstorParsingUtils.asRscName(rscNameRef),
                     "Finishing shpipping of snapshot''" + snapNameRef + "'' of {1} on {0}"

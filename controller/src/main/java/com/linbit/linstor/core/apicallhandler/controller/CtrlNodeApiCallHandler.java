@@ -1349,6 +1349,7 @@ public class CtrlNodeApiCallHandler
                                             Flux.empty())
                                         .transform(
                                             responses -> CtrlResponseUtils.combineResponses(
+                                                errorReporter,
                                                 responses,
                                                 rsc.getResourceDefinition().getName(),
                                                 "Resource restored on {0}"
@@ -1514,6 +1515,7 @@ public class CtrlNodeApiCallHandler
                                     )
                                         .transform(
                                         responses -> CtrlResponseUtils.combineResponses(
+                                            errorReporter,
                                             responses,
                                             res.getResourceDefinition().getName(),
                                             "Resource updated on {0}"

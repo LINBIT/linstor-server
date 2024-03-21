@@ -225,6 +225,7 @@ class CtrlVlmDfnApiCallHandler
             flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         rscDfn.getName(),
                         nodeNames,

@@ -197,6 +197,7 @@ public class CtrlBackupShippingSentInternalCallHandler
                     CtrlSatelliteUpdateCaller.notConnectedWarn()
                 ).transform(
                     responses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         responses,
                         LinstorParsingUtils.asRscName(rscNameRef),
                         "Finishing shipping of backup ''" + snapNameRef + "'' of {1} on {0}"

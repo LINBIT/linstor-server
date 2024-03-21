@@ -619,6 +619,7 @@ public class CtrlRscGrpApiCallHandler
                         ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                             .transform(
                                 updateResponses -> CtrlResponseUtils.combineResponses(
+                                    errorReporter,
                                     updateResponses,
                                     rscDfn.getName(),
                                     "Updated Resource definition {1} on {0}"

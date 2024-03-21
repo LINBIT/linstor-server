@@ -182,6 +182,7 @@ public class SnapshotRollbackManager
                         ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
                             .transform(
                                 updateResponses -> CtrlResponseUtils.combineResponses(
+                                    errorReporter,
                                     updateResponses,
                                     rscDfn.getName(),
                                     infoRef.failedNodes,
@@ -250,6 +251,7 @@ public class SnapshotRollbackManager
         return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.<ApiCallRc>empty())
             .transform(
                 updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     updateResponses,
                     rscDfn.getName(),
                     "Finishing recovery for resource {1} on {0} from rollback"

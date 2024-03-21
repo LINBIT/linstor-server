@@ -20,6 +20,7 @@ import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.security.AccessContext;
@@ -42,6 +43,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 @Singleton
 public class CtrlDrbdProxyDisableApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -64,7 +66,8 @@ public class CtrlDrbdProxyDisableApiCallHandler
         ResponseConverter responseConverterRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @PeerContext Provider<AccessContext> peerAccCtxRef
+        @PeerContext Provider<AccessContext> peerAccCtxRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -77,6 +80,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
         nodesMapLock = nodesMapLockRef;
         rscDfnMapLock = rscDfnMapLockRef;
         peerAccCtx = peerAccCtxRef;
+        errorReporter = errorReporterRef;
     }
 
     public Flux<ApiCallRc> disableProxy(
@@ -133,6 +137,7 @@ public class CtrlDrbdProxyDisableApiCallHandler
 
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
             .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                errorReporter,
                 updateResponses,
                 rscDfn.getName(),
                 "Notified {0} of removed proxy connection for {1}"

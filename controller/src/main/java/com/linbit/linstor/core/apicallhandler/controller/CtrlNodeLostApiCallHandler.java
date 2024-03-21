@@ -29,6 +29,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
@@ -64,6 +65,7 @@ import static java.util.stream.Collectors.toList;
 @Singleton
 public class CtrlNodeLostApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlSatelliteConnectionNotifier ctrlSatelliteConnectionNotifier;
@@ -96,7 +98,8 @@ public class CtrlNodeLostApiCallHandler
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
-        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef
+        CtrlBackupCreateApiCallHandler ctrlBackupCrtApiCallHandlerRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -114,6 +117,7 @@ public class CtrlNodeLostApiCallHandler
         peerAccCtx = peerAccCtxRef;
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
         ctrlBackupCrtApiCallHandler = ctrlBackupCrtApiCallHandlerRef;
+        errorReporter = errorReporterRef;
     }
 
     /**
@@ -257,6 +261,7 @@ public class CtrlNodeLostApiCallHandler
         Flux<ApiCallRc> satelliteUpdateResponses =
             ctrlSatelliteUpdateCaller.updateSatellites(nodeUuid, nodeName, nodesToContact.values())
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     updateResponses,
                     (String) null,
                     "Notified {0} that ''" + nodeName + "'' has been lost"

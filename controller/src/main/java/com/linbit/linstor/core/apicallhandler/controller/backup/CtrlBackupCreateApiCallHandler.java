@@ -441,7 +441,8 @@ public class CtrlBackupCreateApiCallHandler
                 flux = ctrlSatelliteUpdateCaller.updateSatellites(snapDfn, CtrlSatelliteUpdateCaller.notConnectedWarn())
                     .transform(
                         responses -> CtrlResponseUtils
-                            .combineResponses(responses, snapDfn.getResourceName(), "Started shipping of resource {1}")
+                            .combineResponses(
+                                errorReporter, responses, snapDfn.getResourceName(), "Started shipping of resource {1}")
                     )
                     .concatWith(
                         snapshotCrtHandler.removeInProgressSnapshots(

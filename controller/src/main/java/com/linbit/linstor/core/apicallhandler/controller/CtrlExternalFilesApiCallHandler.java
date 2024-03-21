@@ -332,6 +332,7 @@ public class CtrlExternalFilesApiCallHandler
                     fluxList.add(
                         ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, null).transform(
                             updateResponses -> CtrlResponseUtils.combineResponses(
+                                errorReporter,
                                 updateResponses,
                                 rscDfn.getName(),
                                 "Updated Resource definition {1} on {0}"

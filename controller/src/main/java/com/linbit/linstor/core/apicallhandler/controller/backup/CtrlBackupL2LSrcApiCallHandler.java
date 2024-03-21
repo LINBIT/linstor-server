@@ -104,6 +104,7 @@ import reactor.core.publisher.FluxSink;
 @Singleton
 public class CtrlBackupL2LSrcApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext sysCtx;
     private final Provider<AccessContext> peerAccCtx;
     private final ScopeRunner scopeRunner;
@@ -139,7 +140,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         CtrlSecurityObjects ctrlSecObjsRef,
         BackupShippingRestClient restClientRef,
         CtrlBackupQueueInternalCallHandler queueHandlerRef,
-        TaskScheduleService taskScheduleServiceRef
+        TaskScheduleService taskScheduleServiceRef,
+        ErrorReporter errorReporterRef
     )
     {
         sysCtx = sysCtxRef;
@@ -159,6 +161,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         restClient = restClientRef;
         queueHandler = queueHandlerRef;
         taskScheduleService = taskScheduleServiceRef;
+        errorReporter = errorReporterRef;
     }
 
     /**
@@ -619,6 +622,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                     ctrlSatelliteUpdateCaller.updateSatellites(snap.getSnapshotDefinition(), notConnectedError())
                         .transform(
                             updateResponses -> CtrlResponseUtils.combineResponses(
+                                errorReporter,
                                 updateResponses,
                                 snap.getResourceName(),
                                 "Starting shipment of {1} on {0} "
@@ -740,6 +744,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         return ctrlSatelliteUpdateCaller.updateSatellites(snap.getSnapshotDefinition(), notConnectedError())
             .transform(
                 updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     updateResponses,
                     snap.getResourceName(),
                     "Cleanup of {1} on {0} "

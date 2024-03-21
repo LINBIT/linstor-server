@@ -825,6 +825,7 @@ public class CtrlRscDfnApiCallHandler
             .updateSatellites(rscDfn, notConnectedError(), Flux.empty())
             .transform(
                 responses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     responses,
                     rscDfn.getName(),
                     "Resumed IO of {1} on {0} after clone"
@@ -907,6 +908,7 @@ public class CtrlRscDfnApiCallHandler
         return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), Flux.empty())
             .transform(
                 updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     updateResponses,
                     rscDfn.getName(),
                     "Disabled start cloning flag " + rscDfn.getName()
@@ -1123,6 +1125,7 @@ public class CtrlRscDfnApiCallHandler
             flux = ctrlSatelliteUpdateCaller.updateSatellites(srcRscDfn, Flux.empty())
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         srcRscDfn.getName(),
                         "Suspend IO on clone source " + srcRscName
@@ -1422,6 +1425,7 @@ public class CtrlRscDfnApiCallHandler
                 ret = ctrlSatelliteUpdateCaller.updateSatellites(rscDfnRef, Flux.empty())
                     .transform(
                         updateResponses -> CtrlResponseUtils.combineResponses(
+                            errorReporter,
                             updateResponses,
                             rscDfnRef.getName(),
                             Collections.emptyList(),
@@ -1628,6 +1632,7 @@ public class CtrlRscDfnApiCallHandler
             flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         rscDfn.getName(),
                         (deployRef ? "Deployed " : "Undeployed ") + extFileNameRef + " on resource {1} on {0}"

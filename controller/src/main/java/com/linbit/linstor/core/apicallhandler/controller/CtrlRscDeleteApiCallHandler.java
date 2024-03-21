@@ -27,6 +27,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -57,6 +58,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListener
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -89,7 +91,8 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         SharedResourceManager sharedRscMgrRef,
         CtrlSatelliteUpdateCaller ctrlSatelliteUpdateCallerRef,
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
-        Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef
+        Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -107,6 +110,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         ctrlSatelliteUpdateCaller = ctrlSatelliteUpdateCallerRef;
         ctrlRscActivateApiCallHandler = ctrlRscActivateApiCallHandlerRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -275,6 +279,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                     flux = flux.concatWith(
                         ctrlSatelliteUpdateCaller.updateSatellites(rsc, next).transform(
                             updateResponses -> CtrlResponseUtils.combineResponses(
+                                errorReporter,
                                 updateResponses,
                                 rscName,
                                 Collections.singleton(rsc.getNode().getName()),

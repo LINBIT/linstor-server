@@ -29,6 +29,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
@@ -58,6 +59,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionListener
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -80,7 +82,8 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         LockGuardFactory lockguardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         BackupInfoManager backupInfoMgrRef,
-        CtrlResyncAfterHelper ctrlResyncAfterHelperRef
+        CtrlResyncAfterHelper ctrlResyncAfterHelperRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -93,6 +96,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         peerAccCtx = peerAccCtxRef;
         backupInfoMgr = backupInfoMgrRef;
         ctrlResyncAfterHelper = ctrlResyncAfterHelperRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -236,6 +240,7 @@ public class CtrlVlmDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
             Flux<ApiCallRc> deleteDataFlux = deleteData(rscName, vlmNr);
             flux = ctrlSatelliteUpdateCaller.updateSatellites(vlmDfn.getResourceDefinition(), deleteDataFlux)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     updateResponses,
                     rscName,
                     "Deleted volume " + vlmNr + " of {1} on {0}"

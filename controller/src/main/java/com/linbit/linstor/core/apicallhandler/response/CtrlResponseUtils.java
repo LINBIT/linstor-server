@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
+import com.linbit.linstor.logging.ErrorReporter;
 
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -32,12 +33,13 @@ public class CtrlResponseUtils
      * is emitted after all the updates have terminated.
      */
     public static Flux<ApiCallRc> combineResponses(
+        ErrorReporter logger,
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
         ResourceName rscName,
         String messageFormat
     )
     {
-        return combineResponses(responses, rscName, Collections.emptySet(), messageFormat, messageFormat);
+        return combineResponses(logger, responses, rscName, Collections.emptySet(), messageFormat, messageFormat);
     }
 
     /**
@@ -45,12 +47,13 @@ public class CtrlResponseUtils
      * name so that also non-ResourceName-compliant strings can be concatenated
      */
     public static Flux<ApiCallRc> combineResponses(
+        ErrorReporter logger,
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
         String rscName,
         String messageFormat
     )
     {
-        return combineResponses(responses, rscName, Collections.emptySet(), messageFormat, messageFormat);
+        return combineResponses(logger, responses, rscName, Collections.emptySet(), messageFormat, messageFormat);
     }
 
     /**
@@ -58,6 +61,7 @@ public class CtrlResponseUtils
      * the node is in the given collection.
      */
     public static Flux<ApiCallRc> combineResponses(
+        ErrorReporter logger,
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
         ResourceName rscName,
         Collection<NodeName> nodeNames,
@@ -65,7 +69,8 @@ public class CtrlResponseUtils
         String messageFormatOthers
     )
     {
-        return combineResponses(responses, rscName.displayValue, nodeNames, messageFormatThese, messageFormatOthers);
+        return combineResponses(
+            logger, responses, rscName.displayValue, nodeNames, messageFormatThese, messageFormatOthers);
     }
 
     /**
@@ -73,6 +78,7 @@ public class CtrlResponseUtils
      * name so that also non-ResourceName-compliant strings can be concatenated
      */
     public static Flux<ApiCallRc> combineResponses(
+        ErrorReporter logger,
         Flux<Tuple2<NodeName, Flux<ApiCallRc>>> responses,
         String rscName,
         Collection<NodeName> nodeNames,
@@ -91,14 +97,16 @@ public class CtrlResponseUtils
                         messageFormatThese : messageFormatOthers;
                     if (messageFormat != null)
                     {
-                        extraResponses = Flux.just(ApiCallRcImpl.singletonApiCallRc((ApiCallRcImpl.simpleEntry(
+                        ApiCallRc apiCallRc = ApiCallRcImpl.singletonApiCallRc((ApiCallRcImpl.simpleEntry(
                             ApiConsts.MODIFIED,
                             MessageFormat.format(
                                 messageFormat,
                                 "'" + nodeName + "'",
                                 "'" + rscName + "'"
                             )
-                        ))));
+                        )));
+                        logger.logInfo(apiCallRc.get(0).getMessage());
+                        extraResponses = Flux.just(apiCallRc);
                     }
                     else
                     {

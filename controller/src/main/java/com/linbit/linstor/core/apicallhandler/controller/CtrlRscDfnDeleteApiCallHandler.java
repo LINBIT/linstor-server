@@ -27,6 +27,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.resource.CtrlRscLayerDataFactory;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -59,6 +60,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionListener
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -93,7 +95,8 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         CtrlRscActivateApiCallHandler ctrlRscActivateApiCallHandlerRef,
         CtrlRscDeleteApiHelper ctrlRscDeleteApiHelperRef,
         CtrlResyncAfterHelper ctrlResyncAfterHelperRef,
-        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef
+        CtrlRscLayerDataFactory ctrlRscLayerDataFactoryRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -112,6 +115,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
         ctrlRscDeleteApiHelper = ctrlRscDeleteApiHelperRef;
         ctrlResyncAfterHelper = ctrlResyncAfterHelperRef;
         ctrlRscLayerDataFactory = ctrlRscLayerDataFactoryRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -261,6 +265,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                         nextStep
                     )
                     .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         rscName,
                         "Notified {0} that diskless resources of {1} are being deleted"
@@ -350,6 +355,7 @@ public class CtrlRscDfnDeleteApiCallHandler implements CtrlSatelliteConnectionLi
                     )
                         .transform(
                             updateResponses -> CtrlResponseUtils.combineResponses(
+                                errorReporter,
                                 updateResponses,
                                 rscName,
                                 "Resource {1} on {0} deleted"

@@ -833,6 +833,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
             Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(
                     rsc.getResourceDefinition(), CtrlSatelliteUpdateCaller.notConnectedIgnoreIfNot(nodeName), nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     updateResponses,
                     rscName,
                     Collections.singleton(nodeName),
@@ -914,6 +915,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
 
         Flux<ApiCallRc> satelliteUpdateResponses = ctrlSatelliteUpdateCaller.updateSatellites(rsc, Flux.empty())
             .transform(responses -> CtrlResponseUtils.combineResponses(
+                errorReporter,
                 responses,
                 rscName,
                 "Diskless state temporarily reset on {0}"
@@ -1009,6 +1011,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                     migrationFlux
                 )
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     updateResponses,
                     rscName,
                     Collections.singleton(nodeName),

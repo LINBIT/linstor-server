@@ -133,9 +133,11 @@ public class RscDfnInternalCallHandler
 
                 ctrlTransactionHelper.commit();
 
-                errorReporter.logTrace(
-                    "Primary set for " + currentPeer.getNode().getName().getDisplayName() + "; " +
-                        " already initialized: " + alreadyInitialized
+                errorReporter.logInfo(
+                    "%s primary set on %s; already initialized: %b",
+                    rscNameStr,
+                    currentPeer.getNode().getName().getDisplayName(),
+                    alreadyInitialized
                 );
 
                 ctrlSatelliteUpdater.updateSatellites(resDfn);
@@ -205,6 +207,7 @@ public class RscDfnInternalCallHandler
             .updateSatellites(rscDfn, notConnectedError(), Flux.empty())
             .transform(
                 responses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     responses,
                     rscDfn.getName(),
                     "Resource definition {1} marked failed."
@@ -329,6 +332,7 @@ public class RscDfnInternalCallHandler
                 ResourceName resourceName = new ResourceName(rscName);
                 flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                     .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         resourceName,
                         Collections.emptyList(),
@@ -373,6 +377,7 @@ public class RscDfnInternalCallHandler
 
             return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
                     updateResponses,
                     rscDfn.getName(),
                     Collections.emptyList(),

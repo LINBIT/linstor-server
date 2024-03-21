@@ -27,6 +27,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotDefinitionControllerFactory;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -79,6 +80,7 @@ import reactor.util.function.Tuple2;
 @Singleton
 public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnectionListener
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -103,7 +105,8 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         BackupInfoManager backupInfoMgrRef,
-        SnapshotRollbackManager snapRollbackMgrRef
+        SnapshotRollbackManager snapRollbackMgrRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -117,6 +120,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
         peerAccCtx = peerAccCtxRef;
         backupInfoMgr = backupInfoMgrRef;
         snapRollbackMgr = snapRollbackMgrRef;
+        errorReporter = errorReporterRef;
     }
 
     @Override
@@ -192,6 +196,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
             .concatWith(ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, notConnectedError(), nextStep)
                 .transform(
                     updateResponses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         updateResponses,
                         rscName,
                         "Deactivated resource {1} on {0} for rollback"
@@ -318,6 +323,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
                 )
                 .transform(
                     responses -> CtrlResponseUtils.combineResponses(
+                        errorReporter,
                         responses,
                         rscName,
                         diskNodeNames,
@@ -382,6 +388,7 @@ public class CtrlSnapshotRollbackApiCallHandler implements CtrlSatelliteConnecti
 
         return ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, Flux.empty())
             .transform(responses -> CtrlResponseUtils.combineResponses(
+                errorReporter,
                 responses,
                 rscName,
                 "Re-activated resource {1} on {0} after rollback"
