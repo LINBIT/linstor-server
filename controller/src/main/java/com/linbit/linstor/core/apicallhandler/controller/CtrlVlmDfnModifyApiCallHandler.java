@@ -392,6 +392,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
 
         ctrlTransactionHelper.commit();
 
+        errorReporter.logInfo("Volume definition modified %s/%d/%s", rscNameStr, vlmNr.getValue(), notifyStlts);
+
         if (notifyStlts)
         {
             updateResponses = updateResponses.concatWith(updateSatellites(rscName, vlmNr));
