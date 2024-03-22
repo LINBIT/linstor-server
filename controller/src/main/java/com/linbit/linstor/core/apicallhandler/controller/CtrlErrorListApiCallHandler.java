@@ -307,13 +307,17 @@ public class CtrlErrorListApiCallHandler
         // Controller error reports
         if (nodesToRequest.isEmpty() || nodesToRequest.stream().anyMatch(LinStor.CONTROLLER_MODULE::equalsIgnoreCase))
         {
-            errorReportResult.addErrorReportResult(nodeNameForErrorReports, Node.Type.CONTROLLER.name(), errorReporter.listReports(
-                withContent,
-                since,
-                to,
-                ids,
-                limit,
-                offset));
+            errorReportResult.addErrorReportResult(
+                nodeNameForErrorReports,
+                Node.Type.CONTROLLER.name(),
+                errorReporter.listReports(
+                    withContent,
+                    since,
+                    to,
+                    ids,
+                    limit,
+                    offset)
+            );
         }
 
         // Returned satellite error reports
@@ -329,6 +333,7 @@ public class CtrlErrorListApiCallHandler
         }
 
         errorReportResult.sort();
+        errorReporter.logInfo("Assembled error reports; count %d", errorReportResult.getErrorReports().size());
         return errorReportResult;
     }
 
