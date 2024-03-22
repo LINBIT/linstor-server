@@ -234,11 +234,6 @@ public class CtrlApiCallHandler
         {
             props = Collections.emptyMap();
         }
-        List<VolumeDefinitionWithCreationPayload> vlmDescrMap = vlmDescrMapRef;
-        if (vlmDescrMap == null)
-        {
-            vlmDescrMap = Collections.emptyList();
-        }
         try (LockGuard lg = lockGuardFactory.build(WRITE, RSC_DFN_MAP))
         {
             ResourceDefinition rscDfn = rscDfnApiCallHandler.createResourceDefinition(
