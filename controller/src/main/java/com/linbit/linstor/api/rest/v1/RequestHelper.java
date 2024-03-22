@@ -249,6 +249,7 @@ public class RequestHelper
         }
         catch (ApiRcException exc)
         {
+            errorReporter.logError(exc.getMessage());
             ret = ApiCallRcRestUtils.toResponse(exc.getApiCallRc(), Response.Status.INTERNAL_SERVER_ERROR);
         }
         catch (Throwable exc)
@@ -308,6 +309,7 @@ public class RequestHelper
                     {
                         if (exc.getApiCallRc().allSkipErrorReport())
                         {
+                            errorReporter.logError(exc.getMessage());
                             apiCallRc.addEntry(
                                 ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_UNKNOWN_ERROR, exc.getMessage()));
                         }
