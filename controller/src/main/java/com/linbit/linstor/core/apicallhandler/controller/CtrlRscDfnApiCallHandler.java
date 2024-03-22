@@ -308,6 +308,7 @@ public class CtrlRscDfnApiCallHandler
             {
                 ctrlTransactionHelper.commit();
             }
+            errorReporter.logInfo("Resource definition created %s", rscNameStr);
 
             for (VolumeDefinition vlmDfn : createdVlmDfns)
             {
@@ -581,6 +582,8 @@ public class CtrlRscDfnApiCallHandler
             }
 
             ctrlTransactionHelper.commit();
+
+            errorReporter.logInfo("Resource definition modified %s/%s", rscNameStr, notifyStlts);
 
             responseConverter.addWithOp(
                 apiCallRcs, context,
