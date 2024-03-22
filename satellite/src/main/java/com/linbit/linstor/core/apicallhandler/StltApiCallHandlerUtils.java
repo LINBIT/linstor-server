@@ -278,7 +278,7 @@ public class StltApiCallHandlerUtils
         return getSpaceInfo(storPool -> storPool.getDeviceProviderKind().usesThinProvisioning() == thin);
     }
 
-    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getSpaceInfo(Predicate<StorPool> shouldIncludeSpTestRef)
+    private Map<StorPool, Either<SpaceInfo, ApiRcException>> getSpaceInfo(Predicate<StorPool> shouldIncludeSpTestRef)
     {
         Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceMap = new HashMap<>();
 
@@ -316,16 +316,21 @@ public class StltApiCallHandlerUtils
         Either<SpaceInfo, ApiRcException> result;
         try
         {
-            result = Either.left(getStoragePoolSpaceInfo(storPool, false));
+            var spaceInfo = getStoragePoolSpaceInfo(storPool, false);
+            errorReporter.logInfo("SpaceInfo: %s -> %d/%d",
+                storPool.getName(), spaceInfo.freeCapacity, spaceInfo.totalCapacity);
+            result = Either.left(spaceInfo);
         }
         catch (StorageException storageExc)
         {
-            result = Either.right(new ApiRcException(ApiCallRcImpl
+            var apiRcExc = new ApiRcException(ApiCallRcImpl
                 .entryBuilder(ApiConsts.FAIL_UNKNOWN_ERROR, "Failed to query free space from storage pool")
                 .setCause(storageExc.getMessage())
                 .build(),
                 storageExc
-            ));
+            );
+            errorReporter.reportError(apiRcExc);
+            result = Either.right(apiRcExc);
         }
         return result;
     }

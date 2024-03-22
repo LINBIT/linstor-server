@@ -2001,7 +2001,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
             spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
                 spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
-                apiRcException -> errLog.reportError(apiRcException.getCause())
+                apiRcException -> {} // reported while creating
             ));
 
             ctrlPeer.sendMessage(

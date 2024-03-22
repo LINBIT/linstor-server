@@ -347,7 +347,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     }
                     else
                     {
-                        errorReporter.logTrace("Cloning in process for %s", lvId);
+                        errorReporter.logDebug("Cloning in process for %s", lvId);
                     }
                 }
                 else
@@ -476,6 +476,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         final Resource srcRsc = getResource(vlmData, srcRscName);
 
         createLvWithCopyImpl(vlmData, srcRsc);
+        errorReporter.logInfo("Lv copy created %s/%s", vlmData.getIdentifier(), srcRscName);
     }
 
     private void createVolumes(
@@ -495,7 +496,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             boolean snapRestore = sourceLvId != null && sourceSnapshotName != null;
             if (snapRestore)
             {
-                errorReporter.logTrace("Restoring from lv: %s, snapshot: %s", sourceLvId, sourceSnapshotName);
+                errorReporter.logDebug("Restoring from lv: %s, snapshot: %s", sourceLvId, sourceSnapshotName);
 
                 SnapshotName snapshotName;
                 try
@@ -1375,22 +1376,24 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         String snapName = snapVlm.getSnapshotName().displayValue;
         String rscName = snapVlm.getResourceName().displayValue;
         int vlmNr = snapVlm.getVolumeNumber().value;
+        final String msg = String.format(
+            "Snapshot [%s] with name '%s' of resource '%s', volume number %d deleted.",
+            typeDescr,
+            snapName,
+            rscName,
+            vlmNr
+        );
         apiCallRc.addEntry(
             ApiCallRcImpl.entryBuilder(
                 ApiConsts.MASK_SNAPSHOT | ApiConsts.DELETED,
-                String.format(
-                    "Snapshot [%s] with name '%s' of resource '%s', volume number %d deleted.",
-                    typeDescr,
-                    snapName,
-                    rscName,
-                    vlmNr
-                )
+                msg
             )
             .putObjRef(ApiConsts.KEY_SNAPSHOT, snapName)
             .putObjRef(ApiConsts.KEY_RSC_DFN, rscName)
             .putObjRef(ApiConsts.KEY_VLM_NR, Integer.toString(vlmNr))
             .build()
         );
+        errorReporter.logInfo(msg);
     }
 
     private String computeRestoreFromResourceName(LAYER_DATA vlmData)

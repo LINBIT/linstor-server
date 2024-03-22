@@ -515,6 +515,8 @@ public class DrbdLayer implements DeviceLayer
                                 VolumeUtils.isVolumeThinlyBacked(drbdVlmData, false),
                                 null
                             );
+                            errorReporter.logInfo("DRBD resized %s/%d",
+                                drbdRscData.getSuffixedResourceName(), drbdVlmData.getVlmNr().getValue());
                         }
                     }
 
@@ -592,8 +594,8 @@ public class DrbdLayer implements DeviceLayer
                                                     }
                                                     else
                                                     {
-                                                        // ignore the exceptions, the peer does not seem to exist any
-                                                        // more
+                                                        // ignore the exceptions, the peer does not seem to exist
+                                                        // anymore
                                                         errorReporter.logDebug(
                                                             "del-peer and forget-peer failed, but we also failed " +
                                                                 "to find the specific peer. noop"
@@ -1107,6 +1109,9 @@ public class DrbdLayer implements DeviceLayer
                 drbdVlmData,
                 drbdVlmData.getRscLayerObject().getPeerSlots()
             );
+            errorReporter.logInfo("DRBD meta data created for %s/%d",
+                drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                drbdVlmData.getVlmNr().getValue());
             drbdVlmData.setMetaDataIsNew(true);
 
             if (DrbdLayerUtils.skipInitSync(workerCtx, drbdVlmData))
@@ -1130,6 +1135,9 @@ public class DrbdLayer implements DeviceLayer
                     !drbdVlmData.getRscLayerObject().getFlags().isSet(workerCtx, DrbdRscFlags.INITIALIZED),
                     internal
                 );
+                errorReporter.logInfo("DRBD skipping initial sync for %s/%s",
+                    drbdVlmData.getRscLayerObject().getSuffixedResourceName(),
+                    drbdVlmData.getVlmNr().getValue());
             }
         }
         catch (ExtCmdFailedException exc)
@@ -1539,6 +1547,7 @@ public class DrbdLayer implements DeviceLayer
                     ioExc
                 );
             }
+            errorReporter.logInfo("DRBD regenerated resource file: %s", resFile);
         }
         return fileWritten;
     }

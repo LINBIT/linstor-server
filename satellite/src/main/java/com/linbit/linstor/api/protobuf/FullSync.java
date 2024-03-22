@@ -135,17 +135,21 @@ public class FullSync implements ApiCall
         switch (success)
         {
             case FAIL_MISSING_REQUIRED_EXT_TOOLS:
+                errorReporter.logError("FullSync error: missing required ext tools %d", fullSyncId);
                 builder.setFullSyncResult(
                     MsgIntFullSyncResponseOuterClass.FullSyncResult.FAIL_MISSING_REQUIRED_EXT_TOOLS
                 );
                 break;
             case FAIL_UNKNOWN:
+                errorReporter.logError("FullSync error: unknown %d", fullSyncId);
                 builder.setFullSyncResult(MsgIntFullSyncResponseOuterClass.FullSyncResult.FAIL_UNKNOWN);
                 break;
             case SUCCESS:
+                errorReporter.logInfo("FullSync successful %d", fullSyncId);
                 builder.setFullSyncResult(MsgIntFullSyncResponseOuterClass.FullSyncResult.SUCCESS);
                 break;
             default:
+                errorReporter.logError("FullSync error: unknown case %s/%d" , success, fullSyncId);
                 builder.setFullSyncResult(MsgIntFullSyncResponseOuterClass.FullSyncResult.FAIL_UNKNOWN);
                 break;
 
@@ -166,6 +170,7 @@ public class FullSync implements ApiCall
                 builder.addFreeSpace(ProtoCtrlStltSerializerBuilder.buildStorPoolFreeSpace(entry).build());
             }
         }
+        errorReporter.logInfo("FullSync sending response %d", fullSyncId);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         builder.build().writeDelimitedTo(baos);
         controllerPeerProvider.get().sendMessage(
