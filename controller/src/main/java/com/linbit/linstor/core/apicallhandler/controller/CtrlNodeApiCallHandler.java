@@ -333,6 +333,9 @@ public class CtrlNodeApiCallHandler
                     ctrlTransactionHelper.commit();
                 }
 
+                errorReporter.logInfo("Node created %s/%s/%s",
+                    nodeNameStr, netIfs.get(0).getAddress(), nodeTypeStr);
+
                 responseConverter.addWithOp(responses, context,
                     ApiSuccessUtils.defaultRegisteredEntry(node.getUuid(), getNodeDescriptionInline(node)));
 
