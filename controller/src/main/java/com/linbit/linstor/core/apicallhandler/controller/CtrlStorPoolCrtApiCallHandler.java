@@ -24,6 +24,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -48,6 +49,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlStorPoolCrtApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final ScopeRunner scopeRunner;
     private final CtrlTransactionHelper ctrlTransactionHelper;
@@ -74,7 +76,8 @@ public class CtrlStorPoolCrtApiCallHandler
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ExosEnclosurePingTask exosPingTaskRef,
-        CtrlApiDataLoader dataLoaderRef
+        CtrlApiDataLoader dataLoaderRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -89,6 +92,7 @@ public class CtrlStorPoolCrtApiCallHandler
         peerAccCtx = peerAccCtxRef;
         exosPingTask = exosPingTaskRef;
         dataLoader = dataLoaderRef;
+        errorReporter = errorReporterRef;
     }
 
     public Flux<ApiCallRc> createStorPool(
@@ -276,6 +280,9 @@ public class CtrlStorPoolCrtApiCallHandler
             updateStorPoolDfnMap(storPool);
 
             ctrlTransactionHelper.commit();
+
+            errorReporter.logInfo("Storage pool created %s/%s/%s",
+                nodeNameStr, storPoolNameStr, deviceProviderKindRef);
 
             Flux<ApiCallRc> updateResponses = ctrlSatelliteUpdateCaller
                 .updateSatellite(storPool)
