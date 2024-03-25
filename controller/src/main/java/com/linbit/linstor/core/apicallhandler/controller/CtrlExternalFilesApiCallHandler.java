@@ -290,7 +290,7 @@ public class CtrlExternalFilesApiCallHandler
             flux = Flux.<ApiCallRc>just(
                 ApiCallRcImpl.singleApiCallRc(
                     ApiConsts.WARN_NOT_FOUND,
-                    extFileDescription + " not found."
+                    extFileDescription + " not found in LINSTOR database."
                 )
             );
         }

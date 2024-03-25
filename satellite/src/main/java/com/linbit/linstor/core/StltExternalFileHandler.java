@@ -265,7 +265,7 @@ public class StltExternalFileHandler
         }
         try
         {
-            errorReporter.logTrace("Writing into temporary external file: %s", tmpFile.toString());
+            errorReporter.logDebug("Writing into temporary external file: %s", tmpFile.toString());
             Files.write(tmpFile, externalFile.getContent(wrkCtx), StandardOpenOption.WRITE);
         }
         catch (AccessDeniedException exc)
@@ -279,7 +279,7 @@ public class StltExternalFileHandler
 
         try
         {
-            errorReporter.logTrace(
+            errorReporter.logDebug(
                 "Moving temporary file (%s) to its destination: %s",
                 tmpFile.toString(),
                 path.toString()
@@ -293,7 +293,7 @@ public class StltExternalFileHandler
                 exc
             );
         }
-        errorReporter.logDebug("External file %s written successfully", path.toString());
+        errorReporter.logInfo("External file %s written successfully", path.toString());
         externalFile.setAlreadyWritten(true);
     }
 
@@ -309,6 +309,7 @@ public class StltExternalFileHandler
             {
                 extFile.setAlreadyWritten(false);
             }
+            errorReporter.logInfo("External file %s deleted.", extFileNameRef);
         }
         catch (IOException exc)
         {
