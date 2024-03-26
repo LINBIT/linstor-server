@@ -8,11 +8,13 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.CtrlRscAutoHelper.AutoHelperContext;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
+import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.objects.Node;
@@ -42,6 +44,7 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -62,6 +65,7 @@ public class CtrlRscDeleteApiHelper
     private final LockGuardFactory lockGuardFactory;
     private final ScheduleBackupService scheduleService;
     private final RetryResourcesTask retryRscTask;
+    private final Provider<CtrlRscAutoHelper> rscAutoHelperProvider;
 
     @Inject
     public CtrlRscDeleteApiHelper(
@@ -74,7 +78,8 @@ public class CtrlRscDeleteApiHelper
         LockGuardFactory lockGuardFactoryRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScheduleBackupService scheduleServiceRef,
-        RetryResourcesTask retryRscTaskRef
+        RetryResourcesTask retryRscTaskRef,
+        Provider<CtrlRscAutoHelper> rscAutoHelperProviderRef
     )
     {
         errorReporter = errorReporterRef;
@@ -87,6 +92,7 @@ public class CtrlRscDeleteApiHelper
         peerAccCtx = peerAccCtxRef;
         scheduleService = scheduleServiceRef;
         retryRscTask = retryRscTaskRef;
+        rscAutoHelperProvider = rscAutoHelperProviderRef;
     }
 
     public void markDeletedWithVolumes(Resource rsc)
@@ -148,17 +154,25 @@ public class CtrlRscDeleteApiHelper
     }
 
     // Restart from here when connection established and DELETE flag set
-    public Flux<ApiCallRc> updateSatellitesForResourceDelete(Set<NodeName> nodeNames, ResourceName rscName)
+    public Flux<ApiCallRc> updateSatellitesForResourceDelete(
+        ResponseContext contextRef,
+        Set<NodeName> nodeNames,
+        ResourceName rscName
+    )
     {
         return scopeRunner
             .fluxInTransactionlessScope(
                 "Update for resource deletion",
                 lockGuardFactory.buildDeferred(LockType.READ, LockObj.RSC_DFN_MAP),
-                () -> updateSatellitesInScope(nodeNames, rscName)
+                () -> updateSatellitesInScope(contextRef, nodeNames, rscName)
             );
     }
 
-    private Flux<ApiCallRc> updateSatellitesInScope(Set<NodeName> nodeNames, ResourceName rscName)
+    private Flux<ApiCallRc> updateSatellitesInScope(
+        ResponseContext contextRef,
+        Set<NodeName> nodeNames,
+        ResourceName rscName
+    )
     {
         ResourceDefinition rscDfn = null;
         for (NodeName nodeName : nodeNames)
@@ -174,7 +188,7 @@ public class CtrlRscDeleteApiHelper
         Flux<ApiCallRc> flux;
         if (rscDfn != null)
         {
-            Flux<ApiCallRc> nextStep = deleteData(nodeNames, rscName);
+            Flux<ApiCallRc> nextStep = deleteData(contextRef, nodeNames, rscName);
             flux = ctrlSatelliteUpdateCaller.updateSatellites(rscDfn, nextStep)
                 .transform(updateResponses -> CtrlResponseUtils.combineResponses(
                     errorReporter,
@@ -195,17 +209,21 @@ public class CtrlRscDeleteApiHelper
         return flux;
     }
 
-    public Flux<ApiCallRc> deleteData(Set<NodeName> nodeNames, ResourceName rscName)
+    public Flux<ApiCallRc> deleteData(ResponseContext contextRef, Set<NodeName> nodeNames, ResourceName rscName)
     {
         return scopeRunner
             .fluxInTransactionalScope(
                 "Delete resource data",
                 lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.RSC_DFN_MAP),
-                () -> deleteDataInTransaction(nodeNames, rscName)
+                () -> deleteDataInTransaction(contextRef, nodeNames, rscName)
             );
     }
 
-    private Flux<ApiCallRc> deleteDataInTransaction(Set<NodeName> nodeNames, ResourceName rscName)
+    private Flux<ApiCallRc> deleteDataInTransaction(
+        ResponseContext contextRef,
+        Set<NodeName> nodeNames,
+        ResourceName rscName
+    )
     {
         List<Resource> rscList = new ArrayList<>();
         for (NodeName nodeName : nodeNames)
@@ -226,6 +244,7 @@ public class CtrlRscDeleteApiHelper
         else
         {
             ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
+            Set<ResourceDefinition> rscDfnsToCheck = new HashSet<>();
             for (Resource rsc : rscList)
             {
                 UUID rscUuid = rsc.getUuid();
@@ -242,6 +261,7 @@ public class CtrlRscDeleteApiHelper
                     );
                     removePropPrimarySetPrivileged(rscDfn);
                 }
+                rscDfnsToCheck.add(rscDfn);
 
                 apiCallRc.addEntry(
                     ApiCallRcImpl
@@ -250,9 +270,24 @@ public class CtrlRscDeleteApiHelper
                         .build()
                 );
             }
+
+            Flux<ApiCallRc> autoFlux = Flux.empty();
+            for (ResourceDefinition rscDfn : rscDfnsToCheck)
+            {
+                // check auto-helpers if we need a tiebreaker or something since we just deleted a resource
+                autoFlux = autoFlux.concatWith(
+                    rscAutoHelperProvider.get()
+                        .manage(
+                            new AutoHelperContext(apiCallRc, contextRef, rscDfn)
+                        )
+                        .getFlux()
+                );
+            }
+
             ctrlTransactionHelper.commit();
 
-            flux = Flux.just(apiCallRc);
+            flux = Flux.<ApiCallRc>just(apiCallRc)
+                .concatWith(autoFlux);
         }
 
         return flux;

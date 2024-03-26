@@ -219,6 +219,11 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     public Collection<Flux<ApiCallRc>> resourceConnected(Resource rsc)
         throws AccessDeniedException
     {
+        ResponseContext context = makeRscContext(
+            ApiOperation.makeModifyOperation(),
+            rsc.getNode().getName().displayValue,
+            rsc.getResourceDefinition().getName().displayValue
+        );
         String migrateFromNodeNameStr = getPropsPrivileged(rsc).map().get(ApiConsts.KEY_RSC_MIGRATE_FROM);
 
         // Only restart the migration watch if adding the disk is complete
@@ -227,6 +232,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         return migrateFromNodeNameStr == null || !diskAddRequested ?
             Collections.emptySet() :
             Collections.singleton(Flux.from(waitForMigration(
+                context,
                 rsc.getNode().getName(),
                 rsc.getResourceDefinition().getName(),
                 ctrlApiDataLoader.loadNode(migrateFromNodeNameStr, true).getName()
@@ -995,6 +1001,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         else
         {
             migrationFlux = waitForMigration(
+                context,
                 nodeName,
                 rscName,
                 ctrlApiDataLoader.loadNode(migrateFromNodeNameStr, true).getName()
@@ -1069,6 +1076,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
     }
 
     Publisher<ApiCallRc> waitForMigration(
+        ResponseContext contextRef,
         NodeName nodeName,
         ResourceName rscName,
         NodeName migrateFromNodeName
@@ -1095,13 +1103,14 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
                 .thenMany(scopeRunner.fluxInTransactionalScope(
                     "Delete after migrate",
                     lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.RSC_DFN_MAP),
-                    () -> startDeletionInTransaction(nodeName, rscName, migrateFromNodeName)
+                    () -> startDeletionInTransaction(contextRef, nodeName, rscName, migrateFromNodeName)
                 ))
                 .onErrorResume(PeerNotConnectedException.class, ignored -> Flux.empty())
         ));
     }
 
     private Flux<ApiCallRc> startDeletionInTransaction(
+        ResponseContext contextRef,
         NodeName nodeName,
         ResourceName rscName,
         NodeName migrateFromNodeName
@@ -1121,6 +1130,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         {
             ctrlRscDeleteApiHelper.markDeletedWithVolumes(migrateFromRsc);
             deleteFlux = ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(
+                contextRef,
                 Collections.singleton(migrateFromNodeName),
                 rscName
             );

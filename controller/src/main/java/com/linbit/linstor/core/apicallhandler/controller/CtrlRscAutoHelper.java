@@ -196,6 +196,7 @@ public class CtrlRscAutoHelper
         {
             ctx.additionalFluxList.add(
                 rscDelHelper.updateSatellitesForResourceDelete(
+                    ctx.responseContext,
                     ctx.nodeNamesForDelete,
                     ctx.rscDfn.getName()
                 )

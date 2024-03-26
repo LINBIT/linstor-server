@@ -1552,6 +1552,11 @@ public class CtrlNodeApiCallHandler
 
     public Flux<ApiCallRc> evacuateNode(String nodeNameRef)
     {
+        ResponseContext context = makeNodeContext(
+            ApiOperation.makeModifyOperation(),
+            nodeNameRef
+        );
+
         return freeCapacityFetcher.fetchThinFreeCapacities(Collections.emptySet()).flatMapMany(
             // fetchThinFreeCapacities also updates the freeSpaceManager. we can safely ignore
             // the freeCapacities parameter here
@@ -1561,13 +1566,13 @@ public class CtrlNodeApiCallHandler
                 () -> scopeRunner.fluxInTransactionalScope(
                     "Evacuate node (" + nodeNameRef + "): Find new storage pools",
                     lockGuardFactory.createDeferred().write(LockObj.NODES_MAP).build(),
-                    () -> evacuateNodeInTrasaction(nodeNameRef)
+                    () -> evacuateNodeInTrasaction(context, nodeNameRef)
                 )
             )
         );
     }
 
-    private Flux<ApiCallRc> evacuateNodeInTrasaction(String nodeNameEvacuateSourceStrRef)
+    private Flux<ApiCallRc> evacuateNodeInTrasaction(ResponseContext contextRef, String nodeNameEvacuateSourceStrRef)
     {
         Map<String, String> objRefs = new TreeMap<>();
         objRefs.put(ApiConsts.KEY_NODE, nodeNameEvacuateSourceStrRef);
@@ -1702,6 +1707,7 @@ public class CtrlNodeApiCallHandler
                             fluxList.add(
                                 createOrToggleDiskFlux.concatWith(
                                     rscToggleDiskApiCallHandler.waitForMigration(
+                                        contextRef,
                                         nodeNameEvacTarget,
                                         rscName,
                                         nodeNameEvacuateSource

@@ -116,7 +116,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     @Override
     public Collection<Flux<ApiCallRc>> resourceDefinitionConnected(
         ResourceDefinition rscDfn,
-        ResponseContext context
+        ResponseContext contextRef
     )
         throws AccessDeniedException
     {
@@ -141,7 +141,9 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         {
             fluxes.add(
                 ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(
-                    nodeNamesToDelete, rscDfn.getName()
+                    contextRef,
+                    nodeNamesToDelete,
+                    rscDfn.getName()
                 )
             );
         }
@@ -379,7 +381,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
 
                 ResourceName rscName = rsc.getResourceDefinition().getName();
                 flux = flux.concatWith(
-                    ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(nodeNamesToDelete, rscName)
+                    ctrlRscDeleteApiHelper.updateSatellitesForResourceDelete(context, nodeNamesToDelete, rscName)
                 );
             }
             else
