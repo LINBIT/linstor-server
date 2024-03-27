@@ -29,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed K8s migrations to use correct generated DB table instances
 - Deleted invalid SpaceHistory entries from K8s.
 - Fixed left-over tiebreaker after evacuation of sinlge DRBD resource
+- Fixed negative result of an allocation granularity calculation
+- Fixed infinite loop and limited range of power-of-2 calculations
+- Workaround for connections where the attached peer object is missing
 
 ## [1.26.2] - 2024-02-28
 
