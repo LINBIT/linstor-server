@@ -508,6 +508,23 @@ public class CtrlRscDfnApiCallHandler
                 Map<String, PropertyChangedListener> propsChangedListeners = propsChangeListenerBuilder.get()
                     .buildPropsChangedListeners(peerAccCtx.get(), rscDfn, specialPropFluxes);
 
+                // ExactSize check
+                @Nullable String exactSizeValue = overrideProps.get(
+                    ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE
+                );
+                if (exactSizeValue != null && Boolean.parseBoolean(exactSizeValue) && rscDfn.getResourceCount() > 0)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_INVLD_PROP,
+                            "The property '" + ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE +
+                                "' must not be set to True when resources are deployed in the given " +
+                                "resource-definition.",
+                            true
+                        )
+                    );
+                }
+
                 notifyStlts = ctrlPropsHelper.fillProperties(
                     apiCallRcs,
                     LinStorObject.RESOURCE_DEFINITION,

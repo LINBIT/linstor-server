@@ -272,7 +272,8 @@ public class ResourceGroups
                 rscGrpSpwn.partial,
                 rscGrpSpwn.definitions_only,
                 parsePeerSlots(rscGrpSpwn.peer_slots),
-                rscGrpSpwn.volume_passphrases
+                rscGrpSpwn.volume_passphrases,
+                rscGrpSpwn.resource_definition_props
             )
                 .contextWrite(requestHelper.createContext(ApiConsts.API_SPAWN_RSC_DFN, request));
 

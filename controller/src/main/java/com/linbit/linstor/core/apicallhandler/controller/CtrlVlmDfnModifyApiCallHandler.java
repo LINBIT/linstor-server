@@ -62,6 +62,7 @@ import com.linbit.utils.Pair;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.getVlmDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmDfnApiCallHandler.makeVlmDfnContext;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -96,6 +97,8 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("uuuu-MM-dd HH:mm:ss");
     private static final long EBS_DFLT_COOLDOWN_PERIOD_IN_SEC = TimeUnit.HOURS.toSeconds(6) +
         TimeUnit.MINUTES.toSeconds(5); // 6 hours and 5 min in sec
+    private static final String PROP_KEY_RSC_DNF_EXACT_SIZE =
+        ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE;
 
     private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
@@ -326,6 +329,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
             {
                 ensureAllStorPoolsHaveEnoughFreeSpace(vlmDfn, diffSize);
             }
+            ensureExactSizeIsUnset(vlmDfn);
 
             updateForResize = true;
             notifyStlts = true;
@@ -775,6 +779,41 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
         catch (AccessDeniedException exc)
         {
             throw new ImplementationError(exc);
+        }
+    }
+
+    /**
+     * Throws an ApiRcException if the given vlmDfn's rscDfn has the "DrbdOption/ExactSize" property set to true
+     *
+     * @param vlmDfnRef
+     */
+    private void ensureExactSizeIsUnset(VolumeDefinition vlmDfnRef)
+    {
+        try
+        {
+            Props rscDfnProps = vlmDfnRef.getResourceDefinition().getProps(peerAccCtx.get());
+            @Nullable String exactSize = rscDfnProps.getProp(
+                ApiConsts.KEY_DRBD_EXACT_SIZE,
+                ApiConsts.NAMESPC_DRBD_OPTIONS
+            );
+            if (exactSize != null && Boolean.parseBoolean(exactSize))
+            {
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_INVLD_PROP,
+                        "Volume definition must not be resized while the resource-definition has the property '' set!",
+                        true
+                    )
+                );
+            }
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "Checking resource-defintion if property '" + PROP_KEY_RSC_DNF_EXACT_SIZE + "' is set",
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
         }
     }
 

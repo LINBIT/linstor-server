@@ -10,6 +10,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
   - Added volume_passphrases to ResourceDefinitionCloneRequest
   - Added passphrase to volume-definition create
   - Added volume definition PUT /encryption-passphrase endpoint
+  - Added initial resource definition properties to spawn command
 
 ## [1.21.0]
   - Removed everything OpenFlex related (entry-points, schemas, etc..)

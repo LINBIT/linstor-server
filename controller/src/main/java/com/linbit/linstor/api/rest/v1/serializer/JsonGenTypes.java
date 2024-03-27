@@ -747,6 +747,7 @@ public class JsonGenTypes
          * For volumes with encryption's, you can provide your own passphrases here.
          */
         public List<String> volume_passphrases = Collections.emptyList();
+        public Map<String, String> resource_definition_props = Collections.emptyMap();
     }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)

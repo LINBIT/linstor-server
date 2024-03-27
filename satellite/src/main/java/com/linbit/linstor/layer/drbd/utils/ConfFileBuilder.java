@@ -43,6 +43,8 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -964,6 +966,7 @@ public class ConfFileBuilder
 
                 ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
                 ResourceGroup rscGrp = rscDfn.getResourceGroup();
+                Props rscDfnProps = rscDfn.getProps(accCtx);
                 PriorityProps vlmPrioProps = new PriorityProps()
                     .addProps(vlmData.getVolume().getProps(accCtx), "V (" + rscDfn.getName() + "/" + vlmNr.value + ")")
                     .addProps(vlmData.getVolume().getAbsResource().getProps(accCtx), "R (" + rscDfn.getName() + ")")
@@ -975,7 +978,7 @@ public class ConfFileBuilder
                         rscGrp.getVolumeGroupProps(accCtx, vlmNr),
                         "VG (" + rscGrp.getName() + "/" + vlmNr.value + ")"
                     )
-                    .addProps(rscDfn.getProps(accCtx), "RD (" + rscDfn.getName() + ")")
+                    .addProps(rscDfnProps, "RD (" + rscDfn.getName() + ")")
                     .addProps(rscGrp.getProps(accCtx), "RG (" + rscGrp.getName() + ")")
                     .addProps(
                         vlmData.getVolume().getAbsResource().getNode().getProps(accCtx),
@@ -994,6 +997,16 @@ public class ConfFileBuilder
                             new ConfFileBuilderAutoRules(accCtx, vlmData),
                             isPeerRsc
                         );
+
+                        // deliberately not asking the prio-props here, just the RD props
+                        @Nullable String exactSize = rscDfnProps.getProp(
+                            ApiConsts.KEY_DRBD_EXACT_SIZE,
+                            ApiConsts.NAMESPC_DRBD_OPTIONS
+                        );
+                        if (exactSize != null && Boolean.parseBoolean(exactSize))
+                        {
+                            appendLine("size    %sk;", Long.toString(vlmDfn.getVolumeSize(localAccCtx)));
+                        }
                     }
                 }
 

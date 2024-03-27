@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow users to change the passphrase for a luks volume definition
 - Backup ship, restore and scheduled backups now have a --force-restore option
 - Added more info logging
+- Added "DrbdOptions/ExactSize" for migration purposes
 
 ### Changed
 

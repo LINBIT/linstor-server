@@ -515,6 +515,22 @@ public class CtrlRscGrpApiCallHandler
                 rscGrpData.setDescription(peerCtx, descriptionRef);
             }
 
+            if (overrideProps.containsKey(ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE))
+            {
+                // currently we can only whitelist props for RD _and_ RG combined. in this case however, we only want to
+                // allow this property on RD level.
+                // FIXME: this should change with the properties rework
+                throw new ApiRcException(
+                    ApiCallRcImpl
+                        .entryBuilder(ApiConsts.FAIL_INVLD_PROP, "Invalid property key")
+                        .setCause(
+                            "The key '" + ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_EXACT_SIZE +
+                                "' is not whitelisted."
+                        )
+                        .build()
+                );
+            }
+
             if (!overrideProps.isEmpty() || !deletePropKeysRef.isEmpty() || !deleteNamespacesRef.isEmpty())
             {
                 List<String> prefixesIgnoringWhitelistCheck = new ArrayList<>();
@@ -896,7 +912,8 @@ public class CtrlRscGrpApiCallHandler
         boolean partialRef,
         boolean definitionsOnlyRef,
         @Nullable Short peerSlotsRef,
-        @Nullable List<String> volumePassphrases
+        @Nullable List<String> volumePassphrases,
+        Map<String, String> rscDfnPropsRef
     )
     {
         Map<String, String> objRefs = new TreeMap<>();
@@ -930,6 +947,7 @@ public class CtrlRscGrpApiCallHandler
                     definitionsOnlyRef,
                     peerSlotsRef,
                     volumePassphrases,
+                    rscDfnPropsRef,
                     context
                 )
             )
@@ -946,6 +964,7 @@ public class CtrlRscGrpApiCallHandler
         boolean definitionsOnlyRef,
         @Nullable Short peerSlotsRef,
         @Nullable List<String> volumePassphrases,
+        Map<String, String> rscDfnPropsRef,
         ResponseContext contextRef
     )
     {
@@ -1053,7 +1072,7 @@ public class CtrlRscGrpApiCallHandler
             ResourceDefinition rscDfn = ctrlRscDfnApiCallHandler.createResourceDefinition(
                 rscDfnNameRef,
                 rscDfnExtNameRef,
-                Collections.emptyMap(),
+                rscDfnPropsRef,
                 vlmDfnCrtList,
                 layerStackStr,
                 layerPayload,
