@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed negative result of an allocation granularity calculation
 - Fixed infinite loop and limited range of power-of-2 calculations
 - Workaround for connections where the attached peer object is missing
+- Only show warnings of missing cgroup (v1) if the user actually tries to use it
 
 ## [1.26.2] - 2024-02-28
 

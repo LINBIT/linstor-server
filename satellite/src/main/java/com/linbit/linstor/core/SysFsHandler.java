@@ -32,6 +32,7 @@ import com.linbit.utils.ExceptionThrowingBiFunction;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.SPDK_PATH_PREFIX;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -144,16 +145,20 @@ public class SysFsHandler
             }
             else
             {
-                errorReporter.logWarning("%s does not exist. Skipping.", cfg.device);
-                apiCallRcRef.add(
-                    ApiCallRcImpl.simpleEntry(
-                        ApiConsts.WARN_NOT_FOUND,
-                        String.format("%s does not exist. Skipping QoS setting for resource: %s",
-                            cfg.device,
-                            rsc.getResourceDefinition().getName()
+                if (anyVlmDataHasKey(rsc.getLayerData(apiCtx), cfg))
+                {
+                    errorReporter.logWarning("%s does not exist. Skipping.", cfg.device);
+                    apiCallRcRef.add(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.WARN_NOT_FOUND,
+                            String.format(
+                                "%s does not exist. Skipping QoS setting for resource: %s",
+                                cfg.device,
+                                rsc.getResourceDefinition().getName()
+                            )
                         )
-                    )
-                );
+                    );
+                }
             }
         }
         if (!consumers.isEmpty())
@@ -216,19 +221,7 @@ public class SysFsHandler
                 AbsRscLayerObject<Resource> rscLayerObject = vlmData.getRscLayerObject();
                 if (rscLayerObject.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA))
                 {
-                    boolean isLowestLocalDevices = true;
-                    if (!vlmData.getRscLayerObject().getChildren().isEmpty())
-                    {
-                        VlmProviderObject<Resource> childVlmData = vlmData.getRscLayerObject()
-                            .getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
-                            .getVlmProviderObject(vlmData.getVlmNr());
-                        if (childVlmData != null &&
-                            childVlmData.getDevicePath() != null &&
-                            !childVlmData.getDevicePath().trim().isEmpty())
-                        {
-                            isLowestLocalDevices = false;
-                        }
-                    }
+                    boolean isLowestLocalDevice = isLowestLocalDevice(vlmData);
                     String identifier;
                     if (vlmData instanceof SpdkData)
                     {
@@ -239,13 +232,31 @@ public class SysFsHandler
                         identifier = getMajorMinor(vlmData);
                     }
 
-                    if (identifier != null && isLowestLocalDevices)
+                    if (identifier != null && isLowestLocalDevice)
                     {
                         consumer.exec(vlmData, identifier);
                     }
                 }
             }
         );
+    }
+
+    private boolean isLowestLocalDevice(VlmProviderObject<Resource> vlmData)
+    {
+        boolean isLowestLocalDevices = true;
+        if (!vlmData.getRscLayerObject().getChildren().isEmpty())
+        {
+            VlmProviderObject<Resource> childVlmData = vlmData.getRscLayerObject()
+                .getChildBySuffix(RscLayerSuffixes.SUFFIX_DATA)
+                .getVlmProviderObject(vlmData.getVlmNr());
+            if (childVlmData != null &&
+                childVlmData.getDevicePath() != null &&
+                !childVlmData.getDevicePath().trim().isEmpty())
+            {
+                isLowestLocalDevices = false;
+            }
+        }
+        return isLowestLocalDevices;
     }
 
     private void setThrottle(
@@ -255,27 +266,7 @@ public class SysFsHandler
     )
         throws AccessDeniedException, InvalidKeyException, StorageException
     {
-        Volume vlm = (Volume) vlmDataRef.getVolume();
-        Resource rsc = vlm.getAbsResource();
-        ResourceDefinition rscDfn = vlm.getResourceDefinition();
-        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
-        ResourceGroup rscGrp = rscDfn.getResourceGroup();
-        PriorityProps priorityProps = new PriorityProps();
-        priorityProps.addProps(vlm.getProps(apiCtx));
-        priorityProps.addProps(vlmDfn.getProps(apiCtx));
-        priorityProps.addProps(rscGrp.getVolumeGroupProps(apiCtx, vlmDfn.getVolumeNumber()));
-        priorityProps.addProps(rsc.getProps(apiCtx));
-        priorityProps.addProps(rscDfn.getProps(apiCtx));
-        priorityProps.addProps(rscGrp.getProps(apiCtx));
-
-        for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlm, apiCtx, true))
-        {
-            priorityProps.addProps(storPool.getProps(apiCtx));
-            priorityProps.addProps(storPool.getDefinition(apiCtx).getProps(apiCtx));
-        }
-
-        priorityProps.addProps(rsc.getNode().getProps(apiCtx));
-        priorityProps.addProps(satelliteProps);
+        PriorityProps priorityProps = getPrioProps(vlmDataRef);
 
         String apiKey = cfg.propKey;
         Map<String, String> deviceThrottleMap = cfg.map;
@@ -315,6 +306,32 @@ public class SysFsHandler
             }
             deviceThrottleMap.put(identifier, expectedThrottle);
         }
+    }
+
+    private PriorityProps getPrioProps(VlmProviderObject<Resource> vlmDataRef) throws AccessDeniedException
+    {
+        Volume vlm = (Volume) vlmDataRef.getVolume();
+        Resource rsc = vlm.getAbsResource();
+        ResourceDefinition rscDfn = vlm.getResourceDefinition();
+        VolumeDefinition vlmDfn = vlm.getVolumeDefinition();
+        ResourceGroup rscGrp = rscDfn.getResourceGroup();
+        PriorityProps priorityProps = new PriorityProps();
+        priorityProps.addProps(vlm.getProps(apiCtx));
+        priorityProps.addProps(vlmDfn.getProps(apiCtx));
+        priorityProps.addProps(rscGrp.getVolumeGroupProps(apiCtx, vlmDfn.getVolumeNumber()));
+        priorityProps.addProps(rsc.getProps(apiCtx));
+        priorityProps.addProps(rscDfn.getProps(apiCtx));
+        priorityProps.addProps(rscGrp.getProps(apiCtx));
+
+        for (StorPool storPool : LayerVlmUtils.getStorPoolSet(vlm, apiCtx, true))
+        {
+            priorityProps.addProps(storPool.getProps(apiCtx));
+            priorityProps.addProps(storPool.getDefinition(apiCtx).getProps(apiCtx));
+        }
+
+        priorityProps.addProps(rsc.getNode().getProps(apiCtx));
+        priorityProps.addProps(satelliteProps);
+        return priorityProps;
     }
 
     private String getMajorMinor(VlmProviderObject<Resource> vlmDataRef) throws AccessDeniedException
@@ -357,6 +374,41 @@ public class SysFsHandler
         {
             execForAllVlmData(childRscData, consumer);
         }
+    }
+
+    /**
+     * Returns true iff any given lowest volume data actually uses the sys-fs key from the given ThrottleConfig
+     */
+    private boolean anyVlmDataHasKey(AbsRscLayerObject<Resource> rscLayerDataRef, ThrottleConfig cfgRef)
+        throws AccessDeniedException
+    {
+        boolean ret = false;
+        boolean isDataPath = rscLayerDataRef.getResourceNameSuffix().equals(RscLayerSuffixes.SUFFIX_DATA);
+        for (VlmProviderObject<Resource> vlmData : rscLayerDataRef.getVlmLayerObjects().values())
+        {
+            if (isDataPath && isLowestLocalDevice(vlmData))
+            {
+                PriorityProps priorityProps = getPrioProps(vlmData);
+                @Nullable String expectedThrottle = priorityProps.getProp(
+                    cfgRef.propKey,
+                    ApiConsts.NAMESPC_SYS_FS
+                );
+                if (expectedThrottle != null)
+                {
+                    ret = true;
+                    break;
+                }
+            }
+        }
+        if (!ret)
+        {
+            for (AbsRscLayerObject<Resource> childRscData : rscLayerDataRef.getChildren())
+            {
+                ret = anyVlmDataHasKey(childRscData, cfgRef);
+            }
+        }
+
+        return ret;
     }
 
     private void setSysFs(String path, String data) throws StorageException
