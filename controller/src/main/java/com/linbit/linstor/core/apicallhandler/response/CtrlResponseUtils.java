@@ -112,7 +112,7 @@ public class CtrlResponseUtils
                         extraResponses = Flux.empty();
                     }
 
-                    return nodeResponses.thenMany(extraResponses);
+                    return nodeResponses.concatWith(extraResponses);
                 }
             )
             .transform(sources -> CtrlResponseUtils.mergeExtractingApiRcExceptions(logger, sources));
