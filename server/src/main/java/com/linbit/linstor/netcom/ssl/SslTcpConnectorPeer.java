@@ -1133,7 +1133,10 @@ public class SslTcpConnectorPeer extends TcpConnectorPeer
                         }
                     );
                     sslTaskThread.start();
-                    debugLog("executeSslTasks: Delegated task created, activeTaskCount == " + activeTaskCount);
+                    if (DEBUG_SSL_TASKS)
+                    {
+                        debugLog("executeSslTasks: Delegated task created, activeTaskCount == " + activeTaskCount);
+                    }
                 }
                 catch (Exception exc)
                 {
