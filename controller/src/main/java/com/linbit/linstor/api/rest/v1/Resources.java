@@ -1,5 +1,6 @@
 package com.linbit.linstor.api.rest.v1;
 
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.LinStorObject;
@@ -304,7 +305,9 @@ public class Resources
                     rscData.layer_list,
                     rscData.diskful
                 )
-                .contextWrite(requestHelper.createContext(ApiConsts.API_MAKE_RSC_AVAIL, request));
+                .contextWrite(requestHelper.createContext(ApiConsts.API_MAKE_RSC_AVAIL, request))
+                // TODO this should be moved into a context class
+                .contextWrite(reactor.util.context.Context.of(InternalApiConsts.ONLY_WARN_IF_OFFLINE, Boolean.TRUE));
 
             requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
         }

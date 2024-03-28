@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Default configuration directory for linstor-database utility (export-db and import-db) is now "/etc/linstor"
+- Make-available will no longer return an error if an involved node is offline (warn instead)
 
 ### Fixed
 

@@ -249,6 +249,9 @@ public class InternalApiConsts
     // storage
     public static final String ALLOCATION_GRANULARITY = "AllocationGranularity";
 
+    // temporary context key
+    public static final String ONLY_WARN_IF_OFFLINE = "onlyWarnIfOffline";
+
     private InternalApiConsts()
     {
     }

@@ -45,6 +45,7 @@ import java.util.UUID;
 
 import org.reactivestreams.Publisher;
 import reactor.core.publisher.Flux;
+import reactor.util.context.ContextView;
 import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
@@ -167,7 +168,26 @@ public class CtrlSatelliteUpdateCaller
         Publisher<ApiCallRc> nextStepRef
     )
     {
-        return updateSatellites(rscDfn, notConnectedError(), nextStepRef);
+        return Flux.deferContextual(cv -> updateSatellitesWithContext(rscDfn, nextStepRef, cv));
+    }
+
+    private Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateSatellitesWithContext(
+        ResourceDefinition rscDfn, Publisher<ApiCallRc> nextStepRef, ContextView cv)
+    {
+        NotConnectedHandler dfltNotConnectedHandler;
+        // TODO move this into context class
+        if (cv != null &&
+            cv.hasKey(InternalApiConsts.ONLY_WARN_IF_OFFLINE) &&
+            Boolean.TRUE.equals(cv.get(InternalApiConsts.ONLY_WARN_IF_OFFLINE)))
+        {
+            dfltNotConnectedHandler = notConnectedWarn();
+        }
+        else
+        {
+            dfltNotConnectedHandler = notConnectedError();
+        }
+
+        return updateSatellites(rscDfn, dfltNotConnectedHandler, nextStepRef);
     }
 
     /**
