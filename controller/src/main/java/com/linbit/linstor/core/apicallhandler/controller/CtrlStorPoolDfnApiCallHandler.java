@@ -28,6 +28,7 @@ import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionControllerFactory;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -56,6 +57,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 class CtrlStorPoolDfnApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
@@ -82,7 +84,8 @@ class CtrlStorPoolDfnApiCallHandler
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -97,6 +100,7 @@ class CtrlStorPoolDfnApiCallHandler
         peerAccCtx = peerAccCtxRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
+        errorReporter = errorReporterRef;
     }
 
     public ApiCallRc createStorPoolDfn(
@@ -216,7 +220,7 @@ class CtrlStorPoolDfnApiCallHandler
         }
 
         return Flux.just((ApiCallRc) apiCallRcs)
-            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(Flux.merge(fluxes)));
+            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(errorReporter, Flux.merge(fluxes)));
     }
 
     public ApiCallRc deleteStorPoolDfn(String storPoolNameStr)

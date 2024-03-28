@@ -105,7 +105,6 @@ public class CtrlResponseUtils
                                 "'" + rscName + "'"
                             )
                         )));
-                        logger.logInfo(apiCallRc.get(0).getMessage());
                         extraResponses = Flux.just(apiCallRc);
                     }
                     else
@@ -116,7 +115,32 @@ public class CtrlResponseUtils
                     return nodeResponses.thenMany(extraResponses);
                 }
             )
-            .transform(CtrlResponseUtils::mergeExtractingApiRcExceptions);
+            .transform(sources -> CtrlResponseUtils.mergeExtractingApiRcExceptions(logger, sources));
+    }
+
+    private static void logApiCallRc(ErrorReporter logger, ApiCallRc apiCallRc)
+    {
+        if (apiCallRc != null)
+        {
+            apiCallRc.forEach(rc -> {
+                String logMsg = String.format("ACR: %s", rc.getMessage());
+                switch (rc.getSeverity())
+                {
+                    case INFO:
+                        logger.logInfo(logMsg);
+                        break;
+                    case WARNING:
+                        logger.logWarning(logMsg);
+                        break;
+                    case ERROR:
+                        logger.logError(logMsg);
+                        break;
+                    default:
+                        logger.logInfo(logMsg);
+                        break;
+                }
+            });
+        }
     }
 
     /**
@@ -125,6 +149,7 @@ public class CtrlResponseUtils
      * If any errors were suppressed, a token {@link DelayedApiRcException} error is emitted when all sources complete.
      */
     public static Flux<ApiCallRc> mergeExtractingApiRcExceptions(
+        ErrorReporter logger,
         Publisher<? extends Publisher<ApiCallRc>> sources)
     {
         return Flux
@@ -153,6 +178,7 @@ public class CtrlResponseUtils
                                 {
                                     apiCallRc = signal.get();
                                 }
+                                logApiCallRc(logger, apiCallRc);
                                 return apiCallRc;
                             }
                         )

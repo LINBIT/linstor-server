@@ -373,7 +373,7 @@ public class CtrlVlmGrpApiCallHandler
         }
 
         return Flux.just((ApiCallRc) apiCallRcs)
-            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(Flux.merge(fluxes)))
+            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(errorReporter, Flux.merge(fluxes)))
             .concatWith(Flux.merge(specialPropFluxes));
     }
 

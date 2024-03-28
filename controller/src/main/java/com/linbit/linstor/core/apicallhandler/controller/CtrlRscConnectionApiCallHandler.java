@@ -23,6 +23,7 @@ import com.linbit.linstor.core.objects.NetInterface;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
@@ -49,6 +50,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 class CtrlRscConnectionApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final AccessContext apiCtx;
     private final CtrlTransactionHelper ctrlTransactionHelper;
     private final CtrlPropsHelper ctrlPropsHelper;
@@ -71,7 +73,8 @@ class CtrlRscConnectionApiCallHandler
         Provider<Peer> peerRef,
         @PeerContext Provider<AccessContext> peerAccCtxRef,
         ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef
+        LockGuardFactory lockGuardFactoryRef,
+        ErrorReporter errorReporterRef
     )
     {
         apiCtx = apiCtxRef;
@@ -84,6 +87,7 @@ class CtrlRscConnectionApiCallHandler
         peerAccCtx = peerAccCtxRef;
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
+        errorReporter = errorReporterRef;
     }
 
     public Flux<ApiCallRc> createResourceConnection(
@@ -127,7 +131,7 @@ class CtrlRscConnectionApiCallHandler
         }
 
         return Flux.just((ApiCallRc) apiCallRcs)
-            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(Flux.merge(fluxes)));
+            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(errorReporter, Flux.merge(fluxes)));
     }
 
     public Flux<ApiCallRc> modify(
@@ -272,7 +276,7 @@ class CtrlRscConnectionApiCallHandler
         }
 
         return Flux.just((ApiCallRc) apiCallRcs)
-            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(Flux.merge(fluxes)));
+            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(errorReporter, Flux.merge(fluxes)));
     }
 
     public Flux<ApiCallRc> deleteResourceConnection(
@@ -310,7 +314,7 @@ class CtrlRscConnectionApiCallHandler
         }
 
         return Flux.just((ApiCallRc) apiCallRcs)
-            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(Flux.merge(fluxes)));
+            .concatWith(CtrlResponseUtils.mergeExtractingApiRcExceptions(errorReporter, Flux.merge(fluxes)));
     }
 
     private Props getProps(ResourceConnection rscConn)
