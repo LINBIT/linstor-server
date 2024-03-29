@@ -479,6 +479,10 @@ public class CtrlRscCrtApiHelper
         if (isFlagSet(rsc, Resource.Flags.DELETE) || isFlagSet(rsc, Resource.Flags.DRBD_DELETE))
         {
             disableFlags(rsc, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE);
+            rsc.streamVolumes()
+                .forEach(
+                    vlm -> disableFlags(vlm, Volume.Flags.DELETE, Volume.Flags.DRBD_DELETE)
+                );
 
             ResourceDataUtils.recalculateVolatileRscData(layerDataHelper, rsc);
         }
@@ -1437,6 +1441,26 @@ public class CtrlRscCrtApiHelper
                 exc,
                 "disabling flags for resource",
                 ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private void disableFlags(Volume vlm, Volume.Flags... flags)
+    {
+        try
+        {
+            vlm.getFlags().disableFlags(peerAccCtx.get(), flags);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ApiAccessDeniedException(
+                exc,
+                "disabling flags for volume",
+                ApiConsts.FAIL_ACC_DENIED_VLM
             );
         }
         catch (DatabaseException exc)
