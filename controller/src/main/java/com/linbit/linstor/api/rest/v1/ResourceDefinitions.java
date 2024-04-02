@@ -1,6 +1,7 @@
 package com.linbit.linstor.api.rest.v1;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -214,7 +215,8 @@ public class ResourceDefinitions
             modifyData.drbd_peer_slots == null ? null : modifyData.drbd_peer_slots.shortValue(),
             modifyData.resource_group
         )
-        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request));
+        .contextWrite(requestHelper.createContext(ApiConsts.API_MOD_RSC_DFN, request))
+        .contextWrite(reactor.util.context.Context.of(InternalApiConsts.ONLY_WARN_IF_OFFLINE, Boolean.TRUE));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux, Response.Status.OK));
     }
