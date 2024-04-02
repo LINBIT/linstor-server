@@ -1,3 +1,51 @@
+linstor-server (1.27.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * openapi: move changelog into own markdown file
+  * encryption: Allow users to provide their own encryption keys for volumes
+  * rscdfninternal: fix clone method naming
+  * cloning/encrypted: Allow to specify a new passhrase after cloning
+  * vlmdfn: add modify luks passphrase api
+  * snapshot/rollback: fix rollback after first attempt
+  * controller: info log client responses from ResponseUtils
+  * ctrlapihandler: cleanup useless code
+  * ctrlerrorlist: add loginfo
+  * ctrlnode: add loginfo
+  * ctrlrscdfn: add loginfo
+  * ctrlstorpool: added loginfo
+  * ctrlvlmdfnmodify: added loginfo
+  * rest/reqhelper: log apircexceptions as errors
+  * satellite: add more info logging
+  * external-files: Improve error message and info logging
+  * response-utils: improve logging ACR messages
+  * response-utils: concat extra responses instead of replacing them
+  * make-available: only warn if an involved node is offline
+
+  [ Gabor Hernadi ]
+  * linstor-db: Changed dflt cfg path to "/etc/linstor"
+  * Backup,rst: Only reset RD props if we actually restore the backup
+  * AutoSnapTask: Fix rescheduling issue
+  * Backup,restore: Fix invalid negative number when restoring from old LINSTOR
+  * K8sTxMgr: Iterate over correct ALL_TABLES
+  * K8s,SpaceHistory: Fix incorrect dates
+  * Rsc,del: Rerun tiebreaker-check after migration
+  * SysFs: Only show missing cgroup warning if property is set
+  * ExactSize: Add property to render the size entry
+  * Rsc,undelete: Also remove flags from volume
+
+  [ Johanna Kucera ]
+  * Backup: Add force-restore
+  * Backups: allow multi-restore
+  * SnapDfn: don't allow empty snapDfns to exist
+
+  [ Robert Altnoeder ]
+  * Report SocketChannel without an attached Peer object
+  * Fix power-of-2 calculations
+  * Update MathUtilsTest
+  * Add change log entries
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Tue, 02 Apr 2024 07:10:58 +0000
+
 linstor-server (1.26.2-1) experimental; urgency=medium
 
   [ Gabor Hernadi ]
