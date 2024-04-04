@@ -112,7 +112,7 @@ RUN curl -fsSL "https://github.com/LINBIT/losetup-container/releases/download/${
   chmod +x /usr/local/sbin/losetup
 
 # package post inst config
-RUN lvmconfig --type current --mergedconfig --config 'activation { udev_rules = 0 monitoring = 0 } devices { global_filter = [ "r|^/dev/drbd|" ] }' > /etc/lvm/lvm.conf.new && mv /etc/lvm/lvm.conf.new /etc/lvm/lvm.conf
+RUN lvmconfig --type current --mergedconfig --config 'activation { udev_sync = 0 udev_rules = 0 monitoring = 0 } devices { global_filter = [ "r|^/dev/drbd|" ] }' > /etc/lvm/lvm.conf.new && mv /etc/lvm/lvm.conf.new /etc/lvm/lvm.conf
 # Ensure we log to files in containers, otherwise SOS reports won't show any logs at all
 RUN sed -i 's#<!-- <appender-ref ref="FILE" /> -->#<appender-ref ref="FILE" />#' /usr/share/linstor-server/lib/conf/logback.xml
 
