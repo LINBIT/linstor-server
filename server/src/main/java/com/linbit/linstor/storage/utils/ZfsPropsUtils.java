@@ -15,7 +15,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
-import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +32,7 @@ public class ZfsPropsUtils
     }
 
     public static long extractZfsVolBlockSizePrivileged(
-        VlmProviderObject<?> vlmDataRef,
+        ZfsData<?> vlmDataRef,
         @SystemContext AccessContext sysCtx,
         Props stltProps
     )

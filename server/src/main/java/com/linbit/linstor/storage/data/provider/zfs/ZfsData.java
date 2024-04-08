@@ -32,6 +32,10 @@ public class ZfsData<RSC extends AbsResource<RSC>>
     public static final State CREATED = new State(true, true, "Created");
     public static final State FAILED = new State(false, true, "Failed");
 
+    // not persisted, but serialized
+    // stlt source, ctrl read only
+    private @Nullable Long extentSize = null;
+
     // not persisted, not serialized, stlt only
     private transient String zpool = null;
     private transient boolean shippingInProgress;
@@ -100,6 +104,17 @@ public class ZfsData<RSC extends AbsResource<RSC>>
     public String getFullQualifiedLvIdentifier()
     {
         return zpool + File.separator + identifier;
+    }
+
+    public void setExtentSize(@Nullable Long extentSizeRef)
+    {
+        // snapshots do not report extentSizes
+        extentSize = extentSizeRef;
+    }
+
+    public @Nullable Long getExtentSize()
+    {
+        return extentSize;
     }
 
     @Override

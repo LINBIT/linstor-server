@@ -19,6 +19,7 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.SharedResourceManager;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
+import com.linbit.linstor.core.apicallhandler.controller.helpers.AllocationGranularityHelper;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.ResourceCreateCheck;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.utils.ResourceDataUtils;
@@ -129,6 +130,7 @@ public class CtrlRscCrtApiHelper
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
     private final Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandler;
+    private final AllocationGranularityHelper allocationGranularityHelper;
 
     @Inject
     CtrlRscCrtApiHelper(
@@ -154,7 +156,8 @@ public class CtrlRscCrtApiHelper
         CtrlTransactionHelper ctrlTransactionHelperRef,
         ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
-        Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef
+        Provider<CtrlRscDfnApiCallHandler> ctrlRscDfnApiCallHandlerRef,
+        AllocationGranularityHelper allocationGranularityHelperRef
     )
     {
         apiCtx = apiCtxRef;
@@ -180,6 +183,7 @@ public class CtrlRscCrtApiHelper
         scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         ctrlRscDfnApiCallHandler = ctrlRscDfnApiCallHandlerRef;
+        allocationGranularityHelper = allocationGranularityHelperRef;
     }
 
     /**
@@ -899,6 +903,7 @@ public class CtrlRscCrtApiHelper
                 {
                     ((DrbdRscData<Resource>) drbdRsc).getFlags().enableFlags(peerCtx, DrbdRscFlags.INITIALIZED);
                 }
+                allocationGranularityHelper.updateIfNeeded(rscDfn, false);
             }
             ctrlTransactionHelper.commit();
         }

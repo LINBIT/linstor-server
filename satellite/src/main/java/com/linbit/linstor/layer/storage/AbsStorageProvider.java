@@ -1766,7 +1766,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         long ret;
         if (allocGran == null)
         {
-            ret = 1; // old vlmDfn, value has not yet been recalcuated by controller
+            ret = 1; // old vlmDfn, value has not yet been recalculated by controller
         }
         else
         {

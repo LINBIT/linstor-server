@@ -299,7 +299,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         try
         {
             return ZfsPropsUtils.extractZfsVolBlockSizePrivileged(
-                vlmDataRef,
+                (ZfsData<?>) vlmDataRef,
                 storDriverAccCtx,
                 stltConfigAccessor.getReadonlyProps()
             );
@@ -716,6 +716,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         vlmData.setIdentifier(zfsInfo.identifier);
         vlmData.setAllocatedSize(zfsInfo.allocatedSize);
         vlmData.setUsableSize(zfsInfo.usableSize);
+        vlmData.setExtentSize(zfsInfo.volBlockSize);
 
         String devicePath;
 

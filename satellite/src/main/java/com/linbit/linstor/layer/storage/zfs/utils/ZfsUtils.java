@@ -9,6 +9,8 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,10 +27,11 @@ public class ZfsUtils
 {
     private static final String DELIMITER = "\t"; // default for all "zfs -H ..." commands
 
-    private static final int ZFS_LIST_COL_IDENTIFIER    = 0; // -o "name"
-    private static final int ZFS_LIST_COL_REFER_SIZE    = 1; // -o "refer"
-    private static final int ZFS_LIST_COL_VOLSIZE       = 2; // -o "volsize"
-    private static final int ZFS_LIST_COL_TYPE          = 3; // -o "type"
+    private static final int ZFS_LIST_COL_IDENTIFIER        = 0; // -o "name"
+    private static final int ZFS_LIST_COL_REFER_SIZE        = 1; // -o "refer"
+    private static final int ZFS_LIST_COL_VOLSIZE           = 2; // -o "volsize"
+    private static final int ZFS_LIST_COL_TYPE              = 3; // -o "type"
+    private static final int ZFS_LIST_COL_VOL_BLOCK_SIZE    = 4; // -o "volblocksize"
 
     private static final int ZFS_LIST_FILESYSTEMS_COL_IDENTIFIER = 0;
     private static final int ZFS_LIST_FILESYSTEMS_COL_AVAILABLE_SIZE = 1;
@@ -50,6 +53,8 @@ public class ZfsUtils
         public final String path;
         public final long allocatedSize;
         public final long usableSize;
+        // Snapshots do not report volBlockSize
+        public final @Nullable Long volBlockSize;
 
         ZfsInfo(
             String poolNameRef,
@@ -57,7 +62,8 @@ public class ZfsUtils
             String typeRef,
             String pathRef,
             long allocatedSizeRef,
-            long usableSizeRef
+            long usableSizeRef,
+            Long volBlockSizeRef
         )
         {
             poolName = poolNameRef;
@@ -66,6 +72,7 @@ public class ZfsUtils
             path = pathRef;
             allocatedSize = allocatedSizeRef;
             usableSize = usableSizeRef;
+            volBlockSize = volBlockSizeRef;
         }
     }
 
@@ -108,7 +115,8 @@ public class ZfsUtils
                             type,
                             buildZfsPath(identifier),
                             -1,
-                            usableSize
+                            usableSize,
+                            null
                         );
                         infoByIdentifier.put(identifier, state);
                     }
@@ -136,7 +144,7 @@ public class ZfsUtils
         final HashMap<String, ZfsInfo> infoByIdentifier = new HashMap<>();
 
         final String[] lines = stdOut.split("\n");
-        final int expectedColCount = 4;
+        final int expectedColCount = 5;
         for (final String line : lines)
         {
             final String[] data = line.trim().split(DELIMITER);
@@ -147,6 +155,7 @@ public class ZfsUtils
                     final String identifier = data[ZFS_LIST_COL_IDENTIFIER];
                     final String usableSizeStr = data[ZFS_LIST_COL_VOLSIZE];
                     final String type = data[ZFS_LIST_COL_TYPE];
+                    final String volBlockSizeStr = data[ZFS_LIST_COL_VOL_BLOCK_SIZE];
 
                     final String allocatedSizeStr;
                     if (kindRef == DeviceProviderKind.ZFS_THIN || type.equals(ZFS_TYPE_SNAPSHOT))
@@ -181,6 +190,21 @@ public class ZfsUtils
                             SizeUnit.UNIT_KiB
                         );
 
+                        @Nullable Long volBlockSize;
+                        if (volBlockSizeStr.trim().equals("-"))
+                        {
+                            // snapshot
+                            volBlockSize = null;
+                        }
+                        else
+                        {
+                            volBlockSize = SizeConv.convert(
+                                StorageUtils.parseDecimalAsLong(volBlockSizeStr.trim()),
+                                SizeUnit.UNIT_B,
+                                SizeUnit.UNIT_KiB
+                            );
+                        }
+
                         int poolNameEndIndex = identifier.lastIndexOf(File.separator);
                         if (poolNameEndIndex == -1)
                         {
@@ -192,7 +216,8 @@ public class ZfsUtils
                             type,
                             buildZfsPath(identifier),
                             allocatedSize,
-                            usableSize
+                            usableSize,
+                            volBlockSize
                         );
                         infoByIdentifier.put(identifier, state);
                     }

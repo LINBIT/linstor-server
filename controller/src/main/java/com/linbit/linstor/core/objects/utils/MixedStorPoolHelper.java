@@ -23,6 +23,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
+import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
@@ -323,7 +324,7 @@ public class MixedStorPoolHelper
                     case ZFS:// fall-through
                     case ZFS_THIN:
                         vlmExtentSize = ZfsPropsUtils.extractZfsVolBlockSizePrivileged(
-                            vlmData,
+                            (ZfsData<?>) vlmData,
                             sysCtx,
                             systemConfRepository.getStltConfForView(sysCtx)
                         );
