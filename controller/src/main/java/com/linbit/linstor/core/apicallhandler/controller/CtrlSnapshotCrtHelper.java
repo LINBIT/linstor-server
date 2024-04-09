@@ -33,6 +33,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidValueException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -326,10 +327,41 @@ public class CtrlSnapshotCrtHelper
     private void ensureSnapshotsViable(ResourceDefinition rscDfn)
     {
         Iterator<Resource> rscIterator = ctrlSnapshotHelper.iterateResource(rscDfn);
+        // ctrl, node, sp, rg, rd, r
         int diskFullConnected = 0;
         while (rscIterator.hasNext())
         {
             Resource currentRsc = rscIterator.next();
+            try
+            {
+                Set<AbsRscLayerObject<Resource>> drbdLayerDataSet = LayerRscUtils.getRscDataByLayer(
+                    currentRsc.getLayerData(apiCtx),
+                    DeviceLayerKind.DRBD
+                );
+                Props stltProps = ctrlPropsHelper.getStltPropsForView();
+                for (AbsRscLayerObject<Resource> drbdLayerData : drbdLayerDataSet)
+                {
+                    DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) drbdLayerData;
+                    if (drbdRscData.isSkipDiskEnabled(apiCtx, stltProps))
+                    {
+                        throw new ApiRcException(ApiCallRcImpl
+                            .entryBuilder(
+                                ApiConsts.FAIL_SNAPSHOT_NOT_UPTODATE,
+                                "SkipDisk is enabled for resource " + rscDfn.getName()
+                            )
+                            .setDetails(
+                                "Snapshots are not allowed while SkipDisk is enabled, " +
+                                    "because upToDate-state cannot be ensured."
+                            )
+                            .build()
+                        );
+                    }
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
             ensureDriversSupportSnapshots(currentRsc);
             if (!isDisklessPrivileged(currentRsc) && ctrlSnapshotHelper.satelliteConnected(currentRsc))
             {
