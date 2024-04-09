@@ -35,6 +35,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -386,13 +387,14 @@ public class StorageLayer implements DeviceLayer
     public LocalPropsChangePojo checkStorPool(StorPool storPool, boolean update)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        LocalPropsChangePojo setLocalNodePojo;
+        @Nullable LocalPropsChangePojo setLocalNodePojo;
 
         DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
         setLocalNodePojo = deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
+        @Nullable LocalPropsChangePojo updatePropsPojo = null;
         if (update)
         {
-            deviceProvider.update(storPool);
+            updatePropsPojo = deviceProvider.update(storPool);
         }
 
         // check for locked SEDs
@@ -417,16 +419,10 @@ public class StorageLayer implements DeviceLayer
                 }
             }
         }
-        LocalPropsChangePojo checkCfgPropsPojo = deviceProvider.checkConfig(storPool);
-
-        LocalPropsChangePojo ret = null;
-        if (setLocalNodePojo != null || checkCfgPropsPojo != null)
-        {
-            ret = new LocalPropsChangePojo();
-            ret.putAll(setLocalNodePojo);
-            ret.putAll(checkCfgPropsPojo);
-        }
-
-        return ret;
+        return LocalPropsChangePojo.merge(
+            setLocalNodePojo,
+            deviceProvider.checkConfig(storPool),
+            updatePropsPojo
+        );
     }
 }

@@ -19,6 +19,8 @@ import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -94,5 +96,10 @@ public interface VlmLayerDataApi
     default StorPoolApi getStorPoolApi()
     {
         return null; // layers should not have storage pools (only storage layer / diskless vlm)
+    }
+
+    default @Nullable Long getExtentSize()
+    {
+        return null;
     }
 }

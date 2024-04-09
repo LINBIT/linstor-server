@@ -50,6 +50,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -668,17 +669,13 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
      * Expected to be overridden by LvmThinProvider (maybe additionally called)
      */
     @Override
-    public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        LocalPropsChangePojo ret = new LocalPropsChangePojo();
-
         Props publicStorDriverNamespace = DeviceLayerUtils.getNamespaceStorDriver(storPool.getProps(storDriverAccCtx));
         StorageConfigReader.checkVolumeGroupEntry(extCmdFactory, publicStorDriverNamespace);
         StorageConfigReader.checkToleranceFactor(publicStorDriverNamespace);
 
-        checkExtentSize(storPool, ret);
-
-        return ret;
+        return null;
     }
 
     protected void checkExtentSize(StorPool storPool, LocalPropsChangePojo ret)
@@ -691,14 +688,19 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    public void update(StorPool storPoolRef) throws AccessDeniedException, DatabaseException, StorageException
+    public @Nullable LocalPropsChangePojo update(StorPool storPoolRef)
+        throws AccessDeniedException, DatabaseException, StorageException
     {
+        LocalPropsChangePojo ret = new LocalPropsChangePojo();
         List<String> pvs = LvmUtils.getPhysicalVolumes(extCmdFactory, getVolumeGroup(storPoolRef));
         if (PmemUtils.supportsDax(extCmdFactory.create(), pvs))
         {
             storPoolRef.setPmem(true);
         }
         storPoolRef.setVDO(LsBlkUtils.parentIsVDO(extCmdFactory.create(), pvs));
+        checkExtentSize(storPoolRef, ret);
+
+        return ret;
     }
 
     private Set<String> getAffectedVolumeGroups(

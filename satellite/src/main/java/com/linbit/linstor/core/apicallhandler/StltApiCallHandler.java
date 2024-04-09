@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ChildProcessHandler;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -36,6 +37,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.EventBroker;
 import com.linbit.linstor.event.EventIdentifier;
@@ -330,7 +332,7 @@ public class StltApiCallHandler
                 }
                 controllerPeerConnector.setControllerPeerToCurrentLocalNode();
 
-                doApplyControllerChanges(satelliteProps);
+                doApplyControllerChanges(satelliteProps, true);
 
                 /*
                  * At least openflex stor pools need the properties of the localnode in order to
@@ -556,7 +558,7 @@ public class StltApiCallHandler
         applyChangedData(new ApplyControllerData(satelliteProps, fullSyncId, updateId));
     }
 
-    private void doApplyControllerChanges(Map<String, String> satelliteProps)
+    private void doApplyControllerChanges(Map<String, String> satelliteProps, boolean runSpUpdatesRef)
     {
         try
         {
@@ -574,7 +576,7 @@ public class StltApiCallHandler
 
             transMgrProvider.get().commit();
 
-            reconfigureAllStorageDrivers();
+            reconfigureAllStorageDrivers(runSpUpdatesRef);
 
             Set<ResourceName> slctRsc = new TreeSet<>();
             for (ResourceDefinition curRscDfn : rscDfnMap.values())
@@ -616,7 +618,7 @@ public class StltApiCallHandler
         }
     }
 
-    private void reconfigureAllStorageDrivers()
+    private void reconfigureAllStorageDrivers(boolean runSpUpdatesRef)
     {
         try
         {
@@ -627,17 +629,36 @@ public class StltApiCallHandler
                 {
                     try
                     {
-                        StorPool sp = spd.getStorPool(apiCtx, controllerPeerConnector.getLocalNodeName());
+                        @Nullable StorPool sp = spd.getStorPool(apiCtx, controllerPeerConnector.getLocalNodeName());
+                        // storage pool probably not deployed on this node
                         if (sp != null)
                         {
-                            // storage pool probably not deployed on this node
                             DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(sp);
+                            if (runSpUpdatesRef)
+                            {
+                                @Nullable LocalPropsChangePojo pojo = deviceProvider.update(sp);
+                                if (pojo != null)
+                                {
+                                    controllerPeerConnector.getControllerPeer()
+                                    .sendMessage(
+                                        interComSerializer
+                                                .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT)
+                                                .updateLocalProps(pojo)
+                                                .build(),
+                                        InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT
+                                        );
+                                }
+                            }
                             deviceProvider.checkConfig(sp);
                         }
                     }
                     catch (StorageException exc)
                     {
                         errorReporter.reportError(exc);
+                    }
+                    catch (DatabaseException exc)
+                    {
+                        throw new ImplementationError(exc);
                     }
                 }
             }
@@ -933,7 +954,7 @@ public class StltApiCallHandler
         @Override
         public void applyChange()
         {
-            doApplyControllerChanges(satelliteProps);
+            doApplyControllerChanges(satelliteProps, false);
         }
     }
 

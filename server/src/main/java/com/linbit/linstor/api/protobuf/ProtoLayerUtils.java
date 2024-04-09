@@ -592,7 +592,8 @@ public class ProtoLayerUtils
                     diskState,
                     discGran,
                     storPoolApi,
-                    exists
+                    exists,
+                    protoVlm.getZfs().getExtentSize()
                 );
                 break;
             case ZFS_THIN:
@@ -606,7 +607,8 @@ public class ProtoLayerUtils
                     diskState,
                     discGran,
                     storPoolApi,
-                    exists
+                    exists,
+                    protoVlm.getZfsThin().getExtentSize()
                 );
                 break;
             case FILE:

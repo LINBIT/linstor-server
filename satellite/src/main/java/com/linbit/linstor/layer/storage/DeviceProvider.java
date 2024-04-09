@@ -79,7 +79,7 @@ public interface DeviceProvider
      * @throws DatabaseException
      * @throws StorageException
      */
-    void update(StorPool storPoolRef)
+    LocalPropsChangePojo update(StorPool storPoolRef)
         throws AccessDeniedException, DatabaseException, StorageException;
 
     DeviceProviderKind getDeviceProviderKind();

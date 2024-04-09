@@ -38,6 +38,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -545,14 +546,16 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     }
 
     @Override
-    public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
         return null;
     }
 
     @Override
-    public void update(StorPool storPoolRef) throws AccessDeniedException, DatabaseException, StorageException
+    public @Nullable LocalPropsChangePojo update(StorPool storPoolRef)
+        throws AccessDeniedException, DatabaseException, StorageException
     {
+        return null;
     }
 
     @Override

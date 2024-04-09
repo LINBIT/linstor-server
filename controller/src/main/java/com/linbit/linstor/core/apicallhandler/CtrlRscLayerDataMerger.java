@@ -391,6 +391,7 @@ public class CtrlRscLayerDataMerger extends AbsLayerRscDataMerger<Resource>
         zfsData.setDevicePath(vlmPojoRef.getDevicePath());
         zfsData.setUsableSize(vlmPojoRef.getUsableSize());
         zfsData.setDiscGran(vlmPojoRef.getDiscGran());
+        zfsData.setExtentSize(vlmPojoRef.getExtentSize());
     }
 
     @Override

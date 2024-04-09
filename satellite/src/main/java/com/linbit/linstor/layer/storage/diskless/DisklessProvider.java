@@ -14,6 +14,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -84,7 +85,7 @@ public class DisklessProvider implements DeviceProvider
     }
 
     @Override
-    public LocalPropsChangePojo checkConfig(StorPool storPool)
+    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool)
     {
         // no-op
         return null;
@@ -104,8 +105,9 @@ public class DisklessProvider implements DeviceProvider
     }
 
     @Override
-    public void update(StorPool storPoolRef)
+    public @Nullable LocalPropsChangePojo update(StorPool storPoolRef)
     {
         // no-op
+        return null;
     }
 }

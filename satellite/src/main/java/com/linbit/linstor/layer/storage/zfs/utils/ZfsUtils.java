@@ -8,6 +8,7 @@ import com.linbit.linstor.layer.storage.utils.ParseUtils;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nullable;
 
@@ -22,6 +23,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ZfsUtils
 {
@@ -40,6 +44,8 @@ public class ZfsUtils
     private static final String ZFS_TYPE_VOLUME = "volume";
     private static final String ZFS_TYPE_SNAPSHOT = "snapshot";
     private static final String ZFS_TYPE_FILESYSTEM = "filesystem";
+
+    private static final Pattern ZFS_CREATE_DRYRUN_OUTPUT_PATTERN = Pattern.compile("property\\s+volsize\\s+(\\d+)");
 
     private ZfsUtils()
     {
@@ -267,6 +273,44 @@ public class ZfsUtils
         }
 
         return freeSizes;
+    }
+
+    /**
+     * Executes a '<code>zfs create -n -P -V 1B $zpool/$dummy_volume</code>' and returns the reported
+     * <code>volsize</code>.
+     */
+    public static long getZfsExtentSize(ExtCmd extCmd, String poolName) throws StorageException
+    {
+        OutputData outputData = ZfsCommands.create(
+            extCmd,
+            poolName,
+            "LINSTOR_dry_run_" + UUID.randomUUID().toString(),
+            1,
+            true,
+            "-n", // dry-run
+            "-P" // parseable
+        );
+
+        long ret;
+
+        String dryrunOutput = new String(outputData.stdoutData).trim();
+        Matcher matcher = ZFS_CREATE_DRYRUN_OUTPUT_PATTERN.matcher(dryrunOutput);
+        if (matcher.find())
+        {
+            String volSizeStr = matcher.group(1);
+            ret = SizeConv.convert(Long.parseLong(volSizeStr), SizeUnit.UNIT_B, SizeUnit.UNIT_KiB);
+        }
+        else
+        {
+            throw new StorageException(
+                "Unexpected output of '" + StringUtils.join(" ", outputData.executedCommand) +
+                    "'. Could not find pattern: '" + ZFS_CREATE_DRYRUN_OUTPUT_PATTERN.pattern() +
+                    "'.\nStandard out: \n" + dryrunOutput +
+                    "\n\nStandard error: \n" + new String(outputData.stderrData)
+            );
+        }
+
+        return ret;
     }
 
     public static long getZfsExtentSize(ExtCmd extCmd, String poolName, String identifier) throws StorageException

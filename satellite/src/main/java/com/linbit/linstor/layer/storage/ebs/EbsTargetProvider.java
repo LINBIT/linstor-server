@@ -764,15 +764,16 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     }
 
     @Override
-    public void update(StorPool storPoolRef) throws AccessDeniedException, DatabaseException, StorageException
+    public @Nullable LocalPropsChangePojo update(StorPool storPoolRef)
+        throws AccessDeniedException, DatabaseException, StorageException
     {
-        // noop
+        return null;
     }
 
     @Override
-    public LocalPropsChangePojo checkConfig(StorPool storPoolRef) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPoolRef)
+        throws StorageException, AccessDeniedException
     {
-        // TODO Auto-generated method stub
         return null;
     }
 

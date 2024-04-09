@@ -60,6 +60,8 @@ public class StltExtToolsChecker
     private static final Pattern THIN_SEND_RECV_VERSION_PATTERN = Pattern.compile("(\\d+)\\.(\\d+)");
     private static final Pattern ZFS_KMOD_VERSION_PATTERN = Pattern
         .compile("(\\d+)\\.(\\d+)\\.(\\d+)");
+    private static final Pattern ZFS_UTILS_VERSION_PATTERN = Pattern
+        .compile("^zfs-(\\d+)\\.(\\d+)\\.(\\d+)(-?)(.*)$", Pattern.MULTILINE);
     private static final Pattern NVME_VERSION_PATTERN = Pattern
         .compile("(?:nvme version\\s*)(\\d+)\\.(\\d+)");
     private static final Pattern SPDK_VERSION_PATTERN = Pattern
@@ -347,23 +349,51 @@ public class StltExtToolsChecker
         return infoBy3MatchGroupPattern(ZFS_KMOD_VERSION_PATTERN, ExtTools.ZFS_KMOD, "cat", "/sys/module/zfs/version");
     }
 
+    @SuppressWarnings("checkstyle:magicnumber")
     private ExtToolsInfo getZfsUtilsInfo()
     {
-        // older zfs versions have neither '--version' nor 'version' subcommand. we therefore only check if a simple
-        // 'zfs list' exists with 0 or not. A "command not found" would yield in a different error
-
-        return getStdoutOrErrorReason(
-            ec -> ec == 0 || ec == 1,
-            "zfs", "-?"
+        // Although older zfs versions have neither '--version' nor 'version' subcommand, we still try a 'zfs --version'
+        // first. If that succeeds, we are happy to know the precise version.
+        // If that fails (should return an exit-code of 2 (subcommand not found) or 1 (some other error occurred)), we
+        // additionally run a 'zfs -?'. If that has an exit code of 0, zfs utils is available but in a version
+        // pre 0.8.0 (before --version was introduced)
+        ExtToolsInfo ret = getStdoutOrErrorReason(
+            ec -> ec == 0 || ec == 1 || ec == 2,
+            "zfs", "--version"
         ).map(
-            pair -> new ExtToolsInfo(
-                ExtTools.ZFS_UTILS,
-                true,
-                null,
-                null,
-                null,
-                Collections.emptyList()
-            ),
+            pair ->
+            {
+                Version version;
+
+                Matcher matcher = ZFS_UTILS_VERSION_PATTERN.matcher(pair.objA);
+                boolean found = matcher.find();
+                if (!found)
+                {
+                    matcher = ZFS_UTILS_VERSION_PATTERN.matcher(pair.objB); // retry in stderr output
+                    found = matcher.find();
+                }
+                if (found)
+                {
+                    version = new ExtToolsInfo.Version(
+                        Integer.parseInt(matcher.group(1)),
+                        Integer.parseInt(matcher.group(2)),
+                        Integer.parseInt(matcher.group(3)),
+                        matcher.group(4),
+                        matcher.group(5)
+                    );
+                }
+                else
+                {
+                    // zfs is supported but "zfs --vesion" does not exist. unknown version (most likely pre 0.8.0)
+                    version = new ExtToolsInfo.Version();
+                }
+                return new ExtToolsInfo(
+                    ExtTools.ZFS_UTILS,
+                    true,
+                    version,
+                    Collections.emptyList()
+                );
+            },
             notSupportedReasonList -> new ExtToolsInfo(
                 ExtTools.ZFS_UTILS,
                 false,
@@ -373,6 +403,25 @@ public class StltExtToolsChecker
                 notSupportedReasonList
             )
         );
+
+        if (ret.isSupported())
+        {
+            errorReporter.logTrace(
+                "Checking support for %s: supported (%s)",
+                ExtTools.ZFS_UTILS.name(),
+                ret.getVersion().toString()
+            );
+        }
+        else
+        {
+            errorReporter.logTrace("Checking support for %s: NOT supported:", ExtTools.ZFS_UTILS.name());
+            for (String reason : ret.getNotSupportedReasons())
+            {
+                errorReporter.logTrace("   %s", reason);
+            }
+        }
+
+        return ret;
     }
 
     private ExtToolsInfo getNvmeInfo(List<String> loadedModulesRef)

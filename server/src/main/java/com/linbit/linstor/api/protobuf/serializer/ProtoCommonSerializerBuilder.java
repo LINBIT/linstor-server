@@ -100,6 +100,7 @@ import com.linbit.linstor.proto.common.StltConfigOuterClass.StltConfig;
 import com.linbit.linstor.proto.common.StorPoolDfnOuterClass;
 import com.linbit.linstor.proto.common.StorPoolFreeSpaceOuterClass.StorPoolFreeSpace;
 import com.linbit.linstor.proto.common.StorPoolOuterClass;
+import com.linbit.linstor.proto.common.StorageRscOuterClass;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.DisklessVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.EbsVlm;
 import com.linbit.linstor.proto.common.StorageRscOuterClass.ExosVlm;
@@ -1999,10 +2000,24 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
                     builder.setStorageSpacesThin(StorageSpacesThinVlm.newBuilder().build());
                     break;
                 case ZFS:
-                    builder.setZfs(ZfsVlm.newBuilder().build());
+                {
+                    StorageRscOuterClass.ZfsVlm.Builder protoZfsVlmBuilder = ZfsVlm.newBuilder();
+                    if (vlmPojo.getExtentSize() != null)
+                    {
+                        protoZfsVlmBuilder.setExtentSize(vlmPojo.getExtentSize());
+                    }
+                    builder.setZfs(protoZfsVlmBuilder.build());
+                }
                     break;
                 case ZFS_THIN:
-                    builder.setZfsThin(ZfsThinVlm.newBuilder().build());
+                {
+                    StorageRscOuterClass.ZfsThinVlm.Builder protoZfsVlmBuilder = ZfsThinVlm.newBuilder();
+                    if (vlmPojo.getExtentSize() != null)
+                    {
+                        protoZfsVlmBuilder.setExtentSize(vlmPojo.getExtentSize());
+                    }
+                    builder.setZfsThin(protoZfsVlmBuilder.build());
+                }
                     break;
                 case FILE:
                     builder.setFile(FileVlm.newBuilder().build());

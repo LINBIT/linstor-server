@@ -71,12 +71,12 @@ message LvmThinVlm
 
 message ZfsVlm
 {
-    // currently no special payload
+    optional int64      extent_size = 1;
 }
 
 message ZfsThinVlm
 {
-    // currently no special payload
+    optional int64      extent_size = 1;
 }
 
 message FileVlm

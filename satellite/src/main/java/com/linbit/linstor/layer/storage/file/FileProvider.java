@@ -46,6 +46,7 @@ import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObje
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -682,7 +683,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
         Props props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
@@ -744,7 +745,8 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    public void update(StorPool storPool) throws AccessDeniedException, DatabaseException, StorageException
+    public @Nullable LocalPropsChangePojo update(StorPool storPool)
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         Props props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
@@ -757,6 +759,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         {
             storPool.setPmem(true);
         }
+        return null;
     }
 
     @Override

@@ -135,6 +135,7 @@ public class StorageRscPojo implements RscLayerDataApi
         private final long discGran;
         @JsonIgnore
         private final boolean exists;
+        private final @Nullable Long extentSize;
 
         AbsVlmProviderPojo(
             int vlmNrRef,
@@ -147,7 +148,8 @@ public class StorageRscPojo implements RscLayerDataApi
             long discGranRef,
             StorPoolApi storPoolApiRef,
             DeviceProviderKind kindRef,
-            boolean existsRef
+            boolean existsRef,
+            @Nullable Long extentSizeRef
         )
         {
             vlmNr = vlmNrRef;
@@ -161,6 +163,7 @@ public class StorageRscPojo implements RscLayerDataApi
             storPoolApi = storPoolApiRef;
             kind = kindRef;
             exists = existsRef;
+            extentSize = extentSizeRef;
         }
 
         @Override
@@ -235,6 +238,12 @@ public class StorageRscPojo implements RscLayerDataApi
         {
             return exists;
         }
+
+        @Override
+        public @Nullable Long getExtentSize()
+        {
+            return extentSize;
+        }
     }
 
     public static class DisklessVlmPojo extends AbsVlmProviderPojo
@@ -263,7 +272,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 DISKLESS,
-                existsRef
+                existsRef,
+                null
             );
         }
 
@@ -289,7 +299,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 DISKLESS,
-                false
+                false,
+                null
             );
         }
     }
@@ -320,7 +331,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 LVM,
-                existsRef
+                existsRef,
+                null
             );
         }
 
@@ -345,7 +357,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 LVM,
-                false
+                false,
+                null
             );
         }
     }
@@ -375,7 +388,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 64,
                 storPoolApiRef,
                 STORAGE_SPACES,
-                existsRef
+                existsRef,
+                null
             );
         }
 
@@ -400,7 +414,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 64,
                 storPoolApiRef,
                 STORAGE_SPACES,
-                false
+                false,
+                null
             );
         }
     }
@@ -430,7 +445,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 64,
                 storPoolApiRef,
                 STORAGE_SPACES_THIN,
-                existsRef
+                existsRef,
+                null
             );
         }
 
@@ -455,7 +471,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 64,
                 storPoolApiRef,
                 STORAGE_SPACES_THIN,
-                false
+                false,
+                null
             );
         }
     }
@@ -486,7 +503,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 SPDK,
-                existsRef
+                existsRef,
+                null
             );
         }
 
@@ -511,7 +529,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 SPDK,
-                false
+                false,
+                null
             );
         }
     }
@@ -542,7 +561,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 REMOTE_SPDK,
-                existsRef
+                existsRef,
+                null
             );
         }
     }
@@ -573,7 +593,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 LVM_THIN,
-                existsRef
+                existsRef,
+                null
             );
         }
 
@@ -598,7 +619,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 LVM_THIN,
-                false
+                false,
+                null
             );
         }
     }
@@ -615,7 +637,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
-            boolean existsRef
+            boolean existsRef,
+            @Nullable Long extentSizeRef
         )
         {
             super(
@@ -629,7 +652,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 ZFS,
-                existsRef
+                existsRef,
+                extentSizeRef
             );
         }
 
@@ -640,7 +664,8 @@ public class StorageRscPojo implements RscLayerDataApi
             @JsonProperty("usableSize") long usableSizeRef,
             @JsonProperty("allocatedSize") long allocatedSizeRef,
             @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
-            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef,
+            @JsonProperty("extentSize") @Nullable Long extentSizeRef
         )
         {
             super(
@@ -654,7 +679,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 ZFS,
-                false
+                false,
+                extentSizeRef
             );
         }
     }
@@ -671,7 +697,8 @@ public class StorageRscPojo implements RscLayerDataApi
             String diskStateRef,
             long discGranRef,
             StorPoolApi storPoolApiRef,
-            boolean existsRef
+            boolean existsRef,
+            @Nullable Long extentSizeRef
         )
         {
             super(
@@ -685,7 +712,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 ZFS_THIN,
-                existsRef
+                existsRef,
+                extentSizeRef
             );
         }
 
@@ -696,7 +724,8 @@ public class StorageRscPojo implements RscLayerDataApi
             @JsonProperty("usableSize") long usableSizeRef,
             @JsonProperty("allocatedSize") long allocatedSizeRef,
             @JsonProperty("snapshotUsableSize") Long snapUsableSizeRef,
-            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef
+            @JsonProperty("snapshotAllocatedSize") Long snapAllocatedSizeRef,
+            @JsonProperty("extentSize") @Nullable Long extentSizeRef
         )
         {
             super(
@@ -710,7 +739,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 ZFS_THIN,
-                false
+                false,
+                extentSizeRef
             );
         }
     }
@@ -741,7 +771,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 FILE,
-                existsRef
+                existsRef,
+                null
             );
         }
 
@@ -766,7 +797,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 FILE,
-                false
+                false,
+                null
             );
         }
     }
@@ -797,7 +829,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 FILE_THIN,
-                existsRef
+                existsRef,
+                null
             );
         }
 
@@ -822,7 +855,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 FILE_THIN,
-                false
+                false,
+                null
             );
         }
     }
@@ -854,7 +888,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 EXOS,
-                existsRef
+                existsRef,
+                null
             );
         }
     }
@@ -886,7 +921,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 discGranRef,
                 storPoolApiRef,
                 EBS_INIT,
-                existsRef
+                existsRef,
+                null
             );
         }
 
@@ -911,7 +947,8 @@ public class StorageRscPojo implements RscLayerDataApi
                 VlmProviderObject.UNINITIALIZED_SIZE,
                 storPoolApiRef,
                 EBS_INIT,
-                false
+                false,
+                null
             );
         }
     }

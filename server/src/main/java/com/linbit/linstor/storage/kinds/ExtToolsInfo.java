@@ -1,5 +1,7 @@
 package com.linbit.linstor.storage.kinds;
 
+import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -129,10 +131,11 @@ public class ExtToolsInfo
 
     public static class Version implements Comparable<Version>
     {
-        private final Integer major;
-        private final Integer minor;
-        private final Integer patch;
-        private final String additionalInfo; // "rc1" or whatever
+        private final @Nullable Integer major;
+        private final @Nullable Integer minor;
+        private final @Nullable Integer patch;
+        private final @Nullable String additionalInfoSeparator;
+        private final @Nullable String additionalInfo; // "rc1" or whatever
 
         public Version()
         {
@@ -149,30 +152,47 @@ public class ExtToolsInfo
             this(majRef, minRef, null, null);
         }
 
-        public Version(Integer majRef, Integer minRef, Integer patchRef)
+        public Version(@Nullable Integer majRef, @Nullable Integer minRef, @Nullable Integer patchRef)
         {
             this(majRef, minRef, patchRef, null);
         }
 
-        public Version(Integer majRef, Integer minRef, Integer patchRef, String additionalInfoRef)
+        public Version(
+            @Nullable Integer majRef,
+            @Nullable Integer minRef,
+            @Nullable Integer patchRef,
+            @Nullable String additionalInfoRef
+        )
+        {
+            this(majRef, minRef, patchRef, null, additionalInfoRef);
+        }
+
+        public Version(
+            @Nullable Integer majRef,
+            @Nullable Integer minRef,
+            @Nullable Integer patchRef,
+            @Nullable String additionalInfoSeparatorRef,
+            @Nullable String additionalInfoRef
+        )
         {
             major = majRef;
             minor = minRef;
             patch = patchRef;
+            additionalInfoSeparator = additionalInfoSeparatorRef;
             additionalInfo = additionalInfoRef;
         }
 
-        public Integer getMajor()
+        public @Nullable Integer getMajor()
         {
             return major;
         }
 
-        public Integer getMinor()
+        public @Nullable Integer getMinor()
         {
             return minor;
         }
 
-        public Integer getPatch()
+        public @Nullable Integer getPatch()
         {
             return patch;
         }
@@ -297,6 +317,7 @@ public class ExtToolsInfo
             result = prime * result + ((major == null) ? 0 : major.hashCode());
             result = prime * result + ((minor == null) ? 0 : minor.hashCode());
             result = prime * result + ((patch == null) ? 0 : patch.hashCode());
+            result = prime * result + ((additionalInfoSeparator == null) ? 0 : additionalInfoSeparator.hashCode());
             result = prime * result + ((additionalInfo == null) ? 0 : additionalInfo.hashCode());
             return result;
         }
@@ -320,6 +341,7 @@ public class ExtToolsInfo
             return Objects.equals(major, other.major) &&
                 Objects.equals(minor, other.minor) &&
                 Objects.equals(patch, other.patch) &&
+                Objects.equals(additionalInfoSeparator, other.additionalInfoSeparator) &&
                 Objects.equals(additionalInfo, other.additionalInfo);
         }
 
@@ -341,6 +363,10 @@ public class ExtToolsInfo
             }
             if (additionalInfo != null)
             {
+                if (additionalInfoSeparator != null)
+                {
+                    sb.append(additionalInfoSeparator);
+                }
                 sb.append(additionalInfo);
             }
             return sb.toString();

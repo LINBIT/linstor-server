@@ -29,6 +29,7 @@ import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -109,9 +110,8 @@ public class ZfsThinProvider extends ZfsProvider
     }
 
     @Override
-    public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        LocalPropsChangePojo ret = new LocalPropsChangePojo();
 
         String thinZpoolName = getZPool(storPool);
         if (thinZpoolName == null)
@@ -131,9 +131,7 @@ public class ZfsThinProvider extends ZfsProvider
             throw new StorageException("no zfs dataset found with name '" + thinZpoolName + "'");
         }
 
-        checkExtentSize(storPool, ret);
-
-        return ret;
+        return null;
     }
 
     @Override

@@ -44,10 +44,13 @@ import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.storage.kinds.ExtTools;
+import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.ZfsPropsUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -73,7 +76,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     private static final String FORMAT_ZFS_DEV_PATH = "/dev/zvol/%s/%s";
     private static final int TOLERANCE_FACTOR = 3;
 
-    private static final String ZFS_DFLT_EXTENT_SIZE_IN_KIB = "8";
+    private static final long ZFS_DFLT_EXTENT_SIZE_IN_KIB = 8L;
+    private static final ExtToolsInfo.Version VERSION_2_0_0 = new ExtToolsInfo.Version(2, 0, 0);
 
     private  Map<StorPool, Long> extentSizes = new TreeMap<>();
 
@@ -310,6 +314,50 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         }
     }
 
+    /**
+     * Brief summary of ZFS versions and default <code>volBlockSize</code>:
+     * <ul>
+     * <li>Before version 0.8.0, ZFS had no '<code>zfs version</code>' or '<code>zfs --version</code>'. Default
+     * <code>volBlockSize</code> is 8k.</li>
+     * <li>Before version 2.0.0, ZFS had no '<code>zfs create ... --dry-run --verbose --parseable</code>' options.
+     * Default <code>volBlockSize</code> is still 8k.</li>
+     * <li>Since ZFS version 2.2.0 the default <code>volBlockSize</code> is increased to 16k (openzfs git hash
+     * <code>72f0521</code>).</li>
+     * </ul>
+     * This means, that LINSTOR can return <code>8k</code> for versions pre 2.0.0, and for versions since 2.0.0 "query"
+     * the current <code>volBlockSize</code> using
+     * '<code>zfs create zpool/dummy-volume -V 1B --dry-run --parseable</code>'. Here is an example result of this
+     * command:
+     *
+     * <pre>
+    # zfs create -n -P -V 1B scratch-zfs/dummy
+    create  scratch-zfs/dummy
+    property    volsize 8192
+    property    refreservation  1843200
+    #
+     * </pre>
+     */
+    protected long getExtentSize(StorPool storPoolRef) throws StorageException
+    {
+        long ret = ZFS_DFLT_EXTENT_SIZE_IN_KIB;
+        Map<ExtTools, ExtToolsInfo> externalTools = extToolsChecker.getExternalTools(false);
+        @Nullable ExtToolsInfo zfsUtilsInfo = externalTools.get(ExtTools.ZFS_UTILS);
+        @Nullable ExtToolsInfo zfsKmodInfo = externalTools.get(ExtTools.ZFS_KMOD);
+
+        if (zfsUtilsInfo != null && zfsKmodInfo != null && zfsUtilsInfo.isSupported() && zfsKmodInfo.isSupported())
+        {
+            ExtToolsInfo.Version zfsUtilsVersion = zfsUtilsInfo.getVersion();
+            ExtToolsInfo.Version zfsKmodVersion = zfsKmodInfo.getVersion();
+
+            if (zfsUtilsVersion.getMajor() != null && zfsUtilsVersion.greaterOrEqual(VERSION_2_0_0) &&
+                zfsKmodVersion.getMajor() != null && zfsKmodVersion.greaterOrEqual(VERSION_2_0_0))
+            {
+                ret = ZfsUtils.getZfsExtentSize(extCmdFactory.create(), getZPool(storPoolRef));
+            }
+        }
+        return ret;
+    }
+
     @Override
     protected void resizeLvImpl(ZfsData<Resource> vlmData)
         throws StorageException, AccessDeniedException, DatabaseException
@@ -467,10 +515,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        LocalPropsChangePojo ret = new LocalPropsChangePojo();
-
         String zpoolName = getZPool(storPool);
         if (zpoolName == null)
         {
@@ -489,37 +535,49 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             throw new StorageException("no zpool found with name '" + zpoolName + "'");
         }
 
-        checkExtentSize(storPool, ret);
-
-        return ret;
+        return null;
     }
 
     protected void checkExtentSize(StorPool storPool, LocalPropsChangePojo ret)
-        throws StorageException, ImplementationError, AccessDeniedException
+        throws ImplementationError, AccessDeniedException, StorageException
     {
-        String oldExtentSizeInKib = storPool.getProps(storDriverAccCtx)
+        @Nullable String oldExtentSizeInKib = storPool.getProps(storDriverAccCtx)
             .getProp(
                 InternalApiConsts.ALLOCATION_GRANULARITY,
                 StorageConstants.NAMESPACE_INTERNAL
             );
-        if (!Objects.equals(ZFS_DFLT_EXTENT_SIZE_IN_KIB, oldExtentSizeInKib))
+
+        long currentExtentSize = getExtentSize(storPool);
+        String currentExtentSizeStr = Long.toString(currentExtentSize);
+
+        if (!Objects.equals(currentExtentSizeStr, oldExtentSizeInKib))
         {
+            errorReporter.logTrace(
+                "Found extent size for ZFS SP '%s': %dKiB",
+                storPool.getName().displayValue,
+                currentExtentSize
+            );
             ret.changeStorPoolProp(
                 storPool,
                 StorageConstants.NAMESPACE_INTERNAL + "/" + InternalApiConsts.ALLOCATION_GRANULARITY,
-                ZFS_DFLT_EXTENT_SIZE_IN_KIB
+                currentExtentSizeStr
             );
         }
     }
 
     @Override
-    public void update(StorPool storPoolRef) throws AccessDeniedException, DatabaseException, StorageException
+    public @Nullable LocalPropsChangePojo update(StorPool storPoolRef)
+        throws AccessDeniedException, DatabaseException, StorageException
     {
+        LocalPropsChangePojo ret = new LocalPropsChangePojo();
         List<String> pvs = ZfsUtils.getPhysicalVolumes(extCmdFactory.create(), getZpoolOnlyName(storPoolRef));
         if (PmemUtils.supportsDax(extCmdFactory.create(), pvs))
         {
             storPoolRef.setPmem(true);
         }
+        checkExtentSize(storPoolRef, ret);
+
+        return ret;
     }
 
     protected String getZpoolOnlyName(StorPool storPoolRef) throws StorageException

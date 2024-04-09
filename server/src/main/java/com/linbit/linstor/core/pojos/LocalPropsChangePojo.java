@@ -18,6 +18,38 @@ public class LocalPropsChangePojo
     public final Map<StorPoolName, Map<String, String>> changedStorPoolProps;
     public final Map<StorPoolName, Set<String>> deletedStorPoolProps;
 
+    /**
+     * Combines / merges all give non-null {@link LocalPropsChangePojo}s. If all given {@link LocalPropsChangePojo}s are
+     * null, <code>null</code> is returned.
+     */
+    public static @Nullable LocalPropsChangePojo merge(LocalPropsChangePojo... localPropsChangesToMerge)
+    {
+        boolean hasContent = false;
+        for (@Nullable LocalPropsChangePojo item : localPropsChangesToMerge)
+        {
+            if (item != null)
+            {
+                hasContent = true;
+                break;
+            }
+        }
+
+        @Nullable LocalPropsChangePojo ret;
+        if (hasContent)
+        {
+            ret = new LocalPropsChangePojo();
+            for (LocalPropsChangePojo item : localPropsChangesToMerge)
+            {
+                ret.putAll(item);
+            }
+        }
+        else
+        {
+            ret = null;
+        }
+        return ret;
+    }
+
     public LocalPropsChangePojo()
     {
         changedNodeProps = new HashMap<>();
@@ -31,7 +63,7 @@ public class LocalPropsChangePojo
      *
      * @param pojo
      */
-    public void putAll(LocalPropsChangePojo pojo)
+    public void putAll(@Nullable LocalPropsChangePojo pojo)
     {
         if (pojo != null)
         {
