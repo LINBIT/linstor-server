@@ -221,14 +221,15 @@ public class FreeCapacityAutoPoolSelectorUtils
         }
     }
 
-    private static long getReservedCapacityPrivileged(@Nonnull AccessContext sysCtxRef, @Nonnull StorPool storPoolRef)
+    private static long getReservedCapacityPrivileged(AccessContext sysCtxRef, StorPool storPoolRef)
     {
         long reservedCapacity;
         try
         {
             reservedCapacity = storPoolRef.getFreeSpaceTracker().getPendingAllocatedSum(sysCtxRef);
-            reservedCapacity += getReservedSum(sysCtxRef, storPoolRef.getVolumes(sysCtxRef));
-            reservedCapacity += getReservedSum(sysCtxRef, storPoolRef.getSnapVolumes(sysCtxRef));
+            boolean isThin = storPoolRef.getDeviceProviderKind().usesThinProvisioning();
+            reservedCapacity += getReservedSum(storPoolRef.getVolumes(sysCtxRef), isThin);
+            reservedCapacity += getReservedSum(storPoolRef.getSnapVolumes(sysCtxRef), isThin);
         }
         catch (AccessDeniedException exc)
         {
@@ -238,15 +239,22 @@ public class FreeCapacityAutoPoolSelectorUtils
     }
 
     private static <RSC extends AbsResource<RSC>> long getReservedSum(
-        @Nonnull AccessContext sysCtxRef,
-        @Nonnull Collection<VlmProviderObject<RSC>> absVlmListRef
+        Collection<VlmProviderObject<RSC>> absVlmListRef,
+        boolean isThin
     )
         throws AccessDeniedException
     {
         long ret = 0;
         for (VlmProviderObject<RSC> absVlmData : absVlmListRef)
         {
-            ret += absVlmData.getVolume().getVolumeSize(sysCtxRef);
+            if (isThin)
+            {
+                ret += absVlmData.getAllocatedSize();
+            }
+            else
+            {
+                ret += absVlmData.getUsableSize();
+            }
         }
         return ret;
     }

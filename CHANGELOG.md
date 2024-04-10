@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Freespace calc: Snapshots only reserve allocated size now instead of volume size
+
 ## [1.27.0] - 2024-04-02
 
 ### Added
