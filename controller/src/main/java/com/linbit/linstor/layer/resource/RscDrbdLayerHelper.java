@@ -770,6 +770,10 @@ public class RscDrbdLayerHelper extends
         {
             changed = setIgnoreReason(rscDataRef, IGNORE_REASON_DRBD_DISKLESS, false, true, true);
         }
+        if (rscDataRef.isSkipDiskEnabled(apiCtx, stltConf))
+        {
+            changed |= setIgnoreReason(rscDataRef, IGNORE_REASON_DRBD_SKIP_DISK, false, true, true);
+        }
         return changed;
     }
 

@@ -1381,10 +1381,10 @@ public class CtrlBackupRestoreApiCallHandler
                                 )
                             )
                             .map(apiCallRcList ->
-                            {
-                                responses.addEntries(apiCallRcList);
-                                return (ApiCallRc) responses;
-                            }
+                                {
+                                    responses.addEntries(apiCallRcList);
+                                    return (ApiCallRc) responses;
+                                }
                             )
                             .thenMany(
                                 Flux.just(

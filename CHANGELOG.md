@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Snapshots now cannot be created while SkipDisk is active
+
+### Fixed
+
+- SkipDisk: layers below DRBD now get ignored to prevent errors on the satellites
+
 ## [1.27.1] - 2024-04-25
 
 ### Added
@@ -17,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Freespace calc: Snapshots only reserve allocated size now instead of volume size
-- resource-definition modify now, only warns if a satellite is offline
+- resource-definition modify: now only warns if a satellite is offline
 - AutoVerifyAlgo: allow to use algorithm name additionally to the specific implementation
 - ZFS: try to determine default volblocksize
 
@@ -26,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deleting a remote can now be safely done even if there are active shippings to said remote
 - MakeAvail: trigger update satellite if only FLAGS changed
 - Resource delete: Don't check user set verify-algo if last resource deleted.
-- If mkfs failed, resources have not been demoted(secondary) and couldn't easily be deleted afterward
+- If mkfs fails, resources are now being demoted to secondary and can now easily be deleted afterwards
 - Fixed incorrect least common multiple call when calculating AllocationGranularity
 
 ## [1.27.0] - 2024-04-02

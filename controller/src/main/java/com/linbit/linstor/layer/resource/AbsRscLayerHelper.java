@@ -62,6 +62,7 @@ public abstract class AbsRscLayerHelper<
     public static final String IGNORE_REASON_CACHE_META = "Cache meta";
     public static final String IGNORE_REASON_DRBD_DISKLESS = "DRBD diskless device";
     public static final String IGNORE_REASON_DRBD_METADATA = "DRBD metadata";
+    public static final String IGNORE_REASON_DRBD_SKIP_DISK = "DRBD skip-disk";
     public static final String IGNORE_REASON_EBS_TARGET = "EBS target";
     public static final String IGNORE_REASON_EBS_MISSING_KEY = "EBS no key";
     @Deprecated(forRemoval = true)
