@@ -99,6 +99,18 @@ public class MixedStorPoolHelper
         {
             throw new ImplementationError(exc);
         }
+        catch (InterruptedException exc)
+        {
+            Thread.currentThread().interrupt();
+            throw new ApiRcException(
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.MASK_ERROR,
+                    "AllocationGranularity calculation was interrupted"
+                ),
+                exc,
+                false
+            );
+        }
     }
 
     private void ensureNoGrossSize(VolumeDefinition vlmDfnRef)
@@ -248,7 +260,7 @@ public class MixedStorPoolHelper
     }
 
     private long getLeastCommonExtentSizeInKib(Volume vlmRef)
-        throws AccessDeniedException, StorageException
+        throws AccessDeniedException, StorageException, InterruptedException
     {
         SortedSet<Long> minGranularities = new TreeSet<>();
         Long vlmDfnExtentSize = getCurrentVlmDfnExtentSize(vlmRef.getVolumeDefinition());
@@ -258,7 +270,7 @@ public class MixedStorPoolHelper
         }
         Set<Long> storPoolAndVlmExtentSizes = extractStorPoolAndVlmExtentSizes(vlmRef);
         minGranularities.addAll(storPoolAndVlmExtentSizes);
-        return MathUtils.getLeastCommonMultiple(minGranularities);
+        return MathUtils.leastCommonMultiple(minGranularities);
     }
 
     private @Nullable Long getCurrentVlmDfnExtentSize(VolumeDefinition vlmDfnRef)

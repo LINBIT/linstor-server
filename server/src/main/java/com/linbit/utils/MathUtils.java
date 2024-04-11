@@ -3,7 +3,6 @@ package com.linbit.utils;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -796,66 +795,6 @@ public class MathUtils
             result = upperBound;
         }
         return result;
-    }
-
-    public static long getLeastCommonMultiple(Set<Long> numbers)
-    {
-        Map<Integer, Integer> primeFactors = getHighestPrimeFactors(numbers);
-        long lcm = 1;
-        for (Entry<Integer, Integer> entry : primeFactors.entrySet())
-        {
-            lcm *= Math.pow(entry.getKey(), entry.getValue());
-        }
-        return lcm;
-    }
-
-    public static Map<Integer, Integer> getHighestPrimeFactors(Set<Long> numbers)
-    {
-        Map<Integer, Integer> primeBaseToExponent = new HashMap<>();
-
-        for (long origNum : numbers)
-        {
-            long num = origNum;
-            for (int primeFactor : PRIMES_TO_100)
-            {
-                num = getPrimeFactors(num, primeFactor, primeBaseToExponent);
-                if (num == 1)
-                {
-                    break;
-                }
-            }
-            if (num > 1)
-            {
-                long sqrt = origNum / 2;
-                for (int factor = PRIMES_TO_100[PRIMES_TO_100.length - 1] + 2; factor < sqrt; factor += 2)
-                {
-                    num = getPrimeFactors(num, factor, primeBaseToExponent);
-                }
-            }
-        }
-
-        return primeBaseToExponent;
-    }
-
-    private static long getPrimeFactors(
-        long numRef,
-        int factorRef,
-        Map<Integer, Integer> primeBaseToExponentRef
-    )
-    {
-        long ret = numRef;
-        int count = 0;
-        while (ret % factorRef == 0)
-        {
-            count++;
-            ret /= factorRef;
-        }
-        Integer exp = primeBaseToExponentRef.get(factorRef);
-        if (count > 0 && (exp == null || count > exp))
-        {
-            primeBaseToExponentRef.put(factorRef, count);
-        }
-        return ret;
     }
 
     private MathUtils()
