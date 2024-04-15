@@ -23,7 +23,7 @@ BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python
 %define GRADLE_J11_PATH -Pjava11=lib64
 %else
 %define GRADLE_J11_PATH -Pjava11=lib
-    %if 0%{?rhel} > 8
+    %if 0%{?rhel} > 7
 BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python3
     %else
 BuildRequires: java-11-openjdk-headless java-11-openjdk-devel python2
