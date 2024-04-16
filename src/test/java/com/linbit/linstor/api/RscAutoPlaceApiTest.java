@@ -315,10 +315,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 .addStorPool("fast1", 100 * GB)
                 .build()
             .stltBuilder("stlt3")
-                .addStorPool("slow1", 80*GB)
+                .addStorPool("slow1", 80 * GB)
                 .build()
             .stltBuilder("stlt4")
-                .addStorPool("slow1", 80*GB)
+                .addStorPool("slow1", 80 * GB)
                 .build()
             .addVlmDfn(TEST_RSC_NAME, 0, 50 * GB)
 
@@ -911,20 +911,20 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             )
             .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
             .stltBuilder("stlt1")
-                .addStorPool("sp1", 100*GB)
+                .addStorPool("sp1", 100 * GB)
                 // prefered from free space, but missing "rack" property
                 .build()
             .stltBuilder("stlt2")
-                .addStorPool("sp1", 90*GB)
+                .addStorPool("sp1", 90 * GB)
                 // second prefered from free space, but has no second node with same "rack" property
                 .setNodeProp("Aux/rack", "1")
                 .build()
             .stltBuilder("stlt3")
-                .addStorPool("sp1", 10*GB)
+                .addStorPool("sp1", 10 * GB)
                 .setNodeProp("Aux/rack", "2")
                 .build()
             .stltBuilder("stlt4")
-                .addStorPool("sp1", 10*GB)
+                .addStorPool("sp1", 10 * GB)
                 .setNodeProp("Aux/rack", "2")
                 .build()
 
@@ -1154,8 +1154,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                 ApiConsts.CREATED, // property set
                 ApiConsts.CREATED // rsc autoplace
             )
-            // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
-            // should still know about the previously configured objects
+                // no need for addVlmDfn or stltBuilderCalls. We are in the same instance, the controller
+                // should still know about the previously configured objects
                 .addStorPool(
                     "stor2"
                 )
@@ -1373,27 +1373,27 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         for (int nodeIdx = 0; nodeIdx < 512; nodeIdx++)
         {
-            int a = (nodeIdx >> 8) % 2;
-            int b = (nodeIdx >> 7) % 2;
-            int c = (nodeIdx >> 6) % 2;
-            int d = (nodeIdx >> 5) % 2;
-            int e = (nodeIdx >> 4) % 2;
-            int f = (nodeIdx >> 3) % 2;
-            int g = (nodeIdx >> 2) % 2;
-            int h = (nodeIdx >> 1) % 2;
-            int i = nodeIdx % 2;
+            int propA = (nodeIdx >> 8) % 2;
+            int propB = (nodeIdx >> 7) % 2;
+            int propC = (nodeIdx >> 6) % 2;
+            int propD = (nodeIdx >> 5) % 2;
+            int propE = (nodeIdx >> 4) % 2;
+            int propF = (nodeIdx >> 3) % 2;
+            int propG = (nodeIdx >> 2) % 2;
+            int propH = (nodeIdx >> 1) % 2;
+            int propI = nodeIdx % 2;
 
             call = call.stltBuilder(String.format("stlt.%03d", nodeIdx)) // fill with leading zeroes
                 .addStorPool("sp" + nodeIdx + "_1", 20 * GB, LVM)
-                .setNodeProp("Aux/a", ""+a)
-                .setNodeProp("Aux/b", ""+b)
-                .setNodeProp("Aux/c", ""+c)
-                .setNodeProp("Aux/d", ""+d)
-                .setNodeProp("Aux/e", ""+e)
-                .setNodeProp("Aux/f", ""+f)
-                .setNodeProp("Aux/g", ""+g)
-                .setNodeProp("Aux/h", ""+h)
-                .setNodeProp("Aux/i", ""+i)
+                .setNodeProp("Aux/a", "" + propA)
+                .setNodeProp("Aux/b", "" + propB)
+                .setNodeProp("Aux/c", "" + propC)
+                .setNodeProp("Aux/d", "" + propD)
+                .setNodeProp("Aux/e", "" + propE)
+                .setNodeProp("Aux/f", "" + propF)
+                .setNodeProp("Aux/g", "" + propG)
+                .setNodeProp("Aux/h", "" + propH)
+                .setNodeProp("Aux/i", "" + propI)
                 .build();
         }
 
@@ -1469,20 +1469,20 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         )
             .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
             .stltBuilder("stlt1")
-                .addStorPool("sp1", 100*GB)
+                .addStorPool("sp1", 100 * GB)
                 .build()
             .stltBuilder("stlt2")
-                .addStorPool("sp1", 90*GB)
+                .addStorPool("sp1", 90 * GB)
                 .build()
             .stltBuilder("stlt3")
-                .addStorPool("sp1", 50*GB)
+                .addStorPool("sp1", 50 * GB)
                 .build()
             .addRscDfn("dummyRsc1", 9000)
-                .addVlmDfn("dummyRsc1", 0, 12*MB)
+                .addVlmDfn("dummyRsc1", 0, 12 * MB)
             .addRscDfn("dummyRsc2", 9001)
-                .addVlmDfn("dummyRsc2", 0, 12*MB)
+                .addVlmDfn("dummyRsc2", 0, 12 * MB)
             .addRscDfn("dummyRsc3", 9002)
-                .addVlmDfn("dummyRsc3", 0, 12*MB)
+                .addVlmDfn("dummyRsc3", 0, 12 * MB)
             .addRsc("dummyRsc1", "sp1", "stlt1")
             .addRsc("dummyRsc2", "sp1", "stlt1")
             .addRsc("dummyRsc3", "sp1", "stlt2");
@@ -1518,30 +1518,62 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             ApiConsts.CREATED // rsc autoplace
         )
             .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
-            .setVlmDfnProp(TEST_RSC_NAME, 0, ApiConsts.NAMESPC_SYS_FS + "/"  + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ, "100")
+                .setVlmDfnProp(
+                    TEST_RSC_NAME,
+                    0,
+                    ApiConsts.NAMESPC_SYS_FS + "/"  + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
+                    "100"
+                )
             .stltBuilder("stlt1")
-                .addStorPool("sp1", 100*GB)
+                .addStorPool("sp1", 100 * GB)
                 // sp with highest max throughput - but having already some rscs / vlms deployed
-                .setStorPoolProp("sp1", ApiConsts.NAMESPC_AUTOPLACER + "/"  + ApiConsts.KEY_AUTOPLACE_MAX_THROUGHPUT, "1000")
+                .setStorPoolProp(
+                    "sp1",
+                    ApiConsts.NAMESPC_AUTOPLACER + "/" + ApiConsts.KEY_AUTOPLACE_MAX_THROUGHPUT,
+                    "1000"
+                )
                 .build()
             .stltBuilder("stlt2")
-                .addStorPool("sp1", 100*GB)
-                .setStorPoolProp("sp1", ApiConsts.NAMESPC_AUTOPLACER + "/"  + ApiConsts.KEY_AUTOPLACE_MAX_THROUGHPUT, "800")
+                .addStorPool("sp1", 100 * GB)
+                .setStorPoolProp(
+                    "sp1",
+                    ApiConsts.NAMESPC_AUTOPLACER + "/" + ApiConsts.KEY_AUTOPLACE_MAX_THROUGHPUT,
+                    "800"
+                )
                 .build()
             .stltBuilder("stlt3")
-                .addStorPool("sp1", 100*GB)
-                .setStorPoolProp("sp1", ApiConsts.NAMESPC_AUTOPLACER + "/"  + ApiConsts.KEY_AUTOPLACE_MAX_THROUGHPUT, "500")
+                .addStorPool("sp1", 100 * GB)
+                .setStorPoolProp(
+                    "sp1",
+                    ApiConsts.NAMESPC_AUTOPLACER + "/"  + ApiConsts.KEY_AUTOPLACE_MAX_THROUGHPUT,
+                    "500"
+                )
                 .build()
 
             .addRscDfn("dummyRsc1", 9000)
-                .addVlmDfn("dummyRsc1", 0, 12*MB)
-                .setVlmDfnProp("dummyRsc1", 0,  ApiConsts.NAMESPC_SYS_FS + "/"  + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ, "100")
+                .addVlmDfn("dummyRsc1", 0, 12 * MB)
+                .setVlmDfnProp(
+                    "dummyRsc1",
+                    0,
+                    ApiConsts.NAMESPC_SYS_FS + "/" + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
+                    "100"
+                )
             .addRscDfn("dummyRsc2", 9001)
-                .addVlmDfn("dummyRsc2", 0, 12*MB)
-                .setVlmDfnProp("dummyRsc2", 0,  ApiConsts.NAMESPC_SYS_FS + "/"  + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ, "100")
+                .addVlmDfn("dummyRsc2", 0, 12 * MB)
+                .setVlmDfnProp(
+                    "dummyRsc2",
+                    0,
+                    ApiConsts.NAMESPC_SYS_FS + "/" + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
+                    "100"
+                )
             .addRscDfn("dummyRsc3", 9002)
-                .addVlmDfn("dummyRsc3", 0, 12*MB)
-                .setVlmDfnProp("dummyRsc3", 0,  ApiConsts.NAMESPC_SYS_FS + "/"  + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ, "100")
+                .addVlmDfn("dummyRsc3", 0, 12 * MB)
+                .setVlmDfnProp(
+                    "dummyRsc3",
+                    0,
+                    ApiConsts.NAMESPC_SYS_FS + "/" + ApiConsts.KEY_SYS_FS_BLKIO_THROTTLE_READ,
+                    "100"
+                )
             .addRsc("dummyRsc1", "sp1", "stlt1")
             .addRsc("dummyRsc2", "sp1", "stlt1")
             .addRsc("dummyRsc3", "sp1", "stlt1");
@@ -1580,13 +1612,13 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         )
             .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
             .stltBuilder("stlt1")
-                .addStorPool("sp1", 100*GB)
+                .addStorPool("sp1", 100 * GB)
                 .build()
             .stltBuilder("stlt2")
-                .addStorPool("sp1", 90*GB)
+                .addStorPool("sp1", 90 * GB)
                 .build()
             .stltBuilder("stlt3")
-                .addStorPool("sp1", 50*GB)
+                .addStorPool("sp1", 50 * GB)
                 .build();
 
         evaluateTest(call);
@@ -1617,10 +1649,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         )
             .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
             .stltBuilder("stlt1")
-                .addStorPool("sp1", 100*GB, LVM)
+                .addStorPool("sp1", 100 * GB, LVM)
                 .build()
             .stltBuilder("stlt2") // DO NOT select this
-                .addStorPool("sp1", 1*TB, LVM_THIN)
+                .addStorPool("sp1", 1 * TB, LVM_THIN)
                 .build()
             .stltBuilder("stlt3")
                 .addStorPool("sp1", 900 * GB, LVM)
@@ -1657,17 +1689,17 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
             .stltBuilder("stlt1")
                 .setNodeProp(ApiConsts.KEY_SITE, "A")
-                .addStorPool("sp1", 100*GB, LVM)
+                .addStorPool("sp1", 100 * GB, LVM)
                 .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
                 .build()
             .stltBuilder("stlt2")
                 .setNodeProp(ApiConsts.KEY_SITE, "A")
-                .addStorPool("sp1", 100*GB, LVM)
+                .addStorPool("sp1", 100 * GB, LVM)
                 .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
                 .build()
             .stltBuilder("stlt3")
                 .setNodeProp(ApiConsts.KEY_SITE, "B")
-                .addStorPool("sp1", 100*GB, LVM)
+                .addStorPool("sp1", 100 * GB, LVM)
                 .setExtToolSupported(ExtTools.DRBD_PROXY, true, 42, 42, 9001)
                 .build();
 
@@ -1703,9 +1735,11 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    public void keepFirstCandidateAfterContinuedSearch_Github139Test() throws Exception
+    public void keepFirstCandidateAfterContinuedSearchTest() throws Exception
     {
         /*
+         * Test for GitHub issue 139
+         *
          * Scenario: The Autoplacer.Selector happily finds the first candidate but is unsure
          * if that is the best candidate or not, so it continues searching for a while.
          * When the selector is confident enough that there cannot be any better candidates
@@ -1728,28 +1762,28 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             .addVlmDfn(TEST_RSC_NAME, 0, 1 * GB)
             .stltBuilder("stlt1")
                 .setNodeProp(testKey, "a")
-                .addStorPool("sp1", 100*GB, LVM_THIN) // best stor-pool, best candidate
+                .addStorPool("sp1", 100 * GB, LVM_THIN) // best stor-pool, best candidate
                 .build()
             .stltBuilder("stlt2")
                 .setNodeProp(testKey, "a")
                 // worst stor-pool but the only that can be combined with best candidate
-                .addStorPool("sp1", 10*GB, LVM_THIN)
+                .addStorPool("sp1", 10 * GB, LVM_THIN)
                 .build()
             .stltBuilder("stlt3")
                 .setNodeProp(testKey, "b")
                 // better than the worst, but not as good as best, also not best candidate
-                .addStorPool("sp1", 30*GB, LVM_THIN)
+                .addStorPool("sp1", 30 * GB, LVM_THIN)
                 .build()
             .stltBuilder("stlt4")
                 .setNodeProp(testKey, "b")
                 // better than the worst, but not as good as best, also not best candidate
-                .addStorPool("sp1", 30*GB, LVM_THIN)
+                .addStorPool("sp1", 30 * GB, LVM_THIN)
                 .build()
             .stltBuilder("stlt5")
                 .setNodeProp(testKey, "c")
                 // theoretically combinable to get a score higher than currently best, but
                 // practically not combinable to a candidate due to the property-constraint
-                .addStorPool("sp1", 90*GB, LVM_THIN)
+                .addStorPool("sp1", 90 * GB, LVM_THIN)
                 .build()
             .addReplicasOnSameNodeProp(testKey)
             .addStorPool("sp1");
@@ -1850,7 +1884,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
-    public void AllowMixStorPoolWithRecentEnoughDrbdTest() throws Exception
+    public void allowMixStorPoolWithRecentEnoughDrbdTest() throws Exception
     {
         /*
          * Scenario: We already have a diskful resource in an LVM pool, the
@@ -2042,7 +2076,6 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                         .getVlmProviderObject(vlm.getVolumeDefinition().getVolumeNumber())
                         .getStorPool()
                         .getName()
-                        .displayValue
                 );
             }
         }
@@ -2483,8 +2516,8 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             mockedPeer = Mockito.mock(Peer.class);
             mockedExtToolsMgr = Mockito.mock(ExtToolsManager.class);
 
-            // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to be
-            // ready
+            // Fail deployment of the new resources so that the API call handler doesn't wait for the resource to
+            // be ready
             Mockito.when(mockedPeer.apiCall(anyString(), any()))
                 .thenReturn(Flux.error(new RuntimeException("Deployment deliberately failed")));
             Mockito.when(mockedPeer.isOnline()).thenReturn(true);
