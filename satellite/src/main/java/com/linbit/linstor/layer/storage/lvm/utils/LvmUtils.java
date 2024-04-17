@@ -8,6 +8,7 @@ import com.linbit.linstor.layer.storage.utils.ParseUtils;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
+import com.linbit.utils.ExceptionThrowingSupplier;
 import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_ATTRIBUTES;
@@ -19,6 +20,8 @@ import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_PAT
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_POOL_LV;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_SIZE;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_VG;
+
+import javax.annotation.Nullable;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -169,6 +172,34 @@ public class LvmUtils
         return getLvmConfig(extCmdFactory, volumeGroups);
     }
 
+    private static <T> Map<String, T> retryIfNotAllContainingVgsExist(
+        ExtCmdFactory extCmdFactory,
+        Set<String> volumeGroups,
+        ExceptionThrowingSupplier<Map<String, T>, StorageException> supplierRef
+    )
+        throws StorageException
+    {
+        @Nullable Map<String, T> ret = supplierRef.supply();
+        boolean someMissing = ret == null;
+        if (ret != null)
+        {
+            for (String vg : volumeGroups)
+            {
+                if (!ret.containsKey(vg))
+                {
+                    someMissing = true;
+                    break;
+                }
+            }
+        }
+        if (someMissing)
+        {
+            recacheLvmConfig(extCmdFactory, volumeGroups);
+            ret = supplierRef.supply();
+        }
+        return ret;
+    }
+
     public static HashMap<String, LvsInfo> getLvsInfo(
         final ExtCmdFactory ecf,
         final Set<String> volumeGroups
@@ -294,60 +325,86 @@ public class LvmUtils
     public static Map<String, Long> getExtentSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
         throws StorageException
     {
-        return ParseUtils.parseSimpleTable(
-            execWithRetry(
-                extCmdFactory,
-                volumeGroups,
-                config -> LvmCommands.getExtentSize(extCmdFactory.create(), volumeGroups, config)
-            ),
-            DELIMITER,
-            "extent size"
+        return retryIfNotAllContainingVgsExist(
+            extCmdFactory,
+            volumeGroups,
+            () -> ParseUtils.parseSimpleTable(
+                execWithRetry(
+                    extCmdFactory,
+                    volumeGroups,
+                    config -> LvmCommands.getExtentSize(extCmdFactory.create(), volumeGroups, config)
+                ),
+                DELIMITER,
+                "extent size"
+            )
         );
     }
 
     public static Map<String, Long> getVgTotalSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
         throws StorageException
     {
-        return ParseUtils.parseSimpleTable(
-            execWithRetry(
-                extCmdFactory,
-                volumeGroups,
-                config -> LvmCommands.getVgTotalSize(extCmdFactory.create(), volumeGroups, config)
-            ),
-            DELIMITER,
-            "total size"
+        return retryIfNotAllContainingVgsExist(
+            extCmdFactory,
+            volumeGroups,
+            () -> ParseUtils.parseSimpleTable(
+                execWithRetry(
+                    extCmdFactory,
+                    volumeGroups,
+                    config -> LvmCommands.getVgTotalSize(extCmdFactory.create(), volumeGroups, config)
+                ),
+                DELIMITER,
+                "total size"
+            )
         );
     }
 
     public static Map<String, Long> getVgFreeSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
         throws StorageException
     {
-        return ParseUtils.parseSimpleTable(
-            execWithRetry(
-                extCmdFactory,
-                volumeGroups,
-                config -> LvmCommands.getVgFreeSize(extCmdFactory.create(), volumeGroups, config)
-            ),
-            DELIMITER,
-            "free size"
+        return retryIfNotAllContainingVgsExist(
+            extCmdFactory,
+            volumeGroups,
+            () -> ParseUtils.parseSimpleTable(
+                execWithRetry(
+                    extCmdFactory,
+                    volumeGroups,
+                    config -> LvmCommands.getVgFreeSize(extCmdFactory.create(), volumeGroups, config)
+                ),
+                DELIMITER,
+                "free size"
+            )
         );
     }
 
     public static Map<String, Long> getThinTotalSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
         throws StorageException
     {
-        return ParseUtils.parseSimpleTable(
-            execWithRetry(
-                extCmdFactory,
-                volumeGroups,
-                config -> LvmCommands.getVgThinTotalSize(extCmdFactory.create(), volumeGroups, config)
-            ),
-            DELIMITER,
-            "total thin size"
+        return retryIfNotAllContainingVgsExist(
+            extCmdFactory,
+            volumeGroups,
+            () -> ParseUtils.parseSimpleTable(
+                execWithRetry(
+                    extCmdFactory,
+                    volumeGroups,
+                    config -> LvmCommands.getVgThinTotalSize(extCmdFactory.create(), volumeGroups, config)
+                ),
+                DELIMITER,
+                "total thin size"
+            )
         );
     }
 
     public static Map<String, Long> getThinFreeSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
+        throws StorageException
+    {
+        return retryIfNotAllContainingVgsExist(
+            extCmdFactory,
+            volumeGroups,
+            () -> getThinFreeSizeImpl(extCmdFactory, volumeGroups)
+        );
+    }
+
+    private static Map<String, Long> getThinFreeSizeImpl(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
         throws StorageException
     {
         final int expectedColums = 3;
@@ -409,10 +466,30 @@ public class LvmUtils
         return result;
     }
 
+    public static void checkVgExists(ExtCmdFactory extCmdFactory, String volumeGroup) throws StorageException
+    {
+        if (!checkVgExistsBool(extCmdFactory, volumeGroup))
+        {
+            throw new StorageException("Volume group '" + volumeGroup + "' not found");
+        }
+    }
+
     public static boolean checkVgExistsBool(
         final ExtCmdFactory extCmdFactory,
         final String volumeGroup
     )
+        throws StorageException
+    {
+        boolean exists = checkVgExistsBoolImpl(extCmdFactory, volumeGroup);
+        if (!exists)
+        {
+            recacheLvmConfig(extCmdFactory, volumeGroup);
+            exists = checkVgExistsBoolImpl(extCmdFactory, volumeGroup);
+        }
+        return exists;
+    }
+
+    private static boolean checkVgExistsBoolImpl(final ExtCmdFactory extCmdFactory, final String volumeGroup)
         throws StorageException
     {
         OutputData output = execWithRetry(
@@ -435,19 +512,23 @@ public class LvmUtils
         return matchFlag;
     }
 
-    public static void checkVgExists(ExtCmdFactory extCmdFactory, String volumeGroup) throws StorageException
-    {
-        if (!checkVgExistsBool(extCmdFactory, volumeGroup))
-        {
-            throw new StorageException("Volume group '" + volumeGroup + "' not found");
-        }
-    }
-
     public static boolean checkThinPoolExistsBool(
         ExtCmdFactory extCmdFactory,
         String volumeGroup,
         String thinPool
     )
+        throws StorageException
+    {
+        boolean exists = checkThinPoolExistsBoolImpl(extCmdFactory, volumeGroup, thinPool);
+        if (!exists)
+        {
+            recacheLvmConfig(extCmdFactory, volumeGroup);
+            exists = checkThinPoolExistsBoolImpl(extCmdFactory, volumeGroup, thinPool);
+        }
+        return exists;
+    }
+
+    private static boolean checkThinPoolExistsBoolImpl(ExtCmdFactory extCmdFactory, String volumeGroup, String thinPool)
         throws StorageException
     {
         HashMap<String, LvsInfo> map = getLvsInfo(extCmdFactory, Collections.singleton(volumeGroup));
