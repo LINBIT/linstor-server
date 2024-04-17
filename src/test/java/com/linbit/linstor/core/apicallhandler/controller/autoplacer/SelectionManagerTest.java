@@ -189,7 +189,7 @@ public class SelectionManagerTest extends GenericDbBase
     }
 
     @Test
-    public void partialSelection() throws Exception
+    public void partialDiffSelection() throws Exception
     {
         AutoSelectFilterApi selectFilter = new AutoSelectFilterBuilder()
             .setPlaceCount(3)
@@ -201,6 +201,35 @@ public class SelectionManagerTest extends GenericDbBase
             errorReporter,
             selectFilter,
             Arrays.asList(nodes.get("node-a1-1"), nodes.get("node-b1-2")),
+            2,
+            0,
+            Collections.emptyList(),
+            Collections.emptyMap(),
+            storPoolWithScores,
+            false
+        );
+
+        Set<Autoplacer.StorPoolWithScore> actual = selectionManager.findSelection(0);
+        Assert.assertEquals(1, actual.size());
+        for (Autoplacer.StorPoolWithScore selected : actual)
+        {
+            Assert.assertEquals("c", selected.storPool.getNode().getProps(accessContext).getProp(zoneKey));
+        }
+    }
+
+    @Test
+    public void partialSameSelection() throws Exception
+    {
+        AutoSelectFilterApi selectFilter = new AutoSelectFilterBuilder()
+            .setPlaceCount(3)
+            .setReplicasOnSameList(Collections.singletonList(zoneKey))
+            .build();
+
+        SelectionManager selectionManager = new SelectionManager(
+            DummySecurityInitializer.getSystemAccessContext(),
+            errorReporter,
+            selectFilter,
+            Arrays.asList(nodes.get("node-c1-1"), nodes.get("node-c1-2")),
             2,
             0,
             Collections.emptyList(),

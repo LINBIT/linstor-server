@@ -777,6 +777,90 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
+    public void replicasOnDifferentWithRollbackTest() throws Exception
+    {
+        /*
+         * This test aims to force the autoplacer to make the first selection (which should make it into the final
+         * decision), then make the autoplacer make the second selection. This second choice should not yield to any
+         * result (dead-end), so the autoplacer will need to rollback this second selection.
+         *
+         * The point of this test is to test the rollback mechanism in combination with replicas-on-differnt. The new
+         * second selection must still consider the first decisions node-prop for replicas-on-differnt.
+         */
+        evaluateTest(
+            new RscAutoPlaceApiCall(
+                TEST_RSC_NAME,
+                3,
+                true,
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // property set
+                ApiConsts.CREATED, // rsc autoplace
+                ApiConsts.CREATED // rsc autoplace
+            )
+                .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB)
+            .stltBuilder("node0.00")
+                // best candidate, should also be selected in the end
+                .setNodeProp("Aux/A", "0")
+                .setNodeProp("Aux/B", "0")
+                .addStorPool("stor", 100 * GB)
+                .build()
+            .stltBuilder("node1.11")
+                // second best, but should be rolled back
+                .setNodeProp("Aux/A", "1")
+                .setNodeProp("Aux/B", "1")
+                .addStorPool("stor", 90 * GB)
+                .build()
+            .stltBuilder("node2.10")
+                // cannot be selected while node1.11 is selected
+                // but also cannot be selected while node0.00 is selected
+                .setNodeProp("Aux/A", "1")
+                .setNodeProp("Aux/B", "0")
+                .addStorPool("stor", 80 * GB)
+                .build()
+            .stltBuilder("node3.21")
+                // cannot be selected while node1.11 is selected
+                .setNodeProp("Aux/A", "2")
+                .setNodeProp("Aux/B", "1")
+                .addStorPool("stor", 70 * GB)
+                .build()
+            .stltBuilder("node4.12")
+                // also cannot be selected while node 1.11 is selected
+                .setNodeProp("Aux/A", "1")
+                .setNodeProp("Aux/B", "2")
+                .addStorPool("stor", 10 * GB)
+                .build()
+
+            .addReplicasOnDifferentNodeProp("Aux/A")
+            .addReplicasOnDifferentNodeProp("Aux/B")
+        );
+
+        List<Node> deployedNodes = nodesMap.values()
+            .stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 3 nodes
+            .collect(Collectors.toList());
+        assertEquals(3, deployedNodes.size());
+
+        for (int idx1 = 0; idx1 < deployedNodes.size(); idx1++)
+        {
+            Node firstNode = deployedNodes.get(idx1);
+            Props firstProps = firstNode.getProps(SYS_CTX);
+            for (int idx2 = idx1 + 1; idx2 < deployedNodes.size(); idx2++)
+            {
+                Node secondNode = deployedNodes.get(idx2);
+                Props secondProps = secondNode.getProps(SYS_CTX);
+
+                assertNotEquals(firstProps.getProp("Aux/A"), secondProps.getProp("Aux/A"));
+                assertNotEquals(firstProps.getProp("Aux/B"), secondProps.getProp("Aux/B"));
+            }
+        }
+
+        assertEquals("node0.00", deployedNodes.get(0).getName().displayValue);
+        assertEquals("node3.21", deployedNodes.get(1).getName().displayValue);
+        assertEquals("node4.12", deployedNodes.get(2).getName().displayValue);
+    }
+
+    @Test
     public void replicasOnSameTest() throws Exception
     {
         evaluateTest(

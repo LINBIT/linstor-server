@@ -724,7 +724,7 @@ public class StorPoolFilter
                         throw new ApiRcException(
                             ApiCallRcImpl.simpleEntry(
                                 ApiConsts.FAIL_UNDECIDABLE_AUTOPLACMENT,
-                                "The propert property in --replicas-on-same '" + elem + "' is already set " +
+                                "The property in --replicas-on-same '" + elem + "' is already set " +
                                     "on already deployed nodes with different values. Autoplacer cannot decide " +
                                     "which value to continue with. Linstor found the following conflicting values: " +
                                     nodeValues

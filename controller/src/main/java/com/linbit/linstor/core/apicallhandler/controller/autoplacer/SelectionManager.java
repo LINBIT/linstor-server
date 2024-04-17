@@ -1,6 +1,11 @@
 package com.linbit.linstor.core.apicallhandler.controller.autoplacer;
 
+import com.linbit.ImplementationError;
+import com.linbit.linstor.api.ApiCallRcImpl;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
+import com.linbit.linstor.core.apicallhandler.controller.autoplacer.Autoplacer.StorPoolWithScore;
+import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
@@ -12,11 +17,15 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
+import javax.annotation.Nullable;
+
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -34,29 +43,18 @@ import java.util.Set;
  */
 public class SelectionManager
 {
+    /** DRBD Version 9.1.0 */
     private static final Version DFLT_DISKLESS_DRBD_VERSION = new Version(9, 1, 0);
+
+    private static final String REPL_ON_SAME_UNDECIDED = null;
 
     private final AccessContext accessContext;
     private final ErrorReporter errorReporter;
-    private final List<Node> alreadyDeployedOnNodes;
-    private final Map<DeviceProviderKind, List</* DrbdVersion */Version>> alreadyDeployedProviderKindsAndVersions;
-    private final List<SharedStorPoolName> alreadyDeployedInSharedSPNames;
 
-    private final AutoSelectFilterApi selectFilter;
-    private final Set<Node> selectedNodes;
-    private final Set<SharedStorPoolName> selectedSharedSPNames;
-    private final Set<Autoplacer.StorPoolWithScore> selectedStorPoolWithScoreSet;
     private final Autoplacer.StorPoolWithScore[] sortedStorPoolByScoreArr;
-    private final int additionalRscCountToSelect;
-    private final Map<DeviceProviderKind, List</* DrbdVersion */ Version>> selectedProviderKindsToDrbdVersions;
     private final boolean allowStorPoolMixing;
 
-    /*
-     * temporary maps, extended when a storage pool is added and
-     * recalculated when a storage pool is removed
-     */
-    private final HashMap<String, String> sameProps = new HashMap<>();
-    private final HashMap<String, List<String>> diffProps = new HashMap<>();
+    private final LinkedList<State> selectionStack = new LinkedList<>();
 
     public SelectionManager(
         AccessContext accessContextRef,
@@ -74,31 +72,7 @@ public class SelectionManager
     {
         accessContext = accessContextRef;
         errorReporter = errorReporterRef;
-        selectFilter = selectFilterRef;
-        alreadyDeployedOnNodes = alreadyDeployedOnNodesRef;
-        alreadyDeployedInSharedSPNames = alreadyDeployedInSharedSPNamesRef;
-        selectedProviderKindsToDrbdVersions = new HashMap<>();
         sortedStorPoolByScoreArr = sortedStorPoolByScoreArrRef;
-
-        if (selectFilterRef.getDisklessType() == null)
-        {
-            additionalRscCountToSelect = getReplicaCount(selectFilterRef, diskfulNodeCount);
-
-            HashMap<DeviceProviderKind, List<Version>> tmpMap = new HashMap<>();
-            for (Entry<DeviceProviderKind, List<Version>> entry : alreadyDeployedProviderKindsRef.entrySet())
-            {
-                tmpMap.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
-            }
-            alreadyDeployedProviderKindsAndVersions = Collections.unmodifiableMap(tmpMap);
-        }
-        else
-        {
-            additionalRscCountToSelect = getReplicaCount(selectFilterRef, disklessNodeCount);
-            alreadyDeployedProviderKindsAndVersions = Collections.singletonMap(
-                DeviceProviderKind.DISKLESS,
-                Collections.singletonList(DFLT_DISKLESS_DRBD_VERSION) // should not matter what version we take here
-            );
-        }
 
         boolean tmpAllowMixing = allowStorPoolMixingRef;
         for (Node alreadyDeployedNode : alreadyDeployedOnNodesRef)
@@ -111,16 +85,171 @@ public class SelectionManager
         }
         allowStorPoolMixing = tmpAllowMixing;
 
-        selectedNodes = new HashSet<>();
-        selectedSharedSPNames = new HashSet<>();
-        selectedStorPoolWithScoreSet = new HashSet<>();
+        final Map<DeviceProviderKind, List<Version>> initDeployedProviderKindsToDrbdVersionsRef;
+        if (selectFilterRef.getDisklessType() == null)
+        {
+            HashMap<DeviceProviderKind, List<Version>> tmpMap = new HashMap<>();
+            for (Entry<DeviceProviderKind, List<Version>> entry : alreadyDeployedProviderKindsRef.entrySet())
+            {
+                tmpMap.put(entry.getKey(), Collections.unmodifiableList(entry.getValue()));
+            }
+            initDeployedProviderKindsToDrbdVersionsRef = Collections.unmodifiableMap(tmpMap);
+        }
+        else
+        {
+            initDeployedProviderKindsToDrbdVersionsRef = Collections.singletonMap(
+                DeviceProviderKind.DISKLESS,
+                Collections.singletonList(DFLT_DISKLESS_DRBD_VERSION) // should not matter what version we take here
+            );
+        }
 
-        clear();
+        final HashMap<String, String> initSameProps = initializeSameProps(selectFilterRef, alreadyDeployedOnNodesRef);
+
+        final HashMap<String, List<String>> initDiffProps = initializeDiffProps(
+            selectFilterRef,
+            alreadyDeployedOnNodesRef
+        );
+        selectionStack.push(
+            new State(
+                alreadyDeployedOnNodesRef,
+                alreadyDeployedInSharedSPNamesRef,
+                initDeployedProviderKindsToDrbdVersionsRef,
+                new HashSet<>(),
+                getReplicaCount(
+                    selectFilterRef,
+                    selectFilterRef.getDisklessType() == null ? diskfulNodeCount : disklessNodeCount
+                ),
+                initSameProps,
+                initDiffProps
+            )
+        );
+    }
+
+    private HashMap<String, String> initializeSameProps(
+        AutoSelectFilterApi selectFilterRef,
+        List<Node> alreadyDeployedOnNodesRef
+    )
+        throws AccessDeniedException
+    {
+        final HashMap<String, String> initSameProps = new HashMap<>();
+
+        if (selectFilterRef.getReplicasOnSameList() != null)
+        {
+            for (String replOnSame : selectFilterRef.getReplicasOnSameList())
+            {
+                final int assignIdx = replOnSame.indexOf("=");
+                final String key;
+                final String val;
+                if (assignIdx != -1)
+                {
+                    key = replOnSame.substring(0, assignIdx);
+                    val = getSameValFromNodes(key, alreadyDeployedOnNodesRef, replOnSame.substring(assignIdx + 1));
+                }
+                else
+                {
+                    key = replOnSame;
+                    val = getSameValFromNodes(key, alreadyDeployedOnNodesRef, REPL_ON_SAME_UNDECIDED);
+                }
+                initSameProps.put(key, val);
+            }
+        }
+        return initSameProps;
+    }
+
+    private @Nullable String getSameValFromNodes(
+        String keyRef,
+        List<Node> alreadyDeployedOnNodesRef,
+        @Nullable String dfltIfNotUsed
+    )
+        throws AccessDeniedException
+    {
+        HashMap<String, List<String>> valToNodeListMap = getValuesToNodesListMap(keyRef, alreadyDeployedOnNodesRef);
+
+        final @Nullable String ret;
+        switch (valToNodeListMap.size())
+        {
+            case 0:
+                ret = dfltIfNotUsed;
+                break;
+            case 1:
+                ret = valToNodeListMap.keySet().iterator().next();
+                break;
+            default:
+                throw new ApiRcException(
+                    ApiCallRcImpl.simpleEntry(
+                        ApiConsts.FAIL_UNDECIDABLE_AUTOPLACMENT,
+                        "The property in --replicas-on-same '" + keyRef + "' is already set " +
+                            "on already deployed nodes with different values. Autoplacer cannot decide " +
+                            "which value to continue with. Linstor found the following conflicting values: " +
+                            valToNodeListMap
+                    )
+                );
+        }
+        return ret;
+    }
+
+    private HashMap<String, List<String>> getValuesToNodesListMap(String keyRef, List<Node> alreadyDeployedOnNodesRef)
+        throws AccessDeniedException
+    {
+        HashMap<String, List<String>> valToNodeList = new HashMap<>();
+
+        for (Node node : alreadyDeployedOnNodesRef)
+        {
+            Props prop = node.getProps(accessContext);
+            @Nullable String val = prop.getProp(keyRef);
+            if (val != null)
+            {
+                valToNodeList.computeIfAbsent(val, ignore -> new ArrayList<>())
+                    .add(node.getName().displayValue);
+            }
+        }
+        return valToNodeList;
+    }
+
+    private HashMap<String, List<String>> initializeDiffProps(
+        AutoSelectFilterApi selectFilterRef,
+        List<Node> alreadyDeployedOnNodesRef
+    )
+        throws AccessDeniedException
+    {
+        final HashMap<String, List<String>> initDiffProps = new HashMap<>();
+        if (selectFilterRef.getReplicasOnDifferentList() != null)
+        {
+            for (String replOnDiff : selectFilterRef.getReplicasOnDifferentList())
+            {
+                ArrayList<String> list = new ArrayList<>();
+                int assignIdx = replOnDiff.indexOf("=");
+                String key;
+                if (assignIdx != -1)
+                {
+                    key = replOnDiff.substring(0, assignIdx);
+                    String val = replOnDiff.substring(assignIdx + 1);
+                    list.add(val);
+                }
+                else
+                {
+                    key = replOnDiff;
+                }
+                list.addAll(getValuesToNodesListMap(key, alreadyDeployedOnNodesRef).keySet());
+                initDiffProps.put(key, Collections.unmodifiableList(list));
+            }
+        }
+        return initDiffProps;
     }
 
     public int getAdditionalRscCountToSelect()
     {
-        return additionalRscCountToSelect;
+        return getCurrentState().remainingRscCountToSelect;
+    }
+
+    private State getCurrentState()
+    {
+        final @Nullable State curState = selectionStack.peek();
+        if (curState == null)
+        {
+            throw new ImplementationError("Current state is unexpectedly null.");
+        }
+        return curState;
     }
 
     private int getReplicaCount(AutoSelectFilterApi selectFilterRef, int alreadyExistingCount)
@@ -158,9 +287,8 @@ public class SelectionManager
 
     public HashSet<Autoplacer.StorPoolWithScore> findSelection(int startIdxRef) throws AccessDeniedException
     {
-        clear();
         findSelectionImpl(startIdxRef);
-        return new HashSet<>(selectedStorPoolWithScoreSet);
+        return new HashSet<>(getCurrentState().selectedStorPoolWithScoreSet);
     }
 
     private void findSelectionImpl(int startIdxRef) throws AccessDeniedException
@@ -178,7 +306,13 @@ public class SelectionManager
                      * recursion could not finish, i.e. the current selection does not allow enough storage pools
                      * remove our selection and retry with the next storage pool
                      */
-                    unselect(currentSpWithScore);
+                    unselectLast();
+                    errorReporter.logTrace(
+                        "Autoplacer.Selector: Removing StorPool '%s' on Node '%s' from current selection, " +
+                            "since we could not complete the selection.",
+                        currentSpWithScore.storPool.getName().displayValue,
+                        currentSpWithScore.storPool.getNode().getName().displayValue
+                    );
                 }
             }
         }
@@ -186,35 +320,63 @@ public class SelectionManager
 
     private boolean isComplete()
     {
-        return selectedStorPoolWithScoreSet.size() == additionalRscCountToSelect;
+        return getCurrentState().remainingRscCountToSelect <= 0;
+    }
+
+    private void logNotSelecting(StorPool sp, String reason)
+    {
+        errorReporter.logTrace(
+            "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
+                "canditate-selection as %s",
+            sp.getName().displayValue,
+            sp.getNode().getName().displayValue,
+            reason
+        );
     }
 
     public boolean isAllowed(StorPool sp) throws AccessDeniedException
     {
-        Node node = sp.getNode();
-        Props nodeProps = node.getProps(accessContext);
+        final State curState = getCurrentState();
 
-        boolean isAllowed = !selectedNodes.contains(node);
-        isAllowed &= !selectedSharedSPNames.contains(sp.getSharedStorPoolName());
+        boolean isAllowed = checkNode(sp, curState);
+        isAllowed &= checkSharedSpName(sp, curState);
+        isAllowed &= checkDevProviderKind(sp, curState);
+        isAllowed &= checkSameProps(sp, curState);
+        isAllowed &= checkDiffProps(sp, curState);
+        return isAllowed;
+    }
 
+    private boolean checkNode(final StorPool spRef, final State curStateRef)
+    {
+        boolean isAllowed = !curStateRef.containsNode(spRef.getNode());
         if (!isAllowed)
         {
-            errorReporter.logTrace(
-                "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
-                    "canditate-selection as another StorPool was already selected from this node ",
-                sp.getName().displayValue,
-                sp.getNode().getName().displayValue
-            );
+            logNotSelecting(spRef, "another StorPool was already selected from this node");
         }
+        return isAllowed;
+    }
 
-        DeviceProviderKind candidateDevProvKind = sp.getDeviceProviderKind();
-        Version candidateDrbdVersion = getDrbdVersion(sp);
-        Set<Entry<DeviceProviderKind, List<Version>>> selectedDevProvKindsToDrbdVersion = selectedProviderKindsToDrbdVersions
-            .entrySet();
-        for (Entry<DeviceProviderKind, List<Version>> selectedKindAndVersion : selectedDevProvKindsToDrbdVersion)
+    private boolean checkSharedSpName(final StorPool spRef, final State curStateRef)
+    {
+        boolean isAllowed = !curStateRef.containsSharedSpName(spRef.getSharedStorPoolName());
+        if (!isAllowed)
         {
-            DeviceProviderKind selectedKind = selectedKindAndVersion.getKey();
-            for (Version selectedDrbdVersion : selectedKindAndVersion.getValue())
+            logNotSelecting(spRef, "another StorPool with the given shared-name was already selected");
+        }
+        return isAllowed;
+    }
+
+    private boolean checkDevProviderKind(final StorPool spRef, final State curStateRef) throws AccessDeniedException
+    {
+        boolean isAllowed = true;
+        DeviceProviderKind candidateDevProvKind = spRef.getDeviceProviderKind();
+        Version candidateDrbdVersion = getDrbdVersion(spRef);
+
+        var selectedDevProvKindsToDrbdVersionEntrySet = curStateRef.selectedProviderKindsToDrbdVersions.entrySet();
+        for (Entry<DeviceProviderKind, List<Version>> selectedKindAndVer : selectedDevProvKindsToDrbdVersionEntrySet)
+        {
+            DeviceProviderKind selectedKind = selectedKindAndVer.getKey();
+            for (Version selectedDrbdVersion : selectedKindAndVer.getValue())
             {
                 if (!DeviceProviderKind.isMixingAllowed(
                     candidateDevProvKind,
@@ -224,51 +386,65 @@ public class SelectionManager
                     allowStorPoolMixing
                 ))
                 {
-                    errorReporter.logTrace(
-                        "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
-                            "canditate-selection as its provider kind (%s) does not match already selected (%s)",
-                        sp.getName().displayValue,
-                        sp.getNode().getName().displayValue,
-                        candidateDevProvKind.name(),
-                        selectedKind.name()
+                    logNotSelecting(
+                        spRef,
+                        String.format(
+                            "its provider kind (%s) does not match already selected (%s)",
+                            candidateDevProvKind.name(),
+                            selectedKind.name()
+                        )
                     );
                     isAllowed = false;
                 }
             }
         }
+        return isAllowed;
+    }
 
 
-        // checking same props
-        Iterator<Map.Entry<String, String>> samePropEntrySetIterator = sameProps.entrySet().iterator();
+    private boolean checkSameProps(final StorPool spRef, final State curStateRef) throws AccessDeniedException
+    {
+        boolean isAllowed = true;
+        final Props nodePropsRef = spRef.getNode().getProps(accessContext);
+
+        Iterator<Map.Entry<String, String>> samePropEntrySetIterator = curStateRef.sameProps.entrySet().iterator();
         while (isAllowed && samePropEntrySetIterator.hasNext())
         {
             Map.Entry<String, String> sameProp = samePropEntrySetIterator.next();
-            String samePropValue = sameProp.getValue();
+            @Nullable String samePropValue = sameProp.getValue();
             if (samePropValue != null)
             {
-                String nodePropValue = nodeProps.getProp(sameProp.getKey());
+                String nodePropValue = nodePropsRef.getProp(sameProp.getKey());
                 // if the node does not have the property, do not allow selecting this storage pool
                 isAllowed = nodePropValue != null && nodePropValue.equals(samePropValue);
                 if (!isAllowed)
                 {
-                    errorReporter.logTrace(
-                        "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
-                            "canditate-selection as the node has property '%s' set to '%s' while the already " +
+                    logNotSelecting(
+                        spRef,
+                        String.format(
+                            "the node has property '%s' set to '%s' while the already " +
                             "selected nodes require the value to be '%s'",
-                        sp.getName().displayValue,
-                        sp.getNode().getName().displayValue,
-                        sameProp.getKey(),
-                        nodePropValue,
-                        samePropValue
+                            sameProp.getKey(),
+                            nodePropValue,
+                            samePropValue
+                        )
                     );
                 }
             }
         }
-        // checking diff props
-        Iterator<Map.Entry<String, List<String>>> diffPropEntrySetIterator = diffProps.entrySet().iterator();
-        while (isAllowed && diffPropEntrySetIterator.hasNext())
+        return isAllowed;
+    }
+
+
+    private boolean checkDiffProps(final StorPool spRef, final State curStateRef) throws AccessDeniedException
+    {
+        boolean isAllowed = true;
+
+        final Props nodeProps = spRef.getNode().getProps(accessContext);
+        Iterator<Map.Entry<String, List<String>>> diffPropEntrySetIt = curStateRef.diffProps.entrySet().iterator();
+        while (isAllowed && diffPropEntrySetIt.hasNext())
         {
-            Map.Entry<String, List<String>> diffProp = diffPropEntrySetIterator.next();
+            Map.Entry<String, List<String>> diffProp = diffPropEntrySetIt.next();
 
             String nodePropValue = nodeProps.getProp(diffProp.getKey());
             if (nodePropValue != null)
@@ -277,26 +453,26 @@ public class SelectionManager
                 isAllowed = !diffPropValue.contains(nodePropValue);
                 if (!isAllowed)
                 {
-                    errorReporter.logTrace(
-                        "Autoplacer.Selector: cannot add StorPool '%s' on Node '%s' to " +
-                            "canditate-selection as the node has property '%s' set to '%s', but that value is " +
+                    logNotSelecting(
+                        spRef,
+                        String.format(
+                            "the node has property '%s' set to '%s', but that value is " +
                             "already taken by another node from the current selection",
-                        sp.getName().displayValue,
-                        sp.getNode().getName().displayValue,
-                        diffProp.getKey(),
-                        nodePropValue
+                            diffProp.getKey(),
+                            nodePropValue
+                        )
                     );
                 }
             }
         }
-
         return isAllowed;
     }
 
     private void select(Autoplacer.StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
     {
-        StorPool currentStorPool = currentSpWithScoreRef.storPool;
-        Props nodeProps = currentStorPool.getNode().getProps(accessContext);
+        final State curState = getCurrentState();
+        final StorPool curSp = currentSpWithScoreRef.storPool;
+        final Props nodeProps = curSp.getNode().getProps(accessContext);
 
         errorReporter.logTrace(
             "Autoplacer.Selector: Adding StorPool '%s' on Node '%s' to current selection",
@@ -304,15 +480,9 @@ public class SelectionManager
             currentSpWithScoreRef.storPool.getNode().getName().displayValue
         );
 
-        selectedProviderKindsToDrbdVersions.computeIfAbsent(
-            currentStorPool.getDeviceProviderKind(),
-            ignored -> new ArrayList<>()
-        )
-            .add(getDrbdVersion(currentStorPool));
-
         // update same props
-        Map<String, String> updateEntriesForSameProps = new HashMap<>(); // prevent concurrentModificationException
-        for (Map.Entry<String, String> sameProp : sameProps.entrySet())
+        Map<String, String> updatedSameProps = new HashMap<>(curState.sameProps);
+        for (Map.Entry<String, String> sameProp : curState.sameProps.entrySet())
         {
             if (sameProp.getValue() == null)
             {
@@ -320,146 +490,41 @@ public class SelectionManager
                 String propValue = nodeProps.getProp(key);
                 if (propValue != null)
                 {
-                    updateEntriesForSameProps.put(key, propValue);
+                    updatedSameProps.put(key, propValue);
                 }
             }
         }
-        sameProps.putAll(updateEntriesForSameProps);
 
         // update diff props
-        for (Map.Entry<String, List<String>> diffProp : diffProps.entrySet())
+        Map<String, List<String>> updatedDiffProps = new HashMap<>(curState.diffProps);
+        for (Map.Entry<String, List<String>> diffProp : curState.diffProps.entrySet())
         {
             String key = diffProp.getKey();
+            List<String> valuesCopy = new ArrayList<>(diffProp.getValue());
             String propValue = nodeProps.getProp(key);
             if (propValue != null)
             {
-                diffProp.getValue().add(propValue);
+                valuesCopy.add(propValue);
             }
+            updatedDiffProps.put(key, valuesCopy);
         }
 
-        selectedStorPoolWithScoreSet.add(currentSpWithScoreRef);
-        selectedNodes.add(currentStorPool.getNode());
-        selectedSharedSPNames.add(currentStorPool.getSharedStorPoolName());
-    }
-
-    private void unselect(Autoplacer.StorPoolWithScore currentSpWithScoreRef) throws AccessDeniedException
-    {
-        StorPool sp = currentSpWithScoreRef.storPool;
-        selectedStorPoolWithScoreSet.remove(currentSpWithScoreRef);
-        selectedNodes.remove(sp.getNode());
-        selectedSharedSPNames.remove(sp.getSharedStorPoolName());
-
-        List<Version> drbdVersions = selectedProviderKindsToDrbdVersions.get(sp.getDeviceProviderKind());
-        drbdVersions.remove(getDrbdVersion(sp));
-        if (drbdVersions.isEmpty())
-        {
-            selectedProviderKindsToDrbdVersions.remove(sp.getDeviceProviderKind());
-        }
-        /*
-         * The current selection always must contain all alreadyExistingProviderKinds
-         */
-        for (Entry<DeviceProviderKind, List<Version>> entry : alreadyDeployedProviderKindsAndVersions.entrySet())
-        {
-            assert selectedProviderKindsToDrbdVersions.containsKey(entry.getKey());
-            assert selectedProviderKindsToDrbdVersions.get(entry.getKey()).containsAll(entry.getValue());
-        }
-
-        errorReporter.logTrace(
-            "Autoplacer.Selector: Removing StorPool '%s' on Node '%s' to current selection",
-            sp.getName().displayValue,
-            sp.getNode().getName().displayValue
+        selectionStack.push(
+            new State(
+                add(curState.selectedNodes, curSp.getNode()),
+                add(curState.selectedSharedSPNames, curSp.getSharedStorPoolName()),
+                add(curState.selectedProviderKindsToDrbdVersions, curSp.getDeviceProviderKind(), getDrbdVersion(curSp)),
+                add(curState.selectedStorPoolWithScoreSet, currentSpWithScoreRef),
+                curState.remainingRscCountToSelect - 1,
+                updatedSameProps,
+                updatedDiffProps
+            )
         );
-
-        rebuildTemporaryMaps();
     }
 
-    /*
-     * This method could be implemented much more performant. However this would need
-     * a bit more clever strategy for rolling back those maps
-     */
-    private void rebuildTemporaryMaps() throws AccessDeniedException
+    private void unselectLast()
     {
-        sameProps.clear();
-        if (selectFilter.getReplicasOnSameList() != null)
-        {
-            for (String replOnSame : selectFilter.getReplicasOnSameList())
-            {
-                int assignIdx = replOnSame.indexOf("=");
-
-                if (assignIdx != -1)
-                {
-                    String key = replOnSame.substring(0, assignIdx);
-                    String val = replOnSame.substring(assignIdx + 1);
-                    sameProps.put(key, val);
-                }
-                else
-                {
-                    String key = replOnSame;
-                    String selectedValue = null;
-                    for (Node selectedNode : selectedNodes)
-                    {
-                        String selectedNodeValue = selectedNode.getProps(accessContext).getProp(key);
-                        if (selectedNodeValue != null)
-                        {
-                            selectedValue = selectedNodeValue;
-                            /*
-                             * all other nodes of the selectedNodes set have to have the same value
-                             * otherwise they should not be in the list.
-                             */
-                            break;
-                        }
-                    }
-                    sameProps.put(key, selectedValue);
-                }
-            }
-        }
-
-        diffProps.clear();
-        if (selectFilter.getReplicasOnDifferentList() != null)
-        {
-            for (String replOnDiff : selectFilter.getReplicasOnDifferentList())
-            {
-                String key;
-                int assignIdx = replOnDiff.indexOf("=");
-                List<String> list = new ArrayList<>();
-
-                if (assignIdx == -1)
-                {
-                    key = replOnDiff;
-                }
-                else
-                {
-                    key = replOnDiff.substring(0, assignIdx);
-                    list.add(replOnDiff.substring(assignIdx + 1));
-                }
-                for (Node selectedNode : selectedNodes)
-                {
-                    String selectedNodeValue = selectedNode.getProps(accessContext).getProp(key);
-                    if (selectedNodeValue != null)
-                    {
-                        list.add(selectedNodeValue);
-                    }
-                }
-                diffProps.put(key, list);
-            }
-        }
-    }
-
-    private void clear() throws AccessDeniedException
-    {
-        selectedNodes.clear();
-        selectedNodes.addAll(alreadyDeployedOnNodes);
-        selectedSharedSPNames.clear();
-        selectedSharedSPNames.addAll(alreadyDeployedInSharedSPNames);
-
-        selectedProviderKindsToDrbdVersions.clear();
-        for (Entry<DeviceProviderKind, List<Version>> entry : alreadyDeployedProviderKindsAndVersions.entrySet())
-        {
-            selectedProviderKindsToDrbdVersions.put(entry.getKey(), new ArrayList<>(entry.getValue()));
-        }
-
-        selectedStorPoolWithScoreSet.clear();
-        rebuildTemporaryMaps();
+        selectionStack.pop();
     }
 
     private Version getDrbdVersion(StorPool sp) throws AccessDeniedException
@@ -470,5 +535,82 @@ public class SelectionManager
     private Version getDrbdVersion(Node node) throws AccessDeniedException
     {
         return node.getPeer(accessContext).getExtToolsManager().getVersion(ExtTools.DRBD9_KERNEL);
+    }
+
+    private <T> HashSet<T> add(Set<T> unmodifiableSetRef, T additionalElementRef)
+    {
+        HashSet<T> ret = new HashSet<>(unmodifiableSetRef);
+        ret.add(additionalElementRef);
+        return ret;
+    }
+
+    private <K, V> HashMap<K, List<V>> add(
+        Map<K, List<V>> unmodifiableMapRef,
+        K additionalKeyRef,
+        V additionalValueRef
+    )
+    {
+        HashMap<K, List<V>> ret = new HashMap<>();
+        for (Map.Entry<K, List<V>> entry : unmodifiableMapRef.entrySet())
+        {
+            K key = entry.getKey();
+            ArrayList<V> list = new ArrayList<>(entry.getValue());
+            if (key.equals(additionalKeyRef))
+            {
+                list.add(additionalValueRef);
+            }
+            ret.put(additionalKeyRef, Collections.unmodifiableList(list));
+        }
+
+        // DO NOT USE ret.computeIfAbsent(...).add(additionalValueRef);
+        // since that will also try to add the value if the entry existed before the .computeIfAbsent, which is not what
+        // we want to do here
+        ret.computeIfAbsent(
+            additionalKeyRef,
+            ignored -> Collections.singletonList(additionalValueRef)
+        );
+        return ret;
+    }
+
+    private static class State
+    {
+        private final Set<Node> selectedNodes;
+        private final Set<SharedStorPoolName> selectedSharedSPNames;
+        private final Map<DeviceProviderKind, List</* DrbdVersion */ Version>> selectedProviderKindsToDrbdVersions;
+        private final Set<Autoplacer.StorPoolWithScore> selectedStorPoolWithScoreSet;
+        private final int remainingRscCountToSelect;
+
+        private final HashMap<String, String> sameProps;
+        private final HashMap<String, List<String>> diffProps;
+
+        State(
+            Collection<Node> selectedNodesRef,
+            Collection<SharedStorPoolName> selectedSharedSPNamesRef,
+            Map<DeviceProviderKind, List<Version>> selectedProviderKindsToDrbdVersionsRef,
+            Collection<StorPoolWithScore> selectedStorPoolWithScoreSetRef,
+            int remainingRscCountToSelectRef,
+            Map<String, String> samePropsRef,
+            Map<String, List<String>> diffPropsRef
+        )
+        {
+            selectedNodes = new HashSet<>(selectedNodesRef);
+            selectedSharedSPNames = new HashSet<>(selectedSharedSPNamesRef);
+            selectedProviderKindsToDrbdVersions = new HashMap<>(selectedProviderKindsToDrbdVersionsRef);
+            selectedStorPoolWithScoreSet = new HashSet<>(selectedStorPoolWithScoreSetRef);
+            remainingRscCountToSelect = remainingRscCountToSelectRef;
+
+            sameProps = new HashMap<>(samePropsRef);
+            diffProps = new HashMap<>(diffPropsRef);
+        }
+
+        boolean containsNode(Node nodeRef)
+        {
+            return selectedNodes.contains(nodeRef);
+        }
+
+        boolean containsSharedSpName(SharedStorPoolName sharedSpNameRef)
+        {
+            return selectedSharedSPNames.contains(sharedSpNameRef);
+        }
     }
 }
