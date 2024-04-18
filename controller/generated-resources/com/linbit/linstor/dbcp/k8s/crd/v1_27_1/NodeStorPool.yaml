@@ -1,0 +1,157 @@
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "nodestorpool.internal.linstor.linbit.com"
+spec:
+  group: "internal.linstor.linbit.com"
+  versions:
+  - name: "v1-27-1"
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              pool_name:
+                type: "string"
+              driver_name:
+                type: "string"
+              free_space_mgr_name:
+                type: "string"
+              free_space_mgr_dsp_name:
+                type: "string"
+              external_locking:
+                type: "boolean"
+  - name: "v1-25-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              pool_name:
+                type: "string"
+              driver_name:
+                type: "string"
+              free_space_mgr_name:
+                type: "string"
+              free_space_mgr_dsp_name:
+                type: "string"
+              external_locking:
+                type: "boolean"
+  - name: "v1-19-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              pool_name:
+                type: "string"
+              driver_name:
+                type: "string"
+              free_space_mgr_name:
+                type: "string"
+              free_space_mgr_dsp_name:
+                type: "string"
+              external_locking:
+                type: "boolean"
+  - name: "v1-18-2"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              pool_name:
+                type: "string"
+              driver_name:
+                type: "string"
+              free_space_mgr_name:
+                type: "string"
+              free_space_mgr_dsp_name:
+                type: "string"
+              external_locking:
+                type: "boolean"
+  - name: "v1-17-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              pool_name:
+                type: "string"
+              driver_name:
+                type: "string"
+              free_space_mgr_name:
+                type: "string"
+              free_space_mgr_dsp_name:
+                type: "string"
+              external_locking:
+                type: "boolean"
+  - name: "v1-15-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              node_name:
+                type: "string"
+              pool_name:
+                type: "string"
+              driver_name:
+                type: "string"
+              free_space_mgr_name:
+                type: "string"
+              free_space_mgr_dsp_name:
+                type: "string"
+              external_locking:
+                type: "boolean"
+  scope: "Cluster"
+  names:
+    plural: "nodestorpool"
+    singular: "nodestorpool"
+    kind: "NodeStorPool"

@@ -14,6 +14,7 @@ import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.DbEngine.DataToString;
 import com.linbit.linstor.dbdrivers.interfaces.GenericDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.k8s.crd.GenCrdCurrent;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
@@ -37,6 +38,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, INIT_MAPS, LOAD_ALL>
@@ -45,6 +47,14 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
     protected static final String MSG_DO_NOT_LOG = "do not log";
 
     protected static final ObjectMapper OBJ_MAPPER = new ObjectMapper();
+    protected static final TypeReference<List<String>> TYPE_REF_STRING_LIST = new TypeReference<>()
+    {
+    };
+    protected static final TypeReference<Map<String, Integer>> TYPE_REF_STRING_INTEGER_MAP =
+        new TypeReference<>()
+    {
+    };
+
     protected final AccessContext dbCtx;
 
     protected final ErrorReporter errorReporter;
@@ -250,6 +260,13 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
         return dbEngine.generateCollectionToJsonStringArrayDriver(setters, col, this::getId);
     }
 
+    protected <KEY, VALUE> MapDatabaseDriver<DATA, KEY, VALUE> generateMapToJsonStringArrayDriver(
+        Column col
+    )
+    {
+        return dbEngine.generateMapToJsonStringArrayDriver(setters, col, this::getId);
+    }
+
     @SafeVarargs
     protected final <INPUT_TYPE> SingleColumnDatabaseDriver<DATA, INPUT_TYPE> generateMultiColumnDriver(
         SingleColumnDatabaseDriver<DATA, INPUT_TYPE>... singleColumnDriversRef
@@ -274,6 +291,18 @@ public abstract class AbsDatabaseDriver<DATA extends Comparable<? super DATA>, I
     protected DatabaseType getDbType()
     {
         return dbEngine.getType();
+    }
+
+    protected String toString(Map<String, ?> asStrListRef) throws LinStorDBRuntimeException
+    {
+        try
+        {
+            return OBJ_MAPPER.writeValueAsString(asStrListRef);
+        }
+        catch (JsonProcessingException exc)
+        {
+            throw new LinStorDBRuntimeException("Failed to write json array");
+        }
     }
 
     protected String toString(List<?> asStrListRef) throws LinStorDBRuntimeException

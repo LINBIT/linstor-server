@@ -1,0 +1,163 @@
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "volumedefinitions.internal.linstor.linbit.com"
+spec:
+  group: "internal.linstor.linbit.com"
+  versions:
+  - name: "v1-27-1"
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              vlm_size:
+                type: "integer"
+                format: "int64"
+              vlm_flags:
+                type: "integer"
+                format: "int64"
+  - name: "v1-25-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              vlm_size:
+                type: "integer"
+                format: "int64"
+              vlm_flags:
+                type: "integer"
+                format: "int64"
+  - name: "v1-19-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              vlm_size:
+                type: "integer"
+                format: "int64"
+              vlm_flags:
+                type: "integer"
+                format: "int64"
+  - name: "v1-18-2"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              vlm_size:
+                type: "integer"
+                format: "int64"
+              vlm_flags:
+                type: "integer"
+                format: "int64"
+  - name: "v1-17-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              vlm_size:
+                type: "integer"
+                format: "int64"
+              vlm_flags:
+                type: "integer"
+                format: "int64"
+  - name: "v1-15-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              uuid:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              vlm_nr:
+                type: "integer"
+                format: "int32"
+              vlm_size:
+                type: "integer"
+                format: "int64"
+              vlm_flags:
+                type: "integer"
+                format: "int64"
+  scope: "Cluster"
+  names:
+    plural: "volumedefinitions"
+    singular: "volumedefinitions"
+    kind: "VolumeDefinitions"

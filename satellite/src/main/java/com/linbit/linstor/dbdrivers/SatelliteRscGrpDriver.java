@@ -3,6 +3,7 @@ package com.linbit.linstor.dbdrivers;
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -25,6 +26,7 @@ public class SatelliteRscGrpDriver
     private final SingleColumnDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscRegexDriver;
     private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnSameListDriver;
     private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnDifferentDriver;
+    private final MapDatabaseDriver<ResourceGroup, String, Integer> xReplicasOnDifferentDriver;
     private final CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> allowedProviderListDriver;
     private final SingleColumnDatabaseDriver<ResourceGroup, Boolean> disklessOnRemainingDriver;
     private final SingleColumnDatabaseDriver<ResourceGroup, Short> peerSlotsDriver;
@@ -42,6 +44,7 @@ public class SatelliteRscGrpDriver
         doNotPlaceWithRscRegexDriver = getNoopColumnDriver();
         replicasOnSameListDriver = getNoopCollectionDriver();
         replicasOnDifferentDriver = getNoopCollectionDriver();
+        xReplicasOnDifferentDriver = getNoopMapDriver();
         allowedProviderListDriver = getNoopCollectionDriver();
         disklessOnRemainingDriver = getNoopColumnDriver();
         peerSlotsDriver = getNoopColumnDriver();
@@ -105,6 +108,12 @@ public class SatelliteRscGrpDriver
     public CollectionDatabaseDriver<ResourceGroup, String> getReplicasOnDifferentDriver()
     {
         return replicasOnDifferentDriver;
+    }
+
+    @Override
+    public MapDatabaseDriver<ResourceGroup, String, Integer> getXReplicasOnDifferentMapDriver()
+    {
+        return xReplicasOnDifferentDriver;
     }
 
     @Override

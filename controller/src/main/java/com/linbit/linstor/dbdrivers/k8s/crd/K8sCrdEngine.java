@@ -21,6 +21,7 @@ import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -330,6 +331,47 @@ public class K8sCrdEngine implements DbEngine
                 throws DatabaseException
             {
                 update(table, settersRef, parent, dataIdToString);
+            }
+        };
+    }
+
+    @Override
+    public <DATA, KEY, VALUE> MapDatabaseDriver<DATA, KEY, VALUE> generateMapToJsonStringArrayDriver(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> settersRef,
+        Column colRef,
+        DataToString<DATA> dataIdToString
+        )
+    {
+        final DatabaseTable table = colRef.getTable();
+        // k8s cannot update single "columns" just the whole object. Map all drivers to a simple object-update
+        return new MapDatabaseDriver<>()
+        {
+
+            @Override
+            public void insert(DATA parentRef, Map<KEY, VALUE> backingMapRef, KEY keyRef, VALUE valueRef)
+                throws DatabaseException
+            {
+                K8sCrdEngine.this.update(table, settersRef, parentRef, dataIdToString);
+            }
+
+            @Override
+            public void update(
+                DATA parentRef,
+                Map<KEY, VALUE> backingMapRef,
+                KEY keyRef,
+                VALUE oldValueRef,
+                VALUE newValueRef
+            )
+                throws DatabaseException
+            {
+                K8sCrdEngine.this.update(table, settersRef, parentRef, dataIdToString);
+            }
+
+            @Override
+            public void delete(DATA parentRef, Map<KEY, VALUE> backingMapRef, KEY keyRef, VALUE valueRef)
+                throws DatabaseException
+            {
+                K8sCrdEngine.this.update(table, settersRef, parentRef, dataIdToString);
             }
         };
     }

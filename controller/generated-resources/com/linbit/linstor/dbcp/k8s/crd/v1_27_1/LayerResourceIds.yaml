@@ -1,0 +1,181 @@
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "layerresourceids.internal.linstor.linbit.com"
+spec:
+  group: "internal.linstor.linbit.com"
+  versions:
+  - name: "v1-27-1"
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              node_name:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              layer_resource_kind:
+                type: "string"
+              layer_resource_parent_id:
+                type: "integer"
+                format: "int32"
+              layer_resource_suffix:
+                type: "string"
+              layer_resource_suspended:
+                type: "boolean"
+  - name: "v1-25-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              node_name:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              layer_resource_kind:
+                type: "string"
+              layer_resource_parent_id:
+                type: "integer"
+                format: "int32"
+              layer_resource_suffix:
+                type: "string"
+              layer_resource_suspended:
+                type: "boolean"
+  - name: "v1-19-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              node_name:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              layer_resource_kind:
+                type: "string"
+              layer_resource_parent_id:
+                type: "integer"
+                format: "int32"
+              layer_resource_suffix:
+                type: "string"
+              layer_resource_suspended:
+                type: "boolean"
+  - name: "v1-18-2"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              node_name:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              layer_resource_kind:
+                type: "string"
+              layer_resource_parent_id:
+                type: "integer"
+                format: "int32"
+              layer_resource_suffix:
+                type: "string"
+              layer_resource_suspended:
+                type: "boolean"
+  - name: "v1-17-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              node_name:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              layer_resource_kind:
+                type: "string"
+              layer_resource_parent_id:
+                type: "integer"
+                format: "int32"
+              layer_resource_suffix:
+                type: "string"
+              layer_resource_suspended:
+                type: "boolean"
+  - name: "v1-15-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              layer_resource_id:
+                type: "integer"
+                format: "int32"
+              node_name:
+                type: "string"
+              resource_name:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              layer_resource_kind:
+                type: "string"
+              layer_resource_parent_id:
+                type: "integer"
+                format: "int32"
+              layer_resource_suffix:
+                type: "string"
+              layer_resource_suspended:
+                type: "boolean"
+  scope: "Cluster"
+  names:
+    plural: "layerresourceids"
+    singular: "layerresourceids"
+    kind: "LayerResourceIds"

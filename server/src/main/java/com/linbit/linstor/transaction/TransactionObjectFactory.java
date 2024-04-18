@@ -40,7 +40,7 @@ public class TransactionObjectFactory
         ELEMENT element
     )
     {
-        return createTransactionSimpleObject(null, element, null);
+        return new TransactionSimpleObject<>(null, element, null, transMgrProvider);
     }
 
     public <PARENT, ELEMENT> TransactionSimpleObject<PARENT, ELEMENT> createTransactionSimpleObject(

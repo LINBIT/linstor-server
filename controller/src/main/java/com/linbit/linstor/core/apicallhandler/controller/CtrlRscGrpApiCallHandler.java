@@ -825,6 +825,7 @@ public class CtrlRscGrpApiCallHandler
             List<DeviceLayerKind> layerStackList = null;
             List<String> replicasOnSameList = null;
             List<String> replicasOnDifferentList = null;
+            Map<String, Integer> xReplicasOnDifferentMap = null;
             List<DeviceProviderKind> providerList = null;
             Boolean disklessOnRemaining = null;
 
@@ -839,6 +840,7 @@ public class CtrlRscGrpApiCallHandler
                 replicasOnSameList = autoSelectFilter.getReplicasOnSameList();
                 layerStackList = autoSelectFilter.getLayerStackList();
                 replicasOnDifferentList = autoSelectFilter.getReplicasOnDifferentList();
+                xReplicasOnDifferentMap = autoSelectFilter.getXReplicasOnDifferentMap();
                 providerList = autoSelectFilter.getProviderList();
                 disklessOnRemaining = autoSelectFilter.getDisklessOnRemaining();
             }
@@ -855,6 +857,7 @@ public class CtrlRscGrpApiCallHandler
                 doNotPlaceWithRscRegex,
                 replicasOnSameList,
                 replicasOnDifferentList,
+                xReplicasOnDifferentMap,
                 providerList,
                 disklessOnRemaining,
                 rscGrpPojoRef.getPeerSlots()

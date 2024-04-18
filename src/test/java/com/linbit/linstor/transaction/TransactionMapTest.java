@@ -15,17 +15,17 @@ import static org.junit.Assert.assertTrue;
 public class TransactionMapTest
 {
     private DummyTxMgr dummyTxMgr;
-    private NoOpMapDatabaseDriver<Void, String, DummyTxObj> dummyMapDbDriver = new NoOpMapDatabaseDriver<>();
+    private NoOpMapDatabaseDriver<Object, String, DummyTxObj> dummyMapDbDriver = new NoOpMapDatabaseDriver<>();
 
     private TreeMap<String, DummyTxObj> backingMap;
-    private TransactionMap<Void, String, DummyTxObj> txMap;
+    private TransactionMap<Object, String, DummyTxObj> txMap;
 
     @Before
     public void setUp()
     {
         dummyTxMgr = new DummyTxMgr();
         backingMap = new TreeMap<>();
-        txMap = new TransactionMap<>(null, backingMap, dummyMapDbDriver, () -> dummyTxMgr);
+        txMap = new TransactionMap<>(new Object(), backingMap, dummyMapDbDriver, () -> dummyTxMgr);
     }
 
     @Test

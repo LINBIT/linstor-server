@@ -21,7 +21,9 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -66,6 +68,7 @@ public class ResourceGroupControllerFactory
         @Nullable String autoPlaceDoNotPlaceWithRscRegexRef,
         @Nullable List<String> autoPlaceReplicasOnSameListRef,
         @Nullable List<String> autoPlaceReplicasOnDifferentListRef,
+        @Nullable Map<String, Integer> autoPlaceXReplicasOnDifferentMapRef,
         @Nullable List<DeviceProviderKind> autoPlaceAllowedProviderListRef,
         @Nullable Boolean autoPlaceDisklessOnRemainingRef,
         @Nullable Short peerSlotsRef
@@ -97,6 +100,7 @@ public class ResourceGroupControllerFactory
             autoPlaceDoNotPlaceWithRscRegexRef,
             copy(autoPlaceReplicasOnSameListRef),
             copy(autoPlaceReplicasOnDifferentListRef),
+            copy(autoPlaceXReplicasOnDifferentMapRef),
             copy(autoPlaceAllowedProviderListRef),
             autoPlaceDisklessOnRemainingRef,
             new TreeMap<>(),
@@ -125,5 +129,19 @@ public class ResourceGroupControllerFactory
             copiedList = new ArrayList<>(source);
         }
         return copiedList;
+    }
+
+    private <K, V> HashMap<K, V> copy(Map<K, V> source)
+    {
+        HashMap<K, V> copiedMap;
+        if (source == null)
+        {
+            copiedMap = new HashMap<>();
+        }
+        else
+        {
+            copiedMap = new HashMap<>(source);
+        }
+        return copiedMap;
     }
 }

@@ -1,0 +1,205 @@
+---
+apiVersion: "apiextensions.k8s.io/v1"
+kind: "CustomResourceDefinition"
+metadata:
+  name: "layerdrbdresourcedefinitions.internal.linstor.linbit.com"
+spec:
+  group: "internal.linstor.linbit.com"
+  versions:
+  - name: "v1-27-1"
+    served: true
+    storage: true
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              resource_name:
+                type: "string"
+              resource_name_suffix:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              peer_slots:
+                type: "integer"
+                format: "int32"
+              al_stripes:
+                type: "integer"
+                format: "int32"
+              al_stripe_size:
+                type: "integer"
+                format: "int64"
+              tcp_port:
+                type: "integer"
+                format: "int32"
+              transport_type:
+                type: "string"
+              secret:
+                type: "string"
+  - name: "v1-25-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              resource_name:
+                type: "string"
+              resource_name_suffix:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              peer_slots:
+                type: "integer"
+                format: "int32"
+              al_stripes:
+                type: "integer"
+                format: "int32"
+              al_stripe_size:
+                type: "integer"
+                format: "int64"
+              tcp_port:
+                type: "integer"
+                format: "int32"
+              transport_type:
+                type: "string"
+              secret:
+                type: "string"
+  - name: "v1-19-1"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              resource_name:
+                type: "string"
+              resource_name_suffix:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              peer_slots:
+                type: "integer"
+                format: "int32"
+              al_stripes:
+                type: "integer"
+                format: "int32"
+              al_stripe_size:
+                type: "integer"
+                format: "int64"
+              tcp_port:
+                type: "integer"
+                format: "int32"
+              transport_type:
+                type: "string"
+              secret:
+                type: "string"
+  - name: "v1-18-2"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              resource_name:
+                type: "string"
+              resource_name_suffix:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              peer_slots:
+                type: "integer"
+                format: "int32"
+              al_stripes:
+                type: "integer"
+                format: "int32"
+              al_stripe_size:
+                type: "integer"
+                format: "int64"
+              tcp_port:
+                type: "integer"
+                format: "int32"
+              transport_type:
+                type: "string"
+              secret:
+                type: "string"
+  - name: "v1-17-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              resource_name:
+                type: "string"
+              resource_name_suffix:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              peer_slots:
+                type: "integer"
+                format: "int32"
+              al_stripes:
+                type: "integer"
+                format: "int32"
+              al_stripe_size:
+                type: "integer"
+                format: "int64"
+              tcp_port:
+                type: "integer"
+                format: "int32"
+              transport_type:
+                type: "string"
+              secret:
+                type: "string"
+  - name: "v1-15-0"
+    served: true
+    storage: false
+    schema:
+      openAPIV3Schema:
+        type: "object"
+        properties:
+          spec:
+            type: "object"
+            properties:
+              resource_name:
+                type: "string"
+              resource_name_suffix:
+                type: "string"
+              snapshot_name:
+                type: "string"
+              peer_slots:
+                type: "integer"
+                format: "int32"
+              al_stripes:
+                type: "integer"
+                format: "int32"
+              al_stripe_size:
+                type: "integer"
+                format: "int64"
+              tcp_port:
+                type: "integer"
+                format: "int32"
+              transport_type:
+                type: "string"
+              secret:
+                type: "string"
+  scope: "Cluster"
+  names:
+    plural: "layerdrbdresourcedefinitions"
+    singular: "layerdrbdresourcedefinitions"
+    kind: "LayerDrbdResourceDefinitions"

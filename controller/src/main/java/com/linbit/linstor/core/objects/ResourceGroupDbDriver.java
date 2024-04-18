@@ -16,6 +16,7 @@ import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables;
 import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.ResourceGroupCtrlDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.PropsContainerFactory;
@@ -44,7 +45,9 @@ import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroup
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_DSP_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.RESOURCE_GROUP_NAME;
 import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.UUID;
+import static com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.ResourceGroups.X_REPLICAS_ON_DIFFERENT;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -56,6 +59,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.Function;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 @Singleton
 public class ResourceGroupDbDriver
@@ -76,6 +81,7 @@ public class ResourceGroupDbDriver
     private final SingleColumnDatabaseDriver<ResourceGroup, String> doNotPlaceWithRscRegexDriver;
     private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnSameListDriver;
     private final CollectionDatabaseDriver<ResourceGroup, String> replicasOnDifferentListDriver;
+    private final MapDatabaseDriver<ResourceGroup, String, Integer> xReplicasOnDifferentMapDriver;
     private final CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> allowedProviderListDriver;
     private final SingleColumnDatabaseDriver<ResourceGroup, Boolean> disklessOnRemainingDriver;
     private final SingleColumnDatabaseDriver<ResourceGroup, Short> peerSlotsDriver;
@@ -142,6 +148,10 @@ public class ResourceGroupDbDriver
             rscGrp -> toString(rscGrp.getAutoPlaceConfig().getReplicasOnDifferentList(dbCtxRef))
         );
         setColumnSetter(
+            X_REPLICAS_ON_DIFFERENT,
+            rscGrp -> toString(rscGrp.getAutoPlaceConfig().getXReplicasOnDifferentMap(dbCtxRef))
+        );
+        setColumnSetter(
             PEER_SLOTS,
             rscGrp -> rscGrp.getPeerSlots(dbCtxRef)
         );
@@ -168,6 +178,7 @@ public class ResourceGroupDbDriver
         );
         replicasOnSameListDriver = generateCollectionToJsonStringArrayDriver(REPLICAS_ON_SAME);
         replicasOnDifferentListDriver = generateCollectionToJsonStringArrayDriver(REPLICAS_ON_DIFFERENT);
+        xReplicasOnDifferentMapDriver = generateMapToJsonStringArrayDriver(X_REPLICAS_ON_DIFFERENT);
         allowedProviderListDriver = generateCollectionToJsonStringArrayDriver(ALLOWED_PROVIDER_LIST);
         disklessOnRemainingDriver = generateSingleColumnDriver(
             DISKLESS_ON_REMAINING,
@@ -242,6 +253,12 @@ public class ResourceGroupDbDriver
     }
 
     @Override
+    public MapDatabaseDriver<ResourceGroup, String, Integer> getXReplicasOnDifferentMapDriver()
+    {
+        return xReplicasOnDifferentMapDriver;
+    }
+
+    @Override
     public CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> getAllowedProviderListDriver()
     {
         return allowedProviderListDriver;
@@ -270,29 +287,41 @@ public class ResourceGroupDbDriver
         Map<VolumeNumber, VolumeGroup> vlmGrpMap = new TreeMap<>();
         Map<ResourceName, ResourceDefinition> rscDfnMap = new TreeMap<>();
 
-        final Integer replicaCount;
-        final List<String> replicasOnSame;
-        final List<String> replicasOnDifferent;
-        final Boolean disklessOnRemaining;
-        final Short peerSlots;
+        final @Nullable Integer replicaCount;
+        final @Nullable List<String> replicasOnSame;
+        final @Nullable List<String> replicasOnDifferentList;
+        final @Nullable Map<String, Integer> xReplicasOnDifferentMap;
+        final @Nullable Boolean disklessOnRemaining;
+        final @Nullable Short peerSlots;
 
         try
         {
             switch (getDbType())
             {
                 case ETCD:
-                    String replicaCountStr = raw.get(REPLICA_COUNT);
+                    @Nullable String replicaCountStr = raw.get(REPLICA_COUNT);
                     replicaCount = replicaCountStr != null ? Integer.parseInt(replicaCountStr) : null;
 
-                    String replicasOnSameStr = raw.get(REPLICAS_ON_SAME);
+                    @Nullable String replicasOnSameStr = raw.get(REPLICAS_ON_SAME);
                     replicasOnSame = replicasOnSameStr != null ?
-                        new ArrayList<>(OBJ_MAPPER.readValue(replicasOnSameStr, List.class)) : null;
+                        new ArrayList<>(OBJ_MAPPER.readValue(replicasOnSameStr, TYPE_REF_STRING_LIST)) :
+                        null;
 
-                    String replicasOnDifferentStr = raw.get(REPLICAS_ON_DIFFERENT);
-                    replicasOnDifferent = replicasOnDifferentStr != null ?
-                        new ArrayList<>(OBJ_MAPPER.readValue(replicasOnDifferentStr, List.class)) : null;
+                    @Nullable String replicasOnDifferentStr = raw.get(REPLICAS_ON_DIFFERENT);
+                    replicasOnDifferentList = replicasOnDifferentStr != null ?
+                        new ArrayList<>(OBJ_MAPPER.readValue(replicasOnDifferentStr, TYPE_REF_STRING_LIST)) :
+                        null;
 
-                    String disklessOnRemainingStr = raw.get(DISKLESS_ON_REMAINING);
+                    @Nullable String xReplicasOnDifferentMapStr = raw.get(X_REPLICAS_ON_DIFFERENT);
+                    xReplicasOnDifferentMap = xReplicasOnDifferentMapStr != null ?
+                        new TreeMap<>(
+                            OBJ_MAPPER.readValue(xReplicasOnDifferentMapStr, new TypeReference<Map<String, Integer>>()
+                            {
+                            })
+                        ) :
+                        null;
+
+                    @Nullable String disklessOnRemainingStr = raw.get(DISKLESS_ON_REMAINING);
                     disklessOnRemaining = disklessOnRemainingStr != null ?
                         Boolean.parseBoolean(disklessOnRemainingStr) : null;
 
@@ -303,7 +332,8 @@ public class ResourceGroupDbDriver
                     replicaCount = raw.get(REPLICA_COUNT);
 
                     replicasOnSame = raw.getAsStringList(REPLICAS_ON_SAME);
-                    replicasOnDifferent = raw.getAsStringList(REPLICAS_ON_DIFFERENT);
+                    replicasOnDifferentList = raw.getAsStringList(REPLICAS_ON_DIFFERENT);
+                    xReplicasOnDifferentMap = raw.getAsStringIntegerMap(X_REPLICAS_ON_DIFFERENT);
 
                     disklessOnRemaining = raw.get(DISKLESS_ON_REMAINING);
                     peerSlots = raw.get(PEER_SLOTS);
@@ -331,7 +361,8 @@ public class ResourceGroupDbDriver
                 raw.getAsStringList(DO_NOT_PLACE_WITH_RSC_LIST),
                 raw.get(DO_NOT_PLACE_WITH_RSC_REGEX),
                 replicasOnSame,
-                replicasOnDifferent,
+                replicasOnDifferentList,
+                xReplicasOnDifferentMap,
                 DatabaseLoader.asDevLayerProviderList(raw.getAsStringList(ALLOWED_PROVIDER_LIST)),
                 disklessOnRemaining,
                 vlmGrpMap,

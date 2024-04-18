@@ -2,9 +2,11 @@ package com.linbit.linstor.dbdrivers;
 
 import com.linbit.linstor.dbdrivers.interfaces.GenericDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpCollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpFlagDriver;
+import com.linbit.linstor.dbdrivers.noop.NoOpMapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpObjectDatabaseDriver;
 import com.linbit.linstor.stateflags.StateFlagsPersistence;
 
@@ -12,6 +14,7 @@ public abstract class AbsSatelliteDbDriver<DATA> implements GenericDatabaseDrive
 {
     private static final SingleColumnDatabaseDriver<?, ?> NOOP_COLUMN_DRIVER = new NoOpObjectDatabaseDriver<>();
     private static final CollectionDatabaseDriver<?, ?> NOOP_COLLECTION_DRIVER = new NoOpCollectionDatabaseDriver<>();
+    private static final MapDatabaseDriver<?, ?, ?> NOOP_MAP_DRIVER = new NoOpMapDatabaseDriver<>();
     private static final StateFlagsPersistence<?> NOOP_FLAG_DRIVER = new NoOpFlagDriver();
 
     protected AbsSatelliteDbDriver()
@@ -53,6 +56,12 @@ public abstract class AbsSatelliteDbDriver<DATA> implements GenericDatabaseDrive
     protected <PARENT, ELEMENT> CollectionDatabaseDriver<PARENT, ELEMENT> getNoopCollectionDriver()
     {
         return (CollectionDatabaseDriver<PARENT, ELEMENT>) NOOP_COLLECTION_DRIVER;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected <PARENT, K, V> MapDatabaseDriver<PARENT, K, V> getNoopMapDriver()
+    {
+        return (MapDatabaseDriver<PARENT, K, V>) NOOP_MAP_DRIVER;
     }
 
     @SuppressWarnings("unchecked")

@@ -24,6 +24,7 @@ import javax.inject.Singleton;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -39,7 +40,10 @@ public class ResourceGroupTestFactory
     private AtomicInteger nextId = new AtomicInteger(1);
 
     private AccessContext dfltAccCtx = TestAccessContextProvider.PUBLIC_CTX;
-    private Supplier<String> dfltRscGrpNameSupplier = () -> String.format(dfltRscGrpNamePattern, nextId.incrementAndGet());
+    private Supplier<String> dfltRscGrpNameSupplier = () -> String.format(
+        dfltRscGrpNamePattern,
+        nextId.incrementAndGet()
+    );
     private String dfltDescription = null;
     private List<DeviceLayerKind> dfltLayerStack = null;
     private Integer dfltAutoPlaceReplicaCount = null;
@@ -50,6 +54,7 @@ public class ResourceGroupTestFactory
     private String dfltAutoPlaceDoNotPlaceWithRscRegex = null;
     private List<String> dfltAutoPlaceReplicasOnSameList = null;
     private List<String> dfltAutoPlaceReplicasOnDifferentList = null;
+    private Map<String, Integer> dfltAutoPlaceXReplicasOnDifferentMap = null;
     private List<DeviceProviderKind> dfltAutoPlaceAllowedProviderList = null;
     private Boolean dfltAutoPlaceDisklessOnRemaining = null;
     private @Nullable Short dfltPeerSlots = null;
@@ -181,6 +186,14 @@ public class ResourceGroupTestFactory
         return this;
     }
 
+    public ResourceGroupTestFactory setDfltAutoPlaceXReplicasOnDifferentMap(
+        Map<String, Integer> dfltAutoPlaceXReplicasOnDifferentMapRef
+    )
+    {
+        dfltAutoPlaceXReplicasOnDifferentMap = dfltAutoPlaceXReplicasOnDifferentMapRef;
+        return this;
+    }
+
     public ResourceGroupTestFactory setDfltAutoPlaceAllowedProviderList(
         List<DeviceProviderKind> dfltAutoPlaceAllowedProviderListRef
     )
@@ -231,6 +244,7 @@ public class ResourceGroupTestFactory
         private String autoPlaceDoNotPlaceWithRscRegex;
         private List<String> autoPlaceReplicasOnSameList;
         private List<String> autoPlaceReplicasOnDifferentList;
+        private Map<String, Integer> autoPlaceXReplicasOnDifferentMap;
         private List<DeviceProviderKind> autoPlaceAllowedProviderList;
         private Boolean autoPlaceDisklessOnRemaining;
         private @Nullable Short peerSlots;
@@ -250,6 +264,7 @@ public class ResourceGroupTestFactory
             autoPlaceDoNotPlaceWithRscRegex = dfltAutoPlaceDoNotPlaceWithRscRegex;
             autoPlaceReplicasOnSameList = copyOrNull(dfltAutoPlaceReplicasOnSameList);
             autoPlaceReplicasOnDifferentList = copyOrNull(dfltAutoPlaceReplicasOnDifferentList);
+            autoPlaceXReplicasOnDifferentMap = copyOrNull(dfltAutoPlaceXReplicasOnDifferentMap);
             autoPlaceAllowedProviderList = copyOrNull(dfltAutoPlaceAllowedProviderList);
             autoPlaceDisklessOnRemaining = dfltAutoPlaceDisklessOnRemaining;
             peerSlots = dfltPeerSlots;
@@ -359,6 +374,7 @@ public class ResourceGroupTestFactory
                 autoPlaceDoNotPlaceWithRscRegex,
                 autoPlaceReplicasOnSameList,
                 autoPlaceReplicasOnDifferentList,
+                autoPlaceXReplicasOnDifferentMap,
                 autoPlaceAllowedProviderList,
                 autoPlaceDisklessOnRemaining,
                 peerSlots

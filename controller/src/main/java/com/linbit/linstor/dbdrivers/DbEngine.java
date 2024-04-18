@@ -18,6 +18,7 @@ import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.GeneratedDatabaseTables.Nodes;
 import com.linbit.linstor.dbdrivers.etcd.ETCDEngine;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.sql.SQLEngine;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -193,6 +194,30 @@ public interface DbEngine
     );
 
     /**
+     * Returns a {@link MapDatabaseDriver} for the given DATA type.
+     *
+     * @param <DATA>
+     *     The Linstor-object, i.e. {@link Node}, {@link Resource}, {@link ResourceDefinition}, ...
+     * @param <LIST_TYPE>
+     *     The type of the elements of the {@link Collection}.
+     * @param setters
+     *     This map contains accessors for all columns of the given {@link Table}.<br/>
+     *     The {@link ExceptionThrowingFunction} receives the DATA object, and has to return a
+     *     value of correct type for the given {@link Column}. <br />
+     *     For example, {@link Nodes#NODE_FLAGS} has to have an {@link ExceptionThrowingFunction}
+     *     that gets a {@link Node} which returns a long value from {@link StateFlags#getFlagsBits}
+     * @param colRef
+     *     The {@link Column} of the FLAG, i.e. {@link Nodes#NODE_FLAGS}
+     * @param dataToStringRef
+     *     Converts the DATA to a String (only for logging)
+     */
+    <DATA, KEY, VALUE> MapDatabaseDriver<DATA, KEY, VALUE> generateMapToJsonStringArrayDriver(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        Column colRef,
+        DataToString<DATA> dataToStringRef
+    );
+
+    /**
      * Persists the given data object into the database.
      *
      * @param <DATA>
@@ -209,6 +234,7 @@ public interface DbEngine
      *     The {@link Table} in which the given <code>dataRef</code> should be persisted.
      * @param dataToString
      *     Converts the DATA to a String (only for logging)
+     *
      * @throws DatabaseException
      * @throws AccessDeniedException
      */

@@ -20,6 +20,7 @@ import com.linbit.linstor.dbdrivers.DatabaseTable.Column;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.dbdrivers.RawParameters;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec;
 import com.linbit.linstor.dbdrivers.sql.dump.DbDump;
@@ -477,6 +478,16 @@ public class SQLEngine implements DbEngine
     )
     {
         return new SQLListToJsonArrayDriver<>(this, errorReporter, setters, colRef, dataToStringRef);
+    }
+
+    @Override
+    public <DATA, KEY, VALUE> MapDatabaseDriver<DATA, KEY, VALUE> generateMapToJsonStringArrayDriver(
+        Map<Column, ExceptionThrowingFunction<DATA, Object, AccessDeniedException>> setters,
+        Column colRef,
+        DataToString<DATA> dataToStringRef
+    )
+    {
+        return new SQLMapToJsonDriver<>(this, errorReporter, setters, colRef, dataToStringRef);
     }
 
     @Override

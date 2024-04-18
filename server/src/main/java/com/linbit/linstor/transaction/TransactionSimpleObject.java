@@ -14,14 +14,25 @@ import java.util.Objects;
 public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObject
 {
     private final @Nullable PARENT parent;
-    private ELEMENT object;
-    private ELEMENT cachedObject;
+    private @Nullable ELEMENT object;
+    private @Nullable ELEMENT cachedObject;
     private final SingleColumnDatabaseDriver<PARENT, ELEMENT> dbDriver;
     private boolean dirty = false;
 
+    /**
+     * @param parentRef
+     *     is only allowed to be <code>null</code> iff <code>driverRef</code> is also <code>null</code>.
+     *     Otherwise, the {@link SingleColumnDatabaseDriver} might run into {@link NullPointerException}s
+     * @param objRef
+     *     The object that this {@link TransactionSimpleObject} should be initialized with
+     * @param driverRef
+     *     Optional. The {@link SingleColumnDatabaseDriver} to use.
+     * @param transMgrProviderRef
+     *     the {@link TransactionMgr} provider
+     */
     public TransactionSimpleObject(
         @Nullable PARENT parentRef,
-        ELEMENT objRef,
+        @Nullable ELEMENT objRef,
         @Nullable SingleColumnDatabaseDriver<PARENT, ELEMENT> driverRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
@@ -44,9 +55,9 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
         }
     }
 
-    public ELEMENT set(ELEMENT obj) throws DatabaseException
+    public @Nullable ELEMENT set(@Nullable ELEMENT obj) throws DatabaseException
     {
-        ELEMENT oldObj = object;
+        @Nullable ELEMENT oldObj = object;
         if (!Objects.equals(obj, cachedObject))
         {
             activateTransMgr();
@@ -61,7 +72,7 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
         return oldObj;
     }
 
-    public ELEMENT get()
+    public @Nullable ELEMENT get()
     {
         return object;
     }

@@ -992,6 +992,7 @@ public class GeneratedDatabaseTables
         public static final ColumnImpl DO_NOT_PLACE_WITH_RSC_LIST = new ColumnImpl("DO_NOT_PLACE_WITH_RSC_LIST", Types.CLOB, false, true);
         public static final ColumnImpl REPLICAS_ON_SAME = new ColumnImpl("REPLICAS_ON_SAME", Types.CLOB, false, true);
         public static final ColumnImpl REPLICAS_ON_DIFFERENT = new ColumnImpl("REPLICAS_ON_DIFFERENT", Types.CLOB, false, true);
+        public static final ColumnImpl X_REPLICAS_ON_DIFFERENT = new ColumnImpl("X_REPLICAS_ON_DIFFERENT", Types.CLOB, false, true);
         public static final ColumnImpl ALLOWED_PROVIDER_LIST = new ColumnImpl("ALLOWED_PROVIDER_LIST", Types.VARCHAR, false, true);
         public static final ColumnImpl DISKLESS_ON_REMAINING = new ColumnImpl("DISKLESS_ON_REMAINING", Types.BOOLEAN, false, true);
         public static final ColumnImpl PEER_SLOTS = new ColumnImpl("PEER_SLOTS", Types.SMALLINT, false, true);
@@ -1011,6 +1012,7 @@ public class GeneratedDatabaseTables
             DO_NOT_PLACE_WITH_RSC_LIST,
             REPLICAS_ON_SAME,
             REPLICAS_ON_DIFFERENT,
+            X_REPLICAS_ON_DIFFERENT,
             ALLOWED_PROVIDER_LIST,
             DISKLESS_ON_REMAINING,
             PEER_SLOTS
@@ -2076,6 +2078,7 @@ public class GeneratedDatabaseTables
         ResourceGroups.DO_NOT_PLACE_WITH_RSC_LIST.table = RESOURCE_GROUPS;
         ResourceGroups.REPLICAS_ON_SAME.table = RESOURCE_GROUPS;
         ResourceGroups.REPLICAS_ON_DIFFERENT.table = RESOURCE_GROUPS;
+        ResourceGroups.X_REPLICAS_ON_DIFFERENT.table = RESOURCE_GROUPS;
         ResourceGroups.ALLOWED_PROVIDER_LIST.table = RESOURCE_GROUPS;
         ResourceGroups.DISKLESS_ON_REMAINING.table = RESOURCE_GROUPS;
         ResourceGroups.PEER_SLOTS.table = RESOURCE_GROUPS;

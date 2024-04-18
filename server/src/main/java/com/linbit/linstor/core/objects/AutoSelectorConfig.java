@@ -14,16 +14,20 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.BaseTransactionObject;
 import com.linbit.linstor.transaction.TransactionList;
+import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.TransactionObjectFactory;
 import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -41,6 +45,7 @@ public class AutoSelectorConfig extends BaseTransactionObject
     private final TransactionSimpleObject<ResourceGroup, String> doNotPlaceWithRscRegex;
     private final TransactionList<ResourceGroup, String> replicasOnSameList;
     private final TransactionList<ResourceGroup, String> replicasOnDifferentList;
+    private final TransactionMap<ResourceGroup, String, Integer> xReplicasOnDifferentMap;
     private final TransactionList<ResourceGroup, DeviceLayerKind> layerStack;
     private final TransactionList<ResourceGroup, DeviceProviderKind> allowedProviderList;
     private final TransactionSimpleObject<ResourceGroup, Boolean> disklessOnRemaining;
@@ -55,6 +60,7 @@ public class AutoSelectorConfig extends BaseTransactionObject
         String doNotPlaceWithRscRegexRef,
         List<String> replicasOnSameListRef,
         List<String> replicasOnDifferentListRef,
+        Map<String, Integer> xReplicasOnDifferentMapRef,
         List<DeviceLayerKind> layerStackRef,
         List<DeviceProviderKind> allowedProviderListRef,
         Boolean disklessOnRemainingRef,
@@ -107,6 +113,11 @@ public class AutoSelectorConfig extends BaseTransactionObject
             replicasOnDifferentListRef,
             dbDriverRef.getReplicasOnDifferentDriver()
         );
+        xReplicasOnDifferentMap = transactionObjectFactoryRef.createTransactionPrimitiveMap(
+            rscGrpRef,
+            xReplicasOnDifferentMapRef,
+            dbDriverRef.getXReplicasOnDifferentMapDriver()
+        );
         layerStack = transactionObjectFactoryRef.createTransactionPrimitiveList(
             rscGrpRef,
             layerStackRef,
@@ -131,6 +142,7 @@ public class AutoSelectorConfig extends BaseTransactionObject
             doNotPlaceWithRscRegex,
             replicasOnSameList,
             replicasOnDifferentList,
+            xReplicasOnDifferentMap,
             layerStack,
             allowedProviderList,
             disklessOnRemaining
@@ -155,6 +167,7 @@ public class AutoSelectorConfig extends BaseTransactionObject
             get(priorityApi.getDoNotPlaceWithRscRegex(), baseCfg.doNotPlaceWithRscRegex),
             get(priorityApi.getReplicasOnSameList(), baseCfg.replicasOnSameList),
             get(priorityApi.getReplicasOnDifferentList(), baseCfg.replicasOnDifferentList),
+            get(priorityApi.getXReplicasOnDifferentMap(), baseCfg.xReplicasOnDifferentMap),
             get(priorityApi.getLayerStackList(), baseCfg.layerStack),
             get(priorityApi.getProviderList(), baseCfg.allowedProviderList),
             get(priorityApi.getDisklessOnRemaining(), baseCfg.disklessOnRemaining),
@@ -172,6 +185,11 @@ public class AutoSelectorConfig extends BaseTransactionObject
     private static <T> List<T> get(List<T> value, TransactionList<?, T> dflt)
     {
         return value == null ? dflt : new ArrayList<>(value);
+    }
+
+    private static <K, V> Map<K, V> get(Map<K, V> value, TransactionMap<?, K, V> dflt)
+    {
+        return value == null ? dflt : new HashMap<>(value);
     }
 
     @Override
@@ -232,6 +250,10 @@ public class AutoSelectorConfig extends BaseTransactionObject
         return protectedList(accCtx, replicasOnDifferentList);
     }
 
+    public Map<String, Integer> getXReplicasOnDifferentMap(AccessContext accCtx) throws AccessDeniedException
+    {
+        return protectedMap(accCtx, xReplicasOnDifferentMap);
+    }
 
     public List<DeviceLayerKind> getLayerStackList(AccessContext accCtx) throws AccessDeniedException
     {
@@ -262,6 +284,7 @@ public class AutoSelectorConfig extends BaseTransactionObject
             .setDoNotPlaceWithRegex(doNotPlaceWithRscRegex.get())
             .setReplicasOnSameList(new ArrayList<>(replicasOnSameList))
             .setReplicasOnDifferentList(new ArrayList<>(replicasOnDifferentList))
+            .setXReplicasOnDifferentMap(new HashMap<>(xReplicasOnDifferentMap))
             .setLayerStackList(new ArrayList<>(layerStack))
             .setDeviceProviderKinds(new ArrayList<>(allowedProviderList))
             .setDisklessOnRemaining(disklessOnRemaining.get())
@@ -272,66 +295,44 @@ public class AutoSelectorConfig extends BaseTransactionObject
     {
         if (autoPlaceConfigRef != null)
         {
-            if (autoPlaceConfigRef.getReplicaCount() != null)
-            {
-                replicaCount.set(autoPlaceConfigRef.getReplicaCount());
-            }
-            List<String> pojoNodeName = autoPlaceConfigRef.getNodeNameList();
-            if (pojoNodeName != null && !pojoNodeName.isEmpty())
-            {
-                nodeNameList.clear();
-                nodeNameList.addAll(pojoNodeName);
-            }
-            List<String> pojoStorPool = autoPlaceConfigRef.getStorPoolNameList();
-            if (pojoStorPool != null)
-            {
-                storPoolNameList.clear();
-                storPoolNameList.addAll(pojoStorPool);
-            }
-            List<String> pojoStorPoolDiskless = autoPlaceConfigRef.getStorPoolDisklessNameList();
-            if (pojoStorPoolDiskless != null)
-            {
-                storPoolDisklessNameList.clear();
-                storPoolDisklessNameList.addAll(pojoStorPoolDiskless);
-            }
-            Boolean disklessOnRemainingRef = autoPlaceConfigRef.getDisklessOnRemaining();
-            if (disklessOnRemainingRef != null)
-            {
-                disklessOnRemaining.set(disklessOnRemainingRef);
-            }
-            List<String> doNotPlaceWithRscListRef = autoPlaceConfigRef.getDoNotPlaceWithRscList();
-            if (doNotPlaceWithRscListRef != null)
-            {
-                doNotPlaceWithRscList.clear();
-                doNotPlaceWithRscList.addAll(doNotPlaceWithRscListRef);
-            }
-            if (autoPlaceConfigRef.getDoNotPlaceWithRscRegex() != null)
-            {
-                doNotPlaceWithRscRegex.set(autoPlaceConfigRef.getDoNotPlaceWithRscRegex());
-            }
-            if (autoPlaceConfigRef.getLayerStackList() != null &&
-                !autoPlaceConfigRef.getLayerStackList().equals(layerStack))
-            {
-                layerStack.clear();
-                layerStack.addAll(autoPlaceConfigRef.getLayerStackList());
-            }
-            if (autoPlaceConfigRef.getProviderList() != null)
-            {
-                allowedProviderList.clear();
-                allowedProviderList.addAll(autoPlaceConfigRef.getProviderList());
-            }
-            List<String> replicasOnSameListRef = autoPlaceConfigRef.getReplicasOnSameList();
-            if (replicasOnSameListRef != null)
-            {
-                replicasOnSameList.clear();
-                replicasOnSameList.addAll(replicasOnSameListRef);
-            }
-            List<String> replicasOnDifferentListRef = autoPlaceConfigRef.getReplicasOnDifferentList();
-            if (replicasOnDifferentListRef != null)
-            {
-                replicasOnDifferentList.clear();
-                replicasOnDifferentList.addAll(replicasOnDifferentListRef);
-            }
+            apply(autoPlaceConfigRef.getReplicaCount(), replicaCount);
+            apply(autoPlaceConfigRef.getNodeNameList(), nodeNameList);
+            apply(autoPlaceConfigRef.getStorPoolNameList(), storPoolNameList);
+            apply(autoPlaceConfigRef.getStorPoolDisklessNameList(), storPoolDisklessNameList);
+            apply(autoPlaceConfigRef.getDisklessOnRemaining(), disklessOnRemaining);
+            apply(autoPlaceConfigRef.getDoNotPlaceWithRscList(), doNotPlaceWithRscList);
+            apply(autoPlaceConfigRef.getDoNotPlaceWithRscRegex(), doNotPlaceWithRscRegex);
+            apply(autoPlaceConfigRef.getLayerStackList(), layerStack);
+            apply(autoPlaceConfigRef.getProviderList(), allowedProviderList);
+            apply(autoPlaceConfigRef.getReplicasOnSameList(), replicasOnSameList);
+            apply(autoPlaceConfigRef.getReplicasOnDifferentList(), replicasOnDifferentList);
+            apply(autoPlaceConfigRef.getXReplicasOnDifferentMap(), xReplicasOnDifferentMap);
+        }
+    }
+
+    private <T> void apply(@Nullable T from, TransactionSimpleObject<?, T> to) throws DatabaseException
+    {
+        if (from != null)
+        {
+            to.set(from);
+        }
+    }
+
+    private <T> void apply(@Nullable List<T> from, List<T> to)
+    {
+        if (from != null && !from.equals(to))
+        {
+            to.clear();
+            to.addAll(from);
+        }
+    }
+
+    private <K, V> void apply(@Nullable Map<K, V> from, Map<K, V> to)
+    {
+        if (from != null && !from.equals(to))
+        {
+            to.clear();
+            to.putAll(from);
         }
     }
 
@@ -354,6 +355,26 @@ public class AutoSelectorConfig extends BaseTransactionObject
         else
         {
             ret = Collections.unmodifiableList(list);
+        }
+        return ret;
+    }
+
+    private <K, V> Map<K, V> protectedMap(AccessContext accCtx, Map<K, V> map)
+        throws AccessDeniedException
+    {
+        ObjectProtection objProt = getObjProt();
+        objProt.requireAccess(accCtx, AccessType.VIEW);
+
+        Map<K, V> ret;
+        AccessType queryAccess = objProt.queryAccess(accCtx);
+
+        if (queryAccess.hasAccess(AccessType.CHANGE))
+        {
+            ret = map;
+        }
+        else
+        {
+            ret = Collections.unmodifiableMap(map);
         }
         return ret;
     }
@@ -411,61 +432,44 @@ public class AutoSelectorConfig extends BaseTransactionObject
     {
         StringBuilder sb = new StringBuilder();
         sb.append("AutoSelectorConfig:\n");
-        sb.append(
-            replicaCount.get() != null
-                ? "\treplicaCount: " + replicaCount + "\n"
-                : ""
-        );
-        sb.append(
-            !nodeNameList.isEmpty()
-                ? "\tnodeNameList: " + nodeNameList + "\n"
-                : ""
-        );
-        sb.append(
-            !storPoolNameList.isEmpty()
-                ? "\tstorPoolNameList: " + storPoolNameList + "\n"
-                : ""
-        );
-        sb.append(
-            !storPoolDisklessNameList.isEmpty()
-                ? "\tstorPoolDisklessNameList: " + storPoolDisklessNameList + "\n"
-                : ""
-        );
-        sb.append(
-            !doNotPlaceWithRscList.isEmpty()
-                ? "\tdoNotPlaceWithRscList: " + doNotPlaceWithRscList + "\n"
-                : ""
-        );
-        sb.append(
-            doNotPlaceWithRscRegex.get() != null
-                ? "\tdoNotPlaceWithRscRegex: " + doNotPlaceWithRscRegex + "\n"
-                : ""
-        );
-        sb.append(
-            !replicasOnSameList.isEmpty()
-                ? "\treplicasOnSameList: " + replicasOnSameList + "\n"
-                : ""
-        );
-        sb.append(
-            !replicasOnDifferentList.isEmpty()
-                ? "\treplicasOnDifferentList: " + replicasOnDifferentList + "\n"
-                : ""
-        );
-        sb.append(
-            !layerStack.isEmpty()
-                ? "\tlayerStack: " + layerStack + "\n"
-                : ""
-        );
-        sb.append(
-            !allowedProviderList.isEmpty()
-                ? "\tallowedProviderList: " + allowedProviderList + "\n"
-                : ""
-        );
-        sb.append(
-            disklessOnRemaining.get() != null
-                ? "\tdisklessOnRemaining: " + disklessOnRemaining + "\n"
-                : ""
-        );
+        appendIfExists(sb, "replicaCount", replicaCount);
+        appendIfNotEmpty(sb, "nodeNameList", nodeNameList);
+        appendIfNotEmpty(sb, "storPoolNameList", storPoolNameList);
+        appendIfNotEmpty(sb, "storPoolDisklessNameList", storPoolDisklessNameList);
+        appendIfNotEmpty(sb, "doNotPlaceWithRscList", doNotPlaceWithRscList);
+        appendIfExists(sb, "doNotPlaceWithRscRegex", doNotPlaceWithRscRegex);
+        appendIfNotEmpty(sb, "replicasOnSameList", replicasOnSameList);
+        appendIfNotEmpty(sb, "replicasOnDifferentList", replicasOnDifferentList);
+        appendIfNotEmpty(sb, "xReplicasOnDifferentMap", xReplicasOnDifferentMap);
+        appendIfNotEmpty(sb, "layerStack", layerStack);
+        appendIfNotEmpty(sb, "allowedProviderList", allowedProviderList);
+        appendIfExists(sb, "disklessOnRemaining", disklessOnRemaining);
         return sb.toString();
+    }
+
+
+    private void appendIfExists(StringBuilder sb, String description, TransactionSimpleObject<?, ?> txSimpleObj)
+    {
+        @Nullable Object obj = txSimpleObj.get();
+        if (obj != null)
+        {
+            sb.append("\t").append(description).append(": ").append(obj).append("\n");
+        }
+    }
+
+    private void appendIfNotEmpty(StringBuilder sb, String description, TransactionList<?, ?> txList)
+    {
+        if (!txList.isEmpty())
+        {
+            sb.append("\t").append(description).append(": ").append(txList).append("\n");
+        }
+    }
+
+    private void appendIfNotEmpty(StringBuilder sb, String description, TransactionMap<?, ?, ?> txLMap)
+    {
+        if (!txLMap.isEmpty())
+        {
+            sb.append("\t").append(description).append(": ").append(txLMap).append("\n");
+        }
     }
 }

@@ -2,6 +2,7 @@ package com.linbit.linstor.dbdrivers.interfaces;
 
 import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
+import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDriver;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -36,9 +37,12 @@ public interface ResourceGroupDatabaseDriver extends GenericDatabaseDriver<Resou
 
     CollectionDatabaseDriver<ResourceGroup, String> getReplicasOnDifferentDriver();
 
+    MapDatabaseDriver<ResourceGroup, String, Integer> getXReplicasOnDifferentMapDriver();
+
     CollectionDatabaseDriver<ResourceGroup, DeviceProviderKind> getAllowedProviderListDriver();
 
     SingleColumnDatabaseDriver<ResourceGroup, Boolean> getDisklessOnRemainingDriver();
 
     SingleColumnDatabaseDriver<ResourceGroup, Short> getPeerSlotsDriver();
+
 }

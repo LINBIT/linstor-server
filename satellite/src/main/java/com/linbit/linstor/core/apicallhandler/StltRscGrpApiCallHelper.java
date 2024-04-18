@@ -87,6 +87,7 @@ class StltRscGrpApiCallHelper
                 autoPlaceConfigPojo.getDoNotPlaceWithRscRegex(),
                 autoPlaceConfigPojo.getReplicasOnSameList(),
                 autoPlaceConfigPojo.getReplicasOnDifferentList(),
+                autoPlaceConfigPojo.getXReplicasOnDifferentMap(),
                 autoPlaceConfigPojo.getProviderList(),
                 autoPlaceConfigPojo.getDisklessOnRemaining(),
                 rscGrpApiRef.getPeerSlots()
