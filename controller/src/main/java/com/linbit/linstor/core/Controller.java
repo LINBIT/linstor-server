@@ -54,7 +54,6 @@ import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.ControllerSecurityModule;
 import com.linbit.linstor.security.DbCoreObjProtInitializer;
-import com.linbit.linstor.security.DummySecurityManager;
 import com.linbit.linstor.security.Privilege;
 import com.linbit.linstor.security.SecurityModule;
 import com.linbit.linstor.systemstarter.ConnectNodesInitializer;
@@ -487,7 +486,6 @@ public final class Controller
         System.out.printf("%s, Module %s\n", LinStor.PROGRAM, LinStor.CONTROLLER_MODULE);
         LinStor.printStartupInfo();
 
-        System.setSecurityManager(new DummySecurityManager());
         CtrlConfig cfg = new CtrlConfig(args);
 
         System.setProperty("log.module", LinStor.CONTROLLER_MODULE);

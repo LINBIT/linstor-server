@@ -30,7 +30,6 @@ public class Autoplacer
     private final AccessContext apiAccCtx;
     private final StorPoolFilter filter;
     private final StrategyHandler strategyHandler;
-    private final PreSelector preSelector;
     private final Selector selector;
     private final ErrorReporter errorReporter;
 
@@ -39,7 +38,6 @@ public class Autoplacer
         @SystemContext AccessContext apiAccCtxRef,
         StorPoolFilter filterRef,
         StrategyHandler strategyHandlerRef,
-        PreSelector preSelectorRef,
         Selector selectorRef,
         ErrorReporter errorReporterRef
     )
@@ -47,7 +45,6 @@ public class Autoplacer
         apiAccCtx = apiAccCtxRef;
         filter = filterRef;
         strategyHandler = strategyHandlerRef;
-        preSelector = preSelectorRef;
         selector = selectorRef;
         errorReporter = errorReporterRef;
     }
@@ -96,23 +93,12 @@ public class Autoplacer
                 System.currentTimeMillis() - startRating
             );
 
-            // 3: allow the user to re-sort / filter storage pools as they see fit
-            long startPreselect = System.currentTimeMillis();
-            Collection<StorPoolWithScore> preselection = preSelector.preselect(
-                rscDfnRef,
-                storPoolsWithScoreList
-            );
-            errorReporter.logTrace(
-                "Autoplacer.Preselector: Finished in %dms.",
-                System.currentTimeMillis() - startPreselect
-            );
-
-            // 4: actual selection of storage pools
+            // 3: actual selection of storage pools
             long startSelection = System.currentTimeMillis();
             Set<StorPoolWithScore> selectionWithScores = selector.select(
                 selectFilter,
                 rscDfnRef,
-                preselection
+                storPoolsWithScoreList
             );
             errorReporter.logTrace(
                 "Autoplacer.Selection: Finished in %dms.",
