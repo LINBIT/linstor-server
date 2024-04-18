@@ -13,8 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - resource-definition modify now, only warns if a satellite is offline
 
 ### Fixed
-
 - Deleting a remote can now be safely done even if there are active shippings to said remote
+- MakeAvail: trigger update satellite if only FLAGS changed
 
 ## [1.27.0] - 2024-04-02
 

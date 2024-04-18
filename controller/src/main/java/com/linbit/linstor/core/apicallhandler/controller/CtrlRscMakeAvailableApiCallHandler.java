@@ -197,6 +197,8 @@ public class CtrlRscMakeAvailableApiCallHandler
                 );
             }
 
+
+            boolean updateSatellite = false;
             if (isAnyFlagSet(rsc, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE))
             {
                 unsetFlag(rsc, Resource.Flags.DELETE, Resource.Flags.DRBD_DELETE);
@@ -204,6 +206,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                 {
                     unsetFlag(vlm, Volume.Flags.DELETE, Volume.Flags.DRBD_DELETE);
                 }
+                updateSatellite = true;
             }
 
             if (isFlagSet(rsc, Resource.Flags.INACTIVE) && !isFlagSet(rsc, Resource.Flags.INACTIVE_PERMANENTLY))
@@ -228,6 +231,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                         )
                     ).onErrorResume(error -> abortDeactivateOldRsc(activeRsc, rsc));
                 }
+                updateSatellite = false; // is done by active fluxes above
             }
             else
             {
@@ -260,6 +264,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                         false,
                         Resource.DiskfulBy.MAKE_AVAILABLE
                     );
+                    updateSatellite = false;
                 }
                 else
                 {
@@ -277,6 +282,13 @@ public class CtrlRscMakeAvailableApiCallHandler
                     flux = Flux.just(
                         ApiCallRcImpl.singleApiCallRc(ApiConsts.MASK_SUCCESS, "Resource already deployed as requested")
                     );
+                }
+
+                if (updateSatellite)
+                {
+                    flux = flux.concatWith(
+                        stltUpdateCaller.updateSatellites(rsc, Flux.empty())
+                            .flatMap(updateTuple -> updateTuple == null ? Flux.empty() : updateTuple.getT2()));
                 }
             }
             ResourceDataUtils.recalculateVolatileRscData(ctrlRscLayerDataFactory, rsc);
@@ -318,7 +330,7 @@ public class CtrlRscMakeAvailableApiCallHandler
                         )
                     )
                 ).onErrorResume(
-                    error -> abortDeactivateOldRsc(activeRsc, rsc)
+                    error -> abortDeactivateOldRsc(activeRsc, null)
                         .concatWith(placeAnywhere(nodeNameRef, rscDfn, layerStack, diskfulRequestedRef))
                 );
             }
