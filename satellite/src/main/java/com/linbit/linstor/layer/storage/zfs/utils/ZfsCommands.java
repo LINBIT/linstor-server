@@ -357,6 +357,7 @@ public class ZfsCommands
                     "zpool",
                     "create",
                     "-f", // force otherwise zpool will cry about possible partition on device
+                    "-m", "none", // do not mount the default zpool dataset
                     zpoolName
                 },
                 devicePaths),
