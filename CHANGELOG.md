@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Freespace calc: Snapshots only reserve allocated size now instead of volume size
 - resource-definition modify now, only warns if a satellite is offline
+- AutoVerifyAlgo: allow to use algorithm name additionally to the specific implementation
 
 ### Fixed
 - Deleting a remote can now be safely done even if there are active shippings to said remote

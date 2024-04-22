@@ -116,6 +116,19 @@ public class ProcCryptoUtils
             .collect(Collectors.toList());
     }
 
+    @SuppressWarnings("checkstyle:DescendantToken")
+    private static boolean hasCryptoName(List<ProcCryptoEntry> cryptos, String name)
+    {
+        for (var pce : cryptos)
+        {
+            if (pce.getName().equalsIgnoreCase(name))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static List<ProcCryptoEntry> commonCryptos(
         Map<String, List<ProcCryptoEntry>> nodeCryptoMap,
         ProcCryptoEntry.CryptoType type,
@@ -128,14 +141,16 @@ public class ProcCryptoUtils
         {
             List<ProcCryptoEntry> firstNode = optFirstEntry.get();
             commons = firstNode.stream()
-                .filter(pce -> pce.getType() == type && (allowedDrivers.isEmpty() || allowedDrivers.contains(pce.getDriver().toLowerCase())))
+                .filter(pce -> pce.getType() == type && (allowedDrivers.isEmpty()
+                    || allowedDrivers.contains(pce.getDriver().toLowerCase())
+                    || allowedDrivers.contains(pce.getName().toLowerCase())))
                 .collect(Collectors.toList());
 
             for (List<ProcCryptoEntry> nodeCryptos : nodeCryptoMap.values().stream()
                 .skip(1)
                 .collect(Collectors.toList()))
             {
-                commons.retainAll(nodeCryptos);
+                commons.removeIf(pce -> !hasCryptoName(nodeCryptos, pce.getName()));
             }
         }
         return commons;

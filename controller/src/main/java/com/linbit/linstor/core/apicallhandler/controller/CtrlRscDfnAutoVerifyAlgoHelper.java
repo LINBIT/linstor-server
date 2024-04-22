@@ -185,23 +185,23 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                         InternalApiConsts.DRBD_AUTO_VERIFY_ALGO, ApiConsts.NAMESPC_DRBD_OPTIONS
                     );
 
-                    if (!commonHashAlgo.getDriver().equalsIgnoreCase(autoVerifyAlgo))
+                    if (!commonHashAlgo.getName().equalsIgnoreCase(autoVerifyAlgo))
                     {
                         errorReporter.logInfo(
                             "Drbd-auto-verify-Algo for %s automatically set to %s",
                             rscDfn.getName(),
-                            commonHashAlgo.getDriver()
+                            commonHashAlgo.getName()
                         );
                         rscDfn.getProps(peerCtxProvider.get()).setProp(
                             InternalApiConsts.DRBD_AUTO_VERIFY_ALGO,
-                            commonHashAlgo.getDriver(),
+                            commonHashAlgo.getName(),
                             ApiConsts.NAMESPC_DRBD_OPTIONS
                         );
                         touchedResources.addAll(rscDfn.streamResource(
                             peerCtxProvider.get()).collect(Collectors.toList()));
                         rc.addEntry(
                             String.format("Updated %s DRBD auto verify algorithm to '%s'",
-                                rscDfn.getName(), commonHashAlgo.getDriver()),
+                                rscDfn.getName(), commonHashAlgo.getName()),
                             ApiConsts.MASK_INFO
                         );
                     }

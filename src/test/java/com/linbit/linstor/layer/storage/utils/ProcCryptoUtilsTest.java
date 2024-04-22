@@ -235,12 +235,14 @@ public class ProcCryptoUtilsTest extends TestCase
         cryptoNode1.add(new ProcCryptoEntry("poly1305", "poly1305-simd", ProcCryptoEntry.CryptoType.SHASH, 100));
         cryptoNode1.add(new ProcCryptoEntry("blake2s-256", "blake2s-256-x86", ProcCryptoEntry.CryptoType.SHASH, 200));
         cryptoNode1.add(new ProcCryptoEntry("lzo-rle", "lzo-rle-scomp", ProcCryptoEntry.CryptoType.SCOMP, 0));
+        cryptoNode1.add(new ProcCryptoEntry("crc32", "crc32-intel", ProcCryptoEntry.CryptoType.SHASH, 200));
 
         ArrayList<ProcCryptoEntry> cryptoNode2 = new ArrayList<>();
         cryptoNode2.add(new ProcCryptoEntry("curve25519", "curve25519-x86", ProcCryptoEntry.CryptoType.KPP, 200));
         cryptoNode2.add(new ProcCryptoEntry("poly1305", "poly1305-simd", ProcCryptoEntry.CryptoType.SHASH, 100));
         cryptoNode2.add(new ProcCryptoEntry("blake2s-256", "blake2s-256-x86", ProcCryptoEntry.CryptoType.SHASH, 200));
         cryptoNode2.add(new ProcCryptoEntry("lzo-rle", "lzo-rle-scomp", ProcCryptoEntry.CryptoType.SCOMP, 0));
+        cryptoNode2.add(new ProcCryptoEntry("crc32", "crc32-intel", ProcCryptoEntry.CryptoType.SHASH, 200));
 
         ArrayList<ProcCryptoEntry> cryptoNode3 = new ArrayList<>();
         cryptoNode3.add(new ProcCryptoEntry("curve25519", "curve25519-x86", ProcCryptoEntry.CryptoType.KPP, 200));
@@ -261,6 +263,8 @@ public class ProcCryptoUtilsTest extends TestCase
             ProcCryptoUtils.cryptoDriverSupported(cryptoMap, ProcCryptoEntry.CryptoType.SHASH, "blake2s-256-x86"));
         assertFalse(
             ProcCryptoUtils.cryptoDriverSupported(cryptoMap, ProcCryptoEntry.CryptoType.SHASH, "crc32-pclmul"));
+        assertTrue(
+            ProcCryptoUtils.cryptoDriverSupported(cryptoMap, ProcCryptoEntry.CryptoType.SHASH, "crc32"));
         assertFalse(
             ProcCryptoUtils.cryptoDriverSupported(cryptoMap, ProcCryptoEntry.CryptoType.SHASH, "curve25519-x86"));
         assertTrue(
