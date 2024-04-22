@@ -1660,16 +1660,14 @@ public class DrbdLayer implements DeviceLayer
 
                 /*
                  * since we just created this resource, becoming briefly primary should not be an issue.
-                 * primary needs to be done with --force since we might configured quorum but did not give DRBD
+                 * primary needs to be done with --force since we might have configured quorum, but did not give DRBD
                  * enough time to connect to peers.
                  *
                  * we need to be primary even if autoPromote is deactivated to create the filesystem
                  */
-                drbdUtils.primary(drbdRscData, true, false);
-                MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
-                try
+                try (var ignored = drbdUtils.primaryAutoClose(drbdRscData, true, false))
                 {
-                    drbdUtils.secondary(drbdRscData);
+                    MkfsUtils.makeFileSystemOnMarked(errorReporter, extCmdFactory, workerCtx, rsc);
                 }
                 catch (ExtCmdFailedException exc)
                 {
@@ -1732,15 +1730,14 @@ public class DrbdLayer implements DeviceLayer
 
     private void setResourceUpToDate(DrbdRscData<Resource> drbdRscData) throws StorageException
     {
-        try
-        {
-            waitForValidStateForPrimary(drbdRscData);
+        waitForValidStateForPrimary(drbdRscData);
 
-            drbdUtils.primary(drbdRscData, true, false);
+        try (var ignored = drbdUtils.primaryAutoClose(drbdRscData, true, false))
+        {
             // setting to secondary because of two reasons:
             // * bug in drbdsetup: cannot down a primary resource
             // * let the user choose which satellite should be primary (or let it be handled by auto-promote)
-            drbdUtils.secondary(drbdRscData);
+            assert true; // "fix" checkstyle empty statement
         }
         catch (ExtCmdFailedException | StorageException cmdExc)
         {

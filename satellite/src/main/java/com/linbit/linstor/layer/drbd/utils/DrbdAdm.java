@@ -169,7 +169,7 @@ public class DrbdAdm
     /**
      * Switches a DRBD resource to primary mode
      *
-     * @throws StorageException
+     * @throws StorageException if primary didn't work
      */
     public void primary(
         DrbdRscData<Resource> drbdRscData,
@@ -178,7 +178,6 @@ public class DrbdAdm
     )
         throws StorageException
     {
-
         List<String> command = new ArrayList<>();
         if (withDrbdSetup)
         {
@@ -203,7 +202,7 @@ public class DrbdAdm
         }
 
 
-        String[] commandArr = command.toArray(new String[command.size()]);
+        String[] commandArr = command.toArray(new String[0]);
         Commands.genericExecutor(
             extCmdFactory.create(),
             commandArr,
@@ -240,6 +239,21 @@ public class DrbdAdm
                 }
             }
         );
+    }
+
+    /**
+     * Switches a DRBD resource to primary mode with auto close (secondary)
+     *
+     * @throws StorageException If primary command didn't work
+     */
+    public DrbdPrimary primaryAutoClose(
+        DrbdRscData<Resource> drbdRscData,
+        boolean force,
+        boolean withDrbdSetup
+    )
+        throws StorageException
+    {
+        return new DrbdPrimary(this, drbdRscData, force, withDrbdSetup);
     }
 
     /**
@@ -649,6 +663,28 @@ public class DrbdAdm
         catch (IOException ioExc)
         {
             throw new ExtCmdFailedException(command, ioExc);
+        }
+    }
+
+    public static class DrbdPrimary implements AutoCloseable
+    {
+        private final DrbdAdm drbdAdm;
+        private final DrbdRscData<Resource> drbdRscData;
+
+        public DrbdPrimary(
+            DrbdAdm drbdAdmRef, DrbdRscData<Resource> drbdRscDataRef, boolean primary, boolean withDrbdSetup)
+            throws StorageException
+        {
+            this.drbdAdm = drbdAdmRef;
+            drbdRscData = drbdRscDataRef;
+
+            drbdAdm.primary(drbdRscData, primary, withDrbdSetup);
+        }
+
+        @Override
+        public void close() throws ExtCmdFailedException
+        {
+            drbdAdm.secondary(drbdRscData);
         }
     }
 }
