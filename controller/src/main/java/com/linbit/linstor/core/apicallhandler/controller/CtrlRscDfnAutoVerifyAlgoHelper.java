@@ -74,7 +74,8 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
                     {
                         if (!rsc.getNode().isDeleted())
                         {
-                            result = LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get()).contains(DeviceLayerKind.DRBD);
+                            result = LayerRscUtils.getLayerStack(rsc, peerCtxProvider.get())
+                                .contains(DeviceLayerKind.DRBD);
                         }
                     }
                     catch (AccessDeniedException ignored)
@@ -108,7 +109,8 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
             {
                 final Map<String, List<ProcCryptoEntry>> nodeCryptos = getCryptoEntryMap(rscDfn);
 
-                if (!ProcCryptoUtils.cryptoDriverSupported(nodeCryptos, ProcCryptoEntry.CryptoType.SHASH, verifyAlgo))
+                if (!nodeCryptos.isEmpty() &&
+                    !ProcCryptoUtils.cryptoDriverSupported(nodeCryptos, ProcCryptoEntry.CryptoType.SHASH, verifyAlgo))
                 {
                     throw new ApiRcException(ApiCallRcImpl.singleApiCallRc(
                         ApiConsts.FAIL_INVLD_PROP,

@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Deleting a remote can now be safely done even if there are active shippings to said remote
 - MakeAvail: trigger update satellite if only FLAGS changed
+- Resource delete: Don't check user set verify-algo if last resource deleted.
 - If mkfs failed, resources have not been demoted(secondary) and couldn't easily be deleted afterward
 
 ## [1.27.0] - 2024-04-02
