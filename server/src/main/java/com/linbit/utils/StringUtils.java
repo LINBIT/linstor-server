@@ -169,9 +169,24 @@ public class StringUtils
         return ret;
     }
 
-    public static boolean propTrueOrYes(String propValue)
+    /**
+     * Check if the given propValue is "true" or "yes".
+     * @param propValue Linstor property string
+     * @return true if value is "Yes" or "True" case-insensitive
+     */
+    public static boolean propTrueOrYes(@Nullable String propValue)
     {
         return propValue != null && (propValue.equalsIgnoreCase("true") || propValue.equalsIgnoreCase("yes"));
+    }
+
+    /**
+     * Check if the given propValue is null or "false"
+     * @param propValue Linstor property string
+     * @return true if value is null or "FaLsE" case-insensitive
+     */
+    public static boolean propFalseOrNull(@Nullable String propValue)
+    {
+        return propValue == null || "false".equalsIgnoreCase(propValue);
     }
 
     /**

@@ -24,6 +24,7 @@ import com.linbit.linstor.storage.ProcCryptoEntry;
 import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -157,7 +158,8 @@ public class CtrlRscDfnAutoVerifyAlgoHelper implements CtrlRscAutoHelper.AutoHel
 
             final String disableAuto = prioProps.getProp(ApiConsts.KEY_DRBD_DISABLE_AUTO_VERIFY_ALGO,
                 ApiConsts.NAMESPC_DRBD_OPTIONS);
-            if (disableAuto == null && rscDfn.getLayerStack(peerCtx).contains(DeviceLayerKind.DRBD))
+            if (StringUtils.propFalseOrNull(disableAuto) &&
+                rscDfn.getLayerStack(peerCtx).contains(DeviceLayerKind.DRBD))
             {
                 final Map<String, List<ProcCryptoEntry>> nodeCryptos = getCryptoEntryMap(rscDfn);
 

@@ -42,6 +42,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nullable;
 
@@ -170,7 +171,7 @@ public class ConfFileBuilder
 
             boolean supportsCramHmac = true;
 
-            if (disableAutoVerifyAlgo == null && verifyAlgo == null && autoVerifyAlgo != null)
+            if (StringUtils.propFalseOrNull(disableAutoVerifyAlgo) && verifyAlgo == null && autoVerifyAlgo != null)
             {
                 localRscPrioProps.setFallbackProp(
                     InternalApiConsts.DRBD_VERIFY_ALGO,
