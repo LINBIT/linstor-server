@@ -21,6 +21,7 @@ import com.linbit.utils.StringUtils;
 
 import static com.linbit.linstor.layer.storage.spdk.utils.SpdkLocalCommands.SPDK_RPC_SCRIPT;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -83,9 +85,10 @@ public class StltExtToolsChecker
     private final ExtCmdFactory extCmdFactory;
     private final StltConfig stltCfg;
 
-    private Map<ExtTools, ExtToolsInfo> cache = null;
+    private @Nullable Map<ExtTools, ExtToolsInfo> cache = null;
 
     private final DrbdEventService drbdEventService;
+    private final Predicate<ExtToolsInfoChecker> platformPredicate;
 
     @Inject
     public StltExtToolsChecker(
@@ -101,48 +104,94 @@ public class StltExtToolsChecker
         extCmdFactory = extCmdFactoryRef;
         stltCfg = stltCfgRef;
         drbdEventService = drbdEventServiceRef;
+
+        platformPredicate = getPlatformPredicate();
     }
 
-    private ExtToolsInfo[] getInfoArrayForLinux()
+    private static class ExtToolsInfoChecker
     {
-        List<String> loadedModules = getLoadedModules();
+        /*
+         * Deliberately using a supplier here instead of the resulting ExtToolsInfo instance because of two reasons:
+         * 1) to be able to perform the isLinux/isWindows test before running the supplier/check
+         * 2) so that the logged time of the "supported" / "NOT supported" messages correlate with the check itself. If
+         * a check takes unusually long, this way we should have at least some hints which ExtTool-check is causing the
+         * issue
+         */
+        private final Supplier<ExtToolsInfo> supplier;
+        private final boolean hasLinuxTarget;
+        private final boolean hasWindowsTarget;
 
-        return new ExtToolsInfo[]
+        ExtToolsInfoChecker(Supplier<ExtToolsInfo> supplierRef, boolean hasLinuxTargetRef, boolean hasWindowsTargetRef)
         {
-            getDrbd9Info(),
-            getDrbdUtilsInfo(),
-            getDrbdProxyInfo(),
-            getCryptSetupInfo(),
-            getLvmInfo(),
-            getLvmThinInfo(),
-            getThinSendRecvInfo(),
-            getZfsKmodInfo(),
-            getZfsUtilsInfo(),
-            getNvmeInfo(loadedModules),
-            getSpdkInfo(),
-            getEbsTargetInfo(),
-            getEbsInitInfo(),
-            getWritecacheInfo(loadedModules),
-            getCacheInfo(loadedModules),
-            getBCacheInfo(loadedModules),
-            getLosetupInfo(),
-            getZstdInfo(),
-            getSocatInfo(),
-            getCoreUtilsInfo(),
-            getUdevadmInfo(),
-            getLsscsiInfo(),
-            getSasPhyInfo(),
-            getSasDeviceInfo()
-        };
+            supplier = supplierRef;
+            hasLinuxTarget = hasLinuxTargetRef;
+            hasWindowsTarget = hasWindowsTargetRef;
+        }
+
+        boolean hasLinuxTarget()
+        {
+            return hasLinuxTarget;
+        }
+
+        boolean hasWindowsTarget()
+        {
+            return hasWindowsTarget;
+        }
+
+        static ExtToolsInfoChecker checkBoth(Supplier<ExtToolsInfo> supplierRef)
+        {
+            return new ExtToolsInfoChecker(supplierRef, true, true);
+        }
+
+        static ExtToolsInfoChecker checkLinux(Supplier<ExtToolsInfo> supplierRef)
+        {
+            return new ExtToolsInfoChecker(supplierRef, true, false);
+        }
+
+        static ExtToolsInfoChecker checkWindows(Supplier<ExtToolsInfo> supplierRef)
+        {
+            return new ExtToolsInfoChecker(supplierRef, false, true);
+        }
     }
 
-    private ExtToolsInfo[] getInfoArrayForWindows()
+    private ExtToolsInfoChecker[] getCheckerArray()
     {
-        return new ExtToolsInfo[]
+        final List<String> loadedModules;
+        if (Platform.isLinux())
         {
-            getDrbd9Info(),
-            getDrbdUtilsInfo(),
-            getStorageSpacesInfo()
+            loadedModules = getLoadedModules();
+        }
+        else
+        {
+            loadedModules = Collections.emptyList();
+        }
+
+        return new ExtToolsInfoChecker[] {
+            ExtToolsInfoChecker.checkBoth(this::getDrbd9Info),
+            ExtToolsInfoChecker.checkBoth(this::getDrbdUtilsInfo),
+            ExtToolsInfoChecker.checkWindows(this::getStorageSpacesInfo),
+            ExtToolsInfoChecker.checkLinux(this::getDrbdProxyInfo),
+            ExtToolsInfoChecker.checkLinux(this::getCryptSetupInfo),
+            ExtToolsInfoChecker.checkLinux(this::getLvmInfo),
+            ExtToolsInfoChecker.checkLinux(this::getLvmThinInfo),
+            ExtToolsInfoChecker.checkLinux(this::getThinSendRecvInfo),
+            ExtToolsInfoChecker.checkLinux(this::getZfsKmodInfo),
+            ExtToolsInfoChecker.checkLinux(this::getZfsUtilsInfo),
+            ExtToolsInfoChecker.checkLinux(() -> getNvmeInfo(loadedModules)),
+            ExtToolsInfoChecker.checkLinux(this::getSpdkInfo),
+            ExtToolsInfoChecker.checkLinux(this::getEbsTargetInfo),
+            ExtToolsInfoChecker.checkLinux(this::getEbsInitInfo),
+            ExtToolsInfoChecker.checkLinux(() -> getWritecacheInfo(loadedModules)),
+            ExtToolsInfoChecker.checkLinux(() -> getCacheInfo(loadedModules)),
+            ExtToolsInfoChecker.checkLinux(() -> getBCacheInfo(loadedModules)),
+            ExtToolsInfoChecker.checkLinux(this::getLosetupInfo),
+            ExtToolsInfoChecker.checkLinux(this::getZstdInfo),
+            ExtToolsInfoChecker.checkLinux(this::getSocatInfo),
+            ExtToolsInfoChecker.checkLinux(this::getCoreUtilsInfo),
+            ExtToolsInfoChecker.checkLinux(this::getUdevadmInfo),
+            ExtToolsInfoChecker.checkLinux(this::getLsscsiInfo),
+            ExtToolsInfoChecker.checkLinux(this::getSasPhyInfo),
+            ExtToolsInfoChecker.checkLinux(this::getSasDeviceInfo),
         };
     }
 
@@ -150,8 +199,6 @@ public class StltExtToolsChecker
     {
         if (recache || cache == null)
         {
-            ExtToolsInfo[] infoArray = null;
-
             boolean wasDrbd9AvailableBeforeRecheck = drbdVersionCheck.hasDrbd9();
 
             // needed by getDrbd9Info() and getDrbdUtilsInfo(). however, calling checkVersions() once is enough
@@ -162,23 +209,15 @@ public class StltExtToolsChecker
                 drbdEventService.start();
             }
 
-            if (Platform.isLinux())
-            {
-                infoArray = getInfoArrayForLinux();
-            }
-            else if (Platform.isWindows())
-            {
-                infoArray = getInfoArrayForWindows();
-            }
-            else
-            {
-                throw new ImplementationError("Platform is neither Linux nor Windows, please add support for it to LINSTOR");
-            }
-
             Map<ExtTools, ExtToolsInfo> extTools = new HashMap<>();
-            for (ExtToolsInfo info : infoArray)
+            for (ExtToolsInfoChecker checker : getCheckerArray())
             {
-                extTools.put(info.getTool(), info);
+                if (platformPredicate.test(checker))
+                {
+                    ExtToolsInfo info = checker.supplier.get();
+                    extTools.put(info.getTool(), info);
+                    logSupported(info);
+                }
             }
             for (ExtTools tool : ExtTools.values())
             {
@@ -188,6 +227,47 @@ public class StltExtToolsChecker
             cache = Collections.unmodifiableMap(extTools);
         }
         return cache;
+    }
+
+    private Predicate<ExtToolsInfoChecker> getPlatformPredicate()
+        throws ImplementationError
+    {
+        Predicate<ExtToolsInfoChecker> ret;
+        if (Platform.isLinux())
+        {
+            ret = ExtToolsInfoChecker::hasLinuxTarget;
+        }
+        else if (Platform.isWindows())
+        {
+            ret = ExtToolsInfoChecker::hasWindowsTarget;
+        }
+        else
+        {
+            throw new ImplementationError(
+                "Platform is neither Linux nor Windows, please add support for it to LINSTOR"
+            );
+        }
+        return ret;
+    }
+
+    private void logSupported(ExtToolsInfo info)
+    {
+        if (info.isSupported())
+        {
+            errorReporter.logInfo(
+                "Checking support for %s: supported (%s)",
+                info.getTool().name(),
+                info.getVersion().toString()
+            );
+        }
+        else
+        {
+            errorReporter.logInfo("Checking support for %s: NOT supported:", info.getTool().name());
+            for (String reason : info.getNotSupportedReasons())
+            {
+                errorReporter.logDebug("   %s", reason);
+            }
+        }
     }
 
     public boolean areSupported(boolean recache, ExtTools... tools)
@@ -209,7 +289,12 @@ public class StltExtToolsChecker
     private ExtToolsInfo doesNotExist(ExtTools tool)
     {
         List<String> reasons = new ArrayList<>();
-        reasons.add(String.format("This tool does not exist on the %s platform.", Platform.isLinux() ? "Linux" : "Windows"));
+        reasons.add(
+            String.format(
+                "This tool does not exist on the %s platform.",
+                Platform.isLinux() ? PLATFORM_LINUX : PLATFORM_WINDOWS
+            )
+        );
 
         return new ExtToolsInfo(tool, false, null, null, null, reasons);
     }
@@ -302,11 +387,6 @@ public class StltExtToolsChecker
             )
         );
 
-        errorReporter.logTrace(
-            "Checking support for %s:%s supported ",
-            ExtTools.STORAGE_SPACES.name(),
-            extToolsInfo.isSupported() ? "" : "NOT"
-        );
         return extToolsInfo;
     }
 
@@ -404,23 +484,6 @@ public class StltExtToolsChecker
             )
         );
 
-        if (ret.isSupported())
-        {
-            errorReporter.logTrace(
-                "Checking support for %s: supported (%s)",
-                ExtTools.ZFS_UTILS.name(),
-                ret.getVersion().toString()
-            );
-        }
-        else
-        {
-            errorReporter.logTrace("Checking support for %s: NOT supported:", ExtTools.ZFS_UTILS.name());
-            for (String reason : ret.getNotSupportedReasons())
-            {
-                errorReporter.logTrace("   %s", reason);
-            }
-        }
-
         return ret;
     }
 
@@ -439,14 +502,6 @@ public class StltExtToolsChecker
             checkModuleLoaded(loadedModulesRef, "nvme_rdma", modprobeFailures);
             if (!modprobeFailures.isEmpty())
             {
-                errorReporter.logTrace(
-                    "Checking support for %s: NOT supported ",
-                    ExtTools.NVME.name()
-                );
-                for (String reason : loadedModulesRef)
-                {
-                    errorReporter.logTrace("   %s", reason);
-                }
                 ret = new ExtToolsInfo(ExtTools.NVME, false, null, null, null, modprobeFailures);
             }
             else
@@ -471,11 +526,6 @@ public class StltExtToolsChecker
     private ExtToolsInfo getEbsTargetInfo()
     {
         boolean isSupported = stltCfg.isEbs();
-        errorReporter.logTrace(
-            "Checking support for %s:%s supported ",
-            ExtTools.EBS_TARGET.name(),
-            isSupported ? "" : " NOT"
-        );
         return new ExtToolsInfo(
             ExtTools.EBS_TARGET,
             isSupported,
@@ -487,11 +537,6 @@ public class StltExtToolsChecker
     private ExtToolsInfo getEbsInitInfo()
     {
         final boolean isSupported = EbsInitiatorProvider.isSupported(errorReporter);
-        errorReporter.logTrace(
-            "Checking support for %s:%s supported ",
-            ExtTools.EBS_INIT.name(),
-            isSupported ? "" : " NOT"
-        );
         return new ExtToolsInfo(
             ExtTools.EBS_INIT,
             isSupported,
@@ -549,20 +594,6 @@ public class StltExtToolsChecker
                     null,
                     notSupportedReasonList
                 )
-            );
-        }
-        if (extToolsInfo.isSupported())
-        {
-            errorReporter.logTrace(
-                "Checking support for %s: supported ",
-                ExtTools.BCACHE_TOOLS.name()
-            );
-        }
-        else
-        {
-            errorReporter.logTrace(
-                "Checking support for %s: NOT supported ",
-                ExtTools.BCACHE_TOOLS.name()
             );
         }
         return extToolsInfo;
@@ -649,6 +680,7 @@ public class StltExtToolsChecker
         return infoBy3MatchGroupPattern(pattern, tool, true, hasPatchVersion, true, cmd);
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private ExtToolsInfo infoBy3MatchGroupPattern(
         Pattern pattern,
         ExtTools tool,
@@ -658,7 +690,7 @@ public class StltExtToolsChecker
         String... cmd
     )
     {
-        ExtToolsInfo extToolsInfo = getStdoutOrErrorReason(cmd).map(
+        return getStdoutOrErrorReason(cmd).map(
             pair ->
             {
                 ExtToolsInfo ret;
@@ -701,23 +733,6 @@ public class StltExtToolsChecker
             },
             notSupportedReasonList -> new ExtToolsInfo(tool, false, null, null, null, notSupportedReasonList)
         );
-        if (extToolsInfo.isSupported())
-        {
-            errorReporter.logTrace(
-                "Checking support for %s: supported (%s)",
-                tool.name(),
-                extToolsInfo.getVersion().toString()
-            );
-        }
-        else
-        {
-            errorReporter.logTrace("Checking support for %s: NOT supported:", tool.name());
-            for (String reason : extToolsInfo.getNotSupportedReasons())
-            {
-                errorReporter.logTrace("   %s", reason);
-            }
-        }
-        return extToolsInfo;
     }
 
     private void checkModuleLoaded(List<String> loadedModulesRef, String moduleName, List<String> failReasons)

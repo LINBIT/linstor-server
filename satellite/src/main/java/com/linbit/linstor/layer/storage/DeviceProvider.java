@@ -16,6 +16,8 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 
+import javax.annotation.Nullable;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -79,7 +81,7 @@ public interface DeviceProvider
      * @throws DatabaseException
      * @throws StorageException
      */
-    LocalPropsChangePojo update(StorPool storPoolRef)
+    @Nullable LocalPropsChangePojo update(StorPool storPoolRef)
         throws AccessDeniedException, DatabaseException, StorageException;
 
     DeviceProviderKind getDeviceProviderKind();
