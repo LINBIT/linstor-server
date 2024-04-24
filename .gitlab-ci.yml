@@ -220,6 +220,7 @@ test-e2e-all:
 test-e2e:
   stage: integration
   interruptible: true
+  timeout: 90 minutes
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web"'
     - if: $CI_COMMIT_BRANCH == 'jenkins'
