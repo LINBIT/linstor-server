@@ -89,11 +89,15 @@ public class MixedStorPoolHelper
 
         try
         {
-            vlmDfnProps.setProp(
-                InternalApiConsts.ALLOCATION_GRANULARITY,
-                Long.toString(getLeastCommonExtentSizeInKib(vlmRef)),
-                StorageConstants.NAMESPACE_INTERNAL
-            );
+            @Nullable Long leastCommonExtentSizeInKib = getLeastCommonExtentSizeInKib(vlmRef);
+            if (leastCommonExtentSizeInKib != null)
+            {
+                vlmDfnProps.setProp(
+                    InternalApiConsts.ALLOCATION_GRANULARITY,
+                    Long.toString(leastCommonExtentSizeInKib),
+                    StorageConstants.NAMESPACE_INTERNAL
+                );
+            }
         }
         catch (InvalidKeyException | InvalidValueException exc)
         {
@@ -259,18 +263,37 @@ public class MixedStorPoolHelper
         return usesSkipInitSync && doesNotUseSkipInitSync;
     }
 
-    private long getLeastCommonExtentSizeInKib(Volume vlmRef)
+    private @Nullable Long getLeastCommonExtentSizeInKib(Volume vlmRef)
         throws AccessDeniedException, StorageException, InterruptedException
     {
         SortedSet<Long> minGranularities = new TreeSet<>();
-        Long vlmDfnExtentSize = getCurrentVlmDfnExtentSize(vlmRef.getVolumeDefinition());
+        @Nullable Long vlmDfnExtentSize = getCurrentVlmDfnExtentSize(vlmRef.getVolumeDefinition());
         if (vlmDfnExtentSize != null)
         {
             minGranularities.add(vlmDfnExtentSize);
         }
         Set<Long> storPoolAndVlmExtentSizes = extractStorPoolAndVlmExtentSizes(vlmRef);
         minGranularities.addAll(storPoolAndVlmExtentSizes);
-        return MathUtils.leastCommonMultiple(minGranularities);
+
+        // in case we are creating a new volume-definition while we already have a few resources deployed, the first
+        // volume that we have to process here might be a diskless volume (DRBD, NVME, ...). In that case we have no
+        // sources for AllocationGranularities, i.e. the set is empty.
+        // Calling MathUtils.LCM with an empty set returns 0, which we MUST NOT store in the vlmDfn properties, since
+        // the next MathUtils.LCM call would include that 0 in the set, which the LCM will complain about.
+
+        @Nullable Long ret;
+        // just in case we did some mistake and a 0 slipped into the set - we still have to prevent a 0 getting stored
+        // in the vlmDfn
+        minGranularities.remove(0L);
+        if (minGranularities.isEmpty())
+        {
+            ret = null;
+        }
+        else
+        {
+            ret = MathUtils.leastCommonMultiple(minGranularities);
+        }
+        return ret;
     }
 
     private @Nullable Long getCurrentVlmDfnExtentSize(VolumeDefinition vlmDfnRef)
