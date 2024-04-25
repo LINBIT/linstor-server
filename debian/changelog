@@ -1,3 +1,39 @@
+linstor-server (1.27.1-1) experimental; urgency=medium
+
+  [ Moritz Wanzenböck ]
+  * docker: fix udev sync in containers
+  * spec: also depend on python3 for rhel8
+
+  [ Rene Peinthor ]
+  * debian: include #DEBHELPER# token in postinst script
+  * freespace: calculate snapshot reserved size by allocated and not volume size
+  * rscdfn-modify: Only warn if a satellite is offline
+  * MakeAvail: update satellite if only the DELETE flags changed
+  * gitlab-ci: build for ubuntu-noble
+  * autoplacer: remove DummySecurityManager and Preselector
+  * drbd: add auto-closable drbd primary
+  * Rsc/delete: don't check verify algorithm on last resource delete
+  * AutoVerifyAlgo: use driver names instead of implementation name
+  * auto-verify-alg: Improve disabled check
+  * gitlab: build for ubuntu-noble also on master
+
+  [ Johanna Kucera ]
+  * Schedule: fix schedule delete after restore
+  * Schedule: prevent NPE while adding schedule-tasks
+  * Backups: only delete remote when not in use
+
+  [ Bernard Gütermann ]
+  * Talos support: Do not mount default on zpool create
+
+  [ Gabor Hernadi ]
+  * Zfs: Query volBlockSize during zfs list
+  * Zfs: Added check for extent size
+  * MixSpHelper: Fixed incorrect calculation of LCM
+  * StltExtToolsChecker: Unified logging
+  * MixedSpHelper: Fix possible 0 for LCM
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 25 Apr 2024 11:09:06 +0000
+
 linstor-server (1.27.0-1) experimental; urgency=medium
 
   [ Rene Peinthor ]

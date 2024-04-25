@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.27.1] - 2024-04-25
+
+### Added
+
+- Support for java-21
+
 ### Changed
 
 - Freespace calc: Snapshots only reserve allocated size now instead of volume size
