@@ -10,12 +10,14 @@ import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
+import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nullable;
 
@@ -43,10 +45,14 @@ import java.util.Set;
  */
 public class SelectionManager
 {
+    private static final int X_REPLICAS_USAGE_NOT_ALLOWED = -1;
+    public static final int X_REPLICAS_DFLT_COUNT = 1;
+
     /** DRBD Version 9.1.0 */
     private static final Version DFLT_DISKLESS_DRBD_VERSION = new Version(9, 1, 0);
 
     private static final String REPL_ON_SAME_UNDECIDED = null;
+
 
     private final AccessContext accessContext;
     private final ErrorReporter errorReporter;
@@ -55,6 +61,7 @@ public class SelectionManager
     private final boolean allowStorPoolMixing;
 
     private final LinkedList<State> selectionStack = new LinkedList<>();
+    private final HashMap<String, Integer> xReplicasOnDiffCount = new HashMap<>();
 
     public SelectionManager(
         AccessContext accessContextRef,
@@ -105,7 +112,7 @@ public class SelectionManager
 
         final HashMap<String, String> initSameProps = initializeSameProps(selectFilterRef, alreadyDeployedOnNodesRef);
 
-        final HashMap<String, List<String>> initDiffProps = initializeDiffProps(
+        final HashMap<String, Map<String, Integer>> initDiffProps = initializeDiffProps(
             selectFilterRef,
             alreadyDeployedOnNodesRef
         );
@@ -206,32 +213,70 @@ public class SelectionManager
         return valToNodeList;
     }
 
-    private HashMap<String, List<String>> initializeDiffProps(
+    private HashMap<String, Map<String, Integer>> initializeDiffProps(
         AutoSelectFilterApi selectFilterRef,
-        List<Node> alreadyDeployedOnNodesRef
+        List<Node> areadyDeployedNode
     )
-        throws AccessDeniedException
+        throws InvalidKeyException, AccessDeniedException
     {
-        final HashMap<String, List<String>> initDiffProps = new HashMap<>();
+        final HashMap<String, Map<String, Integer>> initDiffProps = new HashMap<>();
+        final Map<String, Integer> xReplicasOnDifferentMap = selectFilterRef.getXReplicasOnDifferentMap() == null ?
+            new HashMap<>() :
+            selectFilterRef.getXReplicasOnDifferentMap();
+
         if (selectFilterRef.getReplicasOnDifferentList() != null)
         {
             for (String replOnDiff : selectFilterRef.getReplicasOnDifferentList())
             {
-                ArrayList<String> list = new ArrayList<>();
+                HashMap<String, Integer> valueToRemainingCount = new HashMap<>();
                 int assignIdx = replOnDiff.indexOf("=");
+                final Integer maxCount;
                 String key;
                 if (assignIdx != -1)
                 {
                     key = replOnDiff.substring(0, assignIdx);
                     String val = replOnDiff.substring(assignIdx + 1);
-                    list.add(val);
+                    // we are not allowed to use this value at all
+                    valueToRemainingCount.put(val, X_REPLICAS_USAGE_NOT_ALLOWED);
+                    // maxCount = xReplicasOnDifferentMap.computeIfAbsent(key, ignored -> X_REPLICAS_DFLT_COUNT);
                 }
                 else
                 {
                     key = replOnDiff;
                 }
-                list.addAll(getValuesToNodesListMap(key, alreadyDeployedOnNodesRef).keySet());
-                initDiffProps.put(key, Collections.unmodifiableList(list));
+                maxCount = xReplicasOnDifferentMap.computeIfAbsent(key, ignored -> X_REPLICAS_DFLT_COUNT);
+                for (Node node : areadyDeployedNode)
+                {
+                    @Nullable String nodeVal = node.getProps(accessContext).getProp(key);
+                    if (nodeVal != null)
+                    {
+                        final int oldRemainingCount = valueToRemainingCount.getOrDefault(nodeVal, maxCount);
+                        if (oldRemainingCount > 0)
+                        {
+                            // if oldRemainingCount is already 0, we do not want to go to -1, since that is a special
+                            // case using X_REPLICAS_USAGE_NOT_ALLOWED
+                            // if we are already at -1 (X_REPLICAS_USAGE_NOT_ALLOWED) we also want to stay at that value
+                            valueToRemainingCount.put(nodeVal, oldRemainingCount - 1);
+                        }
+                    }
+                }
+                xReplicasOnDiffCount.put(key, maxCount);
+
+                initDiffProps.put(key, Collections.unmodifiableMap(valueToRemainingCount));
+            }
+        }
+        // also there is the possibility that we receive entries in the xReplicasOnDiffMap which were not present in the
+        // replicasOnDiffList
+        for (Entry<String, Integer> xReplEntry : xReplicasOnDifferentMap.entrySet())
+        {
+            String propKey = xReplEntry.getKey();
+            if (!xReplicasOnDiffCount.containsKey(propKey))
+            {
+                xReplicasOnDiffCount.put(propKey, xReplEntry.getValue());
+            }
+            if (!initDiffProps.containsKey(propKey))
+            {
+                initDiffProps.put(propKey, Collections.emptyMap());
             }
         }
         return initDiffProps;
@@ -300,7 +345,7 @@ public class SelectionManager
             {
                 select(currentSpWithScore);
                 findSelectionImpl(idx + 1);
-                if (!isComplete())
+                if (!isComplete() || !isValid())
                 {
                     /*
                      * recursion could not finish, i.e. the current selection does not allow enough storage pools
@@ -321,6 +366,56 @@ public class SelectionManager
     private boolean isComplete()
     {
         return getCurrentState().remainingRscCountToSelect <= 0;
+    }
+
+    /**
+     * Checks if the current state (once "complete") is also valid. Currently a state can only be invalid if more than 1
+     * x-replicas-on-different group is only partially filled
+     * That means a call with "--x-replicas-on-different 2 site --place-count 3" should only allow 2 groups, never 3.
+     *
+     * @return
+     */
+    private boolean isValid()
+    {
+        State state = getCurrentState();
+
+        boolean isValid = true;
+        for (Entry<String, Map<String, Integer>> entry : state.diffProps.entrySet())
+        {
+            String propKey = entry.getKey();
+            Map<String, Integer> valueAndRemainingCountMap = entry.getValue();
+            int partiallyFullGroupCount = 0;
+            for (Integer remainingCount : valueAndRemainingCountMap.values())
+            {
+                if (remainingCount > 0)
+                {
+                    partiallyFullGroupCount++;
+                }
+            }
+
+            if (partiallyFullGroupCount > 1)
+            {
+                isValid = false;
+                List<String> groupList = new ArrayList<>();
+                for (Entry<String, Integer> valueAndCount : valueAndRemainingCountMap.entrySet())
+                {
+                    groupList.add(
+                        xReplicasOnDiffCount.get(propKey) - valueAndCount.getValue() + "x '" + valueAndCount.getKey() +
+                            "'"
+                    );
+                }
+                errorReporter.logTrace(
+                    "Autoplacer.Selector: current selection is not valid since %s has %d only partially " +
+                        "filled groups: %s",
+                    propKey,
+                    partiallyFullGroupCount,
+                    StringUtils.join(groupList, ", ")
+
+                );
+            }
+        }
+
+        return isValid;
     }
 
     private void logNotSelecting(StorPool sp, String reason)
@@ -441,27 +536,40 @@ public class SelectionManager
         boolean isAllowed = true;
 
         final Props nodeProps = spRef.getNode().getProps(accessContext);
-        Iterator<Map.Entry<String, List<String>>> diffPropEntrySetIt = curStateRef.diffProps.entrySet().iterator();
+        Iterator<Entry<String, Map<String, Integer>>> diffPropEntrySetIt = curStateRef.diffProps.entrySet().iterator();
         while (isAllowed && diffPropEntrySetIt.hasNext())
         {
-            Map.Entry<String, List<String>> diffProp = diffPropEntrySetIt.next();
+            Map.Entry<String, Map<String, Integer>> diffProp = diffPropEntrySetIt.next();
 
-            String nodePropValue = nodeProps.getProp(diffProp.getKey());
+            String propKey = diffProp.getKey();
+            @Nullable String nodePropValue = nodeProps.getProp(propKey);
             if (nodePropValue != null)
             {
-                List<String> diffPropValue = diffProp.getValue();
-                isAllowed = !diffPropValue.contains(nodePropValue);
+                Map<String, Integer> diffPropValueAndRemainingCount = diffProp.getValue();
+                @Nullable Integer remainingCount = diffPropValueAndRemainingCount.get(nodePropValue);
+                isAllowed = remainingCount == null || remainingCount > 0;
                 if (!isAllowed)
                 {
-                    logNotSelecting(
-                        spRef,
-                        String.format(
-                            "the node has property '%s' set to '%s', but that value is " +
-                            "already taken by another node from the current selection",
-                            diffProp.getKey(),
+                    final String notSelectingReason;
+                    if (remainingCount <= X_REPLICAS_USAGE_NOT_ALLOWED)
+                    {
+                        notSelectingReason = String.format(
+                            "the node has property '%s' set to '%s', but that value is not allowed " +
+                                "to be selected at all",
+                            propKey,
                             nodePropValue
-                        )
-                    );
+                        );
+                    }
+                    else
+                    {
+                        notSelectingReason = String.format(
+                            "the node has property '%s' set to '%s', but that value must " +
+                                "not be selected again",
+                            propKey,
+                            nodePropValue
+                        );
+                    }
+                    logNotSelecting(spRef, notSelectingReason);
                 }
             }
         }
@@ -496,15 +604,20 @@ public class SelectionManager
         }
 
         // update diff props
-        Map<String, List<String>> updatedDiffProps = new HashMap<>(curState.diffProps);
-        for (Map.Entry<String, List<String>> diffProp : curState.diffProps.entrySet())
+        Map<String, Map<String, Integer>> updatedDiffProps = new HashMap<>(curState.diffProps);
+        for (Entry<String, Map<String, Integer>> diffProp : curState.diffProps.entrySet())
         {
             String key = diffProp.getKey();
-            List<String> valuesCopy = new ArrayList<>(diffProp.getValue());
+            Map<String, Integer> valuesCopy = new HashMap<>(diffProp.getValue());
             String propValue = nodeProps.getProp(key);
             if (propValue != null)
             {
-                valuesCopy.add(propValue);
+                @Nullable Integer remainingCount = valuesCopy.get(propValue);
+                if (remainingCount == null)
+                {
+                    remainingCount = xReplicasOnDiffCount.getOrDefault(key, X_REPLICAS_DFLT_COUNT);
+                }
+                valuesCopy.put(propValue, remainingCount - 1);
             }
             updatedDiffProps.put(key, valuesCopy);
         }
@@ -581,7 +694,22 @@ public class SelectionManager
         private final int remainingRscCountToSelect;
 
         private final HashMap<String, String> sameProps;
-        private final HashMap<String, List<String>> diffProps;
+        /**
+         * <p>
+         * Outer key is the PropKey itself.
+         * </p>
+         * <p>
+         * Inner key is the PropValue
+         * </p>
+         * <p>
+         * Inner value is the (decreasing) count of how many times the given PropValue is allowed to be used.
+         * </p>
+         * <p>
+         * If the outer value does not exist, the {@link SelectionManager#xReplicasOnDiffCount} should be queried for
+         * the initial inner value.
+         * </p>
+         */
+        private final HashMap</* PropKey */String, Map</* PropValue */String, /* remaining-count */Integer>> diffProps;
 
         State(
             Collection<Node> selectedNodesRef,
@@ -590,7 +718,7 @@ public class SelectionManager
             Collection<StorPoolWithScore> selectedStorPoolWithScoreSetRef,
             int remainingRscCountToSelectRef,
             Map<String, String> samePropsRef,
-            Map<String, List<String>> diffPropsRef
+            Map<String, Map<String, Integer>> diffPropsRef
         )
         {
             selectedNodes = new HashSet<>(selectedNodesRef);

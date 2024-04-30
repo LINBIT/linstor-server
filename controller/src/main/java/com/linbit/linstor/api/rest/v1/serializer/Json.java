@@ -932,6 +932,12 @@ public class Json
         }
 
         @Override
+        public Map<String, Integer> getXReplicasOnDifferentMap()
+        {
+            return autoSelectFilter.x_replicas_on_different_map;
+        }
+
+        @Override
         public List<DeviceLayerKind> getLayerStackList()
         {
             return autoSelectFilter.layer_stack != null ?
@@ -1116,6 +1122,7 @@ public class Json
             auto_select_filter.not_place_with_rsc_regex = autoSelectApi.getDoNotPlaceWithRscRegex();
             auto_select_filter.replicas_on_same = autoSelectApi.getReplicasOnSameList();
             auto_select_filter.replicas_on_different = autoSelectApi.getReplicasOnDifferentList();
+            auto_select_filter.x_replicas_on_different_map = autoSelectApi.getXReplicasOnDifferentMap();
             auto_select_filter.layer_stack = autoSelectApi.getLayerStackList().stream()
                 .map(Json::getLayerTypeString).collect(Collectors.toList());
             auto_select_filter.provider_list = autoSelectApi.getProviderList().stream()

@@ -804,6 +804,7 @@ public class JsonGenTypes
         public String not_place_with_rsc_regex;
         public List<String> replicas_on_same = null;
         public List<String> replicas_on_different = null;
+        public Map<String, Integer> x_replicas_on_different_map = null;
         public List<String> layer_stack = null;
         public List<String> provider_list = null;
         public Boolean diskless_on_remaining;

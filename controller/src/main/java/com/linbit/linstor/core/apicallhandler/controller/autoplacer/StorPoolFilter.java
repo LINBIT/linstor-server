@@ -36,6 +36,7 @@ import javax.inject.Singleton;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -182,13 +183,14 @@ public class StorPoolFilter
         }
         List<String> filterDoNotPlaceWithRscList = selectFilter.getDoNotPlaceWithRscList();
         String filterDoNotPlaceWithRscRegex = selectFilter.getDoNotPlaceWithRscRegex();
-        Map<String, String> filterNodePropsMatch = extractFixedMatchingProperties(
+        Map<String, String> filterNodePropsSame = extractFixedSameProperties(
             selectFilter.getReplicasOnSameList(),
             alreadyDeployedNodesProps
         );
-        Map<String, ArrayList<String>> filterNodePropsMismatch = extractFixedMismatchingProperties(
+        Map<String, Map<String, Integer>> filterNodePropsDifferent = extractFixedDifferentProperties(
             selectFilter.getReplicasOnDifferentList(),
-            alreadyDeployedNodesProps
+            alreadyDeployedNodesProps,
+            selectFilter.getXReplicasOnDifferentMap()
         );
         List<DeviceLayerKind> filterLayerList = selectFilter.getLayerStackList();
         List<DeviceProviderKind> filterProviderList = selectFilter.getProviderList();
@@ -201,8 +203,8 @@ public class StorPoolFilter
         logIfNotEmpty("filter stor pool names: %s", filterStorPoolNameList);
         logIfNotEmpty("filter do not place with rsc: %s", filterDoNotPlaceWithRscList);
         logIfNotEmpty("filter do not place with rsc regex: %s", filterDoNotPlaceWithRscRegex);
-        logIfNotEmpty("filter node properties match: %s", filterNodePropsMatch);
-        logIfNotEmpty("filter node properties mismatch: %s", filterNodePropsMismatch);
+        logIfNotEmpty("filter node properties same: %s", filterNodePropsSame);
+        logIfNotEmpty("filter node properties different: %s", filterNodePropsDifferent);
         logIfNotEmpty("filter layer list: %s", filterLayerList);
         logIfNotEmpty("filter provider list: %s", filterProviderList);
         logIfNotEmpty("skip already placed on node names %s", skipAlreadyPlacedOnNodeNamesCheck);
@@ -347,9 +349,9 @@ public class StorPoolFilter
                         );
                     }
                 }
-                if (nodeMatches && filterNodePropsMatch != null && !filterNodePropsMatch.isEmpty())
+                if (nodeMatches && filterNodePropsSame != null && !filterNodePropsSame.isEmpty())
                 {
-                    for (Entry<String, String> matchEntry : filterNodePropsMatch.entrySet())
+                    for (Entry<String, String> matchEntry : filterNodePropsSame.entrySet())
                     {
                         String nodeVal = nodeProps.getProp(matchEntry.getKey());
                         String valueToMatch = matchEntry.getValue();
@@ -382,24 +384,30 @@ public class StorPoolFilter
                         }
                     }
                 }
-                if (nodeMatches && filterNodePropsMismatch != null && !filterNodePropsMismatch.isEmpty())
+                if (nodeMatches && filterNodePropsDifferent != null && !filterNodePropsDifferent.isEmpty())
                 {
                     boolean anyMatch = false;
-                    for (Entry<String, ArrayList<String>> mismatchEntry : filterNodePropsMismatch.entrySet())
+                    for (Entry<String, Map<String, Integer>> diffPropEntry : filterNodePropsDifferent.entrySet())
                     {
-                        String val = nodeProps.getProp(mismatchEntry.getKey());
-                        if (mismatchEntry.getValue().contains(val))
+                        String key = diffPropEntry.getKey();
+                        @Nullable String val = nodeProps.getProp(key);
+                        if (val != null)
                         {
-                            anyMatch = true;
-                            errorReporter.logTrace(
-                                "Autoplacer.Filter: Disqualifying node '%s' as it does not match fixed different " +
-                                    "property '%s'. Value prohibited: %s, but node has: '%s'",
-                                nodeDisplayValue,
-                                mismatchEntry.getKey(),
-                                mismatchEntry.getValue(),
-                                val
-                            );
-                            break;
+                            Map<String, Integer> valuesWithRemainingCount = diffPropEntry.getValue();
+                            @Nullable Integer remainingCount = valuesWithRemainingCount.get(val);
+                            if (remainingCount != null && remainingCount <= 0)
+                            {
+                                anyMatch = true;
+                                errorReporter.logTrace(
+                                    "Autoplacer.Filter: Disqualifying node '%s' as it has a prohibited value for " +
+                                        "property '%s'. Value(s) prohibited: %s, but node has: '%s'",
+                                    nodeDisplayValue,
+                                    key,
+                                    valuesWithRemainingCount.keySet(),
+                                    val
+                                );
+                                break;
+                            }
                         }
                     }
                     nodeMatches = !anyMatch;
@@ -690,7 +698,7 @@ public class StorPoolFilter
      *
      * @return
      */
-    private Map<String, String> extractFixedMatchingProperties(
+    private Map<String, String> extractFixedSameProperties(
         List<String> propsList,
         List<Props> alreadyDeployedNodeProps
     )
@@ -747,56 +755,112 @@ public class StorPoolFilter
     }
 
     /**
-     * Basically the same as the {@link #extractFixedMatchingProperties(List)}, but this time we return a list of values
-     *
-     * @param propsList
-     *
-     * @return
+     * Basically the same as the {@link #extractFixedSameProperties(List, List)}, but this time we return a map of
+     * values and the number of their allowed usages (0 means prohibited, > 0 means {@link Selector} has to deal with
+     * it)
      */
-    private Map<String, ArrayList<String>> extractFixedMismatchingProperties(
-        List<String> propsList,
-        List<Props> alreadyDeployedNodeProps
+    private Map<String, Map<String, Integer>> extractFixedDifferentProperties(
+        @Nullable List<String> origReplicasOnDifferentList,
+        List<Props> alreadyDeployedNodeProps,
+        @Nullable Map<String, Integer> xReplicasOnDifferentRef
     )
     {
-        Map<String, ArrayList<String>> ret = new TreeMap<>();
-        if (propsList != null)
+        // if we have keys in the xReplicasOndifferentRef map that do not exist in the origReplOnDiffList, we want to
+        // add those keys to the list to also process them.
+
+        // however, building such a dedicated list would be inefficient since we would need to iterate once through the
+        // map and with a nested loop over all elements of the list, since we cannot use a simple list.contains(key)
+        // call, since the list might contain "Aux/test=bla" entries, whereas the xReplicasOnDifferentMap would in such
+        // a case only contain "Aux/test" as a key
+
+        // therefore we copy the map, so we can remove the entries one by one as we process the
+        // origReplicasOnDifferentList. after we are done with the list, we see if the map still has elements and
+        // process the remaining entries, just as if they were part of the list without the "=bla" part
+
+        Map<String, Integer> nonNullXReplicasOnDiffMap;
+        Set<String> xReplicasOndifferentToProcess;
+        if (xReplicasOnDifferentRef == null)
         {
-            for (String elem : propsList)
+            nonNullXReplicasOnDiffMap = Collections.emptyMap();
+            xReplicasOndifferentToProcess = new HashSet<>();
+        }
+        else
+        {
+            nonNullXReplicasOnDiffMap = xReplicasOnDifferentRef;
+            xReplicasOndifferentToProcess = new HashSet<>(xReplicasOnDifferentRef.keySet());
+        }
+
+        Map<String, Map<String, Integer>> ret = new TreeMap<>();
+        if (origReplicasOnDifferentList != null)
+        {
+            for (String replOnDiffElement : origReplicasOnDifferentList)
             {
                 String key;
-                String fixedValueToAvoid = null;
-                int idx = elem.indexOf("=");
+                @Nullable String fixedValueToAvoid = null;
+                int idx = replOnDiffElement.indexOf("=");
                 if (idx != -1)
                 {
-                    key = elem.substring(0, idx);
-                    fixedValueToAvoid = elem.substring(idx + 1);
+                    key = replOnDiffElement.substring(0, idx);
+                    fixedValueToAvoid = replOnDiffElement.substring(idx + 1);
                 }
                 else
                 {
-                    key = elem;
+                    key = replOnDiffElement;
                 }
 
-                ArrayList<String> fixedValuesList = ret.get(key);
-                if (fixedValuesList == null)
-                {
-                    fixedValuesList = new ArrayList<>();
-                    ret.put(key, fixedValuesList);
-                }
-                if (fixedValueToAvoid != null)
-                {
-                    fixedValuesList.add(fixedValueToAvoid);
-                }
-                for (Props alreadyDeployedNodeProp : alreadyDeployedNodeProps)
-                {
-                    String currentValue = alreadyDeployedNodeProp.getProp(elem);
-                    if (currentValue != null)
-                    {
-                        fixedValuesList.add(currentValue);
-                    }
-                }
-
+                processReplOnDiff(alreadyDeployedNodeProps, nonNullXReplicasOnDiffMap, ret, key, fixedValueToAvoid);
+                xReplicasOndifferentToProcess.remove(key);
             }
         }
+
+        for (String unprocessedXReplOnDiffKey : xReplicasOndifferentToProcess)
+        {
+            processReplOnDiff(
+                alreadyDeployedNodeProps,
+                nonNullXReplicasOnDiffMap,
+                ret,
+                unprocessedXReplOnDiffKey,
+                null
+            );
+        }
+
         return ret;
+    }
+
+    private void processReplOnDiff(
+        List<Props> alreadyDeployedNodeProps,
+        Map<String, Integer> xReplicasOnDifferentRef,
+        Map<String, Map<String, Integer>> ret,
+        String key,
+        @Nullable String fixedValueToAvoid
+    )
+    {
+        Map<String, Integer> usedValuesMap = ret.get(key);
+        if (usedValuesMap == null)
+        {
+            usedValuesMap = new TreeMap<>();
+            ret.put(key, usedValuesMap);
+        }
+        if (fixedValueToAvoid != null)
+        {
+            usedValuesMap.put(fixedValueToAvoid, 0);
+        }
+
+        for (Props alreadyDeployedNodeProp : alreadyDeployedNodeProps)
+        {
+            @Nullable String currentValue = alreadyDeployedNodeProp.getProp(key);
+            if (currentValue != null)
+            {
+                @Nullable Integer remainingCount = usedValuesMap.get(currentValue);
+                if (remainingCount == null)
+                {
+                    remainingCount = xReplicasOnDifferentRef.getOrDefault(
+                        key,
+                        SelectionManager.X_REPLICAS_DFLT_COUNT
+                    );
+                }
+                usedValuesMap.put(currentValue, remainingCount - 1);
+            }
+        }
     }
 }

@@ -77,6 +77,7 @@ import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -861,8 +862,594 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     }
 
     @Test
+    public void xReplicasOnDifferentSimpleTest() throws Exception
+    {
+        /*
+         * Simple test, we have 5 datacenter locations with 3 nodes each and want to have an
+         * "--x-replicas-on-different 2 DC --place-count 5".
+         * Expected result should be a 2+2+1 distribution, not a 1+1+1+1+1
+         */
+        RscAutoPlaceApiCall rscAutoPlaceApiCall = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            5,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB);
+        int nodeId = 0;
+        final int nodesPerLocation = 3;
+        TreeSet<String> dcLocations = new TreeSet<>(
+            Arrays.asList(
+                "Vienna",
+                "Berlin",
+                "Frankfurt",
+                "London",
+                "Paris"
+            )
+        );
+        for (String datacenter : dcLocations)
+        {
+            for (int i = 1; i <= nodesPerLocation; i++)
+            {
+                rscAutoPlaceApiCall = rscAutoPlaceApiCall
+                    .stltBuilder(String.format("node%02d.%s%d", nodeId++, datacenter, i))
+                        .setNodeProp("Aux/DC", datacenter)
+                        .addStorPool("stor", 10 * GB)
+                    .build();
+            }
+        }
+        evaluateTest(
+            rscAutoPlaceApiCall
+                .putXReplicasOnDifferent("Aux/DC", 2)
+                .addReplicasOnDifferentNodeProp("Aux/DC")
+        );
+
+        // all SPs are equal, so we expect alphanummerically the first two DCs to contain 2 replicas each and the third
+        // DC to have a single replica
+        List<Node> deployedNodes = nodesMap.values()
+            .stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(5, deployedNodes.size());
+
+
+        Map<String, Integer> selectedDcs = new TreeMap<>();
+        for (String dc : dcLocations)
+        {
+            selectedDcs.put(dc, 0);
+        }
+        for (Node node : deployedNodes)
+        {
+            String dc = node.getProps(SYS_CTX).getProp("Aux/DC");
+            selectedDcs.put(dc, selectedDcs.get(dc) + 1);
+        }
+
+        Iterator<String> dcLocIterator = dcLocations.iterator();
+        assertEquals(2, (int) selectedDcs.get(dcLocIterator.next()));
+        assertEquals(2, (int) selectedDcs.get(dcLocIterator.next()));
+        assertEquals(1, (int) selectedDcs.get(dcLocIterator.next()));
+        while (dcLocIterator.hasNext())
+        {
+            assertEquals(0, (int) selectedDcs.get(dcLocIterator.next()));
+        }
+    }
+
+    @Test
+    public void xReplicasOnDifferentOnlyOnePartiallyFilledGroupTest() throws Exception
+    {
+        /*
+         * 5 datacenter locations, 3 nodes each, but try to provoke the autoplacer in choosing a 1+1+1+1+1, which is not
+         * allowed. This provocation is done by giving one node of every datacenter a much higher score (more free
+         * space) than the other two nodes of the given datacenter.
+         * The autoplacer is expected to try the 1+1+1+1+1 first (since this combination has the highest score), but
+         * should rollback and retry until it finishes in a valid 2+2+1 setup.
+         */
+        RscAutoPlaceApiCall rscAutoPlaceApiCall = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            5,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB);
+        int nodeId = 0;
+        TreeSet<String> dcLocations = new TreeSet<>(
+            Arrays.asList(
+                "Vienna",
+                "Berlin",
+                "Frankfurt",
+                "London",
+                "Paris"
+            )
+        );
+        for (String datacenter : dcLocations)
+        {
+            rscAutoPlaceApiCall = rscAutoPlaceApiCall
+                .stltBuilder(String.format("node%02d.%s1", nodeId++, datacenter))
+                    .setNodeProp("Aux/DC", datacenter)
+                    .addStorPool("stor", 100 * GB)
+                .build()
+                .stltBuilder(String.format("node%02d.%s2", nodeId++, datacenter))
+                    .setNodeProp("Aux/DC", datacenter)
+                    .addStorPool("stor", 10 * GB)
+                .build()
+                .stltBuilder(String.format("node%02d.%s3", nodeId++, datacenter))
+                    .setNodeProp("Aux/DC", datacenter)
+                    .addStorPool("stor", 10 * GB)
+                .build();
+        }
+        evaluateTest(
+            rscAutoPlaceApiCall
+                .putXReplicasOnDifferent("Aux/DC", 2)
+                .addReplicasOnDifferentNodeProp("Aux/DC")
+        );
+
+        // although not all SPs are equal, we still expect alphanummerically the first two DCs to contain 2 replicas
+        // each and the third DC to have a single replica, since all nodes have the same equally good storage pool
+        // (100G) and two not-that-good SPs (10G). so there is no "preferred" node, which means, alphanumeric sorting is
+        // still expected
+        List<Node> deployedNodes = nodesMap.values()
+            .stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(5, deployedNodes.size());
+
+        Map<String, Integer> selectedDcs = new TreeMap<>();
+        for (String dc : dcLocations)
+        {
+            selectedDcs.put(dc, 0);
+        }
+        for (Node node : deployedNodes)
+        {
+            String dc = node.getProps(SYS_CTX).getProp("Aux/DC");
+            selectedDcs.put(dc, selectedDcs.get(dc) + 1);
+        }
+
+        Iterator<String> dcLocIterator = dcLocations.iterator();
+        assertEquals(2, (int) selectedDcs.get(dcLocIterator.next()));
+        assertEquals(2, (int) selectedDcs.get(dcLocIterator.next()));
+        assertEquals(1, (int) selectedDcs.get(dcLocIterator.next()));
+        while (dcLocIterator.hasNext())
+        {
+            assertEquals(0, (int) selectedDcs.get(dcLocIterator.next()));
+        }
+    }
+
+    @Test
+    public void xReplicasOnDifferentOnlyOnePartiallyFilledGroup2Test() throws Exception
+    {
+        /*
+         * 3 datacenter locations, 3 nodes each, but try to provoke the autoplacer in choosing a 2+2, which is not
+         * allowed. This provocation is done by giving 2 nodes of every datacenter a much higher score (more free
+         * space) than the remaining node of the given datacenter.
+         * The autoplacer is expected to try the 2+2 first (since this combination has the highest score), but
+         * should rollback and retry until it finishes in a valid 3+1 setup.
+         */
+        RscAutoPlaceApiCall rscAutoPlaceApiCall = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            4,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB);
+        int nodeId = 0;
+        TreeSet<String> dcLocations = new TreeSet<>(
+            Arrays.asList(
+                "Vienna",
+                "Berlin",
+                "Frankfurt"
+            )
+        );
+        for (String datacenter : dcLocations)
+        {
+            rscAutoPlaceApiCall = rscAutoPlaceApiCall
+                .stltBuilder(String.format("node%02d.%s1", nodeId++, datacenter))
+                .setNodeProp("Aux/DC", datacenter)
+                .addStorPool("stor", 100 * GB)
+                .build()
+                .stltBuilder(String.format("node%02d.%s2", nodeId++, datacenter))
+                .setNodeProp("Aux/DC", datacenter)
+                .addStorPool("stor", 100 * GB)
+                .build()
+                .stltBuilder(String.format("node%02d.%s3", nodeId++, datacenter))
+                .setNodeProp("Aux/DC", datacenter)
+                .addStorPool("stor", 10 * GB)
+                .build();
+        }
+        evaluateTest(
+            rscAutoPlaceApiCall
+                .putXReplicasOnDifferent("Aux/DC", 3)
+                .addReplicasOnDifferentNodeProp("Aux/DC")
+                .addReplicasOnDifferentNodeProp("Aux/DC2")
+        );
+
+        List<Node> deployedNodes = nodesMap.values()
+            .stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(4, deployedNodes.size());
+
+        Map<String, Integer> selectedDcs = new TreeMap<>();
+        for (String dc : dcLocations)
+        {
+            selectedDcs.put(dc, 0);
+        }
+        for (Node node : deployedNodes)
+        {
+            String dc = node.getProps(SYS_CTX).getProp("Aux/DC");
+            selectedDcs.put(dc, selectedDcs.get(dc) + 1);
+        }
+
+        Iterator<String> dcLocIterator = dcLocations.iterator();
+        assertEquals(3, (int) selectedDcs.get(dcLocIterator.next()));
+        assertEquals(1, (int) selectedDcs.get(dcLocIterator.next()));
+        while (dcLocIterator.hasNext())
+        {
+            assertEquals(0, (int) selectedDcs.get(dcLocIterator.next()));
+        }
+    }
+
+    @Test
+    public void xReplicasOnDifferentWithPreexistingResourcesTest() throws Exception
+    {
+        /*
+         * 5 datacenters, 3 nodes each, but 2 nodes (different DCs) have already a resource deployed.
+         * Expected result: the already selected DCs should either be filled up or one of the pre-selected DCs should be
+         * the on with only 1 replica
+         */
+        RscAutoPlaceApiCall rscAutoPlaceApiCall = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            5,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB);
+        int nodeId = 0;
+        final int nodesPerLocation = 3;
+        TreeSet<String> dcLocations = new TreeSet<>(
+            Arrays.asList(
+                "Vienna",
+                "Berlin",
+                "Frankfurt",
+                "London",
+                "Paris"
+            )
+        );
+        for (String datacenter : dcLocations)
+        {
+            for (int i = 1; i <= nodesPerLocation; i++)
+            {
+                rscAutoPlaceApiCall
+                    .stltBuilder(String.format("node%02d.%s%d", nodeId++, datacenter, i))
+                    .setNodeProp("Aux/DC", datacenter)
+                    .addStorPool("stor", 10 * GB);
+            }
+        }
+        rscAutoPlaceApiCall.addRsc(
+            TEST_RSC_NAME,
+            "stor",
+            "node12.Vienna1",
+            "node02.Berlin3"
+        );
+
+        evaluateTest(
+            rscAutoPlaceApiCall
+                .putXReplicasOnDifferent("Aux/DC", 2)
+                .addReplicasOnDifferentNodeProp("Aux/DC")
+        );
+
+        // although not all SPs are equal, we still expect alphanummerically the first two DCs to contain 2 replicas
+        // each and the third DC to have a single replica, since all nodes have the same equally good storage pool
+        // (100G) and two not-that-good SPs (10G). so there is no "preferred" node, which means, alphanumeric sorting is
+        // still expected
+        List<Node> deployedNodes = nodesMap.values()
+            .stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(5, deployedNodes.size());
+
+        Map<String, Integer> selectedDcs = new TreeMap<>();
+        for (Node node : deployedNodes)
+        {
+            String dc = node.getProps(SYS_CTX).getProp("Aux/DC");
+            @Nullable Integer count = selectedDcs.get(dc);
+            selectedDcs.put(dc, count == null ? 1 : count + 1);
+        }
+
+        assertEquals(3, selectedDcs.size());
+        assertTrue(selectedDcs.containsKey("Vienna"));
+        assertTrue(selectedDcs.containsKey("Berlin"));
+    }
+
+    @Test
+    public void xReplicasOnDifferentWithPreexistingResourcesFillingAGroupTest() throws Exception
+    {
+        /*
+         * 5 datacenters, 3 nodes each, 2 nodes of the same DC have a resource already deployed.
+         */
+        RscAutoPlaceApiCall rscAutoPlaceApiCall = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            5,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB);
+        int nodeId = 0;
+        final int nodesPerLocation = 3;
+        TreeSet<String> dcLocations = new TreeSet<>(
+            Arrays.asList(
+                "Vienna",
+                "Berlin",
+                "Frankfurt",
+                "London",
+                "Paris"
+            )
+        );
+        for (String datacenter : dcLocations)
+        {
+            for (int i = 1; i <= nodesPerLocation; i++)
+            {
+                rscAutoPlaceApiCall
+                    .stltBuilder(String.format("node%02d.%s%d", nodeId++, datacenter, i))
+                    .setNodeProp("Aux/DC", datacenter)
+                    .addStorPool("stor", 10 * GB);
+            }
+        }
+        rscAutoPlaceApiCall.addRsc(
+            TEST_RSC_NAME,
+            "stor",
+            "node12.Vienna1",
+            "node13.Vienna2"
+        );
+
+        evaluateTest(
+            rscAutoPlaceApiCall
+                .putXReplicasOnDifferent("Aux/DC", 2)
+                .addReplicasOnDifferentNodeProp("Aux/DC")
+        );
+
+        // although not all SPs are equal, we still expect alphanummerically the first two DCs to contain 2 replicas
+        // each and the third DC to have a single replica, since all nodes have the same equally good storage pool
+        // (100G) and two not-that-good SPs (10G). so there is no "preferred" node, which means, alphanumeric sorting is
+        // still expected
+        List<Node> deployedNodes = nodesMap.values()
+            .stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(5, deployedNodes.size());
+
+        Map<String, Integer> selectedDcs = new TreeMap<>();
+        for (Node node : deployedNodes)
+        {
+            String dc = node.getProps(SYS_CTX).getProp("Aux/DC");
+            @Nullable Integer count = selectedDcs.get(dc);
+            selectedDcs.put(dc, count == null ? 1 : count + 1);
+        }
+
+        assertEquals(3, selectedDcs.size());
+        assertTrue(selectedDcs.containsKey("Vienna"));
+        assertTrue(selectedDcs.containsKey("Berlin"));
+    }
+
+    @Test
+    public void xReplicasOnDifferentWithExcludingSpecificValueTest() throws Exception
+    {
+        /*
+         * 5 datacenters, 3 nodes each, one DC is highly attractive, but excluded via
+         * "--replicas-on-different Aux/DC=Vienna"
+         */
+        RscAutoPlaceApiCall rscAutoPlaceApiCall = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            5,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB);
+        int nodeId = 0;
+        final int nodesPerLocation = 3;
+        TreeSet<String> dcLocations = new TreeSet<>(
+            Arrays.asList(
+                "Berlin",
+                "Frankfurt",
+                "London",
+                "Paris"
+            )
+        );
+        for (String datacenter : dcLocations)
+        {
+            for (int i = 1; i <= nodesPerLocation; i++)
+            {
+                rscAutoPlaceApiCall
+                    .stltBuilder(String.format("node%02d.%s%d", nodeId++, datacenter, i))
+                    .setNodeProp("Aux/DC", datacenter)
+                    .addStorPool("stor", 10 * GB);
+            }
+        }
+        dcLocations.add("Vienna");
+        for (int i = 1; i <= nodesPerLocation; i++)
+        {
+            rscAutoPlaceApiCall
+                .stltBuilder(String.format("node%02d.%s%d", nodeId++, "Vienna", i))
+                .setNodeProp("Aux/DC", "Vienna")
+                .addStorPool("stor", 100 * GB);
+        }
+
+        evaluateTest(
+            rscAutoPlaceApiCall
+                .putXReplicasOnDifferent("Aux/DC", 2)
+                .addReplicasOnDifferentNodeProp("Aux/DC=Vienna")
+        );
+
+        List<Node> deployedNodes = nodesMap.values()
+            .stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(5, deployedNodes.size());
+
+        Map<String, Integer> selectedDcs = new TreeMap<>();
+        for (Node node : deployedNodes)
+        {
+            String dc = node.getProps(SYS_CTX).getProp("Aux/DC");
+            @Nullable Integer count = selectedDcs.get(dc);
+            selectedDcs.put(dc, count == null ? 1 : count + 1);
+        }
+
+        assertEquals(3, selectedDcs.size());
+        assertFalse(selectedDcs.containsKey("Vienna"));
+    }
+
+    @Test
+    public void xReplicasOnDifferentForceRollbackTest() throws Exception
+    {
+        /*
+         * 5 datacenters, 3 nodes each, but the first (most attractive) DC has only one node (i.e. forces a
+         * rollback).
+         * requires a "--x-replicas-on-different X ... --place-count P" such that X % P = 0
+         */
+        RscAutoPlaceApiCall rscAutoPlaceApiCall = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            4,
+            true,
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED, // property set
+            ApiConsts.CREATED // rsc autoplace
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB);
+        int nodeId = 0;
+        final int nodesPerLocation = 3;
+        TreeSet<String> dcLocations = new TreeSet<>(
+            Arrays.asList(
+                "Berlin",
+                "Frankfurt",
+                "London",
+                "Paris"
+            )
+        );
+        for (String datacenter : dcLocations)
+        {
+            for (int i = 1; i <= nodesPerLocation; i++)
+            {
+                rscAutoPlaceApiCall
+                    .stltBuilder(String.format("node%02d.%s%d", nodeId++, datacenter, i))
+                    .setNodeProp("Aux/DC", datacenter)
+                    .addStorPool("stor", 10 * GB);
+            }
+        }
+
+        rscAutoPlaceApiCall
+            .stltBuilder("node99.Vienna")
+            .setNodeProp("Aux/DC", "Vienna")
+            .addStorPool("stor", 100 * GB);
+
+        evaluateTest(
+            rscAutoPlaceApiCall
+                .putXReplicasOnDifferent("Aux/DC", 2)
+                .addReplicasOnDifferentNodeProp("Aux/DC")
+        );
+
+        List<Node> deployedNodes = nodesMap.values()
+            .stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(4, deployedNodes.size());
+
+        Map<String, Integer> selectedDcs = new TreeMap<>();
+        for (Node node : deployedNodes)
+        {
+            String dc = node.getProps(SYS_CTX).getProp("Aux/DC");
+            @Nullable Integer count = selectedDcs.get(dc);
+            selectedDcs.put(dc, count == null ? 1 : count + 1);
+        }
+
+        assertEquals(2, selectedDcs.size());
+        assertFalse(selectedDcs.containsKey("Vienna"));
+    }
+
+    @Test
+    public void xReplicasOnDifferentNotEnoughNodesTest() throws Exception
+    {
+        /*
+         * "--x-replicas-on-different 2 DC" test, but all DCs have only 1 node -> must fail
+         */
+        RscAutoPlaceApiCall rscAutoPlaceApiCall = new RscAutoPlaceApiCall(
+            TEST_RSC_NAME,
+            4,
+            false,
+            ApiConsts.FAIL_NOT_ENOUGH_NODES
+        )
+            .addVlmDfn(TEST_RSC_NAME, 0, 5 * GB);
+        int nodeId = 0;
+        final int nodesPerLocation = 1;
+        TreeSet<String> dcLocations = new TreeSet<>(
+            Arrays.asList(
+                "Berlin",
+                "Frankfurt",
+                "London",
+                "Paris"
+            )
+        );
+        for (String datacenter : dcLocations)
+        {
+            for (int i = 1; i <= nodesPerLocation; i++)
+            {
+                rscAutoPlaceApiCall
+                    .stltBuilder(String.format("node%02d.%s%d", nodeId++, datacenter, i))
+                    .setNodeProp("Aux/DC", datacenter)
+                    .addStorPool("stor", 10 * GB);
+            }
+        }
+
+        evaluateTest(
+            rscAutoPlaceApiCall
+                .putXReplicasOnDifferent("Aux/DC", 2)
+                .addReplicasOnDifferentNodeProp("Aux/DC")
+        );
+
+        List<Node> deployedNodes = nodesMap.values()
+            .stream()
+            .flatMap(this::streamResources)
+            .map(Resource::getNode) // we should have now only 2 nodes
+            .collect(Collectors.toList());
+        assertEquals(0, deployedNodes.size());
+    }
+
+    @Test
     public void replicasOnSameTest() throws Exception
     {
+
         evaluateTest(
             new RscAutoPlaceApiCall(
                 TEST_RSC_NAME,
@@ -2215,17 +2802,18 @@ public class RscAutoPlaceApiTest extends ApiTestBase
     private class RscAutoPlaceApiCall extends AbsApiCallTester
     {
         private final String rscNameStr;
-        private Integer placeCount;
-        private Integer additionalPlaceCount;
+        private @Nullable Integer placeCount;
+        private @Nullable Integer additionalPlaceCount;
 
         private final List<String> doNotPlaceWithRscList = new ArrayList<>();
         private final List<String> nodeNameList = new ArrayList<>();
         private final List<String> storPoolNameList = new ArrayList<>();
         private final List<String> storPoolDisklessNameList = new ArrayList<>();
-        private String doNotPlaceWithRscRegexStr = null;
+        private @Nullable String doNotPlaceWithRscRegexStr = null;
 
         private final List<String> replicasOnSameNodePropList = new ArrayList<>();
         private final List<String> replicasOnDifferentNodePropList = new ArrayList<>();
+        private final Map<String, Integer> xReplicasOnDifferentMap = new TreeMap<>();
         private boolean disklessOnRemaining;
         private List<String> skipAlreadyPlacedOnNodeCheck;
         private boolean skipAlreadyPlacedOnAllNodeCheck = false;
@@ -2233,7 +2821,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         private final List<DeviceLayerKind> layerStack = new ArrayList<>(Arrays.asList(DRBD, STORAGE));
         private final List<DeviceProviderKind> providerList =
             new ArrayList<>(Arrays.asList(DeviceProviderKind.values()));
-        private String disklessType;
+        private @Nullable String disklessType;
         private Map<ExtTools, ExtToolsInfo.Version> requiredExtTools = null;
 
         RscAutoPlaceApiCall(
@@ -2258,6 +2846,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
             );
             rscNameStr = rscNameStrRef;
             placeCount = placeCountRef;
+
+            // user should not be able to enter this :)
+            providerList.remove(DeviceProviderKind.FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER);
         }
 
         public RscAutoPlaceApiCall addRequiredExtTools(ExtTools extTool, Integer major, Integer minor, Integer patch)
@@ -2311,6 +2902,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         RscAutoPlaceApiCall addReplicasOnDifferentNodeProp(String nodePropKey)
         {
             replicasOnDifferentNodePropList.add(nodePropKey);
+            return this;
+        }
+
+        RscAutoPlaceApiCall putXReplicasOnDifferent(String nodePropKey, Integer countRef)
+        {
+            xReplicasOnDifferentMap.put(nodePropKey, countRef);
             return this;
         }
 
@@ -2393,6 +2990,12 @@ public class RscAutoPlaceApiTest extends ApiTestBase
                     public List<String> getReplicasOnDifferentList()
                     {
                         return replicasOnDifferentNodePropList;
+                    }
+
+                    @Override
+                    public Map<String, Integer> getXReplicasOnDifferentMap()
+                    {
+                        return xReplicasOnDifferentMap;
                     }
 
                     @Override
@@ -2587,8 +3190,7 @@ public class RscAutoPlaceApiTest extends ApiTestBase
         }
     }
 
-
-    private class SatelliteBuilder
+    private final class SatelliteBuilder
     {
         private final RscAutoPlaceApiCall parent;
         private final Node stlt;
@@ -2730,11 +3332,9 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         public SatelliteBuilder setSupportedProviders(DeviceProviderKind... providers)
         {
-            List<DeviceProviderKind> kinds = new ArrayList<>(Arrays.asList(DeviceProviderKind.values()));
             for (DeviceProviderKind supportedProvider : providers)
             {
                 Mockito.when(mockedExtToolsMgr.isProviderSupported(supportedProvider)).thenReturn(true);
-                kinds.remove(supportedProvider);
             }
             for (DeviceProviderKind unsupportedProviderLayer : providers)
             {

@@ -6,27 +6,30 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
+import javax.annotation.Nullable;
+
 import java.util.List;
 import java.util.Map;
 
 public class AutoSelectFilterBuilder
 {
-    private Integer placeCount = null;
-    private Integer additionalPlaceCount = null;
-    private List<String> nodeNameList = null;
-    private List<String> storPoolNameList = null;
-    private List<String> storPoolDisklessNameList = null;
-    private List<String> doNotPlaceWithRscList = null;
-    private String doNotPlaceWithRegex = null;
-    private List<String> replicasOnSameList = null;
-    private List<String> replicasOnDifferentList = null;
-    private List<DeviceLayerKind> layerStackList = null;
-    private List<DeviceProviderKind> deviceProviderKinds = null;
-    private Boolean disklessOnRemaining = null;
-    private List<String> skipAlreadyPlacedOnNodeNamesCheck = null;
-    private Boolean skipAlreadyPlacedOnAllNodeCheck = null;
-    private String disklessType = null;
-    private Map<ExtTools, Version> extTools = null;
+    private @Nullable Integer placeCount = null;
+    private @Nullable Integer additionalPlaceCount = null;
+    private @Nullable List<String> nodeNameList = null;
+    private @Nullable List<String> storPoolNameList = null;
+    private @Nullable List<String> storPoolDisklessNameList = null;
+    private @Nullable List<String> doNotPlaceWithRscList = null;
+    private @Nullable String doNotPlaceWithRegex = null;
+    private @Nullable List<String> replicasOnSameList = null;
+    private @Nullable List<String> replicasOnDifferentList = null;
+    private @Nullable Map<String, Integer> xReplicasOnDifferentMap = null;
+    private @Nullable List<DeviceLayerKind> layerStackList = null;
+    private @Nullable List<DeviceProviderKind> deviceProviderKinds = null;
+    private @Nullable Boolean disklessOnRemaining = null;
+    private @Nullable List<String> skipAlreadyPlacedOnNodeNamesCheck = null;
+    private @Nullable Boolean skipAlreadyPlacedOnAllNodeCheck = null;
+    private @Nullable String disklessType = null;
+    private @Nullable Map<ExtTools, Version> extTools = null;
 
     public AutoSelectFilterBuilder(AutoSelectFilterPojo pojo)
     {
@@ -39,6 +42,7 @@ public class AutoSelectFilterBuilder
         doNotPlaceWithRegex = pojo.getDoNotPlaceWithRscRegex();
         replicasOnSameList = pojo.getReplicasOnSameList();
         replicasOnDifferentList = pojo.getReplicasOnDifferentList();
+        xReplicasOnDifferentMap = pojo.getXReplicasOnDifferentMap();
         layerStackList = pojo.getLayerStackList();
         deviceProviderKinds = pojo.getProviderList();
         disklessOnRemaining = pojo.getDisklessOnRemaining();
@@ -106,6 +110,12 @@ public class AutoSelectFilterBuilder
         return this;
     }
 
+    public AutoSelectFilterBuilder setXReplicasOnDifferentMap(Map<String, Integer> xReplicasOnDifferentMapRef)
+    {
+        xReplicasOnDifferentMap = xReplicasOnDifferentMapRef;
+        return this;
+    }
+
     public AutoSelectFilterBuilder setLayerStackList(List<DeviceLayerKind> layerStackListRef)
     {
         layerStackList = layerStackListRef;
@@ -155,6 +165,7 @@ public class AutoSelectFilterBuilder
             doNotPlaceWithRegex,
             replicasOnSameList,
             replicasOnDifferentList,
+            xReplicasOnDifferentMap,
             layerStackList,
             deviceProviderKinds,
             disklessOnRemaining,

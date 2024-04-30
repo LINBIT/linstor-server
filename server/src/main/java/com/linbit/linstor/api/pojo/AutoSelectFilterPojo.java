@@ -7,7 +7,6 @@ import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.List;
@@ -27,6 +26,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     private @Nullable String doNotPlaceWithRegex;
     private @Nullable List<String> replicasOnSameList;
     private @Nullable List<String> replicasOnDifferentList;
+    private @Nullable Map<String, Integer> xReplicasOnDifferentMap;
     private @Nullable List<DeviceLayerKind> layerStackList;
     private @Nullable List<DeviceProviderKind> providerList;
     private @Nullable Boolean disklessOnRemaining;
@@ -45,6 +45,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         @Nullable String doNotPlaceWithRegexRef,
         @Nullable List<String> replicasOnSameListRef,
         @Nullable List<String> replicasOnDifferentListRef,
+        @Nullable Map<String, Integer> xReplicasOnDifferentMapRef,
         @Nullable List<DeviceLayerKind> layerStackListRef,
         @Nullable List<DeviceProviderKind> deviceProviderKindsRef,
         @Nullable Boolean disklessOnRemainingRef,
@@ -63,6 +64,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         doNotPlaceWithRegex = doNotPlaceWithRegexRef;
         replicasOnSameList = replicasOnSameListRef;
         replicasOnDifferentList = replicasOnDifferentListRef;
+        xReplicasOnDifferentMap = xReplicasOnDifferentMapRef;
         disklessOnRemaining = disklessOnRemainingRef;
         layerStackList = layerStackListRef;
         providerList = deviceProviderKindsRef;
@@ -83,6 +85,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             api.getDoNotPlaceWithRscRegex(),
             api.getReplicasOnSameList(),
             api.getReplicasOnDifferentList(),
+            api.getXReplicasOnDifferentMap(),
             api.getLayerStackList(),
             api.getProviderList(),
             api.getDisklessOnRemaining(),
@@ -93,28 +96,27 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
         );
     }
 
-    public static @Nonnull AutoSelectFilterPojo merge(
-        AutoSelectFilterApi... cfgArr
-    )
+    public static AutoSelectFilterPojo merge(AutoSelectFilterApi... cfgArr)
     {
-        Integer placeCount = null;
-        Integer additionalPlaceCount = null;
-        List<String> replicasOnDifferentList = null;
-        List<String> replicasOnSameList = null;
-        String notPlaceWithRscRegex = null;
-        List<String> notPlaceWithRscList = null;
-        List<String> nodeNameList = null;
-        List<String> storPoolNameList = null;
-        List<String> storPoolDisklessNameList = null;
-        List<DeviceLayerKind> layerStack = null;
-        List<DeviceProviderKind> providerList = null;
-        Boolean disklessOnRemaining = null;
-        List<String> skipAlreadyPlacedOnNodeCheck = null;
-        Boolean skipAlreadyPlacedOnAllNodeCheck = null;
-        String disklessType = null;
-        Map<ExtTools, ExtToolsInfo.Version> requiredExtTools = null;
+        @Nullable Integer placeCount = null;
+        @Nullable Integer additionalPlaceCount = null;
+        @Nullable List<String> replicasOnDifferentList = null;
+        @Nullable Map<String, Integer> xReplicasOnDifferentMap = null;
+        @Nullable List<String> replicasOnSameList = null;
+        @Nullable String notPlaceWithRscRegex = null;
+        @Nullable List<String> notPlaceWithRscList = null;
+        @Nullable List<String> nodeNameList = null;
+        @Nullable List<String> storPoolNameList = null;
+        @Nullable List<String> storPoolDisklessNameList = null;
+        @Nullable List<DeviceLayerKind> layerStack = null;
+        @Nullable List<DeviceProviderKind> providerList = null;
+        @Nullable Boolean disklessOnRemaining = null;
+        @Nullable List<String> skipAlreadyPlacedOnNodeCheck = null;
+        @Nullable Boolean skipAlreadyPlacedOnAllNodeCheck = null;
+        @Nullable String disklessType = null;
+        @Nullable Map<ExtTools, ExtToolsInfo.Version> requiredExtTools = null;
 
-        for (AutoSelectFilterApi cfgApi : cfgArr)
+        for (@Nullable AutoSelectFilterApi cfgApi : cfgArr)
         {
             if (cfgApi != null)
             {
@@ -129,6 +131,10 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
                 if (replicasOnDifferentList == null)
                 {
                     replicasOnDifferentList = cfgApi.getReplicasOnDifferentList();
+                }
+                if (xReplicasOnDifferentMap == null)
+                {
+                    xReplicasOnDifferentMap = cfgApi.getXReplicasOnDifferentMap();
                 }
                 if (replicasOnSameList == null)
                 {
@@ -195,6 +201,7 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
             notPlaceWithRscRegex,
             replicasOnSameList,
             replicasOnDifferentList,
+            xReplicasOnDifferentMap,
             layerStack,
             providerList,
             disklessOnRemaining,
@@ -257,6 +264,12 @@ public class AutoSelectFilterPojo implements AutoSelectFilterApi
     public @Nullable List<String> getReplicasOnDifferentList()
     {
         return replicasOnDifferentList;
+    }
+
+    @Override
+    public @Nullable Map<String, Integer> getXReplicasOnDifferentMap()
+    {
+        return xReplicasOnDifferentMap;
     }
 
     @Override

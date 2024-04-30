@@ -28,6 +28,8 @@ public interface AutoSelectFilterApi
 
     List<String> getReplicasOnDifferentList();
 
+    Map<String, Integer> getXReplicasOnDifferentMap();
+
     List<DeviceLayerKind> getLayerStackList();
 
     List<DeviceProviderKind> getProviderList();

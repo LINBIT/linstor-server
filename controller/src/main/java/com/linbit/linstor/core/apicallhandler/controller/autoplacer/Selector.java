@@ -223,10 +223,10 @@ class Selector
             sortedStorPoolByScoreArr,
             allowMixing
         );
-        final int replicaCount = selectionManager.getAdditionalRscCountToSelect();
+        final int additionalReplicaCount = selectionManager.getAdditionalRscCountToSelect();
         errorReporter.logTrace(
             "Autoplacer.Selector: Starting selection for %d additional resources",
-            replicaCount - alreadyDeployedOnNodes.size()
+            additionalReplicaCount
         );
         do
         {
@@ -235,7 +235,7 @@ class Selector
             {
                 keepSearchingForCandidates = false;
             }
-            else if (currentSelection.size() == replicaCount)
+            else if (currentSelection.size() == additionalReplicaCount)
             {
                 double currentScore = 0;
 
@@ -274,10 +274,10 @@ class Selector
                     );
                 }
                 startIdx++;
-                if (startIdx <= sortedStorPoolByScoreArr.length - replicaCount)
+                if (startIdx <= sortedStorPoolByScoreArr.length - additionalReplicaCount)
                 {
                     double nextHighestPossibleScore = 0;
-                    for (int idx = 0; idx < replicaCount; idx++)
+                    for (int idx = 0; idx < additionalReplicaCount; idx++)
                     {
                         /*
                          * we ignore here all filters and node-assignments, etc... we just want to
@@ -315,7 +315,7 @@ class Selector
                 errorReporter.logTrace("Autoplacer.Selector: no more candidates found");
             }
         }
-        while (currentSelection.size() == replicaCount && keepSearchingForCandidates);
+        while (currentSelection.size() == additionalReplicaCount && keepSearchingForCandidates);
 
         return selectionResult;
     }

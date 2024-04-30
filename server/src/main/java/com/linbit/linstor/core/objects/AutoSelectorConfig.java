@@ -124,13 +124,16 @@ public class AutoSelectorConfig extends BaseTransactionObject
         );
         transObjs = Arrays.asList(
             replicaCount,
+            nodeNameList,
             storPoolNameList,
+            storPoolDisklessNameList,
             doNotPlaceWithRscList,
             doNotPlaceWithRscRegex,
             replicasOnSameList,
             replicasOnDifferentList,
             layerStack,
-            allowedProviderList
+            allowedProviderList,
+            disklessOnRemaining
         );
     }
 

@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Autoplacer: Add --x-replicas-on-different option
+
 ### Changed
 
 - Snapshots now cannot be created while SkipDisk is active

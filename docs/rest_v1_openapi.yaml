@@ -7319,6 +7319,11 @@ components:
           default: null
           items:
             type: string
+        x_replicas_on_different_map:
+          type: object
+          default: null
+          additionalProperties:
+            type: integer
         layer_stack:
           type: array
           default: null

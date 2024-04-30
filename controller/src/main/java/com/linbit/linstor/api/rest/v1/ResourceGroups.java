@@ -184,6 +184,7 @@ public class ResourceGroups
                 .setDoNotPlaceWithRegex(selectFilter.not_place_with_rsc_regex)
                 .setReplicasOnSameList(selectFilter.replicas_on_same)
                 .setReplicasOnDifferentList(selectFilter.replicas_on_different)
+                .setXReplicasOnDifferentMap(selectFilter.x_replicas_on_different_map)
                 .setLayerStackList(selectFilter.layer_stack == null ? null :
                     LinstorParsingUtils.asDeviceLayerKind(selectFilter.layer_stack))
                 .setDeviceProviderKinds(selectFilter.provider_list == null ? null :
