@@ -1,11 +1,13 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpCollectionDatabaseDriver;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
@@ -19,16 +21,16 @@ import java.util.Set;
 public class TransactionSet<PARENT, VALUE extends TransactionObject>
     extends AbsTransactionObject implements Set<VALUE>
 {
-    private final PARENT parent;
+    private final @Nullable PARENT parent;
     private final CollectionDatabaseDriver<PARENT, VALUE> dbDriver;
     private final Set<VALUE> backingSet;
     private final Set<VALUE> oldValues;
     private boolean isDirty = false;
 
     public TransactionSet(
-        PARENT parentRef,
+        @Nullable PARENT parentRef,
         Set<VALUE> backingSetRef,
-        CollectionDatabaseDriver<PARENT, VALUE> dbDriverRef,
+        @Nullable CollectionDatabaseDriver<PARENT, VALUE> dbDriverRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -36,7 +38,18 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
         parent = parentRef;
         backingSet = backingSetRef == null ? new HashSet<>() : backingSetRef;
         oldValues = new LinkedHashSet<>();
-        dbDriver = dbDriverRef == null ? new NoOpCollectionDatabaseDriver<>() : dbDriverRef;
+        if (dbDriverRef == null)
+        {
+            dbDriver = new NoOpCollectionDatabaseDriver<>();
+        }
+        else
+        {
+            if (parentRef == null)
+        {
+                throw new ImplementationError("Parent must not be null when using a database driver!");
+            }
+            dbDriver = dbDriverRef;
+        }
     }
 
     @Override
@@ -100,7 +113,7 @@ public class TransactionSet<PARENT, VALUE extends TransactionObject>
     {
         // workaround to prevent the call of iterator.remove()
         final Iterator<VALUE> it = backingSet.iterator();
-        return new Iterator<VALUE>()
+        return new Iterator<>()
         {
             @Override
             public boolean hasNext()

@@ -1,5 +1,6 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -7,6 +8,7 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.CollectionDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpCollectionDatabaseDriver;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -21,7 +23,7 @@ import java.util.Objects;
 public class TransactionList<PARENT, VALUE>
     extends AbsTransactionObject implements List<VALUE>
 {
-    private final PARENT parent;
+    private final @Nullable PARENT parent;
     private final CollectionDatabaseDriver<PARENT, VALUE> dbDriver;
     private final List<VALUE> backingList;
     private final List<VALUE> oldValues;
@@ -29,15 +31,26 @@ public class TransactionList<PARENT, VALUE>
     private volatile boolean isDirty;
 
     public TransactionList(
-        PARENT parentRef,
+        @Nullable PARENT parentRef,
         List<VALUE> backingListRef,
-        CollectionDatabaseDriver<PARENT, VALUE> dbDriverRef,
+        @Nullable CollectionDatabaseDriver<PARENT, VALUE> dbDriverRef,
         Provider<TransactionMgr> transMgrProvider
     )
     {
         super(transMgrProvider);
         parent = parentRef;
-        dbDriver = dbDriverRef == null ? new NoOpCollectionDatabaseDriver<>() : dbDriverRef;
+        if (dbDriverRef == null)
+        {
+            dbDriver = new NoOpCollectionDatabaseDriver<>();
+        }
+        else
+        {
+            if (parentRef == null)
+            {
+                throw new ImplementationError("Parent must not be null when using a database driver!");
+            }
+            dbDriver = dbDriverRef;
+        }
         backingList = backingListRef == null ? new ArrayList<>() : backingListRef;
         oldValues = new ArrayList<>();
         immutableBackingList = Collections.unmodifiableList(backingList);

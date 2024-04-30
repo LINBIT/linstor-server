@@ -33,7 +33,10 @@ public class TransactionObjectFactory
         transMgrProvider = transMgrProviderRef;
     }
 
-    public <ELEMENT> TransactionSimpleObject<Void, ELEMENT> createVolatileTransactionSimpleObject(
+    /*
+     * TxSimpleObj
+     */
+    public <PARENT, ELEMENT> TransactionSimpleObject<PARENT, ELEMENT> createNonPersistentTransactionSimpleObject(
         ELEMENT element
     )
     {
@@ -41,9 +44,9 @@ public class TransactionObjectFactory
     }
 
     public <PARENT, ELEMENT> TransactionSimpleObject<PARENT, ELEMENT> createTransactionSimpleObject(
-        PARENT parent,
+        @Nullable PARENT parent,
         ELEMENT element,
-        SingleColumnDatabaseDriver<PARENT, ELEMENT> driver
+        @Nullable SingleColumnDatabaseDriver<PARENT, ELEMENT> driver
     )
     {
         return new TransactionSimpleObject<>(
@@ -54,7 +57,11 @@ public class TransactionObjectFactory
         );
     }
 
-    public <PARENT, KEY, VALUE extends TransactionObject> TransactionMap<PARENT, KEY, VALUE> createVolatileTransactionMap(
+    /*
+     * TxMap
+     */
+    @SuppressWarnings("checkstyle:LineLengthCheck")
+    public <PARENT, KEY, VALUE extends TransactionObject> TransactionMap<PARENT, KEY, VALUE> createNonPersistentTransactionMap(
         Map<KEY, VALUE> mapRef
     )
     {
@@ -70,13 +77,6 @@ public class TransactionObjectFactory
         return new TransactionMap<>(parent, mapRef, driver, transMgrProvider);
     }
 
-    public <VALUE extends TransactionObject> TransactionSet<Void, VALUE> createVolatileTransactionSet(
-        Set<VALUE> backingSet
-    )
-    {
-        return createTransactionSet(null, backingSet, null);
-    }
-
     public <PARENT, KEY, VALUE> TransactionMap<PARENT, KEY, VALUE> createTransactionPrimitiveMap(
         @Nullable PARENT parent,
         Map<KEY, VALUE> mapRef,
@@ -86,16 +86,29 @@ public class TransactionObjectFactory
         return new TransactionMap<>(parent, mapRef, driver, transMgrProvider);
     }
 
+    /*
+     * TxSet
+     */
+    public <PARENT, VALUE extends TransactionObject> TransactionSet<PARENT, VALUE> createNonPersistentTransactionSet(
+        Set<VALUE> backingSet
+    )
+    {
+        return createTransactionSet(null, backingSet, null);
+    }
+
     public <PARENT, VALUE extends TransactionObject> TransactionSet<PARENT, VALUE> createTransactionSet(
-        PARENT parent,
+        @Nullable PARENT parent,
         Set<VALUE> backingSet,
-        CollectionDatabaseDriver<PARENT, VALUE> dbDriver
+        @Nullable CollectionDatabaseDriver<PARENT, VALUE> dbDriver
     )
     {
         return new TransactionSet<>(parent, backingSet, dbDriver, transMgrProvider);
     }
 
-    public <VALUE extends TransactionObject> TransactionList<Void, VALUE> createVolatileTransactionList(
+    /*
+     * TxList
+     */
+    public <PARENT, VALUE extends TransactionObject> TransactionList<PARENT, VALUE> createNonPersistentTransactionList(
         List<VALUE> backingList
     )
     {
@@ -103,15 +116,15 @@ public class TransactionObjectFactory
     }
 
     public <PARENT, VALUE extends TransactionObject> TransactionList<PARENT, VALUE> createTransactionList(
-        PARENT parent,
+        @Nullable PARENT parent,
         List<VALUE> backingList,
-        CollectionDatabaseDriver<PARENT, VALUE> dbDriver
+        @Nullable CollectionDatabaseDriver<PARENT, VALUE> dbDriver
     )
     {
         return new TransactionList<>(parent, backingList, dbDriver, transMgrProvider);
     }
 
-    public <VALUE> TransactionList<Void, VALUE> createVolatileTransactionPrimitiveList(
+    public <PARENT, VALUE> TransactionList<PARENT, VALUE> createNonPersistentTransactionPrimitiveList(
         List<VALUE> backingList
     )
     {
@@ -119,14 +132,17 @@ public class TransactionObjectFactory
     }
 
     public <PARENT, VALUE> TransactionList<PARENT, VALUE> createTransactionPrimitiveList(
-        PARENT parent,
+        @Nullable PARENT parent,
         List<VALUE> backingList,
-        CollectionDatabaseDriver<PARENT, VALUE> dbDriver
+        @Nullable CollectionDatabaseDriver<PARENT, VALUE> dbDriver
     )
     {
         return new TransactionList<>(parent, backingList, dbDriver, transMgrProvider);
     }
 
+    /*
+     * Flags
+     */
     public <PARENT, FLAG extends Enum<FLAG> & Flags> StateFlags<FLAG> createStateFlagsImpl(
         ObjectProtection objProt,
         PARENT parentObj,

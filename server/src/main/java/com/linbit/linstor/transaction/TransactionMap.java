@@ -1,5 +1,6 @@
 package com.linbit.linstor.transaction;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorDBRuntimeException;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
@@ -19,7 +20,7 @@ import java.util.Set;
 public class TransactionMap<PARENT, KEY, VALUE>
     extends AbsTransactionObject implements Map<KEY, VALUE>
 {
-    private final PARENT parent;
+    private final @Nullable PARENT parent;
     private final MapDatabaseDriver<PARENT, KEY, VALUE> dbDriver;
     private final Map<KEY, VALUE> backingMap;
     private final Map<KEY, VALUE> oldValues;
@@ -40,6 +41,10 @@ public class TransactionMap<PARENT, KEY, VALUE>
         }
         else
         {
+            if (parentRef == null)
+        {
+                throw new ImplementationError("Parent must not be null when using a database driver!");
+            }
             dbDriver = driver;
         }
 

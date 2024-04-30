@@ -6,22 +6,23 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.SingleColumnDatabaseDrive
 import com.linbit.linstor.dbdrivers.noop.NoOpObjectDatabaseDriver;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Objects;
 
 public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObject
 {
-    private final PARENT parent;
+    private final @Nullable PARENT parent;
     private ELEMENT object;
     private ELEMENT cachedObject;
     private final SingleColumnDatabaseDriver<PARENT, ELEMENT> dbDriver;
     private boolean dirty = false;
 
     public TransactionSimpleObject(
-        PARENT parentRef,
+        @Nullable PARENT parentRef,
         ELEMENT objRef,
-        SingleColumnDatabaseDriver<PARENT, ELEMENT> driverRef,
+        @Nullable SingleColumnDatabaseDriver<PARENT, ELEMENT> driverRef,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
@@ -35,6 +36,10 @@ public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObje
         }
         else
         {
+            if (parentRef == null)
+            {
+                throw new ImplementationError("Parent must not be null when using a database driver!");
+            }
             dbDriver = driverRef;
         }
     }
