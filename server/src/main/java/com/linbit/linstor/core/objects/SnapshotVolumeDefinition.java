@@ -60,12 +60,12 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
     // State flags
     private final StateFlags<Flags> flags;
 
-    private final TransactionMap<NodeName, SnapshotVolume> snapshotVlmMap;
+    private final TransactionMap<SnapshotVolumeDefinition, NodeName, SnapshotVolume> snapshotVlmMap;
 
     private final VolumeDefinition vlmDfn;
     private final VolumeNumber vlmNr;
 
-    private final TransactionMap<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
+    private final TransactionMap<SnapshotVolumeDefinition, Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
 
     private final Key snapVlmDfnKey;
 
@@ -112,9 +112,9 @@ public class SnapshotVolumeDefinition extends AbsCoreObj<SnapshotVolumeDefinitio
             initFlags
         );
 
-        snapshotVlmMap = transObjFactory.createTransactionMap(snapshotVlmMapRef, null);
+        snapshotVlmMap = transObjFactory.createTransactionMap(this, snapshotVlmMapRef, null);
 
-        layerStorage = transObjFactory.createTransactionMap(layerDataMapRef, null);
+        layerStorage = transObjFactory.createTransactionMap(this, layerDataMapRef, null);
 
         volumeSize = transObjFactory.createTransactionSimpleObject(
             this,

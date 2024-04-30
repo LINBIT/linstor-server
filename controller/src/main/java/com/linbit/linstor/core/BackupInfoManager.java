@@ -82,7 +82,7 @@ public class BackupInfoManager
         sysCtx = sysCtxRef;
         errorReporter = errorReporterRef;
         rscDfnMap = rscDfnMapRef;
-        restoreMap = transObjFactoryRef.createTransactionPrimitiveMap(new HashMap<>(), null);
+        restoreMap = transObjFactoryRef.createTransactionPrimitiveMap(null, new HashMap<>(), null);
         abortCreateMap = new HashMap<>();
         abortRestoreMap = new HashMap<>();
         backupsToDownload = new HashMap<>();
@@ -167,7 +167,7 @@ public class BackupInfoManager
                 }
             }
             Set<RemoteName> remotesToCleanup = removeInProgressBackups(snapDfnsToCleanup);
-            return new Pair<Set<SnapshotDefinition>, Set<RemoteName>>(snapDfnsToCleanup, remotesToCleanup);
+            return new Pair<>(snapDfnsToCleanup, remotesToCleanup);
         }
     }
 

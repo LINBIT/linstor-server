@@ -67,8 +67,8 @@ public class Resource extends AbsResource<Resource>
     private final StateFlags<Flags> flags;
 
     // Connections to the peer resources
-    private final TransactionMap<Resource.ResourceKey, ResourceConnection> resourceConnections;
-    private final TransactionMap<VolumeNumber, Volume> vlmMap;
+    private final TransactionMap<Resource, Resource.ResourceKey, ResourceConnection> resourceConnections;
+    private final TransactionMap<Resource, VolumeNumber, Volume> vlmMap;
 
     // Access control for this resource
     private final ObjectProtection objProt;
@@ -117,9 +117,9 @@ public class Resource extends AbsResource<Resource>
 
         ErrorCheck.ctorNotNull(Resource.class, ResourceDefinition.class, resDfnRef);
         resourceDfn = resDfnRef;
-        resourceConnections = transObjFactory.createTransactionMap(rscConnMapRef, null);
+        resourceConnections = transObjFactory.createTransactionMap(this, rscConnMapRef, null);
         objProt = objProtRef;
-        vlmMap = transObjFactory.createTransactionMap(vlmMapRef, null);
+        vlmMap = transObjFactory.createTransactionMap(this, vlmMapRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,

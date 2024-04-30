@@ -40,7 +40,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     protected final LayerResourceIdDatabaseDriver dbDriver;
 
     // not (explicitly) persisted, serialized
-    protected final TransactionMap<VolumeNumber, VLM_TYPE> vlmMap;
+    protected final TransactionMap<AbsRscData<RSC, VLM_TYPE>, VolumeNumber, VLM_TYPE> vlmMap;
     protected final TransactionSet<AbsRscData<RSC, VLM_TYPE>, AbsRscLayerObject<RSC>> children;
 
     // not persisted, serialized
@@ -75,7 +75,7 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
 
         parent = transObjFactory.createTransactionSimpleObject(this, parentRef, dbDriverRef.getParentDriver());
         children = transObjFactory.createTransactionSet(this, childrenRef, null);
-        vlmMap = transObjFactory.createTransactionMap(vlmProviderObjectsRef, null);
+        vlmMap = transObjFactory.createTransactionMap(this, vlmProviderObjectsRef, null);
         suspend = transObjFactory.createTransactionSimpleObject(this, false, dbDriverRef.getSuspendDriver());
         ignoreReason = transObjFactory.createTransactionSimpleObject(this, null, null);
 

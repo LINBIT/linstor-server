@@ -47,10 +47,8 @@ public final class AccessControlList extends BaseTransactionObject
         super(transMgrProviderRef);
         objPath = objPathRef;
         dbDriver = dbDriverRef;
-        TransactionMap<RoleName, AccessControlEntry> txAcl = transObjFactoryRef.createTransactionPrimitiveMap(
-            backingMapRef,
-            null
-        );
+        TransactionMap<AccessControlList, RoleName, AccessControlEntry> txAcl = transObjFactoryRef
+            .createTransactionPrimitiveMap(this, backingMapRef, null);
         acl = Collections.synchronizedMap(txAcl);
 
         transObjs = Arrays.asList(txAcl);

@@ -60,7 +60,7 @@ public class Volume extends AbsVolume<Resource>
     // State flags
     private final StateFlags<Volume.Flags> flags;
 
-    private final TransactionMap<Volume.Key, VolumeConnection> volumeConnections;
+    private final TransactionMap<Volume, Volume.Key, VolumeConnection> volumeConnections;
 
     private final TransactionSimpleObject<Volume, String> devicePath;
 
@@ -126,7 +126,7 @@ public class Volume extends AbsVolume<Resource>
             initFlags
         );
 
-        volumeConnections = transObjFactory.createTransactionMap(vlmConnsMapRef, null);
+        volumeConnections = transObjFactory.createTransactionMap(this, vlmConnsMapRef, null);
 
         transObjs.addAll(
             Arrays.asList(

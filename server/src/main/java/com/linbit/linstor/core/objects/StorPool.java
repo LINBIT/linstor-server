@@ -66,8 +66,8 @@ public class StorPool extends AbsCoreObj<StorPool>
     private final boolean externalLocking;
     private final Key storPoolKey;
 
-    private final TransactionMap<String, VlmProviderObject<Resource>> vlmProviderMap;
-    private final TransactionMap<String, VlmProviderObject<Snapshot>> snapVlmProviderMap;
+    private final TransactionMap<StorPool, String, VlmProviderObject<Resource>> vlmProviderMap;
+    private final TransactionMap<StorPool, String, VlmProviderObject<Snapshot>> snapVlmProviderMap;
 
     /**
      * This boolean is only asked if the deviceProviderKind is FILE or FILE_THIN. Otherwise
@@ -106,8 +106,8 @@ public class StorPool extends AbsCoreObj<StorPool>
         node = nodeRef;
         dbDriver = dbDriverRef;
         externalLocking = externalLockingRef;
-        vlmProviderMap = transObjFactory.createTransactionMap(volumeMapRef, null);
-        snapVlmProviderMap = transObjFactory.createTransactionMap(snapshotVolumeMapRef, null);
+        vlmProviderMap = transObjFactory.createTransactionMap(this, volumeMapRef, null);
+        snapVlmProviderMap = transObjFactory.createTransactionMap(this, snapshotVolumeMapRef, null);
         storPoolKey = new Key(this);
 
         props = propsContainerFactory.getInstance(

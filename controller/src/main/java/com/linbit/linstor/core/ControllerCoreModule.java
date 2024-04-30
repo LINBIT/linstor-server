@@ -50,12 +50,12 @@ public class ControllerCoreModule extends AbstractModule
 
     @Singleton
     public static class FreeSpaceMgrMapImpl
-        extends TransactionMap<SharedStorPoolName, FreeSpaceMgr> implements FreeSpaceMgrMap
+        extends TransactionMap<Void, SharedStorPoolName, FreeSpaceMgr> implements FreeSpaceMgrMap
     {
         @Inject
         public FreeSpaceMgrMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
-            super(new TreeMap<>(), null, transMgrProvider);
+            super(null, new TreeMap<>(), null, transMgrProvider);
         }
     }
 }

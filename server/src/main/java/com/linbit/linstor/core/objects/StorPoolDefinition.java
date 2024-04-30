@@ -42,7 +42,7 @@ public class StorPoolDefinition extends AbsCoreObj<StorPoolDefinition> implement
     private final StorPoolName name;
     private final ObjectProtection objProt;
     private final StorPoolDefinitionDatabaseDriver dbDriver;
-    private final TransactionMap<NodeName, StorPool> storPools;
+    private final TransactionMap<StorPoolDefinition, NodeName, StorPool> storPools;
     private final Props props;
 
     StorPoolDefinition(
@@ -62,7 +62,7 @@ public class StorPoolDefinition extends AbsCoreObj<StorPoolDefinition> implement
         objProt = objProtRef;
         name = nameRef;
         dbDriver = dbDriverRef;
-        storPools = transObjFactory.createTransactionMap(storPoolsMapRef, null);
+        storPools = transObjFactory.createTransactionMap(this, storPoolsMapRef, null);
 
         props = propsContainerFactory.getInstance(
             PropsContainer.buildPath(nameRef),

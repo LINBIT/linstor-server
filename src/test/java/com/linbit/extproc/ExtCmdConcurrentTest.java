@@ -4,9 +4,11 @@ import com.linbit.ChildProcessTimeoutException;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.logging.StderrErrorReporter;
-import com.linbit.timer.GenericTimer;
 import com.linbit.timer.Action;
+import com.linbit.timer.GenericTimer;
+
 import java.io.IOException;
+
 import org.junit.Test;
 
 import static org.junit.Assert.fail;

@@ -79,13 +79,13 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
     // State flags
     private final StateFlags<VolumeDefinition.Flags> flags;
 
-    private final TransactionMap<String, Volume> volumes;
+    private final TransactionMap<VolumeDefinition, String, Volume> volumes;
 
     private final VolumeDefinitionDatabaseDriver dbDriver;
 
     private transient TransactionSimpleObject<VolumeDefinition, String> cryptKey;
 
-    private final TransactionMap<Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
+    private final TransactionMap<VolumeDefinition, Pair<DeviceLayerKind, String>, VlmDfnLayerObject> layerStorage;
 
     private final Key vlmDfnKey;
 
@@ -128,9 +128,9 @@ public class VolumeDefinition extends AbsCoreObj<VolumeDefinition> implements Pr
             LinStorObject.VOLUME_DEFINITION
         );
 
-        layerStorage = transObjFactory.createTransactionMap(layerDataMapRef, null);
+        layerStorage = transObjFactory.createTransactionMap(this, layerDataMapRef, null);
 
-        volumes = transObjFactory.createTransactionMap(vlmMapRef, null);
+        volumes = transObjFactory.createTransactionMap(this, vlmMapRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             resDfnRef.getObjProt(),

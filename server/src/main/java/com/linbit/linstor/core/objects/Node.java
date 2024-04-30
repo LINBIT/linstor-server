@@ -88,19 +88,19 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
     private final TransactionSimpleObject<Node, Type> nodeType;
 
     // List of resources assigned to this cluster node
-    private final TransactionMap<ResourceName, Resource> resourceMap;
+    private final TransactionMap<Node, ResourceName, Resource> resourceMap;
 
     // List of snapshots on this cluster node
-    private final TransactionMap<SnapshotDefinition.Key, Snapshot> snapshotMap;
+    private final TransactionMap<Node, SnapshotDefinition.Key, Snapshot> snapshotMap;
 
     // List of network interfaces used for replication on this cluster node
-    private final TransactionMap<NetInterfaceName, NetInterface> netInterfaceMap;
+    private final TransactionMap<Node, NetInterfaceName, NetInterface> netInterfaceMap;
 
     // List of storage pools
-    private final TransactionMap<StorPoolName, StorPool> storPoolMap;
+    private final TransactionMap<Node, StorPoolName, StorPool> storPoolMap;
 
     // Map to the other endpoint of a node connection (this is NOT necessarily the source!)
-    private final TransactionMap<NodeName, NodeConnection> nodeConnections;
+    private final TransactionMap<Node, NodeName, NodeConnection> nodeConnections;
 
     // Access controls for this object
     private final ObjectProtection objProt;
@@ -149,7 +149,6 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
             new TreeMap<>(),
             new TreeMap<>()
         );
-
     }
 
     Node(
@@ -177,17 +176,17 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
         nodeName = nameRef;
         dbDriver = dbDriverRef;
 
-        resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
-        snapshotMap = transObjFactory.createTransactionMap(snapshotMapRef, null);
-        netInterfaceMap = transObjFactory.createTransactionMap(netIfMapRef, null);
-        storPoolMap = transObjFactory.createTransactionMap(storPoolMapRef, null);
+        resourceMap = transObjFactory.createTransactionMap(this, rscMapRef, null);
+        snapshotMap = transObjFactory.createTransactionMap(this, snapshotMapRef, null);
+        netInterfaceMap = transObjFactory.createTransactionMap(this, netIfMapRef, null);
+        storPoolMap = transObjFactory.createTransactionMap(this, storPoolMapRef, null);
 
         nodeProps = propsContainerFactory.getInstance(
             PropsContainer.buildPath(nameRef),
             toStringImpl(),
             LinStorObject.NODE
         );
-        nodeConnections = transObjFactory.createTransactionMap(nodeConnMapRef, null);
+        nodeConnections = transObjFactory.createTransactionMap(this, nodeConnMapRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
             objProt,

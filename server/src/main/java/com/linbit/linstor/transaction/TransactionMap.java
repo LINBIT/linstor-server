@@ -6,6 +6,7 @@ import com.linbit.linstor.dbdrivers.interfaces.updater.MapDatabaseDriver;
 import com.linbit.linstor.dbdrivers.noop.NoOpMapDatabaseDriver;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Collection;
@@ -15,21 +16,24 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-public class TransactionMap<KEY, VALUE>
+public class TransactionMap<PARENT, KEY, VALUE>
     extends AbsTransactionObject implements Map<KEY, VALUE>
 {
-    private MapDatabaseDriver<KEY, VALUE> dbDriver;
-    private Map<KEY, VALUE> map;
-    private Map<KEY, VALUE> oldValues;
+    private final PARENT parent;
+    private final MapDatabaseDriver<PARENT, KEY, VALUE> dbDriver;
+    private final Map<KEY, VALUE> backingMap;
+    private final Map<KEY, VALUE> oldValues;
 
     public TransactionMap(
-        Map<KEY, VALUE> mapRef,
-        MapDatabaseDriver<KEY, VALUE> driver,
+        @Nullable PARENT parentRef,
+        @Nullable Map<KEY, VALUE> backingMapRef,
+        @Nullable MapDatabaseDriver<PARENT, KEY, VALUE> driver,
         Provider<TransactionMgr> transMgrProviderRef
     )
     {
         super(transMgrProviderRef);
-        map = mapRef;
+        parent = parentRef;
+        backingMap = backingMapRef == null ? new HashMap<>() : backingMapRef;
         if (driver == null)
         {
             dbDriver = new NoOpMapDatabaseDriver<>();
@@ -46,13 +50,15 @@ public class TransactionMap<KEY, VALUE>
     public void postSetConnection(TransactionMgr transMgrRef)
     {
         // forward transaction manager on keys
-        map.keySet().stream()
-            .filter(key -> key instanceof TransactionObject)
+        backingMap.keySet()
+            .stream()
+            .filter(TransactionObject.class::isInstance)
             .forEach(to -> ((TransactionObject) to).setConnection(transMgrRef));
 
         // forward transaction manager on values
-        map.values().stream()
-            .filter(val -> val instanceof TransactionObject)
+        backingMap.values()
+            .stream()
+            .filter(TransactionObject.class::isInstance)
             .forEach(to -> ((TransactionObject) to).setConnection(transMgrRef));
     }
 
@@ -73,11 +79,11 @@ public class TransactionMap<KEY, VALUE>
             VALUE value = entry.getValue();
             if (value == null)
             {
-                map.remove(key);
+                backingMap.remove(key);
             }
             else
             {
-                map.put(key, value);
+                backingMap.put(key, value);
             }
         }
         oldValues.clear();
@@ -92,37 +98,38 @@ public class TransactionMap<KEY, VALUE>
     @Override
     public int size()
     {
-        return map.size();
+        return backingMap.size();
     }
 
     @Override
     public boolean isEmpty()
     {
-        return map.isEmpty();
+        return backingMap.isEmpty();
     }
 
     @Override
     public boolean containsKey(Object key)
     {
-        return map.containsKey(key);
+        return backingMap.containsKey(key);
     }
 
     @Override
     public boolean containsValue(Object value)
     {
-        return map.containsValue(value);
+        return backingMap.containsValue(value);
     }
 
     @Override
     public VALUE get(Object key)
     {
-        return map.get(key);
+        return backingMap.get(key);
     }
 
     @Override
     public VALUE put(KEY key, VALUE value)
     {
-        VALUE oldValue = map.put(key, value);
+        VALUE oldValue = backingMap.put(key, value);
+        // value must be put into the backing map before (possibly) calling the DB driver
         cache(key, value, oldValue);
         return oldValue;
     }
@@ -131,7 +138,8 @@ public class TransactionMap<KEY, VALUE>
     @SuppressWarnings("unchecked")
     public VALUE remove(Object key)
     {
-        VALUE oldValue = map.remove(key);
+        VALUE oldValue = backingMap.remove(key);
+        // value must be removed from the backing map before (possibly) calling the DB driver
         cache((KEY) key, null, oldValue);
         return oldValue;
     }
@@ -148,29 +156,31 @@ public class TransactionMap<KEY, VALUE>
     @Override
     public void clear()
     {
-        for (Entry<KEY, VALUE> entry : map.entrySet())
+        HashMap<KEY, VALUE> copy = new HashMap<>(backingMap);
+        backingMap.clear();
+        // backing map must be cleared before (possibly) calling the database driver
+        for (Entry<KEY, VALUE> entry : copy.entrySet())
         {
             cache(entry.getKey(), null, entry.getValue());
         }
-        map.clear();
     }
 
     @Override
     public Set<KEY> keySet()
     {
-        return Collections.unmodifiableSet(map.keySet());
+        return Collections.unmodifiableSet(backingMap.keySet());
     }
 
     @Override
     public Collection<VALUE> values()
     {
-        return Collections.unmodifiableCollection(map.values());
+        return Collections.unmodifiableCollection(backingMap.values());
     }
 
     @Override
     public Set<Entry<KEY, VALUE>> entrySet()
     {
-        return Collections.unmodifiableSet(map.entrySet());
+        return Collections.unmodifiableSet(backingMap.entrySet());
     }
 
     private void cache(KEY key, VALUE value, VALUE oldValue)
@@ -190,7 +200,7 @@ public class TransactionMap<KEY, VALUE>
             {
                 try
                 {
-                    dbDriver.insert(key, value);
+                    dbDriver.insert(parent, backingMap, key, value);
                 }
                 catch (DatabaseException sqlExc)
                 {
@@ -206,7 +216,7 @@ public class TransactionMap<KEY, VALUE>
                 {
                     try
                     {
-                        dbDriver.delete(key, oldValue);
+                        dbDriver.delete(parent, backingMap, key, oldValue);
                     }
                     catch (DatabaseException sqlExc)
                     {
@@ -220,7 +230,7 @@ public class TransactionMap<KEY, VALUE>
                 {
                     try
                     {
-                        dbDriver.update(key, oldValue, value);
+                        dbDriver.update(parent, backingMap, key, oldValue, value);
                     }
                     catch (DatabaseException sqlExc)
                     {
@@ -246,7 +256,7 @@ public class TransactionMap<KEY, VALUE>
             }
             else
             {
-                eq = objRef.equals(map);
+                eq = objRef.equals(backingMap);
             }
         }
 
@@ -256,12 +266,12 @@ public class TransactionMap<KEY, VALUE>
     @Override
     public int hashCode()
     {
-        return map.hashCode();
+        return backingMap.hashCode();
     }
 
     @Override
     public String toString()
     {
-        return "TransactionMap " + map.toString();
+        return "TransactionMap " + backingMap.toString();
     }
 }

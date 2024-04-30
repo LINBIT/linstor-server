@@ -162,29 +162,29 @@ public class CoreModule extends AbstractModule
 
     @Singleton
     public static class NodesMapImpl
-        extends TransactionMap<NodeName, Node> implements NodesMap
+        extends TransactionMap<Void, NodeName, Node> implements NodesMap
     {
         @Inject
         public NodesMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
-            super(new TreeMap<>(), null, transMgrProvider);
+            super(null, new TreeMap<>(), null, transMgrProvider);
         }
     }
 
     @Singleton
     public static class ResourceDefinitionMapImpl
-        extends TransactionMap<ResourceName, ResourceDefinition> implements ResourceDefinitionMap
+        extends TransactionMap<Void, ResourceName, ResourceDefinition> implements ResourceDefinitionMap
     {
         @Inject
         public ResourceDefinitionMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
-            super(new TreeMap<>(), null, transMgrProvider);
+            super(null, new TreeMap<>(), null, transMgrProvider);
         }
     }
 
     @Singleton
     public static class ResourceDefinitionMapExtNameImpl
-        extends TransactionMap<byte[], ResourceDefinition> implements ResourceDefinitionMapExtName
+        extends TransactionMap<Void, byte[], ResourceDefinition> implements ResourceDefinitionMapExtName
     {
         private static final int UNSIGNED_BYTE_MAX = 0xFF;
 
@@ -231,40 +231,40 @@ public class CoreModule extends AbstractModule
         @Inject
         public ResourceDefinitionMapExtNameImpl(Provider<TransactionMgr> transMgrProvider)
         {
-            super(new TreeMap<byte[], ResourceDefinition>(EXT_NAME_COMP), null, transMgrProvider);
+            super(null, new TreeMap<>(EXT_NAME_COMP), null, transMgrProvider);
         }
     }
 
     @Singleton
     public static class StorPoolDefinitionMapImpl
-        extends TransactionMap<StorPoolName, StorPoolDefinition> implements StorPoolDefinitionMap
+        extends TransactionMap<Void, StorPoolName, StorPoolDefinition> implements StorPoolDefinitionMap
     {
         @Inject
         public StorPoolDefinitionMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
-            super(new TreeMap<>(), null, transMgrProvider);
+            super(null, new TreeMap<>(), null, transMgrProvider);
         }
     }
 
     @Singleton
     public static class KeyValueStoreMapImpl
-        extends TransactionMap<KeyValueStoreName, KeyValueStore> implements KeyValueStoreMap
+        extends TransactionMap<Void, KeyValueStoreName, KeyValueStore> implements KeyValueStoreMap
     {
         @Inject
         public KeyValueStoreMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
-            super(new TreeMap<>(), null, transMgrProvider);
+            super(null, new TreeMap<>(), null, transMgrProvider);
         }
     }
 
     @Singleton
     public static class ResourceGroupMapImpl
-    extends TransactionMap<ResourceGroupName, ResourceGroup> implements ResourceGroupMap
+        extends TransactionMap<Void, ResourceGroupName, ResourceGroup> implements ResourceGroupMap
     {
         @Inject
         public ResourceGroupMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
-            super(new TreeMap<>(), null, transMgrProvider);
+            super(null, new TreeMap<>(), null, transMgrProvider);
         }
     }
 
@@ -283,48 +283,48 @@ public class CoreModule extends AbstractModule
 
     @Singleton
     public static class ExternalFilesMapImpl
-        extends TransactionMap<ExternalFileName, ExternalFile> implements ExternalFileMap
+        extends TransactionMap<Void, ExternalFileName, ExternalFile> implements ExternalFileMap
     {
         @Inject
         public ExternalFilesMapImpl(Provider<TransactionMgr> transMgrProviderRef)
         {
-            super(new TreeMap<>(), null, transMgrProviderRef);
+            super(null, new TreeMap<>(), null, transMgrProviderRef);
         }
     }
 
     @Singleton
     public static class RemoteMapImpl
-        extends TransactionMap<RemoteName, AbsRemote>
+        extends TransactionMap<Void, RemoteName, AbsRemote>
         implements RemoteMap
     {
         @Inject
         public RemoteMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
-            super(new TreeMap<>(), null, transMgrProvider);
+            super(null, new TreeMap<>(), null, transMgrProvider);
         }
     }
 
     @Singleton
     public static class ScheduleMapImpl
-        extends TransactionMap<ScheduleName, Schedule>
+        extends TransactionMap<Void, ScheduleName, Schedule>
         implements ScheduleMap
     {
         @Inject
         public ScheduleMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
-            super(new TreeMap<>(), null, transMgrProvider);
+            super(null, new TreeMap<>(), null, transMgrProvider);
         }
     }
 
     @Singleton
     public static class ObjProtMapImpl
-        extends TransactionMap<String /* objProtPath */, ObjectProtection>
+        extends TransactionMap<Void, /* objProtPath */ String, ObjectProtection>
         implements ObjProtMap
     {
         @Inject
         public ObjProtMapImpl(Provider<TransactionMgr> transMgrProvider)
         {
-            super(new TreeMap<>(), null, transMgrProvider);
+            super(null, new TreeMap<>(), null, transMgrProvider);
         }
     }
 }

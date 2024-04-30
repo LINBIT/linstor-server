@@ -74,14 +74,14 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
     // State flags
     private final StateFlags<Flags> flags;
 
-    private final TransactionMap<VolumeNumber, SnapshotVolumeDefinition> snapshotVolumeDefinitionMap;
+    private final TransactionMap<SnapshotDefinition, VolumeNumber, SnapshotVolumeDefinition> snapshotVolumeDefinitionMap;
 
-    private final TransactionMap<NodeName, Snapshot> snapshotMap;
+    private final TransactionMap<SnapshotDefinition, NodeName, Snapshot> snapshotMap;
 
     // Not persisted because we do not resume snapshot creation after a restart
     private TransactionSimpleObject<SnapshotDefinition, Boolean> inCreation;
 
-    private final TransactionMap<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
+    private final TransactionMap<SnapshotDefinition, Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
     private final TransactionList<SnapshotDefinition, DeviceLayerKind> layerStack;
 
     private final Key snapDfnKey;
@@ -125,12 +125,12 @@ public class SnapshotDefinition extends AbsCoreObj<SnapshotDefinition> implement
             initFlags
         );
 
-        snapshotVolumeDefinitionMap = transObjFactory.createTransactionMap(snapshotVlmDfnMapRef, null);
+        snapshotVolumeDefinitionMap = transObjFactory.createTransactionMap(this, snapshotVlmDfnMapRef, null);
 
-        snapshotMap = transObjFactory.createTransactionMap(snapshotMapRef, null);
+        snapshotMap = transObjFactory.createTransactionMap(this, snapshotMapRef, null);
 
         inCreation = transObjFactory.createTransactionSimpleObject(this, Boolean.FALSE, null);
-        layerStorage = transObjFactory.createTransactionMap(layerDataMapRef, null);
+        layerStorage = transObjFactory.createTransactionMap(this, layerDataMapRef, null);
         layerStack = transObjFactory.createTransactionPrimitiveList(
             this,
             new ArrayList<>(),

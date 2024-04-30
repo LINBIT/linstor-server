@@ -61,7 +61,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
     // Not persisted because we do not resume snapshot creation after a restart
     private final TransactionSimpleObject<Snapshot, Boolean> takeSnapshot;
 
-    private final TransactionMap<VolumeNumber, SnapshotVolume> snapVlmMap;
+    private final TransactionMap<Snapshot, VolumeNumber, SnapshotVolume> snapVlmMap;
 
     private final Key snapKey;
 
@@ -112,7 +112,7 @@ public class Snapshot extends AbsResource<Snapshot> // TODO: add SnapshotConnect
             dbDriverRef.getStateFlagsPersistence(),
             initFlags
         );
-        snapVlmMap = transObjFactory.createTransactionMap(snapshotVlmMapRef, null);
+        snapVlmMap = transObjFactory.createTransactionMap(this, snapshotVlmMapRef, null);
 
         suspendResource = transObjFactory.createTransactionSimpleObject(this, false, null);
         takeSnapshot = transObjFactory.createTransactionSimpleObject(this, false, null);

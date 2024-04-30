@@ -50,7 +50,7 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
 
     // persisted, serialized, ctrl and stlt
     private final TransactionList<DrbdRscDfnData<RSC>, DrbdRscData<RSC>> drbdRscDataList;
-    private final TransactionMap<VolumeNumber, DrbdVlmDfnData<RSC>> drbdVlmDfnMap;
+    private final TransactionMap<DrbdRscDfnData<?>, VolumeNumber, DrbdVlmDfnData<RSC>> drbdVlmDfnMap;
     private final TransactionSimpleObject<DrbdRscDfnData<?>, TcpPortNumber> port;
     private final TransactionSimpleObject<DrbdRscDfnData<?>, TransportType> transportType;
     private final TransactionSimpleObject<DrbdRscDfnData<?>, String> secret;
@@ -122,7 +122,7 @@ public class DrbdRscDfnData<RSC extends AbsResource<RSC>>
 
         down = transObjFactory.createTransactionSimpleObject(this, false, null);
 
-        drbdVlmDfnMap = transObjFactory.createTransactionMap(vlmDfnMap, null);
+        drbdVlmDfnMap = transObjFactory.createTransactionMap(this, vlmDfnMap, null);
 
         transObjs = Arrays.asList(
             port,

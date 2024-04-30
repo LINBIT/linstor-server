@@ -73,13 +73,13 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
     private final byte[] externalName;
 
     // Volumes of the resource
-    private final TransactionMap<VolumeNumber, VolumeDefinition> volumeMap;
+    private final TransactionMap<ResourceDefinition, VolumeNumber, VolumeDefinition> volumeMap;
 
     // Resources defined by this ResourceDefinition
-    private final TransactionMap<NodeName, Resource> resourceMap;
+    private final TransactionMap<ResourceDefinition, NodeName, Resource> resourceMap;
 
     // Snapshots from this resource definition
-    private final TransactionMap<SnapshotName, SnapshotDefinition> snapshotDfnMap;
+    private final TransactionMap<ResourceDefinition, SnapshotName, SnapshotDefinition> snapshotDfnMap;
 
     // State flags
     private final StateFlags<Flags> flags;
@@ -92,7 +92,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
 
     private final ResourceDefinitionDatabaseDriver dbDriver;
 
-    private final TransactionMap<Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
+    private final TransactionMap<ResourceDefinition, Pair<DeviceLayerKind, String>, RscDfnLayerObject> layerStorage;
 
     private final TransactionList<ResourceDefinition, DeviceLayerKind> layerStack;
 
@@ -126,9 +126,9 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
         resourceName = resName;
         externalName = extName;
         dbDriver = dbDriverRef;
-        volumeMap = transObjFactory.createTransactionMap(vlmDfnMapRef, null);
-        resourceMap = transObjFactory.createTransactionMap(rscMapRef, null);
-        snapshotDfnMap = transObjFactory.createTransactionMap(snapshotDfnMapRef, null);
+        volumeMap = transObjFactory.createTransactionMap(this, vlmDfnMapRef, null);
+        resourceMap = transObjFactory.createTransactionMap(this, rscMapRef, null);
+        snapshotDfnMap = transObjFactory.createTransactionMap(this, snapshotDfnMapRef, null);
         layerStack = transObjFactory.createTransactionPrimitiveList(
             this,
             layerStackRef,
@@ -149,7 +149,7 @@ public class ResourceDefinition extends AbsCoreObj<ResourceDefinition> implement
             initialFlags
         );
 
-        layerStorage = transObjFactory.createTransactionMap(layerDataMapRef, null);
+        layerStorage = transObjFactory.createTransactionMap(this, layerDataMapRef, null);
 
         transObjs = Arrays.asList(
             flags,

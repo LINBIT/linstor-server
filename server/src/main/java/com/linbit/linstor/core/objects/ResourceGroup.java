@@ -57,11 +57,11 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
 
     private final Props rscDfnGrpProps;
 
-    private final TransactionMap<VolumeNumber, VolumeGroup> vlmMap;
+    private final TransactionMap<ResourceGroup, VolumeNumber, VolumeGroup> vlmMap;
 
     private final AutoSelectorConfig autoPlaceConfig;
 
-    private final TransactionMap<ResourceName, ResourceDefinition> rscDfnMap;
+    private final TransactionMap<ResourceGroup, ResourceName, ResourceDefinition> rscDfnMap;
     private final TransactionSimpleObject<ResourceGroup, Short> peerSlots;
 
     private final ResourceGroupDatabaseDriver dbDriver;
@@ -108,9 +108,9 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
             toStringImpl(),
             LinStorObject.RESOURCE_GROUP
         );
-        vlmMap = transObjFactory.createTransactionMap(vlmGrpMapRef, null);
+        vlmMap = transObjFactory.createTransactionMap(this, vlmGrpMapRef, null);
 
-        rscDfnMap = transObjFactory.createTransactionMap(rscDfnMapRef, null);
+        rscDfnMap = transObjFactory.createTransactionMap(this, rscDfnMapRef, null);
 
         autoPlaceConfig = new AutoSelectorConfig(
             this,

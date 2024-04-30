@@ -37,7 +37,7 @@ public class StltRemote extends AbsRemote
     }
 
     private final TransactionSimpleObject<StltRemote, String> ip;
-    private final TransactionMap<String, Integer> ports;
+    private final TransactionMap<StltRemote, String, Integer> ports;
     private final TransactionSimpleObject<StltRemote, Boolean> useZstd;
     private final TransactionSimpleObject<StltRemote, Boolean> deleted;
     private final StateFlags<Flags> flags;
@@ -66,7 +66,7 @@ public class StltRemote extends AbsRemote
         node = nodeRef;
 
         ip = transObjFactory.createTransactionSimpleObject(this, ipRef, null);
-        ports = transObjFactory.createTransactionPrimitiveMap(portRef, null);
+        ports = transObjFactory.createTransactionPrimitiveMap(this, portRef, null);
         useZstd = transObjFactory.createTransactionSimpleObject(this, useZstdRef == null ? false : useZstdRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(

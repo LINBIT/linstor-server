@@ -12,10 +12,10 @@ import java.util.Objects;
 
 public class TransactionSimpleObject<PARENT, ELEMENT> extends AbsTransactionObject
 {
-    private PARENT parent;
+    private final PARENT parent;
     private ELEMENT object;
     private ELEMENT cachedObject;
-    private SingleColumnDatabaseDriver<PARENT, ELEMENT> dbDriver;
+    private final SingleColumnDatabaseDriver<PARENT, ELEMENT> dbDriver;
     private boolean dirty = false;
 
     public TransactionSimpleObject(
