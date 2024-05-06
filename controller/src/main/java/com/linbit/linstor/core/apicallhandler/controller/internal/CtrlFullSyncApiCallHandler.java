@@ -157,7 +157,8 @@ public class CtrlFullSyncApiCallHandler
             // however, when a rsc / vlm is created, they already assume the referenced storPool already exists
             storPools.addAll(satelliteNode.streamStorPools(apiCtx).collect(toList()));
 
-            snapshots.addAll(satelliteNode.getInProgressSnapshots(apiCtx));
+            // we need to send all snaps, since the stlt might need them for e.g. incremental backup shipping
+            snapshots.addAll(satelliteNode.getSnapshots(apiCtx));
 
             externalFiles.addAll(externalFilesRepo.getMapForView(apiCtx).values());
             remotes.addAll(remoteRepo.getMapForView(apiCtx).values());
