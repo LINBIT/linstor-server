@@ -3,10 +3,6 @@
 [![Open Source](https://img.shields.io/badge/Open-Source-brightgreen)](https://opensource.org/) [![GPLv3 License](https://img.shields.io/badge/License-GPL%20v3-brightgreen.svg)](https://opensource.org/licenses/) [![Slack Channel](https://img.shields.io/badge/Slack-Channel-brightgreen)](https://join.slack.com/t/linbit-community/shared_invite/enQtOTg0MTEzOTA4ODY0LTFkZGY3ZjgzYjEzZmM2OGVmODJlMWI2MjlhMTg3M2UyOGFiOWMxMmI1MWM4Yjc0YzQzYWU0MjAzNGRmM2M5Y2Q) [![Support](https://img.shields.io/badge/$-support-12a0df.svg?style=flat)](https://www.linbit.com/support/) [![Active](http://img.shields.io/badge/Status-Active-green.svg)](https://linbit.com/linstor) [![GitHub Release](https://img.shields.io/github/release/linbit/linstor-server.svg?style=flat)](https://github.com/LINBIT/linstor-server) [![GitHub Commit](https://img.shields.io/github/commit-activity/y/linbit/linstor-server)](https://github.com/LINBIT/linstor-server) 
 
 
- [![](https://github.com/LINBIT/linstor-server/blob/master/docs/sodaecop.png)](https://github.com/sodafoundation) 
-
- LINSTOR is a SODA ECO Project
- 
 # What is LINSTOR®
 
 LINSTOR® developed by LINBIT, is a software that manages replicated volumes across a group of machines. With native integration to Kubernetes, LINSTOR makes building, running, and controlling block storage simple. LINSTOR® is open-source software designed to manage block storage devices for large Linux server clusters. It’s used to provide persistent Linux block storage for cloudnative and hypervisor environments. 
@@ -104,6 +100,11 @@ Please check the development documentation for details.
 
 [![LINSTOR Development](https://img.shields.io/badge/LINSTOR-DEVELOPMENT-brightgreen)](https://github.com/LINBIT/linstor-server/blob/master/docs/development.md
 ) 
+
+## Foundation Membership
+[![](https://github.com/LINBIT/linstor-server/blob/master/docs/sodaecop.png)](https://github.com/sodafoundation)
+
+LINSTOR is a SODA ECO Project
 
 **Free Software, Hell Yeah!**
 
