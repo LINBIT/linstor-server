@@ -6,6 +6,7 @@ import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.interfaces.AutoSelectFilterApi;
 import com.linbit.linstor.api.pojo.AutoSelectFilterPojo;
 import com.linbit.linstor.api.pojo.builder.AutoSelectFilterBuilder;
 import com.linbit.linstor.core.CoreModule;
@@ -50,6 +51,7 @@ import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHa
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -57,8 +59,11 @@ import javax.inject.Singleton;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Predicate;
@@ -514,6 +519,23 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
 
             while (storPool == null)
             {
+                AutoSelectFilterApi apiData = ctx.rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData();
+                @Nullable Map<String, Integer> xReplicasOnDifferentMap = apiData.getXReplicasOnDifferentMap();
+                @Nullable Map<String, Integer> xReplOnDiffCopyOrNull;
+                if (xReplicasOnDifferentMap != null)
+                {
+                    xReplOnDiffCopyOrNull = new HashMap<>(xReplicasOnDifferentMap);
+                    // in order to force the tiebreaker to be put on a new datacenter, we want to (temporarily) override
+                    // all values of the xReplicasOnDifferentMap with 1
+                    for (Entry<String, Integer> entry : xReplOnDiffCopyOrNull.entrySet())
+                    {
+                        entry.setValue(1);
+                    }
+                }
+                else
+                {
+                    xReplOnDiffCopyOrNull = null;
+                }
                 AutoSelectFilterPojo mergedAutoSelectFilterPojo = AutoSelectFilterPojo.merge(
                     new AutoSelectFilterBuilder()
                         .setPlaceCount(0)
@@ -522,6 +544,7 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         .setDoNotPlaceWithRscList(Collections.singletonList(ctx.rscDfn.getName().displayValue))
                         .setLayerStackList(Collections.singletonList(DeviceLayerKind.DRBD))
                         .setDisklessType(Resource.Flags.DRBD_DISKLESS.name())
+                        .setXReplicasOnDifferentMap(xReplOnDiffCopyOrNull)
                         .build(),
                     ctx.rscDfn.getResourceGroup().getAutoPlaceConfig().getApiData(),
                     ctx.selectFilter
