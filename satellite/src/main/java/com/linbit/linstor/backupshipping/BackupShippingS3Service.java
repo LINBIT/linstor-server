@@ -39,21 +39,15 @@ public class BackupShippingS3Service extends AbsBackupShippingService
 
     protected static final String CMD_FORMAT_SENDING =
         "set -o pipefail; " +
-        "trap 'kill -HUP 0' SIGTERM; " +
-        "(" +
             "%s | " +  // thin_send prev_LV_snapshot cur_LV_snapshot
             // "pv -s 100m -bnr -i 0.1 | " +
-            "zstd;" +
-        ")&\\wait $!";
+            "zstd;";
 
-    protected static final String CMD_FORMAT_RECEIVING = "trap 'kill -HUP 0' SIGTERM; " +
-        "exec 7<&0 0</dev/null; " +
+    protected static final String CMD_FORMAT_RECEIVING =
         "set -o pipefail; " +
-        "(" +
-        "exec 0<&7 7<&-; zstd -d | " +
+        "zstd -d | " +
         // "pv -s 100m -bnr -i 0.1 | " +
-        "%s ;" +
-        ") & wait $!";
+        "%s";
 
     private final BackupToS3 backupHandler;
 

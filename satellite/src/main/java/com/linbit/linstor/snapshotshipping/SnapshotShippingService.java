@@ -41,22 +41,17 @@ public class SnapshotShippingService implements SystemService
     public static final String SERVICE_INFO = "SnapshotShippingService";
 
     private static final String CMD_FORMAT_RECEIVING =
-        "trap 'kill -HUP 0' SIGTERM; " +
         "set -o pipefail; " +
-        "(" +
             "socat TCP-LISTEN:%s STDOUT | " +
             "zstd -d | " +
             // "pv -s 100m -bnr -i 0.1 | " +
-            "%s ;" +
-        ")& wait $!";
+            "%s";
     private static final String CMD_FORMAT_SENDING =
-        "trap 'kill -HUP 0' SIGTERM; " +
-        "(" +
+        "set -o pipefail; " +
             "%s | " +
             // "pv -s 100m -bnr -i 0.1 | " +
             "zstd | " +
-            "socat STDIN TCP:%s:%s ;" +
-        ")&\\wait $!";
+            "socat STDIN TCP:%s:%s";
 
     private final AccessContext storDriverAccCtx;
     private final ExtCmdFactory extCmdFactory;

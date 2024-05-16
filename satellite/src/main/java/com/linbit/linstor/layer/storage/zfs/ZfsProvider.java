@@ -926,13 +926,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                     "bash",
                     "-c",
                     String.format(
-                        "trap 'kill -HUP 0' SIGTERM; " +
                             "set -o pipefail; " +
-                            "(" +
                             "zfs send --embed --dedup --large-block %s/%s | " +
                             // if send/recv fails no new volume will be there, so destroy isn't needed
-                            "zfs receive -F %s/%s && zfs destroy -r %s/%s@%% ;" +
-                            ")& wait $!",
+                            "zfs receive -F %s/%s && zfs destroy -r %s/%s@%%",
                         srcData.getZPool(),
                         srcFullSnapshotName,
                         dstData.getZPool(),

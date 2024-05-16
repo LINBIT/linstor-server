@@ -76,9 +76,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
         boolean useZstd = stltRemote.useZstd(accCtx);
 
         StringBuilder cmdBuilder = new StringBuilder()
-            .append("trap 'kill -HUP 0' SIGTERM; ")
             .append("set -o pipefail; ")
-            .append("(")
             .append("socat TCP-LISTEN:")
             .append(ports.get(snapVlmDataRef.getVlmNr() + snapVlmDataRef.getRscLayerObject().getResourceNameSuffix()))
             .append(" STDOUT | ");
@@ -87,7 +85,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
             cmdBuilder.append("zstd -d | ");
         }
         // "pv -s 100m -bnr -i 0.1 | " +
-        cmdBuilder.append(cmdRef).append(" ;)& wait $!");
+        cmdBuilder.append(cmdRef);
 
         return cmdBuilder.toString();
     }
@@ -103,8 +101,6 @@ public class BackupShippingL2LService extends AbsBackupShippingService
 
         StringBuilder cmdBuilder = new StringBuilder()
             .append("set -o pipefail; ")
-            .append("trap 'kill -HUP 0' SIGTERM; ")
-            .append("(")
             .append(cmdRef)
             .append(" | ");
         if (useZstd)
@@ -115,8 +111,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
         cmdBuilder.append("socat STDIN TCP:")
             .append(stltRemote.getIp(accCtx))
             .append(":")
-            .append(ports.get(snapVlmDataRef.getVlmNr() + snapVlmDataRef.getRscLayerObject().getResourceNameSuffix()))
-            .append(" ;)&\\wait $!");
+            .append(ports.get(snapVlmDataRef.getVlmNr() + snapVlmDataRef.getRscLayerObject().getResourceNameSuffix()));
 
         return cmdBuilder.toString();
     }
