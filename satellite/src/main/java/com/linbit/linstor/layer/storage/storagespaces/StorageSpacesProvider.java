@@ -614,9 +614,9 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     }
 
     @Override
-    protected void createLvWithCopyImpl(
+    protected void createSnapshotForCloneImpl(
         StorageSpacesData<Resource> vlmData,
-        Resource srcRsc)
+        String cloneRscName)
         throws StorageException, AccessDeniedException
     {
         throw new StorageException("createLvWithCopyImpl not implemented",
@@ -649,17 +649,6 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     protected String getStorageName(StorageSpacesData<Resource> vlmDataRef) throws DatabaseException
     {
         return vlmDataRef.getStoragePoolFriendlyName();
-    }
-
-    @Override
-    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
-    {
-        return new String[]{};
-    }
-
-    @Override
-    public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
-    {
     }
 
     @Override

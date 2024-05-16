@@ -471,5 +471,29 @@ public class LayerResourceIdDbDriver extends AbsDatabaseDriver<AbsRscLayerObject
         {
             throw new ImplementationError(IMPL_ERR_TEXT);
         }
+
+        @Override
+        public void cleanupAfterCloneFinished()
+        {
+            throw new ImplementationError(IMPL_ERR_TEXT);
+        }
+
+        @Override
+        public Boolean isClonePassthroughMode()
+        {
+            throw new ImplementationError(IMPL_ERR_TEXT);
+        }
+
+        @Override
+        public void setClonePassthroughMode(AbsRscLayerObject<?> targetLayerDataRef, boolean targetHasPassthrough)
+        {
+            throw new ImplementationError(IMPL_ERR_TEXT);
+        }
+
+        @Override
+        public void removeClonePassthroughMode(AbsRscLayerObject<?> targetLayerDataRef)
+        {
+            throw new ImplementationError(IMPL_ERR_TEXT);
+        }
     }
 }

@@ -1895,6 +1895,7 @@ public class JsonGenTypes
          * use a parent snapshot with clone, which cannot be deleted
          */
         public Boolean use_zfs_clone;
+        public List<String> layer_list = Collections.emptyList();
         /**
          * For volumes with encryption's, you can provide your own passphrases here.
          */

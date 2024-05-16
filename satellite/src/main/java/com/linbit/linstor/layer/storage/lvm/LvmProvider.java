@@ -50,6 +50,7 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmData;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
@@ -312,7 +313,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
 
     @Override
     protected void createLvImpl(LvmData<Resource> vlmData)
-        throws StorageException, AccessDeniedException
+        throws StorageException
     {
         List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateOptions(vlmData));
         String[] additionalOptionsArr = new String[additionalOptions.size()];
@@ -818,54 +819,46 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    protected void createLvWithCopyImpl(
+    protected void createSnapshotForCloneImpl(
         LvmData<Resource> vlmData,
-        Resource srcRsc)
+        String cloneRscName)
         throws StorageException, AccessDeniedException
     {
-        final LvmData<Resource> srcVlmData = getVlmDataFromResource(
-            srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
+        final String srcId = asLvIdentifier(vlmData);
+        final String srcFullSnapshotName = getCloneSnapshotNameFull(vlmData, cloneRscName, "_");
 
-        final String srcId = asLvIdentifier(srcVlmData);
-        final String srcFullSnapshotName = getCloneSnapshotNameFull(srcVlmData, vlmData, "_");
-
-        if (!infoListCache.containsKey(srcVlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
+        if (!infoListCache.containsKey(vlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
         {
             LvmUtils.execWithRetry(
                 extCmdFactory,
-                Collections.singleton(srcVlmData.getVolumeGroup()),
+                Collections.singleton(vlmData.getVolumeGroup()),
                 config -> LvmCommands.createSnapshot(
                     extCmdFactory.create(),
-                    srcVlmData.getVolumeGroup(),
+                    vlmData.getVolumeGroup(),
                     srcId,
                     srcFullSnapshotName,
                     config,
-                    srcVlmData.getAllocatedSize()
+                    vlmData.getAllocatedSize()
                 )
             );
 
             LvmUtils.execWithRetry(
                 extCmdFactory,
-                Collections.singleton(srcVlmData.getVolumeGroup()),
+                Collections.singleton(vlmData.getVolumeGroup()),
                 config -> LvmCommands.addTag(
                     extCmdFactory.create(),
-                    srcVlmData.getVolumeGroup(),
+                    vlmData.getVolumeGroup(),
                     srcFullSnapshotName,
                     LvmCommands.LVM_TAG_CLONE_SNAPSHOT,
                     config
                 )
             );
-            createLvImpl(vlmData);
+            LvmUtils.recacheNextLvs();
         }
         else
         {
             errorReporter.logInfo("Clone base snapshot %s already found, reusing.", srcFullSnapshotName);
         }
-
-        cloneService.startClone(
-            srcVlmData,
-            vlmData,
-            this);
     }
 
     @Override
@@ -915,49 +908,33 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
-    {
-        LvmData<Resource> srcData = (LvmData<Resource>) cloneInfo.getSrcVlmData();
-        LvmData<Resource> dstData = (LvmData<Resource>) cloneInfo.getDstVlmData();
-        final String srcFullSnapshotName = getCloneSnapshotNameFull(srcData, dstData, "_");
-
-        return new String[]
-            {
-                "dd",
-                "if=" + getDevicePath(srcData.getVolumeGroup(), srcFullSnapshotName),
-                "of=" + getDevicePath(dstData.getVolumeGroup(), asLvIdentifier(dstData)),
-                "bs=64k", // According to the internet this seems currently to be a better default
-                "conv=fsync"
-            };
-    }
-
-    @Override
-    public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
-    {
-        LvmData<Resource> srcData = (LvmData<Resource>) cloneInfo.getSrcVlmData();
-        final String srcFullSnapshotName = getCloneSnapshotNameFull(
-            srcData, (LvmData<Resource>) cloneInfo.getDstVlmData(), "_"
-        );
-
-        final String vlmGroup = getVolumeGroup(srcData.getStorPool());
-        LvmUtils.execWithRetry(
-            extCmdFactory,
-            Collections.singleton(vlmGroup),
-            config -> LvmCommands.delete(
-                extCmdFactory.create(),
-                vlmGroup,
-                srcFullSnapshotName,
-                config,
-                LvmVolumeType.SNAPSHOT
-            )
-        );
-        LvmUtils.recacheNext();
-    }
-
-    @Override
     public Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
         throws StorageException, AccessDeniedException
     {
         return fetchOrigAllocatedSizes(vlmDataListRef);
+    }
+
+    @Override
+    public void openForClone(VlmProviderObject<?> vlm, @Nullable String cloneName, boolean readOnly)
+        throws StorageException
+    {
+        LvmData<Resource> srcData = (LvmData<Resource>) vlm;
+        if (cloneName != null)
+        {
+            // use snapshot path
+            vlm.setCloneDevicePath(getDevicePath(
+                srcData.getVolumeGroup(), getCloneSnapshotNameFull(srcData, cloneName, "_")));
+        }
+        else
+        {
+            createLvImpl(srcData);
+            vlm.setCloneDevicePath(getDevicePath(srcData.getVolumeGroup(), asLvIdentifier(srcData)));
+        }
+    }
+
+    @Override
+    public void closeForClone(VlmProviderObject<?> vlm) throws StorageException
+    {
+        vlm.setCloneDevicePath(null);
     }
 }

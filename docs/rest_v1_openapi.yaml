@@ -8750,6 +8750,10 @@ components:
           description: |
             If true Zfs will not use send/recv to clone, but instead
             use a parent snapshot with clone, which cannot be deleted
+        layer_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/LayerType'
         volume_passphrases:
           type: array
           items:

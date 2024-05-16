@@ -7,6 +7,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.devmgr.DeviceHandler.CloneStrategy;
 import com.linbit.linstor.core.devmgr.SuspendManager;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
@@ -24,7 +25,11 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 
+import javax.annotation.Nullable;
+
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
@@ -181,7 +186,7 @@ public interface DeviceLayer
         );
     }
 
-    public interface NotificationListener
+    interface NotificationListener
     {
         void notifyResourceDispatchResponse(ResourceName resourceName, ApiCallRc response);
 
@@ -230,4 +235,39 @@ public interface DeviceLayer
     }
 
     boolean isDeleteFlagSet(AbsRscLayerObject<?> rscDataRef) throws AccessDeniedException;
+
+    enum CloneSupportResult
+    {
+        TRUE,
+        FALSE,
+        PASSTHROUGH
+    }
+
+    CloneSupportResult getCloneSupport(
+        AbsRscLayerObject<?> sourceRscLayerObjectRef,
+        AbsRscLayerObject<?> targetRscLayerObjectRef
+    );
+
+    default Set<CloneStrategy> getCloneStrategy(VlmProviderObject<?> vlm)
+        throws StorageException
+    {
+        return Collections.emptySet();
+    }
+
+    /**
+     * @param vlm
+     * @param targetRscNameRef If non-null, <code>vlm</code> is the source volume. If <code>targetRscNameRef</code> is
+     *     null, <code>vlm</code> is the target volume.
+     *
+     * @throws StorageException
+     */
+    default void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
+    {
+        throw new StorageException("Not supported");
+    }
+
+    default void closeDeviceForClone(VlmProviderObject<?> vlm) throws StorageException
+    {
+        throw new StorageException("Not supported");
+    }
 }

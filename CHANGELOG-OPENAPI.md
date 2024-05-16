@@ -10,6 +10,7 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
   - Added snapshot_props and resource_props to SnapshotNode schema
   - Added snapshot_volume_props and volume_props to SnapshotVolumeNode schema
   - Added snapshot_volume_definition_props and volume_definition_props to SnapshotVolumeDefinition schema
+  - Added layer_list to resource definition clone request
 
 ### Deprecated
   - Deprecated props of Snapshot schema in favor of snapshot_definition_props and resource_definition_props

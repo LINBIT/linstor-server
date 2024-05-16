@@ -349,4 +349,13 @@ public class NvmeLayer implements DeviceLayer
     {
         return false; // no layer specific DELETE flag
     }
+
+    @Override
+    public CloneSupportResult getCloneSupport(
+        AbsRscLayerObject<?> ignoredSourceRef,
+        AbsRscLayerObject<?> ignoredTargetRef
+    )
+    {
+        return CloneSupportResult.PASSTHROUGH;
+    }
 }

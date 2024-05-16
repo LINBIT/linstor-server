@@ -46,6 +46,7 @@ import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
@@ -410,13 +411,14 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
             if (useZfsClone != null)
             {
-                String clonedFromRsc = vlmData.getRscLayerObject().getAbsResource()
-                    .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_CLONED_FROM);
+                final Resource rsc = vlmData.getRscLayerObject().getAbsResource();
+                String clonedFromRsc = rsc.getResourceDefinition().getProps(storDriverAccCtx)
+                    .getProp(InternalApiConsts.KEY_CLONED_FROM);
                 String srcFullSnapshotName = asSnapLvIdentifierRaw(
                     vlmData.getStorPool().getName().displayValue,
                     clonedFromRsc,
                     vlmData.getRscLayerObject().getResourceNameSuffix(),
-                    getCloneSnapshotName(vlmData),
+                    getCloneSnapshotName(rsc.getResourceDefinition().getName().displayValue, vlmData.getVlmNr().value),
                     vlmData.getVlmNr().value);
                 ZfsCommands.delete(
                     extCmdFactory.create(),
@@ -866,59 +868,53 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    protected void createLvWithCopyImpl(
+    protected void createSnapshotForCloneImpl(
         ZfsData<Resource> vlmData,
-        Resource srcRsc)
+        String cloneRscName)
         throws StorageException, AccessDeniedException
     {
-        final String useZfsClone = vlmData.getRscLayerObject().getAbsResource()
-            .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
-        final ZfsData<Resource> srcVlmData = getVlmDataFromResource(
-            srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
-
-        final String dstRscName = vlmData.getRscLayerObject().getResourceName().displayValue;
-        final String srcFullSnapshotName = getCloneSnapshotNameFull(srcVlmData, vlmData, "@");
-        final String dstId = asLvIdentifier(vlmData);
+        final String srcFullSnapshotName = getCloneSnapshotNameFull(vlmData, cloneRscName, "@");
 
 
-        if (!infoListCache.containsKey(srcVlmData.getZPool() + "/" + srcFullSnapshotName))
+        if (!infoListCache.containsKey(vlmData.getZPool() + "/" + srcFullSnapshotName))
         {
             ZfsCommands.createSnapshotFullName(
                 extCmdFactory.create(),
-                srcVlmData.getZPool(),
+                vlmData.getZPool(),
                 srcFullSnapshotName
             );
             // mark snapshot as temporary clone
             ZfsCommands.setUserProperty(
                 extCmdFactory.create(),
-                srcVlmData.getZPool(),
+                vlmData.getZPool(),
                 srcFullSnapshotName,
                 "clone_for",
-                dstRscName
+                cloneRscName
             );
 
-            if (useZfsClone != null)
-            {
-                ZfsCommands.restoreSnapshotFullName(
-                    extCmdFactory.create(),
-                    srcVlmData.getZPool(),
-                    srcFullSnapshotName,
-                    dstId
-                );
-            }
+//            if (useZfsClone != null)
+//            {
+//                ZfsCommands.restoreSnapshotFullName(
+//                    extCmdFactory.create(),
+//                    srcVlmData.getZPool(),
+//                    srcFullSnapshotName,
+//                    dstId
+//                );
+//            }
         }
         else
         {
             errorReporter.logInfo("Clone base snapshot %s already found, reusing.", srcFullSnapshotName);
         }
 
-        cloneService.startClone(
-            srcVlmData,
-            vlmData,
-            this);
+//        cloneService.startClone(
+//            srcVlmData,
+//            vlmData,
+//            this);
     }
 
-    @Override
+
+    // TODO move remove
     public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
     {
         String[] cmd;
@@ -938,7 +934,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
             ZfsData<Resource> dstData = (ZfsData<Resource>) cloneInfo.getDstVlmData();
             final String dstId = asLvIdentifier(dstData);
-            final String srcFullSnapshotName = getCloneSnapshotNameFull(srcData, dstData, "@");
+            final String srcFullSnapshotName = getCloneSnapshotNameFull(
+                srcData, cloneInfo.getResourceName().displayValue, "@");
             cmd = new String[]
                 {
                     "timeout",
@@ -965,7 +962,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         return cmd;
     }
 
-    @Override
+    // TODO move remove
     public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
     {
         try
@@ -980,7 +977,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             {
                 ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
                 final String srcFullSnapshotName = getCloneSnapshotNameFull(
-                    srcData, (ZfsData<Resource>) cloneInfo.getDstVlmData(), "@");
+                    srcData, cloneInfo.getResourceName().displayValue, "@");
                 ZfsCommands.delete(
                     extCmdFactory.create(),
                     getZPool(srcData.getStorPool()),
@@ -1029,5 +1026,28 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         }
 
         return ret;
+    }
+
+    public void openForClone(VlmProviderObject<?> vlm, @Nullable String cloneName, boolean readOnly)
+        throws StorageException
+    {
+        if (cloneName != null)
+        {
+            // TODO unhide zfs snapshots for device path
+            ZfsData<Resource> srcData = (ZfsData<Resource>) vlm;
+            vlm.setCloneDevicePath(getDevicePath(
+                srcData.getZPool(), getCloneSnapshotNameFull(srcData, cloneName, "_")));
+        }
+        else
+        {
+            vlm.setCloneDevicePath(vlm.getDevicePath());
+        }
+    }
+
+    @Override
+    public void closeForClone(VlmProviderObject<?> vlm) throws StorageException
+    {
+        // TODO hide zfs snapshot if resource opened
+        vlm.setCloneDevicePath(null);
     }
 }

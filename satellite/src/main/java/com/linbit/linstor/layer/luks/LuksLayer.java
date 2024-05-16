@@ -9,6 +9,7 @@ import com.linbit.linstor.api.DecryptionHelper;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.core.devmgr.DeviceHandler.CloneStrategy;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.Resource;
@@ -29,9 +30,11 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.adapter.luks.LuksRscData;
 import com.linbit.linstor.storage.data.adapter.luks.LuksVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.utils.Commands;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -44,6 +47,11 @@ import java.util.Set;
 public class LuksLayer implements DeviceLayer
 {
     private static final String LUKS_IDENTIFIER_FORMAT = "%s_%05d";
+
+    // always use DD as it keeps the resource thin in the beginning
+    private static final Set<DeviceHandler.CloneStrategy> SUPPORTED_CLONE_STRATS = Collections.singleton(
+        DeviceHandler.CloneStrategy.DD
+    );
 
     private final AccessContext sysCtx;
     private final CryptSetupCommands cryptSetup;
@@ -409,5 +417,37 @@ public class LuksLayer implements DeviceLayer
         }
 
         return identifier;
+    }
+
+    @Override
+    public CloneSupportResult getCloneSupport(
+        AbsRscLayerObject<?> sourceRscLayerObjectRef,
+        AbsRscLayerObject<?> targetRscLayerObjectRef
+    )
+    {
+        // unconditionally. Does not matter if LUKS -> LUKS, LUKS -> non-LUKS or non-LUKS -> LUKS. All cases need to be
+        // read and/or written through the LUKS layer.
+        return CloneSupportResult.TRUE;
+    }
+
+    @Override
+    public Set<CloneStrategy> getCloneStrategy(VlmProviderObject<?> vlm) throws StorageException
+    {
+        return SUPPORTED_CLONE_STRATS;
+    }
+
+    @Override
+    public void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
+    {
+        // TODO check if already open
+        resourceProcessorProvider.get().openForClone(((LuksVlmData<?>) vlm).getSingleChild(), targetRscNameRef);
+        // TODO luksopen, etc...
+    }
+
+    @Override
+    public void closeDeviceForClone(VlmProviderObject<?> vlm) throws StorageException
+    {
+        // TODO: luksclose
+        resourceProcessorProvider.get().closeAfterClone(((LuksVlmData<?>) vlm).getSingleChild());
     }
 }

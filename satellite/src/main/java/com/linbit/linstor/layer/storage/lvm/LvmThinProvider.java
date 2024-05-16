@@ -125,7 +125,7 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    protected void createLvImpl(LvmData<Resource> lvmVlmData) throws StorageException, AccessDeniedException
+    protected void createLvImpl(LvmData<Resource> lvmVlmData) throws StorageException
     {
         LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmData;
         String volumeGroup = vlmData.getVolumeGroup();
@@ -537,33 +537,36 @@ public class LvmThinProvider extends LvmProvider
         return thinPool;
     }
 
+    /**
+     * Create a thin snapshot instead of supers thick snapshot
+     * @param lvmVlmData
+     * @param cloneRscName
+     * @throws StorageException
+     */
     @Override
-    protected void createLvWithCopyImpl(
+    protected void createSnapshotForCloneImpl(
         LvmData<Resource> lvmVlmData,
-        Resource srcRsc)
-        throws StorageException, AccessDeniedException
+        String cloneRscName)
+        throws StorageException
     {
         final LvmThinData<Resource> vlmData = (LvmThinData<Resource>) lvmVlmData;
-        final LvmThinData<Resource> srcVlmData = (LvmThinData<Resource>) getVlmDataFromResource(
-            srcRsc, vlmData.getRscLayerObject().getResourceNameSuffix(), vlmData.getVlmNr());
 
-        final String srcId = asLvIdentifier(srcVlmData);
-        final String srcFullSnapshotName = getCloneSnapshotNameFull(srcVlmData, vlmData, "_");
-        final String dstId = asLvIdentifier(vlmData);
+        final String srcId = asLvIdentifier(vlmData);
+        final String srcFullSnapshotName = getCloneSnapshotNameFull(vlmData, cloneRscName, "_");
 
         List<String> additionalOptions = MkfsUtils.shellSplit(getLvcreateSnapshotOptions(lvmVlmData));
         String[] additionalOptionsArr = new String[additionalOptions.size()];
         additionalOptions.toArray(additionalOptionsArr);
 
-        if (!infoListCache.containsKey(srcVlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
+        if (!infoListCache.containsKey(vlmData.getVolumeGroup() + "/" + srcFullSnapshotName))
         {
             LvmUtils.execWithRetry(
                 extCmdFactory,
-                Collections.singleton(srcVlmData.getVolumeGroup()),
+                Collections.singleton(vlmData.getVolumeGroup()),
                 config -> LvmCommands.createSnapshotThin(
                     extCmdFactory.create(),
-                    srcVlmData.getVolumeGroup(),
-                    srcVlmData.getThinPool(),
+                    vlmData.getVolumeGroup(),
+                    vlmData.getThinPool(),
                     srcId,
                     srcFullSnapshotName,
                     config,
@@ -573,60 +576,22 @@ public class LvmThinProvider extends LvmProvider
 
             LvmUtils.execWithRetry(
                 extCmdFactory,
-                Collections.singleton(srcVlmData.getVolumeGroup()),
+                Collections.singleton(vlmData.getVolumeGroup()),
                 config -> LvmCommands.addTag(
                     extCmdFactory.create(),
-                    srcVlmData.getVolumeGroup(),
+                    vlmData.getVolumeGroup(),
                     srcFullSnapshotName,
                     LvmCommands.LVM_TAG_CLONE_SNAPSHOT,
                     config
                 )
             );
 
-            // restore
-            LvmUtils.execWithRetry(
-                extCmdFactory,
-                Collections.singleton(vlmData.getVolumeGroup()),
-                config -> LvmCommands.restoreFromSnapshot(
-                    extCmdFactory.create(),
-                    srcFullSnapshotName,
-                    srcVlmData.getVolumeGroup(),
-                    dstId,
-                    config,
-                    additionalOptionsArr
-                )
-            );
-
-            // activate
-            LvmUtils.execWithRetry(
-                extCmdFactory,
-                Collections.singleton(vlmData.getVolumeGroup()),
-                config -> LvmCommands.activateVolume(
-                    extCmdFactory.create(),
-                    vlmData.getVolumeGroup(),
-                    dstId,
-                    config
-                )
-            );
             LvmUtils.recacheNextLvs();
         }
         else
         {
             errorReporter.logInfo("Clone base snapshot %s already found, reusing.", srcFullSnapshotName);
         }
-
-        cloneService.startClone(
-            srcVlmData,
-            vlmData,
-            this
-        );
-    }
-
-    @Override
-    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo) {
-        // LVM_THIN doesn't have a long run operation, but it is vital that the device manager runs
-        // through before getting updated flags, so keep the clone daemon a bit busy
-        return new String[] {"sleep", "1"};
     }
 
     @Override

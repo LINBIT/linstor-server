@@ -152,6 +152,10 @@ public interface VlmProviderObject<RSC extends AbsResource<RSC>> extends LayerOb
         return key;
     }
 
+    @Nullable String getCloneDevicePath();
+
+    void setCloneDevicePath(@Nullable String cloneDevicePath);
+
     @Override
     default int compareTo(VlmProviderObject<RSC> oRef)
     {

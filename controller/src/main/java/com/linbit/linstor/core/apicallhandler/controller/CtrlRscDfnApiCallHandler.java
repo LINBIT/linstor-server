@@ -802,9 +802,10 @@ public class CtrlRscDfnApiCallHandler
     public Flux<ApiCallRc> cloneRscDfn(
         String srcRscName,
         String clonedRscName,
-        byte[] clonedExtName,
+        @Nullable byte[] clonedExtName,
         Boolean useZfsClone,
-        @Nullable List<String> volumePassphrases)
+        @Nullable List<String> volumePassphrases,
+        @Nullable List<String> layerList)
     {
         ResponseContext context = makeResourceDefinitionContext(
             ApiOperation.makeCreateOperation(),
@@ -819,9 +820,80 @@ public class CtrlRscDfnApiCallHandler
                         lockGuardFactory.buildDeferred(LockGuardFactory.LockType.WRITE, NODES_MAP, RSC_DFN_MAP),
                         () -> cloneRscDfnInTransaction(
                             srcRscName, clonedRscName, clonedExtName, useZfsClone,
-                            volumePassphrases, context, thinFreeCapacities)
+                            volumePassphrases, layerList, context, thinFreeCapacities)
                     )
                     .transform(responses -> responseConverter.reportingExceptions(context, responses)));
+    }
+
+    private Flux<ApiCallRc> setCloneSnapshotProperty(ResourceDefinition rscDfn, String cloneRscName)
+    {
+        return scopeRunner
+            .fluxInTransactionalScope(
+                "Set clone snapshot property",
+                lockGuardFactory.create()
+                    .read(LockObj.NODES_MAP)
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> setCloneSnapshotPropertyInTrans(rscDfn, cloneRscName)
+            );
+    }
+
+    private Flux<ApiCallRc> setCloneSnapshotPropertyInTrans(ResourceDefinition rscDfn, String cloneRscName)
+    {
+        try
+        {
+            var diskfulRscs = rscDfn.getDiskfulResources(apiCtx);
+            for (var diskRsc : diskfulRscs)
+            {
+                setCloneSnapshotPropPrivileged(diskRsc, cloneRscName);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "set clone snapshot property for " + getRscDfnDescription(rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        ctrlTransactionHelper.commit();
+
+        return ctrlSatelliteUpdateCaller
+            .updateSatellites(rscDfn, notConnectedError(), Flux.empty())
+            .transform(
+                responses -> CtrlResponseUtils.combineResponses(
+                    errorReporter,
+                    responses,
+                    rscDfn.getName(),
+                    "Set snapshot for clone property of {1} on {0}"
+                )
+            );
+    }
+
+    private void setCloneSnapshotPropPrivileged(Resource rsc, String cloneRscName)
+    {
+        try
+        {
+            Props props = rsc.getProps(apiCtx);
+            props.setProp("Clone/" + InternalApiConsts.CLONE_FOR_PREFIX + cloneRscName, cloneRscName);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "set resource clone property for " + getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (InvalidKeyException|InvalidValueException invKey)
+        {
+            errorReporter.reportError(invKey);
+            throw new RuntimeException("Invalid key or value for clone snapshot property:" + cloneRscName);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
     }
 
     private Flux<ApiCallRc> resumeIO(ResourceDefinition rscDfn)
@@ -992,6 +1064,7 @@ public class CtrlRscDfnApiCallHandler
         byte[] clonedExtName,
         Boolean useZfsClone,
         @Nullable List<String> volumePassphrases,
+        @Nullable List<String> layerList,
         ResponseContext context,
         Map<StorPool.Key, Long> thinFreeCapacities)
     {
@@ -1005,10 +1078,12 @@ public class CtrlRscDfnApiCallHandler
             final ResourceDefinition srcRscDfn = ctrlApiDataLoader.loadRscDfn(srcRscName, true);
 
             final LayerPayload payload = new LayerPayload();
+            final List<DeviceLayerKind> layerStack = layerList != null ?
+                LinstorParsingUtils.asDeviceLayerKind(layerList) : srcRscDfn.getLayerStack(peerAccCtx.get());
             final ResourceDefinition clonedRscDfn = createRscDfn(
                 clonedRscName,
                 clonedExtName,
-                srcRscDfn.getLayerStack(peerAccCtx.get()),
+                layerStack,
                 payload,
                 srcRscDfn.getResourceGroup().getName().displayValue);
 
@@ -1035,7 +1110,6 @@ public class CtrlRscDfnApiCallHandler
             storeVolumePassphrasesToVlmDfn(clonedRscDfn, volumePassphrases);
 
             Set<Resource> deployedResources = new TreeSet<>();
-            List<Flux<ApiCallRc>> createClonedRscsFlux = new ArrayList<>();
             Iterator<Resource> it = srcRscDfn.iterateResource(peerAccCtx.get());
             while (it.hasNext())
             {
@@ -1154,9 +1228,9 @@ public class CtrlRscDfnApiCallHandler
                     )
                 )
                 .concatWith(Flux.just(responses))
-                .concatWith(deploymentResponses)
-                .concatWith(Flux.merge(createClonedRscsFlux))
+                .concatWith(setCloneSnapshotProperty(srcRscDfn, clonedRscName))
                 .concatWith(resumeIO(srcRscDfn))
+                .concatWith(deploymentResponses)
                 .concatWith(removeStartCloning(clonedRscDfn))
                 .onErrorResume(exception -> resumeIO(srcRscDfn));
         }

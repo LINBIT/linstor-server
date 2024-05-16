@@ -37,6 +37,10 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
     // not persisted, not serialized, stlt only
     protected transient long originalSize = UNINITIALIZED_SIZE;
 
+    // holds the clone device path while cloning in process
+    // not serializable, not persisted, stlt only
+    protected @Nullable String cloneDevicePath;
+
     public AbsVlmData(
         AbsVolume<RSC> vlmRef,
         RSC_DATA rscDataRef,
@@ -149,6 +153,18 @@ public abstract class AbsVlmData<RSC extends AbsResource<RSC>, RSC_DATA extends 
     public long getExpectedSize()
     {
         throw new ImplementationError("This method should only be called for STORAGE volumes");
+    }
+
+    @Override
+    public @Nullable String getCloneDevicePath()
+    {
+        return cloneDevicePath;
+    }
+
+    @Override
+    public void setCloneDevicePath(@Nullable String cloneDevicePathRef)
+    {
+        cloneDevicePath = cloneDevicePathRef;
     }
 
     @Override

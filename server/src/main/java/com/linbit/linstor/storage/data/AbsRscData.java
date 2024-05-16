@@ -28,6 +28,7 @@ import javax.inject.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -56,7 +57,9 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
 
     // volatile satellite only
     private boolean checkFileSystem;
-    private Boolean isSuspended = null; // unknown
+    private @Nullable Boolean isSuspended = null; // unknown
+
+    private final Map<AbsRscLayerObject<?>, Boolean> clonePassthroughModeMap = new HashMap<>(); // not cloning if empty
 
     public AbsRscData(
         int rscLayerIdRef,
@@ -276,6 +279,35 @@ public abstract class AbsRscData<RSC extends AbsResource<RSC>, VLM_TYPE extends 
     public void disableCheckFileSystem()
     {
         this.checkFileSystem = false;
+    }
+
+    @Override
+    public void setClonePassthroughMode(AbsRscLayerObject<?> targetLayerDataRef, boolean targetHasPassthrough)
+    {
+        clonePassthroughModeMap.put(targetLayerDataRef, targetHasPassthrough);
+    }
+
+    @Override
+    public void removeClonePassthroughMode(AbsRscLayerObject<?> targetLayerDataRef)
+    {
+        clonePassthroughModeMap.remove(targetLayerDataRef);
+    }
+
+    @Override
+    public Boolean isClonePassthroughMode()
+    {
+        return !clonePassthroughModeMap.isEmpty() && clonePassthroughModeMap.values().stream()
+            .allMatch(Boolean.TRUE::equals);
+    }
+
+    @Override
+    public void cleanupAfterCloneFinished()
+    {
+        clonePassthroughModeMap.clear();
+        for (VLM_TYPE vlmData : vlmMap.values())
+        {
+            vlmData.setCloneDevicePath(null);
+        }
     }
 
     @Override

@@ -14,6 +14,9 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+
+import javax.annotation.Nullable;
 
 import java.util.Collection;
 
@@ -55,4 +58,47 @@ public interface DeviceHandler
     default void initialize()
     {
     }
+
+    enum CloneStrategy
+    {
+        LVM_THIN_CLONE(0, false), // lvm snapshot, rename and pretend it is a volume
+        ZFS_CLONE(0, false), // zfs clone
+        ZFS_COPY(10, true), // zfs send/recv
+        DD(90, true);
+
+        private final int priority;
+        private final boolean needsOpenDevices;
+
+        CloneStrategy(int priorityRef, boolean needsOpenDevicesRef)
+        {
+            priority = priorityRef;
+            needsOpenDevices = needsOpenDevicesRef;
+        }
+
+        public int getPriority()
+        {
+            return priority;
+        }
+
+        public boolean needsOpenDevices()
+        {
+            return needsOpenDevices;
+        }
+
+        public static CloneStrategy highestPriority()
+        {
+            return CloneStrategy.DD;
+        }
+
+        public static CloneStrategy maxStrategy(CloneStrategy first, CloneStrategy second)
+        {
+            return first.getPriority() > second.getPriority() ? first : second;
+        }
+    }
+
+    void openForClone(VlmProviderObject<?> sourceVlmData, @Nullable String targetRscNameRef)
+        throws StorageException;
+
+    void closeAfterClone(VlmProviderObject<?> vlmDataRef) throws StorageException;
+
 }

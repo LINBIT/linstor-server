@@ -429,4 +429,14 @@ public class CacheLayer implements DeviceLayer
             stltConfAccessor.getReadonlyProps()
         );
     }
+
+    @Override
+    public CloneSupportResult getCloneSupport(
+        AbsRscLayerObject<?> ignoredSourceRef,
+        AbsRscLayerObject<?> ignoredTargetRef
+    )
+    {
+        return CloneSupportResult.PASSTHROUGH;
+    }
+
 }

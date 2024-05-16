@@ -1,6 +1,7 @@
 package com.linbit.linstor.core.devmgr;
 
 import com.linbit.ImplementationError;
+import com.linbit.InvalidNameException;
 import com.linbit.Platform;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
@@ -12,6 +13,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.backupshipping.BackupShippingMgr;
+import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.StltExternalFileHandler;
 import com.linbit.linstor.core.SysFsHandler;
@@ -37,6 +39,7 @@ import com.linbit.linstor.event.common.ResourceStateEvent;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.AbortLayerProcessingException;
+import com.linbit.linstor.layer.DeviceLayer.CloneSupportResult;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.LayerFactory;
 import com.linbit.linstor.layer.LayerIgnoreReason;
@@ -57,6 +60,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.utils.SetUtils;
 import com.linbit.utils.Either;
@@ -101,6 +105,7 @@ public class DeviceHandlerImpl implements DeviceHandler
     private final StorageLayer storageLayer;
     private final ExtCmdFactory extCmdFactory;
     private final SnapshotShippingService snapshotShippingManager;
+    private final CloneService cloneService;
 
     private final SysFsHandler sysFsHandler;
     private final UdevHandler udevHandler;
@@ -128,7 +133,8 @@ public class DeviceHandlerImpl implements DeviceHandler
         StltExternalFileHandler extFileHandlerRef,
         BackupShippingMgr backupShippingManagerRef,
         SuspendManager suspendMgrRef,
-        LayerSizeHelper layerSizeHelperRef
+        LayerSizeHelper layerSizeHelperRef,
+        CloneService cloneServiceRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -148,6 +154,7 @@ public class DeviceHandlerImpl implements DeviceHandler
         backupShippingManager = backupShippingManagerRef;
         suspendMgr = suspendMgrRef;
         layerSizeHelper = layerSizeHelperRef;
+        cloneService = cloneServiceRef;
 
         suspendMgrRef.setExceptionHandler(this::handleException);
 
@@ -228,6 +235,11 @@ public class DeviceHandlerImpl implements DeviceHandler
                 nonDeletingSnapshots,
                 snapListNotifyApplied,
                 snapListNotifyDelete,
+                failedRscs
+            );
+            processClone(
+                resources,
+                rscListNotifyApplied,
                 failedRscs
             );
 
@@ -789,6 +801,290 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
             notificationListenerProvider.get()
                 .notifySnapshotDispatchResponse(snap.getSnapshotDefinition().getSnapDfnKey(), apiCallRc);
+        }
+    }
+
+    private boolean isCloneVolume(Volume vlm) throws AccessDeniedException
+    {
+        StateFlags<Volume.Flags> vlmFlags = vlm.getFlags();
+        return vlmFlags.isSet(wrkCtx, Volume.Flags.CLONING_START) &&
+            !vlmFlags.isSet(wrkCtx, Volume.Flags.CLONING_FINISHED);
+    }
+
+    protected final Resource getResource(Resource anyRsc, String rscName)
+        throws AccessDeniedException, StorageException
+    {
+        @Nullable Resource rsc;
+        try
+        {
+            ResourceName tmpName = new ResourceName(rscName);
+            rsc = anyRsc.getNode().getResource(wrkCtx, tmpName);
+            if (rsc == null)
+            {
+                throw new StorageException("Couldn't find resource: " + rscName);
+            }
+        }
+        catch (InvalidNameException exc)
+        {
+            throw new ImplementationError("Couldn't create resource name from: " + rscName, exc);
+        }
+        return rsc;
+    }
+
+    private void processClone(
+        Collection<Resource> resourceList,
+        List<Resource> rscListNotifyApplied,
+        HashMap<Resource, ApiCallRcImpl> failedRscs
+
+    )
+        throws ImplementationError
+    {
+        for (Resource rsc : resourceList)
+        {
+            try
+            {
+                final Props rscDfnProps = rsc.getResourceDefinition().getProps(wrkCtx);
+                final @Nullable String srcRscName = rscDfnProps.getProp(InternalApiConsts.KEY_CLONED_FROM);
+                if (srcRscName != null && anyVlmInCloningState(rsc))
+                {
+                    final Resource srcRsc = getResource(rsc, srcRscName);
+                    final AbsRscLayerObject<Resource> srcRootLayerObj = srcRsc.getLayerData(wrkCtx);
+
+                    Map<VlmProviderObject<Resource>, VlmProviderObject<Resource>> devicesToClone = getDevicesToClone(
+                        srcRootLayerObj,
+                        rsc.getLayerData(wrkCtx)
+                    );
+
+                    startClone(devicesToClone);
+                }
+
+                final Iterator<Volume> vlmsIt = rsc.iterateVolumes();
+                while (vlmsIt.hasNext())
+                {
+                    Volume vlm = vlmsIt.next();
+                    if (vlm.getFlags().isSet(wrkCtx, Volume.Flags.CLONING_FINISHED))
+                    {
+                        cloneService.removeClone(
+                            vlm.getResourceDefinition().getName(),
+                            vlm.getVolumeNumber());
+                    }
+                }
+            }
+            catch (StorageException exc)
+            {
+                handleException(rsc, exc);
+            }
+            catch (AccessDeniedException accExc)
+            {
+                throw new ImplementationError(accExc);
+            }
+        }
+    }
+
+    private boolean anyVlmInCloningState(Resource rscRef) throws AccessDeniedException
+    {
+        boolean ret = false;
+        final Iterator<Volume> vlmsIt = rscRef.iterateVolumes();
+        while (vlmsIt.hasNext())
+        {
+            Volume vlm = vlmsIt.next();
+            if (isCloneVolume(vlm))
+            {
+                ret = true;
+                break;
+            }
+        }
+        return ret;
+    }
+
+    private <SRC_RSC_TYPE extends AbsResource<SRC_RSC_TYPE>>
+                Map<VlmProviderObject<SRC_RSC_TYPE>, VlmProviderObject<Resource>> getDevicesToClone(
+        AbsRscLayerObject<SRC_RSC_TYPE> sourceLayerDataRef,
+        AbsRscLayerObject<Resource> targetLayerDataRef
+    )
+        throws StorageException
+    {
+        final Map<VlmProviderObject<SRC_RSC_TYPE>, VlmProviderObject<Resource>> ret = new HashMap<>();
+
+        final DeviceLayer sourceDevLayer = layerFactory.getDeviceLayer(sourceLayerDataRef.getLayerKind());
+        final DeviceLayer targetDevLayer = layerFactory.getDeviceLayer(targetLayerDataRef.getLayerKind());
+
+        final DeviceLayer.CloneSupportResult sourceCloneSupport = sourceDevLayer.getCloneSupport(
+            sourceLayerDataRef,
+            targetLayerDataRef
+        );
+        final DeviceLayer.CloneSupportResult targetCloneSupport;
+        if (sourceDevLayer.equals(targetDevLayer))
+        {
+            // no need to recalculate twice
+            targetCloneSupport = sourceCloneSupport;
+        }
+        else
+        {
+            targetCloneSupport = targetDevLayer.getCloneSupport(sourceLayerDataRef, targetLayerDataRef);
+        }
+
+        boolean sourceHasPassthrough = hasPassthrough(sourceCloneSupport, sourceLayerDataRef.getLayerKind());
+        boolean targetHasPassthrough = hasPassthrough(targetCloneSupport, targetLayerDataRef.getLayerKind());
+
+        sourceLayerDataRef.setClonePassthroughMode(targetLayerDataRef, sourceHasPassthrough);
+        targetLayerDataRef.setClonePassthroughMode(targetLayerDataRef, targetHasPassthrough);
+
+        if (sourceHasPassthrough || targetHasPassthrough)
+        {
+            // continue with recursion
+
+            // if either (source or target) still wants a passthrough, we can advance that layer-tree downwards.
+            // advancing is only done depending on the target layer tree. if the source does not have a corresponding
+            // rscLayerSuffic as a child, that source will be skipped (i.e. not cloned). the result will be a missing
+            // (i.e. not cloned) device, which should not be a problem, since once the cloning is finished, the storage
+            // layer will happily create all missing devices before returning to the upper layers.
+
+            if (!targetHasPassthrough)
+            {
+                // if targetHasPassthrough is already false, sourceHasPassthrough must be true, otherwise the outer if
+                // would have gone into the "else" case, not there
+                @Nullable AbsRscLayerObject<SRC_RSC_TYPE> sourceRscDataToAdvance = sourceLayerDataRef.getChildBySuffix(
+                    targetLayerDataRef.getResourceNameSuffix()
+                );
+                // sourceRscDataToAdvance might be null if we are cloning from a storage only into a
+                // DRBD-with-ext-metadata targetVlmObj with ".meta" suffix will have no srcVlmObj associated
+                // in that case, we can just skip cloning, since the external metadata device (and later also the
+                // external metadata) will be created automatically. the controller will still have to set the
+                // property KEY_FORCE_INITIAL_SYNC_PERMA, but that is true in all storage --clone-> DRBD cases
+                if (sourceRscDataToAdvance != null)
+                {
+                    ret.putAll(getDevicesToClone(sourceRscDataToAdvance, targetLayerDataRef));
+                }
+            }
+            else
+            {
+                for (AbsRscLayerObject<Resource> targetChildRscData : targetLayerDataRef.getChildren())
+                {
+                    final String targetChildRscSuffix = targetChildRscData.getResourceNameSuffix();
+                    // we only care about target's child-suffixes
+                    if (RscLayerSuffixes.shouldSuffixBeCloned(targetChildRscSuffix))
+                    {
+                        final @Nullable AbsRscLayerObject<SRC_RSC_TYPE> sourceRscDataToAdvance = sourceHasPassthrough ?
+                            sourceLayerDataRef.getChildBySuffix(targetChildRscSuffix) :
+                            sourceLayerDataRef;
+                        if (sourceRscDataToAdvance != null)
+                        {
+                            ret.putAll(getDevicesToClone(sourceRscDataToAdvance, targetChildRscData));
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            // recursion ends. populate the map that should be returned
+
+            for (var entry : targetLayerDataRef.getVlmLayerObjects().entrySet())
+            {
+                // we only need to populate the entries that the target actually wants (and the source also has).
+                // that means that we can safely skip a source ".meta" device, if the target does not need it.
+                VolumeNumber vlmNr = entry.getKey();
+                VlmProviderObject<Resource> targetVlmData = entry.getValue();
+
+                // it still might be possible that the sourceVlmData does not exist (i.e. when cloning from internal
+                // metadata into external metadata, targetVlmData will be ".meta", but there will be no such
+                // sourceVlmData
+                @Nullable VlmProviderObject<SRC_RSC_TYPE> sourceVlmData = sourceLayerDataRef.getVlmProviderObject(
+                    vlmNr
+                );
+                if (sourceVlmData != null)
+                {
+                    ret.put(sourceVlmData, targetVlmData);
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    private boolean hasPassthrough(CloneSupportResult cloneSupportResultRef, DeviceLayerKind layerKind)
+        throws StorageException
+    {
+        final boolean ret;
+        switch (cloneSupportResultRef)
+        {
+            case FALSE:
+                throw new StorageException(
+                    String.format("Layer %s does not support cloning", layerKind.name())
+                );
+            case TRUE:
+                ret = false;
+                break;
+            case PASSTHROUGH:
+                ret = true;
+                break;
+            default:
+                throw new ImplementationError(
+                    String.format("Unexpected clone support result: %s", cloneSupportResultRef.name())
+                );
+        }
+        return ret;
+    }
+
+    private void startClone(Map<VlmProviderObject<Resource>, VlmProviderObject<Resource>> devicesToCloneRef)
+        throws AccessDeniedException
+    {
+        for (var cloneEntry : devicesToCloneRef.entrySet())
+        {
+            final VlmProviderObject<Resource> sourceVlmData = cloneEntry.getKey();
+            final VlmProviderObject<Resource> targetVlmData = cloneEntry.getValue();
+            try
+            {
+                final Volume targetVlm = (Volume) targetVlmData.getVolume();
+                final AbsRscLayerObject<Resource> targetRscData = targetVlmData.getRscLayerObject();
+                final VolumeNumber vlmNr = targetVlm.getVolumeNumber();
+
+                final boolean isCloneResource = isCloneVolume(targetVlm);
+                if (isCloneResource && !cloneService.isRunning(
+                    targetRscData.getResourceName(),
+                    vlmNr,
+                    targetRscData.getResourceNameSuffix()
+                ))
+                {
+                    Set<DeviceHandler.CloneStrategy> srcStrat = getCloneStrategy(sourceVlmData);
+                    Set<DeviceHandler.CloneStrategy> tgtStrat = getCloneStrategy(targetVlmData);
+
+                    // lowest prio-number first (DD strategy has highest number)
+                    Set<DeviceHandler.CloneStrategy> resultStrat = new TreeSet<>(
+                        (strat1, strat2) -> Integer.compare(strat1.getPriority(), strat2.getPriority())
+                    );
+                    resultStrat.addAll(srcStrat);
+                    resultStrat.retainAll(tgtStrat);
+
+                    if (resultStrat.isEmpty())
+                    {
+                        throw new StorageException(
+                            String.format("Failed to clone, no common clone strategy found between:\n" +
+                                "  source: %s/%d/%s\n target: %s/%d/%s",
+                                sourceVlmData.getRscLayerObject().getSuffixedResourceName(),
+                                vlmNr.value,
+                                sourceVlmData.getLayerKind().name(),
+                                targetRscData.getSuffixedResourceName(),
+                                vlmNr.value,
+                                targetRscData.getLayerKind().name())
+                        );
+                    }
+                    CloneStrategy cloneStrategy = resultStrat.iterator().next();
+
+                    if (cloneStrategy.needsOpenDevices())
+                    {
+                        openForClone(sourceVlmData, targetVlmData.getRscLayerObject().getResourceName().displayValue);
+                        openForClone(targetVlmData, null);
+                    }
+
+                    cloneService.startClone(sourceVlmData, targetVlmData, cloneStrategy);
+                }
+            }
+            catch (StorageException exc)
+            {
+                handleException(targetVlmData.getRscLayerObject().getAbsResource(), exc);
+            }
         }
     }
 
@@ -1363,5 +1659,56 @@ public class DeviceHandlerImpl implements DeviceHandler
         boolean process(DeviceLayer layer, AbsRscLayerObject<RSC> layerData, ApiCallRcImpl apiCallRc)
             throws StorageException, ResourceException, VolumeException, AccessDeniedException,
             DatabaseException, AbortLayerProcessingException;
+    }
+
+
+    public Set<DeviceHandler.CloneStrategy> getCloneStrategy(VlmProviderObject<?> vlmProvObj) throws StorageException
+    {
+        return layerFactory.getDeviceLayer(vlmProvObj.getRscLayerObject().getLayerKind())
+            .getCloneStrategy(vlmProvObj);
+    }
+
+    @Override
+    public void openForClone(
+        VlmProviderObject<?> vlmData,
+        @Nullable String targetRscNameRef
+    )
+        throws StorageException
+    {
+        final AbsRscLayerObject<?> rscData = vlmData.getRscLayerObject();
+        final DeviceLayer curLayer = layerFactory.getDeviceLayer(rscData.getLayerKind());
+
+        @Nullable Boolean isPassthrough = rscData.isClonePassthroughMode();
+        if (isPassthrough != null && isPassthrough)
+        {
+            final String rscNameSuffix = rscData.getResourceNameSuffix();
+            final AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
+            final VlmProviderObject<?> childVlmData = childRscData.getVlmProviderObject(vlmData.getVlmNr());
+            openForClone(childVlmData, targetRscNameRef);
+            vlmData.setCloneDevicePath(childVlmData.getCloneDevicePath());
+        }
+        else
+        {
+            curLayer.openDeviceForClone(vlmData, targetRscNameRef);
+        }
+    }
+
+    @Override
+    public void closeAfterClone(VlmProviderObject<?> vlmData) throws StorageException
+    {
+        final AbsRscLayerObject<?> rscData = vlmData.getRscLayerObject();
+        final String rscNameSuffix = rscData.getResourceNameSuffix();
+
+        DeviceLayer nextLayer = layerFactory.getDeviceLayer(vlmData.getLayerKind());
+        if (rscData.isClonePassthroughMode())
+        {
+            AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
+            VlmProviderObject<?> childVlmData = childRscData.getVlmProviderObject(vlmData.getVlmNr());
+            closeAfterClone(childVlmData);
+        }
+        else
+        {
+            nextLayer.closeDeviceForClone(vlmData);
+        }
     }
 }

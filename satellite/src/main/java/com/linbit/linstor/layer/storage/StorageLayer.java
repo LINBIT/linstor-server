@@ -3,6 +3,7 @@ package com.linbit.linstor.layer.storage;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
@@ -35,6 +36,7 @@ import com.linbit.linstor.stateflags.StateFlags;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Either;
 import com.linbit.utils.Pair;
 
@@ -455,5 +457,133 @@ public class StorageLayer implements DeviceLayer
     public boolean isDeleteFlagSet(AbsRscLayerObject<?> rscDataRef)
     {
         return false; // no layer specific DELETE flag
+    }
+
+    @Override
+    public CloneSupportResult getCloneSupport(
+        AbsRscLayerObject<?> sourceRscLayerObjectRef,
+        AbsRscLayerObject<?> ignoredTargetRscLayerObjectRef
+    )
+    {
+        // passthrough is not an option. TRUE or FALSE depend on the volumes..
+        boolean allVolumesSupportClone = true;
+        for (VlmProviderObject<?> vlmData : sourceRscLayerObjectRef.getVlmLayerObjects().values())
+        {
+            switch (vlmData.getProviderKind())
+            {
+                case LVM:
+                case LVM_THIN:
+                case ZFS:
+                case ZFS_THIN:
+                    break;
+                case DISKLESS: // fail through
+                case FILE: // fail through
+                case FILE_THIN: // fail through
+                case SPDK: // fail through
+                case REMOTE_SPDK: // fail through
+                case EXOS: // fail through
+                case EBS_INIT: // fail through
+                case EBS_TARGET: // fail through
+                case STORAGE_SPACES: // fail through
+                case STORAGE_SPACES_THIN: // fail through
+                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                default:
+                    allVolumesSupportClone = false;
+                    break;
+            }
+            if (!allVolumesSupportClone)
+            {
+                break;
+            }
+        }
+        return allVolumesSupportClone ? CloneSupportResult.TRUE : CloneSupportResult.FALSE;
+    }
+
+    @Override
+    public Set<DeviceHandler.CloneStrategy> getCloneStrategy(VlmProviderObject<?> vlm)
+    {
+        Set<DeviceHandler.CloneStrategy> result = new HashSet<>();
+        result.add(DeviceHandler.CloneStrategy.DD);
+
+        try
+        {
+            switch (vlm.getProviderKind())
+            {
+                case LVM:
+                    break;
+                case LVM_THIN:
+                    result.add(DeviceHandler.CloneStrategy.LVM_THIN_CLONE);
+                    break;
+                case ZFS:
+                case ZFS_THIN:
+                    String useZfsClone = vlm.getRscLayerObject().getAbsResource().getResourceDefinition()
+                        .getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
+                    if (useZfsClone != null)
+                    {
+                        result.add(DeviceHandler.CloneStrategy.ZFS_CLONE);
+                    }
+                    else
+                    {
+                        result.add(DeviceHandler.CloneStrategy.ZFS_COPY);
+                    }
+                    break;
+                case DISKLESS: // fail through
+                case FILE: // fail through
+                case FILE_THIN: // fail through
+                case SPDK: // fail through
+                case REMOTE_SPDK: // fail through
+                case EXOS: // fail through
+                case EBS_INIT: // fail through
+                case EBS_TARGET: // fail through
+                case STORAGE_SPACES: // fail through
+                case STORAGE_SPACES_THIN: // fail through
+                case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                default:
+                    break;
+            }
+        }
+        catch (AccessDeniedException ignore)
+        {
+            throw new ImplementationError("Access denied.");
+        }
+        return result;
+    }
+
+    @Override
+    public void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
+    {
+        switch (vlm.getProviderKind())
+        {
+            case LVM:// fall-through
+            case LVM_THIN:// fall-through
+            case ZFS:// fall-through
+            case ZFS_THIN:
+                DeviceProvider devProvider = getDevProviderByVlmObj(vlm);
+                devProvider.openForClone(vlm, targetRscNameRef, targetRscNameRef != null);
+                break;
+            case DISKLESS: // fail through
+            case FILE: // fail through
+            case FILE_THIN: // fail through
+            case SPDK: // fail through
+            case REMOTE_SPDK: // fail through
+            case EXOS: // fail through
+            case EBS_INIT: // fail through
+            case EBS_TARGET: // fail through
+            case STORAGE_SPACES: // fail through
+            case STORAGE_SPACES_THIN: // fail through
+            case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+            default:
+                throw new StorageException(vlm.getProviderKind() + " not supported.");
+        }
+    }
+
+    @Override
+    public void closeDeviceForClone(VlmProviderObject<?> vlm) throws StorageException
+    {
+        if (vlm.getProviderKind() == DeviceProviderKind.ZFS || vlm.getProviderKind() == DeviceProviderKind.ZFS_THIN)
+        {
+            // TODO hide
+        }
+        vlm.setCloneDevicePath(null);
     }
 }

@@ -103,6 +103,15 @@ public interface AbsRscLayerObject<RSC extends AbsResource<RSC>>
         addAllIgnoreReasons(ignoreReasonsRef);
     }
 
+    void setClonePassthroughMode(AbsRscLayerObject<?> targetLayerDataRef, boolean targetHasPassthrough);
+
+    void removeClonePassthroughMode(AbsRscLayerObject<?> targetLayerDataRef);
+
+    @Nullable
+    Boolean isClonePassthroughMode();
+
+    void cleanupAfterCloneFinished();
+
     default AbsRscLayerObject<RSC> getSingleChild()
     {
         Set<AbsRscLayerObject<RSC>> children = getChildren();

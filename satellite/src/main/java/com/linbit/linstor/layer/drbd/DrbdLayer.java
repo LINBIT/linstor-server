@@ -56,8 +56,10 @@ import com.linbit.linstor.storage.data.RscLayerSuffixes;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdVlmData;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
+import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscObject.DrbdRscFlags;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.storage.utils.VolumeUtils;
 import com.linbit.linstor.utils.layer.DrbdLayerUtils;
@@ -1041,6 +1043,11 @@ public class DrbdLayer implements DeviceLayer
     }
 
 
+    private boolean hasExternalMd(DrbdRscData<?> drbdRscDataRef)
+    {
+        return drbdRscDataRef.getChildren().size() > 1;
+    }
+
     private boolean hasMetaData(DrbdVlmData<Resource> drbdVlmData)
         throws VolumeException, AccessDeniedException
     {
@@ -1901,5 +1908,64 @@ public class DrbdLayer implements DeviceLayer
         }
 
         return isDeleteFlagSet;
+    }
+
+    @Override
+    public CloneSupportResult getCloneSupport(
+        AbsRscLayerObject<?> sourceRscDataRef,
+        AbsRscLayerObject<?> targetRscDataRef
+    )
+    {
+        final CloneSupportResult ret;
+        final boolean isSourceDrbd = sourceRscDataRef.getLayerKind().equals(DeviceLayerKind.DRBD);
+        final boolean isTargetDrbd = targetRscDataRef.getLayerKind().equals(DeviceLayerKind.DRBD);
+        if (isSourceDrbd)
+        {
+            final boolean hasSourceInternalMd = !hasExternalMd((DrbdRscData<?>) sourceRscDataRef);
+            if (isTargetDrbd)
+            {
+                // passthrough is an option, but only if both agree on internal or external MD.
+                final boolean hasTargetInternalMd = !hasExternalMd((DrbdRscData<?>) targetRscDataRef);
+
+                if (hasSourceInternalMd == hasTargetInternalMd)
+                {
+                    ret = CloneSupportResult.PASSTHROUGH;
+                }
+                else
+                {
+                    ret = CloneSupportResult.TRUE;
+                }
+            }
+            else
+            {
+                if (hasSourceInternalMd)
+                {
+                    ret = CloneSupportResult.TRUE;
+                }
+                else
+                {
+                    // if source has external MD and target has no DRBD at all, we can use PASSTHROUGH
+                    ret = CloneSupportResult.PASSTHROUGH;
+                }
+            }
+        }
+        else
+        {
+            if (isTargetDrbd)
+            {
+                ret = CloneSupportResult.TRUE;
+            }
+            else
+            {
+                throw new ImplementationError("Neither source, nor target is a DRBD resource");
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public void openDeviceForClone(VlmProviderObject<?> vlmRef, String targetRscNameRef) throws StorageException
+    {
+        throw new ImplementationError("not implemented yet");
     }
 }
