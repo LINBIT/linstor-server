@@ -722,51 +722,6 @@ public class CtrlRscAutoPlaceApiCallHandler
         AutoSelectFilterApi config
     )
     {
-        StringBuilder sb = new StringBuilder();
-        if (config.getReplicaCount() != null)
-        {
-            sb.append("  Place Count: " + config.getReplicaCount() + "\n");
-        }
-        else if (config.getAdditionalReplicaCount() != null)
-        {
-            sb.append("  Additional place count: " + config.getAdditionalReplicaCount() + "\n");
-        }
-        else
-        {
-            throw new ImplementationError("Placecount AND additional place count were empty!");
-        }
-        if (!config.getReplicasOnDifferentList().isEmpty())
-        {
-            sb.append("  Replicas on different nodes: " + config.getReplicasOnDifferentList() + "\n");
-        }
-        if (!config.getReplicasOnSameList().isEmpty())
-        {
-            sb.append("  Replicas on same nodes: " + config.getReplicasOnSameList() + "\n");
-        }
-        if (config.getDoNotPlaceWithRscRegex() != null && !config.getDoNotPlaceWithRscRegex().isEmpty())
-        {
-            sb.append("  Don't place with resource (RegEx): " + config.getDoNotPlaceWithRscRegex() + "\n");
-        }
-        if (!config.getDoNotPlaceWithRscList().isEmpty())
-        {
-            sb.append("  Don't place with resource (List): " + config.getDoNotPlaceWithRscList() + "\n");
-        }
-        if (config.getNodeNameList() != null && !config.getNodeNameList().isEmpty())
-        {
-            sb.append("  Node name: " + config.getNodeNameList() + "\n");
-        }
-        if (config.getStorPoolNameList() != null && !config.getStorPoolNameList().isEmpty())
-        {
-            sb.append("  Storage pool name: " + config.getStorPoolNameList() + "\n");
-        }
-        if (!config.getLayerStackList().isEmpty())
-        {
-            sb.append("  Layer stack: " + config.getLayerStackList() + "\n");
-        }
-        if (!config.getProviderList().isEmpty())
-        {
-            sb.append("  Provider: " + config.getProviderList() + "\n");
-        }
         return new ApiRcException(ApiCallRcImpl
             .entryBuilder(
                 ApiConsts.FAIL_NOT_ENOUGH_NODES,
@@ -784,7 +739,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                     ) +
                     " * the current access context has enough privileges to use the node and the storage pool\n" +
                         " * the node is online\n\n" +
-                        "Auto-place configuration details:\n" + sb.toString()
+                    "Auto-place configuration details:\n" + config.asHelpString("   ")
             )
             .setSkipErrorReport(true)
             .build()
