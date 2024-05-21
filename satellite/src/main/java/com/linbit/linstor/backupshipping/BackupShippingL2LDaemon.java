@@ -10,18 +10,29 @@ import com.linbit.extproc.OutputProxy.StdErrEvent;
 import com.linbit.extproc.OutputProxy.StdOutEvent;
 import com.linbit.linstor.logging.ErrorReporter;
 
+import javax.annotation.Nullable;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
 {
+    private static final String FIRST_SOCAT_CONNECT_MSG = "accepting connection";
     private static final int DFLT_DEQUE_CAPACITY = 100;
     private static final String ALREADY_IN_USE = "Address already in use";
+    private static final Pattern SOCAT_LOG_NOTICE = Pattern.compile(
+        "\\d{4}(?:[/|:| ]\\d{2}){5} socat\\[\\d+\\] N (.*)"
+    );
 
     private final ErrorReporter errorReporter;
     private final Thread thread;
+    private final LinkedBlockingDeque<Boolean> waitForConnDeque;
+    private final Integer timeoutInMs;
     private final String[] command;
 
     private final LinkedBlockingDeque<Event> deque;
@@ -41,7 +52,8 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
         String threadName,
         String[] commandRef,
         Integer portRef,
-        BiConsumer<Boolean, Integer> postActionRef
+        BiConsumer<Boolean, Integer> postActionRef,
+        @Nullable Integer timeoutInMsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -54,6 +66,51 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
         port = portRef;
 
         thread = new Thread(threadGroupRef, this, threadName);
+        timeoutInMs = timeoutInMsRef;
+        if (timeoutInMsRef != null)
+        {
+            waitForConnDeque = new LinkedBlockingDeque<>(1);
+        }
+        else
+        {
+            waitForConnDeque = null;
+        }
+    }
+
+    /**
+     * Interrupts the daemon after a given timeout unless the thread is cancelled by adding <code>true</code> into the
+     * {@link BackupShippingL2LDaemon#waitForConnDeque}
+     */
+    private void waitForConn()
+    {
+        final long waitUntil = System.currentTimeMillis() + timeoutInMs;
+        while (started && System.currentTimeMillis() < waitUntil)
+        {
+            try
+            {
+                @Nullable Boolean pollResult = waitForConnDeque.poll(
+                    waitUntil - System.currentTimeMillis(),
+                    TimeUnit.MILLISECONDS
+                );
+                if ((pollResult == null || !pollResult) && started)
+                {
+                    errorReporter.logWarning(
+                        "Stopped waiting for shipment, either due to an error or " +
+                            "because the source-cluster did not connect within %d ms",
+                        timeoutInMs
+                    );
+                    shutdown(true);
+                }
+                break;
+            }
+            catch (InterruptedException exc)
+            {
+                if (started)
+                {
+                    errorReporter.reportError(new ImplementationError(exc));
+                }
+            }
+        }
     }
 
     @Override
@@ -61,6 +118,11 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     {
         started = true;
         thread.start();
+        if (timeoutInMs != null)
+        {
+            new Thread(thread.getThreadGroup(), this::waitForConn, "waitForConn" + thread.getName())
+                .start();
+        }
         try
         {
             handler.startDelimited();
@@ -105,7 +167,15 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
                 if (event instanceof StdErrEvent)
                 {
                     String stdErr = new String(((StdErrEvent) event).data);
-                    errorReporter.logWarning("stdErr: %s", stdErr);
+                    Matcher mLog = SOCAT_LOG_NOTICE.matcher(stdErr);
+                    if (!mLog.matches())
+                    {
+                        errorReporter.logWarning("stdErr: %s", stdErr);
+                    }
+                    else if (mLog.group(1).contains(FIRST_SOCAT_CONNECT_MSG))
+                    {
+                        waitForConnDeque.offer(true);
+                    }
                     if (stdErr.contains(ALREADY_IN_USE))
                     {
                         alreadyInUse = true;
@@ -161,6 +231,8 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
                 );
             }
         }
+        // just in case this wasn't stopped yet
+        waitForConnDeque.offer(false);
         if (runAfterTermination && !afterTerminationCalled)
         {
             afterTermination.accept(false, null);
@@ -185,6 +257,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
             thread.interrupt();
         }
         deque.addFirst(new PoisonEvent());
+        waitForConnDeque.offer(false);
     }
 
     @Override

@@ -11,7 +11,6 @@ import com.linbit.linstor.core.CoreModule.RemoteMap;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltConnTracker;
 import com.linbit.linstor.core.StltSecurityObjects;
-import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote.RemoteType;
@@ -33,13 +32,12 @@ import java.util.function.BiConsumer;
 public class BackupShippingL2LService extends AbsBackupShippingService
 {
     public static final String SERVICE_INFO = "BackupShippingL2LService";
-    private StltExtToolsChecker extToolsChecker;
+    private static final int RESTORE_TIMEOUT_MS = 300_000;
 
     @Inject
     public BackupShippingL2LService(
         ErrorReporter errorReporterRef,
         ExtCmdFactory extCmdFactoryRef,
-        StltExtToolsChecker extToolsCheckerRef,
         ControllerPeerConnector controllerPeerConnectorRef,
         CtrlStltSerializer interComSerializerRef,
         @SystemContext AccessContext accCtxRef,
@@ -64,7 +62,6 @@ public class BackupShippingL2LService extends AbsBackupShippingService
             remoteMapRef,
             lockGuardFactoryRef
         );
-        extToolsChecker = extToolsCheckerRef;
     }
 
     @Override
@@ -77,7 +74,7 @@ public class BackupShippingL2LService extends AbsBackupShippingService
 
         StringBuilder cmdBuilder = new StringBuilder()
             .append("set -o pipefail; ")
-            .append("socat TCP-LISTEN:")
+            .append("socat -dd TCP-LISTEN:")
             .append(ports.get(snapVlmDataRef.getVlmNr() + snapVlmDataRef.getRscLayerObject().getResourceNameSuffix()))
             .append(" STDOUT | ");
         if (useZstd)
@@ -133,7 +130,8 @@ public class BackupShippingL2LService extends AbsBackupShippingService
             backupNameRef,
             fullCommandRef,
             portRef,
-            postActionRef
+            postActionRef,
+            restoreRef ? RESTORE_TIMEOUT_MS : null
         );
     }
 
