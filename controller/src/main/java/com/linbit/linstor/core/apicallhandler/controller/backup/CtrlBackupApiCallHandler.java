@@ -1084,10 +1084,16 @@ public class CtrlBackupApiCallHandler
         {
             Collection<Snapshot> snaps = snapDfn.getAllSnapshots(peerAccCtx.get());
             boolean abort = false;
+            boolean isSource = false;
+            boolean isTarget = false;
             for (Snapshot snap : snaps)
             {
-                boolean crt = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE) && create;
-                boolean rst = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET) && restore;
+                boolean tmp = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
+                isSource |= tmp;
+                boolean crt = tmp && create;
+                tmp = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
+                isTarget |= tmp;
+                boolean rst = tmp && restore;
                 if (crt && remoteNameRef != null)
                 {
                     String remoteName = snap.getProps(peerAccCtx.get())
@@ -1105,6 +1111,12 @@ public class CtrlBackupApiCallHandler
                     abort = true;
                     break;
                 }
+            }
+            if (!isSource && create && !isTarget)
+            {
+                // BACKUP_SOURCE is set in a later transaction than SHIPPING, therefore we need to abort in this case if
+                // we want to abort creates.
+                snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
             }
             if (abort)
             {
