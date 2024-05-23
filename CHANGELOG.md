@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - SkipDisk: layers below DRBD now get ignored to prevent errors on the satellites
+- ReconnectorTask,EventProcessor: Attempt to fix possible deadlocks while having many connections/requests
 
 ## [1.27.1] - 2024-04-25
 

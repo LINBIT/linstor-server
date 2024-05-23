@@ -290,21 +290,26 @@ public class ReconnectorTask implements Task
                     Node node = config.peer.getNode();
                     if (node != null && !node.isDeleted())
                     {
-                        TransactionMgr transMgr = null;
-                        try (LockGuard ignore = lockGuardFactory
-                            .create()
+                        // transactionMgr MUST be started before taking any linstor locks in order to avoid a deadlock
+                        // with database internal locks
+                        // worst case scenario: since we just checked if the node is already deleted (outside of any
+                        // lock... which is not great, but should be fine), all that might happen between now and when
+                        // we have acquired the lock is that the node gets deleted. In that case, we still have a second
+                        // check within the try (with locks) to deal with that situation, so we can also return the
+                        // (unnecessarily created) transaction immediately again
+                        TransactionMgr transMgr = transactionMgrGenerator.startTransaction();
+                        try (LockGuard ignore = lockGuardFactory.create()
                             .read(CTRL_CONFIG)
                             .write(NODES_MAP)
                             .build();
                             LinStorScope.ScopeAutoCloseable close = reconnScope.enter()
                         )
                         {
-                            reconnScope.seed(Key.get(AccessContext.class, PeerContext.class), apiCtx);
                             // another check needed to detect race conditions (someone could have called node.delete()
                             // while we were waiting for the lock)
                             if (!node.isDeleted())
                             {
-                                transMgr = transactionMgrGenerator.startTransaction();
+                                reconnScope.seed(Key.get(AccessContext.class, PeerContext.class), apiCtx);
                                 TransactionMgrUtil.seedTransactionMgr(reconnScope, transMgr);
 
                                 // look for another netIf configured as satellite connection and set it as active
@@ -329,17 +334,16 @@ public class ReconnectorTask implements Task
                         }
                         finally
                         {
-                            if (transMgr != null)
+                            try
                             {
-
-                                try
-                                {
-                                    transMgr.rollback();
-                                }
-                                catch (TransactionException exc)
-                                {
-                                    errorReporter.reportError(exc);
-                                }
+                                transMgr.rollback();
+                            }
+                            catch (TransactionException exc)
+                            {
+                                errorReporter.reportError(exc);
+                            }
+                            finally
+                            {
                                 transMgr.returnConnection();
                             }
                         }
