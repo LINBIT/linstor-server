@@ -63,9 +63,14 @@ public class SatelliteResourceState
         inUse = value;
     }
 
-    public boolean isReady(Collection<Integer> expectedOnlineNodeIds)
+    /**
+     * Check if resource is ready and connected to the given node ids
+     * @param expectedDiskfulOnlineNodeIds Should only contain diskfull node ids
+     * @return true if resource connected and ready
+     */
+    public boolean isReady(Collection<Integer> expectedDiskfulOnlineNodeIds)
     {
-        return isReady && ResourceState.allExpectedPeersOnline(expectedOnlineNodeIds, peersConnected);
+        return isReady && ResourceState.allExpectedPeersOnline(expectedDiskfulOnlineNodeIds, peersConnected);
     }
 
     public void setIsReady(Boolean value)

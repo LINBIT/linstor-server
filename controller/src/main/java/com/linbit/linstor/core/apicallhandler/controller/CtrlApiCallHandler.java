@@ -1273,14 +1273,130 @@ public class CtrlApiCallHandler
         return rscDfnApi.getLayerData().stream().anyMatch(pair -> pair.objA.equalsIgnoreCase(kind.getValue()));
     }
 
+    private static Map<String, Integer> getExpectedOnlineDiskfulNodeIds(ResourceList rscs)
+    {
+        Map<String, Integer> diskfulExpectedOnlineNodeIds = new HashMap<>();
+        for (ResourceApi resourceApi : rscs.getResources())
+        {
+            // if DRBD is involved, it has to be the topmost layer if it exists in the
+            // layer-tree
+            RscLayerDataApi rootLayerData = resourceApi.getLayerData();
+            if (rootLayerData.getLayerKind().equals(DeviceLayerKind.DRBD) && !resourceApi.isDRBDDiskless())
+            {
+                diskfulExpectedOnlineNodeIds.put(
+                    resourceApi.getNodeName().toLowerCase(),
+                    ((DrbdRscPojo) rootLayerData).getNodeId()
+                );
+            }
+        }
+        return diskfulExpectedOnlineNodeIds;
+    }
+
+    private ApiConsts.CloneStatus cloneCheckRscDfn(ResourceDefinitionApi cloneRscDfn, ResourceList rscs)
+        throws InvalidNameException
+    {
+        ResourceName rscCloneName = new ResourceName(cloneRscDfn.getResourceName());
+        ApiConsts.CloneStatus status = ApiConsts.CloneStatus.CLONING;
+        if ((cloneRscDfn.getFlags() & CLONING.flagValue) != CLONING.flagValue)
+        {
+            boolean isReady = true;
+            boolean anyFailed = false;
+
+            // if DRBD is involved wait for all resources to be ready
+            if (containsLayerKind(cloneRscDfn, ApiConsts.DeviceLayerKind.DRBD))
+            {
+                if (rscs.getSatelliteStates().size() >= rscs.getResources().size())
+                {
+                    Map<String, Integer> diskfulExpectedOnlineNodeIds = getExpectedOnlineDiskfulNodeIds(rscs);
+
+                    final Set<String> nodeNames = rscs.getResources().stream()
+                        .map(r -> r.getNodeName().toLowerCase())
+                        .collect(Collectors.toSet());
+
+                    for (Map.Entry<NodeName, SatelliteState> entry : rscs.getSatelliteStates().entrySet())
+                    {
+                        // Ignore non resource nodes
+                        String lowerCaseNodeName = entry.getKey().displayValue.toLowerCase();
+                        if (nodeNames.contains(lowerCaseNodeName))
+                        {
+                            Map<String, Integer> expectedOnlineNodeIds = new HashMap<>(
+                                diskfulExpectedOnlineNodeIds
+                            );
+                            expectedOnlineNodeIds.remove(lowerCaseNodeName);
+
+                            SatelliteState stltState = entry.getValue();
+                            SatelliteResourceState rscState =
+                                stltState.getResourceStates().get(rscCloneName);
+
+                            if (rscState == null)
+                            {
+                                isReady = false;
+                                break;
+
+                            }
+                            if (!rscState.isReady(expectedOnlineNodeIds.values()))
+                            {
+                                isReady = false;
+
+                                anyFailed = rscState.getConnectionStates().values()
+                                    .stream()
+                                    .flatMap(f -> f.values().stream())
+                                    .anyMatch("StandAlone"::equalsIgnoreCase);
+
+                                if (anyFailed)
+                                {
+                                    break;
+                                }
+
+                                boolean allDrbdConnected = rscState.getConnectionStates().values()
+                                    .stream()
+                                    .flatMap(f -> f.values().stream())
+                                    .allMatch("Connected"::equalsIgnoreCase);
+
+                                if (allDrbdConnected)
+                                {
+                                    anyFailed = rscState.getVolumeStates().values().stream().anyMatch(
+                                        vlmState ->
+                                            vlmState.getDiskState().equalsIgnoreCase("Inconsistent") ||
+                                                vlmState.getDiskState().equalsIgnoreCase("Outdated")
+                                    );
+                                    if (anyFailed)
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    isReady = false;
+                }
+            }
+
+            if (isReady)
+            {
+                status = ApiConsts.CloneStatus.COMPLETE;
+            }
+            else
+            {
+                if (anyFailed)
+                {
+                    status = ApiConsts.CloneStatus.FAILED;
+                }
+            }
+        }
+        return status;
+    }
+
     public ApiConsts.CloneStatus isCloneReady(
         String cloneName
     )
     {
-        ApiConsts.CloneStatus status = ApiConsts.CloneStatus.CLONING;
+        ApiConsts.CloneStatus status;
         try (LockGuard ignored = lockGuardFactory.build(READ, NODES_MAP, RSC_DFN_MAP))
         {
-            ResourceName rscCloneName = new ResourceName(cloneName);
             ArrayList<ResourceDefinitionApi> clonedResources = this.listResourceDefinitions(
                 Collections.singletonList(cloneName),
                 Collections.singletonList(InternalApiConsts.KEY_CLONED_FROM));
@@ -1302,109 +1418,7 @@ public class CtrlApiCallHandler
                 }
                 else
                 {
-                    if ((cloneRscDfn.getFlags() & CLONING.flagValue) != CLONING.flagValue)
-                    {
-                        boolean isReady = true;
-                        boolean anyFailed = false;
-
-                        // if DRBD is involved wait for all resources to be ready
-                        if (containsLayerKind(cloneRscDfn, ApiConsts.DeviceLayerKind.DRBD))
-                        {
-                            if (rscs.getSatelliteStates().size() >= rscs.getResources().size())
-                            {
-                                Map<String, Integer> allExpectedOnlineNodeIds = new HashMap<>();
-                                for (ResourceApi resourceApi : rscs.getResources())
-                                {
-                                    // if DRBD is involved, it has to be the topmost layer if it exists in the
-                                    // layer-tree
-                                    RscLayerDataApi rootLayerData = resourceApi.getLayerData();
-                                    if (rootLayerData.getLayerKind().equals(DeviceLayerKind.DRBD))
-                                    {
-                                        allExpectedOnlineNodeIds.put(
-                                            resourceApi.getNodeName().toLowerCase(),
-                                            ((DrbdRscPojo) rootLayerData).getNodeId()
-                                        );
-                                    }
-                                }
-
-                                final Set<String> nodeNames = rscs.getResources().stream()
-                                    .map(r -> r.getNodeName().toLowerCase())
-                                    .collect(Collectors.toSet());
-
-                                for (Map.Entry<NodeName, SatelliteState> entry : rscs.getSatelliteStates().entrySet())
-                                {
-                                    // Ignore non resource nodes
-                                    String lowerCaseNodeName = entry.getKey().displayValue.toLowerCase();
-                                    if (nodeNames.contains(lowerCaseNodeName))
-                                    {
-                                        Map<String, Integer> expectedOnlineNodeIds = new HashMap<>(
-                                            allExpectedOnlineNodeIds
-                                        );
-                                        expectedOnlineNodeIds.remove(lowerCaseNodeName);
-
-                                        SatelliteState stltState = entry.getValue();
-                                        SatelliteResourceState rscState =
-                                            stltState.getResourceStates().get(rscCloneName);
-
-                                        if (rscState == null)
-                                        {
-                                            isReady = false;
-                                            break;
-
-                                        }
-                                        if (!rscState.isReady(expectedOnlineNodeIds.values()))
-                                        {
-                                            isReady = false;
-
-                                            anyFailed = rscState.getConnectionStates().values()
-                                                .stream()
-                                                .flatMap(f -> f.values().stream())
-                                                .anyMatch("StandAlone"::equalsIgnoreCase);
-
-                                            if (anyFailed)
-                                            {
-                                                break;
-                                            }
-
-                                            boolean allDrbdConnected = rscState.getConnectionStates().values()
-                                                .stream()
-                                                .flatMap(f -> f.values().stream())
-                                                .allMatch("Connected"::equalsIgnoreCase);
-
-                                            if (allDrbdConnected)
-                                            {
-                                                anyFailed = rscState.getVolumeStates().values().stream().anyMatch(
-                                                    vlmState ->
-                                                        vlmState.getDiskState().equalsIgnoreCase("Inconsistent") ||
-                                                        vlmState.getDiskState().equalsIgnoreCase("Outdated")
-                                                );
-                                                if (anyFailed)
-                                                {
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                isReady = false;
-                            }
-                        }
-
-                        if (isReady)
-                        {
-                            status = ApiConsts.CloneStatus.COMPLETE;
-                        }
-                        else
-                        {
-                            if (anyFailed)
-                            {
-                                status = ApiConsts.CloneStatus.FAILED;
-                            }
-                        }
-                    }
+                    status = cloneCheckRscDfn(cloneRscDfn, rscs);
                 }
             }
             else
