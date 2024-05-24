@@ -4,6 +4,7 @@ import com.linbit.linstor.core.BackgroundRunner;
 import com.linbit.linstor.core.BackgroundRunner.RunConfig;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
+import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 
@@ -32,9 +33,10 @@ public class StltRemoteCleanupTask implements TaskScheduleService.Task
     @Override
     public long run(long scheduledAtRef)
     {
+        Snapshot srcSnapshot = data.getSrcSnapshot();
         backgroundRunner.runInBackground(
             new RunConfig<>(
-                "cleanup backup shipping of " + (data.srcSnapshot.isDeleted() ? " deleted snapshot" : data.srcSnapshot),
+                "cleanup backup shipping of " + (srcSnapshot.isDeleted() ? " deleted snapshot" : srcSnapshot),
                 backupL2LSrcApiCallHandler.startQueueIfReady(data.getStltRemote(), false),
                 accCtx,
                 Collections.emptyList(),

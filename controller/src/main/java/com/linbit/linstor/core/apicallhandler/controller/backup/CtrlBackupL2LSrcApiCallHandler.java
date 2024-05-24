@@ -17,12 +17,12 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
-import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveDoneRequest;
-import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingReceiveRequest;
-import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequest;
-import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequestPrevSnap;
-import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponse;
-import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponsePrevSnap;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingReceiveDoneRequest;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingReceiveRequest;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingRequest;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingRequestPrevSnap;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponse;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponsePrevSnap;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -1021,12 +1021,12 @@ public class CtrlBackupL2LSrcApiCallHandler
 
     public class BackupShippingData
     {
-        public final String srcClusterId;
-        public String srcNodeName;
+        private final String srcClusterId;
+        private String srcNodeName;
         private final String srcRscName;
         private final String srcBackupName;
         private final Date now;
-        public Snapshot srcSnapshot;
+        private Snapshot srcSnapshot;
         private final LinstorRemote linstorRemote;
         private boolean useZstd;
         private boolean downloadOnly;
@@ -1034,17 +1034,17 @@ public class CtrlBackupL2LSrcApiCallHandler
         private boolean allowIncremental;
 
         private BackupMetaDataPojo metaDataPojo;
-        public final String dstRscName;
-        public String dstNodeName;
+        private final String dstRscName;
+        private String dstNodeName;
         private String dstNetIfName;
         private String dstStorPool;
         private final Map<String, String> storPoolRename;
         private String scheduleName;
 
         private StltRemote stltRemote;
-        public boolean resetData;
-        public String dstBaseSnapName;
-        public String dstActualNodeName;
+        private boolean resetData;
+        private String dstBaseSnapName;
+        private String dstActualNodeName;
 
         BackupShippingData(
             String srcClusterIdRef,
@@ -1084,6 +1084,186 @@ public class CtrlBackupL2LSrcApiCallHandler
         public StltRemote getStltRemote()
         {
             return stltRemote;
+        }
+
+        public String getSrcClusterId()
+        {
+            return srcClusterId;
+        }
+
+        public String getSrcNodeName()
+        {
+            return srcNodeName;
+        }
+
+        public String getSrcRscName()
+        {
+            return srcRscName;
+        }
+
+        public String getSrcBackupName()
+        {
+            return srcBackupName;
+        }
+
+        public Date getNow()
+        {
+            return now;
+        }
+
+        public Snapshot getSrcSnapshot()
+        {
+            return srcSnapshot;
+        }
+
+        public LinstorRemote getLinstorRemote()
+        {
+            return linstorRemote;
+        }
+
+        public boolean isUseZstd()
+        {
+            return useZstd;
+        }
+
+        public boolean isDownloadOnly()
+        {
+            return downloadOnly;
+        }
+
+        public boolean isForceRestore()
+        {
+            return forceRestore;
+        }
+
+        public boolean isAllowIncremental()
+        {
+            return allowIncremental;
+        }
+
+        public BackupMetaDataPojo getMetaDataPojo()
+        {
+            return metaDataPojo;
+        }
+
+        public String getDstRscName()
+        {
+            return dstRscName;
+        }
+
+        public String getDstNodeName()
+        {
+            return dstNodeName;
+        }
+
+        public String getDstNetIfName()
+        {
+            return dstNetIfName;
+        }
+
+        public String getDstStorPool()
+        {
+            return dstStorPool;
+        }
+
+        public Map<String, String> getStorPoolRename()
+        {
+            return storPoolRename;
+        }
+
+        public String getScheduleName()
+        {
+            return scheduleName;
+        }
+
+        public boolean isResetData()
+        {
+            return resetData;
+        }
+
+        public String getDstBaseSnapName()
+        {
+            return dstBaseSnapName;
+        }
+
+        public String getDstActualNodeName()
+        {
+            return dstActualNodeName;
+        }
+
+        public void setSrcNodeName(String srcNodeNameRef)
+        {
+            srcNodeName = srcNodeNameRef;
+        }
+
+        public void setSrcSnapshot(Snapshot srcSnapshotRef)
+        {
+            srcSnapshot = srcSnapshotRef;
+        }
+
+        public void setUseZstd(boolean useZstdRef)
+        {
+            useZstd = useZstdRef;
+        }
+
+        public void setDownloadOnly(boolean downloadOnlyRef)
+        {
+            downloadOnly = downloadOnlyRef;
+        }
+
+        public void setForceRestore(boolean forceRestoreRef)
+        {
+            forceRestore = forceRestoreRef;
+        }
+
+        public void setAllowIncremental(boolean allowIncrementalRef)
+        {
+            allowIncremental = allowIncrementalRef;
+        }
+
+        public void setMetaDataPojo(BackupMetaDataPojo metaDataPojoRef)
+        {
+            metaDataPojo = metaDataPojoRef;
+        }
+
+        public void setDstNodeName(String dstNodeNameRef)
+        {
+            dstNodeName = dstNodeNameRef;
+        }
+
+        public void setDstNetIfName(String dstNetIfNameRef)
+        {
+            dstNetIfName = dstNetIfNameRef;
+        }
+
+        public void setDstStorPool(String dstStorPoolRef)
+        {
+            dstStorPool = dstStorPoolRef;
+        }
+
+        public void setScheduleName(String scheduleNameRef)
+        {
+            scheduleName = scheduleNameRef;
+        }
+
+        public void setStltRemote(StltRemote stltRemoteRef)
+        {
+            stltRemote = stltRemoteRef;
+        }
+
+        public void setResetData(boolean resetDataRef)
+        {
+            resetData = resetDataRef;
+        }
+
+        public void setDstBaseSnapName(String dstBaseSnapNameRef)
+        {
+            dstBaseSnapName = dstBaseSnapNameRef;
+        }
+
+        public void setDstActualNodeName(String dstActualNodeNameRef)
+        {
+            dstActualNodeName = dstActualNodeNameRef;
         }
     }
 }

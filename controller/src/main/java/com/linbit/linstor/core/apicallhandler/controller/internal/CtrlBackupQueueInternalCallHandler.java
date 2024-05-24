@@ -19,8 +19,8 @@ import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiHel
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupCreateApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingRestClient;
-import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRequestPrevSnap;
-import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingResponsePrevSnap;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingRequestPrevSnap;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponsePrevSnap;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Snapshot;
@@ -431,10 +431,10 @@ public class CtrlBackupQueueInternalCallHandler
             restClient.sendPrevSnapRequest(
                 new BackupShippingRequestPrevSnap(
                     LinStor.VERSION_INFO_PROVIDER.getSemanticVersion(),
-                    current.l2lData.srcClusterId,
-                    current.l2lData.dstRscName,
+                    current.l2lData.getSrcClusterId(),
+                    current.l2lData.getDstRscName(),
                     srcSnapDfnUuids,
-                    current.l2lData.dstNodeName
+                    current.l2lData.getDstNodeName()
                 ),
                 (LinstorRemote) current.remote,
                 sysCtx
@@ -469,9 +469,9 @@ public class CtrlBackupQueueInternalCallHandler
             }
             else
             {
-                next.l2lData.resetData = resp.resetData;
-                next.l2lData.dstBaseSnapName = resp.dstBaseSnapName;
-                next.l2lData.dstActualNodeName = resp.dstActualNodeName;
+                next.l2lData.setResetData(resp.resetData);
+                next.l2lData.setDstBaseSnapName(resp.dstBaseSnapName);
+                next.l2lData.setDstActualNodeName(resp.dstActualNodeName);
                 SnapshotDefinition l2lPrevSnapDfn = backupCrtHandler.getIncrementalBaseL2L(
                     next.snapDfn.getResourceDefinition(),
                     resp.prevSnapUuid,
@@ -491,8 +491,10 @@ public class CtrlBackupQueueInternalCallHandler
                 );
                 if (l2lNodeForShipping != null)
                 {
-                    next.l2lData.srcSnapshot = next.snapDfn.getSnapshot(peerAccCtx.get(), l2lNodeForShipping.getName());
-                    next.l2lData.srcNodeName = l2lNodeForShipping.getName().displayValue;
+                    next.l2lData.setSrcSnapshot(
+                        next.snapDfn.getSnapshot(peerAccCtx.get(), l2lNodeForShipping.getName())
+                    );
+                    next.l2lData.setSrcNodeName(l2lNodeForShipping.getName().displayValue);
                     final Node nodeForEffectivelyFinal = l2lNodeForShipping;
                     ret = backupCrtHandler.startShippingInTransaction(
                         next.snapDfn,
