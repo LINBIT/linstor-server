@@ -827,6 +827,14 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         Snapshot snap = snapVlm.getVolume().getAbsResource();
         StateFlags<Snapshot.Flags> snapFlags = snap.getFlags();
         StateFlags<SnapshotDefinition.Flags> snapDfnFlags = snap.getSnapshotDefinition().getFlags();
+        /*
+         * backupShippingService might be null if the snapshot does not have the
+         * ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE
+         * property set
+         * but in the cases where backupShippingService is null, the checked flags should
+         * also be unset, preventing NPE
+         */
+        @Nullable AbsBackupShippingService backupShippingService = backupShipMapper.getService(snapVlm);
         if (snapVlm.getVolume().getAbsResource().getTakeSnapshot(storDriverAccCtx))
         {
             if (vlmData == null && !snapFlags.isSet(storDriverAccCtx, Snapshot.Flags.BACKUP_TARGET))
@@ -920,15 +928,6 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                 finishShipReceiving(vlmData, snapVlm);
             }
 
-            /*
-             * backupShippingService might be null if the snapshot does not have the
-             * ApiConsts.NAMESPC_BACKUP_SHIPPING + "/" + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE
-             * property set
-             *
-             * but in the cases where backupShippingService is null, the checked flags should
-             * also be unset, preventing NPE
-             */
-            @Nullable AbsBackupShippingService backupShippingService = backupShipMapper.getService(snapVlm);
             if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.SHIPPING_ABORT) &&
                 backupShippingService != null)
             {
@@ -962,6 +961,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
                     }
                 }
             }
+        }
+        // do either way, but after take-snapshot, so that daemon does already exist
+        if (snapDfnFlags.isSet(storDriverAccCtx, SnapshotDefinition.Flags.PREPARE_SHIPPING_ABORT) &&
+            backupShippingService != null && !backupShippingService.alreadyFinished(snapVlm))
+        {
+            backupShippingService.setPrepareAbort(snap);
         }
     }
 

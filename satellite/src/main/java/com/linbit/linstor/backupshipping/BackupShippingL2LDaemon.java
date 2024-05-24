@@ -29,6 +29,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
         "\\d{4}(?:[/|:| ]\\d{2}){5} socat\\[\\d+\\] N (.*)"
     );
 
+    private final Object syncObj = new Object();
     private final ErrorReporter errorReporter;
     private final Thread thread;
     private final LinkedBlockingDeque<Boolean> waitForConnDeque;
@@ -38,12 +39,13 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     private final LinkedBlockingDeque<Event> deque;
     private final DaemonHandler handler;
 
+    private final BiConsumer<Boolean, Integer> afterTermination;
     private final Integer port;
 
     private boolean started = false;
+    private boolean shutdown = false;
     private boolean alreadyInUse = false;
-
-    private final BiConsumer<Boolean, Integer> afterTermination;
+    private boolean prepareAbort = false;
     private boolean runAfterTermination = false;
 
     public BackupShippingL2LDaemon(
@@ -107,42 +109,56 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
             {
                 if (started)
                 {
-                    errorReporter.reportError(new ImplementationError(exc));
+                    reportError(new ImplementationError(exc));
                 }
             }
+        }
+    }
+
+    private void reportError(Throwable exc)
+    {
+        if (!prepareAbort)
+        {
+            errorReporter.reportError(exc);
+        }
+        else
+        {
+            errorReporter.logDebug("Waiting for abort, ignoring error %s", exc.getMessage());
         }
     }
 
     @Override
     public String start()
     {
-        started = true;
-        thread.start();
-        if (timeoutInMs != null)
+        synchronized (syncObj)
         {
-            new Thread(thread.getThreadGroup(), this::waitForConn, "waitForConn" + thread.getName())
-                .start();
+            started = true;
+            thread.start();
+            if (timeoutInMs != null)
+            {
+                new Thread(thread.getThreadGroup(), this::waitForConn, "waitForConn" + thread.getName())
+                    .start();
+            }
+            try
+            {
+                handler.startDelimited();
+            }
+            catch (IOException exc)
+            {
+                reportError(
+                    new SystemServiceStartException(
+                        "Unable to daemon for SnapshotShipping",
+                        "I/O error attempting to start '" + Arrays.toString(command) + "'",
+                        exc.getMessage(),
+                        null,
+                        null,
+                        exc,
+                        false
+                    )
+                );
+                shutdown(false);
+            }
         }
-        try
-        {
-            handler.startDelimited();
-        }
-        catch (IOException exc)
-        {
-            errorReporter.reportError(
-                new SystemServiceStartException(
-                    "Unable to daemon for SnapshotShipping",
-                    "I/O error attempting to start '" + Arrays.toString(command) + "'",
-                    exc.getMessage(),
-                    null,
-                    null,
-                    exc,
-                    false
-                )
-            );
-            shutdown(false);
-        }
-
         return null;
     }
 
@@ -172,7 +188,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
                     {
                         errorReporter.logWarning("stdErr: %s", stdErr);
                     }
-                    else if (mLog.group(1).contains(FIRST_SOCAT_CONNECT_MSG))
+                    else if (timeoutInMs != null && mLog.group(1).contains(FIRST_SOCAT_CONNECT_MSG))
                     {
                         waitForConnDeque.offer(true);
                     }
@@ -185,7 +201,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
                 if (event instanceof ExceptionEvent)
                 {
                     errorReporter.logTrace("ExceptionEvent in '%s':", Arrays.toString(command));
-                    errorReporter.reportError(((ExceptionEvent) event).exc);
+                    reportError(((ExceptionEvent) event).exc);
                     // FIXME: Report the exception to the controller
                 }
                 else
@@ -218,12 +234,12 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
             {
                 if (started)
                 {
-                    errorReporter.reportError(new ImplementationError(exc));
+                    reportError(exc);
                 }
             }
             catch (Exception exc)
             {
-                errorReporter.reportError(
+                reportError(
                     new ImplementationError(
                         "Unknown exception occurred while executing '" + Arrays.toString(command) + "'",
                         exc
@@ -231,8 +247,11 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
                 );
             }
         }
-        // just in case this wasn't stopped yet
-        waitForConnDeque.offer(false);
+        if (timeoutInMs != null)
+        {
+            // just in case this wasn't stopped yet
+            waitForConnDeque.offer(false);
+        }
         if (runAfterTermination && !afterTerminationCalled)
         {
             afterTermination.accept(false, null);
@@ -251,13 +270,17 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     {
         runAfterTermination = runAfterTerminationRef;
         started = false;
+        shutdown = true;
         handler.stop(false);
         if (thread != null)
         {
             thread.interrupt();
         }
         deque.addFirst(new PoisonEvent());
-        waitForConnDeque.offer(false);
+        if (timeoutInMs != null)
+        {
+            waitForConnDeque.offer(false);
+        }
     }
 
     @Override
@@ -266,6 +289,25 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
         if (thread != null)
         {
             thread.join(timeoutRef);
+        }
+    }
+
+    @Override
+    public void setPrepareAbort()
+    {
+        synchronized (syncObj)
+        {
+            if (!shutdown)
+            {
+                if (!started)
+                {
+                    afterTermination.accept(false, null);
+                }
+                else
+                {
+                    prepareAbort = true;
+                }
+            }
         }
     }
 }

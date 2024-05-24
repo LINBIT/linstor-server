@@ -430,4 +430,10 @@ public class BackupShippingS3Daemon implements Runnable, BackupShippingDaemon
             s3Thread.join(timeoutRef);
         }
     }
+
+    @Override
+    public void setPrepareAbort()
+    {
+        // not needed for S3
+    }
 }

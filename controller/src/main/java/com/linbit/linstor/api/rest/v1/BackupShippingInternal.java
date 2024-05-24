@@ -11,6 +11,7 @@ import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LDstApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingPrepareAbortRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingReceiveDoneRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingRequest;
@@ -314,6 +315,43 @@ public class BackupShippingInternal
             );
         }
         ApiCallRcRestUtils.mapToMonoResponse(responses).subscribe(asyncResponse::resume);
+    }
+
+    @POST
+    @Path("requestPrepareAbort")
+    public void internalRequestPrepareAbort(
+        @Context Request request,
+        @Suspended final AsyncResponse asyncResponse,
+        String jsonData
+    )
+    {
+        Flux<ApiCallRc> responses;
+        BackupShippingPrepareAbortRequest prepareAbortRequest;
+        try
+        {
+            prepareAbortRequest = objectMapper.readValue(jsonData, BackupShippingPrepareAbortRequest.class);
+            responses = backupL2LDstApiCallHandler.prepareForAbort(prepareAbortRequest)
+                .contextWrite(
+                    requestHelper.createContext(InternalApiConsts.API_BACKUP_REST_PREPARE_ABORT, request)
+                );
+        }
+        catch (JsonProcessingException exc)
+        {
+            responses = Flux.just(
+                ApiCallRcImpl.singleApiCallRc(
+                    ApiConsts.FAIL_INVLD_REQUEST,
+                    "Failed to deserialize JSON",
+                    exc.getMessage()
+                )
+            );
+        }
+        requestHelper.doFlux(
+            asyncResponse,
+            ApiCallRcRestUtils.mapToMonoResponse(
+                responses,
+                Response.Status.OK
+            )
+        );
     }
 
     private String responseToJson(BackupShippingResponse responseRef)

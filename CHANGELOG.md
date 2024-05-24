@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ReconnectorTask,EventProcessor: Attempt to fix possible deadlocks while having many connections/requests
 - Clone: Fix clone waiting if there is more than one diskless resource
 - ToggleDisk: Fix toggle disk for resource spawned with diskles-on-remaining
+- Backups: Ensure snapshots can't be stuck in either sending or receiving, which would render them undeletable
 
 ## [1.27.1] - 2024-04-25
 

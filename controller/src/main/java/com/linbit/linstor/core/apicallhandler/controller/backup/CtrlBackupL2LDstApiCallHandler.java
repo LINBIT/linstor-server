@@ -20,11 +20,13 @@ import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlApiDataLoader;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
-import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingRestClient;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingPrepareAbortRequest;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRestClient;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponse;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponsePrevSnap;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
+import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
@@ -95,7 +97,7 @@ public class CtrlBackupL2LDstApiCallHandler
     private final SystemConfRepository systemConfRepository;
     private final CtrlApiDataLoader ctrlApiDataLoader;
     private final BackupInfoManager backupInfoMgr;
-    private final CtrlBackupL2LSrcApiCallHandler.BackupShippingRestClient backupShippingRestClient;
+    private final BackupShippingRestClient backupShippingRestClient;
     private final Provider<Peer> peerProvider;
     private final CtrlBackupApiHelper backupHelper;
 
@@ -698,6 +700,79 @@ public class CtrlBackupL2LDstApiCallHandler
         return flux;
     }
 
+    public Flux<ApiCallRc> prepareForAbort(
+        BackupShippingPrepareAbortRequest data
+    )
+    {
+        Flux<ApiCallRc> flux;
+        LinstorRemote srcRemote = loadLinstorRemote(data.srcClusterId);
+        ApiCallRcImpl rc = isClusterAllowedContact(data.srcVersion, data.srcClusterId, srcRemote);
+        if (rc != null)
+        {
+            flux = Flux.just(rc);
+        }
+        else
+        {
+            flux = scopeRunner.fluxInTransactionalScope(
+                "pepare for abort",
+                lockGuardFactory.create()
+                    .write(LockObj.RSC_DFN_MAP)
+                    .buildDeferred(),
+                () -> prepareForAbortInTransaction(data)
+            );
+        }
+        return flux;
+    }
+
+    private Flux<ApiCallRc> prepareForAbortInTransaction(BackupShippingPrepareAbortRequest data)
+    {
+        final String clusterHash = getSrcClusterShortId(data.srcClusterId);
+        ApiCallRcImpl responses = new ApiCallRcImpl();
+        Set<SnapshotDefinition> snapsToUpdate = new HashSet<>();
+        for (String snapName : data.snapNamesToAbort)
+        {
+            // no need to parse string into SnapshotName since the snap exists on src-cluster with that name
+            String fullSnapName = snapName + "_" + clusterHash;
+            SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(data.rscName, fullSnapName, false);
+            if (snapDfn != null)
+            {
+                try
+                {
+                    snapDfn.getFlags().enableFlags(apiCtx, SnapshotDefinition.Flags.PREPARE_SHIPPING_ABORT);
+                    snapsToUpdate.add(snapDfn);
+                }
+                catch (AccessDeniedException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+                catch (DatabaseException exc)
+                {
+                    throw new ApiDatabaseException(exc);
+                }
+            }
+        }
+        ctrlTransactionHelper.commit();
+        Flux<ApiCallRc> flux = Flux.empty();
+        for (SnapshotDefinition snapDfn : snapsToUpdate)
+        {
+            flux = flux.concatWith(
+                ctrlSatelliteUpdateCaller.updateSatellites(
+                    snapDfn,
+                    CtrlSatelliteUpdateCaller.notConnectedWarn()
+                )
+                    .transform(
+                        resp -> CtrlResponseUtils.combineResponses(
+                            errorReporter,
+                            resp,
+                            snapDfn.getResourceName(),
+                            "Preparing backup ''" + snapDfn.getName() + "'' of {1} on {0} for abort"
+                        )
+                    )
+            );
+        }
+        return flux.concatWith(Flux.just(responses));
+    }
+
     static class BackupShippingStartInfo
     {
         private final ApiCallRcWith<Snapshot> apiCallRcWithSnapshot;
@@ -711,6 +786,7 @@ public class CtrlBackupL2LDstApiCallHandler
             incrBaseSnapshot = incrBaseSnapshotRef;
         }
     }
+
 
     public class BackupShippingData
     {
@@ -780,4 +856,5 @@ public class CtrlBackupL2LDstApiCallHandler
             dstActualNodeName = dstActualNodeNameRef;
         }
     }
+
 }

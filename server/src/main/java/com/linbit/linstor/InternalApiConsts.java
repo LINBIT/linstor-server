@@ -154,6 +154,7 @@ public class InternalApiConsts
     public static final String KEY_BACKUP_NODE_ID_SEPERATOR = ",";
     public static final String API_BACKUP_REST_START_RECEIVING = "BackupRestStartReceiving";
     public static final String API_BACKUP_REST_RECEIVING_DONE = "BackupRestReceivingDone";
+    public static final String API_BACKUP_REST_PREPARE_ABORT = "BackupRestPrepareAbort";
     public static final String KEY_BACKUP_SHIP_PORT = "BackupShipPort";
     public static final String KEY_BACKUP_START_TIMESTAMP = "BackupStartTimestamp";
 

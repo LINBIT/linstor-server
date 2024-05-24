@@ -21,6 +21,7 @@ import com.linbit.linstor.api.pojo.backups.BackupPojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupS3Pojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVlmS3Pojo;
 import com.linbit.linstor.api.pojo.backups.BackupPojo.BackupVolumePojo;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.backupshipping.BackupConsts;
 import com.linbit.linstor.backupshipping.S3MetafileNameInfo;
 import com.linbit.linstor.backupshipping.S3VolumeNameInfo;
@@ -32,6 +33,8 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCa
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiHelper.S3ObjectInfo;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingPrepareAbortRequest;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRestClient;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
@@ -44,7 +47,9 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
+import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
@@ -72,6 +77,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -107,6 +113,7 @@ public class CtrlBackupApiCallHandler
     private final SystemConfProtectionRepository sysCfgRepo;
     private final ResourceDefinitionRepository rscDfnRepo;
     private final CtrlBackupApiHelper backupHelper;
+    private final BackupShippingRestClient backupClient;
 
     @Inject
     public CtrlBackupApiCallHandler(
@@ -124,7 +131,8 @@ public class CtrlBackupApiCallHandler
         BackupInfoManager backupInfoMgrRef,
         SystemConfProtectionRepository sysCfgRepoRef,
         ResourceDefinitionRepository rscDfnRepoRef,
-        CtrlBackupApiHelper backupHelperRef
+        CtrlBackupApiHelper backupHelperRef,
+        BackupShippingRestClient backupClientRef
     )
     {
         peerAccCtx = peerAccCtxRef;
@@ -142,6 +150,7 @@ public class CtrlBackupApiCallHandler
         sysCfgRepo = sysCfgRepoRef;
         rscDfnRepo = rscDfnRepoRef;
         backupHelper = backupHelperRef;
+        backupClient = backupClientRef;
     }
 
     public Flux<ApiCallRc> deleteBackup(
@@ -1038,7 +1047,7 @@ public class CtrlBackupApiCallHandler
     public Flux<ApiCallRc> backupAbort(String rscNameRef, boolean restore, boolean create, String remoteNameRef)
     {
         return scopeRunner.fluxInTransactionalScope(
-            "abort backup",
+            "prepare for abort backup",
             lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
             () -> backupAbortInTransaction(rscNameRef, restore, create, remoteNameRef)
         );
@@ -1056,7 +1065,7 @@ public class CtrlBackupApiCallHandler
     )
         throws AccessDeniedException, DatabaseException, InvalidNameException
     {
-        Flux<ApiCallRc> flux = null;
+        Flux<ApiCallRc> flux = Flux.empty();
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
         AbsRemote remote = ctrlApiDataLoader.loadRemote(remoteNameRef, true);
         // immediately remove any queued snapshots
@@ -1065,71 +1074,154 @@ public class CtrlBackupApiCallHandler
             backupInfoMgr.deleteFromQueue(snapDfn, remote);
         }
         Set<SnapshotDefinition> snapDfns = backupHelper.getInProgressBackups(rscDfn);
-        if (snapDfns.isEmpty())
+        if (!snapDfns.isEmpty())
         {
-            flux = Flux.empty();
-        }
-
-        boolean restore = restorePrm;
-        boolean create = createPrm;
-        if (!restore && !create)
-        {
-            restore = true;
-            create = true;
-        }
-
-        Flux<Tuple2<NodeName, Flux<ApiCallRc>>> updateStlts = Flux.empty();
-        List<SnapshotDefinition> snapDfnsToUpdate = new ArrayList<>();
-        for (SnapshotDefinition snapDfn : snapDfns)
-        {
-            Collection<Snapshot> snaps = snapDfn.getAllSnapshots(peerAccCtx.get());
-            boolean abort = false;
-            boolean isSource = false;
-            boolean isTarget = false;
-            for (Snapshot snap : snaps)
+            boolean restore = restorePrm;
+            boolean create = createPrm;
+            if (!restore && !create)
             {
-                boolean tmp = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
-                isSource |= tmp;
-                boolean crt = tmp && create;
-                tmp = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
-                isTarget |= tmp;
-                boolean rst = tmp && restore;
-                if (crt && remoteNameRef != null)
+                restore = true;
+                create = true;
+            }
+
+            Set<SnapshotDefinition> snapDfnsToUpdateOnlyShipping = new HashSet<>();
+            Set<SnapshotDefinition> snapDfnsToUpdateShippingAbort = new HashSet<>();
+            Set<String> snapNamesToUpdateShippingAbort = new HashSet<>();
+            for (SnapshotDefinition snapDfn : snapDfns)
+            {
+                Collection<Snapshot> snaps = snapDfn.getAllSnapshots(peerAccCtx.get());
+                boolean abort = false;
+                boolean isSource = false;
+                boolean isTarget = false;
+                for (Snapshot snap : snaps)
                 {
-                    String remoteName = snap.getProps(peerAccCtx.get())
-                        .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                    crt = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
+                    boolean tmp = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
+                    isSource |= tmp;
+                    boolean crt = tmp && create;
+                    tmp = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
+                    isTarget |= tmp;
+                    boolean rst = tmp && restore;
+                    if (crt && remoteNameRef != null)
+                    {
+                        String remoteName = snap.getProps(peerAccCtx.get())
+                            .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        crt = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
+                    }
+                    if (rst && remoteNameRef != null)
+                    {
+                        String remoteName = snap.getProps(peerAccCtx.get())
+                            .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
+                        rst = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
+                    }
+                    if (crt || rst)
+                    {
+                        abort = true;
+                        break;
+                    }
                 }
-                if (rst && remoteNameRef != null)
+                if (!isSource && create && !isTarget)
                 {
-                    String remoteName = snap.getProps(peerAccCtx.get())
-                        .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                    rst = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
+                    // this can happen for l2l-shipments if the target-cluster fails to start the receive, since
+                    // BACKUP_SOURCE is set in a later transaction than SHIPPING, therefore we need to remove the
+                    // SHIPPING
+                    // flag if we are aborting creates (otherwise the snap is stuck unable to be aborted or deleted)
+                    snapDfnsToUpdateOnlyShipping.add(snapDfn);
                 }
-                if (crt || rst)
+                if (abort)
                 {
-                    abort = true;
-                    break;
+                    snapDfnsToUpdateShippingAbort.add(snapDfn);
+                    snapNamesToUpdateShippingAbort.add(snapDfn.getName().displayValue);
                 }
             }
-            if (!isSource && create && !isTarget)
+            if (!snapNamesToUpdateShippingAbort.isEmpty() && !(remote instanceof S3Remote))
             {
-                // BACKUP_SOURCE is set in a later transaction than SHIPPING, therefore we need to abort in this case if
-                // we want to abort creates.
-                snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+                if (remote instanceof StltRemote)
+                {
+                    remote = ctrlApiDataLoader.loadRemote(((StltRemote) remote).getLinstorRemoteName(), true);
+                }
+                String srcClusterId;
+                try
+                {
+                    srcClusterId = sysCfgRepo.getCtrlConfForView(sysCtx)
+                        .getProp(
+                            InternalApiConsts.KEY_CLUSTER_LOCAL_ID,
+                            ApiConsts.NAMESPC_CLUSTER
+                        );
+                }
+                catch (InvalidKeyException | AccessDeniedException exc)
+                {
+                    throw new ImplementationError(exc);
+                }
+                BackupShippingPrepareAbortRequest data = new BackupShippingPrepareAbortRequest(
+                    new ApiCallRcImpl(),
+                    srcClusterId,
+                    rscNameRef,
+                    snapNamesToUpdateShippingAbort,
+                    LinStor.VERSION_INFO_PROVIDER.getSemanticVersion()
+                );
+                LinstorRemote l2lRemote = (LinstorRemote) remote;
+                flux = backupClient.sendPrepareAbortRequest(data, l2lRemote, peerAccCtx.get())
+                    .map(Json::jsonToApiCallRc);
             }
-            if (abort)
-            {
-                snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
-                snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT);
-                snapDfnsToUpdate.add(snapDfn);
-            }
+            flux = flux.concatWith(
+                setFlagsAndAbort(
+                    snapDfnsToUpdateOnlyShipping,
+                    snapDfnsToUpdateShippingAbort,
+                    rscNameRef,
+                    create,
+                    restore
+                )
+            );
         }
+        return flux;
+    }
 
+    private Flux<ApiCallRc> setFlagsAndAbort(
+        Set<SnapshotDefinition> snapDfnsToUpdateOnlyShipping,
+        Set<SnapshotDefinition> snapDfnsToUpdateShippingAbort,
+        String rscName,
+        boolean create,
+        boolean restore
+    )
+    {
+        return scopeRunner.fluxInTransactionalScope(
+            "set flags and abort backup",
+            lockGuardFactory.create().read(LockObj.NODES_MAP).write(LockObj.RSC_DFN_MAP).buildDeferred(),
+            () -> setFlagsAndAbortInTransaction(
+                snapDfnsToUpdateOnlyShipping,
+                snapDfnsToUpdateShippingAbort,
+                rscName,
+                create,
+                restore
+            )
+        );
+    }
+
+    private Flux<ApiCallRc> setFlagsAndAbortInTransaction(
+        Set<SnapshotDefinition> snapDfnsToUpdateOnlyShipping,
+        Set<SnapshotDefinition> snapDfnsToUpdateShippingAbort,
+        String rscName,
+        boolean create,
+        boolean restore
+    ) throws AccessDeniedException, DatabaseException
+    {
+        for (SnapshotDefinition snapDfn : snapDfnsToUpdateOnlyShipping)
+        {
+            snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+        }
+        for (SnapshotDefinition snapDfn : snapDfnsToUpdateShippingAbort)
+        {
+            snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
+            snapDfn.getFlags().enableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING_ABORT);
+        }
         ctrlTransactionHelper.commit();
+
+        Set<SnapshotDefinition> snapDfnsToUpdate = new HashSet<>(snapDfnsToUpdateOnlyShipping);
+        snapDfnsToUpdate.addAll(snapDfnsToUpdateShippingAbort);
+        Flux<Tuple2<NodeName, Flux<ApiCallRc>>> flux = Flux.empty();
         for (SnapshotDefinition snapDfn : snapDfnsToUpdate)
         {
-            updateStlts = updateStlts.concatWith(
+            flux = flux.concatWith(
                 ctrlSatelliteUpdateCaller.updateSatellites(snapDfn, CtrlSatelliteUpdateCaller.notConnectedWarn())
             );
         }
@@ -1139,21 +1231,17 @@ public class CtrlBackupApiCallHandler
                 ((create && restore) ?
                     "in-progress backup-shipments and restores" :
                     (create ? "in-progress backup-shipments" : "in-progress backup-restores")) +
-                " of resource " + rscNameRef,
+                " of resource " + rscName,
             ApiConsts.MASK_SUCCESS
         );
-        if (flux == null)
-        {
-            flux = updateStlts.transform(
-                responses -> CtrlResponseUtils.combineResponses(
-                    errorReporter,
-                    responses,
-                    LinstorParsingUtils.asRscName(rscNameRef),
-                    "Abort backups of {1} on {0} started"
-                )
-            ).concatWith(Flux.just(success));
-        }
-        return flux;
+        return flux.transform(
+            responses -> CtrlResponseUtils.combineResponses(
+                errorReporter,
+                responses,
+                LinstorParsingUtils.asRscName(rscName),
+                "Abort backups of {1} on {0} started"
+            )
+        ).concatWith(Flux.just(success));
     }
 
     public Flux<BackupInfoPojo> backupInfo(

@@ -39,6 +39,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import java.io.IOException;
@@ -617,6 +618,14 @@ public abstract class AbsBackupShippingService implements SystemService
         }
     }
 
+    /**
+     * In cases where the shipping finished faster (success irrelevant) than the ctrl can finish the take-snapshot
+     * flux-chain (and consequently set SUCCESSFUL), this ensures that the ctrl doesn't get confused
+     *
+     * @param snap
+     *
+     * @return
+     */
     private boolean waitForSnapCreateFinished(Snapshot snap)
     {
         boolean success = false;
@@ -854,6 +863,25 @@ public abstract class AbsBackupShippingService implements SystemService
         finishedShipments.remove(snap);
     }
 
+    public void setPrepareAbort(Snapshot snap)
+    {
+        // no need to sync to snap because when postShipping runs, setting this can't trigger postShipping again
+        // (sync(snap) is only to prevent stuff from happening at the same time as postShipping)
+        @Nullable ShippingInfo shippingInfo = shippingInfoMap.get(snap);
+        if (shippingInfo != null)
+        {
+            synchronized (shippingInfo)
+            {
+                // if the daemon didn't start running yet, make sure it won't start at a later time either
+                shippingInfo.isStarted = true;
+                for (SnapVlmDataInfo vlmData : shippingInfo.snapVlmDataInfoMap.values())
+                {
+                    vlmData.daemon.setPrepareAbort();
+                }
+            }
+        }
+    }
+
     protected abstract BackupShippingDaemon createDaemon(
         AbsStorageVlmData<Snapshot> snapVlmDataRef,
         String[] fullCommandRef,
@@ -918,6 +946,4 @@ public abstract class AbsBackupShippingService implements SystemService
             vlmNr = vlmNrRef;
         }
     }
-
-
 }

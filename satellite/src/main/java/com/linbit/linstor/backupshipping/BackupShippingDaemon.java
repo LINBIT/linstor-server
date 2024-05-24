@@ -7,4 +7,6 @@ public interface BackupShippingDaemon
     void shutdown(boolean doPostShipping);
 
     void awaitShutdown(long maxWaitTimeRef) throws InterruptedException;
+
+    void setPrepareAbort();
 }
