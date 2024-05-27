@@ -450,6 +450,8 @@ public class CtrlRscAutoPlaceApiCallHandler
             // TODO: allow other diskless storage pools
             rscPropsMap.put(ApiConsts.KEY_STOR_POOL_NAME, LinStor.DISKLESS_STOR_POOL_NAME);
 
+            final long rscInitFlags = calculateInitialDisklessFlags(layerStackList, rscNameStr);
+
             // deploy resource disklessly on remaining nodes
             for (Node disklessNode : nodesMap.values())
             {
@@ -469,7 +471,7 @@ public class CtrlRscAutoPlaceApiCallHandler
                             .createResourceDb(
                                 disklessNode.getName().displayValue,
                                 rscNameStr,
-                                Resource.Flags.DRBD_DISKLESS.flagValue | Resource.Flags.NVME_INITIATOR.flagValue,
+                                rscInitFlags,
                                 rscPropsMap,
                                 Collections.emptyList(),
                                 null,
@@ -522,6 +524,63 @@ public class CtrlRscAutoPlaceApiCallHandler
         responseConverter.addWithOp(responses, context, entry);
 
         return new Pair<>(autoFlux, deployedResources);
+    }
+
+    /**
+     * Returns the flag value of {@link Resource.Flags#DRBD_DISKLESS}, {@link Resource.Flags#NVME_INITIATOR} or a
+     * bit-wise combination of those two, depending on whether or not DRBD and/or NVME are contained in the layer-stack.
+     * If the given list of {@link DeviceLayerKind}s is empty, the resource-definition is loaded and asked for its
+     * default layer-stack. If that default layer stack is also empty and/or the current resource-count is 0, that would
+     * mean that we have no other resources deployed. This, by definition, makes the
+     * <code>--diskless-on-remaining</code> useless, and thus this method will throw an {@link ApiRcException}.
+     *
+     * @param layerStackListRef
+     * @param rscNameStrRef
+     *
+     * @return
+     */
+    private long calculateInitialDisklessFlags(List<DeviceLayerKind> layerStackListRef, String rscNameStrRef)
+    {
+        final List<DeviceLayerKind> layerStackToUse;
+        if (!layerStackListRef.isEmpty())
+        {
+            layerStackToUse = layerStackListRef;
+        }
+        else
+        {
+            ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStrRef, true);
+            try
+            {
+                if (rscDfn.getDiskfulCount(peerAccCtx.get()) == 0)
+                {
+                    throw new ApiRcException(
+                        ApiCallRcImpl.simpleEntry(
+                            ApiConsts.FAIL_NOT_FOUND_RSC,
+                            "Cannot place 'diskless-on-remaining' without having diskful resources deployed"
+                        )
+                    );
+                }
+                layerStackToUse = rscDfn.getLayerStack(peerAccCtx.get());
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ApiAccessDeniedException(
+                    exc,
+                    "getting default layer stack",
+                    ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+                );
+            }
+        }
+        if (layerStackToUse == null || layerStackToUse.isEmpty())
+        {
+            throw new ApiRcException(
+                ApiCallRcImpl.simpleEntry(ApiConsts.FAIL_INVLD_LAYER_STACK, "Could not find default layer stack")
+            );
+        }
+        final boolean hasDrbd = layerStackToUse.contains(DeviceLayerKind.DRBD);
+        final boolean hasNvme = layerStackToUse.contains(DeviceLayerKind.NVME);
+        return (hasDrbd ? Resource.Flags.DRBD_DISKLESS.flagValue : 0) |
+            (hasNvme ? Resource.Flags.NVME_INITIATOR.flagValue : 0);
     }
 
     private boolean isFlagSet(Resource rsc, Resource.Flags... flags)

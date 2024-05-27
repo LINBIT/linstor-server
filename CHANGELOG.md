@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SkipDisk: layers below DRBD now get ignored to prevent errors on the satellites
 - ReconnectorTask,EventProcessor: Attempt to fix possible deadlocks while having many connections/requests
 - Clone: Fix clone waiting if there is more than one diskless resource
+- ToggleDisk: Fix toggle disk for resource spawned with diskles-on-remaining
 
 ## [1.27.1] - 2024-04-25
 
