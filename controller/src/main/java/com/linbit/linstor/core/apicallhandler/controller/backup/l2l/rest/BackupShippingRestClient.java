@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest;
 
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
+import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
@@ -195,7 +196,8 @@ public class BackupShippingRestClient
                         Arrays.asList(OK, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR),
                         JsonGenTypes.ApiCallRc[].class
                     );
-                    if (isResponseOk(response, data.linstorRemoteName, fluxSink, data.responses))
+                    ApiCallRcImpl respApiCalls = Json.jsonToApiCallRc(response.getData());
+                    if (isResponseOk(response, data.linstorRemoteName, fluxSink, respApiCalls))
                     {
                         for (JsonGenTypes.ApiCallRc rc : response.getData())
                         {
@@ -239,7 +241,8 @@ public class BackupShippingRestClient
                         Arrays.asList(OK, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR),
                         JsonGenTypes.ApiCallRc[].class
                     );
-                    if (isResponseOk(response, data.linstorRemoteName, fluxSink, data.responses))
+                    ApiCallRcImpl respApiCalls = Json.jsonToApiCallRc(response.getData());
+                    if (isResponseOk(response, data.linstorRemoteName, fluxSink, respApiCalls))
                     {
                         for (JsonGenTypes.ApiCallRc rc : response.getData())
                         {
@@ -258,7 +261,6 @@ public class BackupShippingRestClient
         });
     }
 
-    // TODO: call this!!!
     public Flux<JsonGenTypes.ApiCallRc> sendPrepareAbortRequest(
         BackupShippingPrepareAbortRequest data,
         LinstorRemote remote,
@@ -286,7 +288,8 @@ public class BackupShippingRestClient
                         Arrays.asList(OK, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR),
                         JsonGenTypes.ApiCallRc[].class
                     );
-                    if (isResponseOk(response, remote.getName().displayValue, fluxSink, data.responses))
+                    ApiCallRcImpl respApiCalls = Json.jsonToApiCallRc(response.getData());
+                    if (isResponseOk(response, remote.getName().displayValue, fluxSink, respApiCalls))
                     {
                         for (JsonGenTypes.ApiCallRc rc : response.getData())
                         {

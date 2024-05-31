@@ -727,7 +727,6 @@ public class CtrlBackupL2LDstApiCallHandler
     private Flux<ApiCallRc> prepareForAbortInTransaction(BackupShippingPrepareAbortRequest data)
     {
         final String clusterHash = getSrcClusterShortId(data.srcClusterId);
-        ApiCallRcImpl responses = new ApiCallRcImpl();
         Set<SnapshotDefinition> snapsToUpdate = new HashSet<>();
         for (String snapName : data.snapNamesToAbort)
         {
@@ -770,7 +769,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     )
             );
         }
-        return flux.concatWith(Flux.just(responses));
+        return flux;
     }
 
     static class BackupShippingStartInfo

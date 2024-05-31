@@ -233,18 +233,21 @@ public class Json
         return json;
     }
 
-    public static ApiCallRcImpl jsonToApiCallRc(JsonGenTypes.ApiCallRc json)
+    public static ApiCallRcImpl jsonToApiCallRc(JsonGenTypes.ApiCallRc... jsonRcs)
     {
         ApiCallRcImpl ret = new ApiCallRcImpl();
-        ret.addEntry(
-            ApiCallRcImpl.entryBuilder(json.ret_code, json.message)
-                .addAllErrorIds(json.error_report_ids)
-                .putAllObjRefs(json.obj_refs)
-                .setCause(json.cause)
-                .setCorrection(json.correction)
-                .setDetails(json.details)
-                .build()
-        );
+        for (JsonGenTypes.ApiCallRc json : jsonRcs)
+        {
+            ret.addEntry(
+                ApiCallRcImpl.entryBuilder(json.ret_code, json.message)
+                    .addAllErrorIds(json.error_report_ids)
+                    .putAllObjRefs(json.obj_refs)
+                    .setCause(json.cause)
+                    .setCorrection(json.correction)
+                    .setDetails(json.details)
+                    .build()
+            );
+        }
         return ret;
     }
 
