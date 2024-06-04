@@ -41,6 +41,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apis.BackupApi;
 import com.linbit.linstor.core.apis.StorPoolApi;
 import com.linbit.linstor.core.identifier.NodeName;
+import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
@@ -1086,7 +1087,7 @@ public class CtrlBackupApiCallHandler
 
             Set<SnapshotDefinition> snapDfnsToUpdateOnlyShipping = new HashSet<>();
             Set<SnapshotDefinition> snapDfnsToUpdateShippingAbort = new HashSet<>();
-            Set<String> snapNamesToUpdateShippingAbort = new HashSet<>();
+            List<Pair<String, String>> stltRemoteAndSnapNamesToUpdateShippingAbort = new ArrayList<>();
             for (SnapshotDefinition snapDfn : snapDfns)
             {
                 Collection<Snapshot> snaps = snapDfn.getAllSnapshots(peerAccCtx.get());
@@ -1106,16 +1107,34 @@ public class CtrlBackupApiCallHandler
                         String remoteName = snap.getProps(peerAccCtx.get())
                             .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                         crt = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
+                        if (crt)
+                        {
+                            // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
+                            // this set will not be used anyway, so no need to check for that
+                            stltRemoteAndSnapNamesToUpdateShippingAbort.add(
+                                new Pair<>(remoteName, snap.getSnapshotName().displayValue)
+                            );
+                        }
                     }
                     if (rst && remoteNameRef != null)
                     {
                         String remoteName = snap.getProps(peerAccCtx.get())
                             .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                         rst = backupHelper.hasShippingToRemote(remoteName, remoteNameRef);
+                        if (rst)
+                        {
+                            // this has to be the stlt-remote-name if we are in an l2l-abort, if we are in an s3-abort
+                            // this set will not be used anyway, so no need to check for that
+                            stltRemoteAndSnapNamesToUpdateShippingAbort.add(
+                                new Pair<>(remoteName, snap.getSnapshotName().displayValue)
+                            );
+                        }
                     }
                     if (crt || rst)
                     {
                         abort = true;
+                        // there should always be only one snapshot of any given snapDfn that is actually shipping, so
+                        // once we found that one, we can stop looking at any others
                         break;
                     }
                 }
@@ -1123,20 +1142,21 @@ public class CtrlBackupApiCallHandler
                 {
                     // this can happen for l2l-shipments if the target-cluster fails to start the receive, since
                     // BACKUP_SOURCE is set in a later transaction than SHIPPING, therefore we need to remove the
-                    // SHIPPING
-                    // flag if we are aborting creates (otherwise the snap is stuck unable to be aborted or deleted)
+                    // SHIPPING flag if we are aborting creates (otherwise the snap is stuck unable to be aborted or
+                    // deleted)
                     snapDfnsToUpdateOnlyShipping.add(snapDfn);
                 }
                 if (abort)
                 {
                     snapDfnsToUpdateShippingAbort.add(snapDfn);
-                    snapNamesToUpdateShippingAbort.add(snapDfn.getName().displayValue);
                 }
             }
-            if (!snapNamesToUpdateShippingAbort.isEmpty() && !(remote instanceof S3Remote))
+            if (!snapDfnsToUpdateShippingAbort.isEmpty() && !(remote instanceof S3Remote))
             {
                 if (remote instanceof StltRemote)
                 {
+                    // it should not be possible for this remote to be a stltRemote, but just in case someone didn't pay
+                    // attention while calling this method...
                     remote = ctrlApiDataLoader.loadRemote(((StltRemote) remote).getLinstorRemoteName(), true);
                 }
                 String srcClusterId;
@@ -1152,11 +1172,12 @@ public class CtrlBackupApiCallHandler
                 {
                     throw new ImplementationError(exc);
                 }
+                // get stltRemote from prop - if prop not set, we should be src and early, and target does not need to
+                // prepare abort
                 BackupShippingPrepareAbortRequest data = new BackupShippingPrepareAbortRequest(
                     new ApiCallRcImpl(),
                     srcClusterId,
-                    rscNameRef,
-                    snapNamesToUpdateShippingAbort,
+                    getOtherRscNamesFromStltRemotes(stltRemoteAndSnapNamesToUpdateShippingAbort),
                     LinStor.VERSION_INFO_PROVIDER.getSemanticVersion()
                 );
                 LinstorRemote l2lRemote = (LinstorRemote) remote;
@@ -1174,6 +1195,22 @@ public class CtrlBackupApiCallHandler
             );
         }
         return flux;
+    }
+
+    private Map<String, List<String>> getOtherRscNamesFromStltRemotes(List<Pair<String, String>> remoteSnapPairList)
+        throws InvalidNameException
+    {
+        Map<String, List<String>> ret = new HashMap<>();
+        for (Pair<String, String> remoteSnapPair : remoteSnapPairList)
+        {
+            StltRemote remote = (StltRemote) ctrlApiDataLoader.loadRemote(
+                new RemoteName(remoteSnapPair.objA, true),
+                true
+            );
+            ret.computeIfAbsent(remote.getOtherRscName(), ignored -> new ArrayList<>())
+                .add(remoteSnapPair.objB);
+        }
+        return ret;
     }
 
     private Flux<ApiCallRc> setFlagsAndAbort(

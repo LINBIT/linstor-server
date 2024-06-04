@@ -173,6 +173,7 @@ public class BackupShippingInternal
                 shipRequest.forceRestore,
                 shipRequest.srcL2LRemoteName, // linstorRemoteName, not StltRemoteName
                 shipRequest.srcStltRemoteName,
+                shipRequest.srcRscName,
                 shipRequest.resetData,
                 shipRequest.dstBaseSnapName,
                 shipRequest.dstActualNodeName

@@ -32,6 +32,7 @@ public class BackupShippingRequest
     public final String srcClusterId;
     public final String srcL2LRemoteName;
     public final String srcStltRemoteName;
+    public final String srcRscName;
 
     public final @Nullable String dstNodeName;
     public final @Nullable String dstNodeNetIfName;
@@ -61,7 +62,8 @@ public class BackupShippingRequest
         @JsonProperty("forceRestore") boolean forceRestoreRef,
         @JsonProperty("resetData") boolean resetDataRef,
         @JsonProperty("dstBaseSnapName") @Nullable String dstBaseSnapNameRef,
-        @JsonProperty("dstActualNodeName") @Nullable String dstActualNodeNameRef
+        @JsonProperty("dstActualNodeName") @Nullable String dstActualNodeNameRef,
+        @JsonProperty("srcRscName") String srcRscNameRef
     )
     {
         srcL2LRemoteName = Objects.requireNonNull(srcL2LRemoteNameRef, "source linstor remote name must not be null!");
@@ -70,6 +72,7 @@ public class BackupShippingRequest
         dstRscName = Objects.requireNonNull(dstRscNameRef, "Target resource name must not be null!");
         srcBackupName = Objects.requireNonNull(srcBackupNameRef, "BackupName must not be null!");
         srcClusterId = Objects.requireNonNull(srcClusterIdRef, "Source Cluster ID must not be null!");
+        srcRscName = srcRscNameRef;
         storPoolRenameMap = storPoolRenameMapRef == null ?
             Collections.emptyMap() :
             Collections.unmodifiableMap(storPoolRenameMapRef);

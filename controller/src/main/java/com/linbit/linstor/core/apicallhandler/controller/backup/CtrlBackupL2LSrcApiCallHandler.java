@@ -394,7 +394,8 @@ public class CtrlBackupL2LSrcApiCallHandler
             data.srcBackupName,
             new TreeMap<>(),
             data.linstorRemote.getName(),
-            node
+            node,
+            data.dstRscName
         );
 
         data.stltRemote = stltRemote;
@@ -424,7 +425,8 @@ public class CtrlBackupL2LSrcApiCallHandler
         String snapshotNameRef,
         Map<String, Integer> snapShipPortsRef,
         RemoteName linstorRemoteNameRef,
-        Node nodeRef
+        Node nodeRef,
+        String otherRscNameRef
     )
     {
         StltRemote stltRemote;
@@ -437,7 +439,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 null,
                 snapShipPortsRef,
                 linstorRemoteNameRef,
-                nodeRef
+                nodeRef,
+                otherRscNameRef
             );
             remoteRepoRef.put(accCtxRef, stltRemote);
         }

@@ -50,7 +50,8 @@ public class StltRemoteControllerFactory
         String ipRef,
         Map<String, Integer> portsRef,
         RemoteName linstorRemoteNameRef,
-        Node nodeRef
+        Node nodeRef,
+        String otherRscNameRef
     )
         throws AccessDeniedException, DatabaseException
     {
@@ -59,7 +60,7 @@ public class StltRemoteControllerFactory
             throw new ImplementationError("This remote name is already registered");
         }
 
-        StltRemote remote = new StltRemote(
+        return new StltRemote(
             objProtFactory.getInstance(
                 accCtxRef,
                 ObjectProtection.buildPath(nameRef),
@@ -75,9 +76,8 @@ public class StltRemoteControllerFactory
             nodeRef,
             (StateFlagsPersistence<StltRemote>) stateFlagsDriver,
             transObjFactory,
-            transMgrProvider
+            transMgrProvider,
+            otherRscNameRef
         );
-
-        return remote;
     }
 }

@@ -17,6 +17,7 @@ import com.linbit.linstor.transaction.TransactionSimpleObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.Arrays;
@@ -45,6 +46,8 @@ public class StltRemote extends AbsRemote
     private final RemoteName linstorRemoteName;
     // a reference to the node the stltRemote is describing
     private final Node node;
+    // rsc-name of the snapDfn we are shipping to or receiving from
+    private final String otherRscName;
 
     public StltRemote(
         ObjectProtection objProtRef,
@@ -54,16 +57,18 @@ public class StltRemote extends AbsRemote
         String ipRef,
         Map<String, Integer> portRef,
         Boolean useZstdRef,
-        RemoteName linstorRemoteNameRef,
+        @Nullable RemoteName linstorRemoteNameRef,
         Node nodeRef,
         StateFlagsPersistence<StltRemote> stateFlagsDriverRef,
         TransactionObjectFactory transObjFactory,
-        Provider<? extends TransactionMgr> transMgrProvider
+        Provider<? extends TransactionMgr> transMgrProvider,
+        @Nullable String otherRscNameRef
     )
     {
         super(objIdRef, transObjFactory, transMgrProvider, objProtRef, remoteNameRef);
         linstorRemoteName = linstorRemoteNameRef;
         node = nodeRef;
+        otherRscName = otherRscNameRef;
 
         ip = transObjFactory.createTransactionSimpleObject(this, ipRef, null);
         ports = transObjFactory.createTransactionPrimitiveMap(this, portRef, null);
@@ -156,6 +161,11 @@ public class StltRemote extends AbsRemote
     {
         checkDeleted();
         return node;
+    }
+
+    public String getOtherRscName()
+    {
+        return otherRscName;
     }
 
     public String getIp(AccessContext accCtx) throws AccessDeniedException

@@ -69,6 +69,7 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -302,6 +303,7 @@ public class CtrlBackupL2LDstApiCallHandler
         boolean forceRestore,
         String srcL2LRemoteName, // linstorRemoteName, not StltRemoteName
         String srcStltRemoteName,
+        String srcRscName,
         boolean resetData,
         String dstBaseSnapName,
         String dstActualNodeName
@@ -331,6 +333,7 @@ public class CtrlBackupL2LDstApiCallHandler
                     metaDataRef,
                     srcBackupNameRef,
                     srcClusterIdRef,
+                    srcRscName,
                     dstNodeNameRef,
                     dstNetIfNameRef,
                     dstStorPoolRef,
@@ -499,7 +502,8 @@ public class CtrlBackupL2LDstApiCallHandler
             snapName.displayValue,
             data.snapShipPorts,
             srcRemote.getName(),
-            null // we are on dst, the node is only needed on src
+            null, // we are on dst, the node is only needed on src
+            data.srcRscName
         );
 
         data.snapName = snapName;
@@ -728,25 +732,29 @@ public class CtrlBackupL2LDstApiCallHandler
     {
         final String clusterHash = getSrcClusterShortId(data.srcClusterId);
         Set<SnapshotDefinition> snapsToUpdate = new HashSet<>();
-        for (String snapName : data.snapNamesToAbort)
+        for (Entry<String, List<String>> rscAndSnapNames : data.rscAndSnapNamesToAbort.entrySet())
         {
-            // no need to parse string into SnapshotName since the snap exists on src-cluster with that name
-            String fullSnapName = snapName + "_" + clusterHash;
-            SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(data.rscName, fullSnapName, false);
-            if (snapDfn != null)
+            String rscName = rscAndSnapNames.getKey();
+            for (String snapName : rscAndSnapNames.getValue())
             {
-                try
+                // no need to parse string into SnapshotName since the snap exists on src-cluster with that name
+                String fullSnapName = snapName + "_" + clusterHash;
+                SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, fullSnapName, false);
+                if (snapDfn != null)
                 {
-                    snapDfn.getFlags().enableFlags(apiCtx, SnapshotDefinition.Flags.PREPARE_SHIPPING_ABORT);
-                    snapsToUpdate.add(snapDfn);
-                }
-                catch (AccessDeniedException exc)
-                {
-                    throw new ImplementationError(exc);
-                }
-                catch (DatabaseException exc)
-                {
-                    throw new ApiDatabaseException(exc);
+                    try
+                    {
+                        snapDfn.getFlags().enableFlags(apiCtx, SnapshotDefinition.Flags.PREPARE_SHIPPING_ABORT);
+                        snapsToUpdate.add(snapDfn);
+                    }
+                    catch (AccessDeniedException exc)
+                    {
+                        throw new ImplementationError(exc);
+                    }
+                    catch (DatabaseException exc)
+                    {
+                        throw new ApiDatabaseException(exc);
+                    }
                 }
             }
         }
@@ -799,6 +807,7 @@ public class CtrlBackupL2LDstApiCallHandler
         public final BackupMetaDataPojo metaData;
         public final String srcBackupName;
         public final String srcClusterId;
+        public final String srcRscName;
         public String incrBaseSnapDfnUuid;
         public String dstNodeName;
         public String dstNetIfName;
@@ -821,6 +830,7 @@ public class CtrlBackupL2LDstApiCallHandler
             BackupMetaDataPojo metaDataRef,
             String srcBackupNameRef,
             String srcClusterIdRef,
+            String srcRscNameRef,
             String dstNodeNameRef, // the node the user wants the receive to happen on
             String dstNetIfNameRef,
             String dstStorPoolRef,
@@ -842,6 +852,7 @@ public class CtrlBackupL2LDstApiCallHandler
             metaData = metaDataRef;
             srcBackupName = srcBackupNameRef;
             srcClusterId = srcClusterIdRef;
+            srcRscName = srcRscNameRef;
             dstNodeName = dstNodeNameRef;
             dstNetIfName = dstNetIfNameRef;
             dstStorPool = dstStorPoolRef;

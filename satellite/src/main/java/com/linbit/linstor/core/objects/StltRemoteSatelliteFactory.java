@@ -73,7 +73,8 @@ public class StltRemoteSatelliteFactory
                     nodeRef,
                     (StateFlagsPersistence<StltRemote>) noopFlagDriver,
                     transObjFactory,
-                    transMgrProvider
+                    transMgrProvider,
+                    null
                 );
                 remoteMap.put(remoteNameRef, stltRemote);
             }

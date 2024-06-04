@@ -142,7 +142,8 @@ public class BackupShippingRestClient
                                 data.isForceRestore(),
                                 data.isResetData(),
                                 data.getDstBaseSnapName(),
-                                data.getDstActualNodeName()
+                                data.getDstActualNodeName(),
+                                data.getSrcRscName()
                             )
                         ),
                         Arrays.asList(OK, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR),
@@ -329,20 +330,36 @@ public class BackupShippingRestClient
             }
             else
             {
-                apiCallRc = new ApiCallRcImpl();
-                apiCallRc.addEntry(
-                    ApiCallRcImpl.entryBuilder(
-                        ApiConsts.FAIL_BACKUP_INCOMPATIBLE_VERSION,
-                        "Destination controller incompatible"
-                    )
-                        .setCause("Probably the destination controller is not recent enough")
-                        .setCorrection(
-                            "Make sure the destination cluster is on the same version as the " +
-                                "current cluster (" +
-                                LinStor.VERSION_INFO_PROVIDER.getVersion() + ")"
+                if (responses.isEmpty())
+                {
+                    apiCallRc = new ApiCallRcImpl();
+                    apiCallRc.addEntry(
+                        ApiCallRcImpl.entryBuilder(
+                            ApiConsts.FAIL_UNKNOWN_ERROR,
+                            "Most likely the destination controller is incompatible"
                         )
-                        .build()
-                );
+                            .setCause("Probably the destination controller is not recent enough")
+                            .setCorrection(
+                                "Make sure the destination cluster is on the same version as the " +
+                                    "current cluster (" +
+                                    LinStor.VERSION_INFO_PROVIDER.getVersion() + ")"
+                            )
+                            .build()
+                    );
+                }
+                else
+                {
+                    apiCallRc = ApiCallRcImpl.singleApiCallRc(
+                        ApiConsts.FAIL_UNKNOWN_ERROR,
+                        "Destination controller had error code " + response.getStatusCode()
+                    );
+                    apiCallRc.addAll(
+                        ApiCallRcImpl.copyAndPrefix(
+                            "Remote '" + remoteName + "': ",
+                            responses
+                        )
+                    );
+                }
             }
             fluxSink.error(new ApiRcException(apiCallRc));
         }
