@@ -40,6 +40,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
@@ -185,7 +186,8 @@ public class CtrlRscAutoPlaceApiCallHandler
             // we do not care about deleting / evicted resources. just make sure to not count them
             if (
                 !isSomeFlagSet(rsc, Resource.Flags.DELETE, Resource.Flags.EVICTED, Resource.Flags.EVACUATE) &&
-                    !isNodeFlagSet(rsc, Node.Flags.EVACUATE)
+                    !isNodeFlagSet(rsc, Node.Flags.EVACUATE) &&
+                    !hasSkipDiskProp(rsc)
             )
             {
                 if (isFlagSet(rsc, Resource.Flags.DISKLESS))
@@ -599,6 +601,25 @@ public class CtrlRscAutoPlaceApiCallHandler
             );
         }
         return flagSet;
+    }
+
+
+    private boolean hasSkipDiskProp(Resource rsc)
+    {
+        try
+        {
+            String skipDiskProp = rsc.getProps(peerAccCtx.get()).getProp(
+                ApiConsts.KEY_DRBD_SKIP_DISK, ApiConsts.NAMESPC_DRBD_OPTIONS);
+            return StringUtils.propTrueOrYes(skipDiskProp);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "access " + CtrlRscApiCallHandler.getRscDescriptionInline(rsc),
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
     }
 
     private boolean isSomeFlagSet(Resource rsc, Resource.Flags... flags)

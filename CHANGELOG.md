@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Snapshots now cannot be created while SkipDisk is active
 - Autoplacer: Added very small default weight for the MinResourceCount-strategy for better tiebreaker-distribution
 - Added some more info logging and improved an error message
+- BalanceResourceTask: Do not count skipDisk resources as diskful
 
 ### Fixed
 

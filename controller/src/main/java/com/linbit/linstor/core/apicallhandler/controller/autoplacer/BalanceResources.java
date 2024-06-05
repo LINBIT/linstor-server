@@ -32,6 +32,7 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.utils.Pair;
+import com.linbit.utils.StringUtils;
 
 import static com.linbit.locks.LockGuardFactory.LockObj.RSC_DFN_MAP;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
@@ -292,7 +293,28 @@ public class BalanceResources
     }
 
     /**
-     * Loops through all resource definitions and tries to fullfill the linked resource groups place counts.
+     * Filter resources that should really considered as UpToDate diskfull resources.
+     *
+     * @param resources
+     * @throws AccessDeniedException should not we use sysctx
+     */
+    private void filterDiskfull(List<Resource> resources) throws AccessDeniedException
+    {
+        List<Resource> toRemove = new ArrayList<>();
+        for(var res : resources)
+        {
+            String skipDiskProp = res.getProps(sysCtx).getProp(
+                ApiConsts.KEY_DRBD_SKIP_DISK, ApiConsts.NAMESPC_DRBD_OPTIONS);
+            if (StringUtils.propTrueOrYes(skipDiskProp))
+            {
+                toRemove.add(res);
+            }
+        }
+        resources.removeAll(toRemove);
+    }
+
+    /**
+     * Loops through all resource definitions and tries to fulfill the linked resource groups place counts.
      * @param timeoutSecs Timeout in seconds of the adjust and delete flux
      * @return a Pair with numberAdjusted, deletedResources
      */
@@ -325,6 +347,7 @@ public class BalanceResources
                 if (replicaCount != null)
                 {
                     List<Resource> notDeletedDiskful = rscDfn.getNotDeletedDiskful(sysCtx);
+                    filterDiskfull(notDeletedDiskful);
                     int notDeletedDiskfulCount = notDeletedDiskful.size();
                     if (notDeletedDiskfulCount < replicaCount)
                     {
