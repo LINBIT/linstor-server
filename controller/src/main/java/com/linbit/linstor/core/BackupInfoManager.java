@@ -6,9 +6,8 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
-import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LDstApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler;
-import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingDstData;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingSrcData;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
 import com.linbit.linstor.core.identifier.ResourceName;
@@ -56,8 +55,8 @@ public class BackupInfoManager
 
     private final Object restoreSyncObj = new Object();
     // Map<LinstorRemoteName, Map<StltRemoteName, Data>>
-    private final Map<RemoteName, Map<RemoteName, CtrlBackupL2LSrcApiCallHandler.BackupShippingData>> l2lSrcData;
-    private final Map<Snapshot, CtrlBackupL2LDstApiCallHandler.BackupShippingData> l2lDstData;
+    private final Map<RemoteName, Map<RemoteName, BackupShippingSrcData>> l2lSrcData;
+    private final Map<Snapshot, BackupShippingDstData> l2lDstData;
     private final BidirectionalMultiMap<Node, QueueItem> uploadQueues;
     /*
      * set of queueItems whose prevSnap is missing the info which node it was shipped by
@@ -518,7 +517,7 @@ public class BackupInfoManager
     public void addL2LSrcData(
         RemoteName linstorRemoteName,
         RemoteName stltRemoteName,
-        CtrlBackupL2LSrcApiCallHandler.BackupShippingData data
+        BackupShippingSrcData data
     )
     {
         synchronized (l2lSrcData)
@@ -530,7 +529,7 @@ public class BackupInfoManager
         }
     }
 
-    public CtrlBackupL2LSrcApiCallHandler.BackupShippingData getL2LSrcData(
+    public BackupShippingSrcData getL2LSrcData(
         RemoteName linstorRemoteName,
         RemoteName stltRemoteName
     )
@@ -541,15 +540,15 @@ public class BackupInfoManager
         }
     }
 
-    public CtrlBackupL2LSrcApiCallHandler.BackupShippingData removeL2LSrcData(
+    public BackupShippingSrcData removeL2LSrcData(
         RemoteName linstorRemoteName,
         RemoteName stltRemoteName
     )
     {
-        BackupShippingData ret;
+        BackupShippingSrcData ret;
         synchronized (l2lSrcData)
         {
-            Map<RemoteName, BackupShippingData> innerMap = l2lSrcData.get(linstorRemoteName);
+            Map<RemoteName, BackupShippingSrcData> innerMap = l2lSrcData.get(linstorRemoteName);
             if (innerMap != null)
             {
                 ret = innerMap.remove(stltRemoteName);
@@ -566,12 +565,12 @@ public class BackupInfoManager
         return ret;
     }
 
-    public void addL2LDstData(Snapshot snap, CtrlBackupL2LDstApiCallHandler.BackupShippingData data)
+    public void addL2LDstData(Snapshot snap, BackupShippingDstData data)
     {
         l2lDstData.put(snap, data);
     }
 
-    public CtrlBackupL2LDstApiCallHandler.BackupShippingData getL2LDstData(Snapshot snap)
+    public BackupShippingDstData getL2LDstData(Snapshot snap)
     {
         return l2lDstData.get(snap);
     }
@@ -614,7 +613,7 @@ public class BackupInfoManager
         AbsRemote remote,
         @Nullable SnapshotDefinition prevSnapDfn,
         @Nullable String preferredNode,
-        @Nullable BackupShippingData l2lData,
+        @Nullable BackupShippingSrcData l2lData,
         @Nullable Set<Node> usableNodes
     )
     {
@@ -833,7 +832,7 @@ public class BackupInfoManager
         }
     }
 
-    public void addCleanupData(BackupShippingData data)
+    public void addCleanupData(BackupShippingSrcData data)
     {
         synchronized (cleanupDataMap)
         {
@@ -885,7 +884,7 @@ public class BackupInfoManager
         /* if prevSnapDfn is null, it means a full backup should be made */
         public final @Nullable SnapshotDefinition prevSnapDfn;
         public final @Nullable String preferredNode;
-        public final @Nullable BackupShippingData l2lData;
+        public final @Nullable BackupShippingSrcData l2lData;
         /*
          * This is needed to make it possible that the queueItems from getFollowUpSnaps can be started on any available
          * node. Without alreadyStartedOn, an already finished shipping could be started again on another node.
@@ -897,7 +896,7 @@ public class BackupInfoManager
             AbsRemote remoteRef,
             SnapshotDefinition prevSnapDfnRef,
             String preferredNodeRef,
-            BackupShippingData l2lDataRef
+            BackupShippingSrcData l2lDataRef
         )
         {
             snapDfn = snapDfnRef;
@@ -1040,11 +1039,11 @@ public class BackupInfoManager
 
     public static class CleanupData
     {
-        public final BackupShippingData data;
+        public final BackupShippingSrcData data;
         private StltRemoteCleanupTask task;
         private int finishedCount = 0;
 
-        private CleanupData(BackupShippingData dataRef)
+        private CleanupData(BackupShippingSrcData dataRef)
         {
             data = dataRef;
         }

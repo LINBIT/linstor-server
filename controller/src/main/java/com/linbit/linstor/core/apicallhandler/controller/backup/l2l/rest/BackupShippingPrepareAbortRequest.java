@@ -11,21 +11,21 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class BackupShippingPrepareAbortRequest
 {
     public final ApiCallRcImpl responses;
-    public final String srcClusterId;
+    public final String clusterId;
     public final Map<String, List<String>> rscAndSnapNamesToAbort;
-    public final int[] srcVersion;
+    public final int[] clusterVersion;
 
     @JsonCreator
     public BackupShippingPrepareAbortRequest(
         @JsonProperty("responses") ApiCallRcImpl responsesRef,
-        @JsonProperty("srcClusterId") String srcClusterIdRef,
+        @JsonProperty("clusterId") String clusterIdRef,
         @JsonProperty("rscAndSnapNamesToAbort") Map<String, List<String>> rscAndSnapNamesToAbortRef,
-        @JsonProperty("srcVersion") int[] srcVersionRef
+        @JsonProperty("clusterVersion") int[] clusterVersionRef
     )
     {
         responses = responsesRef;
-        srcClusterId = srcClusterIdRef;
+        clusterId = clusterIdRef;
         rscAndSnapNamesToAbort = rscAndSnapNamesToAbortRef;
-        srcVersion = srcVersionRef;
+        clusterVersion = clusterVersionRef;
     }
 }

@@ -33,7 +33,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
     private final ErrorReporter errorReporter;
     private final Thread thread;
     private final LinkedBlockingDeque<Boolean> waitForConnDeque;
-    private final Integer timeoutInMs;
+    private final @Nullable Long timeoutInMs;
     private final String[] command;
 
     private final LinkedBlockingDeque<Event> deque;
@@ -55,7 +55,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
         String[] commandRef,
         Integer portRef,
         BiConsumer<Boolean, Integer> postActionRef,
-        @Nullable Integer timeoutInMsRef
+        @Nullable Long timeoutInMsRef
     )
     {
         errorReporter = errorReporterRef;
@@ -136,7 +136,7 @@ public class BackupShippingL2LDaemon implements Runnable, BackupShippingDaemon
             thread.start();
             if (timeoutInMs != null)
             {
-                new Thread(thread.getThreadGroup(), this::waitForConn, "waitForConn" + thread.getName())
+                new Thread(thread.getThreadGroup(), this::waitForConn, "waitForConn_" + thread.getName())
                     .start();
             }
             try

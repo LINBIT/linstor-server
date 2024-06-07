@@ -1092,17 +1092,17 @@ public class CtrlBackupApiCallHandler
             {
                 Collection<Snapshot> snaps = snapDfn.getAllSnapshots(peerAccCtx.get());
                 boolean abort = false;
-                boolean isSource = false;
-                boolean isTarget = false;
+                boolean isSnapDfnSource = false;
+                boolean isSnapDfnTarget = false;
                 for (Snapshot snap : snaps)
                 {
-                    boolean tmp = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
-                    isSource |= tmp;
-                    boolean crt = tmp && create;
-                    tmp = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
-                    isTarget |= tmp;
-                    boolean rst = tmp && restore;
-                    if (crt && remoteNameRef != null)
+                    boolean isSnapSource = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_SOURCE);
+                    isSnapDfnSource |= isSnapSource;
+                    boolean crt = isSnapSource && create;
+                    boolean isSnapTarget = snap.getFlags().isSet(peerAccCtx.get(), Snapshot.Flags.BACKUP_TARGET);
+                    isSnapDfnTarget |= isSnapTarget;
+                    boolean rst = isSnapTarget && restore;
+                    if (crt)
                     {
                         String remoteName = snap.getProps(peerAccCtx.get())
                             .getProp(InternalApiConsts.KEY_BACKUP_TARGET_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
@@ -1116,7 +1116,7 @@ public class CtrlBackupApiCallHandler
                             );
                         }
                     }
-                    if (rst && remoteNameRef != null)
+                    if (rst)
                     {
                         String remoteName = snap.getProps(peerAccCtx.get())
                             .getProp(InternalApiConsts.KEY_BACKUP_SRC_REMOTE, ApiConsts.NAMESPC_BACKUP_SHIPPING);
@@ -1138,7 +1138,7 @@ public class CtrlBackupApiCallHandler
                         break;
                     }
                 }
-                if (!isSource && create && !isTarget)
+                if (!isSnapDfnSource && create && !isSnapDfnTarget)
                 {
                     // this can happen for l2l-shipments if the target-cluster fails to start the receive, since
                     // BACKUP_SOURCE is set in a later transaction than SHIPPING, therefore we need to remove the
@@ -1159,10 +1159,10 @@ public class CtrlBackupApiCallHandler
                     // attention while calling this method...
                     remote = ctrlApiDataLoader.loadRemote(((StltRemote) remote).getLinstorRemoteName(), true);
                 }
-                String srcClusterId;
+                String localClusterId;
                 try
                 {
-                    srcClusterId = sysCfgRepo.getCtrlConfForView(sysCtx)
+                    localClusterId = sysCfgRepo.getCtrlConfForView(sysCtx)
                         .getProp(
                             InternalApiConsts.KEY_CLUSTER_LOCAL_ID,
                             ApiConsts.NAMESPC_CLUSTER
@@ -1176,7 +1176,7 @@ public class CtrlBackupApiCallHandler
                 // prepare abort
                 BackupShippingPrepareAbortRequest data = new BackupShippingPrepareAbortRequest(
                     new ApiCallRcImpl(),
-                    srcClusterId,
+                    localClusterId,
                     getOtherRscNamesFromStltRemotes(stltRemoteAndSnapNamesToUpdateShippingAbort),
                     LinStor.VERSION_INFO_PROVIDER.getSemanticVersion()
                 );

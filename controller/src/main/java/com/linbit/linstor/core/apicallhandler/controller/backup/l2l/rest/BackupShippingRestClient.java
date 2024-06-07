@@ -1,18 +1,19 @@
 package com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest;
 
+import com.linbit.ImplementationError;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.serializer.Json;
 import com.linbit.linstor.api.rest.v1.serializer.JsonGenTypes;
 import com.linbit.linstor.core.BackupInfoManager;
 import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingReceiveDoneRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingRequestPrevSnap;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponse;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponsePrevSnap;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingSrcData;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -102,7 +103,7 @@ public class BackupShippingRestClient
         });
     }
 
-    public Flux<BackupShippingResponse> sendBackupRequest(BackupShippingData data, AccessContext accCtx)
+    public Flux<BackupShippingResponse> sendBackupRequest(BackupShippingSrcData data, AccessContext accCtx)
     {
         return Flux.create(fluxSink ->
         {
@@ -176,90 +177,14 @@ public class BackupShippingRestClient
         BackupShippingReceiveRequest data
     )
     {
-        return Flux.create(fluxSink ->
-        {
-            // Runnable needed for flux shenanigans
-            // (avoids deadlock if flux error occurs while building pipeline)
-            Runnable run = () ->
-            {
-                try
-                {
-                    String restURL = data.remoteUrl +
-                        "/v1/internal/backups/requestReceive";
-                    RestResponse<JsonGenTypes.ApiCallRc[]> response = restClient.execute(
-                        null,
-                        RestOp.POST,
-                        restURL,
-                        Collections.emptyMap(),
-                        objMapper.writeValueAsString(
-                            data
-                        ),
-                        Arrays.asList(OK, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR),
-                        JsonGenTypes.ApiCallRc[].class
-                    );
-                    ApiCallRcImpl respApiCalls = Json.jsonToApiCallRc(response.getData());
-                    if (isResponseOk(response, data.linstorRemoteName, fluxSink, respApiCalls))
-                    {
-                        for (JsonGenTypes.ApiCallRc rc : response.getData())
-                        {
-                            fluxSink.next(rc);
-                        }
-                        fluxSink.complete();
-                    }
-                }
-                catch (StorageException | IOException exc)
-                {
-                    errorReporter.reportError(exc);
-                    fluxSink.error(exc);
-                }
-            };
-            new Thread(run).start();
-        });
+        return sendRequest(data, data.remoteUrl + "/v1/internal/backups/requestReceive", data.linstorRemoteName);
     }
 
     public Flux<JsonGenTypes.ApiCallRc> sendBackupReceiveDoneRequest(
         BackupShippingReceiveDoneRequest data
     )
     {
-        return Flux.create(fluxSink ->
-        {
-            // Runnable needed for flux shenanigans
-            // (avoids deadlock if flux error occurs while building pipeline)
-            Runnable run = () ->
-            {
-                try
-                {
-                    String restURL = data.remoteUrl +
-                        "/v1/internal/backups/requestReceiveDone";
-                    RestResponse<JsonGenTypes.ApiCallRc[]> response = restClient.execute(
-                        null,
-                        RestOp.POST,
-                        restURL,
-                        Collections.emptyMap(),
-                        objMapper.writeValueAsString(
-                            data
-                        ),
-                        Arrays.asList(OK, NOT_FOUND, BAD_REQUEST, INTERNAL_SERVER_ERROR),
-                        JsonGenTypes.ApiCallRc[].class
-                    );
-                    ApiCallRcImpl respApiCalls = Json.jsonToApiCallRc(response.getData());
-                    if (isResponseOk(response, data.linstorRemoteName, fluxSink, respApiCalls))
-                    {
-                        for (JsonGenTypes.ApiCallRc rc : response.getData())
-                        {
-                            fluxSink.next(rc);
-                        }
-                        fluxSink.complete();
-                    }
-                }
-                catch (StorageException | IOException exc)
-                {
-                    errorReporter.reportError(exc);
-                    fluxSink.error(exc);
-                }
-            };
-            new Thread(run).start();
-        });
+        return sendRequest(data, data.remoteUrl + "/v1/internal/backups/requestReceiveDone", data.linstorRemoteName);
     }
 
     public Flux<JsonGenTypes.ApiCallRc> sendPrepareAbortRequest(
@@ -268,6 +193,22 @@ public class BackupShippingRestClient
         AccessContext accCtx
     )
     {
+        try
+        {
+            return sendRequest(
+                data,
+                remote.getUrl(accCtx).toExternalForm() + "/v1/internal/backups/requestPrepareAbort",
+                remote.getName().displayValue
+            );
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+    }
+
+    private <T> Flux<JsonGenTypes.ApiCallRc> sendRequest(T data, String restURL, String remoteName)
+    {
         return Flux.create(fluxSink ->
         {
             // Runnable needed for flux shenanigans
@@ -276,8 +217,6 @@ public class BackupShippingRestClient
             {
                 try
                 {
-                    String restURL = remote.getUrl(accCtx).toExternalForm() +
-                        "/v1/internal/backups/requestPrepareAbort";
                     RestResponse<JsonGenTypes.ApiCallRc[]> response = restClient.execute(
                         null,
                         RestOp.POST,
@@ -290,7 +229,7 @@ public class BackupShippingRestClient
                         JsonGenTypes.ApiCallRc[].class
                     );
                     ApiCallRcImpl respApiCalls = Json.jsonToApiCallRc(response.getData());
-                    if (isResponseOk(response, remote.getName().displayValue, fluxSink, respApiCalls))
+                    if (isResponseOk(response, remoteName, fluxSink, respApiCalls))
                     {
                         for (JsonGenTypes.ApiCallRc rc : response.getData())
                         {
@@ -299,7 +238,7 @@ public class BackupShippingRestClient
                         fluxSink.complete();
                     }
                 }
-                catch (AccessDeniedException | StorageException | IOException exc)
+                catch (StorageException | IOException exc)
                 {
                     errorReporter.reportError(exc);
                     fluxSink.error(exc);

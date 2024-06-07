@@ -3,6 +3,7 @@ package com.linbit.linstor.backupshipping;
 import com.linbit.ImplementationError;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
@@ -22,6 +23,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.locks.LockGuardFactory;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -32,7 +34,7 @@ import java.util.function.BiConsumer;
 public class BackupShippingL2LService extends AbsBackupShippingService
 {
     public static final String SERVICE_INFO = "BackupShippingL2LService";
-    private static final int RESTORE_TIMEOUT_MS = 300_000;
+    private static final String DFLT_RESTORE_TIMEOUT_IN_MS = "300000";
 
     @Inject
     public BackupShippingL2LService(
@@ -131,8 +133,44 @@ public class BackupShippingL2LService extends AbsBackupShippingService
             fullCommandRef,
             portRef,
             postActionRef,
-            restoreRef ? RESTORE_TIMEOUT_MS : null
+            getRestoreTimeout(snapVlmDataRef, restoreRef)
         );
+    }
+
+    private @Nullable Long getRestoreTimeout(AbsStorageVlmData<Snapshot> snapVlmDataRef, boolean restoreRef)
+        throws ImplementationError
+    {
+        @Nullable Long restoreTimeoutMs = null;
+        if (restoreRef)
+        {
+            Snapshot snapshot = snapVlmDataRef.getRscLayerObject().getAbsResource();
+            PriorityProps prioProps;
+            try
+            {
+                prioProps = new PriorityProps(
+                    snapshot.getNode().getProps(accCtx),
+                    snapshot.getResourceDefinition().getProps(accCtx),
+                    snapshot.getResourceDefinition().getResourceGroup().getProps(accCtx),
+                    stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING)
+                );
+                Long timeout = Long.parseLong(
+                    prioProps.getProp(
+                        ApiConsts.KEY_RECV_TIMEOUT_IN_MS,
+                        ApiConsts.NAMESPC_BACKUP_SHIPPING,
+                        DFLT_RESTORE_TIMEOUT_IN_MS
+                    )
+                );
+                if (timeout >= 0)
+                {
+                    restoreTimeoutMs = timeout;
+                }
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new ImplementationError(exc);
+            }
+        }
+        return restoreTimeoutMs;
     }
 
     @Override

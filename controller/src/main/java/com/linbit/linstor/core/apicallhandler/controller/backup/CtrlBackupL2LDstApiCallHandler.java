@@ -22,6 +22,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.FreeCapacityFetcher;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingPrepareAbortRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.BackupShippingRestClient;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingDstData;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingReceiveRequest;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponse;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponsePrevSnap;
@@ -324,7 +325,7 @@ public class CtrlBackupL2LDstApiCallHandler
             {
                 RscLayerDataApi layerData = metaDataRef.getLayerData();
                 allocatePortNumbers(layerData, snapShipPorts);
-                BackupShippingData data = new BackupShippingData(
+                BackupShippingDstData data = new BackupShippingDstData(
                     srcVersionRef,
                     srcL2LRemoteName,
                     srcStltRemoteName,
@@ -489,41 +490,41 @@ public class CtrlBackupL2LDstApiCallHandler
         }
     }
 
-    private Flux<BackupShippingStartInfo> startReceivingInTransaction(BackupShippingData data, AbsRemote srcRemote)
+    private Flux<BackupShippingStartInfo> startReceivingInTransaction(BackupShippingDstData data, AbsRemote srcRemote)
     {
-        String clusterHash = getSrcClusterShortId(data.srcClusterId);
+        String clusterHash = getSrcClusterShortId(data.getSrcClusterId());
 
-        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(data.srcBackupName + "_" + clusterHash);
+        SnapshotName snapName = LinstorParsingUtils.asSnapshotName(data.getSrcBackupName() + "_" + clusterHash);
         StltRemote stltRemote = CtrlBackupL2LSrcApiCallHandler.createStltRemote(
             stltRemoteControllerFactory,
             remoteRepo,
             apiCtx,
-            data.dstRscName,
+            data.getDstRscName(),
             snapName.displayValue,
-            data.snapShipPorts,
+            data.getSnapShipPorts(),
             srcRemote.getName(),
             null, // we are on dst, the node is only needed on src
-            data.srcRscName
+            data.getSrcRscName()
         );
 
-        data.snapName = snapName;
-        data.stltRemote = stltRemote;
+        data.setSnapName(snapName);
+        data.setStltRemote(stltRemote);
 
         synchronized (dstToSrcStltRemoteNameMap)
         {
-            dstToSrcStltRemoteNameMap.put(stltRemote.getName(), data.srcStltRemoteName);
+            dstToSrcStltRemoteNameMap.put(stltRemote.getName(), data.getSrcStltRemoteName());
         }
-        Map<String, String> snapPropsFromSource = data.metaData.getRsc().getProps();
-        snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_UUID, data.srcClusterId);
+        Map<String, String> snapPropsFromSource = data.getMetaData().getRsc().getProps();
+        snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_UUID, data.getSrcClusterId());
         snapPropsFromSource.put(InternalApiConsts.KEY_BACKUP_L2L_SRC_CLUSTER_SHORT_HASH, clusterHash);
         ctrlTransactionHelper.commit();
 
         return ctrlSatelliteUpdateCaller.updateSatellites(stltRemote)
             .thenMany(
                 freeCapacityFetcher.fetchThinFreeCapacities(
-                    data.dstNodeName == null ?
+                    data.getDstNodeName() == null ?
                         Collections.emptySet() :
-                        Collections.singleton(LinstorParsingUtils.asNodeName(data.dstNodeName))
+                        Collections.singleton(LinstorParsingUtils.asNodeName(data.getDstNodeName()))
                 ).flatMapMany(
                     ignoredThinFreeCapacities -> scopeRunner.fluxInTransactionalScope(
                         "restore backup",
@@ -648,13 +649,13 @@ public class CtrlBackupL2LDstApiCallHandler
             }
             Snapshot snap = ctrlApiDataLoader.loadSnapshotDfn(rscName, snapName, true)
                 .getSnapshot(apiCtx, new NodeName(nodeName));
-            BackupShippingData data = backupInfoMgr.getL2LDstData(snap);
+            BackupShippingDstData data = backupInfoMgr.getL2LDstData(snap);
             Node node = snap.getNode();
-            if (data.dstNetIfName != null)
+            if (data.getDstNetIfName() != null)
             {
                 netIf = node.getNetInterface(
                     apiCtx,
-                    LinstorParsingUtils.asNetInterfaceName(data.dstNetIfName)
+                    LinstorParsingUtils.asNetInterfaceName(data.getDstNetIfName())
                 );
             }
             if (netIf == null)
@@ -666,21 +667,21 @@ public class CtrlBackupL2LDstApiCallHandler
             String srcStltRemoteName;
             synchronized (dstToSrcStltRemoteNameMap)
             {
-                srcStltRemoteName = dstToSrcStltRemoteNameMap.remove(data.stltRemote.getName());
+                srcStltRemoteName = dstToSrcStltRemoteNameMap.remove(data.getStltRemote().getName());
             }
 
-            boolean useZstd = data.stltRemote.useZstd(apiCtx);
+            boolean useZstd = data.getStltRemote().useZstd(apiCtx);
 
             flux = backupShippingRestClient.sendBackupReceiveRequest(
                 new BackupShippingReceiveRequest(
                     true,
                     responses,
-                    data.srcL2LRemoteName,
-                    data.stltRemote.getName().value,
-                    data.srcL2LRemoteUrl,
+                    data.getSrcL2LRemoteName(),
+                    data.getStltRemote().getName().value,
+                    data.getSrcL2LRemoteUrl(),
                     netIf.getAddress(apiCtx).getAddress(),
                     ports,
-                    data.incrBaseSnapDfnUuid,
+                    data.getIncrBaseSnapDfnUuid(),
                     useZstd,
                     srcStltRemoteName
                 )
@@ -709,8 +710,8 @@ public class CtrlBackupL2LDstApiCallHandler
     )
     {
         Flux<ApiCallRc> flux;
-        LinstorRemote srcRemote = loadLinstorRemote(data.srcClusterId);
-        ApiCallRcImpl rc = isClusterAllowedContact(data.srcVersion, data.srcClusterId, srcRemote);
+        LinstorRemote otherRemote = loadLinstorRemote(data.clusterId);
+        ApiCallRcImpl rc = isClusterAllowedContact(data.clusterVersion, data.clusterId, otherRemote);
         if (rc != null)
         {
             flux = Flux.just(rc);
@@ -730,16 +731,26 @@ public class CtrlBackupL2LDstApiCallHandler
 
     private Flux<ApiCallRc> prepareForAbortInTransaction(BackupShippingPrepareAbortRequest data)
     {
-        final String clusterHash = getSrcClusterShortId(data.srcClusterId);
+        final String otherClusterHash = "_" + getSrcClusterShortId(data.clusterId);
         Set<SnapshotDefinition> snapsToUpdate = new HashSet<>();
         for (Entry<String, List<String>> rscAndSnapNames : data.rscAndSnapNamesToAbort.entrySet())
         {
             String rscName = rscAndSnapNames.getKey();
             for (String snapName : rscAndSnapNames.getValue())
             {
-                // no need to parse string into SnapshotName since the snap exists on src-cluster with that name
-                String fullSnapName = snapName + "_" + clusterHash;
-                SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, fullSnapName, false);
+                String actualSnapName;
+                if (snapName.endsWith(otherClusterHash))
+                {
+                    // we are src-cluster, target sent us snap-name + hash
+                    actualSnapName = snapName.substring(0, snapName.length() - otherClusterHash.length());
+                }
+                else
+                {
+                    // we are target cluster, src sent us snap-name, but we need snap-name + hash
+                    actualSnapName = snapName + otherClusterHash;
+                }
+                // no need to parse string into SnapshotName since the snap exists on other cluster with that name
+                SnapshotDefinition snapDfn = ctrlApiDataLoader.loadSnapshotDfn(rscName, actualSnapName, false);
                 if (snapDfn != null)
                 {
                     try
@@ -791,79 +802,6 @@ public class CtrlBackupL2LDstApiCallHandler
             super();
             apiCallRcWithSnapshot = apiCallRcWithSnapshotRef;
             incrBaseSnapshot = incrBaseSnapshotRef;
-        }
-    }
-
-
-    public class BackupShippingData
-    {
-        public StltRemote stltRemote;
-        public SnapshotName snapName;
-        public final String srcL2LRemoteName; // linstorRemoteName, not StltRemoteName
-        public final String srcStltRemoteName;
-        public final String srcL2LRemoteUrl;
-        public final int[] srcVersion;
-        public final String dstRscName;
-        public final BackupMetaDataPojo metaData;
-        public final String srcBackupName;
-        public final String srcClusterId;
-        public final String srcRscName;
-        public String incrBaseSnapDfnUuid;
-        public String dstNodeName;
-        public String dstNetIfName;
-        public String dstStorPool;
-        public Map<String, String> storPoolRenameMap;
-        public final Map<String, Integer> snapShipPorts;
-        public boolean useZstd;
-        public boolean downloadOnly;
-        public boolean forceRestore;
-        public final boolean resetData;
-        public final String dstBaseSnapName;
-        public final String dstActualNodeName;
-
-        BackupShippingData(
-            int[] srcVersionRef,
-            String srcL2LRemoteNameRef, // linstorRemoteName, not StltRemoteName
-            String srcStltRemoteNameRef,
-            String srcL2LRemoteUrlRef,
-            String dstRscNameRef,
-            BackupMetaDataPojo metaDataRef,
-            String srcBackupNameRef,
-            String srcClusterIdRef,
-            String srcRscNameRef,
-            String dstNodeNameRef, // the node the user wants the receive to happen on
-            String dstNetIfNameRef,
-            String dstStorPoolRef,
-            Map<String, String> storPoolRenameMapRef,
-            Map<String, Integer> snapShipPortsRef,
-            boolean useZstdRef,
-            boolean downloadOnlyRef,
-            boolean forceRestoreRef,
-            boolean resetDataRef,
-            String dstBaseSnapNameRef,
-            String dstActualNodeNameRef // the node that needs to do the receive
-        )
-        {
-            srcVersion = srcVersionRef;
-            srcL2LRemoteName = srcL2LRemoteNameRef;
-            srcStltRemoteName = srcStltRemoteNameRef;
-            srcL2LRemoteUrl = srcL2LRemoteUrlRef;
-            dstRscName = dstRscNameRef;
-            metaData = metaDataRef;
-            srcBackupName = srcBackupNameRef;
-            srcClusterId = srcClusterIdRef;
-            srcRscName = srcRscNameRef;
-            dstNodeName = dstNodeNameRef;
-            dstNetIfName = dstNetIfNameRef;
-            dstStorPool = dstStorPoolRef;
-            storPoolRenameMap = storPoolRenameMapRef;
-            snapShipPorts = snapShipPortsRef;
-            useZstd = useZstdRef;
-            downloadOnly = downloadOnlyRef;
-            forceRestore = forceRestoreRef;
-            resetData = resetDataRef;
-            dstBaseSnapName = dstBaseSnapNameRef;
-            dstActualNodeName = dstActualNodeNameRef;
         }
     }
 

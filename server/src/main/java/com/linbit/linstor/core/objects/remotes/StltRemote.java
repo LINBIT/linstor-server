@@ -47,7 +47,7 @@ public class StltRemote extends AbsRemote
     // a reference to the node the stltRemote is describing
     private final Node node;
     // rsc-name of the snapDfn we are shipping to or receiving from
-    private final String otherRscName;
+    private final @Nullable String otherRscName;
 
     public StltRemote(
         ObjectProtection objProtRef,
@@ -163,7 +163,7 @@ public class StltRemote extends AbsRemote
         return node;
     }
 
-    public String getOtherRscName()
+    public @Nullable String getOtherRscName()
     {
         return otherRscName;
     }

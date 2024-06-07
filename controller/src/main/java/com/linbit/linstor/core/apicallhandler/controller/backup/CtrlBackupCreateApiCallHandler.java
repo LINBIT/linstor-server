@@ -20,7 +20,7 @@ import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtApiCallH
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotCrtHelper;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlTransactionHelper;
 import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupApiHelper.S3ObjectInfo;
-import com.linbit.linstor.core.apicallhandler.controller.backup.CtrlBackupL2LSrcApiCallHandler.BackupShippingData;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingSrcData;
 import com.linbit.linstor.core.apicallhandler.controller.backup.nodefinder.BackupNodeFinder;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.controller.req.CreateMultiSnapRequest;
@@ -194,7 +194,7 @@ public class CtrlBackupCreateApiCallHandler
         String scheduleNameRef,
         boolean runInBackgroundRef,
         @Nullable String prevSnapDfnUuid,
-        @Nullable BackupShippingData l2lData
+        @Nullable BackupShippingSrcData l2lData
     )
     {
         String snapName = snapNameRef;
@@ -341,7 +341,7 @@ public class CtrlBackupCreateApiCallHandler
         SnapshotDefinition prevSnapDfn,
         ApiCallRcImpl responses,
         @Nullable String optPrefNodeName,
-        @Nullable BackupShippingData optL2LData
+        @Nullable BackupShippingSrcData optL2LData
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -369,7 +369,7 @@ public class CtrlBackupCreateApiCallHandler
         SnapshotDefinition prevSnapDfn,
         ApiCallRcImpl responsesRef,
         @Nullable String optPrefNodeName,
-        @Nullable BackupShippingData optL2LData
+        @Nullable BackupShippingSrcData optL2LData
     )
     {
         try
@@ -626,7 +626,7 @@ public class CtrlBackupCreateApiCallHandler
         String prefNodeName,
         ApiCallRcImpl responses,
         boolean queueAnyways,
-        @Nullable BackupShippingData l2lData
+        @Nullable BackupShippingSrcData l2lData
     ) throws AccessDeniedException
     {
         Set<Node> usableNodes = backupNodeFinder.findUsableNodes(

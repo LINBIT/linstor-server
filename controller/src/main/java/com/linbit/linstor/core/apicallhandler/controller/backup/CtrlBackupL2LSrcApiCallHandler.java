@@ -21,6 +21,7 @@ import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.Ba
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingRequestPrevSnap;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponse;
 import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingResponsePrevSnap;
+import com.linbit.linstor.core.apicallhandler.controller.backup.l2l.rest.data.BackupShippingSrcData;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlBackupQueueInternalCallHandler;
 import com.linbit.linstor.core.apicallhandler.controller.internal.CtrlSatelliteUpdateCaller;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
@@ -272,7 +273,7 @@ public class CtrlBackupL2LSrcApiCallHandler
         {
             storPoolRenameMap.put(AbsLayerHelperUtils.RENAME_STOR_POOL_DFLT_KEY, dstStorPoolRef);
         }
-        BackupShippingData data = new BackupShippingData(
+        BackupShippingSrcData data = new BackupShippingSrcData(
             srcClusterId,
             srcNodeNameRef,
             srcRscNameRef,
@@ -324,7 +325,7 @@ public class CtrlBackupL2LSrcApiCallHandler
      */
     private Flux<ApiCallRc> createSnapshot(
         BackupShippingResponsePrevSnap response,
-        BackupShippingData data,
+        BackupShippingSrcData data,
         boolean runInBackgroundRef
     )
     {
@@ -339,26 +340,26 @@ public class CtrlBackupL2LSrcApiCallHandler
             requiredExtTools.put(ExtTools.SOCAT, null);
             Map<ExtTools, Version> optionalExtTools = new HashMap<>();
             optionalExtTools.put(ExtTools.ZSTD, null);
-            data.resetData = response.resetData;
-            data.dstBaseSnapName = response.dstBaseSnapName;
-            data.dstActualNodeName = response.dstActualNodeName;
+            data.setResetData(response.resetData);
+            data.setDstBaseSnapName(response.dstBaseSnapName);
+            data.setDstActualNodeName(response.dstActualNodeName);
             Pair<Flux<ApiCallRc>, Snapshot> createSnapshot = ctrlBackupCrtApiCallHandler.backupSnapshot(
-                data.srcRscName,
-                data.linstorRemote.getName().displayValue,
-                data.srcNodeName,
-                data.srcBackupName,
-                data.now,
-                data.allowIncremental && response.prevSnapUuid != null,
+                data.getSrcRscName(),
+                data.getLinstorRemote().getName().displayValue,
+                data.getSrcNodeName(),
+                data.getSrcBackupName(),
+                data.getNow(),
+                data.isAllowIncremental() && response.prevSnapUuid != null,
                 RemoteType.LINSTOR,
-                data.scheduleName,
+                data.getScheduleName(),
                 runInBackgroundRef,
                 response.prevSnapUuid,
                 data
             );
             if (createSnapshot.objB != null)
             {
-                data.srcSnapshot = createSnapshot.objB;
-                data.srcNodeName = data.srcSnapshot.getNode().getName().displayValue;
+                data.setSrcSnapshot(createSnapshot.objB);
+                data.setSrcNodeName(data.getSrcSnapshot().getNode().getName().displayValue);
                 flux = createSnapshot.objA
                     .concatWith(
                         scopeRunner.fluxInTransactionalScope(
@@ -384,21 +385,21 @@ public class CtrlBackupL2LSrcApiCallHandler
      * 3) create the stlt-remote</br>
      * also calls updateSatellites
      */
-    public Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingData data, Node node)
+    public Flux<ApiCallRc> createStltRemoteInTransaction(BackupShippingSrcData data, Node node)
     {
         StltRemote stltRemote = createStltRemote(
             stltRemoteFactory,
             remoteRepo,
             peerAccCtx.get(),
-            data.srcRscName,
-            data.srcBackupName,
+            data.getSrcRscName(),
+            data.getSrcBackupName(),
             new TreeMap<>(),
-            data.linstorRemote.getName(),
+            data.getLinstorRemote().getName(),
             node,
-            data.dstRscName
+            data.getDstRscName()
         );
 
-        data.stltRemote = stltRemote;
+        data.setStltRemote(stltRemote);
 
         ctrlTransactionHelper.commit();
         return ctrlSatelliteUpdateCaller.updateSatellites(stltRemote)
@@ -463,14 +464,14 @@ public class CtrlBackupL2LSrcApiCallHandler
      * (see class-javadoc for overview)</br>
      * 3) create the stlt-remote and tell the target cluster to start receiving
      */
-    private Flux<ApiCallRc> prepareShippingInTransaction(BackupShippingData data)
+    private Flux<ApiCallRc> prepareShippingInTransaction(BackupShippingSrcData data)
     {
         Flux<ApiCallRc> flux;
         try
         {
             BackupMetaDataPojo metaDataPojo = BackupShippingUtils.getBackupMetaDataPojo(
                 peerAccCtx.get(),
-                data.srcSnapshot,
+                data.getSrcSnapshot(),
                 systemConfRepository.getStltConfForView(sysCtx),
                 ctrlSecObjs.getEncKey(),
                 ctrlSecObjs.getCryptHash(),
@@ -479,21 +480,24 @@ public class CtrlBackupL2LSrcApiCallHandler
                 null
             );
 
-            NodeName srcSendingNodeName = data.srcSnapshot.getNodeName();
+            NodeName srcSendingNodeName = data.getSrcSnapshot().getNodeName();
             backupInfoMgr.abortCreateAddL2LEntry(
                 srcSendingNodeName,
-                data.srcSnapshot.getSnapshotDefinition().getSnapDfnKey(),
+                data.getSrcSnapshot().getSnapshotDefinition().getSnapDfnKey(),
                 data.getStltRemote().getLinstorRemoteName()
             );
 
-            ExtToolsManager extToolsMgr = data.srcSnapshot.getNode().getPeer(sysCtx).getExtToolsManager();
+            ExtToolsManager extToolsMgr = data.getSrcSnapshot().getNode().getPeer(sysCtx).getExtToolsManager();
             ExtToolsInfo zstd = extToolsMgr.getExtToolInfo(ExtTools.ZSTD);
-            data.useZstd = zstd != null && zstd.isSupported();
+            data.setUseZstd(zstd != null && zstd.isSupported());
 
-            data.metaDataPojo = metaDataPojo;
-            data.metaDataPojo.getRscDfn().getProps().put(
+            data.setMetaDataPojo(metaDataPojo);
+            data.getMetaDataPojo()
+                .getRscDfn()
+                .getProps()
+                .put(
                 InternalApiConsts.KEY_BACKUP_L2L_SRC_SNAP_DFN_UUID,
-                data.srcSnapshot.getSnapshotDefinition().getUuid().toString()
+                    data.getSrcSnapshot().getSnapshotDefinition().getUuid().toString()
             );
             // tell target cluster "Hey! Listen!"
             flux = Flux.merge(
@@ -523,12 +527,12 @@ public class CtrlBackupL2LSrcApiCallHandler
 
     private Flux<ApiCallRc> confirmBackupShippingRequestArrived(
         BackupShippingResponse responseRef,
-        BackupShippingData data
+        BackupShippingSrcData data
     )
     {
         return Flux.just(
             ApiCallRcImpl.copyAndPrefix(
-                "Remote '" + data.linstorRemote.getName().displayValue + "': ",
+                "Remote '" + data.getLinstorRemote().getName().displayValue + "': ",
                 responseRef.responses
             )
         );
@@ -541,7 +545,7 @@ public class CtrlBackupL2LSrcApiCallHandler
      */
     public Flux<ApiCallRc> startShipping(
         BackupShippingReceiveRequest responseRef,
-        BackupShippingData data
+        BackupShippingSrcData data
     )
     {
         return scopeRunner.fluxInTransactionalScope(
@@ -555,7 +559,7 @@ public class CtrlBackupL2LSrcApiCallHandler
 
     private Flux<ApiCallRc> startShippingInTransaction(
         BackupShippingReceiveRequest responseRef,
-        BackupShippingData data
+        BackupShippingSrcData data
     )
     {
         Flux<ApiCallRc> flux;
@@ -564,19 +568,20 @@ public class CtrlBackupL2LSrcApiCallHandler
             if (responseRef.canReceive)
             {
                 AccessContext accCtx = peerAccCtx.get();
-                StltRemote stltRemote = data.stltRemote;
+                StltRemote stltRemote = data.getStltRemote();
                 stltRemote.setIp(accCtx, responseRef.dstStltIp);
                 stltRemote.setAllPorts(accCtx, responseRef.dstStltPorts);
-                stltRemote.useZstd(accCtx, responseRef.useZstd && data.useZstd);
+                stltRemote.useZstd(accCtx, responseRef.useZstd && data.isUseZstd());
                 ctrlTransactionHelper.commit();
                 flux = ctrlSatelliteUpdateCaller.updateSatellites(stltRemote);
 
-                Snapshot snap = data.srcSnapshot;
+                Snapshot snap = data.getSrcSnapshot();
                 snap.getFlags().enableFlags(accCtx, Snapshot.Flags.BACKUP_SOURCE);
                 snap.setTakeSnapshot(accCtx, true); // needed by source-satellite to actually start sending
                 SnapshotDefinition prevSnapDfn = null;
                 if (
-                    responseRef.srcSnapDfnUuid != null && !responseRef.srcSnapDfnUuid.isEmpty() && data.allowIncremental
+                    responseRef.srcSnapDfnUuid != null && !responseRef.srcSnapDfnUuid.isEmpty() && data
+                        .isAllowIncremental()
                 )
                 {
                     UUID prevSnapUuid = UUID.fromString(responseRef.srcSnapDfnUuid);
@@ -601,8 +606,8 @@ public class CtrlBackupL2LSrcApiCallHandler
                 ctrlBackupCrtApiCallHandler.setIncrementalDependentProps(
                     snap.getSnapshotDefinition(),
                     prevSnapDfn,
-                    data.linstorRemote.getName().displayValue,
-                    data.scheduleName
+                    data.getLinstorRemote().getName().displayValue,
+                    data.getScheduleName()
                 );
                 snap.getProps(peerAccCtx.get())
                     .setProp(
@@ -636,7 +641,7 @@ public class CtrlBackupL2LSrcApiCallHandler
             {
                 flux = Flux.just(
                     ApiCallRcImpl.copyAndPrefix(
-                        "Remote '" + data.linstorRemote.getName().displayValue + "': ",
+                        "Remote '" + data.getLinstorRemote().getName().displayValue + "': ",
                         responseRef.responses
                     )
                 );
@@ -682,7 +687,7 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     public Flux<ApiCallRc> startQueues(
-        BackupShippingData data,
+        BackupShippingSrcData data,
         StltRemoteCleanupTask task
     )
     {
@@ -697,29 +702,29 @@ public class CtrlBackupL2LSrcApiCallHandler
     }
 
     private Flux<ApiCallRc> startQueuesInTransaction(
-        BackupShippingData data,
+        BackupShippingSrcData data,
         StltRemoteCleanupTask task
     ) throws AccessDeniedException, DatabaseException
     {
         SnapshotDefinition snapDfn = null;
-        if (data.srcSnapshot != null && !data.srcSnapshot.isDeleted())
+        if (data.getSrcSnapshot() != null && !data.getSrcSnapshot().isDeleted())
         {
-            snapDfn = data.srcSnapshot.getSnapshotDefinition();
+            snapDfn = data.getSrcSnapshot().getSnapshotDefinition();
             snapDfn.getFlags().disableFlags(peerAccCtx.get(), SnapshotDefinition.Flags.SHIPPING);
         }
         taskScheduleService.rescheduleAt(task, Task.END_TASK);
         ctrlTransactionHelper.commit();
         return queueHandler.handleBackupQueues(
             snapDfn,
-            data.linstorRemote,
-            data.stltRemote
+            data.getLinstorRemote(),
+            data.getStltRemote()
         );
     }
 
-    private Flux<ApiCallRc> unsetTakeSnapshotInTransaction(BackupShippingData dataRef)
+    private Flux<ApiCallRc> unsetTakeSnapshotInTransaction(BackupShippingSrcData dataRef)
     {
         AccessContext accCtx = peerAccCtx.get();
-        Snapshot snap = dataRef.srcSnapshot;
+        Snapshot snap = dataRef.getSrcSnapshot();
         try
         {
             snap.setTakeSnapshot(accCtx, false);
@@ -743,253 +748,5 @@ public class CtrlBackupL2LSrcApiCallHandler
                     "Cleanup of {1} on {0} "
                 )
             );
-    }
-
-    public class BackupShippingData
-    {
-        private final String srcClusterId;
-        private final String srcRscName;
-        private final String srcBackupName;
-        private final Date now;
-        private final String dstRscName;
-        private final LinstorRemote linstorRemote;
-        private final Map<String, String> storPoolRename;
-
-        private Snapshot srcSnapshot;
-        private String srcNodeName;
-        private BackupMetaDataPojo metaDataPojo;
-        private String dstNodeName;
-        private String dstNetIfName;
-        private String dstStorPool;
-        private String scheduleName;
-
-        private StltRemote stltRemote;
-        private String dstBaseSnapName;
-        private String dstActualNodeName;
-        private boolean resetData;
-        private boolean useZstd;
-        private boolean downloadOnly;
-        private boolean forceRestore;
-        private boolean allowIncremental;
-
-        BackupShippingData(
-            String srcClusterIdRef,
-            String srcNodeNameRef,
-            String srcRscNameRef,
-            String srcBackupNameRef,
-            Date nowRef,
-            LinstorRemote linstorRemoteRef,
-            String dstRscNameRef,
-            String dstNodeNameRef,
-            String dstNetIfNameRef,
-            String dstStorPoolRef,
-            Map<String, String> storPoolRenameRef,
-            boolean downloadOnlyRef,
-            boolean forceRestoreRef,
-            String scheduleNameRef,
-            boolean allowIncrementalRef
-        )
-        {
-            srcClusterId = srcClusterIdRef;
-            srcNodeName = srcNodeNameRef;
-            srcRscName = srcRscNameRef;
-            srcBackupName = srcBackupNameRef;
-            now = nowRef;
-            linstorRemote = linstorRemoteRef;
-            dstRscName = dstRscNameRef;
-            dstNodeName = dstNodeNameRef;
-            dstNetIfName = dstNetIfNameRef;
-            dstStorPool = dstStorPoolRef;
-            storPoolRename = storPoolRenameRef;
-            downloadOnly = downloadOnlyRef;
-            forceRestore = forceRestoreRef;
-            scheduleName = scheduleNameRef;
-            allowIncremental = allowIncrementalRef;
-        }
-
-        public String getSrcClusterId()
-        {
-            return srcClusterId;
-        }
-
-        public String getSrcRscName()
-        {
-            return srcRscName;
-        }
-
-        public String getSrcBackupName()
-        {
-            return srcBackupName;
-        }
-
-        public Date getNow()
-        {
-            return now;
-        }
-
-        public String getDstRscName()
-        {
-            return dstRscName;
-        }
-
-        public LinstorRemote getLinstorRemote()
-        {
-            return linstorRemote;
-        }
-
-        public Map<String, String> getStorPoolRename()
-        {
-            return storPoolRename;
-        }
-
-        public Snapshot getSrcSnapshot()
-        {
-            return srcSnapshot;
-        }
-
-        public String getSrcNodeName()
-        {
-            return srcNodeName;
-        }
-
-        public BackupMetaDataPojo getMetaDataPojo()
-        {
-            return metaDataPojo;
-        }
-
-        public String getDstNodeName()
-        {
-            return dstNodeName;
-        }
-
-        public String getDstNetIfName()
-        {
-            return dstNetIfName;
-        }
-
-        public String getDstStorPool()
-        {
-            return dstStorPool;
-        }
-
-        public String getScheduleName()
-        {
-            return scheduleName;
-        }
-
-        public StltRemote getStltRemote()
-        {
-            return stltRemote;
-        }
-
-        public String getDstBaseSnapName()
-        {
-            return dstBaseSnapName;
-        }
-
-        public String getDstActualNodeName()
-        {
-            return dstActualNodeName;
-        }
-
-        public boolean isResetData()
-        {
-            return resetData;
-        }
-
-        public boolean isUseZstd()
-        {
-            return useZstd;
-        }
-
-        public boolean isDownloadOnly()
-        {
-            return downloadOnly;
-        }
-
-        public boolean isForceRestore()
-        {
-            return forceRestore;
-        }
-
-        public boolean isAllowIncremental()
-        {
-            return allowIncremental;
-        }
-
-        public void setSrcSnapshot(Snapshot srcSnapshotRef)
-        {
-            srcSnapshot = srcSnapshotRef;
-        }
-
-        public void setSrcNodeName(String srcNodeNameRef)
-        {
-            srcNodeName = srcNodeNameRef;
-        }
-
-        public void setMetaDataPojo(BackupMetaDataPojo metaDataPojoRef)
-        {
-            metaDataPojo = metaDataPojoRef;
-        }
-
-        public void setDstNodeName(String dstNodeNameRef)
-        {
-            dstNodeName = dstNodeNameRef;
-        }
-
-        public void setDstNetIfName(String dstNetIfNameRef)
-        {
-            dstNetIfName = dstNetIfNameRef;
-        }
-
-        public void setDstStorPool(String dstStorPoolRef)
-        {
-            dstStorPool = dstStorPoolRef;
-        }
-
-        public void setScheduleName(String scheduleNameRef)
-        {
-            scheduleName = scheduleNameRef;
-        }
-
-        public void setStltRemote(StltRemote stltRemoteRef)
-        {
-            stltRemote = stltRemoteRef;
-        }
-
-        public void setDstBaseSnapName(String dstBaseSnapNameRef)
-        {
-            dstBaseSnapName = dstBaseSnapNameRef;
-        }
-
-        public void setDstActualNodeName(String dstActualNodeNameRef)
-        {
-            dstActualNodeName = dstActualNodeNameRef;
-        }
-
-        public void setResetData(boolean resetDataRef)
-        {
-            resetData = resetDataRef;
-        }
-
-        public void setUseZstd(boolean useZstdRef)
-        {
-            useZstd = useZstdRef;
-        }
-
-        public void setDownloadOnly(boolean downloadOnlyRef)
-        {
-            downloadOnly = downloadOnlyRef;
-        }
-
-        public void setForceRestore(boolean forceRestoreRef)
-        {
-            forceRestore = forceRestoreRef;
-        }
-
-        public void setAllowIncremental(boolean allowIncrementalRef)
-        {
-            allowIncremental = allowIncrementalRef;
-        }
     }
 }
