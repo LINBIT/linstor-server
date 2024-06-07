@@ -1964,8 +1964,8 @@ public class CtrlBackupRestoreApiCallHandler
                                 flux = flux.concatWith(
                                     ctrlSnapRestoreApiCallHandler.restoreSnapshotFromBackup(
                                         Collections.emptyList(),
-                                        snapNameRef,
-                                        rscNameRef
+                                        snapDfn.getName(),
+                                        snapDfn.getResourceName()
                                     )
                                 );
                             }
@@ -2014,8 +2014,8 @@ public class CtrlBackupRestoreApiCallHandler
                             {
                                 flux = flux.concatWith(
                                     ctrlSnapDeleteApiCallHandler.deleteSnapshot(
-                                        snapDfnToDel.getResourceName().displayValue,
-                                        snapDfnToDel.getName().displayValue,
+                                        snapDfnToDel.getResourceName(),
+                                        snapDfnToDel.getName(),
                                         null
                                     )
                                 );

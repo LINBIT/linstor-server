@@ -357,8 +357,8 @@ public class CtrlBackupApiCallHandler
             {
                 deleteSnapFlux = deleteSnapFlux.concatWith(
                     ctrlSnapDeleteApiCallHandler.deleteSnapshot(
-                        snapKey.getResourceName().displayValue,
-                        snapKey.getSnapshotName().displayValue,
+                        snapKey.getResourceName(),
+                        snapKey.getSnapshotName(),
                         null
                     )
                 );

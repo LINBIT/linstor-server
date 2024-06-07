@@ -513,8 +513,8 @@ public class CtrlNodeDeleteApiCallHandler implements CtrlSatelliteConnectionList
             for (Snapshot snapshot : node.getSnapshots(apiCtx))
             {
                 fluxes.add(ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(
-                    snapshot.getResourceName().getName(),
-                    snapshot.getSnapshotName().getName(),
+                    snapshot.getResourceName(),
+                    snapshot.getSnapshotName(),
                     Collections.singletonList(node.getName().displayValue)
                 ));
             }

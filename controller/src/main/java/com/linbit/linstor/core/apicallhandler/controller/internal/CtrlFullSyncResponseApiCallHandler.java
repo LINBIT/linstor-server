@@ -132,8 +132,8 @@ public class CtrlFullSyncResponseApiCallHandler
             {
                 fluxes.add(
                     ctrlSnapDelApiCallHandler.deleteSnapshot(
-                        snapDfn.getResourceName().displayValue,
-                        snapDfn.getName().displayValue,
+                        snapDfn.getResourceName(),
+                        snapDfn.getName(),
                         null
                     )
                 );

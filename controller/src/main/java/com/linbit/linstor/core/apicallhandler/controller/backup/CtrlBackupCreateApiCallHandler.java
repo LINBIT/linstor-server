@@ -3,6 +3,7 @@ package com.linbit.linstor.core.apicallhandler.controller.backup;
 import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
@@ -255,7 +256,12 @@ public class CtrlBackupCreateApiCallHandler
             }
 
             SnapshotDefinition snapDfn = snapCrtHelper
-                .createSnapshots(Collections.emptyList(), rscDfn.getName().displayValue, snapName, responses);
+                .createSnapshots(
+                    Collections.emptyList(),
+                    rscDfn.getName(),
+                    LinstorParsingUtils.asSnapshotName(snapName),
+                    responses
+                );
             setBackupSnapDfnFlagsAndProps(snapDfn, scheduleNameRef, nowRef);
             /*
              * See if the previous snap has already finished shipping. If it hasn't, the current snap must be queued to

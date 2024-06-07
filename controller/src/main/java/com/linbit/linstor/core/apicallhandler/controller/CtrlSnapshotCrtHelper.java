@@ -5,7 +5,6 @@ import com.linbit.drbd.md.MdException;
 import com.linbit.drbd.md.MetaData;
 import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorDataAlreadyExistsException;
-import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -15,6 +14,7 @@ import com.linbit.linstor.api.interfaces.RscLayerDataApi;
 import com.linbit.linstor.core.apicallhandler.response.ApiAccessDeniedException;
 import com.linbit.linstor.core.apicallhandler.response.ApiDatabaseException;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
@@ -106,13 +106,13 @@ public class CtrlSnapshotCrtHelper
 
     public SnapshotDefinition createSnapshots(
         Collection<String> nodeNameStrs,
-        String rscNameStr,
-        String snapshotNameStr, ApiCallRcImpl responses
+        ResourceName rscName,
+        SnapshotName snapshotName,
+        ApiCallRcImpl responses
     )
     {
-        final ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameStr, true);
+        final ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscName, true);
 
-        SnapshotName snapshotName = LinstorParsingUtils.asSnapshotName(snapshotNameStr);
         SnapshotDefinition snapshotDfn = createSnapshotDfnData(
             rscDfn,
             snapshotName,
@@ -154,11 +154,11 @@ public class CtrlSnapshotCrtHelper
                 {
                     if (isEvacuatingPrivileged(rsc))
                     {
-                        warnNodeEvacuating(rscNameStr, responses, rsc.getNode().getName().displayValue);
+                        warnNodeEvacuating(rscName.displayValue, responses, rsc.getNode().getName().displayValue);
                     }
                     else if (!isNodeOnline(rsc))
                     {
-                        warnNodeOffline(rscNameStr, responses, rsc.getNode().getName().displayValue);
+                        warnNodeOffline(rscName.displayValue, responses, rsc.getNode().getName().displayValue);
                     }
                     else
                     {
@@ -186,7 +186,7 @@ public class CtrlSnapshotCrtHelper
                 }
                 if (isEvacuatingPrivileged(rsc))
                 {
-                    warnNodeEvacuating(rscNameStr, responses, nodeNameStr);
+                    warnNodeEvacuating(rscName.displayValue, responses, nodeNameStr);
                 }
                 else
                 {

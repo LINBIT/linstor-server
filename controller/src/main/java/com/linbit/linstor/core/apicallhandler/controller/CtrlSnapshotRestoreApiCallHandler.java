@@ -18,6 +18,7 @@ import com.linbit.linstor.core.apicallhandler.response.CtrlResponseUtils;
 import com.linbit.linstor.core.apicallhandler.response.OperationDescription;
 import com.linbit.linstor.core.apicallhandler.response.ResponseContext;
 import com.linbit.linstor.core.apicallhandler.response.ResponseConverter;
+import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Node;
@@ -145,6 +146,32 @@ public class CtrlSnapshotRestoreApiCallHandler
     )
     {
         ResponseContext context = makeSnapshotRestoreContext(toRscNameStr);
+        Flux<ApiCallRc> ret;
+        try
+        {
+            ret = restoreSnapshot(
+                nodeNameStrs,
+                LinstorParsingUtils.asRscName(fromRscNameStr),
+                LinstorParsingUtils.asSnapshotName(fromSnapshotNameStr),
+                LinstorParsingUtils.asRscName(toRscNameStr),
+                renameStorPoolMap
+            ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+        }
+        catch (ApiRcException exc)
+        {
+            ret = Flux.error(exc);
+        }
+        return ret;
+    }
+
+    public Flux<ApiCallRc> restoreSnapshot(
+        List<String> nodeNameStrs,
+        ResourceName fromRscName,
+        SnapshotName fromSnapshotName,
+        ResourceName toRscName,
+        Map<String, String> renameStorPoolMap
+    )
+    {
         return scopeRunner.fluxInTransactionalScope(
             "Restore Snapshot Resource",
             lockGuardFactory.createDeferred()
@@ -153,22 +180,22 @@ public class CtrlSnapshotRestoreApiCallHandler
                 .build(),
             () -> restoreResourceInTransaction(
                 nodeNameStrs,
-                fromRscNameStr,
-                fromSnapshotNameStr,
-                toRscNameStr,
+                fromRscName,
+                fromSnapshotName,
+                toRscName,
                 false,
                 renameStorPoolMap
             )
-        ).transform(responses -> responseConverter.reportingExceptions(context, responses));
+        );
     }
 
     public Flux<ApiCallRc> restoreSnapshotFromBackup(
         List<String> nodeNameStrs,
-        String fromSnapshotNameStr,
-        String toRscNameStr
+        SnapshotName fromSnapshotName,
+        ResourceName toRscName
     )
     {
-        ResponseContext context = makeSnapshotRestoreContext(toRscNameStr);
+        ResponseContext context = makeSnapshotRestoreContext(toRscName.displayValue);
         return scopeRunner.fluxInTransactionalScope(
             "Restore Snapshot Resource from backup",
             lockGuardFactory.createDeferred()
@@ -177,9 +204,9 @@ public class CtrlSnapshotRestoreApiCallHandler
                 .build(),
             () -> restoreResourceInTransaction(
                 nodeNameStrs,
-                toRscNameStr,
-                fromSnapshotNameStr,
-                toRscNameStr,
+                toRscName,
+                fromSnapshotName,
+                toRscName,
                 true,
                 Collections.emptyMap() // rename-storpool already happened during download
             )
@@ -188,9 +215,9 @@ public class CtrlSnapshotRestoreApiCallHandler
 
     private Flux<ApiCallRc> restoreResourceInTransaction(
         List<String> nodeNameStrs,
-        String fromRscNameStr,
-        String fromSnapshotNameStr,
-        String toRscNameStr,
+        ResourceName fromRscName,
+        SnapshotName fromSnapshotName,
+        ResourceName toRscName,
         boolean fromBackup,
         Map<String, String> renameStorPoolMap
     )
@@ -201,20 +228,19 @@ public class CtrlSnapshotRestoreApiCallHandler
         ApiCallRcImpl responses = new ApiCallRcImpl();
         ResponseContext context = new ResponseContext(
             new ApiOperation(ApiConsts.MASK_CRT, new OperationDescription("restore", "restoring")),
-            getSnapshotRestoreDescription(nodeNameStrs, toRscNameStr),
-            getSnapshotRestoreDescriptionInline(nodeNameStrs, toRscNameStr),
+            getSnapshotRestoreDescription(nodeNameStrs, toRscName.displayValue),
+            getSnapshotRestoreDescriptionInline(nodeNameStrs, toRscName.displayValue),
             ApiConsts.MASK_RSC,
             Collections.emptyMap()
         );
 
         try
         {
-            ResourceDefinition fromRscDfn = ctrlApiDataLoader.loadRscDfn(fromRscNameStr, true);
+            ResourceDefinition fromRscDfn = ctrlApiDataLoader.loadRscDfn(fromRscName, true);
 
-            SnapshotName fromSnapshotName = LinstorParsingUtils.asSnapshotName(fromSnapshotNameStr);
             SnapshotDefinition fromSnapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(fromRscDfn, fromSnapshotName, true);
 
-            ResourceDefinition toRscDfn = ctrlApiDataLoader.loadRscDfn(toRscNameStr, true);
+            ResourceDefinition toRscDfn = ctrlApiDataLoader.loadRscDfn(toRscName, true);
 
             if (toRscDfn.getResourceCount() != 0)
             {
@@ -242,7 +268,7 @@ public class CtrlSnapshotRestoreApiCallHandler
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
                         ApiConsts.FAIL_IN_USE,
-                        fromSnapshotNameStr + " is currently being restored from a backup. " +
+                        fromSnapshotName + " is currently being restored from a backup. " +
                             "Please wait until the restore is finished"
                     )
                 );
@@ -321,8 +347,9 @@ public class CtrlSnapshotRestoreApiCallHandler
             responseConverter.addWithOp(responses, context, ApiCallRcImpl
                 .entryBuilder(
                     ApiConsts.CREATED,
-                    firstLetterCaps(getSnapshotRestoreDescriptionInline(nodeNameStrs, toRscNameStr)) + " restored " +
-                        "from resource '" + fromRscNameStr + "', snapshot '" + fromSnapshotNameStr + "'."
+                    firstLetterCaps(getSnapshotRestoreDescriptionInline(nodeNameStrs, toRscName.displayValue)) +
+                        " restored " +
+                        "from resource '" + fromRscName + "', snapshot '" + fromSnapshotName + "'."
                 )
                 .setDetails("Resource UUIDs: " +
                     toRscDfn.streamResource(peerAccCtx.get())

@@ -1385,8 +1385,8 @@ public class CtrlNodeApiCallHandler
                         {
                             flux = flux.concatWith(
                                 snapDeleteHandler.deleteSnapshot(
-                                    snap.getResourceName().displayValue,
-                                    snap.getSnapshotName().displayValue,
+                                    snap.getResourceName(),
+                                    snap.getSnapshotName(),
                                     Collections.singletonList(snap.getNodeName().displayValue)
                                 )
                             );

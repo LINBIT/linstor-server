@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.InvalidNameException;
 import com.linbit.TimeoutException;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.api.ApiCallRc;
@@ -126,7 +127,7 @@ public class CtrlSnapshotCrtApiCallHandler
      * <li>Add the snapshot objects (definition and instances), marked with the suspend flag</li>
      * <li>When all resources are suspended, send out a snapshot request</li>
      * <li>When all snapshots have been created, mark the resource as resuming by removing the suspend flag</li>
-     * <li>When all resources have been resumed, remove the in-progress snapshots</li>
+     * <li>When all resources have been resumed, remove the in-progress state of the snapshots</li>
      * </ol>
      */
     public Flux<ApiCallRc> createSnapshot(
@@ -178,8 +179,8 @@ public class CtrlSnapshotCrtApiCallHandler
             String snapshotNameStr = snapReq.getSnapName();
             SnapshotDefinition snapDfn = ctrlSnapshotCrtHelper.createSnapshots(
                 nodeNameStrs,
-                rscNameStr,
-                snapshotNameStr,
+                LinstorParsingUtils.asRscName(rscNameStr),
+                LinstorParsingUtils.asSnapshotName(snapshotNameStr),
                 responses
             );
             snapDfnList.add(snapDfn);
@@ -275,8 +276,8 @@ public class CtrlSnapshotCrtApiCallHandler
 
             snapDfn = ctrlSnapshotCrtHelper.createSnapshots(
                 nodeNameStrs,
-                rscNameStr,
-                autoSnapshotName,
+                LinstorParsingUtils.asRscName(rscNameStr),
+                LinstorParsingUtils.asSnapshotName(autoSnapshotName),
                 responses
             );
             enableFlagPrivileged(snapDfn, SnapshotDefinition.Flags.AUTO_SNAPSHOT);
@@ -697,8 +698,8 @@ public class CtrlSnapshotCrtApiCallHandler
                 // that a SnapshotDefinition is deleted in the current list
                 ret = ret.concatWith(
                     ctrlSnapshotDeleteApiCallHandler.deleteSnapshot(
-                        snapDfn.getResourceName().displayValue,
-                        snapDfn.getName().displayValue,
+                        snapDfn.getResourceName(),
+                        snapDfn.getName(),
                         null
                     )
                 );

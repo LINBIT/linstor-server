@@ -154,8 +154,8 @@ public class CtrlSnapshotShippingAbortHandler
                     flux = flux.concatWith(
                         snapDelHandlerProvider.get()
                             .deleteSnapshot(
-                                snapDfn.getResourceName().displayValue,
-                                snapDfn.getName().displayValue,
+                                snapDfn.getResourceName(),
+                                snapDfn.getName(),
                                 null
                             )
                     );
@@ -346,8 +346,8 @@ public class CtrlSnapshotShippingAbortHandler
             flux = flux.concatWith(
                 snapDelHandlerProvider.get()
                     .deleteSnapshot(
-                        snapDfn.getResourceName().displayValue,
-                        snapDfn.getName().displayValue,
+                        snapDfn.getResourceName(),
+                        snapDfn.getName(),
                         null
                     )
             );

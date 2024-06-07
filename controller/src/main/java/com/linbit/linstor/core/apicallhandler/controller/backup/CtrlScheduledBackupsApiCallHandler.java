@@ -245,8 +245,8 @@ public class CtrlScheduledBackupsApiCallHandler
                     {
                         deleteFlux = deleteFlux.concatWith(
                             ctrlSnapDeleteApiCallHandler.deleteSnapshot(
-                                incSnapToDel.getResourceName().displayValue,
-                                incSnapToDel.getName().displayValue,
+                                incSnapToDel.getResourceName(),
+                                incSnapToDel.getName(),
                                 null
                             )
                         );
@@ -254,8 +254,8 @@ public class CtrlScheduledBackupsApiCallHandler
                 }
                 deleteFlux = deleteFlux.concatWith(
                     ctrlSnapDeleteApiCallHandler.deleteSnapshot(
-                        fullSnapToDel.getResourceName().displayValue,
-                        fullSnapToDel.getName().displayValue,
+                        fullSnapToDel.getResourceName(),
+                        fullSnapToDel.getName(),
                         null
                     )
                 );

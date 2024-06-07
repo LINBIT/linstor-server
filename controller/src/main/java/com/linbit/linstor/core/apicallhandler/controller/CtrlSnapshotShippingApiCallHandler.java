@@ -284,8 +284,8 @@ public class CtrlSnapshotShippingApiCallHandler
 
         snapDfn = snapCrtHelper.createSnapshots(
             Arrays.asList(fromNodeNameRef, toNodeNameRef),
-            rscNameRef,
-            snapShipName,
+            LinstorParsingUtils.asRscName(rscNameRef),
+            LinstorParsingUtils.asSnapshotName(snapShipName),
             responses
         );
 

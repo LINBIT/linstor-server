@@ -2,6 +2,7 @@ package com.linbit.linstor.core.apicallhandler.controller;
 
 import com.linbit.ImplementationError;
 import com.linbit.linstor.InternalApiConsts;
+import com.linbit.linstor.LinstorParsingUtils;
 import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.PeerContext;
@@ -118,7 +119,21 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
         return fluxes;
     }
 
-    public Flux<ApiCallRc> deleteSnapshot(String rscNameStr, String snapshotNameStr, List<String> nodeNamesStrListRef)
+    /**
+     * deletes a snapshot
+     * this should be called directly by the REST-class and therefore needs its own exception handling
+     *
+     * @param rscName
+     * @param snapshotName
+     * @param nodeNamesStrListRef
+     *
+     * @return deletion-flux
+     */
+    public Flux<ApiCallRc> deleteSnapshot(
+        String rscNameStr,
+        String snapshotNameStr,
+        List<String> nodeNamesStrListRef
+    )
     {
         ResponseContext context = makeSnapshotContext(
             ApiOperation.makeDeleteOperation(),
@@ -126,7 +141,39 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
             rscNameStr,
             snapshotNameStr
         );
+        Flux<ApiCallRc> ret;
+        try
+        {
+            ret = deleteSnapshot(
+                LinstorParsingUtils.asRscName(rscNameStr),
+                LinstorParsingUtils.asSnapshotName(snapshotNameStr),
+                nodeNamesStrListRef
+            )
+                .transform(responses -> responseConverter.reportingExceptions(context, responses));
+        }
+        catch (ApiRcException exc)
+        {
+            ret = Flux.error(exc);
+        }
+        return ret;
+    }
 
+    /**
+     * deletes a snapshot
+     * this should be called only internally and therefore leaves the exception handling to its callers
+     *
+     * @param rscName
+     * @param snapshotName
+     * @param nodeNamesStrListRef
+     *
+     * @return deletion-flux or error-flux in case of exception
+     */
+    public Flux<ApiCallRc> deleteSnapshot(
+        ResourceName rscName,
+        SnapshotName snapshotName,
+        List<String> nodeNamesStrListRef
+    )
+    {
         return scopeRunner
             .fluxInTransactionalScope(
                 "Delete snapshot",
@@ -134,48 +181,50 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> deleteSnapshotInTransaction(rscNameStr, snapshotNameStr, nodeNamesStrListRef)
-            )
-            .transform(responses -> responseConverter.reportingExceptions(context, responses));
+                () -> deleteSnapshotInTransaction(rscName, snapshotName, nodeNamesStrListRef)
+            );
     }
 
     private Flux<ApiCallRc> deleteSnapshotInTransaction(
-        String rscNameStr,
-        String snapshotNameStr,
+        ResourceName rscNameRef,
+        SnapshotName snapshotNameRef,
         @Nullable List<String> nodeNamesStrListRef
     )
     {
         ApiCallRcImpl responses = new ApiCallRcImpl();
-        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(rscNameStr, snapshotNameStr, false);
+        SnapshotDefinition snapshotDfn = ctrlApiDataLoader.loadSnapshotDfn(
+            rscNameRef,
+            snapshotNameRef,
+            false
+        );
 
         if (snapshotDfn == null)
         {
             throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                     ApiConsts.WARN_NOT_FOUND,
-                getSnapshotDfnDescription(rscNameStr, snapshotNameStr) + " not found."
+                getSnapshotDfnDescription(rscNameRef, snapshotNameRef) + " not found."
             ));
         }
+        ResourceName rscName = snapshotDfn.getResourceName();
+        SnapshotName snapshotName = snapshotDfn.getName();
         if (backupInfoMgr.restoreContainsRscDfn(snapshotDfn.getResourceDefinition()))
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_IN_USE,
-                    getSnapshotDfnDescription(rscNameStr, snapshotNameStr) + " is currently being restored " +
+                    getSnapshotDfnDescription(rscName, snapshotName) + " is currently being restored " +
                         "from a backup. " +
                         "Please wait until the restore is finished"
                 )
             );
         }
 
-        ResourceName rscName = snapshotDfn.getResourceName();
-        SnapshotName snapshotName = snapshotDfn.getName();
-
         if (isBackupShippingInProgress(snapshotDfn))
         {
             throw new ApiRcException(
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_IN_USE,
-                    getSnapshotDfnDescription(rscNameStr, snapshotNameStr) + " is currently being shipped " +
+                    getSnapshotDfnDescription(rscName, snapshotName) + " is currently being shipped " +
                         "as a backup. " +
                         "Please wait until the shipping is finished or use backup abort --create"
                 )
@@ -236,7 +285,7 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
             if (!nodeNamesStrCopy.isEmpty())
             {
                 responses.addEntry(
-                    getSnapshotDfnDescription(rscName.displayValue, snapshotName.displayValue) +
+                    getSnapshotDfnDescription(rscName, snapshotName) +
                         " was not found on given nodes: " + StringUtils.join(nodeNamesStrCopy, ", "),
                     ApiConsts.WARN_NOT_FOUND
                 );
@@ -261,8 +310,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
                 ApiCallRcImpl.simpleEntry(
                     ApiConsts.FAIL_IN_USE,
                     getSnapshotDfnDescription(
-                        snapDfn.getResourceName().displayValue,
-                        snapDfn.getName().displayValue
+                        snapDfn.getResourceName(),
+                        snapDfn.getName()
                     ) +
                         " is currently being queued for backup shipping. " +
                         "Please wait until the shipping is finished or use backup abort --create"
@@ -521,8 +570,8 @@ public class CtrlSnapshotDeleteApiCallHandler implements CtrlSatelliteConnection
 
                         flux = flux.concatWith(
                             deleteSnapshot(
-                                autoSnapToDelete.getResourceName().displayValue,
-                                autoSnapToDelete.getName().displayValue,
+                                autoSnapToDelete.getResourceName(),
+                                autoSnapToDelete.getName(),
                                 null
                             )
                         );
