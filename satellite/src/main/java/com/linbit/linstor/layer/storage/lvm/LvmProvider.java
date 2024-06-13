@@ -928,12 +928,21 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         else
         {
             createLvImpl(srcData);
-            vlm.setCloneDevicePath(getDevicePath(srcData.getVolumeGroup(), asLvIdentifier(srcData)));
+            String devicePath = getDevicePath(srcData.getVolumeGroup(), asLvIdentifier(srcData));
+            try
+            {
+                waitUntilDeviceCreated(srcData, devicePath);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new StorageException("Unable to run openForClone::waitUntilDeviceCreated", exc);
+            }
+            vlm.setCloneDevicePath(devicePath);
         }
     }
 
     @Override
-    public void closeForClone(VlmProviderObject<?> vlm) throws StorageException
+    public void closeForClone(VlmProviderObject<?> vlm, @Nullable String cloneName) throws StorageException
     {
         vlm.setCloneDevicePath(null);
     }

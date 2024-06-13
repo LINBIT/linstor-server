@@ -266,7 +266,8 @@ public interface DeviceLayer
         throw new StorageException("Not supported");
     }
 
-    default void closeDeviceForClone(VlmProviderObject<?> vlm) throws StorageException
+    default void closeDeviceForClone(
+        VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
     {
         throw new StorageException("Not supported");
     }

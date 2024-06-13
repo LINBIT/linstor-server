@@ -512,10 +512,26 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         return rsc.getVolume(vlmData.getVlmNr()).getFlags().isSet(storDriverAccCtx, Volume.Flags.CLONING);
     }
 
-    protected String getCloneSnapshotName(String cloneRscName, int vlmNr)
+    /**
+     * Create a short clone snapshot name from the identifier + vlmNr.
+     * @param cloneIdentifier resource name + suffix
+     * @param vlmNr vlmnr of the clone
+     * @return a short prefixed name and hashcode of the input parameters
+     */
+    public static String getCloneSnapshotName(String cloneIdentifier, int vlmNr)
     {
-        final String target = String.format("%s_%d", cloneRscName, vlmNr);
+        final String target = String.format("%s_%d", cloneIdentifier, vlmNr);
         return String.format("%s%x", InternalApiConsts.CLONE_FOR_PREFIX, target.hashCode());
+    }
+
+    public static String getLVMCloneSnapshotNameFull(String identifier, String cloneRscName, int vlmNr)
+    {
+        return identifier + "_" + getCloneSnapshotName(cloneRscName, vlmNr);
+    }
+
+    public static String getZFSCloneSnapshotNameFull(String identifier, String cloneRscName, int vlmNr)
+    {
+        return identifier + "@" + getCloneSnapshotName(cloneRscName, vlmNr);
     }
 
     protected String getCloneSnapshotNameFull(LAYER_DATA srcVlmData, String cloneRscname, String separator)
@@ -536,7 +552,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     {
         final ReadOnlyProps props = rsc.getProps(storDriverAccCtx);
         return props.map().entrySet().stream()
-            .filter(e -> e.getKey().startsWith("Clone/" + InternalApiConsts.CLONE_FOR_PREFIX))
+            .filter(e -> e.getKey().startsWith(InternalApiConsts.CLONE_PROP_PREFIX))
             .collect(Collectors.toSet());
     }
 
@@ -552,8 +568,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             final var toCloneEntries = getCloneForKeyProps(rsc);
             for (var entry : toCloneEntries)
             {
-                String cloneRscName = entry.getValue();
-                createSnapshotForClone(vlmData, cloneRscName);
+                // do not create snapshots for suffixes that don't support cloning
+                if (RscLayerSuffixes.shouldSuffixBeCloned(vlmData.getRscLayerObject().getResourceNameSuffix()))
+                {
+                    String cloneRscName = entry.getValue();
+                    createSnapshotForClone(vlmData, cloneRscName);
+                }
             }
         }
     }
@@ -716,9 +736,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     public void postCreate(LAYER_DATA vlmData, boolean wipeData)
         throws AccessDeniedException, StorageException, DatabaseException
     {
-        StorPool storPool = vlmData.getStorPool();
-        long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
-        waitUntilDeviceCreated(vlmData.getDevicePath(), waitTimeoutAfterCreate);
+        waitUntilDeviceCreated(vlmData, vlmData.getDevicePath());
 
         if (stltConfigAccessor.useDmStats() && updateDmStats())
         {
@@ -1539,6 +1557,22 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
              * resource is made primary. Also it has no representation
              * in the file system (like /dev/...).
              */
+    }
+
+    /**
+     * Waits until the device is created.
+     * Has an extra devicePath parameter, as sometimes the clone path is used to wait.
+     * @param vlmData vlmData to get the storage pool and waitTimeAfterCreate from
+     * @param devicePath device path to watch for.
+     * @throws AccessDeniedException
+     * @throws StorageException
+     */
+    protected void waitUntilDeviceCreated(LAYER_DATA vlmData, String devicePath)
+        throws AccessDeniedException, StorageException
+    {
+        StorPool storPool = vlmData.getStorPool();
+        long waitTimeoutAfterCreate = getWaitTimeoutAfterCreate(storPool);
+        waitUntilDeviceCreated(devicePath, waitTimeoutAfterCreate);
     }
 
     protected final @Nonnull Resource getResource(LAYER_DATA vlmData, String rscName)

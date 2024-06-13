@@ -61,6 +61,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.core.repository.ResourceGroupRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
+import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.debug.HexViewer;
 import com.linbit.linstor.layer.LayerPayload;
@@ -875,7 +876,7 @@ public class CtrlRscDfnApiCallHandler
         try
         {
             Props props = rsc.getProps(apiCtx);
-            props.setProp("Clone/" + InternalApiConsts.CLONE_FOR_PREFIX + cloneRscName, cloneRscName);
+            props.setProp(InternalApiConsts.CLONE_PROP_PREFIX + cloneRscName, cloneRscName);
         }
         catch (AccessDeniedException accDeniedExc)
         {
@@ -896,7 +897,38 @@ public class CtrlRscDfnApiCallHandler
         }
     }
 
-    private Flux<ApiCallRc> resumeIO(ResourceDefinition rscDfn)
+    private void removeCloneSnapshotPropPrivileged(ResourceDefinition rscDfn, String cloneRscName)
+    {
+        try
+        {
+            Iterator<Resource> itRsc = rscDfn.iterateResource(apiCtx);
+            while (itRsc.hasNext())
+            {
+                Resource rsc = itRsc.next();
+                Props props = rsc.getProps(apiCtx);
+                props.removeProp(InternalApiConsts.CLONE_PROP_PREFIX + cloneRscName);
+            }
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "remove resource clone property",
+                ApiConsts.FAIL_ACC_DENIED_RSC
+            );
+        }
+        catch (InvalidKeyException invKey)
+        {
+            errorReporter.reportError(invKey);
+            throw new RuntimeException("Invalid key or value for clone snapshot property:" + cloneRscName);
+        }
+        catch (DatabaseException exc)
+        {
+            throw new ApiDatabaseException(exc);
+        }
+    }
+
+    private Flux<ApiCallRc> resumeIOAndClearCloneProp(ResourceDefinition rscDfn, String cloneName)
     {
         return scopeRunner
             .fluxInTransactionalScope(
@@ -905,13 +937,14 @@ public class CtrlRscDfnApiCallHandler
                     .read(LockObj.NODES_MAP)
                     .write(LockObj.RSC_DFN_MAP)
                     .buildDeferred(),
-                () -> resumeIOInTransaction(rscDfn)
+                () -> resumeIOAndClearClonePropInTransaction(rscDfn, cloneName)
             );
     }
 
-    private Flux<ApiCallRc> resumeIOInTransaction(ResourceDefinition rscDfn)
+    private Flux<ApiCallRc> resumeIOAndClearClonePropInTransaction(ResourceDefinition rscDfn, String cloneName)
     {
         resumeIOPrivileged(rscDfn);
+        removeCloneSnapshotPropPrivileged(rscDfn, cloneName);
 
         ctrlTransactionHelper.commit();
 
@@ -1058,6 +1091,24 @@ public class CtrlRscDfnApiCallHandler
         }
     }
 
+    /**
+     * Override resource layer data, that has to be the same as in the original resource.
+     * @param origRsc
+     * @param newPayload
+     * @throws AccessDeniedException
+     */
+    private void overrideRscLayerData(Resource origRsc, LayerPayload newPayload) throws AccessDeniedException {
+        // set same node ids as before
+        Set<AbsRscLayerObject<Resource>> rscLayerSet = LayerRscUtils.getRscDataByLayer(
+            origRsc.getLayerData(peerAccCtx.get()), DeviceLayerKind.DRBD);
+        for (AbsRscLayerObject<Resource> rscLayer : rscLayerSet)
+        {
+            DrbdRscData<Resource> drbdRscData = ((DrbdRscData<Resource>) rscLayer);
+            NodeId oldNodeId = drbdRscData.getNodeId();
+            newPayload.drbdRsc.nodeId = oldNodeId.value;
+        }
+    }
+
     public Flux<ApiCallRc> cloneRscDfnInTransaction(
         String srcRscName,
         String clonedRscName,
@@ -1078,8 +1129,8 @@ public class CtrlRscDfnApiCallHandler
             final ResourceDefinition srcRscDfn = ctrlApiDataLoader.loadRscDfn(srcRscName, true);
 
             final LayerPayload payload = new LayerPayload();
-            final List<DeviceLayerKind> layerStack = layerList != null ?
-                LinstorParsingUtils.asDeviceLayerKind(layerList) : srcRscDfn.getLayerStack(peerAccCtx.get());
+            final List<DeviceLayerKind> layerStack = CollectionUtils.isEmpty(layerList) ?
+                srcRscDfn.getLayerStack(peerAccCtx.get()) : LinstorParsingUtils.asDeviceLayerKind(layerList);
             final ResourceDefinition clonedRscDfn = createRscDfn(
                 clonedRscName,
                 clonedExtName,
@@ -1117,16 +1168,32 @@ public class CtrlRscDfnApiCallHandler
 
                 setSuspendIO(rsc);
 
-                Resource newRsc = resourceControllerFactory.create(
-                    peerAccCtx.get(),
-                    clonedRscDfn,
-                    rsc.getNode(),
-                    rsc.getLayerData(peerAccCtx.get()),
-                    Resource.Flags.restoreFlags(rsc.getStateFlags().getFlagsBits(peerAccCtx.get())),
-                    false,
-                    Collections.emptyMap(), // storpool-rename might be useful for clone
-                    responses
-                );
+                Resource newRsc;
+                if (CollectionUtils.isEmpty(layerList))
+                {
+                    newRsc = resourceControllerFactory.create(
+                        peerAccCtx.get(),
+                        clonedRscDfn,
+                        rsc.getNode(),
+                        rsc.getLayerData(peerAccCtx.get()),
+                        Resource.Flags.restoreFlags(rsc.getStateFlags().getFlagsBits(peerAccCtx.get())),
+                        false,
+                        Collections.emptyMap(), // storpool-rename might be useful for clone
+                        responses
+                    );
+                }
+                else
+                {
+                    overrideRscLayerData(rsc, payload);
+                    newRsc = resourceControllerFactory.create(
+                        peerAccCtx.get(),
+                        clonedRscDfn,
+                        rsc.getNode(),
+                        payload,
+                        Resource.Flags.restoreFlags(rsc.getStateFlags().getFlagsBits(peerAccCtx.get())),
+                        layerStack
+                    );
+                }
 
                 ctrlPropsHelper.copy(
                     ctrlPropsHelper.getProps(rsc),
@@ -1152,16 +1219,31 @@ public class CtrlRscDfnApiCallHandler
                         );
                     }
 
-                    Volume cloneVlm = ctrlVlmCrtApiHelper
-                        .createVolumeFromAbsVolume(
+                    Volume cloneVlm;
+                    if (CollectionUtils.isEmpty(layerList))
+                    {
+                        cloneVlm = ctrlVlmCrtApiHelper
+                            .createVolumeFromAbsVolume(
+                                newRsc,
+                                toVlmDfn,
+                                vlmDfnPayload,
+                                thinFreeCapacities,
+                                srcVlm,
+                                Collections.emptyMap(), // storpool-rename might be useful for clone
+                                responses
+                            );
+                    }
+                    else
+                    {
+                        cloneVlm = ctrlVlmCrtApiHelper.createVolume(
                             newRsc,
                             toVlmDfn,
                             vlmDfnPayload,
                             thinFreeCapacities,
-                            srcVlm,
-                            Collections.emptyMap(), // storpool-rename might be useful for clone
+                            Collections.emptyMap(),
                             responses
                         );
+                    }
 
                     ctrlPropsHelper.copy(
                         ctrlPropsHelper.getProps(srcVlm),
@@ -1229,10 +1311,10 @@ public class CtrlRscDfnApiCallHandler
                 )
                 .concatWith(Flux.just(responses))
                 .concatWith(setCloneSnapshotProperty(srcRscDfn, clonedRscName))
-                .concatWith(resumeIO(srcRscDfn))
+                .concatWith(resumeIOAndClearCloneProp(srcRscDfn, clonedRscName))
                 .concatWith(deploymentResponses)
                 .concatWith(removeStartCloning(clonedRscDfn))
-                .onErrorResume(exception -> resumeIO(srcRscDfn));
+                .onErrorResume(exception -> resumeIOAndClearCloneProp(srcRscDfn, clonedRscName));
         }
         catch (ApiRcException exc)
         {

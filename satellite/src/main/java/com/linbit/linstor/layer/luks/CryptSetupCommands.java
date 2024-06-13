@@ -120,17 +120,29 @@ public class CryptSetupCommands implements Luks
     }
 
     @Override
-    public void openLuksDevice(String dev, String targetIdentifier, byte[] cryptKey) throws StorageException
+    public void openLuksDevice(String dev, String targetIdentifier, byte[] cryptKey, boolean readOnly)
+        throws StorageException
     {
         try
         {
             final ExtCmd extCommand = extCmdFactory.create();
+            List<String> cmd = new ArrayList<>(10);
+            cmd.add(CRYPTSETUP);
+            cmd.add("open");
+            cmd.add("--tries");
+            cmd.add("1");
+            if (readOnly)
+            {
+                cmd.add("--readonly");
+            }
+            cmd.add(dev);
+            cmd.add(CRYPT_PREFIX + targetIdentifier);
 
             // open cryptsetup
             OutputStream outputStream = extCommand.exec(
                 ProcessBuilder.Redirect.PIPE,
                 null,
-                CRYPTSETUP, "open", "--tries", "1", dev, CRYPT_PREFIX + targetIdentifier
+                cmd.toArray(new String[0])
             );
             outputStream.write(cryptKey);
             outputStream.write('\n');

@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.luks;
 
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.extproc.ExtCmdFailedException;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.annotation.DeviceManagerContext;
 import com.linbit.linstor.api.ApiCallRcImpl;
@@ -341,7 +342,8 @@ public class LuksLayer implements DeviceLayer
                         cryptSetup.openLuksDevice(
                             vlmData.getDataDevice(),
                             identifier,
-                            vlmData.getDecryptedPassword()
+                            vlmData.getDecryptedPassword(),
+                            false
                         );
                     }
                     else
@@ -439,15 +441,55 @@ public class LuksLayer implements DeviceLayer
     @Override
     public void openDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
     {
-        // TODO check if already open
-        resourceProcessorProvider.get().openForClone(((LuksVlmData<?>) vlm).getSingleChild(), targetRscNameRef);
-        // TODO luksopen, etc...
+        LuksVlmData<Resource> luksVlmData = (LuksVlmData<Resource>) vlm;
+        String vlmIdentifier = getIdentifier(luksVlmData);
+        String identifier = targetRscNameRef ==  null ?
+            vlmIdentifier : vlmIdentifier + InternalApiConsts.CLONE_FOR_PREFIX + targetRscNameRef;
+        boolean isOpen = cryptSetup.isOpen(identifier);
+        if (!isOpen)
+        {
+            VlmProviderObject<?> storageChild = ((LuksVlmData<?>) vlm).getSingleChild();
+            resourceProcessorProvider.get().openForClone(storageChild, targetRscNameRef);
+
+            if (targetRscNameRef == null)
+            {
+                // initialize luks device
+                cryptSetup.createLuksDevice(
+                    storageChild.getCloneDevicePath(),
+                    luksVlmData.getDecryptedPassword(),
+                    identifier
+                );
+            }
+
+            cryptSetup.openLuksDevice(
+                storageChild.getCloneDevicePath(),
+                identifier,
+                luksVlmData.getDecryptedPassword(),
+                targetRscNameRef != null
+            );
+        }
+        else
+        {
+            // target should not have existed and source should be a snapshot
+            errorReporter.logWarning("LuksLayer:openDeviceForClone: already open %s",
+                cryptSetup.getLuksVolumePath(identifier));
+        }
+        vlm.setCloneDevicePath(cryptSetup.getLuksVolumePath(identifier));
     }
 
     @Override
-    public void closeDeviceForClone(VlmProviderObject<?> vlm) throws StorageException
+    public void closeDeviceForClone(VlmProviderObject<?> vlm, @Nullable String targetRscNameRef) throws StorageException
     {
-        // TODO: luksclose
-        resourceProcessorProvider.get().closeAfterClone(((LuksVlmData<?>) vlm).getSingleChild());
+        LuksVlmData<Resource> luksVlmData = (LuksVlmData<Resource>) vlm;
+        String vlmIdentifier = getIdentifier(luksVlmData);
+        String identifier = targetRscNameRef ==  null ?
+            vlmIdentifier : vlmIdentifier + InternalApiConsts.CLONE_FOR_PREFIX + targetRscNameRef;
+        boolean isOpen = cryptSetup.isOpen(identifier);
+        if (isOpen)
+        {
+            cryptSetup.closeLuksDevice(identifier);
+        }
+        resourceProcessorProvider.get().closeAfterClone(((LuksVlmData<?>) vlm).getSingleChild(), targetRscNameRef);
+        vlm.setCloneDevicePath(null);
     }
 }

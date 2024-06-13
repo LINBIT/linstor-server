@@ -273,7 +273,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
 
     @Override
     protected void createLvImpl(ZfsData<Resource> vlmData)
-        throws StorageException, AccessDeniedException, DatabaseException
+        throws StorageException
     {
         ZfsCommands.create(
             extCmdFactory.create(),
@@ -871,7 +871,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     protected void createSnapshotForCloneImpl(
         ZfsData<Resource> vlmData,
         String cloneRscName)
-        throws StorageException, AccessDeniedException
+        throws StorageException
     {
         final String srcFullSnapshotName = getCloneSnapshotNameFull(vlmData, cloneRscName, "@");
 
@@ -891,104 +891,10 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
                 "clone_for",
                 cloneRscName
             );
-
-//            if (useZfsClone != null)
-//            {
-//                ZfsCommands.restoreSnapshotFullName(
-//                    extCmdFactory.create(),
-//                    srcVlmData.getZPool(),
-//                    srcFullSnapshotName,
-//                    dstId
-//                );
-//            }
         }
         else
         {
             errorReporter.logInfo("Clone base snapshot %s already found, reusing.", srcFullSnapshotName);
-        }
-
-//        cloneService.startClone(
-//            srcVlmData,
-//            vlmData,
-//            this);
-    }
-
-
-    // TODO move remove
-    public String[] getCloneCommand(CloneService.CloneInfo cloneInfo)
-    {
-        String[] cmd;
-        String useZfsClone = null;
-        try
-        {
-            useZfsClone = cloneInfo.getDstVlmData().getRscLayerObject().getAbsResource()
-                .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
-        }
-        catch (AccessDeniedException accessDeniedException)
-        {
-            errorReporter.reportError(accessDeniedException);
-        }
-
-        if (useZfsClone == null)
-        {
-            ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
-            ZfsData<Resource> dstData = (ZfsData<Resource>) cloneInfo.getDstVlmData();
-            final String dstId = asLvIdentifier(dstData);
-            final String srcFullSnapshotName = getCloneSnapshotNameFull(
-                srcData, cloneInfo.getResourceName().displayValue, "@");
-            cmd = new String[]
-                {
-                    "timeout",
-                    "0",
-                    "bash",
-                    "-c",
-                    String.format(
-                            "set -o pipefail; " +
-                            "zfs send --embed --dedup --large-block %s/%s | " +
-                            // if send/recv fails no new volume will be there, so destroy isn't needed
-                            "zfs receive -F %s/%s && zfs destroy -r %s/%s@%%",
-                        srcData.getZPool(),
-                        srcFullSnapshotName,
-                        dstData.getZPool(),
-                        dstId,
-                        dstData.getZPool(),
-                        dstId)
-                };
-        }
-        else
-        {
-            cmd = new String[]{"sleep", "1"};
-        }
-        return cmd;
-    }
-
-    // TODO move remove
-    public void doCloneCleanup(CloneService.CloneInfo cloneInfo) throws StorageException
-    {
-        try
-        {
-            String useZfsClone = cloneInfo.getDstVlmData().getRscLayerObject().getAbsResource()
-                .getResourceDefinition().getProps(storDriverAccCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
-
-            // we cannot delete the snapshot if we have a dependent clone from it
-            // so only delete if it was a send/recv clone
-            // the snapshot will be tried to delete if the cloned resource gets removed
-            if (useZfsClone == null)
-            {
-                ZfsData<Resource> srcData = (ZfsData<Resource>) cloneInfo.getSrcVlmData();
-                final String srcFullSnapshotName = getCloneSnapshotNameFull(
-                    srcData, cloneInfo.getResourceName().displayValue, "@");
-                ZfsCommands.delete(
-                    extCmdFactory.create(),
-                    getZPool(srcData.getStorPool()),
-                    srcFullSnapshotName,
-                    ZfsVolumeType.SNAPSHOT
-                );
-            }
-        }
-        catch (AccessDeniedException accessDeniedException)
-        {
-            errorReporter.reportError(accessDeniedException);
         }
     }
 
@@ -1031,23 +937,39 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     public void openForClone(VlmProviderObject<?> vlm, @Nullable String cloneName, boolean readOnly)
         throws StorageException
     {
+        ZfsData<Resource> srcData = (ZfsData<Resource>) vlm;
+        String zPool = getZPool(srcData.getStorPool());
         if (cloneName != null)
         {
-            // TODO unhide zfs snapshots for device path
-            ZfsData<Resource> srcData = (ZfsData<Resource>) vlm;
-            vlm.setCloneDevicePath(getDevicePath(
-                srcData.getZPool(), getCloneSnapshotNameFull(srcData, cloneName, "_")));
+            final String fullSnapshotName = getCloneSnapshotNameFull(srcData, cloneName, "@");
+            ZfsCommands.hideUnhideSnapshotDevice(
+                extCmdFactory.create(), zPool, srcData.getIdentifier(), false);
+            vlm.setCloneDevicePath(getDevicePath(zPool, fullSnapshotName));
         }
         else
         {
-            vlm.setCloneDevicePath(vlm.getDevicePath());
+            createLvImpl(srcData);
+            final String devicePath = getDevicePath(zPool, asLvIdentifier(srcData));
+            try
+            {
+                waitUntilDeviceCreated(srcData, devicePath);
+            }
+            catch (AccessDeniedException exc)
+            {
+                throw new StorageException("Unable to run openForClone::waitUntilDeviceCreated", exc);
+            }
+            vlm.setCloneDevicePath(devicePath);
         }
     }
 
     @Override
-    public void closeForClone(VlmProviderObject<?> vlm) throws StorageException
+    public void closeForClone(VlmProviderObject<?> vlm, @Nullable String cloneName) throws StorageException
     {
-        // TODO hide zfs snapshot if resource opened
+        ZfsData<Resource> srcData = (ZfsData<Resource>) vlm;
+        // This hide doesn't make problems for other concurernt clones of the same base resource
+        // It was tested and worked without any problems.
+        ZfsCommands.hideUnhideSnapshotDevice(
+            extCmdFactory.create(), getZPool(srcData.getStorPool()), srcData.getIdentifier(), true);
         vlm.setCloneDevicePath(null);
     }
 }

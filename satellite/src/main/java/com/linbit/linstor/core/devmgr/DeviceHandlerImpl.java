@@ -1034,10 +1034,10 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             final VlmProviderObject<Resource> sourceVlmData = cloneEntry.getKey();
             final VlmProviderObject<Resource> targetVlmData = cloneEntry.getValue();
+            final Volume targetVlm = (Volume) targetVlmData.getVolume();
+            final AbsRscLayerObject<Resource> targetRscData = targetVlmData.getRscLayerObject();
             try
             {
-                final Volume targetVlm = (Volume) targetVlmData.getVolume();
-                final AbsRscLayerObject<Resource> targetRscData = targetVlmData.getRscLayerObject();
                 final VolumeNumber vlmNr = targetVlm.getVolumeNumber();
 
                 final boolean isCloneResource = isCloneVolume(targetVlm);
@@ -1049,6 +1049,18 @@ public class DeviceHandlerImpl implements DeviceHandler
                 {
                     Set<DeviceHandler.CloneStrategy> srcStrat = getCloneStrategy(sourceVlmData);
                     Set<DeviceHandler.CloneStrategy> tgtStrat = getCloneStrategy(targetVlmData);
+
+                    if (srcStrat.contains(CloneStrategy.ZFS_COPY) && tgtStrat.contains(CloneStrategy.ZFS_COPY))
+                    {
+                        String useZfsClone = targetVlmData.getRscLayerObject().getAbsResource().getResourceDefinition()
+                            .getProps(wrkCtx).getProp(InternalApiConsts.KEY_USE_ZFS_CLONE);
+                        // TODO also check if on the same storage pool
+                        if (useZfsClone != null)
+                        {
+                            srcStrat.add(CloneStrategy.ZFS_CLONE);
+                            tgtStrat.add(CloneStrategy.ZFS_CLONE);
+                        }
+                    }
 
                     // lowest prio-number first (DD strategy has highest number)
                     Set<DeviceHandler.CloneStrategy> resultStrat = new TreeSet<>(
@@ -1083,6 +1095,10 @@ public class DeviceHandlerImpl implements DeviceHandler
             }
             catch (StorageException exc)
             {
+                cloneService.setFailed(
+                    targetVlmData.getRscLayerObject().getResourceName(),
+                    targetVlmData.getVlmNr(),
+                    targetRscData.getResourceNameSuffix());
                 handleException(targetVlmData.getRscLayerObject().getAbsResource(), exc);
             }
         }
@@ -1694,21 +1710,22 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public void closeAfterClone(VlmProviderObject<?> vlmData) throws StorageException
+    public void closeAfterClone(VlmProviderObject<?> vlmData, @Nullable String targetRscNameRef) throws StorageException
     {
         final AbsRscLayerObject<?> rscData = vlmData.getRscLayerObject();
         final String rscNameSuffix = rscData.getResourceNameSuffix();
 
         DeviceLayer nextLayer = layerFactory.getDeviceLayer(vlmData.getLayerKind());
-        if (rscData.isClonePassthroughMode())
+        @Nullable Boolean isPassthrough = rscData.isClonePassthroughMode();
+        if (isPassthrough != null && isPassthrough)
         {
             AbsRscLayerObject<?> childRscData = rscData.getChildBySuffix(rscNameSuffix);
             VlmProviderObject<?> childVlmData = childRscData.getVlmProviderObject(vlmData.getVlmNr());
-            closeAfterClone(childVlmData);
+            closeAfterClone(childVlmData, targetRscNameRef);
         }
         else
         {
-            nextLayer.closeDeviceForClone(vlmData);
+            nextLayer.closeDeviceForClone(vlmData, targetRscNameRef);
         }
     }
 }

@@ -422,6 +422,29 @@ public class ZfsCommands
         );
     }
 
+    public static OutputData hideUnhideSnapshotDevice(
+        ExtCmd extCmd,
+        final String zPool,
+        final String vlmId,
+        boolean hide
+    ) throws StorageException
+    {
+        final String fullPath = String.format("%s/%s", zPool, vlmId);
+        final String failMsg = String.format(
+            "Failed to hide/unhide snapshot: %s", fullPath);
+        return genericExecutor(
+            extCmd,
+            new String[] {
+                "zfs",
+                "set",
+                "snapdev=" + (hide ? "hidden" : "visible"),
+                fullPath
+            },
+            failMsg,
+            failMsg
+        );
+    }
+
     public enum ZfsVolumeType
     {
         VOLUME("volume"), SNAPSHOT("snapshot");

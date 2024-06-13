@@ -99,6 +99,6 @@ public interface DeviceHandler
     void openForClone(VlmProviderObject<?> sourceVlmData, @Nullable String targetRscNameRef)
         throws StorageException;
 
-    void closeAfterClone(VlmProviderObject<?> vlmDataRef) throws StorageException;
+    void closeAfterClone(VlmProviderObject<?> vlmDataRef, @Nullable String targetRscNameRef) throws StorageException;
 
 }

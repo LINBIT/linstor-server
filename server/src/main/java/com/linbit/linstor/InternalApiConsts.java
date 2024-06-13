@@ -239,7 +239,9 @@ public class InternalApiConsts
     public static final String KEY_CLONED_FROM = "cloned-from";
     public static final String KEY_USE_ZFS_CLONE = "use-zfs-clone";
     public static final String API_NOTIFY_CLONE_UPDATE  = "NotifyCloneUpdate";
+    public static final String CLONE_NS = "Clone";
     public static final String CLONE_FOR_PREFIX = "CF_";
+    public static final String CLONE_PROP_PREFIX = CLONE_NS + "/" + CLONE_FOR_PREFIX;
 
     // ebs
     public static final String EBS_REMOTE_NAME = "EbsRemoteName";

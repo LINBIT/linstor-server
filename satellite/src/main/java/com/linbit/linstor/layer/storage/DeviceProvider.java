@@ -112,7 +112,7 @@ public interface DeviceProvider
     }
 
     // TODO probably need a way to decide if snapshot path needs to be closed
-    default void closeForClone(VlmProviderObject<?> vlm) throws StorageException
+    default void closeForClone(VlmProviderObject<?> vlm, @Nullable String cloneName) throws StorageException
     {
         throw new StorageException("closeForClone not supported.");
     }

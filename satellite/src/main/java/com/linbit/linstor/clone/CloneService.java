@@ -16,20 +16,26 @@ import com.linbit.linstor.core.identifier.VolumeNumber;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.VolumeDiskStateEvent;
+import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.data.provider.lvm.LvmData;
 import com.linbit.linstor.storage.data.provider.lvm.LvmThinData;
 import com.linbit.linstor.storage.data.provider.zfs.ZfsData;
+import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
+import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.utils.layer.LayerRscUtils;
 import com.linbit.utils.StringUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.util.ArrayList;
@@ -70,6 +76,7 @@ public class CloneService implements SystemService
     private final ConcurrentSkipListSet<CloneInfo> activeClones;
     private final ThreadGroup threadGroup;
     private final ReadWriteLock reconfigurationLock;
+    private final Provider<DeviceHandler> resourceProcessorProvider;
 
     private boolean serviceStarted = false;
 
@@ -80,7 +87,8 @@ public class CloneService implements SystemService
         CtrlStltSerializer ctrlStltSerializerRef,
         VolumeDiskStateEvent volumeDiskStateEventRef,
         ExtCmdFactory extCmdFactoryRef,
-        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef
+        @Named(CoreModule.RECONFIGURATION_LOCK) ReadWriteLock reconfigurationLockRef,
+        Provider<DeviceHandler> resourceProcessorRef
     )
     {
         errorReporter = errorReporterRef;
@@ -89,6 +97,7 @@ public class CloneService implements SystemService
         volumeDiskStateEvent = volumeDiskStateEventRef;
         extCmdFactory = extCmdFactoryRef;
         reconfigurationLock = reconfigurationLockRef;
+        resourceProcessorProvider = resourceProcessorRef;
 
         try
         {
@@ -141,19 +150,109 @@ public class CloneService implements SystemService
         }
     }
 
+    private void doLVMCloneCleanup(LvmData<Resource> srcData, String cloneName) throws StorageException
+    {
+        final String srcFullSnapshotName = AbsStorageProvider.getLVMCloneSnapshotNameFull(
+            srcData.getIdentifier(), cloneName, srcData.getVlmNr().value
+        );
+
+        final String vlmGroup = srcData.getVolumeGroup();
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(vlmGroup),
+            config -> LvmCommands.delete(
+                extCmdFactory.create(),
+                vlmGroup,
+                srcFullSnapshotName,
+                config,
+                LvmCommands.LvmVolumeType.SNAPSHOT
+            )
+        );
+        LvmUtils.recacheNext();
+    }
+
+    public void doZFSCloneCleanup(ZfsData<Resource> srcData, String cloneName, boolean zfsClone) throws StorageException
+    {
+        // we cannot delete the snapshot if we have a dependent clone from it
+        // so only delete if it was a send/recv clone
+        // the snapshot will be tried to delete if the cloned resource gets removed
+        if (!zfsClone)
+        {
+            final String srcFullSnapshotName = AbsStorageProvider.getZFSCloneSnapshotNameFull(
+                srcData.getIdentifier(), cloneName, srcData.getVlmNr().value);
+            ZfsCommands.delete(
+                extCmdFactory.create(),
+                srcData.getZPool(),
+                srcFullSnapshotName,
+                ZfsCommands.ZfsVolumeType.SNAPSHOT
+            );
+        }
+    }
+
     private void cleanupDevices(CloneInfo cloneInfo)
     {
         Lock writeLock = reconfigurationLock.writeLock();
         try
         {
             writeLock.lock();
-            // TODO cleanup
-//            cloneInfo.getDeviceProvider().doCloneCleanup(cloneInfo);
+            resourceProcessorProvider.get().closeAfterClone(
+                cloneInfo.srcVlmData, cloneInfo.getResourceName().displayValue);
+            resourceProcessorProvider.get().closeAfterClone(cloneInfo.dstVlmData, null);
+
+            // reset passThroughMode
+            cloneInfo.getSrcVlmData().getRscLayerObject().removeClonePassthroughMode(
+                cloneInfo.getDstVlmData().getRscLayerObject()
+            );
+            cloneInfo.getDstVlmData().getRscLayerObject().removeClonePassthroughMode(
+                cloneInfo.getDstVlmData().getRscLayerObject()
+            );
+
+            // cleanup all clone snapshots
+            Set<AbsRscLayerObject<Resource>> storRscDataSet = LayerRscUtils.getRscDataByLayer(
+                cloneInfo.srcVlmData.getRscLayerObject(),
+                DeviceLayerKind.STORAGE
+            );
+
+            for (var storageLayer : storRscDataSet)
+            {
+                VlmProviderObject<Resource> vlmObj = storageLayer.getVlmLayerObjects()
+                    .get(cloneInfo.srcVlmData.getVlmNr());
+                DeviceProviderKind storPoolKind = vlmObj.getProviderKind();
+                switch (storPoolKind)
+                {
+                    case LVM:
+                    case LVM_THIN:
+                        doLVMCloneCleanup((LvmData<Resource>) vlmObj, cloneInfo.getResourceName().displayValue);
+                        break;
+                    case ZFS:
+                    case ZFS_THIN:
+                        doZFSCloneCleanup(
+                            (ZfsData<Resource>) vlmObj,
+                            cloneInfo.getResourceName().displayValue,
+                            cloneInfo.cloneStrategy == DeviceHandler.CloneStrategy.ZFS_CLONE);
+                        break;
+                    case DISKLESS:
+                    case FILE:
+                    case SPDK:
+                    case EBS_INIT:
+                    case FILE_THIN:
+                    case EBS_TARGET:
+                    case REMOTE_SPDK:
+                    case STORAGE_SPACES:
+                    case EXOS:
+                    case STORAGE_SPACES_THIN:
+                    case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
+                    default:
+                        // no cleanup
+                        break;
+
+                }
+            }
         }
-//        catch (StorageException exc)
-//        {
-//            errorReporter.reportError(exc);
-//        }
+        catch (StorageException exc)
+        {
+            errorReporter.reportError(exc);
+        }
         finally
         {
             writeLock.unlock();
@@ -229,20 +328,29 @@ public class CloneService implements SystemService
                         {
                             ZfsData<Resource> srcZfsData = (ZfsData<Resource>) srcVlmData;
                             ZfsData<Resource> dstZfsData = (ZfsData<Resource>) dstVlmData;
+                            final String srcFullSnapshotName = AbsStorageProvider.getZFSCloneSnapshotNameFull(
+                                srcZfsData.getIdentifier(),
+                                cloneInfo.getResourceName().displayValue,
+                                srcZfsData.getVlmNr().value);
                             cmd = doZFSClone(
                                 dstZfsData.getZPool(),
-                                srcZfsData.getCloneDevicePath(),
-                                dstZfsData.getCloneDevicePath());
+                                srcFullSnapshotName,
+                                dstZfsData.getIdentifier());
                         }
                             break;
                         case ZFS_COPY:
                         {
                             ZfsData<Resource> srcZfsData = (ZfsData<Resource>) srcVlmData;
                             ZfsData<Resource> dstZfsData = (ZfsData<Resource>) dstVlmData;
+                            final String srcFullSnapshotName = AbsStorageProvider.getZFSCloneSnapshotNameFull(
+                                srcZfsData.getIdentifier(),
+                                cloneInfo.getResourceName().displayValue,
+                                srcZfsData.getVlmNr().value);
                             cmd = doZFSCopy(
+                                srcZfsData.getZPool(),
+                                srcFullSnapshotName,
                                 dstZfsData.getZPool(),
-                                srcZfsData.getCloneDevicePath(),
-                                dstZfsData.getCloneDevicePath());
+                                dstZfsData.getIdentifier());
                         }
                             break;
                         case DD:
@@ -303,6 +411,22 @@ public class CloneService implements SystemService
         }
     }
 
+    public void setFailed(ResourceName rscName, VolumeNumber vlmNr, String suffix)
+    {
+        synchronized (activeClones)
+        {
+            activeClones.forEach(ci ->
+            {
+                if (ci.getResourceName().equals(rscName) &&
+                    ci.getVlmNr().equals(vlmNr) &&
+                    ci.getSuffix().equals(suffix))
+                {
+                    ci.setCloneStatus(false);
+                }
+            } );
+        }
+    }
+
     private @Nullable String[] doLvmThinClone(String vlmGroup, String srcSnapshotName, String dstLVName)
         throws StorageException
     {
@@ -347,7 +471,7 @@ public class CloneService implements SystemService
         return null;
     }
 
-    private String[] doZFSCopy(String zpoolName, String srcIdentifier, String dstIdentifier)
+    private String[] doZFSCopy(String srcZPoolName, String srcIdentifier, String dstZPoolName, String dstIdentifier)
     {
         return new String[]
             {
@@ -356,18 +480,15 @@ public class CloneService implements SystemService
                 "bash",
                 "-c",
                 String.format(
-                    "trap 'kill -HUP 0' SIGTERM; " +
                         "set -o pipefail; " +
-                        "(" +
-                        "zfs send --embed --dedup --large-block %s/%s | " +
+                        "zfs send --embed --large-block %s/%s | " +
                         // if send/recv fails no new volume will be there, so destroy isn't needed
-                        "zfs receive -F %s/%s && zfs destroy -r %s/%s@%% ;" +
-                        ")& wait $!",
-                    zpoolName,
+                        "zfs receive -F %s/%s && zfs destroy -r %s/%s@%%",
+                    srcZPoolName,
                     srcIdentifier, // usually snapshot name
-                    zpoolName,
+                    dstZPoolName,
                     dstIdentifier,
-                    zpoolName,
+                    dstZPoolName,
                     dstIdentifier)
             };
     }
@@ -542,7 +663,7 @@ public class CloneService implements SystemService
         @Override
         public String toString()
         {
-            return getKind().name() + "(" +
+            return cloneStrategy.name() + "(" +
                 srcVlmData.getRscLayerObject().getResourceName() +
                 srcVlmData.getRscLayerObject().getResourceNameSuffix() + "/" + srcVlmData.getVlmNr() + "->" +
                 getResourceName() + getSuffix() + "/" + dstVlmData.getVlmNr() + ")";
