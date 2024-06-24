@@ -914,9 +914,9 @@ public class CtrlBackupRestoreApiCallHandler
     {
         SnapshotVolumeDefinition snapVlmDfn = snapVlmRef.getSnapshotVolumeDefinition();
         Props snapVlmDfnProps = snapVlmDfn.getProps(sysCtx);
-        String allocGranPropValue = snapVlmDfnProps.getProp(
+        @Nullable String allocGranPropValue = snapVlmDfnProps.getProp(
             InternalApiConsts.ALLOCATION_GRANULARITY,
-            ApiConsts.NAMESPC_STORAGE_DRIVER + "/" + InternalApiConsts.NAMESPC_INTERNAL
+            StorageConstants.NAMESPACE_INTERNAL
         );
         if (allocGranPropValue == null)
         {

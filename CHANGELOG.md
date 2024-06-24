@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ToggleDisk: Fix toggle disk for resource spawned with diskles-on-remaining
 - Backups: Ensure snapshots can't be stuck in either sending or receiving, which would render them undeletable
 - PhassPhraseInit: Fixed uncommitted transaction
+- Backup,restore: Check correct SnapVlmDfn property before recalculating AllocationGranularity
 
 ## [1.27.1] - 2024-04-25
 
