@@ -7,6 +7,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiException;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
@@ -227,9 +228,8 @@ public class FreeCapacityAutoPoolSelectorUtils
         try
         {
             reservedCapacity = storPoolRef.getFreeSpaceTracker().getPendingAllocatedSum(sysCtxRef);
-            boolean isThin = storPoolRef.getDeviceProviderKind().usesThinProvisioning();
-            reservedCapacity += getReservedSum(storPoolRef.getVolumes(sysCtxRef), isThin);
-            reservedCapacity += getReservedSum(storPoolRef.getSnapVolumes(sysCtxRef), isThin);
+            reservedCapacity += getReservedSum(storPoolRef.getVolumes(sysCtxRef));
+            reservedCapacity += getReservedSum(storPoolRef.getSnapVolumes(sysCtxRef));
         }
         catch (AccessDeniedException exc)
         {
@@ -239,15 +239,13 @@ public class FreeCapacityAutoPoolSelectorUtils
     }
 
     private static <RSC extends AbsResource<RSC>> long getReservedSum(
-        Collection<VlmProviderObject<RSC>> absVlmListRef,
-        boolean isThin
+        Collection<VlmProviderObject<RSC>> absVlmListRef
     )
-        throws AccessDeniedException
     {
         long ret = 0;
         for (VlmProviderObject<RSC> absVlmData : absVlmListRef)
         {
-            if (isThin)
+            if (absVlmData.getVolume() instanceof SnapshotVolume)
             {
                 ret += absVlmData.getAllocatedSize();
             }

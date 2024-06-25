@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Backups: Ensure snapshots can't be stuck in either sending or receiving, which would render them undeletable
 - PhassPhraseInit: Fixed uncommitted transaction
 - Backup,restore: Check correct SnapVlmDfn property before recalculating AllocationGranularity
+- FreeSpace: Fixed incorrect calculation of reserved space for thin volumes
 
 ## [1.27.1] - 2024-04-25
 
