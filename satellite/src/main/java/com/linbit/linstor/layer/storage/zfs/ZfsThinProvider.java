@@ -4,6 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.objects.Resource;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
@@ -27,6 +28,8 @@ import java.util.HashMap;
 @Singleton
 public class ZfsThinProvider extends ZfsProvider
 {
+    public static final String PROBE_VLM_NAME_THIN = ".probeVolumeThinProv";
+
     @Inject
     public ZfsThinProvider(AbsStorageProviderInit superInitRef)
     {
@@ -121,5 +124,19 @@ public class ZfsThinProvider extends ZfsProvider
     {
         // this method is called (for now) only with an input from "blockdev --getsize64 ..."
         // however, we want to ignore that "allocatedSize", and use instead the size from "zfs list ..."
+    }
+
+    @Override
+    public @Nullable String createTmpProbeVlm(final StorPool storPoolRef)
+        throws StorageException
+    {
+        return createTmpProbeVlmImpl(storPoolRef, PROBE_VLM_NAME_THIN, true);
+    }
+
+    @Override
+    public void deleteTmpProbeVlm(final StorPool storPoolRef)
+        throws StorageException
+    {
+        deleteTmpProbeVlmImpl(storPoolRef, PROBE_VLM_NAME_THIN);
     }
 }

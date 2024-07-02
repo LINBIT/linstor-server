@@ -8,11 +8,13 @@ import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
+import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayerUtils;
+import com.linbit.linstor.layer.storage.ProbeVlmStorageProvider;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LvmVolumeType;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
@@ -44,6 +46,8 @@ import java.util.Set;
 @Singleton
 public class LvmThinProvider extends LvmProvider
 {
+    public static final String PROBE_VLM_NAME_THIN = ".probeVolumeThinProv";
+
     @Inject
     public LvmThinProvider(AbsStorageProviderInit superInitRef)
     {
@@ -634,5 +638,67 @@ public class LvmThinProvider extends LvmProvider
         }
 
         return ret;
+    }
+
+    @Override
+    public @Nullable String createTmpProbeVlm(final StorPool storPoolRef)
+        throws StorageException
+    {
+        final String volumeName = PROBE_VLM_NAME_THIN;
+        final String volumeGroup = getStorageName(storPoolRef);
+        String thinPool;
+        try
+        {
+            thinPool = getThinPool(storPoolRef);
+        }
+        catch (AccessDeniedException exc)
+        {
+            throw new ImplementationError(
+                AccessDeniedException.class.getName() + " generated while attempting to determine the name " +
+                "of the thin pool",
+                exc
+            );
+        }
+
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(volumeGroup),
+            config ->
+            {
+                return LvmCommands.createThin(
+                    extCmdFactory.create(),
+                    volumeGroup,
+                    thinPool,
+                    volumeName,
+                    ProbeVlmStorageProvider.DFLT_PROBE_VLM_SIZE_KIB,
+                    config
+                );
+            }
+        );
+
+        final String devPath = getDevicePath(volumeGroup, volumeName);
+        return devPath;
+    }
+
+    @Override
+    public void deleteTmpProbeVlm(final StorPool storPoolRef)
+        throws StorageException
+    {
+        final String volumeGroup = getStorageName(storPoolRef);
+
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(volumeGroup),
+            config ->
+            {
+                return LvmCommands.delete(
+                    extCmdFactory.create(),
+                    volumeGroup,
+                    PROBE_VLM_NAME_THIN,
+                    config,
+                    LvmVolumeType.VOLUME
+                );
+            }
+        );
     }
 }

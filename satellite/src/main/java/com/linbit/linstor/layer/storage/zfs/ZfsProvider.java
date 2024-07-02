@@ -23,6 +23,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
+import com.linbit.linstor.layer.storage.ProbeVlmStorageProvider;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands;
 import com.linbit.linstor.layer.storage.zfs.utils.ZfsCommands.ZfsVolumeType;
@@ -60,8 +61,12 @@ import java.util.TreeMap;
 import java.util.function.BiConsumer;
 
 @Singleton
-public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, ZfsData<Snapshot>>
+public class ZfsProvider
+    extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, ZfsData<Snapshot>>
+    implements ProbeVlmStorageProvider
 {
+    public static final String PROBE_VLM_NAME = ".probeVolume";
+
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
     /** Format: "<code>{rscName}{rscNameSuffix}_{vlmNr}</code>" */
     public static final String FORMAT_RSC_TO_ZFS_ID = "%s%s_%05d";
@@ -1127,5 +1132,48 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         ZfsCommands.hideUnhideSnapshotDevice(
             extCmdFactory.create(), getZPool(srcData.getStorPool()), srcData.getIdentifier(), true);
         vlm.setCloneDevicePath(null);
+    }
+
+    @Override
+    public @Nullable String createTmpProbeVlm(final StorPool storPoolRef) throws StorageException
+    {
+        return createTmpProbeVlmImpl(storPoolRef, PROBE_VLM_NAME, false);
+    }
+
+    protected @Nullable String createTmpProbeVlmImpl(final StorPool storPoolRef, String volumeNameRef, boolean thinRef)
+        throws StorageException
+    {
+        final String volumeGroup = getStorageName(storPoolRef);
+
+        ZfsCommands.create(
+            extCmdFactory.create(),
+            volumeGroup,
+            volumeNameRef,
+            DFLT_PROBE_VLM_SIZE_KIB,
+            thinRef
+        );
+
+        final String devPath = getDevicePath(volumeGroup, volumeNameRef);
+        return devPath;
+    }
+
+    @Override
+    public void deleteTmpProbeVlm(final StorPool storPoolRef)
+        throws StorageException
+    {
+        deleteTmpProbeVlmImpl(storPoolRef, PROBE_VLM_NAME);
+    }
+
+    protected void deleteTmpProbeVlmImpl(final StorPool storPoolRef, final String volumeNameRef)
+        throws StorageException
+    {
+        final String volumeGroup = getStorageName(storPoolRef);
+
+        ZfsCommands.delete(
+            extCmdFactory.create(),
+            volumeGroup,
+            volumeNameRef,
+            ZfsVolumeType.VOLUME
+        );
     }
 }

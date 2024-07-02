@@ -44,12 +44,14 @@ import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.drbd.DrbdInvalidateUtils;
 import com.linbit.linstor.layer.storage.lvm.LvmProvider;
+import com.linbit.linstor.layer.storage.utils.BlockSizeInfo;
 import com.linbit.linstor.layer.storage.utils.DeviceUtils;
 import com.linbit.linstor.layer.storage.utils.DmStatCommands;
 import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
 import com.linbit.linstor.layer.storage.utils.StltProviderUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -67,16 +69,20 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
+import com.linbit.utils.SymbolicLinkResolver;
 
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -1776,6 +1782,138 @@ public abstract class AbsStorageProvider<
     protected int getExtentSizeMulFactor(VlmProviderObject<?> vlmDataRef)
     {
         return DFLT_STRIPES; // by default all volumes have 1 stripes (unless this method is overridden)
+    }
+
+    /**
+     * Updates the minimum I/O size of a block device.
+     *
+     * Attempts to determine the current minimum I/O size of a block device by examining the first volume that exists
+     * in the storage pool, if there is one, and if the minimum I/O size is not set in the corresponding storage
+     * pool property, or if the current storage pool property's value differs from the one that was determined as the
+     * current minimum I/O size, or if the storage pool property's value is unparsable, the storage pool property
+     * is set to the determined value.
+     *
+     * @param storPoolObj The storage pool to operate on
+     * @param propsChange A LocalPropsChangePojo object to use for sending the property update to the controller
+     * @throws AccessDeniedException If the access context does not allow access to a volume or properties object
+     */
+    public void updateMinIoSize(final StorPool storPoolObj, final LocalPropsChangePojo propsChange)
+        throws AccessDeniedException
+    {
+        final StorPoolName storPoolObjName = storPoolObj.getName();
+        errorReporter.logDebug("ENTER updateMinIoSize method: Storage pool \"%s\"", storPoolObjName.displayValue);
+        Collection<VlmProviderObject<Resource>> vlmProviderList = storPoolObj.getVolumes(storDriverAccCtx);
+        if (vlmProviderList != null && vlmProviderList.size() >= 1)
+        {
+            errorReporter.logDebug("updateMinIoSize: Have vlmProviderList with %d items", vlmProviderList.size());
+            Iterator<VlmProviderObject<Resource>> vlmProviderIter = vlmProviderList.iterator();
+            boolean haveInfo = false;
+            while (vlmProviderIter.hasNext() && !haveInfo)
+            {
+                VlmProviderObject<Resource> vlmProvider = vlmProviderIter.next();
+                errorReporter.logDebug("updateMinIoSize: Have vlmProvider");
+                final String storDevicePath = vlmProvider.getDevicePath();
+                try
+                {
+                    updateMinIoSizeByDevice(storPoolObj, storDevicePath, propsChange);
+                    haveInfo = true;
+                }
+                catch (IOException ignored)
+                {
+                }
+            }
+        }
+        else
+        {
+            errorReporter.logDebug("updateMinIoSize: Don't have vlmProviderList, using temporary volumes");
+            if (this instanceof ProbeVlmStorageProvider)
+            {
+                final ProbeVlmStorageProvider storPrv = (ProbeVlmStorageProvider) this;
+                try
+                {
+                    final String storDevicePath = storPrv.createTmpProbeVlm(storPoolObj);
+                    try
+                    {
+                        updateMinIoSizeByDevice(storPoolObj, storDevicePath, propsChange);
+                    }
+                    catch (IOException ignored)
+                    {
+                    }
+                }
+                catch (StorageException ignored)
+                {
+                    errorReporter.logDebug("updateMinIoSize: Temporary volume creation failed");
+                }
+                finally
+                {
+                    try
+                    {
+                        storPrv.deleteTmpProbeVlm(storPoolObj);
+                    }
+                    catch (StorageException ignored)
+                    {
+                        errorReporter.logDebug("updateMinIoSize: Temporary volume deletion failed");
+                    }
+                }
+            }
+        }
+        errorReporter.logDebug("EXIT updateMinIoSize method");
+    }
+
+    private void updateMinIoSizeByDevice(
+        final StorPool storPoolObj,
+        final @Nullable String storDevicePath,
+        final LocalPropsChangePojo propsChange
+    )
+        throws IOException, AccessDeniedException
+    {
+        final StorPoolName storPoolObjName = storPoolObj.getName();
+        if (storDevicePath != null)
+        {
+            errorReporter.logDebug("updateMinIoSize: Have storDevicePath \"%s\"", storDevicePath);
+            errorReporter.logDebug(
+                "updateMinIoSize: Resolving symbolic links for path \"%s\"",
+                storDevicePath
+            );
+            final Path blockDevicePath = SymbolicLinkResolver.resolveSymLink(storDevicePath);
+            errorReporter.logDebug(
+                "updateMinIoSize: Block device path is \"%s\"",
+                blockDevicePath.toString()
+            );
+            final long minIoSize = BlockSizeInfo.getBlockSize(blockDevicePath);
+
+            boolean updateValue = true;
+
+            final String propKey = StorageConstants.NAMESPACE_INTERNAL + '/' +
+                StorageConstants.BLK_DEV_MIN_IO_SIZE;
+            final Props storPoolProps = storPoolObj.getProps(storDriverAccCtx);
+            final @Nullable String currentPropValue = storPoolProps.getProp(propKey);
+            if (currentPropValue != null)
+            {
+                try
+                {
+                    final long currentPropMinIoSize = Long.parseLong(currentPropValue);
+                    updateValue = currentPropMinIoSize != minIoSize;
+                }
+                catch (NumberFormatException ignored)
+                {
+                }
+            }
+
+            if (updateValue)
+            {
+                final String propValue = Long.toString(minIoSize);
+                errorReporter.logDebug(
+                    "Storage pool \"%s\": Set property \"%s\" = \"%s\"",
+                    storPoolObjName.displayValue, propKey, propValue
+                );
+                propsChange.changeStorPoolProp(storPoolObj, propKey, propValue);
+            }
+        }
+        else
+        {
+            errorReporter.logDebug("updateMinIoSize: storDevicePath is a null pointer", storDevicePath);
+        }
     }
 
     @SuppressWarnings("unchecked")

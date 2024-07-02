@@ -31,8 +31,16 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.StorPoolDefinitionSatelliteFactory;
 import com.linbit.linstor.core.objects.StorPoolSatelliteFactory;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
+import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.layer.storage.AbsStorageProvider;
+import com.linbit.linstor.layer.storage.DeviceProvider;
+import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.layer.storage.utils.SEDUtils;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
+import com.linbit.linstor.propscon.InvalidKeyException;
+import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -84,6 +92,7 @@ class StltStorPoolApiCallHandler
     private final ExtCmdFactory extCmdFactory;
     private final DecryptionHelper decryptionHelper;
     private final StltSecurityObjects securityObjects;
+    private final DeviceProviderMapper deviceProviderMapper;
 
     @Inject
     StltStorPoolApiCallHandler(
@@ -101,7 +110,8 @@ class StltStorPoolApiCallHandler
         CtrlStltSerializer ctrlStltSerializerRef,
         ExtCmdFactory extCmdFactoryRef,
         DecryptionHelper decryptionHelperRef,
-        StltSecurityObjects securityObjectsRef
+        StltSecurityObjects securityObjectsRef,
+        DeviceProviderMapper deviceProviderMapperRef
     )
     {
         errorReporter = errorReporterRef;
@@ -119,6 +129,7 @@ class StltStorPoolApiCallHandler
         extCmdFactory = extCmdFactoryRef;
         decryptionHelper = decryptionHelperRef;
         securityObjects = securityObjectsRef;
+        deviceProviderMapper = deviceProviderMapperRef;
     }
 
     /**
@@ -284,6 +295,8 @@ class StltStorPoolApiCallHandler
                     storPool.getProps(apiCtx).map().putAll(storPoolRaw.getStorPoolProps());
                 }
 
+                updateMinimumIoSize(storPool);
+
                 changedData = new ChangedData(storPoolDfnToRegister);
 
                 if (changedData.storPoolDfnToRegister != null)
@@ -365,6 +378,71 @@ class StltStorPoolApiCallHandler
         deviceManager.storPoolUpdateApplied(storPoolSet, changedResources, responses);
 
         return changedData;
+    }
+
+    private void updateMinimumIoSize(StorPool storPoolRef)
+        throws InvalidKeyException, AccessDeniedException, DatabaseException, InvalidValueException
+    {
+        errorReporter.logDebug("%s", "StoragePool applyChanges: Begin: Determine min-io-size");
+        final DeviceProvider devProvider = deviceProviderMapper.getDeviceProviderBy(storPoolRef);
+        final DeviceProviderKind devProviderKind = devProvider.getDeviceProviderKind();
+        if (
+            devProviderKind == DeviceProviderKind.LVM ||
+                devProviderKind == DeviceProviderKind.LVM_THIN ||
+                devProviderKind == DeviceProviderKind.ZFS ||
+                devProviderKind == DeviceProviderKind.ZFS_THIN
+        )
+        {
+            try
+            {
+                final AbsStorageProvider<?, ?, ?> storProvider = (AbsStorageProvider<?, ?, ?>) devProvider;
+                LocalPropsChangePojo propsChange = new LocalPropsChangePojo();
+                errorReporter.logDebug("%s", "min-io-size: invoke updateMinIoSize");
+                storProvider.updateMinIoSize(storPoolRef, propsChange);
+
+                // Merge any changes into the storage pool properties
+                if (!propsChange.changedStorPoolProps.isEmpty())
+                {
+                    Props storPoolProps = storPoolRef.getProps(apiCtx);
+                    for (
+                        Map.Entry<StorPoolName, Map<String, String>> changeEntry : propsChange.changedStorPoolProps
+                            .entrySet()
+                    )
+                    {
+                        // There is only supposed to be one entry in this map,
+                        // because the method that adds the entry is only called
+                        // for a single storage pool from here
+                        Map<String, String> propsMap = changeEntry.getValue();
+                        for (Map.Entry<String, String> propEntry : propsMap.entrySet())
+                        {
+                            final String propKey = propEntry.getKey();
+                            final String propValue = propEntry.getValue();
+                            storPoolProps.setProp(propKey, propValue);
+                        }
+                    }
+                    final Peer controllerPeer = controllerPeerConnector.getControllerPeer();
+                    if (controllerPeer != null)
+                    {
+                        controllerPeer.sendMessage(
+                            ctrlStltSerializer
+                                .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT)
+                                .updateLocalProps(propsChange)
+                                .build(),
+                            InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT
+                        );
+                    }
+                }
+            }
+            catch (ClassCastException ignored)
+            {
+                // Not a storage provider
+            }
+        }
+        else
+        {
+            errorReporter.logDebug("%s", "min-io-size: device provider is not a storage provider");
+        }
+        errorReporter.logDebug("%s", "StoragePool applyChanges: End: Determine min-io-size");
     }
 
     private boolean mergeProps(Props storPoolPropsRef, Map<String, String> storPoolApiPropsRef)

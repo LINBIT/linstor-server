@@ -24,6 +24,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
+import com.linbit.linstor.layer.storage.ProbeVlmStorageProvider;
 import com.linbit.linstor.layer.storage.StorageLayerSizeCalculator;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LvmVolumeType;
@@ -62,8 +63,12 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Singleton
-public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, LvmData<Snapshot>>
+public class LvmProvider
+    extends AbsStorageProvider<LvsInfo, LvmData<Resource>, LvmData<Snapshot>>
+    implements ProbeVlmStorageProvider
 {
+    public static final String PROBE_VLM_NAME = ".probeVolume";
+
     private static final int TOLERANCE_FACTOR = 3;
     // FIXME: FORMAT should be private, only made public for LayeredSnapshotHelper
     public static final String FORMAT_RSC_TO_LVM_ID = "%s%s_%05d";
@@ -986,5 +991,53 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     public void closeForClone(VlmProviderObject<?> vlm, @Nullable String cloneName) throws StorageException
     {
         vlm.setCloneDevicePath(null);
+    }
+
+    @Override
+    public @Nullable String createTmpProbeVlm(final StorPool storPoolRef)
+        throws StorageException
+    {
+        final String volumeName = PROBE_VLM_NAME;
+        final String volumeGroup = getStorageName(storPoolRef);
+
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(volumeGroup),
+            config ->
+            {
+                return LvmCommands.createFat(
+                    extCmdFactory.create(),
+                    volumeGroup,
+                    volumeName,
+                    ProbeVlmStorageProvider.DFLT_PROBE_VLM_SIZE_KIB,
+                    config
+                );
+            }
+        );
+
+        final String devPath = getDevicePath(volumeGroup, volumeName);
+        return devPath;
+    }
+
+    @Override
+    public void deleteTmpProbeVlm(final StorPool storPoolRef)
+        throws StorageException
+    {
+        final String volumeGroup = getStorageName(storPoolRef);
+
+        LvmUtils.execWithRetry(
+            extCmdFactory,
+            Collections.singleton(volumeGroup),
+            config ->
+            {
+                return LvmCommands.delete(
+                    extCmdFactory.create(),
+                    volumeGroup,
+                    PROBE_VLM_NAME,
+                    config,
+                    LvmVolumeType.VOLUME
+                );
+            }
+        );
     }
 }
