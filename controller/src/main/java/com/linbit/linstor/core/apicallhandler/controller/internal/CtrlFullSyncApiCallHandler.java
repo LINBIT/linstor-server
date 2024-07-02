@@ -166,7 +166,7 @@ public class CtrlFullSyncApiCallHandler
             Peer satellitePeer = satelliteNode.getPeer(apiCtx);
             satellitePeer.setFullSyncId(expectedFullSyncId);
 
-            errorReporter.logTrace("Sending full sync to " + satelliteNode + ".");
+            errorReporter.logInfo("Sending full sync to " + satelliteNode + ".");
 
             CtrlStltSerializerBuilder builder;
             if (waitForAnswer)

@@ -197,7 +197,7 @@ public class CtrlAuthResponseApiCallHandler
                 {
                     errorReporter.reportError(exc);
                 }
-                errorReporter.logDebug("Satellite '" + node.getName() + "' authenticated");
+                errorReporter.logInfo("Satellite '" + node.getName() + "' authenticated");
 
                 flux = ctrlFullSyncApiCallHandler.sendFullSync(
                     node,

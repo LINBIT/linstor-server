@@ -116,8 +116,7 @@ public class CtrlAuthenticator
         }
         else
         {
-            errorReporter.logDebug("Sending authentication to satellite '" +
-                node.getName() + "'");
+            errorReporter.logInfo("Sending authentication to satellite '" + node.getName() + "'");
             // TODO make the shared secret customizable
             try
             {

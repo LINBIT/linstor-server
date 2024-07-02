@@ -35,6 +35,7 @@ import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.DbEngine;
 import com.linbit.linstor.layer.LayerPayload;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.satellitestate.SatelliteResourceState;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
@@ -76,6 +77,7 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlApiCallHandler
 {
+    private final ErrorReporter errorReporter;
     private final CtrlConfApiCallHandler ctrlConfApiCallHandler;
     private final CtrlNodeApiCallHandler nodeApiCallHandler;
     private final CtrlRscDfnApiCallHandler rscDfnApiCallHandler;
@@ -106,6 +108,7 @@ public class CtrlApiCallHandler
 
     @Inject
     CtrlApiCallHandler(
+        ErrorReporter errorReporterRef,
         CtrlConfApiCallHandler ctrlConfApiCallHandlerRef,
         CtrlNodeApiCallHandler nodeApiCallHandlerRef,
         CtrlRscDfnApiCallHandler rscDfnApiCallHandlerRef,
@@ -134,6 +137,7 @@ public class CtrlApiCallHandler
         LockGuardFactory lockGuardFactoryRef
     )
     {
+        errorReporter = errorReporterRef;
         ctrlConfApiCallHandler = ctrlConfApiCallHandlerRef;
         nodeApiCallHandler = nodeApiCallHandlerRef;
         rscDfnApiCallHandler = rscDfnApiCallHandlerRef;
@@ -1434,6 +1438,8 @@ public class CtrlApiCallHandler
                 ApiCallRcImpl.singleApiCallRc(ApiConsts.FAIL_INVLD_RSC_NAME, "Invalid resource name provided.")
             );
         }
+
+        errorReporter.logInfo("CloneStatus: %s/%s", cloneName, status);
         return status;
     }
 
