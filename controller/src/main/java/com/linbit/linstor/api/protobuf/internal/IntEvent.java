@@ -3,12 +3,8 @@ package com.linbit.linstor.api.protobuf.internal;
 import com.linbit.linstor.api.ApiCallReactive;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.protobuf.ProtobufApiCall;
-import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.event.EventProcessor;
 import com.linbit.linstor.proto.responses.MsgEventOuterClass;
-import com.linbit.locks.LockGuardFactory;
-import com.linbit.locks.LockGuardFactory.LockObj;
-import com.linbit.locks.LockGuardFactory.LockType;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -26,19 +22,13 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class IntEvent implements ApiCallReactive
 {
-    private final ScopeRunner scopeRunner;
-    private final LockGuardFactory lockGuardFactory;
     private final EventProcessor eventProcessor;
 
     @Inject
     public IntEvent(
-        ScopeRunner scopeRunnerRef,
-        LockGuardFactory lockGuardFactoryRef,
         EventProcessor eventProcessorRef
     )
     {
-        scopeRunner = scopeRunnerRef;
-        lockGuardFactory = lockGuardFactoryRef;
         eventProcessor = eventProcessorRef;
     }
 
@@ -48,9 +38,9 @@ public class IntEvent implements ApiCallReactive
     {
         MsgEventOuterClass.MsgEvent msgEvent = MsgEventOuterClass.MsgEvent.parseDelimitedFrom(msgDataIn);
 
-        return scopeRunner.fluxInTransactionalScope(
-            "Handle event",
-            lockGuardFactory.buildDeferred(LockType.WRITE, LockObj.NODES_MAP),
+        // intentionally not calling eventProcessor.handleEvent directly to prevent the TCP thread from blocking
+        return Flux.defer(
+            // locks are taken within the handleEvent method
             () -> eventProcessor.handleEvent(
                     msgEvent.getEventAction(),
                     msgEvent.getEventName(),

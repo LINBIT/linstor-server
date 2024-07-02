@@ -3,6 +3,7 @@ package com.linbit.locks;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.core.CoreModule;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -25,6 +26,23 @@ public class LockGuardFactory
         LockGuardBuilder read(LockObj... lockIdList);
 
         LockGuardBuilder lock(LockObj lockId, LockType lockType);
+
+        /**
+         * Locks that should be taken <b>before</b> LINSTOR locks (which can be addressed via {@link LockObj}) are
+         * taken.
+         * <br />
+         * This method is <b>not</b> additive. The given argument will override a possibly existing array of
+         * preLocks instead of extending it.
+         */
+        LockGuardBuilder preLinstorLocks(Lock... locks);
+
+        /**
+         * Locks that should be taken <b>after</b> LINSTOR locks (which can be addressed via {@link LockObj}) are taken.
+         * <br />
+         * This method is <b>not</b> additive. The given argument will override a possibly existing array of
+         * postLocks instead of extending it.
+         */
+        LockGuardBuilder postLinstorLocks(Lock... locks);
 
         LockGuard build();
 
@@ -185,6 +203,9 @@ public class LockGuardFactory
 
         private boolean defer = false;
 
+        private @Nullable Lock[] preLocks = null;
+        private @Nullable Lock[] postLocks = null;
+
         private LockGuardBuilderImpl()
         {
             locks = new TreeMap<>((lock1st, lock2nd) -> Integer.compare(lock1st.lockIdx, lock2nd.lockIdx));
@@ -231,6 +252,26 @@ public class LockGuardFactory
         }
 
         @Override
+        public LockGuardBuilder preLinstorLocks(Lock... locksRef)
+        {
+            // we could add checks here if these locks are already known and if so if the order is the same as before.
+            // If the order is different, we should throw an ImplementationError here or simply reorder them (since the
+            // order is usually not important as long as it is consistent?)
+            preLocks = locksRef;
+            return this;
+        }
+
+        @Override
+        public LockGuardBuilder postLinstorLocks(Lock... locksRef)
+        {
+            // we could add checks here if these locks are already known and if so if the order is the same as before.
+            // If the order is different, we should throw an ImplementationError here or simply reorder them (since the
+            // order is usually not important as long as it is consistent?)
+            postLocks = locksRef;
+            return this;
+        }
+
+        @Override
         public LockGuard buildDeferred()
         {
             setDefer(true);
@@ -245,8 +286,9 @@ public class LockGuardFactory
                 locks.put(LockObj.RECONFIGURATION, LockType.READ);
             }
 
-            Lock[] lockArr = new Lock[locks.size()];
-            int lockIdx = 0;
+            Lock[] lockArr = createLockArray();
+            int lockIdx = appendLocks(preLocks, lockArr, 0);
+
             for (Entry<LockObj, LockType> entry : locks.entrySet())
             {
                 Lock lock;
@@ -261,7 +303,38 @@ public class LockGuardFactory
                 lockArr[lockIdx] = lock;
                 ++lockIdx;
             }
+
+            /* lockIdx = */ appendLocks(postLocks, lockArr, lockIdx);
             return new LockGuard(defer, lockArr);
+        }
+
+
+        private Lock[] createLockArray()
+        {
+            Lock[] lockArr;
+            int size = locks.size();
+            if (preLocks != null)
+            {
+                size += preLocks.length;
+            }
+            if (postLocks != null)
+            {
+                size += postLocks.length;
+            }
+            lockArr = new Lock[size];
+            return lockArr;
+        }
+
+        private int appendLocks(@Nullable Lock[] srcLocksArrRef, Lock[] dstLocksArrRef, int lockIdxRef)
+        {
+            int idx = lockIdxRef;
+            if (srcLocksArrRef != null)
+            {
+                int srcLen = srcLocksArrRef.length;
+                System.arraycopy(srcLocksArrRef, 0, dstLocksArrRef, idx, srcLen);
+                idx += srcLen;
+            }
+            return idx;
         }
     }
 }

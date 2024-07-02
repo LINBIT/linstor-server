@@ -7,6 +7,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.PeerContext;
 import com.linbit.linstor.annotation.SystemContext;
 import com.linbit.linstor.api.LinStorScope;
+import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -50,6 +51,7 @@ public class EventProcessor
     private final Provider<Peer> peerProvider;
     private final AccessContext sysCtx;
     private final LinStorScope linstorScope;
+    private final ScopeRunner scopeRunner;
 
     // Synchronizes access to incomingEventStreamStore and pendingEventsPerPeer
     private final ReentrantLock eventHandlingLock;
@@ -63,6 +65,7 @@ public class EventProcessor
         @SystemContext AccessContext sysCtxRef,
         ErrorReporter errorReporterRef,
         Map<String, Provider<EventHandler>> eventHandlersRef,
+        ScopeRunner scopeRunnerRef,
         LockGuardFactory lockGuardFactoryRef,
         Provider<Peer> peerProviderRef,
         LinStorScope linstorScopeRef,
@@ -72,6 +75,7 @@ public class EventProcessor
     {
         errorReporter = errorReporterRef;
         eventHandlers = eventHandlersRef;
+        scopeRunner = scopeRunnerRef;
         lockGuardFactory = lockGuardFactoryRef;
         peerProvider = peerProviderRef;
         linstorScope = linstorScopeRef;
@@ -138,62 +142,83 @@ public class EventProcessor
         InputStream eventDataIn
     )
     {
-        try (LockGuard lockGuard = lockGuardFactory.build(LockGuardFactory.LockType.WRITE, NODES_MAP))
+        // eventHandlingLock is taken in connectionClosed method outside of the lockGuardFactory (inherently, since
+        // connectionClosed calls executeNoConnection which then takes the LINSTOR locks via lockGuardFactory), so here
+        // we must also take the eventHandlinglock before the lockGuardFactory in order to prevent deadlocks
+
+        return scopeRunner.fluxInTransactionalScope(
+            "Handle event",
+            lockGuardFactory.createDeferred()
+                .preLinstorLocks(eventHandlingLock)
+                .write(NODES_MAP)
+                .build(),
+            () -> handleEventInTransaction(
+                eventAction,
+                eventName,
+                resourceNameStr,
+                volumeNr,
+                snapshotNameStr,
+                peerNodeNameStr,
+                eventDataIn
+            )
+        );
+    }
+
+    private Flux<?> handleEventInTransaction(
+        String eventAction,
+        String eventName,
+        String resourceNameStr,
+        Integer volumeNr,
+        String snapshotNameStr,
+        String peerNodeNameStr,
+        InputStream eventDataIn
+    )
+    {
+        try
         {
-            eventHandlingLock.lock();
-            try
+            Provider<EventHandler> eventHandlerProvider = eventHandlers.get(eventName);
+            if (eventHandlerProvider == null)
             {
-                Provider<EventHandler> eventHandlerProvider = eventHandlers.get(eventName);
-                if (eventHandlerProvider == null)
+                errorReporter.logWarning("Unknown event '%s' received", eventName);
+            }
+            else
+            {
+                ResourceName resourceName = resourceNameStr != null ? new ResourceName(resourceNameStr) : null;
+                VolumeNumber volumeNumber = volumeNr != null ? new VolumeNumber(volumeNr) : null;
+                SnapshotName snapshotName = snapshotNameStr != null ? new SnapshotName(snapshotNameStr) : null;
+                NodeName peerNodeName = peerNodeNameStr != null ? new NodeName(peerNodeNameStr) : null;
+
+                Peer peer = peerProvider.get();
+                EventIdentifier eventIdentifier = new EventIdentifier(
+                    eventName,
+                    new ObjectIdentifier(
+                        peer.getNode().getName(),
+                        resourceName,
+                        volumeNumber,
+                        snapshotName,
+                        peerNodeName
+                    )
+                );
+
+                incomingEventStreamStore.addEventStreamIfNew(eventIdentifier);
+
+                errorReporter.logTrace("Peer %s, event '%s' %s", peer, eventIdentifier, eventAction);
+                eventHandlerProvider.get().execute(eventAction, eventIdentifier, eventDataIn);
+
+                if (eventAction.equals(InternalApiConsts.EVENT_STREAM_CLOSE_REMOVED))
                 {
-                    errorReporter.logWarning("Unknown event '%s' received", eventName);
+                    incomingEventStreamStore.removeEventStream(eventIdentifier);
                 }
-                else
-                {
-                    ResourceName resourceName =
-                        resourceNameStr != null ? new ResourceName(resourceNameStr) : null;
-                    VolumeNumber volumeNumber =
-                        volumeNr != null ? new VolumeNumber(volumeNr) : null;
-                    SnapshotName snapshotName =
-                        snapshotNameStr != null ? new SnapshotName(snapshotNameStr) : null;
-                    NodeName peerNodeName = peerNodeNameStr != null ? new NodeName(peerNodeNameStr) : null;
-
-                    Peer peer = peerProvider.get();
-                    EventIdentifier eventIdentifier = new EventIdentifier(
-                        eventName,
-                        new ObjectIdentifier(
-                            peer.getNode().getName(),
-                            resourceName,
-                            volumeNumber,
-                            snapshotName,
-                            peerNodeName
-                        )
-                    );
-
-                    incomingEventStreamStore.addEventStreamIfNew(eventIdentifier);
-
-                    errorReporter.logTrace("Peer %s, event '%s' %s", peer, eventIdentifier, eventAction);
-                    eventHandlerProvider.get().execute(eventAction, eventIdentifier, eventDataIn);
-
-                    if (eventAction.equals(InternalApiConsts.EVENT_STREAM_CLOSE_REMOVED))
-                    {
-                        incomingEventStreamStore.removeEventStream(eventIdentifier);
-                    }
-                }
-                commit(transMgrProvider.get());
             }
-            catch (InvalidNameException | ValueOutOfRangeException exc)
-            {
-                errorReporter.logWarning("Invalid event received: " + exc.getMessage());
-            }
-            catch (Exception | ImplementationError exc)
-            {
-                errorReporter.reportError(exc);
-            }
-            finally
-            {
-                eventHandlingLock.unlock();
-            }
+            commit(transMgrProvider.get());
+        }
+        catch (InvalidNameException | ValueOutOfRangeException exc)
+        {
+            errorReporter.logWarning("Invalid event received: " + exc.getMessage());
+        }
+        catch (Exception | ImplementationError exc)
+        {
+            errorReporter.reportError(exc);
         }
         return Flux.empty();
     }
