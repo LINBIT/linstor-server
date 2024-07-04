@@ -168,22 +168,14 @@ class StrategyHandler
                         );
                         valDouble = 1.0;
                     }
-                }
-                else
-                {
-                    errorReporter.logTrace(
-                        "Autoplacer.Strategy: No weight configured for strategy '%s'. Defaulting to 1.0",
-                        stratName
-                    );
-                    valDouble = 1.0;
-                }
 
-                if (strat.getMinMax() == MinMax.MINIMIZE)
-                {
-                    valDouble *= -1;
-                }
+                    if (strat.getMinMax() == MinMax.MINIMIZE)
+                    {
+                        valDouble *= -1;
+                    }
 
-                weights.put(strat, valDouble);
+                    weights.put(strat, valDouble);
+                }
             }
         }
         return weights;
