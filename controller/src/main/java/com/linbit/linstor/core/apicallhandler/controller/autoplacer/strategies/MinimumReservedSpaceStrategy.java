@@ -37,25 +37,32 @@ public class MinimumReservedSpaceStrategy implements AutoplaceStrategy
         Map<StorPool, Double> ret = new HashMap<>();
         for (StorPool sp : storPoolsRef)
         {
-            double usableSum = 0;
-            for (VlmProviderObject<Resource> vlmObj : sp.getVolumes(apiCtx))
+            if (sp.getDeviceProviderKind().hasBackingDevice())
             {
-                long usableSize = vlmObj.getUsableSize();
-                if (usableSize != -1)
+                double usableSum = 0;
+                for (VlmProviderObject<Resource> vlmObj : sp.getVolumes(apiCtx))
                 {
-                    usableSum += usableSize;
+                    long usableSize = vlmObj.getUsableSize();
+                    if (usableSize != -1)
+                    {
+                        usableSum += usableSize;
+                    }
                 }
-            }
-            for (VlmProviderObject<Snapshot> snapObj : sp.getSnapVolumes(apiCtx))
-            {
-                long allocSize = snapObj.getUsableSize();
-                if (allocSize != -1)
+                for (VlmProviderObject<Snapshot> snapObj : sp.getSnapVolumes(apiCtx))
                 {
-                    usableSum += allocSize;
+                    long allocSize = snapObj.getUsableSize();
+                    if (allocSize != -1)
+                    {
+                        usableSum += allocSize;
+                    }
                 }
-            }
 
-            ret.put(sp, usableSum);
+                ret.put(sp, usableSum);
+            }
+            else
+            {
+                ret.put(sp, 0.0);
+            }
         }
 
         return ret;
