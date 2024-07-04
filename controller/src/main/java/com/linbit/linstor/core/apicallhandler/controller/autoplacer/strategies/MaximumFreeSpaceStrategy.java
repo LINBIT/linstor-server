@@ -17,6 +17,7 @@ import java.util.Map;
 @Singleton
 public class MaximumFreeSpaceStrategy implements AutoplaceStrategy
 {
+    private static final double MAX_FREE_SPACE_DFLT_WEIGHT = 1.0;
     private final AccessContext apiCtx;
 
     @Inject
@@ -37,6 +38,12 @@ public class MaximumFreeSpaceStrategy implements AutoplaceStrategy
     public MinMax getMinMax()
     {
         return MinMax.MAXIMIZE;
+    }
+
+    @Override
+    public double getDefaultWeight()
+    {
+        return MAX_FREE_SPACE_DFLT_WEIGHT;
     }
 
     @Override

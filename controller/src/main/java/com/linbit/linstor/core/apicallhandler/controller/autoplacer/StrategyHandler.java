@@ -54,9 +54,17 @@ class StrategyHandler
         dfltWeights = new HashMap<>();
         for (AutoplaceStrategy strat : strategies)
         {
-            dfltWeights.put(strat, 0.0);
+            double dfltWeight = strat.getDefaultWeight();
+            if (strat.getMinMax() == MinMax.MINIMIZE)
+            {
+                // The user should still be able to set a positive weight, even if the strategy is minimizing this
+                // value. In that case, every time the property is parsed, it will be multiplied with -1.0 in the
+                // end. Storing -DFLT_WEIGHT here simply allows us to skip this unnecessary multiplication when
+                // using default values
+                dfltWeight *= -1.0;
+            }
+            dfltWeights.put(strat, dfltWeight);
         }
-        dfltWeights.put(freeSpaceStratRef, 1.0);
     }
 
     public Collection<StorPoolWithScore> rate(

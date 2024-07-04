@@ -8,6 +8,8 @@ import java.util.Map;
 
 public interface AutoplaceStrategy
 {
+    double DFLT_WEIGHT = 0.0;
+
     Map<StorPool, Double> rate(Collection<StorPool> storPools, RatingAdditionalInfo additionalInfoRef)
         throws AccessDeniedException;
 
@@ -25,5 +27,10 @@ public interface AutoplaceStrategy
         public RatingAdditionalInfo()
         {
         }
+    }
+
+    default double getDefaultWeight()
+    {
+        return DFLT_WEIGHT;
     }
 }

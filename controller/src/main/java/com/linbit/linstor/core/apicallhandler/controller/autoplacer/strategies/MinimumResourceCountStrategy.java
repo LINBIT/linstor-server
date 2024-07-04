@@ -20,6 +20,7 @@ import java.util.Map;
 @Singleton
 public class MinimumResourceCountStrategy implements AutoplaceStrategy
 {
+    private static final double MIN_RSC_COUNT_DFLT_WEIGHT = 0.00001;
     private final AccessContext apiCtx;
 
     @Inject
@@ -65,4 +66,9 @@ public class MinimumResourceCountStrategy implements AutoplaceStrategy
         return MinMax.MINIMIZE;
     }
 
+    @Override
+    public double getDefaultWeight()
+    {
+        return MIN_RSC_COUNT_DFLT_WEIGHT;
+    }
 }
