@@ -229,6 +229,10 @@ public class InternalApiConsts
     public static final String KEY_DRBD_NODE_IDS_TO_RESET = "NodeIdsToReset";
     public static final String KEY_DRBD_QUORUM = "quorum";
     public static final String KEY_DRBD_NEEDS_INVALIDATE = "NeedsInvalidate";
+    public static final String KEY_DRBD_BLOCK_SIZE = "block-size";
+
+    // drbd actions
+    public static final String MIN_IO_SIZE_RESTART_DRBD = ApiConsts.NAMESPC_STLT + "/minIoSizeRestartDrbd";
 
     // external files consts
     public static final String NAMESPC_FILES = "files";
