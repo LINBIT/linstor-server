@@ -274,10 +274,11 @@ public class Resources
         @Context Request request,
         @Suspended final AsyncResponse asyncResponse,
         @PathParam("nodeName") String nodeName,
-        @PathParam("rscName") String rscName
+        @PathParam("rscName") String rscName,
+        @DefaultValue("False") @QueryParam("keep_tiebreaker") boolean keepTiebreakerRef
     )
     {
-        Flux<ApiCallRc> flux = ctrlRscDeleteApiCallHandler.deleteResource(nodeName, rscName)
+        Flux<ApiCallRc> flux = ctrlRscDeleteApiCallHandler.deleteResource(nodeName, rscName, keepTiebreakerRef)
             .contextWrite(requestHelper.createContext(ApiConsts.API_DEL_RSC, request));
 
         requestHelper.doFlux(asyncResponse, ApiCallRcRestUtils.mapToMonoResponse(flux));

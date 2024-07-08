@@ -151,13 +151,18 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
         return fluxes;
     }
 
+    public Flux<ApiCallRc> deleteResource(String nodeNameStr, String rscNameStr)
+    {
+        return deleteResource(nodeNameStr, rscNameStr, false);
+    }
     /**
      * Deletes a {@link Resource}.
      * <p>
      * The {@link Resource} is only deleted once the corresponding satellite confirmed
      * that it has undeployed (deleted) the {@link Resource}
+     * @param keepTiebreakerRef
      */
-    public Flux<ApiCallRc> deleteResource(String nodeNameStr, String rscNameStr)
+    public Flux<ApiCallRc> deleteResource(String nodeNameStr, String rscNameStr, boolean keepTiebreakerRef)
     {
         ResponseContext context = CtrlRscApiCallHandler.makeRscContext(
             ApiOperation.makeDeleteOperation(),
@@ -169,8 +174,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             .fluxInTransactionalScope(
                 "Activating resource if necessary before deletion",
                 LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
-                () -> activateRscIfLastInTransaction(nodeNameStr, rscNameStr, context)
-                // () -> prepareResourceDeleteInTransaction(nodeNameStr, rscNameStr, context)
+                () -> activateRscIfLastInTransaction(nodeNameStr, rscNameStr, keepTiebreakerRef, context)
             )
             .transform(responses -> responseConverter.reportingExceptions(context, responses));
     }
@@ -178,6 +182,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     private Flux<ApiCallRc> activateRscIfLastInTransaction(
         String nodeNameStr,
         String rscNameStr,
+        boolean keepTiebreakerRef,
         ResponseContext context
     )
     {
@@ -202,7 +207,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
             scopeRunner.fluxInTransactionalScope(
                 "Prepare resource delete",
                 LockGuard.createDeferred(nodesMapLock.writeLock(), rscDfnMapLock.writeLock()),
-                () -> prepareResourceDeleteInTransaction(nodeNameStr, rscNameStr, context)
+                () -> prepareResourceDeleteInTransaction(nodeNameStr, rscNameStr, keepTiebreakerRef, context)
             )
         );
     }
@@ -210,6 +215,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
     private Flux<ApiCallRc> prepareResourceDeleteInTransaction(
         String nodeNameStr,
         String rscNameStr,
+        boolean keepTiebreakerRef,
         ResponseContext context
     )
     {
@@ -245,7 +251,7 @@ public class CtrlRscDeleteApiCallHandler implements CtrlSatelliteConnectionListe
                         responses,
                         context,
                         rsc.getResourceDefinition()
-                    )
+                    ).withKeepTiebreaker(keepTiebreakerRef)
                 );
 
                 Flux<ApiCallRc> abortSnapShipFlux = snapShipAbortHandler

@@ -284,6 +284,7 @@ public class CtrlRscAutoHelper
         boolean requiresUpdateFlux = false;
 
         boolean preventUpdateSatellitesForResourceDelete = false;
+        boolean keepTiebreaker;
 
         public AutoHelperContext(
             ApiCallRcImpl responsesRef,
@@ -299,6 +300,12 @@ public class CtrlRscAutoHelper
         public AutoHelperContext withSelectFilter(AutoSelectFilterApi selectFilterRef)
         {
             selectFilter = selectFilterRef;
+            return this;
+        }
+
+        public AutoHelperContext withKeepTiebreaker(boolean keepTiebreakerRef)
+        {
+            keepTiebreaker = keepTiebreakerRef;
             return this;
         }
     }

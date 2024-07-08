@@ -47,6 +47,7 @@ import com.linbit.locks.LockGuard;
 import static com.linbit.linstor.api.ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
 import static com.linbit.linstor.api.ApiConsts.NAMESPC_DRBD_OPTIONS;
 import static com.linbit.linstor.api.ApiConsts.VAL_FALSE;
+import static com.linbit.linstor.api.ApiConsts.VAL_TRUE;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscApiCallHandler.getRscDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 
@@ -128,7 +129,13 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
     {
         try
         {
-            if (isAutoTieBreakerEnabled(ctx.rscDfn))
+            boolean isAutoTieBreakerEnabled = isAutoTieBreakerEnabled(ctx.rscDfn);
+            if (!isAutoTieBreakerEnabled && ctx.keepTiebreaker)
+            {
+                enableAutoTieBreaker(ctx);
+                isAutoTieBreakerEnabled = true;
+            }
+            if (isAutoTieBreakerEnabled)
             {
                 Resource tieBreaker = getTieBreaker(ctx.rscDfn);
                 if (shouldTieBreakerExist(ctx.rscDfn))
@@ -168,7 +175,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                                     ApiCallRcImpl.singleApiCallRc(
                                         ApiConsts.WARN_NOT_ENOUGH_NODES_FOR_TIE_BREAKER,
                                         String.format(
-                                            "Could not find suitable node to automatically create a tie breaking resource for '%s'.",
+                                            "Could not find suitable node to automatically create a tie breaking " +
+                                                "resource for '%s'.",
                                             ctx.rscDfn.getName().displayValue
                                         )
                                     )
@@ -214,19 +222,30 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                         if (isFlagSet(tieBreaker, Resource.Flags.DRBD_DELETE))
                         {
                             // user requested to delete tiebreaker.
-                            tieBreaker.getResourceDefinition().getProps(peerCtx.get()).setProp(
-                                KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER,
-                                VAL_FALSE,
-                                NAMESPC_DRBD_OPTIONS
-                            );
-                            ctx.responses.addEntries(
-                                ApiCallRcImpl.singleApiCallRc(
-                                    ApiConsts.INFO_PROP_SET,
-                                    "Disabling auto-tiebreaker on resource-definition '" +
-                                        tieBreaker.getResourceDefinition().getName() +
-                                        "' as tiebreaker resource was manually deleted"
-                                )
-                            );
+                            if (ctx.keepTiebreaker)
+                            {
+                                // however, --keep-tiebreaker overrules this deletion now
+                                // the takeover will remove the DELETE flags
+                                takeover(tieBreaker, ctx);
+                            }
+                            else
+                            {
+                                tieBreaker.getResourceDefinition()
+                                    .getProps(peerCtx.get())
+                                    .setProp(
+                                        KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER,
+                                        VAL_FALSE,
+                                        NAMESPC_DRBD_OPTIONS
+                                    );
+                                ctx.responses.addEntries(
+                                    ApiCallRcImpl.singleApiCallRc(
+                                        ApiConsts.INFO_PROP_SET,
+                                        "Disabling auto-tiebreaker on resource-definition '" +
+                                            tieBreaker.getResourceDefinition().getName() +
+                                            "' as tiebreaker resource was manually deleted"
+                                    )
+                                );
+                            }
                         }
                     }
                 }
@@ -315,7 +334,8 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
             ctx.responses.addEntries(
                 ApiCallRcImpl.singleApiCallRc(
                     ApiConsts.INFO_TIE_BREAKER_TAKEOVER,
-                    "The given resource will not be deleted but will be taken over as a linstor managed tiebreaker resource."
+                    "The given resource will not be deleted but will be taken over as a " +
+                        "linstor managed tiebreaker resource."
                 )
             );
         }
@@ -355,6 +375,33 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
             );
         }
         return autoTieBreakerEnabled;
+    }
+
+    private void enableAutoTieBreaker(AutoHelperContext ctxRef) throws DatabaseException
+    {
+        try
+        {
+            ctxRef.rscDfn.getProps(peerCtx.get())
+                .setProp(KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER, VAL_TRUE, NAMESPC_DRBD_OPTIONS);
+            ctxRef.responses.add(
+                ApiCallRcImpl.simpleEntry(
+                    ApiConsts.INFO_PROP_SET,
+                    "Autotiebreaker automatically enabled due to --keep-tiebreaker"
+                )
+            );
+        }
+        catch (InvalidKeyException | InvalidValueException exc)
+        {
+            throw new ImplementationError(exc);
+        }
+        catch (AccessDeniedException accDeniedExc)
+        {
+            throw new ApiAccessDeniedException(
+                accDeniedExc,
+                "enabling auto-tiebreaker feature " + getRscDfnDescriptionInline(ctxRef.rscDfn),
+                ApiConsts.FAIL_ACC_DENIED_RSC_DFN
+            );
+        }
     }
 
     private Resource getTieBreaker(ResourceDefinition rscDfn)

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Autoplacer: Add --x-replicas-on-different option
+- Resource delete: Add --keep-tiebreaker option
 
 ### Changed
 
