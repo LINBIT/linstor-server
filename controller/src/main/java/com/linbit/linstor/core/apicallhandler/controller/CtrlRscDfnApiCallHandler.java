@@ -147,6 +147,7 @@ public class CtrlRscDfnApiCallHandler
     private final CtrlRscCrtApiHelper ctrlRscCrtApiHelper;
     private final CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelper;
     private final CtrlRscAutoQuorumHelper ctrlRscAutoQuorumHelper;
+    private final CtrlRscAutoHelper ctrlRscAutoHelper;
     private final FreeCapacityFetcher freeCapacityFetcher;
     private final ResourceControllerFactory resourceControllerFactory;
     private final BackupInfoManager backupInfoMgr;
@@ -183,6 +184,7 @@ public class CtrlRscDfnApiCallHandler
         CtrlRscCrtApiHelper ctrlRscCrtApiHelperRef,
         CtrlRscAutoTieBreakerHelper ctrlRscAutoTiebreakerHelperRef,
         CtrlRscAutoQuorumHelper ctrRscAutoQuorumHelperRef,
+        CtrlRscAutoHelper ctrlRscAutoHelperRef,
         FreeCapacityFetcher freeCapacityFetcherRef,
         ResourceControllerFactory resourceControllerFactoryRef,
         CtrlVlmCrtApiHelper ctrlVlmCrtApiHelperRef,
@@ -219,6 +221,7 @@ public class CtrlRscDfnApiCallHandler
         ctrlRscCrtApiHelper = ctrlRscCrtApiHelperRef;
         ctrlRscAutoTiebreakerHelper = ctrlRscAutoTiebreakerHelperRef;
         ctrlRscAutoQuorumHelper = ctrRscAutoQuorumHelperRef;
+        ctrlRscAutoHelper = ctrlRscAutoHelperRef;
         freeCapacityFetcher = freeCapacityFetcherRef;
         resourceControllerFactory = resourceControllerFactoryRef;
         ctrlVlmCrtApiHelper = ctrlVlmCrtApiHelperRef;
@@ -709,12 +712,11 @@ public class CtrlRscDfnApiCallHandler
 
         String autoTiebreakerKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER;
         String autoQuorumKey = ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_DRBD_AUTO_QUORUM;
-        if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey)
-            || overrideProps.containsKey(autoQuorumKey) || deletePropKeys.contains(autoQuorumKey))
+        if (overrideProps.containsKey(autoTiebreakerKey) || deletePropKeys.contains(autoTiebreakerKey) ||
+            overrideProps.containsKey(autoQuorumKey) || deletePropKeys.contains(autoQuorumKey))
         {
             AutoHelperContext autoHelperCtx = new AutoHelperContext(responsesRef, contextRef, rscDfn);
-            ctrlRscAutoTiebreakerHelper.manage(autoHelperCtx);
-            ctrlRscAutoQuorumHelper.manage(autoHelperCtx);
+            ctrlRscAutoHelper.manage(autoHelperCtx);
 
             retFlux = retFlux.concatWith(Flux.merge(autoHelperCtx.additionalFluxList));
         }

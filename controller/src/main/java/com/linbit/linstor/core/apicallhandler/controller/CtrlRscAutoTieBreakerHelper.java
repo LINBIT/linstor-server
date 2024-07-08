@@ -135,136 +135,134 @@ public class CtrlRscAutoTieBreakerHelper implements CtrlRscAutoHelper.AutoHelper
                 enableAutoTieBreaker(ctx);
                 isAutoTieBreakerEnabled = true;
             }
-            if (isAutoTieBreakerEnabled)
+            @Nullable Resource tieBreaker = getTieBreaker(ctx.rscDfn);
+            boolean shouldTieBreakerExist = isAutoTieBreakerEnabled && shouldTieBreakerExist(ctx.rscDfn);
+            if (shouldTieBreakerExist)
             {
-                Resource tieBreaker = getTieBreaker(ctx.rscDfn);
-                if (shouldTieBreakerExist(ctx.rscDfn))
+                if (tieBreaker == null)
                 {
-                    if (tieBreaker == null)
+                    Resource takeover = null;
+                    Iterator<Resource> rscIt = ctx.rscDfn.iterateResource(peerCtx.get());
+                    while (rscIt.hasNext())
                     {
-                        Resource takeover = null;
-                        Iterator<Resource> rscIt = ctx.rscDfn.iterateResource(peerCtx.get());
-                        while (rscIt.hasNext())
+                        Resource rsc = rscIt.next();
+                        if (isSomeFlagSet(rsc, Resource.Flags.DRBD_DELETE, Resource.Flags.DELETE) &&
+                            !isSomeFlagSet(rsc.getNode(), Node.Flags.EVICTED, Node.Flags.EVACUATE))
                         {
-                            Resource rsc = rscIt.next();
-                            if (isSomeFlagSet(rsc, Resource.Flags.DRBD_DELETE, Resource.Flags.DELETE) &&
-                                !isSomeFlagSet(rsc.getNode(), Node.Flags.EVICTED, Node.Flags.EVACUATE))
+                            if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
                             {
-                                if (isFlagSet(rsc, Resource.Flags.DRBD_DISKLESS))
-                                {
-                                    takeover = rsc;
-                                    break;
-                                }
-                                else
-                                {
-                                    takeover = rsc;
-                                    // keep looking for diskless resource
-                                }
-                            }
-                        }
-                        if (takeover != null)
-                        {
-                            takeover(takeover, ctx);
-                        }
-                        else
-                        {
-                            StorPool storPool = getStorPoolForTieBreaker(ctx);
-                            if (storPool == null)
-                            {
-                                ctx.responses.addEntries(
-                                    ApiCallRcImpl.singleApiCallRc(
-                                        ApiConsts.WARN_NOT_ENOUGH_NODES_FOR_TIE_BREAKER,
-                                        String.format(
-                                            "Could not find suitable node to automatically create a tie breaking " +
-                                                "resource for '%s'.",
-                                            ctx.rscDfn.getName().displayValue
-                                        )
-                                    )
-                                );
+                                takeover = rsc;
+                                break;
                             }
                             else
                             {
-                                // we can ignore the .objA of the returned pair as we are just about to create
-                                // a tiebreaker
-                                tieBreaker = rscCrtApiHelper.createResourceDb(
-                                    storPool.getNode().getName().displayValue,
-                                    ctx.rscDfn.getName().displayValue,
-                                    Resource.Flags.TIE_BREAKER.flagValue,
-                                    Collections.singletonMap(
-                                        ApiConsts.KEY_STOR_POOL_NAME,
-                                        storPool.getName().displayValue
-                                    ),
-                                    Collections.emptyList(),
-                                    null,
-                                    Collections.emptyMap(),
-                                    Collections.emptyList(),
-                                    null
-                                ).objB.extractApiCallRc(ctx.responses);
-
-                                ctx.responses.addEntries(
-                                    ApiCallRcImpl.singleApiCallRc(
-                                        ApiConsts.INFO_TIE_BREAKER_CREATED,
-                                        String.format(
-                                            "Tie breaker resource '%s' created on %s",
-                                            ctx.rscDfn.getName().displayValue,
-                                            storPool.getName().displayValue
-                                        )
-                                    )
-                                );
-
-                                ctx.resourcesToCreate.add(tieBreaker);
-                                ctx.requiresUpdateFlux = true;
+                                takeover = rsc;
+                                // keep looking for diskless resource
                             }
                         }
                     }
+                    if (takeover != null)
+                    {
+                        takeover(takeover, ctx);
+                    }
                     else
                     {
-                        if (isFlagSet(tieBreaker, Resource.Flags.DRBD_DELETE))
+                        StorPool storPool = getStorPoolForTieBreaker(ctx);
+                        if (storPool == null)
                         {
-                            // user requested to delete tiebreaker.
-                            if (ctx.keepTiebreaker)
-                            {
-                                // however, --keep-tiebreaker overrules this deletion now
-                                // the takeover will remove the DELETE flags
-                                takeover(tieBreaker, ctx);
-                            }
-                            else
-                            {
-                                tieBreaker.getResourceDefinition()
-                                    .getProps(peerCtx.get())
-                                    .setProp(
-                                        KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER,
-                                        VAL_FALSE,
-                                        NAMESPC_DRBD_OPTIONS
-                                    );
-                                ctx.responses.addEntries(
-                                    ApiCallRcImpl.singleApiCallRc(
-                                        ApiConsts.INFO_PROP_SET,
-                                        "Disabling auto-tiebreaker on resource-definition '" +
-                                            tieBreaker.getResourceDefinition().getName() +
-                                            "' as tiebreaker resource was manually deleted"
+                            ctx.responses.addEntries(
+                                ApiCallRcImpl.singleApiCallRc(
+                                    ApiConsts.WARN_NOT_ENOUGH_NODES_FOR_TIE_BREAKER,
+                                    String.format(
+                                        "Could not find suitable node to automatically create a tie breaking " +
+                                            "resource for '%s'.",
+                                        ctx.rscDfn.getName().displayValue
                                     )
-                                );
-                            }
+                                )
+                            );
+                        }
+                        else
+                        {
+                            // we can ignore the .objA of the returned pair as we are just about to create
+                            // a tiebreaker
+                            tieBreaker = rscCrtApiHelper.createResourceDb(
+                                storPool.getNode().getName().displayValue,
+                                ctx.rscDfn.getName().displayValue,
+                                Resource.Flags.TIE_BREAKER.flagValue,
+                                Collections.singletonMap(
+                                    ApiConsts.KEY_STOR_POOL_NAME,
+                                    storPool.getName().displayValue
+                                ),
+                                Collections.emptyList(),
+                                null,
+                                Collections.emptyMap(),
+                                Collections.emptyList(),
+                                null
+                            ).objB.extractApiCallRc(ctx.responses);
+
+                            ctx.responses.addEntries(
+                                ApiCallRcImpl.singleApiCallRc(
+                                    ApiConsts.INFO_TIE_BREAKER_CREATED,
+                                    String.format(
+                                        "Tie breaker resource '%s' created on %s",
+                                        ctx.rscDfn.getName().displayValue,
+                                        storPool.getName().displayValue
+                                    )
+                                )
+                            );
+
+                            ctx.resourcesToCreate.add(tieBreaker);
+                            ctx.requiresUpdateFlux = true;
                         }
                     }
                 }
                 else
                 {
-                    if (tieBreaker != null)
+                    if (isFlagSet(tieBreaker, Resource.Flags.DRBD_DELETE))
                     {
-                        // this cannot be the last diskful rsc of any rscDfn, so no need to notify scheduled shipping
-                        tieBreaker.markDeleted(peerCtx.get());
-                        ctx.responses.addEntries(
-                            ApiCallRcImpl.singleApiCallRc(
-                                ApiConsts.INFO_TIE_BREAKER_DELETING,
-                                "Tie breaker marked for deletion"
-                            )
-                        );
-
-                        ctx.nodeNamesForDelete.add(tieBreaker.getNode().getName());
-                        ctx.requiresUpdateFlux = true;
+                        // user requested to delete tiebreaker.
+                        if (ctx.keepTiebreaker)
+                        {
+                            // however, --keep-tiebreaker overrules this deletion now
+                            // the takeover will remove the DELETE flags
+                            takeover(tieBreaker, ctx);
+                        }
+                        else
+                        {
+                            tieBreaker.getResourceDefinition()
+                                .getProps(peerCtx.get())
+                                .setProp(
+                                    KEY_DRBD_AUTO_ADD_QUORUM_TIEBREAKER,
+                                    VAL_FALSE,
+                                    NAMESPC_DRBD_OPTIONS
+                                );
+                            ctx.responses.addEntries(
+                                ApiCallRcImpl.singleApiCallRc(
+                                    ApiConsts.INFO_PROP_SET,
+                                    "Disabling auto-tiebreaker on resource-definition '" +
+                                        tieBreaker.getResourceDefinition().getName() +
+                                        "' as tiebreaker resource was manually deleted"
+                                )
+                            );
+                        }
                     }
+                }
+            }
+            else
+            {
+                if (tieBreaker != null)
+                {
+                    // this cannot be the last diskful rsc of any rscDfn, so no need to notify scheduled shipping
+                    tieBreaker.markDeleted(peerCtx.get());
+                    ctx.responses.addEntries(
+                        ApiCallRcImpl.singleApiCallRc(
+                            ApiConsts.INFO_TIE_BREAKER_DELETING,
+                            "Tie breaker marked for deletion"
+                        )
+                    );
+
+                    ctx.nodeNamesForDelete.add(tieBreaker.getNode().getName());
+                    ctx.requiresUpdateFlux = true;
                 }
             }
         }
