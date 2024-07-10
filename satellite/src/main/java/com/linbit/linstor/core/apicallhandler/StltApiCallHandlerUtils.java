@@ -1,11 +1,14 @@
 package com.linbit.linstor.core.apicallhandler;
 
 import com.linbit.ImplementationError;
+import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.annotation.ApiContext;
 import com.linbit.linstor.annotation.Nullable;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
+import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.CoreModule.ExternalFileMap;
 import com.linbit.linstor.core.CoreModule.KeyValueStoreMap;
@@ -24,15 +27,22 @@ import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
 import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.objects.Volume;
+import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.interfaces.StorPoolInfo;
+import com.linbit.linstor.layer.storage.AbsStorageProvider;
 import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
+import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.utils.Either;
 
 import javax.inject.Inject;
@@ -278,6 +288,55 @@ public class StltApiCallHandlerUtils
         throws StorageException
     {
         return devMgr.get().getSpaceInfo(storPoolInfo, update);
+    }
+
+    public void updateStorPoolMinIoSizes(
+        final ControllerPeerConnector ctrlPeerConnector,
+        final CtrlStltSerializer interComSerializer
+    )
+        throws AccessDeniedException
+    {
+        final LocalPropsChangePojo propsChange = new LocalPropsChangePojo();
+        final @Nullable Node localNode = ctrlPeerConnector.getLocalNode();
+        if (localNode != null)
+        {
+            for (StorPoolDefinition storPoolDfn : storPoolDfnMap.values())
+            {
+                final @Nullable StorPool storPoolObj = localNode.getStorPool(apiCtx, storPoolDfn.getName());
+                if (storPoolObj != null)
+                {
+                    final DeviceProvider devProvider = deviceProviderMapper.getDeviceProviderBy(storPoolObj);
+                    final DeviceProviderKind devProviderKind = devProvider.getDeviceProviderKind();
+                    if (devProviderKind == DeviceProviderKind.LVM ||
+                        devProviderKind == DeviceProviderKind.LVM_THIN ||
+                        devProviderKind == DeviceProviderKind.ZFS ||
+                        devProviderKind == DeviceProviderKind.ZFS_THIN)
+                    {
+                        try
+                        {
+                            AbsStorageProvider<?, ?, ?> storProvider = (AbsStorageProvider<?, ?, ?>) devProvider;
+                            storProvider.updateMinIoSize(storPoolObj, propsChange);
+                        }
+                        catch (ClassCastException ignored)
+                        {
+                            // Not a storage provider
+                        }
+                    }
+                }
+            } // end for loop
+
+            final @Nullable Peer controllerPeer = ctrlPeerConnector.getControllerPeer();
+            if (controllerPeer != null)
+            {
+                controllerPeer.sendMessage(
+                    interComSerializer
+                        .onewayBuilder(InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT)
+                        .updateLocalProps(propsChange)
+                        .build(),
+                    InternalApiConsts.API_UPDATE_LOCAL_PROPS_FROM_STLT
+                );
+            }
+        }
     }
 
     /**

@@ -414,6 +414,8 @@ public class StltApiCallHandler
                     remoteHandler.applyChangesEbs(ebsRemote);
                 }
 
+                stltApiCallHandlerUtils.updateStorPoolMinIoSizes(controllerPeerConnector, interComSerializer);
+
                 transMgrProvider.get().commit();
 
                 for (NodePojo node : nodes)
@@ -957,7 +959,6 @@ public class StltApiCallHandler
         }
         return successFlag;
     }
-
 
     private void deleteUnknownResFiles(Set<RscPojo> resourcesToKeep)
     {

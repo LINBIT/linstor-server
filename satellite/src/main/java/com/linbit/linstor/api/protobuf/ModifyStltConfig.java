@@ -47,8 +47,9 @@ public class ModifyStltConfig implements ApiCall
     public void execute(InputStream msgDataIn) throws IOException
     {
         StltConfig stltConf = StltConfig.parseDelimitedFrom(msgDataIn);
+        final boolean appliedFlag = apiCallHandler.modifyStltConfig(stltConf);
         byte[] msg = interComSerializer.answerBuilder(InternalApiConsts.API_MOD_STLT_CONFIG_RESP, apiCallId.get())
-            .stltConfigApplied(apiCallHandler.modifyStltConfig(stltConf)).build();
+            .stltConfigApplied(appliedFlag).build();
         peerProvider.get().sendMessage(msg, InternalApiConsts.API_MOD_STLT_CONFIG_RESP);
     }
 }

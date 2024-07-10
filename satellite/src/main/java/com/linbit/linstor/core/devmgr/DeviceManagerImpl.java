@@ -59,6 +59,7 @@ import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventService;
+import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -130,6 +131,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock extFileMapLock;
     private final ReadWriteLock remoteMapLock;
+
+    private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
+    private final DeviceProviderMapper deviceProviderMapper;
 
     private final StltUpdateRequester stltUpdateRequester;
     private final ControllerPeerConnector controllerPeerConnector;
@@ -271,7 +275,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         ExtCmdFactory extCmdFactoryRef,
         BackupShippingMgr backupServiceMgrRef,
         StltExternalFileHandler extFileHandlerRef,
-        StltConfig stltCfgRef
+        StltConfig stltCfgRef,
+        CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
+        DeviceProviderMapper deviceProviderMapperRef
     )
     {
         wrkCtx = wrkCtxRef;
@@ -302,6 +308,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         backupServiceMgr = backupServiceMgrRef;
         extFileHandler = extFileHandlerRef;
         stltCfg = stltCfgRef;
+        storPoolDfnMap = storPoolDfnMapRef;
+        deviceProviderMapper = deviceProviderMapperRef;
 
         updTracker = new StltUpdateTrackerImpl(sched, scheduler);
         svcThr = null;
@@ -794,6 +802,8 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                                 notifySocket == null ? "null" : "empty"
                             );
                         }
+
+                        apiCallHandlerUtils.updateStorPoolMinIoSizes(controllerPeerConnector, interComSerializer);
                     }
                 }
                 else
