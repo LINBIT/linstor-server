@@ -207,6 +207,7 @@ public class TcpConnectorService implements Runnable, TcpConnector
     @Override
     public Peer connect(InetSocketAddress address, Node node) throws IOException
     {
+        errorReporter.logInfo("Establishing connection to node '%s' via %s ...", node.getName(), address);
         Selector srvSel = serverSelector;
         Peer peer;
         if (srvSel != null)

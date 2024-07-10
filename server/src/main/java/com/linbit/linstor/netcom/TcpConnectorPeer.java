@@ -567,6 +567,24 @@ public class TcpConnectorPeer implements Peer
     @Override
     public void setConnectionStatus(ApiConsts.ConnectionStatus status)
     {
+        if (node == null)
+        {
+            errorReporter.logInfo(
+                "Changing connection state of peer '%s' from %s -> %s",
+                getId(),
+                connectionStatus,
+                status
+            );
+        }
+        else
+        {
+            errorReporter.logInfo(
+                "Changing connection state of node '%s' from %s -> %s",
+                node.getName(),
+                connectionStatus,
+                status
+            );
+        }
         connectionStatus = status;
     }
 
@@ -852,11 +870,11 @@ public class TcpConnectorPeer implements Peer
         fullSyncId = -1;
         if (suggestedConnStatusRef == null)
         {
-            connectionStatus = ApiConsts.ConnectionStatus.FULL_SYNC_FAILED;
+            setConnectionStatus(ApiConsts.ConnectionStatus.FULL_SYNC_FAILED);
         }
         else
         {
-            connectionStatus = suggestedConnStatusRef;
+            setConnectionStatus(suggestedConnStatusRef);
         }
     }
 

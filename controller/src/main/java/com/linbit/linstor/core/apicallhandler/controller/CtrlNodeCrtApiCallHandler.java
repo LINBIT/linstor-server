@@ -323,6 +323,11 @@ public class CtrlNodeCrtApiCallHandler
         }
         else
         {
+            errorReporter.logInfo(
+                "Not connecting to node '%s' due to its node-type: %s",
+                node.getName(),
+                nodeType.name()
+            );
             node.setOfflinePeer(errorReporter, apiCtx);
             flux = Flux.empty();
         }

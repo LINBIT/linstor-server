@@ -259,7 +259,7 @@ public class CtrlAuthResponseApiCallHandler
 
             for (RcEntry entry : apiCallResponse)
             {
-                errorReporter.logError("Satellite authentication error: " + entry.getCause());
+                errorReporter.logError(" * " + entry.getCause());
             }
 
             flux = Flux.empty();
