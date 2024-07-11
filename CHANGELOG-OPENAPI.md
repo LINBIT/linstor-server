@@ -4,6 +4,8 @@ All notable changes to Linstor OPENAPI(REST) will be documented in this file.
 
 ## [Unreleased]
 
+## [1.23.0]
+
 ### Added
   - Added x_replicas_on_different_map option to AutoSelectFilter schema
   - Added keep_tiebreaker query parameter to DELETE /v1/resource-definitions/{resource}/resources/{node}

@@ -1,3 +1,55 @@
+linstor-server (1.28.0-1) experimental; urgency=medium
+
+  [ Rene Peinthor ]
+  * gitlab: increase test-e2e timeout
+  * isCloneReady: Fix wait if more than 1 diskless resource is cloned
+  * Added some more info logging and improved an error message
+  * balance-rsc: Do not count skipDisk resources as diskful
+
+  [ Johanna Kucera ]
+  * Snapshots: send all snaps during full sync
+  * SkipDisk: do not allow snapshots
+  * SkipDisk: ensure all layers below DRBD are ignored
+  * Backups: ensure abort works if triggered early
+  * Backups: prevent target-cluster from getting stuck in receive
+  * BackupShipping: moved pojos into new package
+  * BackupShipping: suppress receive-thread errorReports while aborting shipment
+  * Backups: ensure error responses are processed correctly
+  * Backups: ensure l2l aborts work in both directions
+  * BackupShipping: review changes (refactoring and new prop)
+
+  [ Gabor Hernadi ]
+  * LvmUtils: Retry checks and size queries if VG or thinpool does not exist
+  * RscAutoPlaceApiTest: Fixed checkstyle issues
+  * Autoplacer: Reworked SelectionManager rollback mechanism
+  * Autoplacer: Added x-replicas-on-different
+  * MapDbDriver: Added PARENT generic type
+  * Tx*: Added safety check
+  * DB: Adding X_REPLICAS_ON_DIFFERENT column to RG
+  * Tiebreaker: Use --x-replicas-on-different * 1
+  * Locks,TransMgr: Attempt to fix possible deadlock
+  * Spawn: Improve diskless flag calculation for diskless-on-remaining
+  * PassPhraseInit: Commit transaction
+  * Backup,restore: Use correct property before recalculating AllocationGr [...]
+  * Autoplace: Pretty print settings
+  * Freespace: properly count 'reserved' space also for thin volumes
+  * MinReservedSpaceStrat: Always return zero for diskless SPs
+  * Autoplacer,Strats: Don't override defaults when strategies namespace exists
+  * Autoplacer,MinRscCountStrat: Change default weight to 0.00001
+  * Locks, TransMgr: Second attempt to fix possible deadlock
+  * GH,Readme: Move SODA note
+  * Rsc,del: Add --keep-tiebreaker option
+  * Rd,Tiebreaker: Disabling auto-tiebreaker should now also delete an exi [...]
+  * Logging: Added more info logging
+
+  [ Robert Altnoeder ]
+  * SSL delegated tasks creation: Make debug output conditional
+
+  [ Lars Ellenberg ]
+  * Backup: drop the trap SIGTERM () & wait $! dance from shell snippets
+
+ -- Rene Peinthor <rene.peinthor@linbit.com>  Thu, 11 Jul 2024 10:20:01 +0000
+
 linstor-server (1.27.1-1) experimental; urgency=medium
 
   [ Moritz Wanzenböck ]
