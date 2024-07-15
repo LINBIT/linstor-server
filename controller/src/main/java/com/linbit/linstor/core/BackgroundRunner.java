@@ -59,8 +59,8 @@ public class BackgroundRunner
      * @param operationDescription A description that is used for logging start/end of the flux as well as the
      *     API_CALL_NAME
      * @param backgroundFlux The Flux that will be executed
-     * @param nodesToLock An optional array of Nodes that will prevent other background fluxes to run concurrently (at
-     *     least of the other background fluxes also state their nodesToLock). It is highly advised to use this
+     * @param nodesToLockRef An optional array of Nodes that will prevent other background fluxes to run concurrently
+     *     (at least of the other background fluxes also state their nodesToLock). It is highly advised to use this
      *     parameter for creating snapshots in background to sequentialize them.
      */
     public <T> void runInBackground(String operationDescription, Flux<T> backgroundFlux, Node... nodesToLockRef)
@@ -77,7 +77,7 @@ public class BackgroundRunner
     {
         synchronized (runQueuesByNode)
         {
-            if (canRun(runCfgRef, busyNodes))
+            if (canRun(runCfgRef, busyNodes, true))
             {
                 startBackgroundFlux(runCfgRef);
             }
@@ -93,9 +93,8 @@ public class BackgroundRunner
         Flux<T> ret;
         synchronized (runQueuesByNode)
         {
-            if (canRun(runCfgRef, busyNodes))
+            if (canRun(runCfgRef, busyNodes, true))
             {
-                takeLocks(runCfgRef);
                 runCfgRef.flux = runCfgRef.fluxSupplier.get();
                 ret = prepareFlux(runCfgRef);
             }
@@ -128,6 +127,11 @@ public class BackgroundRunner
         return ret;
     }
 
+    /**
+     * Assumes that we are in a synchronized(runQueuesByNode) block
+     * If runCfg.background is <code>true</code>, the flux will be queued. Otherwise the postponing deferredFlux will be
+     * executed immediately.
+     */
     private void start(RunConfig<?> runCfgRef)
     {
         if (runCfgRef.background)
@@ -136,7 +140,7 @@ public class BackgroundRunner
         }
         else
         {
-            startForegroundFlux(runCfgRef);
+            runCfgRef.runDeferredFlux();
         }
     }
 
@@ -163,25 +167,10 @@ public class BackgroundRunner
     /**
      * Assumes that runQueuesByNode lock is taken
      *
-     * This method assumes that the given Flux is already subscribed to, but is waiting in the artificially created
-     * Flux.defer() method.
-     * All this method has to do is to put the actual Flux into the supplier of the artificial Flux.defer() and let the
-     * already subscribed Flux continue.
-     */
-    private <T> void startForegroundFlux(RunConfig<T> runCfgRef)
-    {
-        takeLocks(runCfgRef);
-        runCfgRef.runDeferredFlux();
-    }
-
-    /**
-     * Assumes that runQueuesByNode lock is taken
-     *
      * Starts the given Flux and adds the RunConfig to all affected queues stating that the corresponding node is busy
      */
     private <T> void startBackgroundFlux(RunConfig<T> runCfgRef)
     {
-        takeLocks(runCfgRef);
         prepareFlux(runCfgRef)
             .subscribe(
                 responses ->
@@ -219,6 +208,7 @@ public class BackgroundRunner
      */
     private void finished(RunConfig<?> runCfgRef)
     {
+        List<RunConfig<?>> runCfgsToStart = new ArrayList<>();
         synchronized (runQueuesByNode)
         {
             TreeSet<RunConfig<?>> nextToCheck = new TreeSet<>();
@@ -243,15 +233,41 @@ public class BackgroundRunner
 
             for (RunConfig<?> runCfgToCheck : nextToCheck)
             {
-                if (canRun(runCfgToCheck, lockedNodes))
+                if (canRun(runCfgToCheck, lockedNodes, true))
                 {
-                    start(runCfgToCheck);
+                    /*
+                     * We MUST NOT execute runCfgRef.runDeferredFlux() (which is done via calling start(...)) while we
+                     * are within the synchronized (runQueuesByNode) block.
+                     *
+                     * Calling runCfg.runDeferredFlux() will put a "true" into the flux-sink that is postponing the
+                     * actual flux. However, calling the ".next(true)" will actually also start processing the
+                     * flux-step. The flux-step will most likely take some linstor-locks. Although we currently have not
+                     * taken any linstor locks, we are within the synchronized block. Since the actual flux likely needs
+                     * linstor locks, we will need to wait for those locks. Another thread might already have those
+                     * locks and now tries to get into the synchronized block we are currently in (=> deadlock).
+                     *
+                     * To summarize: The deadlock can occur if one thread has for example a linstor-writelock (in case
+                     * of creating a snapshot that might be rscDfnMap.writeLock) and is waiting at the
+                     * "synchronized(runQueueByNode)", while the other thread is already in the
+                     * "synchronized(runQueueByNode)" block and is trying to call this runCfg.runDeferredFlux which
+                     * itself tries to execute the next flux-step which will wait for a rscDfnMap lock.
+                     *
+                     * While we could solve this problem by starting new threads, we simply move the "start(...)" call
+                     * outside of the synchronized block.
+                     * However, we MUST "takeLocks(...)" (done via "canRun(..., true)") within the synchronized block to
+                     * prevent other race-conditions where too many background tasks are executed concurrently.
+                     */
+                    runCfgsToStart.add(runCfgToCheck);
                 } // we do not need to queue otherwise , since runCfgToCheck is already queued
 
                 // whether or not we started, we add the nodes from runCfgToCheck to lockedNodes to simulate execution
                 // to ensure priority is kept
                 lockedNodes.addAll(runCfgToCheck.nodesToLock);
             }
+        }
+        for (RunConfig<?> runCfgToStart : runCfgsToStart)
+        {
+            start(runCfgToStart);
         }
     }
 
@@ -269,8 +285,10 @@ public class BackgroundRunner
 
     /**
      * Assumes that runQueuesByNode lock is taken
+     *
+     * @param takeLocksIfPossible
      */
-    private boolean canRun(RunConfig<?> runCfgRef, Collection<NodeName> lockedNodes)
+    private boolean canRun(RunConfig<?> runCfgRef, Collection<NodeName> lockedNodes, boolean takeLocksIfPossible)
     {
         boolean ret = true;
         for (NodeName nodeName : runCfgRef.nodesToLock)
@@ -280,6 +298,10 @@ public class BackgroundRunner
                 ret = false;
                 break;
             }
+        }
+        if (ret && takeLocksIfPossible)
+        {
+            takeLocks(runCfgRef);
         }
         return ret;
     }
