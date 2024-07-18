@@ -60,6 +60,7 @@ import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.CommandExec;
 import com.linbit.utils.FileCollector;
 import com.linbit.utils.StringUtils;
+import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -77,16 +78,15 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileTime;
 import java.security.DigestException;
 import java.security.NoSuchAlgorithmException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.TimeZone;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -109,8 +109,6 @@ public class CtrlSosReportApiCallHandler
 
     /** 10MiB */
     private static final long MAX_PACKET_SIZE = 10 * (1 << 20);
-    private final DateFormat sdf = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
-    private final DateFormat sdfUtc = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
     private final Provider<AccessContext> peerAccCtx;
     private final ScopeRunner scopeRunner;
     private final LockGuardFactory lockGuardFactory;
@@ -160,7 +158,6 @@ public class CtrlSosReportApiCallHandler
         extCmdFactory = extCmdFactoryRef;
         ctrlCfg = ctrlCfgRef;
         db = dbRef;
-        sdfUtc.setTimeZone(TimeZone.getTimeZone("UTC"));
 
         objectMapper = new ObjectMapper();
     }
@@ -189,7 +186,7 @@ public class CtrlSosReportApiCallHandler
         Set<String> nodes,
         Set<String> rscs,
         Set<String> excludeNodes,
-        Date since,
+        LocalDateTime since,
         boolean includeCtrl,
         String queryParams
     )
@@ -199,7 +196,7 @@ public class CtrlSosReportApiCallHandler
         try
         {
             final Path tmpDir = Files.createTempDirectory("sos");
-            String sosReportName = SOS_PREFIX + sdfUtc.format(new Date());
+            String sosReportName = SOS_PREFIX + TimeUtils.DTF_NO_SPACE.format(ZonedDateTime.now(ZoneOffset.UTC));
             makeDir(tmpDir.resolve(sosReportName));
 
             ret = scopeRunner.fluxInTransactionlessScope(
@@ -249,7 +246,7 @@ public class CtrlSosReportApiCallHandler
         Set<String> excludeNodes,
         Path tmpDir,
         String sosReportName,
-        Date since
+        LocalDateTime since
     )
         throws AccessDeniedException
     {
@@ -270,7 +267,7 @@ public class CtrlSosReportApiCallHandler
         Node node,
         Path tmpDir,
         String sosReportName,
-        Date since
+        LocalDateTime since
     )
     {
         Peer peer = getPeer(node);
@@ -556,7 +553,7 @@ public class CtrlSosReportApiCallHandler
         Set<String> excludeNodes,
         Path tmpDir,
         String sosReportName,
-        Date since,
+        LocalDateTime since,
         boolean includeCtrl,
         String queryParams
     )
@@ -797,17 +794,18 @@ public class CtrlSosReportApiCallHandler
      * </table>
      * </p>
      */
-    private void createControllerFilesInto(Path tmpDir, String sosReportName, Date since) throws IOException
+    private void createControllerFilesInto(Path tmpDir, String sosReportName, LocalDateTime since) throws IOException
     {
         long nowMillis = System.currentTimeMillis();
-        Date now = new Date(nowMillis);
+        LocalDateTime now = TimeUtils.millisToDate(nowMillis);
 
         String nodeName = "_" + LinStor.CONTROLLER_MODULE;
         Path sosDir = tmpDir.resolve(sosReportName + "/" + nodeName);
         String infoContent = LinStor.linstorInfo() + "\n\nuname -a:           " + LinStor.getUname("-a");
         append(sosDir.resolve("linstorInfo"), infoContent.getBytes(), nowMillis);
-
-        String timeContent = "Local Time: " + sdf.format(now) + "\nUTC Time:   " + sdfUtc.format(now);
+        String timeContent = "Local Time: " + TimeUtils.DTF_NO_SPACE.format(now) + "\nUTC Time:   " +
+            TimeUtils.DTF_NO_SPACE
+            .format(ZonedDateTime.of(now, ZoneOffset.UTC));
         append(sosDir.resolve("timeInfo"), timeContent.getBytes(), nowMillis);
         getDbDump(sosDir);
 
@@ -825,7 +823,7 @@ public class CtrlSosReportApiCallHandler
                 sosDir.resolve("journalctl"),
                 new String[]
                 {
-                    "journalctl", "-u", "linstor-controller", "--since", LinStor.JOURNALCTL_DF.format(since)
+                    "journalctl", "-u", "linstor-controller", "--since", TimeUtils.JOURNALCTL_DF.format(since)
                 }
             ),
             new CommandHelper(

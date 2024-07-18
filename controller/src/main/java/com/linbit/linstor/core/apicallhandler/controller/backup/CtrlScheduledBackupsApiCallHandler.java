@@ -44,8 +44,8 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -272,7 +272,7 @@ public class CtrlScheduledBackupsApiCallHandler
         throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
     {
         Flux<ApiCallRc> deleteFlux = Flux.empty();
-        Map<Date, String> backupsToCheck = new TreeMap<>();
+        Map<LocalDateTime, String> backupsToCheck = new TreeMap<>();
 
         backupsToCheck = getFullBackupS3Keys(
             rscName, remote, schedule.getName().displayValue
@@ -450,10 +450,10 @@ public class CtrlScheduledBackupsApiCallHandler
     /**
      * Find all backups of the given triple that are full backups
      */
-    private Map<Date, String> getFullBackupS3Keys(String rscNameRef, S3Remote remote, String scheduleName)
+    private Map<LocalDateTime, String> getFullBackupS3Keys(String rscNameRef, S3Remote remote, String scheduleName)
         throws AccessDeniedException, JsonParseException, JsonMappingException, IOException
     {
-        Map<Date, String> s3keysRet = new TreeMap<>();
+        Map<LocalDateTime, String> s3keysRet = new TreeMap<>();
         Set<String> s3keys = backupHelper.getAllS3Keys(remote, rscNameRef);
         for (String s3key : s3keys)
         {

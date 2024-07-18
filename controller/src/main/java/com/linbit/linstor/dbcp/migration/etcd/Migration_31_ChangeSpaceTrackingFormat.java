@@ -2,10 +2,10 @@ package com.linbit.linstor.dbcp.migration.etcd;
 
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.transaction.EtcdTransaction;
+import com.linbit.utils.TimeUtils;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -56,8 +56,6 @@ public class Migration_31_ChangeSpaceTrackingFormat extends BaseEtcdMigration
     private static final String CLM_ENTRY_DATE = "ENTRY_DATE";
 
     private static final String CLM_CAPACITY = "CAPACITY";
-
-    private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd");
 
     @Override
     public void migrate(EtcdTransaction tx, final String prefix) throws Exception
@@ -127,16 +125,17 @@ public class Migration_31_ChangeSpaceTrackingFormat extends BaseEtcdMigration
             String entryDate = oldFullEtcdKey.substring(tblWithPrefix.length());
             try
             {
-                Date parsedDate;
-                parsedDate = SDF.parse(entryDate);
+                LocalDateTime parsedDate;
+                parsedDate = TimeUtils.DTF_NO_TIME.parse(entryDate, LocalDateTime::from);
 
                 tx.delete(oldFullEtcdKey);
                 tx.put(
-                    tblWithPrefix + Long.toString(parsedDate.getTime()) + "/" + CLM_CAPACITY,
+                    tblWithPrefix + Long.toString(TimeUtils.getEpochMillis(parsedDate)) +
+                        "/" + CLM_CAPACITY,
                     entry.getValue()
                 );
             }
-            catch (ParseException exc)
+            catch (DateTimeParseException exc)
             {
                 throw new DatabaseException("Unexpected date format: " + entryDate, exc);
             }
@@ -153,11 +152,14 @@ public class Migration_31_ChangeSpaceTrackingFormat extends BaseEtcdMigration
             // should be only zero or one entry
             try
             {
-                Date date = SDF.parse(entry.getValue());
+                LocalDateTime date = TimeUtils.DTF_NO_TIME.parse(entry.getValue(), LocalDateTime::from);
                 tx.delete(entry.getKey());
-                tx.put(tblWithPrefix + CLM_ENTRY_DATE, Long.toString(date.getTime()));
+                tx.put(
+                    tblWithPrefix + CLM_ENTRY_DATE,
+                    Long.toString(TimeUtils.getEpochMillis(date))
+                );
             }
-            catch (ParseException exc)
+            catch (DateTimeParseException exc)
             {
                 throw new DatabaseException("Unexpected date format: " + entry.getValue(), exc);
             }

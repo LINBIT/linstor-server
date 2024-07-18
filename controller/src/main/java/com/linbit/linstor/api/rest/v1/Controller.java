@@ -15,6 +15,7 @@ import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
+import com.linbit.utils.TimeUtils;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -32,10 +33,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.HashSet;
-import java.util.Locale;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,7 +53,6 @@ public class Controller
     private final CtrlConfig ctrlCfg;
     private final CtrlPropsInfoApiCallHandler ctrlPropsInfoApiCallHandler;
 
-    public static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH_mm_ss", Locale.US);
     public static final String DB_BACKUP_BASE_DIR = "/var/lib/linstor/";
 
     @Inject
@@ -381,7 +379,9 @@ public class Controller
 
             if (backupPath == null)
             {
-                backupPath = DB_BACKUP_BASE_DIR + "linstordb-backup-" + TIMESTAMP_FORMAT.format(new Date()) + ".zip";
+                backupPath = DB_BACKUP_BASE_DIR + "linstordb-backup-" + TimeUtils.DTF_NO_SPACE.format(
+                    LocalDateTime.now()
+                ) + ".zip";
             }
             else
             {

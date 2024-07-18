@@ -64,6 +64,7 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
+import com.linbit.utils.TimeUtils;
 
 import static com.linbit.linstor.backupshipping.BackupConsts.META_SUFFIX;
 
@@ -73,10 +74,11 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -584,10 +586,10 @@ public class CtrlBackupApiCallHandler
         {
             try
             {
-                Date date = BackupConsts.parse(timestampRef);
-                timestampCheck = timestamp -> date.after(new Date(timestamp));
+                LocalDateTime date = BackupConsts.DATE_FORMAT.parse(timestampRef, LocalDateTime::from);
+                timestampCheck = timestamp -> date.isAfter(TimeUtils.millisToDate(timestamp));
             }
-            catch (ParseException exc)
+            catch (DateTimeParseException exc)
             {
                 throw new ApiRcException(
                     ApiCallRcImpl.simpleEntry(
@@ -612,7 +614,7 @@ public class CtrlBackupApiCallHandler
                 try
                 {
                     S3MetafileNameInfo meta = new S3MetafileNameInfo(s3Key);
-                    startTimestamp = meta.backupTime.getTime();
+                    startTimestamp = TimeUtils.getEpochMillis(meta.backupTime);
                 }
                 catch (ParseException exc)
                 {
@@ -785,7 +787,7 @@ public class CtrlBackupApiCallHandler
                 String backupTimeRaw = snapDfn.getProps(peerCtx)
                     .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
 
-                Date backupTime = new Date(Long.parseLong(backupTimeRaw));
+                LocalDateTime backupTime = TimeUtils.millisToDate(Long.parseLong(backupTimeRaw));
 
                 S3VolumeNameInfo firstFutureInfo = null;
 
@@ -870,7 +872,7 @@ public class CtrlBackupApiCallHandler
                             long vlmFinishedTime = s3BackVlmInfo.getFinishedTimestamp();
                             BackupVolumePojo retVlmPojo = new BackupVolumePojo(
                                 s3MetaVlmNr,
-                                BackupConsts.format(new Date(vlmFinishedTime)),
+                                BackupConsts.DATE_FORMAT.format(TimeUtils.millisToDate(vlmFinishedTime)),
                                 vlmFinishedTime,
                                 new BackupVlmS3Pojo(s3BackVlmInfo.getName())
                             );
@@ -902,9 +904,9 @@ public class CtrlBackupApiCallHandler
                 id,
                 info.rscName,
                 info.snapName,
-                BackupConsts.format(new Date(s3MetaFile.getStartTimestamp())),
+                BackupConsts.DATE_FORMAT.format(TimeUtils.millisToDate(s3MetaFile.getStartTimestamp())),
                 s3MetaFile.getStartTimestamp(),
-                BackupConsts.format(new Date(s3MetaFile.getFinishTimestamp())),
+                BackupConsts.DATE_FORMAT.format(TimeUtils.millisToDate(s3MetaFile.getFinishTimestamp())),
                 s3MetaFile.getFinishTimestamp(),
                 s3MetaFile.getNodeName(),
                 false,
@@ -1031,8 +1033,8 @@ public class CtrlBackupApiCallHandler
             id,
             info.rscName,
             info.snapName,
-            BackupConsts.format(info.backupTime),
-            info.backupTime.getTime(),
+            BackupConsts.DATE_FORMAT.format(info.backupTime),
+            TimeUtils.getEpochMillis(info.backupTime),
             null,
             null,
             nodeName,

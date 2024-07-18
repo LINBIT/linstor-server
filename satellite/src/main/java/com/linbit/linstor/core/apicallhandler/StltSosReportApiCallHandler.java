@@ -16,6 +16,7 @@ import com.linbit.linstor.utils.FileUtils;
 import com.linbit.utils.CommandExec;
 import com.linbit.utils.FileCollector;
 import com.linbit.utils.Pair;
+import com.linbit.utils.TimeUtils;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -28,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -61,7 +63,7 @@ public class StltSosReportApiCallHandler
      * requested separately.
      * The list of collected Reports can be found in {@link #listSosReport(Date)}
      */
-    public Pair<List<FileInfoPojo>, String> handleSosReportRequestFileList(String sosReportName, Date since)
+    public Pair<List<FileInfoPojo>, String> handleSosReportRequestFileList(String sosReportName, LocalDateTime since)
     {
         StringBuilder errors = new StringBuilder();
         List<FileInfoPojo> fileList = new ArrayList<>();
@@ -332,7 +334,6 @@ public class StltSosReportApiCallHandler
     }
 
     /**
-     *
      * Returns a list of files to collect (does not collect anything, just builds and returns the list).
      * Collected reports:
      *
@@ -356,10 +357,11 @@ public class StltSosReportApiCallHandler
      * <tr><td>res/*.res</td><td>All files from /var/lib/linstor.d/*.res</td></tr>
      * <tr><td>logs/*</td><td>All '*{mv.db,log}' from /var/log/linstor (unless overridden) </td></tr>
      * </table>
+     *
      * @param sosReportDir
-     * @param since
+     * @param sinceRef
      */
-    private Set<SosReportType> listSosReport(Path sosReportDir, Date since)
+    private Set<SosReportType> listSosReport(Path sosReportDir, LocalDateTime sinceRef)
     {
         Set<SosReportType> reportTypes = new HashSet<>();
 
@@ -395,7 +397,7 @@ public class StltSosReportApiCallHandler
                 "-u",
                 "linstor-satellite",
                 "--since",
-                LinStor.JOURNALCTL_DF.format(since)
+                TimeUtils.JOURNALCTL_DF.format(sinceRef)
             )
         );
         reportTypes.add(new SosCommandType("ip-a", now, "ip", "a"));

@@ -152,12 +152,14 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.ExtTools;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import com.linbit.utils.Pair;
+import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -815,13 +817,13 @@ public class ProtoCommonSerializerBuilder implements CommonSerializer.CommonSeri
     }
 
     @Override
-    public CommonSerializer.CommonSerializerBuilder requestSosReport(String sosReportNameRef, Date since)
+    public CommonSerializer.CommonSerializerBuilder requestSosReport(String sosReportNameRef, LocalDateTime since)
     {
         try
         {
             MsgReqSosReportList.newBuilder()
                 .setSosReportName(sosReportNameRef)
-                .setSince(since.getTime())
+                .setSince(TimeUtils.getEpochMillis(since))
                 .build()
                 .writeDelimitedTo(baos);
         }

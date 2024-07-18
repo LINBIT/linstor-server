@@ -38,16 +38,17 @@ import com.linbit.locks.LockGuard;
 import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
+import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -202,7 +203,7 @@ public abstract class AbsBackupShippingService implements SystemService
             String backupTimeRaw = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotDefinition()
                 .getProps(accCtx)
                 .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-            Date backupTime = new Date(Long.parseLong(backupTimeRaw));
+            LocalDateTime backupTime = TimeUtils.millisToDate(Long.parseLong(backupTimeRaw));
 
             String backupName = new S3VolumeNameInfo(
                 rscNameRef,
@@ -435,7 +436,7 @@ public abstract class AbsBackupShippingService implements SystemService
                     String backupTimeRaw = ((SnapshotVolume) snapVlmData.getVolume()).getSnapshotDefinition()
                         .getProps(accCtx)
                         .getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP, ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                    Date backupTime = new Date(Long.parseLong(backupTimeRaw));
+                    LocalDateTime backupTime = TimeUtils.millisToDate(Long.parseLong(backupTimeRaw));
 
                     info.s3MetaKey = new S3MetafileNameInfo(
                         snap.getResourceName().displayValue,
@@ -449,7 +450,7 @@ public abstract class AbsBackupShippingService implements SystemService
                         Snapshot basedOnSnap = basedOnSnapVlmData.getRscLayerObject().getAbsResource();
                         String basedOnSnapSuffix = basedOnSnap.getSnapshotDefinition().getProps(accCtx).getProp(ApiConsts.KEY_BACKUP_S3_SUFFIX, ApiConsts.NAMESPC_BACKUP_SHIPPING);
                         String basedOnBackupTimeRaw = basedOnSnap.getSnapshotDefinition().getProps(accCtx).getProp(InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,ApiConsts.NAMESPC_BACKUP_SHIPPING);
-                        Date basedOnBackupTime = new Date(Long.parseLong(basedOnBackupTimeRaw));
+                        LocalDateTime basedOnBackupTime = TimeUtils.millisToDate(Long.parseLong(basedOnBackupTimeRaw));
 
                         info.basedOnS3MetaKey = new S3MetafileNameInfo(
                             basedOnSnap.getResourceName().displayValue,

@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.rest.v1.utils.ApiCallRcRestUtils;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSosReportApiCallHandler;
 import com.linbit.linstor.logging.ErrorReporter;
+import com.linbit.utils.TimeUtils;
 
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
@@ -22,7 +23,8 @@ import javax.ws.rs.core.StreamingOutput;
 
 import java.io.FileInputStream;
 import java.nio.file.Paths;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -38,7 +40,7 @@ public class SosReport
 {
     private final RequestHelper requestHelper;
     private final CtrlSosReportApiCallHandler ctrlSosReportApiCallHandler;
-    private static final long DAY_IN_MS = 1000 * 60 * 60 * 24;
+    private static final int DEFAULT_DAYS = 7;
 
     @Inject
     public SosReport(
@@ -80,7 +82,9 @@ public class SosReport
             {
                 filterExclude.addAll(excludeNodes);
             }
-            final Date sinceDate = since != null ? new Date(since) : new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
+            final LocalDateTime sinceDate = since != null ?
+                TimeUtils.millisToDate(since) :
+                LocalDateTime.now().minus(DEFAULT_DAYS, ChronoUnit.DAYS);
 
             Mono<Response> flux = ctrlSosReportApiCallHandler
                 .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())
@@ -104,7 +108,10 @@ public class SosReport
                                 throw new WebApplicationException("File Not Found !!", exc);
                             }
                         }, MediaType.APPLICATION_OCTET_STREAM)
-                        .header("content-disposition", "attachment; filename = " + Paths.get(sosReport).getFileName().toString())
+                        .header(
+                            "content-disposition",
+                            "attachment; filename = " + Paths.get(sosReport).getFileName().toString()
+                        )
                         .build();
                     return Mono.just(resp);
                 })
@@ -143,7 +150,9 @@ public class SosReport
             {
                 filterExclude.addAll(excludeNodes);
             }
-            final Date sinceDate = since != null ? new Date(since) : new Date(System.currentTimeMillis() - (7 * DAY_IN_MS));
+            final LocalDateTime sinceDate = since != null ?
+                TimeUtils.millisToDate(since) :
+                LocalDateTime.now().minus(DEFAULT_DAYS, ChronoUnit.DAYS);
 
             Mono<Response> flux = ctrlSosReportApiCallHandler
                 .getSosReport(filterNodes, filterRscs, filterExclude, sinceDate, includeCtrl, request.getQueryString())

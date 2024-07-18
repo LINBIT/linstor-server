@@ -9,6 +9,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.apicallhandler.StltSosReportApiCallHandler;
 import com.linbit.linstor.proto.requests.MsgReqSosReportListOuterClass.MsgReqSosReportList;
 import com.linbit.utils.Pair;
+import com.linbit.utils.TimeUtils;
 
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -16,7 +17,6 @@ import javax.inject.Singleton;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Date;
 import java.util.List;
 
 import com.google.inject.Inject;
@@ -55,7 +55,7 @@ public class ReqSosReportFileList implements ApiCall
         String sosReportName = reqSosReport.getSosReportName();
         Pair<List<FileInfoPojo>, String> fileListAndErrors = sosApiCallHandler.handleSosReportRequestFileList(
             sosReportName,
-            new Date(reqSosReport.getSince())
+            TimeUtils.millisToDate(reqSosReport.getSince())
         );
 
         controllerPeerConnector.getControllerPeer().sendMessage(

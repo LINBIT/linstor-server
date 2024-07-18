@@ -27,8 +27,8 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.utils.Base64;
 
 import java.text.ParseException;
+import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -174,9 +174,9 @@ public class BackupShippingUtils
         );
     }
 
-    public static String generateBackupName(Date now)
+    public static String generateBackupName(LocalDateTime now)
     {
-        return BackupConsts.BACKUP_PREFIX + BackupConsts.format(now);
+        return BackupConsts.BACKUP_PREFIX + BackupConsts.DATE_FORMAT.format(now);
     }
 
     public static String defaultEmpty(String str)

@@ -8,7 +8,7 @@ import javax.annotation.Nullable;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.event.Level;
@@ -133,7 +133,7 @@ public class StderrErrorReporter extends BaseErrorReporter implements ErrorRepor
     {
         PrintStream output = System.err;
         String logName = null;
-        final Date errorTime = new Date();
+        final LocalDateTime errorTime = LocalDateTime.now();
         try
         {
             long reportNr = errorNr.getAndIncrement();

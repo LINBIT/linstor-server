@@ -9,10 +9,11 @@ import com.linbit.linstor.transaction.K8sCrdMigrationContext;
 import com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext;
 import com.linbit.linstor.utils.ByteUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
+import com.linbit.utils.TimeUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.sql.Types;
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,7 +43,7 @@ public class GenCrdV1_17_0
 {
     public static final String VERSION = "v1-17-0";
     public static final String GROUP = "internal.linstor.linbit.com";
-    private static final SimpleDateFormat RFC3339 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX");
+    private static final DateTimeFormatter RFC3339 = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
     private static final Map<String, String> KEY_LUT = new HashMap<>();
     private static final HashSet<String> USED_K8S_KEYS = new HashSet<>();
     private static final AtomicLong NEXT_ID = new AtomicLong();
@@ -6845,7 +6846,7 @@ public class GenCrdV1_17_0
 
             formattedPrimaryKey = String.format(
                 SpaceHistorySpec.PK_FORMAT,
-                RFC3339.format(entryDate)
+                RFC3339.format(TimeUtils.millisToDate(entryDate.getTime()))
             );
         }
 
@@ -7109,7 +7110,7 @@ public class GenCrdV1_17_0
 
             formattedPrimaryKey = String.format(
                 TrackingDateSpec.PK_FORMAT,
-                RFC3339.format(entryDate)
+                RFC3339.format(TimeUtils.millisToDate(entryDate.getTime()))
             );
         }
 

@@ -61,15 +61,16 @@ import com.linbit.locks.LockGuardFactory;
 import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.utils.Pair;
 import com.linbit.utils.StringUtils;
+import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -156,7 +157,7 @@ public class CtrlBackupCreateApiCallHandler
                 remoteNameRef,
                 nodeNameRef,
                 snapNameRef,
-                new Date(),
+                LocalDateTime.now(),
                 incremental,
                 RemoteType.S3,
                 scheduleNameRef,
@@ -189,7 +190,7 @@ public class CtrlBackupCreateApiCallHandler
         String remoteName,
         String nodeName,
         String snapNameRef,
-        Date nowRef,
+        LocalDateTime nowRef,
         boolean allowIncremental,
         RemoteType remoteTypeRef,
         String scheduleNameRef,
@@ -650,7 +651,7 @@ public class CtrlBackupCreateApiCallHandler
         return chosenNode;
     }
 
-    private void setBackupSnapDfnFlagsAndProps(SnapshotDefinition snapDfn, String scheduleNameRef, Date nowRef)
+    private void setBackupSnapDfnFlagsAndProps(SnapshotDefinition snapDfn, String scheduleNameRef, LocalDateTime nowRef)
         throws AccessDeniedException, DatabaseException, InvalidKeyException, InvalidValueException
     {
         if (scheduleNameRef != null)
@@ -680,7 +681,7 @@ public class CtrlBackupCreateApiCallHandler
         snapDfn.getProps(peerAccCtx.get())
             .setProp(
                 InternalApiConsts.KEY_BACKUP_START_TIMESTAMP,
-                Long.toString(nowRef.getTime()),
+                Long.toString(TimeUtils.getEpochMillis(nowRef)),
                 ApiConsts.NAMESPC_BACKUP_SHIPPING
             );
 

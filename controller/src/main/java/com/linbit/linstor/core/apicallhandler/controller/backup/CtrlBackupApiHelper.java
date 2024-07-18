@@ -520,7 +520,7 @@ public class CtrlBackupApiHelper
                     // Snapshot names do not match, ignore this backup
                     continue;
                 }
-                if (latest == null || latest.backupTime.before(current.backupTime))
+                if (latest == null || latest.backupTime.isBefore(current.backupTime))
                 {
                     latest = current;
                 }

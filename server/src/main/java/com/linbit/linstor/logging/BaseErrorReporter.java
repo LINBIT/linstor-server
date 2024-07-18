@@ -5,15 +5,15 @@ import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
+import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nullable;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,7 +51,6 @@ public abstract class BaseErrorReporter
         SECTION_SEPARATOR = new String(separator);
     }
 
-    public static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
     public static final Pattern LIGHT_CHECKPOINT_PATTERN =
         Pattern.compile("is identified by light checkpoint \\[([^]]*)");
 
@@ -108,7 +107,7 @@ public abstract class BaseErrorReporter
         @Nullable AccessContext accCtxRef,
         @Nullable Peer client,
         @Nullable Throwable errorInfo,
-        Date errorTime,
+        LocalDateTime errorTime,
         @Nullable String contextInfo,
         boolean includeStackTraceRef
     )
@@ -188,14 +187,12 @@ public abstract class BaseErrorReporter
     void reportPeer(ErrorReportRenderer output, Peer client)
     {
         String peerAddress = null;
-        int peerPort = 0;
 
         String peerId = client.toString();
         InetSocketAddress socketAddr = client.peerAddress();
         if (socketAddr != null)
         {
             InetAddress ipAddr = socketAddr.getAddress();
-            peerPort = socketAddr.getPort();
             if (ipAddr != null)
             {
                 peerAddress = ipAddr.getHostAddress();
@@ -222,7 +219,7 @@ public abstract class BaseErrorReporter
         long reportNr,
         @Nullable AccessContext accCtxRef,
         @Nullable Peer client,
-        Date errorTime
+        LocalDateTime errorTime
     )
     {
         output.printf("ERROR REPORT %s-%06d\n\n", instanceId, reportNr);
@@ -233,7 +230,11 @@ public abstract class BaseErrorReporter
         output.printf(ERROR_FIELD_FORMAT, "Version:", LinStor.VERSION_INFO_PROVIDER.getVersion());
         output.printf(ERROR_FIELD_FORMAT, "Build ID:", LinStor.VERSION_INFO_PROVIDER.getGitCommitId());
         output.printf(ERROR_FIELD_FORMAT, "Build time:", LinStor.VERSION_INFO_PROVIDER.getBuildTime());
-        output.printf(ERROR_FIELD_FORMAT, "Error time:", TIMESTAMP_FORMAT.format(errorTime));
+        output.printf(
+            ERROR_FIELD_FORMAT,
+            "Error time:",
+            TimeUtils.JOURNALCTL_DF.withLocale(Locale.US).format(errorTime)
+        );
         output.printf(ERROR_FIELD_FORMAT, "Node:", nodeName);
         output.printf(ERROR_FIELD_FORMAT, "Thread:", Thread.currentThread().getName());
         if (accCtxRef != null)

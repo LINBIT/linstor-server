@@ -67,8 +67,8 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.text.ParseException;
+import java.time.LocalDateTime;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -262,7 +262,7 @@ public class CtrlBackupL2LSrcApiCallHandler
                 ApiConsts.FAIL_ACC_DENIED_RSC_DFN
             );
         }
-        Date now = new Date();
+        LocalDateTime now = LocalDateTime.now();
         String backupName = BackupShippingUtils.generateBackupName(now);
         Map<String, String> storPoolRenameMap = new HashMap<>();
         if (storPoolRenameRef != null)

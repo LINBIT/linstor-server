@@ -1,7 +1,7 @@
 package com.linbit.linstor.backupshipping;
 
 import java.text.ParseException;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +16,7 @@ public class S3VolumeNameInfo
     public final String layerSuffix;
     public final int vlmNr;
     public final String backupId;
-    public final Date backupTime;
+    public final LocalDateTime backupTime;
     public final String s3Suffix;
     public final String snapName;
 
@@ -24,7 +24,7 @@ public class S3VolumeNameInfo
         String rscNameRef,
         String layerSuffixRef,
         int vlmNrRef,
-        Date backupTimeRef,
+        LocalDateTime backupTimeRef,
         String s3SuffixRef,
         String snapNameRef
     )
@@ -32,7 +32,7 @@ public class S3VolumeNameInfo
         rscName = rscNameRef;
         layerSuffix = BackupShippingUtils.defaultEmpty(layerSuffixRef);
         vlmNr = vlmNrRef;
-        backupId = BackupConsts.BACKUP_PREFIX + BackupConsts.format(backupTimeRef);
+        backupId = BackupConsts.BACKUP_PREFIX + BackupConsts.DATE_FORMAT.format(backupTimeRef);
         backupTime = backupTimeRef;
         s3Suffix = BackupShippingUtils.defaultEmpty(s3SuffixRef);
         if (snapNameRef == null || snapNameRef.isEmpty())
@@ -57,7 +57,10 @@ public class S3VolumeNameInfo
         backupId = matcher.group("backupId");
         layerSuffix = BackupShippingUtils.defaultEmpty(matcher.group("rscSuffix"));
         vlmNr = Integer.parseInt(matcher.group("vlmNr"));
-        backupTime = BackupConsts.parse(backupId.substring(BackupConsts.BACKUP_PREFIX_LEN));
+        backupTime = BackupConsts.DATE_FORMAT.parse(
+            backupId.substring(BackupConsts.BACKUP_PREFIX_LEN),
+            LocalDateTime::from
+        );
         s3Suffix = BackupShippingUtils.defaultEmpty(matcher.group("s3Suffix"));
 
         String snapNameRef = BackupShippingUtils.defaultEmpty(matcher.group("snapName"));

@@ -1,7 +1,6 @@
 package com.linbit.linstor.dbdrivers;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.dbcp.migration.k8s.crd.K8sCrdMigration;
 import com.linbit.linstor.storage.kinds.ExtToolsInfo.Version;
 import com.linbit.utils.Pair;
 
@@ -45,7 +44,6 @@ public final class DatabaseConstantsGenerator
     public static final String DFLT_K8S_CRD_MIGRATION_CLASS_NAME_FORMAT = "Migration_%s";
     public static final String DFLT_K8S_CRD_CLASS_NAME_CURRENT = "GenCrdCurrent";
     public static final String DFLT_K8S_CRD_CLASS_NAME = "GenCrd";
-    private static final String CRD_LINSTOR_CRD_INTERFACE_NAME = "LinstorCrd";
     private static final String CRD_LINSTOR_SPEC_INTERFACE_NAME = "LinstorSpec";
     private static final String CRD_PK_DELIMITER = ":";
 
@@ -529,10 +527,11 @@ public final class DatabaseConstantsGenerator
             "com.linbit.linstor.transaction.K8sCrdSchemaUpdateContext",
             "com.linbit.linstor.utils.ByteUtils",
             "com.linbit.utils.ExceptionThrowingFunction",
+            "com.linbit.utils.TimeUtils",
             "", // empty line
             "java.nio.charset.StandardCharsets",
             genDbTablesJavaCodeRef != null ? "java.sql.Types" : null,
-            "java.text.SimpleDateFormat",
+            "java.time.format.DateTimeFormatter",
             // "java.util.ArrayList",
             "java.util.Date",
             "java.util.HashMap",
@@ -578,7 +577,10 @@ public final class DatabaseConstantsGenerator
         {
             appendLine("public static final String VERSION = \"%s\";", asYamlVersionString(currentVersionRef));
             appendLine("public static final String GROUP = \"%s\";", CRD_GROUP);
-            appendLine("private static final SimpleDateFormat RFC3339 = new SimpleDateFormat(\"yyyy-MM-dd'T'HH:mm:ssXXX\");");
+            appendLine(
+                "private static final DateTimeFormatter RFC3339 = " +
+                    "DateTimeFormatter.ofPattern(\"yyyy-MM-dd'T'HH:mm:ssXXX\");"
+            );
             appendLine("private static final Map<String, String> KEY_LUT = new HashMap<>();");
             appendLine("private static final HashSet<String> USED_K8S_KEYS = new HashSet<>();");
             appendLine("private static final AtomicLong NEXT_ID = new AtomicLong();");
@@ -908,14 +910,16 @@ public final class DatabaseConstantsGenerator
                         try (IndentLevel secondIfIndent = new IndentLevel())
                         {
                             appendLine(
-                                "sha = ByteUtils.bytesToHex(ByteUtils.checksumSha256(formattedPrimaryKey.getBytes(StandardCharsets.UTF_8))).toLowerCase();"
+                                "sha = ByteUtils.bytesToHex(ByteUtils.checksumSha256(" +
+                                    "formattedPrimaryKey.getBytes(StandardCharsets.UTF_8))).toLowerCase();"
                             );
                             appendLine("while (!USED_K8S_KEYS.add(sha))");
                             try (IndentLevel whileIndent = new IndentLevel())
                             {
                                 appendLine("String modifiedPk = formattedPrimaryKey + NEXT_ID.incrementAndGet();");
                                 appendLine(
-                                    "sha = ByteUtils.bytesToHex(ByteUtils.checksumSha256(modifiedPk.getBytes(StandardCharsets.UTF_8))).toLowerCase();"
+                                    "sha = ByteUtils.bytesToHex(ByteUtils.checksumSha256(" +
+                                        "modifiedPk.getBytes(StandardCharsets.UTF_8))).toLowerCase();"
                                 );
                             }
                             appendLine("KEY_LUT.put(formattedPrimaryKey, sha);");
@@ -1233,7 +1237,10 @@ public final class DatabaseConstantsGenerator
                                 String clmName = camelCase(clm.name.toLowerCase().toCharArray());
                                 if (clm.sqlType.equals("DATE"))
                                 {
-                                    appendLine("RFC3339.format(%s),", clmName);
+                                    appendLine(
+                                        "RFC3339.format(TimeUtils.millisToDate(%s.getTime())),",
+                                        clmName
+                                    );
                                 }
                                 else
                                 {
@@ -1547,87 +1554,6 @@ public final class DatabaseConstantsGenerator
         return versionsObj;
     }
 
-    private void renderMigrationClassTemplate(String currentVersionRef)
-    {
-        mainBuilder.setLength(0);
-        String versionedGenCrdClassName = String.format(
-            DFLT_K8S_CRD_CLASS_NAME_FORMAT,
-            currentVersionRef.toUpperCase()
-        );
-        renderPackageAndImports(
-            K8sCrdMigration.class.getPackage().getName(),
-            "com.linbit.ImplementationError",
-            "com.linbit.linstor.ControllerK8sCrdDatabase",
-            "com.linbit.linstor.dbdrivers.k8s.crd." + versionedGenCrdClassName,
-//            "com.linbit.linstor.dbdrivers.k8s.crd.LinstorCrd",
-//            "com.linbit.linstor.dbdrivers.k8s.crd.LinstorSpec",
-            "com.linbit.linstor.transaction.BaseControllerK8sCrdTransactionMgr",
-//            "com.linbit.linstor.transaction.K8sCrdTransaction"
-            "", // empty line
-            "io.fabric8.kubernetes.client.KubernetesClient"
-        );
-        appendEmptyLine();
-
-        String migrationClassName = String.format(
-            DFLT_K8S_CRD_MIGRATION_CLASS_NAME_FORMAT,
-            currentVersionRef.toUpperCase()
-        );
-        appendLine("@K8sCrdMigration(");
-        try (IndentLevel annotIndent = new IndentLevel("", "", false, false))
-        {
-            appendLine("description = null,");
-            appendLine("version = \"%s\"", currentVersionRef);
-        }
-        appendLine(")");
-        appendLine("public class %s extends BaseK8sCrdMigration", migrationClassName);
-        try (IndentLevel clazzIndent = new IndentLevel())
-        {
-            // appendLine("public %s()", migrationClassName);
-            // try (IndentLevel ctorIndent = new IndentLevel())
-            // {}
-            //
-            // appendEmptyLine();
-            appendLine("@Override");
-            appendLine("public void migrate(ControllerK8sCrdDatabase k8sDbRef) throws Exception");
-            try (IndentLevel methodIndent = new IndentLevel())
-            {
-                appendLine(
-                    "BaseControllerK8sCrdTransactionMgr<%s.Rollback> txMgr = new BaseControllerK8sCrdTransactionMgr<>(",
-                    versionedGenCrdClassName
-                );
-                try (IndentLevel argumentIndent = new IndentLevel("", "", false, false))
-                {
-                    appendLine("k8sDbRef,");
-                    appendLine("%s::,", versionedGenCrdClassName);
-                    appendLine("%s.Rollback.class,", versionedGenCrdClassName);
-                    appendLine("%s::newRollbackCrd,", versionedGenCrdClassName);
-                    appendLine("%s::specToCrd", versionedGenCrdClassName);
-                }
-                appendLine(");");
-
-                appendEmptyLine();
-                appendLine("KubernetesClient k8sClient = k8sDbRef.getClient();");
-
-                appendEmptyLine();
-                appendLine("// load data from database that needs to change");
-                appendLine("// TODO implement loading data to migrate");
-
-                appendEmptyLine();
-                appendLine("// update CRD entries for all DatabaseTables");
-                appendLine(
-                    "updateCrdSchemaForAllTables(k8sClient, %s::databaseTableToYamlLocation);",
-                    versionedGenCrdClassName
-                );
-
-                appendEmptyLine();
-                appendLine("// write modified data to database");
-                appendLine("// TODO implement writing changed data");
-                appendEmptyLine();
-                appendLine("throw new ImplementationError(\"Migration not implemented yet\");");
-            }
-        }
-    }
-
     private String getYamlLocation(Table tblRef, String crdVersionRef)
     {
         return getYamlLocation(crdVersionRef, toUpperCamelCase(tblRef.name));
@@ -1644,6 +1570,7 @@ public final class DatabaseConstantsGenerator
 
     private String getJavaType(Column clmRef)
     {
+        String ret;
         switch (clmRef.sqlType)
         {
             case "CHAR":
@@ -1651,107 +1578,112 @@ public final class DatabaseConstantsGenerator
             case "VARCHAR":
                 // fall-through
             case "CLOB":
-                return "String";
+                ret = "String";
+                break;
             case "BIGINT":
                 // fall-through
             case "TIMESTAMP":
-                return clmRef.nullable ? "Long" : "long";
+                ret = clmRef.nullable ? "Long" : "long";
+                break;
             case "INTEGER":
-                return clmRef.nullable ? "Integer" : "int";
+                ret = clmRef.nullable ? "Integer" : "int";
+                break;
             case "SMALLINT":
-                return clmRef.nullable ? "Short" : "short";
+                ret = clmRef.nullable ? "Short" : "short";
+                break;
             case "BOOLEAN":
-                return clmRef.nullable ? "Boolean" : "boolean";
+                ret = clmRef.nullable ? "Boolean" : "boolean";
+                break;
             case "BLOB":
-                return "byte[]";
+                ret = "byte[]";
+                break;
             case "DATE":
-                return "Date";
+                ret = "Date";
+                break;
             default:
                 throw new ImplementationError("Unknown Type: " + clmRef.sqlType);
         }
+        return ret;
     }
 
     private String getYamlType(Column clmRef)
     {
+        String ret;
         switch (clmRef.sqlType)
         {
             case "CHAR":
             case "VARCHAR":
             case "CLOB":
             case "BLOB":
-                return "string";
+                ret = "string";
+                break;
             case "DATE":
             case "BIGINT":
             case "TIMESTAMP":
             case "INTEGER":
             case "SMALLINT":
-                return "integer";
+                ret = "integer";
+                break;
             case "BOOLEAN":
-                return "boolean";
+                ret = "boolean";
+                break;
             default:
                 throw new ImplementationError("Unknown Type: " + clmRef.sqlType);
         }
+        return ret;
     }
 
     private String getYamlFormat(Column clmRef)
     {
+        String ret;
         switch (clmRef.sqlType)
         {
             case "BIGINT":
-                return "int64";
+                ret = "int64";
+                break;
             case "INTEGER":
-                return "int32";
+                ret = "int32";
+                break;
             case "DATE":
-                return "int64";
+                ret = "int64";
+                break;
             case "BLOB":
-                return "byte"; // base64 encoded
+                ret = "byte"; // base64 encoded
+                break;
             default:
-                return null; // no special format
+                ret = null; // no special format
+                break;
         }
+        return ret;
     }
 
     private String getStringFormatType(Column clmRef)
     {
+        String ret;
         switch (clmRef.sqlType)
         {
             case "CHAR":
             case "VARCHAR":
             case "CLOB":
             case "DATE":
-                return "%s";
+                ret = "%s";
+                break;
             case "BIGINT":
             case "TIMESTAMP":
             case "INTEGER":
             case "SMALLINT":
-                return "%d";
+                ret = "%d";
+                break;
             case "BOOLEAN":
-                return "%b";
+                ret = "%b";
+                break;
             case "BLOB":
-                return null;
+                ret = null;
+                break;
             default:
                 throw new ImplementationError("Unknown Type: " + clmRef.sqlType);
         }
-    }
-
-    private String adaptForFormatCall(Column clmRef)
-    {
-        switch (clmRef.sqlType)
-        {
-            case "CHAR":
-            case "VARCHAR":
-            case "CLOB":
-            case "BIGINT":
-            case "TIMESTAMP":
-            case "INTEGER":
-            case "SMALLINT":
-            case "BOOLEAN":
-            case "BLOB":
-                return "";
-            case "DATE":
-                return ".toString()";
-            default:
-                throw new ImplementationError("Unknown Type: " + clmRef.sqlType);
-        }
+        return ret;
     }
 
     private void cutLastAndAppend(int cutLen, String appendAfter)

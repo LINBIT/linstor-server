@@ -5,7 +5,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.remotes.LinstorRemote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 public class BackupShippingSrcData
@@ -13,7 +13,7 @@ public class BackupShippingSrcData
     private final String srcClusterId;
     private final String srcRscName;
     private final String srcBackupName;
-    private final Date now;
+    private final LocalDateTime now;
     private final String dstRscName;
     private final LinstorRemote linstorRemote;
     private final Map<String, String> storPoolRename;
@@ -40,7 +40,7 @@ public class BackupShippingSrcData
         String srcNodeNameRef,
         String srcRscNameRef,
         String srcBackupNameRef,
-        Date nowRef,
+        LocalDateTime nowRef,
         LinstorRemote linstorRemoteRef,
         String dstRscNameRef,
         String dstNodeNameRef,
@@ -85,7 +85,7 @@ public class BackupShippingSrcData
         return srcBackupName;
     }
 
-    public Date getNow()
+    public LocalDateTime getNow()
     {
         return now;
     }

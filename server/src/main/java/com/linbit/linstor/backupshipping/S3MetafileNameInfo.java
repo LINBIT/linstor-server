@@ -1,7 +1,7 @@
 package com.linbit.linstor.backupshipping;
 
 import java.text.ParseException;
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,14 +19,14 @@ public class S3MetafileNameInfo
 
     public final String rscName;
     public final String backupId;
-    public final Date backupTime;
+    public final LocalDateTime backupTime;
     public final String s3Suffix;
     public final String snapName;
 
-    public S3MetafileNameInfo(String rscNameRef, Date backupTimeRef, String s3SuffixRef, String snapNameRef)
+    public S3MetafileNameInfo(String rscNameRef, LocalDateTime backupTimeRef, String s3SuffixRef, String snapNameRef)
     {
         rscName = rscNameRef;
-        backupId = BackupConsts.BACKUP_PREFIX + BackupConsts.format(backupTimeRef);
+        backupId = BackupConsts.BACKUP_PREFIX + BackupConsts.DATE_FORMAT.format(backupTimeRef);
         backupTime = backupTimeRef;
         s3Suffix = BackupShippingUtils.defaultEmpty(s3SuffixRef);
         if (snapNameRef == null || snapNameRef.isEmpty())
@@ -49,7 +49,10 @@ public class S3MetafileNameInfo
 
         rscName = matcher.group("rscName");
         backupId = matcher.group("backupId");
-        backupTime = BackupConsts.parse(backupId.substring(BackupConsts.BACKUP_PREFIX_LEN));
+        backupTime = BackupConsts.DATE_FORMAT.parse(
+            backupId.substring(BackupConsts.BACKUP_PREFIX_LEN),
+            LocalDateTime::from
+        );
         s3Suffix = BackupShippingUtils.defaultEmpty(matcher.group("s3Suffix"));
 
         String snapNameRef = BackupShippingUtils.defaultEmpty(matcher.group("snapName"));

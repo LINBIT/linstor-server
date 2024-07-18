@@ -17,6 +17,7 @@ import com.linbit.linstor.storage.kinds.ExtToolsInfo;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -101,7 +102,7 @@ public interface CommonSerializer
             @Nullable List<String> ids
         );
 
-        CommonSerializerBuilder requestSosReport(String sosReportNameRef, Date since);
+        CommonSerializerBuilder requestSosReport(String sosReportNameRef, LocalDateTime since);
 
         CommonSerializerBuilder requestSosReportFiles(
             String sosReportNameRef,

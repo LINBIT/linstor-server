@@ -1,7 +1,7 @@
 package com.linbit.linstor.core;
 
-import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.Platform;
+import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.utils.InjectorLoader;
 
 import java.io.BufferedReader;
@@ -12,8 +12,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -46,7 +44,6 @@ public abstract class LinStor
 
     public static final int CPU_COUNT = Runtime.getRuntime().availableProcessors();
 
-    public static final DateFormat JOURNALCTL_DF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     public static final ZoneOffset LOCAL_ZONE_OFFSET = OffsetDateTime.now(ZoneId.systemDefault()).getOffset();
 
     // ============================================================

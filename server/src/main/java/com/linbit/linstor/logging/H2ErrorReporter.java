@@ -6,6 +6,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.netcom.Peer;
+import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -20,6 +21,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -104,7 +106,7 @@ public class H2ErrorReporter
         Peer client,
         Throwable errorInfo,
         long instanceEpoch,
-        Date errorTime,
+        LocalDateTime errorTime,
         String nodeName,
         String module,
         byte[] errorReportText)
@@ -131,7 +133,7 @@ public class H2ErrorReporter
             stmt.setInt(fieldIdx++, (int) (module.equalsIgnoreCase(LinStor.CONTROLLER_MODULE) ?
                 Node.Type.CONTROLLER.getFlagValue() : Node.Type.SATELLITE.getFlagValue()));
             stmt.setString(fieldIdx++, String.format("%s-%06d", errorReporter.getInstanceId(), reportNr));
-            stmt.setTimestamp(fieldIdx++, new Timestamp(errorTime.getTime()));
+            stmt.setTimestamp(fieldIdx++, new Timestamp(TimeUtils.getEpochMillis(errorTime)));
             stmt.setString(fieldIdx++, LinStor.VERSION_INFO_PROVIDER.getVersion());
             stmt.setString(fieldIdx++, client != null ? client.toString() : null);
             stmt.setString(fieldIdx++, errorInfo.getClass().getSimpleName());

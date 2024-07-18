@@ -10,6 +10,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.Privilege;
+import com.linbit.utils.TimeUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -24,8 +25,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.sql.SQLException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -293,7 +294,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
         PrintStream output = null;
         long reportNr = errorNr.getAndIncrement();
         final String logName = getLogName(reportNr);
-        final Date errorTime = new Date();
+        final LocalDateTime errorTime = LocalDateTime.now();
         try
         {
             output = openReportFile(logName);
@@ -482,7 +483,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
             final long startTime = System.currentTimeMillis();
             int archiveCount = 0;
 
-            DateFormat df = new SimpleDateFormat("yyyy-MM"); // grouping format
+            DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM"); // grouping format
 
             Map<String, List<Path>> monthGroup = files
                 .filter(file -> file.getFileName().toString().startsWith("ErrorReport"))
@@ -501,7 +502,7 @@ public final class StdErrorReporter extends BaseErrorReporter implements ErrorRe
                 .collect(Collectors.groupingBy(file ->
                 {
                     BasicFileAttributes attr = getAttributes(file);
-                    return attr != null ? df.format(attr.creationTime().toMillis()) : "unknown";
+                    return attr != null ? df.format(TimeUtils.millisToDate(attr.creationTime().toMillis())) : "unknown";
                 }));
 
             for (String month : monthGroup.keySet())

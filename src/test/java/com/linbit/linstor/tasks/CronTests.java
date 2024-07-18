@@ -4,16 +4,15 @@ import com.linbit.linstor.core.objects.Schedule;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.TestAccessContextProvider;
 import com.linbit.utils.Pair;
+import com.linbit.utils.TimeUtils;
 
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 import com.cronutils.model.CronType;
@@ -30,7 +29,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(JUnitParamsRunner.class)
 public class CronTests
 {
-    private static final DateFormat SDF = new SimpleDateFormat("yyyy.MM.dd HH:mm:ss");
     private static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy.MM.dd HH:mm:ss");
     private static final CronDefinition CRON_DFN = CronDefinitionBuilder.instanceDefinitionFor(CronType.UNIX);
     private static final CronParser CRON_PARSER = new CronParser(CRON_DFN);
@@ -65,9 +63,9 @@ public class CronTests
             input.prevIncr
         );
         assertEquals(
-            "expected: " + SDF.format(new Date(input.expectedResult.timeout)) + ", actual: " +
-                SDF.format(new Date(res.objA)),
-            new Long(input.expectedResult.timeout),
+            "expected: " + DTF.format(TimeUtils.millisToDate(input.expectedResult.timeout)) + ", actual: " +
+                DTF.format(TimeUtils.millisToDate(res.objA)),
+            Long.valueOf(input.expectedResult.timeout),
             res.objA
         );
         assertEquals(input.expectedResult.incr, res.objB);
@@ -172,11 +170,13 @@ public class CronTests
         {
             fullExec = fullExecRef;
             incExec = incExecRef;
-            lastStart = lastStartStr == null || lastStartStr.equals("-1") ? -1 : SDF.parse(lastStartStr).getTime();
+            lastStart = lastStartStr == null || lastStartStr.equals("-1") ? -1 :
+                TimeUtils.getEpochMillis(DTF.parse(lastStartStr, LocalDateTime::from));
             prevIncr = prevIncrRef;
-            now = SDF.parse(nowStr).getTime();
+            now = TimeUtils.getEpochMillis(DTF.parse(nowStr, LocalDateTime::from));
             expectedResult = new Result(
-                SDF.parse(expectedRerun).getTime() - SDF.parse(nowStr).getTime(),
+                TimeUtils.getEpochMillis(DTF.parse(expectedRerun, LocalDateTime::from)) -
+                    TimeUtils.getEpochMillis(DTF.parse(nowStr, LocalDateTime::from)),
                 expectedIncr
             );
             lastBackupSuccess = lastBackupSuccessRef;
@@ -186,7 +186,7 @@ public class CronTests
         @Override
         public String toString()
         {
-            return SDF.format(new Date(lastStart)) + ", " + SDF.format(new Date(now));
+            return DTF.format(TimeUtils.millisToDate(lastStart)) + ", " + DTF.format(TimeUtils.millisToDate(now));
         }
     }
 
