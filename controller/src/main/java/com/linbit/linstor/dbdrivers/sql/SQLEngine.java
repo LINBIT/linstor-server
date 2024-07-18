@@ -103,8 +103,9 @@ public class SQLEngine implements DbEngine
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         if (ctrlCfg.getDbConnectionUrl().toLowerCase().startsWith("jdbc:h2"))
         {
-            try (PreparedStatement stmt = getConnection().prepareStatement(String.format("BACKUP TO '%s'", backupPath)))
+            try (PreparedStatement stmt = getConnection().prepareStatement("BACKUP TO ?"))
             {
+                stmt.setString(1, backupPath);
                 stmt.execute();
                 final ApiCallRcImpl.ApiCallRcEntry rc = ApiCallRcImpl.entryBuilder(
                         ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT,
