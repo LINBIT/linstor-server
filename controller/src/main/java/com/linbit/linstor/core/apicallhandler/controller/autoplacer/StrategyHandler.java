@@ -12,6 +12,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -144,11 +145,11 @@ class StrategyHandler
     {
         Map<AutoplaceStrategy, Double> weights = new HashMap<>(dfltWeights);
 
-        Props ctrlProps = sysCfgRep.getCtrlConfForView(apiCtx);
+        ReadOnlyProps ctrlProps = sysCfgRep.getCtrlConfForView(apiCtx);
         Optional<Props> weightsNsOpt = ctrlProps.getNamespace(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS);
         if (weightsNsOpt.isPresent())
         {
-            Props weightsNs = weightsNsOpt.get();
+            ReadOnlyProps weightsNs = weightsNsOpt.get();
             for (AutoplaceStrategy strat : strategies)
             {
                 String stratName = strat.getName();

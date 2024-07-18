@@ -4,6 +4,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -31,12 +32,12 @@ public interface SystemConfRepository extends ProtectedObject
     String removeStltProp(AccessContext accCtx, String key, String namespace)
         throws AccessDeniedException, InvalidKeyException, DatabaseException;
 
-    Props getCtrlConfForView(AccessContext accCtx)
+    ReadOnlyProps getCtrlConfForView(AccessContext accCtx)
         throws AccessDeniedException;
 
     Props getCtrlConfForChange(AccessContext accCtx)
         throws AccessDeniedException;
 
-    Props getStltConfForView(AccessContext accCtx)
+    ReadOnlyProps getStltConfForView(AccessContext accCtx)
         throws AccessDeniedException;
 }

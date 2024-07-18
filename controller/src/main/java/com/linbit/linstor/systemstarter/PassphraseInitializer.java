@@ -7,7 +7,7 @@ import com.linbit.linstor.api.LinStorScope;
 import com.linbit.linstor.core.apicallhandler.controller.helpers.EncryptionHelper;
 import com.linbit.linstor.core.cfg.CtrlConfig;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -56,7 +56,7 @@ public class PassphraseInitializer implements StartupInitializer
         try (LinStorScope.ScopeAutoCloseable close = apiCallScope.enter())
         {
             TransactionMgrUtil.seedTransactionMgr(apiCallScope, txMgr);
-            Props namespace = encHelper.getEncryptedNamespace(accCtx);
+            ReadOnlyProps namespace = encHelper.getEncryptedNamespace(accCtx);
             if (namespace == null || namespace.isEmpty())
             {
                 byte[] masterKey = encHelper.generateSecret();
@@ -107,7 +107,7 @@ public class PassphraseInitializer implements StartupInitializer
         }
     }
 
-    private Flux<ApiCallRc> setCryptKey(byte[] masterKeyRef, Props namespaceRef)
+    private Flux<ApiCallRc> setCryptKey(byte[] masterKeyRef, ReadOnlyProps namespaceRef)
     {
         return encHelper.setCryptKey(
             masterKeyRef,

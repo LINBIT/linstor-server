@@ -46,6 +46,7 @@ import com.linbit.linstor.layer.storage.utils.SysClassUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -929,7 +930,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         return ret;
     }
 
-    private void initNewExosRestClients(Props props)
+    private void initNewExosRestClients(ReadOnlyProps props)
     {
         Optional<Props> optionalProp = props.getNamespace(ApiConsts.NAMESPC_EXOS);
 

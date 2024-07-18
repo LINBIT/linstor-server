@@ -44,7 +44,7 @@ import com.linbit.linstor.core.repository.ScheduleRepository;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -117,7 +117,8 @@ public class CtrlApiDataLoader
             // if node name is a short name, try to append search domain (if there is any)
             if (!ignoreSearchDomain && !nodeName.getDisplayName().contains("."))
             {
-                final Props ctrlProps = systemConfRepository.getCtrlConfForView(systemCtx); // TODO: use user properties
+                final ReadOnlyProps ctrlProps = systemConfRepository.getCtrlConfForView(systemCtx); // TODO: use user
+                                                                                                    // properties
                 try
                 {
                     final String domain = ctrlProps.getProp(ApiConsts.KEY_SEARCH_DOMAIN);

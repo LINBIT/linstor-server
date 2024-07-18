@@ -21,7 +21,7 @@ import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestVolumesColle
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestVolumesCollection.ExosRestVolume;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -106,12 +106,12 @@ public class ExosRestClient
     private final Map<String, Long> lastLoginTimestamp = new HashMap<>();
     private final Map<String, String> currentSessionKey = new HashMap<>();
 
-    private Props localNodeProps;
+    private ReadOnlyProps localNodeProps;
 
     private final String baseEnclosureKey;
     private final String[] baseNamespace;
     private final String[] baseAndCtrlNamespace;
-    private Props props;
+    private ReadOnlyProps props;
 
     /*
      * Should be used by the satellite
@@ -132,7 +132,7 @@ public class ExosRestClient
     public ExosRestClient(
         AccessContext sysCtxRef,
         ErrorReporter errorReporterRef,
-        Props propsRef,
+        ReadOnlyProps propsRef,
         String enclosureNameRef
     )
     {
@@ -159,7 +159,7 @@ public class ExosRestClient
         }
     }
 
-    public void setLocalNodeProps(Props localNodePropsRef)
+    public void setLocalNodeProps(ReadOnlyProps localNodePropsRef)
     {
         localNodeProps = localNodePropsRef;
     }

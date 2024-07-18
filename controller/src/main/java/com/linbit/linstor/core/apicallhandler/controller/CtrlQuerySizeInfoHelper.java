@@ -17,7 +17,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPool.Key;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
@@ -109,7 +109,7 @@ public class CtrlQuerySizeInfoHelper
         long capacity = getCapacity(placeCount, availableStorPoolList);
 
         List<StorPoolApi> selectedStorPools = new ArrayList<>();
-        Props ctrpProps = getCtrlPropsPrivileged();
+        ReadOnlyProps ctrpProps = getCtrlPropsPrivileged();
         if (selectedStorPoolSet != null)
         {
             for (StorPool sp : selectedStorPoolSet)
@@ -151,7 +151,7 @@ public class CtrlQuerySizeInfoHelper
         Long maxVlmSize = null;
         if (selectedStorPoolSetRef != null)
         {
-            final Props ctrlProps = getCtrlPropsPrivileged();
+            final ReadOnlyProps ctrlProps = getCtrlPropsPrivileged();
             for (StorPool sp : selectedStorPoolSetRef)
             {
                 Optional<Long> optFreeCap = FreeCapacityAutoPoolSelectorUtils
@@ -172,7 +172,7 @@ public class CtrlQuerySizeInfoHelper
         return maxVlmSize == null ? 0 : maxVlmSize;
     }
 
-    private @Nonnull Props getCtrlPropsPrivileged()
+    private ReadOnlyProps getCtrlPropsPrivileged()
     {
         try
         {
@@ -200,7 +200,7 @@ public class CtrlQuerySizeInfoHelper
         {
             ArrayList<Long> availableSizes = new ArrayList<>();
 
-            final Props ctrlProps = getCtrlPropsPrivileged();
+            final ReadOnlyProps ctrlProps = getCtrlPropsPrivileged();
             for (StorPool sp : availableStorPoolListRef)
             {
                 Optional<Long> optFreeCap = FreeCapacityAutoPoolSelectorUtils

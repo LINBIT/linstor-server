@@ -21,7 +21,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerNotConnectedException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.proto.javainternal.s2c.MsgPhysicalDevicesOuterClass.MsgPhysicalDevices;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -257,7 +257,7 @@ public class CtrlPhysicalStorageApiCallHandler
                     sedPassword = secretGen.generateSecretString(SED_PASSWORD_LENGTH);
                     byte[] sedEncBytePassword = encryptionHelper.encrypt(sedPassword);
                     storagePoolProps.put(
-                        ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR + device,
+                        ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR + device,
                         Base64.encode(sedEncBytePassword));
                 }
             }

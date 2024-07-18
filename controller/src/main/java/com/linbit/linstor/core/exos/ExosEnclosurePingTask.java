@@ -8,7 +8,7 @@ import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.layer.storage.exos.rest.ExosRestClient;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestSystemCollection;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -111,8 +111,8 @@ public class ExosEnclosurePingTask implements Task
     {
         try
         {
-            Props props = systemConfRepository.getStltConfForView(sysCtx);
-            Props exosProps = props.getNamespace(ApiConsts.NAMESPC_EXOS).orElse(null);
+            ReadOnlyProps props = systemConfRepository.getStltConfForView(sysCtx);
+            ReadOnlyProps exosProps = props.getNamespace(ApiConsts.NAMESPC_EXOS).orElse(null);
             if (exosProps != null)
             {
                 Set<String> enclosuresToDelete;
@@ -176,7 +176,7 @@ public class ExosEnclosurePingTask implements Task
         }
     }
 
-    private String getIp(Props ctrlPropsRef, String baseKey)
+    private String getIp(ReadOnlyProps ctrlPropsRef, String baseKey)
     {
         return PropsUtils
             .getPropOrEnv(

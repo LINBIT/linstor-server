@@ -38,6 +38,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -133,7 +134,7 @@ public class EncryptionHelper
         errorReporter = errorReporterRef;
     }
 
-    public Props getEncryptedNamespace(AccessContext peerAccCtxRef) throws AccessDeniedException
+    public ReadOnlyProps getEncryptedNamespace(AccessContext peerAccCtxRef) throws AccessDeniedException
     {
         return systemConfRepository.getCtrlConfForView(peerAccCtxRef).getNamespace(NAMESPACE_ENCRYPTED)
             .orElse(null);
@@ -151,7 +152,7 @@ public class EncryptionHelper
 
     public boolean passphraseExists(AccessContext peerAccCtxRef) throws AccessDeniedException
     {
-        Props namespace = getEncryptedNamespace(peerAccCtxRef);
+        ReadOnlyProps namespace = getEncryptedNamespace(peerAccCtxRef);
 
         boolean exists = false;
         if (namespace != null)
@@ -193,7 +194,7 @@ public class EncryptionHelper
         transMgrProvider.get().commit();
     }
 
-    public byte[] getDecryptedMasterKey(Props namespace, String oldPassphrase)
+    public byte[] getDecryptedMasterKey(ReadOnlyProps namespace, String oldPassphrase)
         throws InvalidKeyException, LinStorException
     {
         return getDecryptedMasterKey(
@@ -258,7 +259,7 @@ public class EncryptionHelper
         return ret;
     }
 
-    public Flux<ApiCallRc> setCryptKey(byte[] cryptKey, Props namespace, boolean updateSatellites)
+    public Flux<ApiCallRc> setCryptKey(byte[] cryptKey, ReadOnlyProps namespace, boolean updateSatellites)
     {
         Flux<ApiCallRc> flux = Flux.empty();
         byte[] cryptHash = Base64.decode(namespace.getProp(KEY_CRYPT_HASH));

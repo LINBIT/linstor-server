@@ -21,6 +21,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -172,7 +173,7 @@ public class CtrlResyncAfterHelper
 
         try
         {
-            final Props ctrlProps = sysCfgRepo.getCtrlConfForView(sysCtx);
+            final ReadOnlyProps ctrlProps = sysCfgRepo.getCtrlConfForView(sysCtx);
             final String disableAuto = ctrlProps.getProp(ApiConsts.KEY_DRBD_DISABLE_AUTO_RESYNC_AFTER,
                 ApiConsts.NAMESPC_DRBD_OPTIONS);
             if (!"true".equalsIgnoreCase(disableAuto))

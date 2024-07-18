@@ -6,7 +6,7 @@ import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.utils.Commands;
 import com.linbit.utils.Triple;
@@ -286,7 +286,7 @@ public class SEDUtils
         final HashMap<String, String> driveMap = new HashMap<>();
         for (final String fullKey : sedProps.keySet())
         {
-            if (fullKey.startsWith(ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR))
+            if (fullKey.startsWith(ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR))
             {
                 final String drive = fullKey.substring(ApiConsts.NAMESPC_SED.length());
                 final String sedEncPassword = sedProps.get(fullKey);

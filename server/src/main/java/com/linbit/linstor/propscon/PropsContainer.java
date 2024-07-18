@@ -424,7 +424,7 @@ public class PropsContainer extends AbsTransactionObject implements Props
                 String value = entry.getValue();
 
                 PropsContainer targetContainer = this;
-                int idx = key.lastIndexOf(Props.PATH_SEPARATOR);
+                int idx = key.lastIndexOf(ReadOnlyProps.PATH_SEPARATOR);
                 if (idx != -1)
                 {
                     targetContainer = ensureNamespaceExists(key.substring(0, idx));

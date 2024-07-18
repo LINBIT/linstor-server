@@ -16,7 +16,7 @@ import com.linbit.linstor.core.types.NodeId;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdRscDatabaseDriver;
 import com.linbit.linstor.dbdrivers.interfaces.LayerDrbdVlmDatabaseDriver;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -354,7 +354,7 @@ public class DrbdRscData<RSC extends AbsResource<RSC>>
      *
      * @throws AccessDeniedException
      */
-    public boolean isSkipDiskEnabled(AccessContext apiCtxRef, Props stltProps) throws AccessDeniedException
+    public boolean isSkipDiskEnabled(AccessContext apiCtxRef, ReadOnlyProps stltProps) throws AccessDeniedException
     {
         RSC rsc = getAbsResource();
         PriorityProps prioProps = new PriorityProps(rsc.getProps(apiCtxRef));

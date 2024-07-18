@@ -29,6 +29,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
@@ -259,7 +260,7 @@ public class ScheduleBackupService implements SystemService
                 Entry<String, String> prop : prioProps.renderRelativeMap(InternalApiConsts.NAMESPC_SCHEDULE).entrySet()
             )
             {
-                String[] keyParts = prop.getKey().split(Props.PATH_SEPARATOR);
+                String[] keyParts = prop.getKey().split(ReadOnlyProps.PATH_SEPARATOR);
                 // key for activating scheduled shipping is {remoteName}/{scheduleName}/Enabled
                 if (
                     keyParts.length == 3 && keyParts[2].equals(InternalApiConsts.KEY_TRIPLE_ENABLED) &&
@@ -404,9 +405,9 @@ public class ScheduleBackupService implements SystemService
                         systemConfRepository.getCtrlConfForView(accCtx)
                     );
                     // namespace for schedule-remote-rsc props is {remoteName}/{scheduleName}/
-                    String namespace = InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR +
-                        remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue +
-                        Props.PATH_SEPARATOR;
+                    String namespace = InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR +
+                        remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR + schedule.getName().displayValue +
+                        ReadOnlyProps.PATH_SEPARATOR;
                     Map<String, String> propsInNamespace = prioProps.renderRelativeMap(
                         namespace + InternalApiConsts.KEY_RENAME_STORPOOL_MAP
                     );
@@ -421,8 +422,8 @@ public class ScheduleBackupService implements SystemService
                     // key for prefNode is {remoteName}/{scheduleName}/KEY_FORCE_RESTORE
                     forceRestore = Boolean.parseBoolean(
                         prioProps.getProp(
-                            remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue +
-                                Props.PATH_SEPARATOR + InternalApiConsts.KEY_FORCE_RESTORE,
+                            remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR + schedule.getName().displayValue +
+                                ReadOnlyProps.PATH_SEPARATOR + InternalApiConsts.KEY_FORCE_RESTORE,
                             InternalApiConsts.NAMESPC_SCHEDULE
                         )
                     );
@@ -841,7 +842,7 @@ public class ScheduleBackupService implements SystemService
             for (String propKey : copySet)
             {
                 // key for activating scheduled shipping is namespace/{remoteName}/{scheduleName}/Enabled
-                String[] splitKey = propKey.split(Props.PATH_SEPARATOR);
+                String[] splitKey = propKey.split(ReadOnlyProps.PATH_SEPARATOR);
                 if (splitKey.length == expectedKeyLength && (
                     remoteName != null && splitKey[1].equals(remoteName) ||
                     scheduleName != null && splitKey[2].equals(scheduleName))

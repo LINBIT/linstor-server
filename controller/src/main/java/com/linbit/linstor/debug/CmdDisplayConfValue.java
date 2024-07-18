@@ -1,14 +1,15 @@
 package com.linbit.linstor.debug;
 
-import javax.inject.Inject;
 import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorException;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.repository.SystemConfRepository;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 
+import javax.inject.Inject;
 import javax.inject.Named;
+
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.TreeMap;
@@ -100,7 +101,7 @@ public class CmdDisplayConfValue extends BaseDebugCmd
             confLock.readLock().lock();
             try
             {
-                Props searchRoot = systemConfRepository.getCtrlConfForView(accCtx);
+                ReadOnlyProps searchRoot = systemConfRepository.getCtrlConfForView(accCtx);
                 if (prmNamespace != null)
                 {
                     searchRoot = searchRoot.getNamespace(prmNamespace).orElse(null);

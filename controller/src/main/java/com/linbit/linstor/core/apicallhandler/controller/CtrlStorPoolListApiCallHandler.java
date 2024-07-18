@@ -21,6 +21,7 @@ import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuard;
@@ -149,7 +150,7 @@ public class CtrlStorPoolListApiCallHandler
     {
         for (String key : props.keySet())
         {
-            if (key.startsWith(ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR))
+            if (key.startsWith(ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR))
             {
                 byte[] masterKey = secObjs.getCryptKey();
                 if (masterKey == null)
@@ -185,7 +186,7 @@ public class CtrlStorPoolListApiCallHandler
         ArrayList<StorPoolApi> storPools = new ArrayList<>();
         try
         {
-            Props ctrlProps = sysCfgRepo.getCtrlConfForView(peerAccCtx.get());
+            ReadOnlyProps ctrlProps = sysCfgRepo.getCtrlConfForView(peerAccCtx.get());
             storPoolDefinitionRepository.getMapForView(peerAccCtx.get()).values().stream()
                 .filter(
                     storPoolDfn -> storPoolsFilter.isEmpty() ||

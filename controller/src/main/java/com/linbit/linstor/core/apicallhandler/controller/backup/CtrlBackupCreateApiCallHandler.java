@@ -46,6 +46,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
@@ -1069,7 +1070,7 @@ public class CtrlBackupCreateApiCallHandler
             if (scheduleName != null)
             {
                 rscDfnProps.setProp(
-                    remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR +
+                    remoteName + ReadOnlyProps.PATH_SEPARATOR + scheduleName + ReadOnlyProps.PATH_SEPARATOR +
                         InternalApiConsts.KEY_LAST_BACKUP_INC,
                     ApiConsts.VAL_FALSE,
                     InternalApiConsts.NAMESPC_SCHEDULE
@@ -1089,7 +1090,7 @@ public class CtrlBackupCreateApiCallHandler
             if (scheduleName != null)
             {
                 rscDfnProps.setProp(
-                    remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR +
+                    remoteName + ReadOnlyProps.PATH_SEPARATOR + scheduleName + ReadOnlyProps.PATH_SEPARATOR +
                         InternalApiConsts.KEY_LAST_BACKUP_INC,
                     ApiConsts.VAL_TRUE,
                     InternalApiConsts.NAMESPC_SCHEDULE
@@ -1099,7 +1100,7 @@ public class CtrlBackupCreateApiCallHandler
         if (scheduleName != null)
         {
             rscDfnProps.setProp(
-                remoteName + Props.PATH_SEPARATOR + scheduleName + Props.PATH_SEPARATOR +
+                remoteName + ReadOnlyProps.PATH_SEPARATOR + scheduleName + ReadOnlyProps.PATH_SEPARATOR +
                     InternalApiConsts.KEY_LAST_BACKUP_TIME,
                 Long.toString(System.currentTimeMillis()),
                 InternalApiConsts.NAMESPC_SCHEDULE

@@ -33,7 +33,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidValueException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -338,7 +338,7 @@ public class CtrlSnapshotCrtHelper
                     currentRsc.getLayerData(apiCtx),
                     DeviceLayerKind.DRBD
                 );
-                Props stltProps = ctrlPropsHelper.getStltPropsForView();
+                ReadOnlyProps stltProps = ctrlPropsHelper.getStltPropsForView();
                 for (AbsRscLayerObject<Resource> drbdLayerData : drbdLayerDataSet)
                 {
                     DrbdRscData<Resource> drbdRscData = (DrbdRscData<Resource>) drbdLayerData;

@@ -4,7 +4,7 @@ import com.linbit.ImplementationError;
 import com.linbit.linstor.LinStorRuntimeException;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.prop.Property.PropertyType;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -113,7 +113,7 @@ public class PropertyBuilder
                 );
             }
         }
-        key = keyList.stream().collect(Collectors.joining(Props.PATH_SEPARATOR));
+        key = keyList.stream().collect(Collectors.joining(ReadOnlyProps.PATH_SEPARATOR));
         return this;
     }
 

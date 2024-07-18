@@ -25,6 +25,7 @@ import com.linbit.linstor.netcom.ssl.SslTcpConnectorService;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.proto.CommonMessageProcessor;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -203,7 +204,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
         throws SystemServiceStartException
     {
         errorReporter.logInfo("Initializing network communications services");
-        Props netComProps = ctrlConf.getNamespace(PROPSCON_KEY_NETCOM).orElse(null);
+        ReadOnlyProps netComProps = ctrlConf.getNamespace(PROPSCON_KEY_NETCOM).orElse(null);
 
         if (netComProps == null)
         {
@@ -270,7 +271,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
 
     private void createNetComService(
         ServiceName serviceName,
-        Props configProp,
+        ReadOnlyProps configProp,
         ErrorReporter errorLogRef,
         AccessContext initCtx
     )
@@ -550,7 +551,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
 
     private void initNetComService(
         String serviceNameStr,
-        Props netComProps,
+        ReadOnlyProps netComProps,
         ErrorReporter errorLogRef,
         AccessContext initCtx
     )
@@ -579,7 +580,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
                 false
             );
         }
-        Props configProp = netComProps.getNamespace(serviceNameStr).orElse(null);
+        ReadOnlyProps configProp = netComProps.getNamespace(serviceNameStr).orElse(null);
         if (configProp == null)
         {
             errorLogRef.logError(
@@ -601,7 +602,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
         }
     }
 
-    private String loadPropChecked(Props props, String key) throws SystemServiceStartException
+    private String loadPropChecked(ReadOnlyProps props, String key) throws SystemServiceStartException
     {
         String value;
         try
@@ -632,7 +633,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
         return value;
     }
 
-    private String loadOrAddKey(Props props, String key, List<String> missingKeys)
+    private String loadOrAddKey(ReadOnlyProps props, String key, List<String> missingKeys)
     {
         String value = null;
         try
@@ -650,7 +651,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
         return value;
     }
 
-    private String loadProp(Props props, String key, String defaultValue)
+    private String loadProp(ReadOnlyProps props, String key, String defaultValue)
     {
         String value;
         try

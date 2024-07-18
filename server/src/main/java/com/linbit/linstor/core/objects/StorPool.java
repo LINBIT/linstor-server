@@ -19,6 +19,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -34,7 +35,6 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import static com.linbit.linstor.api.ApiConsts.KEY_STOR_POOL_SUPPORTS_SNAPSHOTS;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Provider;
 
@@ -376,7 +376,7 @@ public class StorPool extends AbsCoreObj<StorPool>
         return traits;
     }
 
-    public double getOversubscriptionRatio(@Nonnull AccessContext accCtxRef, @Nullable Props ctrlPropsRef)
+    public double getOversubscriptionRatio(AccessContext accCtxRef, @Nullable ReadOnlyProps ctrlPropsRef)
         throws AccessDeniedException
     {
         Double override = null; // override, regardless of property

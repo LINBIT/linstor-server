@@ -13,10 +13,11 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
-import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
+import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.provider.ebs.EbsData;
@@ -104,7 +105,7 @@ public class EbsUtils
         AccessContext accCtxRef,
         RemoteMap remoteMap,
         StorPool storPoolRef,
-        Props stltPropsRef
+        ReadOnlyProps stltPropsRef
     )
     {
         AbsRemote remote;
@@ -135,7 +136,7 @@ public class EbsUtils
     public static PriorityProps getPrioProps(
         AccessContext accCtx,
         StorPool spRef,
-        Props stltProps
+        ReadOnlyProps stltProps
     )
         throws AccessDeniedException
     {

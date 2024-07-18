@@ -25,7 +25,7 @@ import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -274,7 +274,7 @@ public class CtrlStorPoolCrtApiCallHandler
                 LinStorObject.STORAGEPOOL,
                 storPoolPropsMap, ctrlPropsHelper.getProps(storPool),
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL,
-                Collections.singletonList(ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR)
+                Collections.singletonList(ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR)
             );
 
             updateStorPoolDfnMap(storPool);

@@ -18,7 +18,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.SnapshotVolumeDefinition;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.AbsRscLayerObject;
@@ -50,7 +50,7 @@ public class BackupShippingUtils
     public static String fillPojo(
         AccessContext accCtx,
         Snapshot snap,
-        Props stltProps,
+        ReadOnlyProps stltProps,
         byte[] encKey,
         byte[] hash,
         byte[] salt,
@@ -76,7 +76,7 @@ public class BackupShippingUtils
     public static BackupMetaDataPojo getBackupMetaDataPojo(
         AccessContext accCtx,
         Snapshot snap,
-        Props stltProps,
+        ReadOnlyProps stltProps,
         byte[] encKey,
         byte[] hash,
         byte[] salt,

@@ -30,6 +30,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.ScheduleBackupService;
@@ -59,11 +60,11 @@ import reactor.core.publisher.Flux;
 @Singleton
 public class CtrlScheduledBackupsApiCallHandler
 {
-    private static final String SCHEDULE_KEY = InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR
+    private static final String SCHEDULE_KEY = InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR
         + InternalApiConsts.KEY_BACKUP_SHIPPED_BY_SCHEDULE;
-    private static final String REMOTE_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + Props.PATH_SEPARATOR
+    private static final String REMOTE_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + ReadOnlyProps.PATH_SEPARATOR
         + InternalApiConsts.KEY_BACKUP_TARGET_REMOTE;
-    private static final String PREV_FULL_BACKUP_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + Props.PATH_SEPARATOR
+    private static final String PREV_FULL_BACKUP_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + ReadOnlyProps.PATH_SEPARATOR
         + InternalApiConsts.KEY_LAST_FULL_BACKUP_TIMESTAMP;
 
     private final Provider<ScheduleBackupService> scheduleService;
@@ -339,8 +340,8 @@ public class CtrlScheduledBackupsApiCallHandler
             }
         }
         Map<SnapshotDefinition, List<SnapshotDefinition>> chains = new TreeMap<>();
-        final String PREV_BACKUP_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + Props.PATH_SEPARATOR
-            + remoteName + Props.PATH_SEPARATOR + InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT;
+        final String PREV_BACKUP_KEY = ApiConsts.NAMESPC_BACKUP_SHIPPING + ReadOnlyProps.PATH_SEPARATOR
+            + remoteName + ReadOnlyProps.PATH_SEPARATOR + InternalApiConsts.KEY_BACKUP_LAST_SNAPSHOT;
         while (!sourceSnaps.isEmpty())
         {
             List<SnapshotDefinition> chain = new ArrayList<>();
@@ -587,9 +588,9 @@ public class CtrlScheduledBackupsApiCallHandler
         {
             renameMap.put(AbsLayerHelperUtils.RENAME_STOR_POOL_DFLT_KEY, dstStorPool);
         }
-        final String namespace = InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR +
-            remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue +
-            Props.PATH_SEPARATOR;
+        final String namespace = InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR +
+            remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR + schedule.getName().displayValue +
+            ReadOnlyProps.PATH_SEPARATOR;
         if (rscNameRef != null && !rscNameRef.isEmpty())
         {
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
@@ -610,7 +611,7 @@ public class CtrlScheduledBackupsApiCallHandler
             for (Entry<String, String> renameEntry : renameMap.entrySet())
             {
                 propsRef.setProp(
-                    InternalApiConsts.KEY_RENAME_STORPOOL_MAP + Props.PATH_SEPARATOR + renameEntry.getKey(),
+                    InternalApiConsts.KEY_RENAME_STORPOOL_MAP + ReadOnlyProps.PATH_SEPARATOR + renameEntry.getKey(),
                     renameEntry.getValue(),
                     namespace
                 );
@@ -618,8 +619,8 @@ public class CtrlScheduledBackupsApiCallHandler
             if (add && forceRestore)
             {
                 propsRef.setProp(
-                    InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue +
-                        Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR +
+                    InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR + remote.getName().displayValue +
+                        ReadOnlyProps.PATH_SEPARATOR + schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
                         InternalApiConsts.KEY_FORCE_RESTORE,
                     ApiConsts.VAL_TRUE
                 );
@@ -648,7 +649,7 @@ public class CtrlScheduledBackupsApiCallHandler
             for (Entry<String, String> renameEntry : renameMap.entrySet())
             {
                 propsRef.setProp(
-                    InternalApiConsts.KEY_RENAME_STORPOOL_MAP + Props.PATH_SEPARATOR + renameEntry.getKey(),
+                    InternalApiConsts.KEY_RENAME_STORPOOL_MAP + ReadOnlyProps.PATH_SEPARATOR + renameEntry.getKey(),
                     renameEntry.getValue(),
                     namespace
                 );
@@ -656,8 +657,8 @@ public class CtrlScheduledBackupsApiCallHandler
             if (add && forceRestore)
             {
                 propsRef.setProp(
-                    InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue +
-                        Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR +
+                    InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR + remote.getName().displayValue +
+                        ReadOnlyProps.PATH_SEPARATOR + schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
                         InternalApiConsts.KEY_FORCE_RESTORE,
                     ApiConsts.VAL_TRUE
                 );
@@ -687,7 +688,7 @@ public class CtrlScheduledBackupsApiCallHandler
             {
                 systemConfRepository.setCtrlProp(
                     peerAccCtx.get(),
-                    InternalApiConsts.KEY_RENAME_STORPOOL_MAP + Props.PATH_SEPARATOR + renameEntry.getKey(),
+                    InternalApiConsts.KEY_RENAME_STORPOOL_MAP + ReadOnlyProps.PATH_SEPARATOR + renameEntry.getKey(),
                     renameEntry.getValue(),
                     namespace
                 );
@@ -696,8 +697,8 @@ public class CtrlScheduledBackupsApiCallHandler
             {
                 systemConfRepository.setCtrlProp(
                     peerAccCtx.get(),
-                    remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue +
-                        Props.PATH_SEPARATOR + InternalApiConsts.KEY_FORCE_RESTORE,
+                    remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR + schedule.getName().displayValue +
+                        ReadOnlyProps.PATH_SEPARATOR + InternalApiConsts.KEY_FORCE_RESTORE,
                     ApiConsts.VAL_TRUE,
                     InternalApiConsts.NAMESPC_SCHEDULE
                 );
@@ -727,7 +728,7 @@ public class CtrlScheduledBackupsApiCallHandler
     private void addOrRemoveTasks(Schedule schedule, AbsRemote remote, List<ResourceDefinition> rscDfnsToCheck)
         throws AccessDeniedException
     {
-        Props ctrlProps = systemConfRepository.getCtrlConfForView(peerAccCtx.get());
+        ReadOnlyProps ctrlProps = systemConfRepository.getCtrlConfForView(peerAccCtx.get());
         for (ResourceDefinition rscDfn : rscDfnsToCheck)
         {
             PriorityProps prioProps = new PriorityProps(
@@ -736,8 +737,9 @@ public class CtrlScheduledBackupsApiCallHandler
                 ctrlProps
             );
             String prop = prioProps.getProp(
-                remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
-                    + Props.PATH_SEPARATOR + InternalApiConsts.KEY_TRIPLE_ENABLED,
+                remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    InternalApiConsts.KEY_TRIPLE_ENABLED,
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
             if (prop != null && Boolean.parseBoolean(prop))
@@ -800,14 +802,16 @@ public class CtrlScheduledBackupsApiCallHandler
             ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
             Props propsRef = rscDfn.getProps(peerAccCtx.get());
             propsRef.removeProp(
-                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
-                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
-                    + InternalApiConsts.KEY_TRIPLE_ENABLED
+                InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR +
+                    remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    InternalApiConsts.KEY_TRIPLE_ENABLED
             );
             propsRef.removeProp(
-                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
-                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
-                    + InternalApiConsts.KEY_SCHEDULE_PREF_NODE
+                InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR +
+                    remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    InternalApiConsts.KEY_SCHEDULE_PREF_NODE
             );
             rscDfnsToCheck.add(rscDfn);
             msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully deleted for resource definition '" +
@@ -818,14 +822,16 @@ public class CtrlScheduledBackupsApiCallHandler
             ResourceGroup rscGrp = ctrlApiDataLoader.loadResourceGroup(grpNameRef, true);
             Props propsRef = rscGrp.getProps(peerAccCtx.get());
             propsRef.removeProp(
-                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
-                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
-                    + InternalApiConsts.KEY_TRIPLE_ENABLED
+                InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR +
+                    remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    InternalApiConsts.KEY_TRIPLE_ENABLED
             );
             propsRef.removeProp(
-                InternalApiConsts.NAMESPC_SCHEDULE + Props.PATH_SEPARATOR + remote.getName().displayValue
-                    + Props.PATH_SEPARATOR + schedule.getName().displayValue + Props.PATH_SEPARATOR
-                    + InternalApiConsts.KEY_SCHEDULE_PREF_NODE
+                InternalApiConsts.NAMESPC_SCHEDULE + ReadOnlyProps.PATH_SEPARATOR +
+                    remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    InternalApiConsts.KEY_SCHEDULE_PREF_NODE
             );
             rscDfnsToCheck.addAll(rscGrp.getRscDfns(peerAccCtx.get()));
             msg = "Backup shipping schedule '" + scheduleNameRef + "' sucessfully deleted for resource group '" +
@@ -835,14 +841,16 @@ public class CtrlScheduledBackupsApiCallHandler
         {
             systemConfRepository.removeCtrlProp(
                 peerAccCtx.get(),
-                remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
-                    + Props.PATH_SEPARATOR + InternalApiConsts.KEY_TRIPLE_ENABLED,
+                remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    InternalApiConsts.KEY_TRIPLE_ENABLED,
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
             systemConfRepository.removeCtrlProp(
                 peerAccCtx.get(),
-                remote.getName().displayValue + Props.PATH_SEPARATOR + schedule.getName().displayValue
-                    + Props.PATH_SEPARATOR + InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
+                remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    schedule.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR +
+                    InternalApiConsts.KEY_SCHEDULE_PREF_NODE,
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
             rscDfnsToCheck.addAll(rscDfnRepo.getMapForView(peerAccCtx.get()).values());
@@ -861,6 +869,6 @@ public class CtrlScheduledBackupsApiCallHandler
                 )
                 .build()
         );
-        return Flux.<ApiCallRc> just(response);
+        return Flux.<ApiCallRc>just(response);
     }
 }

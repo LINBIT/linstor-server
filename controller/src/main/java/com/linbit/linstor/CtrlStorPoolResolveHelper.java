@@ -15,7 +15,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -111,11 +111,14 @@ public class CtrlStorPoolResolveHelper
         StorPool storPool = null;
         try
         {
-            Props rscProps = ctrlPropsHelper.getProps(accCtx, rsc);
-            Props vlmDfnProps = ctrlPropsHelper.getProps(accCtx, vlmDfn);
-            Props rscDfnProps = ctrlPropsHelper.getProps(accCtx, rsc.getResourceDefinition());
-            Props rscGrpProps = ctrlPropsHelper.getProps(accCtx, rsc.getResourceDefinition().getResourceGroup());
-            Props nodeProps = ctrlPropsHelper.getProps(accCtx, rsc.getNode());
+            ReadOnlyProps rscProps = ctrlPropsHelper.getProps(accCtx, rsc);
+            ReadOnlyProps vlmDfnProps = ctrlPropsHelper.getProps(accCtx, vlmDfn);
+            ReadOnlyProps rscDfnProps = ctrlPropsHelper.getProps(accCtx, rsc.getResourceDefinition());
+            ReadOnlyProps rscGrpProps = ctrlPropsHelper.getProps(
+                accCtx,
+                rsc.getResourceDefinition().getResourceGroup()
+            );
+            ReadOnlyProps nodeProps = ctrlPropsHelper.getProps(accCtx, rsc.getNode());
 
             PriorityProps vlmPrioProps = new PriorityProps(
                 rscProps, vlmDfnProps, rscDfnProps, rscGrpProps, nodeProps

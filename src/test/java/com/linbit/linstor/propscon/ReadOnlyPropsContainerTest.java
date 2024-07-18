@@ -48,7 +48,7 @@ public class ReadOnlyPropsContainerTest
 
     private PropsContainerFactory propsContainerFactory;
     private PropsContainer writableProp;
-    private ReadOnlyProps roProp;
+    private ReadOnlyPropsImpl roProp;
     private Map<String, String> roMap;
     private Set<String> roKeySet;
     private Set<Entry<String, String>> roEntrySet;
@@ -61,7 +61,7 @@ public class ReadOnlyPropsContainerTest
 
         propsContainerFactory = new PropsContainerFactory(new SatellitePropDriver(), () -> transactionMgr);
         writableProp = propsContainerFactory.getInstance(TEST_INSTANCE_NAME, null, LinStorObject.CONTROLLER);
-        roProp = new ReadOnlyProps(writableProp);
+        roProp = new ReadOnlyPropsImpl(writableProp);
 
         fillProps(writableProp, FIRST_KEY, FIRST_AMOUNT, SECOND_KEY, SECOND_AMOUNT);
 

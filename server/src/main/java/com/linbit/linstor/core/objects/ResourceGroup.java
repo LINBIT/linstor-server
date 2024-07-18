@@ -14,7 +14,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
-import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -206,7 +206,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
     /**
      * Returns the {@link Props} from {@link #getVolumeGroup(AccessContext, VolumeNumber)} but instead of
      * a possible {@link NullPointerException} (in case the {@link VolumeGroup} does not exist) this method
-     * returns an empty {@link ReadOnlyProps} instance.
+     * returns an empty {@link ReadOnlyPropsImpl} instance.
      *
      * @param accCtx
      * @param vlmNrRef
@@ -222,7 +222,7 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
         Props vlmGrpProps;
         if (vlmGrp == null)
         {
-            vlmGrpProps = ReadOnlyProps.emptyRoProps();
+            vlmGrpProps = ReadOnlyPropsImpl.emptyRoProps();
         }
         else
         {

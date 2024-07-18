@@ -31,6 +31,7 @@ import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -184,7 +185,7 @@ public class CtrlStorPoolApiCallHandler
 
             for (Map.Entry<String, String> entry : overrideProps.entrySet())
             {
-                if (entry.getKey().startsWith(ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR))
+                if (entry.getKey().startsWith(ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR))
                 {
                     if (!storPool.getNode().getPeer(peerAccCtx.get()).isConnected(true))
                     {
@@ -217,7 +218,7 @@ public class CtrlStorPoolApiCallHandler
                 overrideProps,
                 props,
                 ApiConsts.FAIL_ACC_DENIED_STOR_POOL,
-                Collections.singletonList(ApiConsts.NAMESPC_SED + Props.PATH_SEPARATOR)
+                Collections.singletonList(ApiConsts.NAMESPC_SED + ReadOnlyProps.PATH_SEPARATOR)
             ) || notifyStlts;
             notifyStlts = ctrlPropsHelper.remove(
                 apiCallRcs, LinStorObject.STORAGEPOOL, props, deletePropKeys, deletePropNamespaces) || notifyStlts;

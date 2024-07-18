@@ -51,6 +51,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.AutoDiskfulTask;
@@ -897,7 +898,7 @@ public class CtrlConfApiCallHandler
                             // fall-through
                         case ApiConsts.NAMESPC_DRBD_OPTIONS + "/" + ApiConsts.KEY_AUTO_EVICT_MIN_REPLICA_COUNT:
                             // fall-through
-                        case ApiConsts.NAMESPC_BACKUP_SHIPPING + Props.PATH_SEPARATOR +
+                        case ApiConsts.NAMESPC_BACKUP_SHIPPING + ReadOnlyProps.PATH_SEPARATOR +
                             ApiConsts.KEY_ALLOW_FORCE_RESTORE:
                             // fall-through
                         case BackupConsts.CONCURRENT_BACKUPS_KEY:
@@ -1143,7 +1144,7 @@ public class CtrlConfApiCallHandler
             final String missingKeyFormat = "NetComConnector '%s' is missing '%s' key.";
             if (!connectorsToCheck.isEmpty())
             {
-                Optional<Props> optCtrlProps = systemConfRepository.getCtrlConfForView(peerAccCtx.get())
+                Optional<Props> optCtrlProps = systemConfRepository.getCtrlConfForChange(peerAccCtx.get())
                     .getNamespace(ApiConsts.NAMESPC_NETCOM);
                 if (optCtrlProps.isPresent())
                 {
@@ -1506,7 +1507,7 @@ public class CtrlConfApiCallHandler
         ApiCallRcImpl apiCallRc = new ApiCallRcImpl();
         try
         {
-            Props namespace = encHelper.getEncryptedNamespace(peerAccCtx.get());
+            ReadOnlyProps namespace = encHelper.getEncryptedNamespace(peerAccCtx.get());
             if (namespace == null || namespace.isEmpty())
             {
                 ResponseUtils.reportStatic(
@@ -1644,7 +1645,7 @@ public class CtrlConfApiCallHandler
         long mask = ApiConsts.MASK_CTRL_CONF;
         try
         {
-            Props namespace = encHelper.getEncryptedNamespace(peerAccCtx.get());
+            ReadOnlyProps namespace = encHelper.getEncryptedNamespace(peerAccCtx.get());
 
             if (oldPassphrase == null)
             {

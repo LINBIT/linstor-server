@@ -5,6 +5,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -62,11 +63,11 @@ public class StltConfigAccessor
         Optional<Props> ns = stltProps.getNamespace(namespace);
         if (ns.isPresent())
         {
-            roRet = new ReadOnlyProps(ns.get());
+            roRet = new ReadOnlyPropsImpl(ns.get());
         }
         else
         {
-            roRet = ReadOnlyProps.emptyRoProps();
+            roRet = ReadOnlyPropsImpl.emptyRoProps();
         }
         return roRet;
     }

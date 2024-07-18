@@ -30,6 +30,7 @@ import com.linbit.linstor.layer.drbd.utils.ConfFileBuilderAutoRules.AutoRule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -71,7 +72,7 @@ public class ConfFileBuilder
     private final DrbdRscData<Resource> localRscData;
     private final Collection<DrbdRscData<Resource>> remoteResourceData;
     private final WhitelistProps whitelistProps;
-    private final Props stltProps;
+    private final ReadOnlyProps stltProps;
     private final DrbdVersion drbdVersion;
 
     private final StringBuilder stringBuilder;
@@ -83,7 +84,7 @@ public class ConfFileBuilder
         final DrbdRscData<Resource> localRscRef,
         final Collection<DrbdRscData<Resource>> remoteResourcesRef,
         final WhitelistProps whitelistPropsRef,
-        final Props stltPropsRef,
+        final ReadOnlyProps stltPropsRef,
         final DrbdVersion drbdVersionRef
     )
     {

@@ -6,7 +6,7 @@ import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.apicallhandler.controller.CtrlSnapshotDeleteApiCallHandler;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.ResourceDefinition;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.AutoSnapshotTask;
@@ -50,7 +50,7 @@ public class ResourceDefinitionUtils
         Set<String> deletedNamespaces,
         Collection<ResourceDefinition> affectedRscDfnListRef,
         AccessContext accCtxRef,
-        Props ctrlProps,
+        ReadOnlyProps ctrlProps,
         boolean forceCheckAllRscDfnRef
     )
         throws AccessDeniedException

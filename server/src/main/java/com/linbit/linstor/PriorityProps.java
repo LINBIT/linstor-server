@@ -7,6 +7,7 @@ import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
@@ -25,7 +26,7 @@ public class PriorityProps
     public static final String FALLBACKMAP_NAME = "Fallback";
     public static final String DEFAULT_DESCR = "default value";
 
-    private final List<Pair<Props, String>> propList = new ArrayList<>();
+    private final List<Pair<ReadOnlyProps, String>> propList = new ArrayList<>();
     private final HashMap<String, String> fallbackMap = new HashMap<>();
 
     public PriorityProps(
@@ -55,21 +56,21 @@ public class PriorityProps
      *
      * @param props
      */
-    public PriorityProps(Props... props)
+    public PriorityProps(ReadOnlyProps... props)
     {
         addProps(props);
     }
 
-    public PriorityProps addProps(Props... props)
+    public PriorityProps addProps(ReadOnlyProps... props)
     {
-        for (Props prop : props)
+        for (ReadOnlyProps prop : props)
         {
             addProps(prop, "");
         }
         return this;
     }
 
-    public PriorityProps addProps(Props props, String descr)
+    public PriorityProps addProps(ReadOnlyProps props, String descr)
     {
         if (props != null)
         {
@@ -78,7 +79,7 @@ public class PriorityProps
         return this;
     }
 
-    public PriorityProps addProps(Props props, String descr, String type)
+    public PriorityProps addProps(ReadOnlyProps props, String descr, String type)
     {
         if (props != null)
         {
@@ -90,7 +91,7 @@ public class PriorityProps
     public String getProp(String key, String namespace) throws InvalidKeyException
     {
         String value = null;
-        for (Pair<Props, String> pair : propList)
+        for (Pair<ReadOnlyProps, String> pair : propList)
         {
             value = pair.objA.getProp(key, namespace);
             if (value != null)
@@ -100,7 +101,7 @@ public class PriorityProps
         }
         if (value == null)
         {
-            final String fullKey = namespace != null ? namespace + Props.PATH_SEPARATOR + key : key;
+            final String fullKey = namespace != null ? namespace + ReadOnlyProps.PATH_SEPARATOR + key : key;
             value = fallbackMap.get(prepStoreKey(fullKey));
         }
         return value;
@@ -120,8 +121,8 @@ public class PriorityProps
     private String prepStoreKey(String key)
     {
         return key
-            .replaceAll(Props.PATH_SEPARATOR + "+", Props.PATH_SEPARATOR)
-            .replaceAll("^" + Props.PATH_SEPARATOR + "*", "");
+            .replaceAll(ReadOnlyProps.PATH_SEPARATOR + "+", ReadOnlyProps.PATH_SEPARATOR)
+            .replaceAll("^" + ReadOnlyProps.PATH_SEPARATOR + "*", "");
     }
 
     public void setFallbackProp(String key, String value)
@@ -131,8 +132,9 @@ public class PriorityProps
 
     public void setFallbackProp(String key, String value, String namespace)
     {
-        final String fullKey = namespace.endsWith(Props.PATH_SEPARATOR) ?
-            namespace + key : namespace + Props.PATH_SEPARATOR + key;
+        final String fullKey = namespace.endsWith(ReadOnlyProps.PATH_SEPARATOR) ?
+            namespace + key :
+            namespace + ReadOnlyProps.PATH_SEPARATOR + key;
         fallbackMap.put(prepStoreKey(fullKey), value);
     }
 
@@ -141,12 +143,12 @@ public class PriorityProps
         Map<String, String> ret = new HashMap<>();
 
         int nsLen = namespace == null ? 0 : namespace.length();
-        if (nsLen > 0 && !namespace.endsWith(Props.PATH_SEPARATOR))
+        if (nsLen > 0 && !namespace.endsWith(ReadOnlyProps.PATH_SEPARATOR))
         {
             nsLen++; // also cut the trailing "/"
         }
 
-        for (Pair<Props, String> prop : propList)
+        for (Pair<ReadOnlyProps, String> prop : propList)
         {
             Optional<Props> optNs = prop.objA.getNamespace(namespace);
             if (optNs.isPresent())
@@ -178,7 +180,7 @@ public class PriorityProps
     public boolean anyPropsHasNamespace(String namespcDrbdHandlerOptionsRef)
     {
         boolean ret = false;
-        for (Pair<Props, String> entry : propList)
+        for (Pair<ReadOnlyProps, String> entry : propList)
         {
             if (entry.objA.getNamespace(namespcDrbdHandlerOptionsRef).isPresent())
             {
@@ -207,7 +209,7 @@ public class PriorityProps
     {
         MultiResult ret = null;
 
-        for (Pair<Props, String> pair : propList)
+        for (Pair<ReadOnlyProps, String> pair : propList)
         {
             String value = pair.objA.getProp(key, namespace);
             if (value != null)
@@ -232,7 +234,7 @@ public class PriorityProps
                 }
             }
         }
-        final String fullKey = namespace != null ? namespace + Props.PATH_SEPARATOR + key : key;
+        final String fullKey = namespace != null ? namespace + ReadOnlyProps.PATH_SEPARATOR + key : key;
         String value = fallbackMap.get(prepStoreKey(fullKey));
         if (value != null)
         {
@@ -259,7 +261,7 @@ public class PriorityProps
             nsLen++; // also cut the trailing "/"
         }
 
-        for (Pair<Props, String> propWithDescr : propList)
+        for (Pair<ReadOnlyProps, String> propWithDescr : propList)
         {
             Optional<Props> optNs = propWithDescr.objA.getNamespace(namespace);
             if (optNs.isPresent())

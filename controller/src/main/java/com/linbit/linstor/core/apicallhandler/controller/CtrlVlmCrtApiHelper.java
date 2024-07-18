@@ -28,7 +28,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -40,7 +40,6 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlVlmListApiCallHandler.getVlmDescriptionInline;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -267,7 +266,7 @@ public class CtrlVlmCrtApiHelper
         {
             poolsToCheck.addAll(thinPools);
         }
-        final Props ctrlProps = getCtrlPropsPrivileged();
+        final ReadOnlyProps ctrlProps = getCtrlPropsPrivileged();
         for (StorPool storPool : poolsToCheck)
         {
             if (getPeerPrivileged(rsc.getNode()).getConnectionStatus() == ApiConsts.ConnectionStatus.ONLINE &&
@@ -359,7 +358,7 @@ public class CtrlVlmCrtApiHelper
         }
     }
 
-    private @Nonnull Props getCtrlPropsPrivileged()
+    private ReadOnlyProps getCtrlPropsPrivileged()
     {
         try
         {

@@ -18,7 +18,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.ComparatorUtils;
@@ -94,7 +94,7 @@ public class CtrlQueryMaxVlmSizeHelper
             storPoolNameList = getStorPoolNamesAsStringPrivileged();
         }
 
-        final Props ctrlProps = getCtrlPropsPrivileged();
+        final ReadOnlyProps ctrlProps = getCtrlPropsPrivileged();
 
         for (String storPoolNameStr : storPoolNameList)
         {
@@ -203,7 +203,7 @@ public class CtrlQueryMaxVlmSizeHelper
         return apiData;
     }
 
-    private @Nonnull Props getCtrlPropsPrivileged()
+    private ReadOnlyProps getCtrlPropsPrivileged()
     {
         try
         {

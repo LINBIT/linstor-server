@@ -11,7 +11,7 @@ import com.linbit.linstor.core.objects.ResourceGroup;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.Volume;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -34,17 +34,17 @@ public class ZfsPropsUtils
     public static long extractZfsVolBlockSizePrivileged(
         ZfsData<?> vlmDataRef,
         @SystemContext AccessContext sysCtx,
-        Props stltProps
+        ReadOnlyProps stltProps
     )
         throws AccessDeniedException, StorageException
     {
         long extentSize = DEFAULT_ZFS_EXTENT_SIZE;
 
         AbsVolume<?> absVlm = vlmDataRef.getVolume();
-        Props absVlmProps;
-        Props absRscProps;
-        Props vlmDfnProps;
-        Props rscDfnProps;
+        ReadOnlyProps absVlmProps;
+        ReadOnlyProps absRscProps;
+        ReadOnlyProps vlmDfnProps;
+        ReadOnlyProps rscDfnProps;
         if (absVlm instanceof Volume)
         {
             Volume vlm = (Volume) vlmDataRef.getVolume();

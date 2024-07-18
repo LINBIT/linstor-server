@@ -10,7 +10,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.SnapshotVolume;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -32,10 +32,10 @@ public class FreeCapacityAutoPoolSelectorUtils
         long rscSize,
         @Nullable Map<StorPool.Key, Long> freeCapacities,
         boolean includeThin,
-        @Nonnull StorPoolName storPoolName,
-        @Nonnull Node node,
-        @Nonnull Props ctrlPropsRef,
-        @Nonnull AccessContext apiCtx
+        StorPoolName storPoolName,
+        Node node,
+        ReadOnlyProps ctrlPropsRef,
+        AccessContext apiCtx
     )
     {
         StorPool storPool = getStorPoolPrivileged(apiCtx, node, storPoolName);
@@ -99,10 +99,10 @@ public class FreeCapacityAutoPoolSelectorUtils
      * @return
      */
     public static Optional<Long> getFreeCapacityCurrentEstimationPrivileged(
-        @Nonnull AccessContext sysCtxRef,
+        AccessContext sysCtxRef,
         @Nullable Map<StorPool.Key, Long> thinFreeCapacities,
-        @Nonnull StorPool storPoolRef,
-        @Nonnull Props ctrlPropRef,
+        StorPool storPoolRef,
+        ReadOnlyProps ctrlPropRef,
         boolean includeOversubscriptionRatioRef
     )
     {
@@ -258,10 +258,10 @@ public class FreeCapacityAutoPoolSelectorUtils
     }
 
     private static @Nullable Double getRatioPrivileged(
-        @Nonnull AccessContext sysCtxRef,
-        @Nonnull StorPool storPoolRef,
-        @Nonnull Props ctrlPropRef,
-        @Nonnull String propKeyRef
+        AccessContext sysCtxRef,
+        StorPool storPoolRef,
+        ReadOnlyProps ctrlPropRef,
+        String propKeyRef
     )
     {
         final Double ret;
@@ -294,8 +294,8 @@ public class FreeCapacityAutoPoolSelectorUtils
     }
 
     private static Optional<Long> getFreeSpaceLastUpdatedPrivileged(
-        @Nonnull AccessContext sysCtxRef,
-        @Nonnull StorPool storPoolRef
+        AccessContext sysCtxRef,
+        StorPool storPoolRef
     )
     {
         Optional<Long> freeSpaceLastUpdated;
@@ -311,9 +311,9 @@ public class FreeCapacityAutoPoolSelectorUtils
     }
 
     public static double getMaxOversubscriptionRatioPrivileged(
-        @Nonnull AccessContext sysCtxRef,
-        @Nonnull StorPool storPoolRef,
-        @Nullable Props ctrlPropsRef
+        AccessContext sysCtxRef,
+        StorPool storPoolRef,
+        @Nullable ReadOnlyProps ctrlPropsRef
     )
     {
         double osRatio;
@@ -329,9 +329,9 @@ public class FreeCapacityAutoPoolSelectorUtils
     }
 
     public static @Nullable Double getFreeCapacityOversubscriptionRatioPrivileged(
-        @Nonnull AccessContext sysCtxRef,
-        @Nonnull StorPool storPoolRef,
-        @Nonnull Props ctrlPropRef
+        AccessContext sysCtxRef,
+        StorPool storPoolRef,
+        ReadOnlyProps ctrlPropRef
     )
     {
         return getRatioPrivileged(
@@ -343,9 +343,9 @@ public class FreeCapacityAutoPoolSelectorUtils
     }
 
     public static @Nullable Double getTotalCapacityOversubscriptionRatioPrivileged(
-        @Nonnull AccessContext sysCtxRef,
-        @Nonnull StorPool storPoolRef,
-        @Nonnull Props ctrlPropRef
+        AccessContext sysCtxRef,
+        StorPool storPoolRef,
+        ReadOnlyProps ctrlPropRef
     )
     {
         return getRatioPrivileged(

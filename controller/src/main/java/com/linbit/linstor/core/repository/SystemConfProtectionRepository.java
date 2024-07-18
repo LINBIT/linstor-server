@@ -5,7 +5,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -102,7 +102,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
     {
         checkProtSet();
         objectProtection.requireAccess(accCtx, AccessType.VIEW);
-        return new ReadOnlyProps(ctrlConf);
+        return new ReadOnlyPropsImpl(ctrlConf);
     }
 
     @Override
@@ -120,7 +120,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
     {
         checkProtSet();
         objectProtection.requireAccess(accCtx, AccessType.VIEW);
-        return new ReadOnlyProps(stltConf);
+        return new ReadOnlyPropsImpl(stltConf);
     }
 
     private void checkProtSet()

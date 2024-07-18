@@ -28,6 +28,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -79,12 +80,12 @@ public class CtrlPropsHelper
         }
     }
 
-    public Props getCtrlPropsForView()
+    public ReadOnlyProps getCtrlPropsForView()
     {
         return getCtrlPropsForView(peerAccCtx.get());
     }
 
-    public Props getCtrlPropsForView(AccessContext accessContextRef)
+    public ReadOnlyProps getCtrlPropsForView(AccessContext accessContextRef)
     {
         try
         {
@@ -121,12 +122,12 @@ public class CtrlPropsHelper
         }
     }
 
-    public Props getStltPropsForView()
+    public ReadOnlyProps getStltPropsForView()
     {
         return getStltPropsForView(peerAccCtx.get());
     }
 
-    public Props getStltPropsForView(AccessContext accessContextRef)
+    public ReadOnlyProps getStltPropsForView(AccessContext accessContextRef)
     {
         try
         {

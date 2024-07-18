@@ -7,7 +7,7 @@ import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -401,7 +401,7 @@ public class BackupToS3
     public List<S3ObjectSummary> listObjects(String withPrefix, S3Remote remote, AccessContext accCtx, byte[] masterKey)
         throws AccessDeniedException
     {
-        Props backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
+        ReadOnlyProps backupProps = stltConfigAccessor.getReadonlyProps(ApiConsts.NAMESPC_BACKUP_SHIPPING);
         final AmazonS3 s3 = getS3Client(remote, accCtx, masterKey);
         String bucket = remote.getBucket(accCtx);
         boolean reqPays = getRequesterPays(remote, accCtx, s3, bucket);

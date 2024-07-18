@@ -34,7 +34,7 @@ import com.linbit.linstor.core.repository.ScheduleRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.ScheduleBackupService;
@@ -501,7 +501,7 @@ public class CtrlScheduleApiCallHandler
                     for (Entry<String, String> prop : props.entrySet())
                     {
                         // key is {remoteName}/{scheduleName}
-                        String[] parts = prop.getKey().split(Props.PATH_SEPARATOR);
+                        String[] parts = prop.getKey().split(ReadOnlyProps.PATH_SEPARATOR);
                         if (parts.length == 3 && parts[2].equals(InternalApiConsts.KEY_TRIPLE_ENABLED))
                         {
                             if (prop.getValue().equals(ApiConsts.VAL_FALSE))
@@ -591,8 +591,8 @@ public class CtrlScheduleApiCallHandler
         for (ScheduledShippingConfig conf : activeShippings)
         {
             String lastSnapTime = conf.rscDfn.getProps(peerAccCtx.get()).getProp(
-                conf.remote.getName().displayValue + Props.PATH_SEPARATOR + conf.schedule.getName().displayValue
-                    + Props.PATH_SEPARATOR + InternalApiConsts.KEY_LAST_BACKUP_TIME,
+                conf.remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR + conf.schedule.getName().displayValue
+                    + ReadOnlyProps.PATH_SEPARATOR + InternalApiConsts.KEY_LAST_BACKUP_TIME,
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
             long lastSnapTimeLong;
@@ -608,8 +608,8 @@ public class CtrlScheduleApiCallHandler
                 lastSnap = ZonedDateTime.now();
             }
             String lastSnapInc = conf.rscDfn.getProps(peerAccCtx.get()).getProp(
-                conf.remote.getName().displayValue + Props.PATH_SEPARATOR + conf.schedule.getName().displayValue
-                    + Props.PATH_SEPARATOR + InternalApiConsts.KEY_LAST_BACKUP_INC,
+                conf.remote.getName().displayValue + ReadOnlyProps.PATH_SEPARATOR + conf.schedule.getName().displayValue
+                    + ReadOnlyProps.PATH_SEPARATOR + InternalApiConsts.KEY_LAST_BACKUP_INC,
                 InternalApiConsts.NAMESPC_SCHEDULE
             );
             if (lastSnapTimeLong >= 0 && lastSnapInc == null)
@@ -700,7 +700,7 @@ public class CtrlScheduleApiCallHandler
                 .renderConflictingMap(InternalApiConsts.NAMESPC_SCHEDULE, false);
             for (Entry<String, MultiResult> prop : propsMap.entrySet())
             {
-                String[] splitKey = prop.getKey().split(Props.PATH_SEPARATOR);
+                String[] splitKey = prop.getKey().split(ReadOnlyProps.PATH_SEPARATOR);
                 if (splitKey.length == 3 && splitKey[2].equals(InternalApiConsts.KEY_TRIPLE_ENABLED))
                 {
                     String remote = splitKey[0];

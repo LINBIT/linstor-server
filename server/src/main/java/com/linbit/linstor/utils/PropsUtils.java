@@ -1,20 +1,20 @@
 package com.linbit.linstor.utils;
 
 import com.linbit.linstor.PriorityProps;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class PropsUtils
 {
-    public static String getPropOrEnv(Props props, String firstKey, String envKey)
+    public static String getPropOrEnv(ReadOnlyProps props, String firstKey, String envKey)
     {
         return getPropOrEnv(props::getProp, firstKey, null, envKey, null);
     }
 
     public static String getPropOrEnv(
-        Props props,
+        ReadOnlyProps props,
         String firstKey,
         String firstNamespace,
         String envKey,
@@ -60,7 +60,7 @@ public class PropsUtils
         return val;
     }
 
-    public static String getPropOrEnv(Props propsRef, String[] prioKeysRef, String[] prioEnvKeysRef)
+    public static String getPropOrEnv(ReadOnlyProps propsRef, String[] prioKeysRef, String[] prioEnvKeysRef)
     {
         return getPropOrEnv(propsRef::getProp, prioKeysRef, prioEnvKeysRef);
     }
