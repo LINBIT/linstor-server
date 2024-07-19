@@ -64,6 +64,9 @@ stages:
     - FORCE=1 VERSION=$LINSTOR_VERSION make debrelease
     - curl -isSf -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD --upload-file linstor-server-$LINSTOR_VERSION.tar.gz $LINBIT_REGISTRY_URL/repository/lbbuild-upstream/
 # workaround a nexus bug not regenerating metadata
+    - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel9/x86_64/linstor-controller-$LINSTOR_VERSION-1.noarch.rpm
+    - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel9/x86_64/linstor-common-$LINSTOR_VERSION-1.noarch.rpm
+    - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel9/x86_64/linstor-satellite-$LINSTOR_VERSION-1.noarch.rpm
     - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel8/x86_64/linstor-controller-$LINSTOR_VERSION-1.noarch.rpm
     - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel8/x86_64/linstor-common-$LINSTOR_VERSION-1.noarch.rpm
     - curl -X DELETE -u $LINBIT_REGISTRY_USER:$LINBIT_REGISTRY_PASSWORD $LINBIT_REGISTRY_URL/repository/ci-yum/rhel8/x86_64/linstor-satellite-$LINSTOR_VERSION-1.noarch.rpm
@@ -74,7 +77,7 @@ stages:
       -e LINBIT_REGISTRY_USER=$LINBIT_REGISTRY_USER
       -e LINBIT_REGISTRY_PASSWORD=$LINBIT_REGISTRY_PASSWORD
       -e LINBIT_REGISTRY_URL=$LINBIT_REGISTRY_URL
-      -d ubuntu-bionic,ubuntu-focal,ubuntu-noble,rhel7.0,rhel8.0,debian-bookworm
+      -d ubuntu-bionic,ubuntu-focal,ubuntu-noble,rhel7.0,rhel8.0,rhel9.0,debian-bookworm
     - rm linstor-server-$LINSTOR_VERSION.tar.gz
 
 .common_e2e:
