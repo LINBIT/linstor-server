@@ -16,6 +16,8 @@ import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateKeys;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateValues;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.glue;
 
+import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -66,7 +68,7 @@ public class PropsContainerTest extends GenericDbBase
     public void dummy() throws Throwable
     {
         root.setProp("test/bla/a", "b");
-        Props testProps = root.getNamespace("test").get();
+        Props testProps = root.getNamespace("test");
         testProps.clear();
         testProps.setProp("/test/blubb/a", "b");
         testProps.setProp("/bla/yada/a", "b");
@@ -282,7 +284,7 @@ public class PropsContainerTest extends GenericDbBase
         final String secondValue = "other value";
         root.setProp(key, firstValue);
 
-        final Props firstNamespace = root.getNamespace(first).orElse(null);
+        final Props firstNamespace = root.getNamespace(first);
         firstNamespace.setProp(second2, secondValue);
 
         assertEquals(secondValue, firstNamespace.getProp(second2));
@@ -294,7 +296,7 @@ public class PropsContainerTest extends GenericDbBase
     {
         root.setProp("a/b/c", "abc");
 
-        final Props abNamespace = root.getNamespace("a/b").orElse(null);
+        final Props abNamespace = root.getNamespace("a/b");
 
         root.clear();
 
@@ -453,7 +455,7 @@ public class PropsContainerTest extends GenericDbBase
         final String value = "value";
         root.setProp(key, value);
 
-        Props firstNamespace = root.getNamespace(first).orElse(null);
+        Props firstNamespace = root.getNamespace(first);
 
         final String removedValue = firstNamespace.removeProp(second);
 
@@ -473,7 +475,7 @@ public class PropsContainerTest extends GenericDbBase
 
         assertNull(root.getProp(removedKey));
 
-        final Props containerNamespace = root.getNamespace(removedContainer).orElse(null);
+        final Props containerNamespace = root.getNamespace(removedContainer);
         assertNull(containerNamespace.getProp(removedEntryKey));
     }
 
@@ -483,14 +485,14 @@ public class PropsContainerTest extends GenericDbBase
         assertEquals("", root.getPath());
 
         root.setProp("a/b/c/d", "value");
-        final Props namespaceA = root.getNamespace("a").orElse(null);
+        final Props namespaceA = root.getNamespace("a");
 
         assertEquals("a/", namespaceA.getPath());
 
-        final Props namespaceB = namespaceA.getNamespace("b").orElse(null);
+        final Props namespaceB = namespaceA.getNamespace("b");
         assertEquals("a/b/", namespaceB.getPath());
 
-        final Props namespaceC = root.getNamespace("a/b/c").orElse(null);
+        final Props namespaceC = root.getNamespace("a/b/c");
         assertEquals("a/b/c/", namespaceC.getPath());
     }
 
@@ -498,10 +500,10 @@ public class PropsContainerTest extends GenericDbBase
     public void testGetPathTrailingSlash() throws Throwable
     {
         root.setProp("a/b/c/d", "value");
-        final Props namespaceC = root.getNamespace("a/b/c").orElse(null);
+        final Props namespaceC = root.getNamespace("a/b/c");
         assertNotNull(namespaceC);
 
-        assertEquals(namespaceC, root.getNamespace("a/b/c/").orElse(null));
+        assertEquals(namespaceC, root.getNamespace("a/b/c/"));
     }
 
     @Test
@@ -611,13 +613,13 @@ public class PropsContainerTest extends GenericDbBase
         root.setProp(key, value);
         assertEquals(value, root.getProp(key));
 
-        final Props firstNamespace = root.getNamespace(first).orElse(null);
+        final Props firstNamespace = root.getNamespace(first);
         assertEquals(value, firstNamespace.getProp(second));
 
-        assertNull(root.getNamespace("non existent").orElse(null));
+        assertNull(root.getNamespace("non existent"));
 
         root.removeProp(key);
-        assertNull(root.getNamespace(first).orElse(null));
+        assertNull(root.getNamespace(first));
     }
 
     @SuppressWarnings("checkstyle:magicnumber")
@@ -632,9 +634,16 @@ public class PropsContainerTest extends GenericDbBase
             String actualFirstKey = iterateFirstNamespaces.next();
             assertEquals(expectedfirstKey, actualFirstKey);
 
-            Iterator<String> iterateSecondNamespaces =
-                root.getNamespace(expectedfirstKey)
-                    .map(Props::iterateNamespaces).orElse(new ArrayList<String>().iterator());
+            @Nullable Props namespace = root.getNamespace(expectedfirstKey);
+            Iterator<String> iterateSecondNamespaces;
+            if (namespace == null)
+            {
+                iterateSecondNamespaces = new ArrayList<String>().iterator();
+            }
+            else
+            {
+                iterateSecondNamespaces = namespace.iterateNamespaces();
+            }
 
             // the "second level" only consists of keys - no namespaces
             assertFalse(iterateSecondNamespaces.hasNext());
@@ -745,11 +754,11 @@ public class PropsContainerTest extends GenericDbBase
 
         root.setAllProps(map, null);
 
-        assertTrue(root.getNamespace("a").isPresent());
+        assertNotNull(root.getNamespace("a"));
 
         assertTrue(root.removeNamespace("a"));
 
-        assertFalse(root.getNamespace("a").isPresent());
+        assertNull(root.getNamespace("a"));
         assertNotNull(root.getProp("a"));
     }
 
@@ -983,7 +992,7 @@ public class PropsContainerTest extends GenericDbBase
         rootEntrySet.add(insertedContainerEntry);
         assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
         assertEquals(insertedContainerValue, root.getProp(insertedEntryKey, insertedContainer));
-        final Props containerNamespace = root.getNamespace(insertedContainer).orElse(null);
+        final Props containerNamespace = root.getNamespace(insertedContainer);
         assertEquals(insertedContainerValue, containerNamespace.getProp(insertedEntryKey));
 
         // do not override existing key
@@ -1014,7 +1023,7 @@ public class PropsContainerTest extends GenericDbBase
         rootEntrySet.add(insertedContainerEntry);
         assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
         assertEquals(insertedContainerValue, root.getProp(insertedEntryKey, insertedContainer));
-        final Props containerNamespace = root.getNamespace(insertedContainer).orElse(null);
+        final Props containerNamespace = root.getNamespace(insertedContainer);
         assertEquals(insertedContainerValue, containerNamespace.getProp(insertedEntryKey));
 
         // do not override existing key
@@ -1387,7 +1396,7 @@ public class PropsContainerTest extends GenericDbBase
         rootKeySet.add(insertedContainerkey);
         assertEquals("", root.getProp(insertedContainerkey));
         assertEquals("", root.getProp(insertedEntryKey, insertedContainer));
-        final Props containerNamespace = root.getNamespace(insertedContainer).orElse(null);
+        final Props containerNamespace = root.getNamespace(insertedContainer);
         assertEquals("", containerNamespace.getProp(insertedEntryKey));
 
         // do not override existing key
@@ -1646,7 +1655,7 @@ public class PropsContainerTest extends GenericDbBase
         rootMap.put(insertedContainerKey, insertedContainerValue);
 
         assertEquals(insertedContainerValue, root.getProp(insertedContainerKey));
-        Props containerNamespace = root.getNamespace(container).orElse(null);
+        Props containerNamespace = root.getNamespace(container);
         assertEquals(insertedContainerValue, containerNamespace.getProp(containerKey));
     }
 
@@ -1681,7 +1690,7 @@ public class PropsContainerTest extends GenericDbBase
         rootMap.remove(glue(removedNamespace, "second0"));
         rootMap.remove(glue(removedNamespace, "second1"));
         // remove the other two entries, thus the namespace should get deleted too
-        assertNull(root.getNamespace(removedNamespace).orElse(null));
+        assertNull(root.getNamespace(removedNamespace));
     }
 
     @Test
@@ -2049,7 +2058,7 @@ public class PropsContainerTest extends GenericDbBase
     @Test(expected = UnsupportedOperationException.class)
     public void testValuesAddAll()
     {
-        rootValues.addAll(new ArrayList<String>());
+        rootValues.addAll(new ArrayList<>());
     }
 
     @Test

@@ -39,6 +39,7 @@ import com.linbit.locks.LockGuardFactory.LockObj;
 import com.linbit.locks.LockGuardFactory.LockType;
 import com.linbit.utils.Pair;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -49,7 +50,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -834,10 +834,10 @@ public class ScheduleBackupService implements SystemService
     private void removePropsFromContainer(Props props, String remoteName, String scheduleName)
         throws InvalidKeyException, DatabaseException, AccessDeniedException
     {
-        Optional<Props> namespaceProps = props.getNamespace(InternalApiConsts.NAMESPC_SCHEDULE);
-        if (namespaceProps.isPresent())
+        @Nullable Props namespaceProps = props.getNamespace(InternalApiConsts.NAMESPC_SCHEDULE);
+        if (namespaceProps != null)
         {
-            Set<String> copySet = new HashSet<>(namespaceProps.get().map().keySet());
+            Set<String> copySet = new HashSet<>(namespaceProps.map().keySet());
             final int expectedKeyLength = 4;
             for (String propKey : copySet)
             {

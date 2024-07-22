@@ -64,7 +64,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.function.Function;
@@ -452,11 +451,10 @@ public class RscInternalCallHandler
              * other properties might have been added or deleted in the meantime, but the satellite
              * did not get the update yet so those properties would be undone / restored now.
              */
-            Optional<Props> stltNs = targetProps.getNamespace(ApiConsts.NAMESPC_STLT);
-            if (stltNs.isPresent())
+            @Nullable Props stltNs = targetProps.getNamespace(ApiConsts.NAMESPC_STLT);
+            if (stltNs != null)
             {
-                Props stltProps = stltNs.get();
-                stltProps.keySet().retainAll(srcPropsMap.keySet());
+                stltNs.keySet().retainAll(srcPropsMap.keySet());
             }
             try
             {

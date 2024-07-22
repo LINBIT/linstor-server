@@ -73,7 +73,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -1152,10 +1151,10 @@ public class DeviceHandlerImpl implements DeviceHandler
         }
 
         Props vlmProps = vlmRef.getProps(wrkCtx);
-        Optional<Props> symlinkProps = vlmProps.getNamespace(ApiConsts.NAMESPC_STLT_DEV_SYMLINKS);
-        if (symlinkProps.isPresent())
+        @Nullable Props symlinkProps = vlmProps.getNamespace(ApiConsts.NAMESPC_STLT_DEV_SYMLINKS);
+        if (symlinkProps != null)
         {
-            symlinkProps.get().clear();
+            symlinkProps.clear();
         }
         for (int idx = 0; idx < prefixedList.size(); idx++)
         {

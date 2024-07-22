@@ -11,11 +11,11 @@ import com.linbit.linstor.core.apicallhandler.controller.autoplacer.strategies.M
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 
 @Singleton
 class StrategyHandler
@@ -146,10 +145,9 @@ class StrategyHandler
         Map<AutoplaceStrategy, Double> weights = new HashMap<>(dfltWeights);
 
         ReadOnlyProps ctrlProps = sysCfgRep.getCtrlConfForView(apiCtx);
-        Optional<Props> weightsNsOpt = ctrlProps.getNamespace(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS);
-        if (weightsNsOpt.isPresent())
+        @Nullable ReadOnlyProps weightsNs = ctrlProps.getNamespace(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS);
+        if (weightsNs != null)
         {
-            ReadOnlyProps weightsNs = weightsNsOpt.get();
             for (AutoplaceStrategy strat : strategies)
             {
                 String stratName = strat.getName();

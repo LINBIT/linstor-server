@@ -32,6 +32,7 @@ import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -711,7 +712,7 @@ public class CtrlPropsHelper
         }
         for (String deleteNamespace : deleteNamespaces)
         {
-            Props namespace = props.getNamespace(deleteNamespace).orElse(null);
+            @Nullable Props namespace = props.getNamespace(deleteNamespace);
             if (namespace != null)
             {
                 Set<String> keySet = namespace.keySet();

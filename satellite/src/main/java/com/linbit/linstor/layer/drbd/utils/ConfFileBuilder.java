@@ -29,7 +29,6 @@ import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.layer.drbd.utils.ConfFileBuilderAutoRules.AutoRule;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -56,7 +55,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -340,7 +338,7 @@ public class ConfFileBuilder
                         List<Pair<NetInterface, NetInterface>> pathsList = new ArrayList<>();
                         NodeConnection nodeConn = localRsc.getNode().getNodeConnection(accCtx, peerRsc.getNode());
                         ResourceConnection rscConn = localRsc.getAbsResourceConnection(accCtx, peerRsc);
-                        Optional<Props> paths = Optional.empty();
+                        @Nullable ReadOnlyProps paths = null;
 
                         PriorityProps prioPropsConn = rscConn != null ?
                             new PriorityProps()
@@ -450,31 +448,29 @@ public class ConfFileBuilder
                         }
 
                         // ...or fall back to node connection
-                        if (!paths.isPresent())
+                        if (paths == null && nodeConn != null)
                         {
-                            if (nodeConn != null)
-                            {
-                                paths = nodeConn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_CONNECTION_PATHS);
-                            }
+                            paths = nodeConn.getProps(accCtx).getNamespace(ApiConsts.NAMESPC_CONNECTION_PATHS);
                         }
 
-                        if (paths.isPresent())
+
+                        if (paths != null)
                         {
                             // iterate through network connection paths
-                            Iterator<String> pathsIterator = paths.get().iterateNamespaces();
+                            Iterator<String> pathsIterator = paths.iterateNamespaces();
                             while (pathsIterator.hasNext())
                             {
                                 String path = pathsIterator.next();
-                                Optional<Props> nodes = paths.get().getNamespace(path);
+                                ReadOnlyProps ncEntryNamespace = paths.getNamespace(path);
 
-                                if (nodes.isPresent() && nodes.get().map().size() == 2)
+                                if (ncEntryNamespace != null && ncEntryNamespace.map().size() == 2)
                                 {
                                     Node firstNode = peerRsc.getNode();
                                     Node secondNode = localRsc.getNode();
                                     try
                                     {
                                         // iterate through nodes (should be exactly 2)
-                                        Iterator<String> nodesIterator = nodes.get().keysIterator();
+                                        Iterator<String> nodesIterator = ncEntryNamespace.keysIterator();
                                         String firstNodeName = nodesIterator.next().split("/")[2];
                                         String secondNodeName = nodesIterator.next().split("/")[2];
 
@@ -497,7 +493,7 @@ public class ConfFileBuilder
                                         }
 
                                         // get corresponding network interfaces
-                                        String nicName = nodes.get().getProp(firstNodeName);
+                                        String nicName = ncEntryNamespace.getProp(firstNodeName);
                                         NetInterface firstNic = firstNode.getNetInterface(
                                                 accCtx, new NetInterfaceName(nicName));
 
@@ -507,7 +503,7 @@ public class ConfFileBuilder
                                                 "' of node '" + firstNode + "' does not exist!");
                                         }
 
-                                        nicName = nodes.get().getProp(secondNodeName);
+                                        nicName = ncEntryNamespace.getProp(secondNodeName);
                                         NetInterface secondNic = secondNode.getNetInterface(
                                             accCtx, new NetInterfaceName(nicName));
 
@@ -799,8 +795,16 @@ public class ConfFileBuilder
         final String namespace
     )
     {
-        Map<String, String> drbdProps = props.getNamespace(namespace)
-            .map(Props::map).orElse(Collections.emptyMap());
+        @Nullable ReadOnlyProps roNamespace = props.getNamespace(namespace);
+        Map<String, String> drbdProps;
+        if (roNamespace == null)
+        {
+            drbdProps = Collections.emptyMap();
+        }
+        else
+        {
+            drbdProps = roNamespace.map();
+        }
         int substrFrom = namespace.length() + 1;
 
         for (Map.Entry<String, String> entry : drbdProps.entrySet())

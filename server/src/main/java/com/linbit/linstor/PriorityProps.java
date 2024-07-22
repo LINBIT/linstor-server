@@ -5,12 +5,13 @@ import com.linbit.linstor.core.objects.NodeConnection;
 import com.linbit.linstor.core.objects.ResourceConnection;
 import com.linbit.linstor.core.objects.VolumeConnection;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.utils.Pair;
+
+import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,7 +19,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.TreeMap;
 
 public class PriorityProps
@@ -150,10 +150,10 @@ public class PriorityProps
 
         for (Pair<ReadOnlyProps, String> prop : propList)
         {
-            Optional<Props> optNs = prop.objA.getNamespace(namespace);
-            if (optNs.isPresent())
+            @Nullable ReadOnlyProps optNs = prop.objA.getNamespace(namespace);
+            if (optNs != null)
             {
-                for (Entry<String, String> entry : optNs.get().map().entrySet())
+                for (Entry<String, String> entry : optNs.map().entrySet())
                 {
                     ret.putIfAbsent(
                         entry.getKey().substring(nsLen),
@@ -182,7 +182,7 @@ public class PriorityProps
         boolean ret = false;
         for (Pair<ReadOnlyProps, String> entry : propList)
         {
-            if (entry.objA.getNamespace(namespcDrbdHandlerOptionsRef).isPresent())
+            if (entry.objA.getNamespace(namespcDrbdHandlerOptionsRef) != null)
             {
                 ret = true;
                 break;
@@ -263,10 +263,10 @@ public class PriorityProps
 
         for (Pair<ReadOnlyProps, String> propWithDescr : propList)
         {
-            Optional<Props> optNs = propWithDescr.objA.getNamespace(namespace);
-            if (optNs.isPresent())
+            @Nullable ReadOnlyProps optNs = propWithDescr.objA.getNamespace(namespace);
+            if (optNs != null)
             {
-                for (Entry<String, String> entry : optNs.get().map().entrySet())
+                for (Entry<String, String> entry : optNs.map().entrySet())
                 {
                     final String absKey = entry.getKey();
                     final String key = absoluteKey ? absKey : absKey.substring(nsLen);

@@ -56,7 +56,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -134,10 +133,10 @@ public class RscAutoPlaceApiTest extends ApiTestBase
 
         Mockito.when(freeCapacityFetcher.fetchThinFreeCapacities(any())).thenReturn(Mono.just(Collections.emptyMap()));
 
-        Optional<Props> optAutoplacerNamespace = ctrlConf.getNamespace(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS);
-        if (optAutoplacerNamespace.isPresent())
+        @Nullable Props optAutoplacerNamespace = ctrlConf.getNamespace(ApiConsts.NAMESPC_AUTOPLACER_WEIGHTS);
+        if (optAutoplacerNamespace != null)
         {
-            optAutoplacerNamespace.get().clear();
+            optAutoplacerNamespace.clear();
         }
 
         AtomicInteger atomicTcpPorts = new AtomicInteger(TEST_TCP_PORT_NR + 1);

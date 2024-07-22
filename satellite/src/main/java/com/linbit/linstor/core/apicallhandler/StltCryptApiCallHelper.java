@@ -31,6 +31,7 @@ import com.linbit.linstor.storage.utils.LayerUtils;
 import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -40,7 +41,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -120,11 +120,11 @@ public class StltCryptApiCallHelper
         while (itStorPool.hasNext())
         {
             StorPool sp = itStorPool.next();
-            Optional<Props> sedNS = sp.getProps(apiCtx).getNamespace(ApiConsts.NAMESPC_SED);
+            @Nullable Props sedNS = sp.getProps(apiCtx).getNamespace(ApiConsts.NAMESPC_SED);
             // SED namespace contains drives as keys with their password as value
-            if (sedNS.isPresent())
+            if (sedNS != null)
             {
-                Map<String, String> sedMap = SEDUtils.drivePasswordMap(sedNS.get().cloneMap());
+                Map<String, String> sedMap = SEDUtils.drivePasswordMap(sedNS.cloneMap());
                 for (final String drive : sedMap.keySet())
                 {
                     String sedEncPassword = sedMap.get(drive);

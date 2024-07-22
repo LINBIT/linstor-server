@@ -5,11 +5,12 @@ import com.linbit.linstor.api.prop.LinStorObject;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -209,10 +210,20 @@ public class ReadOnlyPropsImpl implements Props
     }
 
     @Override
-    public Optional<Props> getNamespace(String namespace)
+    public @Nullable Props getNamespace(String namespace)
     {
-        Optional<Props> ret = propsMap.getNamespace(namespace);
-        return Optional.ofNullable(ret.map(ReadOnlyPropsImpl::new).orElse(null));
+        // TODO change return type
+        @Nullable Props ret;
+        @Nullable Props ns = propsMap.getNamespace(namespace);
+        if (ns == null)
+        {
+            ret = null;
+        }
+        else
+        {
+            ret = new ReadOnlyPropsImpl(ns);
+        }
+        return ret;
     }
 
     @Override

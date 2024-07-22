@@ -635,7 +635,7 @@ public class RscStorageLayerHelper extends
         for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
             ReadOnlyProps storPoolProps = vlmData.getStorPool().getProps(apiCtx);
-            if (storPoolProps.getNamespace(ApiConsts.NAMESPC_SED).isPresent() && !secObjs.areAllSet())
+            if (storPoolProps.getNamespace(ApiConsts.NAMESPC_SED) != null && !secObjs.areAllSet())
             {
                 CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();
                 ctrlRscLayerDataFactory.getLayerHelperByKind(DeviceLayerKind.STORAGE)

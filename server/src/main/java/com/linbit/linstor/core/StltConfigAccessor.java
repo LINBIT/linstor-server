@@ -7,10 +7,9 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
-
-import java.util.Optional;
 
 public class StltConfigAccessor
 {
@@ -60,10 +59,17 @@ public class StltConfigAccessor
     public ReadOnlyProps getReadonlyProps(String namespace)
     {
         ReadOnlyProps roRet;
-        Optional<Props> ns = stltProps.getNamespace(namespace);
-        if (ns.isPresent())
+        @Nullable ReadOnlyProps ns = stltProps.getNamespace(namespace);
+        if (ns != null)
         {
-            roRet = new ReadOnlyPropsImpl(ns.get());
+            if (ns instanceof Props)
+            {
+                roRet = new ReadOnlyPropsImpl((Props) ns);
+            }
+            else
+            {
+                roRet = ns;
+            }
         }
         else
         {

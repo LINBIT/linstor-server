@@ -21,6 +21,7 @@ import com.linbit.linstor.transaction.TransactionObject;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.StringUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Provider;
 
 import java.util.ArrayList;
@@ -207,11 +208,13 @@ public class PropsContainer extends AbsTransactionObject implements Props
         return itemCount == 0;
     }
 
+    @Override
     public String getDescription()
     {
         return description;
     }
 
+    @Override
     public LinStorObject getType()
     {
         return type;
@@ -677,9 +680,9 @@ public class PropsContainer extends AbsTransactionObject implements Props
      * @return The namespace's PropsContainer, or null, if the namespace does not exist
      */
     @Override
-    public Optional<Props> getNamespace(String namespace)
+    public @Nullable Props getNamespace(String namespace)
     {
-        return Optional.ofNullable(findNamespace(namespace).orElse(null));
+        return findNamespace(namespace).orElse(null);
     }
 
     /**

@@ -24,9 +24,11 @@ import com.linbit.linstor.security.AccessDeniedException;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.getRscDfnDescriptionInline;
 import static com.linbit.linstor.core.apicallhandler.controller.CtrlRscDfnApiCallHandler.makeResourceDefinitionContext;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
+
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -125,7 +127,11 @@ public class CtrlDrbdProxyModifyApiCallHandler
             if (compressionType != null)
             {
                 notifyStlts = true;
-                props.getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_COMPRESSION_OPTIONS).ifPresent(this::clearProps);
+                @Nullable Props namespace = props.getNamespace(ApiConsts.NAMESPC_DRBD_PROXY_COMPRESSION_OPTIONS);
+                if (namespace != null)
+                {
+                    clearProps(namespace);
+                }
 
                 if (ApiConsts.VAL_DRBD_PROXY_COMPRESSION_NONE.equals(compressionType))
                 {

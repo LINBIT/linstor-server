@@ -16,7 +16,6 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -27,9 +26,10 @@ import com.linbit.linstor.storage.kinds.DeviceLayerKind;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerRscUtils;
 
+import javax.annotation.Nullable;
+
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 public class EbsUtils
@@ -149,8 +149,8 @@ public class EbsUtils
 
     public static boolean hasAnyEbsProp(ReadOnlyProps propsRef)
     {
-        Optional<Props> namespace = propsRef.getNamespace(EBS_NAMESPC);
-        return namespace.isPresent() && !namespace.get().isEmpty();
+        @Nullable ReadOnlyProps namespace = propsRef.getNamespace(EBS_NAMESPC);
+        return namespace != null && !namespace.isEmpty();
     }
 
     public static boolean hasAnyEbsProp(Map<String, String> propsPojoRef)

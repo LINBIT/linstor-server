@@ -47,7 +47,6 @@ import com.linbit.linstor.layer.storage.utils.MultipathUtils.MultipathRow;
 import com.linbit.linstor.layer.storage.utils.SysClassUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -81,7 +80,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -934,11 +932,9 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
 
     private void initNewExosRestClients(ReadOnlyProps props)
     {
-        Optional<Props> optionalProp = props.getNamespace(ApiConsts.NAMESPC_EXOS);
-
-        if (optionalProp.isPresent())
+        @Nullable ReadOnlyProps exosNamespace = props.getNamespace(ApiConsts.NAMESPC_EXOS);
+        if (exosNamespace != null)
         {
-            ReadOnlyProps exosNamespace = optionalProp.get();
             Iterator<String> exosNamespaceIt = exosNamespace.iterateNamespaces();
 
             while (exosNamespaceIt.hasNext())
@@ -1042,10 +1038,9 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         Set<String> localScsiTargetIds = SysClassUtils.getScsiTargetIds(extCmdFactory);
         Map<String, String> exosCtrlNameMapByTargetIdNew = new HashMap<>();
 
-        Optional<Props> optExosNamespace = localNodePropsRef.getNamespace(ApiConsts.NAMESPC_EXOS);
-        if (optExosNamespace.isPresent())
+        @Nullable ReadOnlyProps exosNamespace = localNodePropsRef.getNamespace(ApiConsts.NAMESPC_EXOS);
+        if (exosNamespace != null)
         {
-            ReadOnlyProps exosNamespace = optExosNamespace.get();
             for (String propKey : exosNamespace.map().keySet())
             {
                 if (propKey.contains("/Ports/"))

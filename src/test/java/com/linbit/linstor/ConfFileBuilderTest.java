@@ -77,7 +77,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -408,7 +407,8 @@ public class ConfFileBuilderTest
         Props rscDfnProps = Mockito.mock(Props.class);
         Props rscGrpProps = Mockito.mock(Props.class);
         Props vlmGrpProps = Mockito.mock(Props.class);
-        Optional<Props> drbdprops = Optional.empty();
+
+        Props drbdprops = Mockito.mock(Props.class);
 
         when(storPool.getProps(accessContext)).thenReturn(storPoolProps);
 
@@ -461,7 +461,7 @@ public class ConfFileBuilderTest
 
         when(resourceDefinition.getName()).thenReturn(new ResourceName("testResource"));
         when(resourceDefinition.getProps(accessContext)).thenReturn(rscDfnProps);
-        when(rscDfnProps.getNamespace(any(String.class))).thenReturn(Optional.empty());
+        when(rscDfnProps.getNamespace(any(String.class))).thenReturn(null);
 
         when(resourceDefinition.getResourceGroup()).thenReturn(rscGrp);
         when(rscGrp.getName()).thenReturn(new ResourceGroupName("testGroup"));

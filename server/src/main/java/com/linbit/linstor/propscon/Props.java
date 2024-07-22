@@ -4,6 +4,8 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.TransactionObject;
 
+import javax.annotation.Nullable;
+
 /**
  * Common interface for Containers that hold linstor property maps
  *
@@ -22,6 +24,9 @@ public interface Props extends TransactionObject, ReadOnlyProps
         throws InvalidKeyException, AccessDeniedException, DatabaseException;
     boolean removeNamespace(String namespaceRef)
         throws AccessDeniedException, DatabaseException;
+
+    @Override
+    @Nullable Props getNamespace(String namespace);
 
     void loadAll() throws DatabaseException, AccessDeniedException;
 

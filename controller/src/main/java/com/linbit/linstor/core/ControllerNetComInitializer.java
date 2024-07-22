@@ -35,6 +35,7 @@ import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.linstor.transaction.manager.TransactionMgrGenerator;
 import com.linbit.linstor.transaction.manager.TransactionMgrUtil;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -204,7 +205,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
         throws SystemServiceStartException
     {
         errorReporter.logInfo("Initializing network communications services");
-        ReadOnlyProps netComProps = ctrlConf.getNamespace(PROPSCON_KEY_NETCOM).orElse(null);
+        @Nullable ReadOnlyProps netComProps = ctrlConf.getNamespace(PROPSCON_KEY_NETCOM);
 
         if (netComProps == null)
         {
@@ -580,7 +581,7 @@ public final class ControllerNetComInitializer implements StartupInitializer
                 false
             );
         }
-        ReadOnlyProps configProp = netComProps.getNamespace(serviceNameStr).orElse(null);
+        @Nullable ReadOnlyProps configProp = netComProps.getNamespace(serviceNameStr);
         if (configProp == null)
         {
             errorLogRef.logError(

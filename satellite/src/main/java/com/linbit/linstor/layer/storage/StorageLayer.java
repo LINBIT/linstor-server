@@ -28,6 +28,7 @@ import com.linbit.linstor.layer.storage.utils.SEDUtils;
 import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -49,7 +50,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -422,14 +422,14 @@ public class StorageLayer implements DeviceLayer
         }
 
         // check for locked SEDs
-        Optional<Props> sedNSProps = storPoolInfo.getReadOnlyProps(storDriverAccCtx)
+        @Nullable ReadOnlyProps sedNSProps = storPoolInfo.getReadOnlyProps(storDriverAccCtx)
             .getNamespace(ApiConsts.NAMESPC_SED);
-        if (sedNSProps.isPresent())
+        if (sedNSProps != null)
         {
             byte[] masterKey = secObjs.getCryptKey();
             if (masterKey == null)
             {
-                Map<String, String> sedMap = SEDUtils.drivePasswordMap(sedNSProps.get().cloneMap());
+                Map<String, String> sedMap = SEDUtils.drivePasswordMap(sedNSProps.cloneMap());
                 for (String device : sedMap.keySet())
                 {
                     try

@@ -19,6 +19,8 @@ import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateKeys;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.generateValues;
 import static com.linbit.linstor.propscon.CommonPropsTestUtils.glue;
 
+import javax.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -189,14 +191,14 @@ public class ReadOnlyPropsContainerTest
         assertEquals("", roProp.getPath());
 
         writableProp.setProp("a/b/c/d", "value");
-        final Props namespaceA = roProp.getNamespace("a").orElse(null);
+        final @Nullable Props namespaceA = roProp.getNamespace("a");
 
         assertEquals("a/", namespaceA.getPath());
 
-        final Props namespaceB = namespaceA.getNamespace("b").orElse(null);
+        final @Nullable Props namespaceB = namespaceA.getNamespace("b");
         assertEquals("a/b/", namespaceB.getPath());
 
-        final Props namespaceC = roProp.getNamespace("a/b/c").orElse(null);
+        final @Nullable Props namespaceC = roProp.getNamespace("a/b/c");
         assertEquals("a/b/c/", namespaceC.getPath());
     }
 
@@ -204,10 +206,10 @@ public class ReadOnlyPropsContainerTest
     public void testGetPathTrailingSlash() throws Throwable
     {
         writableProp.setProp("a/b/c/d", "value");
-        final Props namespaceC = roProp.getNamespace("a/b/c").orElse(null);
+        final @Nullable Props namespaceC = roProp.getNamespace("a/b/c");
         assertNotNull(namespaceC);
 
-        assertEquals(namespaceC, roProp.getNamespace("a/b/c/").orElse(null));
+        assertEquals(namespaceC, roProp.getNamespace("a/b/c/"));
     }
 
     @Test
@@ -312,19 +314,19 @@ public class ReadOnlyPropsContainerTest
         writableProp.setProp(key, value);
         assertEquals(value, roProp.getProp(key));
 
-        final Props firstNamespace = roProp.getNamespace(first).orElse(null);
+        final @Nullable Props firstNamespace = roProp.getNamespace(first);
         assertEquals(value, firstNamespace.getProp(second));
 
-        assertNull(roProp.getNamespace("non existent").orElse(null));
+        assertNull(roProp.getNamespace("non existent"));
 
         writableProp.removeProp(key);
-        assertNull(roProp.getNamespace(first).orElse(null));
+        assertNull(roProp.getNamespace(first));
     }
 
     @Test(expected = AccessDeniedException.class)
     public void testGetNamespaceSet() throws Throwable
     {
-        final Props firstNamespace = roProp.getNamespace(FIRST_KEY + "0").orElse(null);
+        final @Nullable Props firstNamespace = roProp.getNamespace(FIRST_KEY + "0");
         firstNamespace.setProp("key", "value");
     }
 
@@ -1269,7 +1271,7 @@ public class ReadOnlyPropsContainerTest
     @Test(expected = UnsupportedOperationException.class)
     public void testValuesAddAll()
     {
-        roValues.addAll(new ArrayList<String>());
+        roValues.addAll(new ArrayList<>());
     }
 
     @Test(expected = UnsupportedOperationException.class)

@@ -18,7 +18,6 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.DynamicNumberPoolImpl;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -27,6 +26,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.utils.layer.LayerVlmUtils;
 import com.linbit.utils.Triple;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -35,7 +35,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Deprecated(forRemoval = true)
 @Singleton
@@ -97,13 +96,13 @@ public class ExosMappingManager
                             }
 
                             String enclosurePropKey = ApiConsts.NAMESPC_EXOS + "/" + enclosureName;
-                            Optional<Props> enclosureNamespace = stltConfAccessor.getReadonlyProps()
+                            @Nullable ReadOnlyProps enclosureNamespace = stltConfAccessor.getReadonlyProps()
                                 .getNamespace(enclosurePropKey);
-                            if (!enclosureNamespace.isPresent())
+                            if (enclosureNamespace == null)
                             {
                                 throw new LinStorException("No enclosures defined in '" + enclosurePropKey + "'");
                             }
-                            Iterator<String> controllersIt = enclosureNamespace.get().iterateNamespaces();
+                            Iterator<String> controllersIt = enclosureNamespace.iterateNamespaces();
                             while (controllersIt.hasNext())
                             {
                                 String ctrlName = controllersIt.next();
@@ -147,14 +146,14 @@ public class ExosMappingManager
             enclosureMap.put(enclosureName, enclosure);
         }
 
-        Optional<Props> enclosureNamespace = stltConfAccessor.getReadonlyProps()
+        @Nullable ReadOnlyProps enclosureNamespace = stltConfAccessor.getReadonlyProps()
             .getNamespace(enclosurePropKey);
-        if (!enclosureNamespace.isPresent())
+        if (enclosureNamespace == null)
         {
             throw new LinStorException("No enclosures defined in '" + enclosurePropKey + "'");
         }
 
-        Iterator<String> controllersIt = enclosureNamespace.get().iterateNamespaces();
+        Iterator<String> controllersIt = enclosureNamespace.iterateNamespaces();
         while (controllersIt.hasNext())
         {
             String ctrlName = controllersIt.next();
@@ -209,18 +208,17 @@ public class ExosMappingManager
             enclosureMap.put(enclosureName, enclosure);
         }
 
-        Optional<Props> enclosureNamespace = stltConfAccessor.getReadonlyProps()
+        @Nullable ReadOnlyProps enclosureNamespace = stltConfAccessor.getReadonlyProps()
             .getNamespace(enclosurePropKey);
-        if (!enclosureNamespace.isPresent())
+        if (enclosureNamespace == null)
         {
             throw new LinStorException("No enclosures defined in '" + enclosurePropKey + "'");
         }
 
         ReadOnlyProps vlmProps = vlmRef.getProps(apiCtx);
-        Optional<Props> optNamespace = vlmProps.getNamespace(InternalApiConsts.NAMESPC_EXOS_MAP);
-        if (optNamespace.isPresent())
+        @Nullable ReadOnlyProps namespace = vlmProps.getNamespace(InternalApiConsts.NAMESPC_EXOS_MAP);
+        if (namespace != null)
         {
-            ReadOnlyProps namespace = optNamespace.get();
             Iterator<String> ctrlNamespaces = namespace.iterateNamespaces();
             while (ctrlNamespaces.hasNext())
             {
@@ -245,12 +243,12 @@ public class ExosMappingManager
     {
         List<Triple<String, String, String>> ret = new ArrayList<>();
 
-        Optional<Props> exosMapNamespace = vlmProps.getNamespace(InternalApiConsts.NAMESPC_EXOS_MAP);
-        if (!exosMapNamespace.isPresent())
+        @Nullable ReadOnlyProps exosMapNamespace = vlmProps.getNamespace(InternalApiConsts.NAMESPC_EXOS_MAP);
+        if (exosMapNamespace == null)
         {
             throw new ImplementationError(InternalApiConsts.NAMESPC_EXOS_MAP + " does not exist in given vlmProps");
         }
-        Iterator<String> ctrlIt = exosMapNamespace.get().iterateNamespaces();
+        Iterator<String> ctrlIt = exosMapNamespace.iterateNamespaces();
         while (ctrlIt.hasNext())
         {
             String ctrlName = ctrlIt.next();

@@ -2,11 +2,12 @@ package com.linbit.linstor.propscon;
 
 import com.linbit.linstor.api.prop.LinStorObject;
 
+import javax.annotation.Nullable;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 public interface ReadOnlyProps extends Iterable<Map.Entry<String, String>>
@@ -50,7 +51,17 @@ public interface ReadOnlyProps extends Iterable<Map.Entry<String, String>>
 
     Iterator<String> valuesIterator();
 
-    Optional<Props> getNamespace(String namespace);
+    @Nullable ReadOnlyProps getNamespace(String namespace);
+
+    default ReadOnlyProps getNamespaceOrEmpty(String namespace)
+    {
+        @Nullable ReadOnlyProps roProps = getNamespace(namespace);
+        if (roProps == null)
+        {
+            roProps = ReadOnlyPropsImpl.emptyRoProps();
+        }
+        return roProps;
+    }
 
     Iterator<String> iterateNamespaces();
 

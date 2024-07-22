@@ -28,7 +28,6 @@ import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestEventsCollec
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -42,6 +41,7 @@ import static com.linbit.locks.LockGuardFactory.LockObj.CTRL_CONFIG;
 import static com.linbit.locks.LockGuardFactory.LockType.READ;
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -53,7 +53,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -215,11 +214,9 @@ public class CtrlExosApiCallHandler
             for (Node node : nodeRepo.getMapForView(sysCtx).values())
             {
                 final String nodeName = node.getName().displayValue;
-                Optional<Props> namespace = node.getProps(sysCtx).getNamespace(ApiConsts.NAMESPC_EXOS);
-                if (namespace.isPresent())
+                @Nullable ReadOnlyProps exosNamespace = node.getProps(sysCtx).getNamespace(ApiConsts.NAMESPC_EXOS);
+                if (exosNamespace != null)
                 {
-                    ReadOnlyProps exosNamespace = namespace.get();
-
                     Iterator<String> enclosureIt = exosNamespace.iterateNamespaces();
                     while (enclosureIt.hasNext())
                     {
@@ -375,8 +372,10 @@ public class CtrlExosApiCallHandler
         try (LockGuard lg = lockGuardFactory.build(WRITE, CTRL_CONFIG))
         {
             ReadOnlyProps stltPropsView = systemConfRepository.getStltConfForView(sysCtx);
-            boolean enclosureNamespaceExists = stltPropsView
-                .getNamespace(ApiConsts.NAMESPC_EXOS + "/" + enclosureRef).isPresent();
+            @Nullable ReadOnlyProps exosNamespace = stltPropsView.getNamespace(
+                ApiConsts.NAMESPC_EXOS + "/" + enclosureRef
+            );
+            boolean enclosureNamespaceExists = exosNamespace != null;
             if (create && enclosureNamespaceExists)
             {
                 apiCallRc.addEntry(
@@ -484,11 +483,10 @@ public class CtrlExosApiCallHandler
         try (LockGuard lg = lockGuardFactory.create().write(CTRL_CONFIG).read(LockObj.STOR_POOL_DFN_MAP).build())
         {
             ReadOnlyProps stltPropsView = systemConfRepository.getStltConfForView(sysCtx);
-            Optional<Props> exosEnclosureNamespace = stltPropsView.getNamespace(
+            @Nullable ReadOnlyProps exosEnclosureNamespace = stltPropsView.getNamespace(
                 ApiConsts.NAMESPC_EXOS + "/" + enclosureRef
             );
-            boolean enclosureNamespaceExists = exosEnclosureNamespace.isPresent();
-            if (!enclosureNamespaceExists)
+            if (exosEnclosureNamespace == null)
             {
                 apiCallRc.addEntry(
                     ApiCallRcImpl.simpleEntry(
@@ -534,7 +532,7 @@ public class CtrlExosApiCallHandler
                 }
                 else
                 {
-                    Set<String> keys = new HashSet<>(exosEnclosureNamespace.get().keySet());
+                    Set<String> keys = new HashSet<>(exosEnclosureNamespace.keySet());
                     for (String key : keys)
                     {
                         systemConfRepository.removeStltProp(sysCtx, key, null);

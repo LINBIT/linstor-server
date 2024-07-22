@@ -4,7 +4,6 @@ import com.linbit.linstor.core.objects.AbsResource;
 import com.linbit.linstor.core.objects.AbsVolume;
 import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.propscon.ReadOnlyProps;
-import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.utils.ExceptionThrowingConsumer;
 import com.linbit.utils.ExceptionThrowingFunction;
@@ -84,12 +83,12 @@ public class DeviceLayerUtils
 
     public static ReadOnlyProps getNamespaceStorDriver(ReadOnlyProps props)
     {
-        return props.getNamespace(DeviceLayer.STOR_DRIVER_NAMESPACE).orElse(ReadOnlyPropsImpl.emptyRoProps());
+        return props.getNamespaceOrEmpty(DeviceLayer.STOR_DRIVER_NAMESPACE);
     }
 
     public static ReadOnlyProps getInternalNamespaceStorDriver(ReadOnlyProps props)
     {
-        return props.getNamespace(DeviceProvider.STORAGE_NAMESPACE).orElse(ReadOnlyPropsImpl.emptyRoProps());
+        return props.getNamespaceOrEmpty(DeviceProvider.STORAGE_NAMESPACE);
     }
 
     private DeviceLayerUtils()

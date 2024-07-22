@@ -74,7 +74,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -552,10 +551,10 @@ public class CtrlBackupL2LDstApiCallHandler
             {
                 ret = generateClusterShortId();
 
-                Optional<Props> namespace = props.getNamespace(ApiConsts.NAMESPC_CLUSTER_REMOTE);
-                if (namespace.isPresent())
+                @Nullable Props namespace = props.getNamespace(ApiConsts.NAMESPC_CLUSTER_REMOTE);
+                if (namespace != null)
                 {
-                    HashSet<String> existingHashes = new HashSet<>(namespace.get().values());
+                    HashSet<String> existingHashes = new HashSet<>(namespace.values());
 
                     while (existingHashes.contains(ret))
                     {
@@ -799,7 +798,6 @@ public class CtrlBackupL2LDstApiCallHandler
 
         BackupShippingStartInfo(ApiCallRcWith<Snapshot> apiCallRcWithSnapshotRef, Snapshot incrBaseSnapshotRef)
         {
-            super();
             apiCallRcWithSnapshot = apiCallRcWithSnapshotRef;
             incrBaseSnapshot = incrBaseSnapshotRef;
         }

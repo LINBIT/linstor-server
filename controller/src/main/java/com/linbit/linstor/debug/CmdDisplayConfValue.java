@@ -7,6 +7,7 @@ import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -101,10 +102,10 @@ public class CmdDisplayConfValue extends BaseDebugCmd
             confLock.readLock().lock();
             try
             {
-                ReadOnlyProps searchRoot = systemConfRepository.getCtrlConfForView(accCtx);
+                @Nullable ReadOnlyProps searchRoot = systemConfRepository.getCtrlConfForView(accCtx);
                 if (prmNamespace != null)
                 {
-                    searchRoot = searchRoot.getNamespace(prmNamespace).orElse(null);
+                    searchRoot = searchRoot.getNamespace(prmNamespace);
                     if (searchRoot == null)
                     {
                         throw new NamespaceException(

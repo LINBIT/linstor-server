@@ -15,6 +15,7 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.tasks.TaskScheduleService.Task;
 import com.linbit.linstor.utils.PropsUtils;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -112,7 +113,7 @@ public class ExosEnclosurePingTask implements Task
         try
         {
             ReadOnlyProps props = systemConfRepository.getStltConfForView(sysCtx);
-            ReadOnlyProps exosProps = props.getNamespace(ApiConsts.NAMESPC_EXOS).orElse(null);
+            @Nullable ReadOnlyProps exosProps = props.getNamespace(ApiConsts.NAMESPC_EXOS);
             if (exosProps != null)
             {
                 Set<String> enclosuresToDelete;

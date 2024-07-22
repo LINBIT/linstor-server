@@ -70,6 +70,7 @@ import com.linbit.utils.UuidUtils;
 
 import static com.linbit.locks.LockGuardFactory.LockType.WRITE;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -85,7 +86,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiConsumer;
@@ -630,12 +630,11 @@ public class CtrlConfApiCallHandler
         boolean notifyStlts = false;
         try
         {
-            Optional<Props> optNamespace = systemConfRepository.getCtrlConfForChange(peerAccCtx.get()).getNamespace(
-                deleteNamespaceRef
-            );
-            if (optNamespace.isPresent())
+            @Nullable Props optNamespace = systemConfRepository.getCtrlConfForChange(peerAccCtx.get())
+                .getNamespace(deleteNamespaceRef);
+            if (optNamespace != null)
             {
-                Iterator<String> keysIterator = optNamespace.get().keysIterator();
+                Iterator<String> keysIterator = optNamespace.keysIterator();
                 while (keysIterator.hasNext())
                 {
                     Triple<ApiCallRc, Boolean, Set<Resource>> result = deleteProp(
@@ -647,7 +646,7 @@ public class CtrlConfApiCallHandler
                     notifyStlts |= result.objB;
                 }
 
-                Iterator<String> iterateNamespaces = optNamespace.get().iterateNamespaces();
+                Iterator<String> iterateNamespaces = optNamespace.iterateNamespaces();
                 while (iterateNamespaces.hasNext())
                 {
                     Pair<ApiCallRc, Boolean> result = deleteNamespace(
@@ -1125,11 +1124,11 @@ public class CtrlConfApiCallHandler
                 String[] splitByNamespaces = currentKey.split("/");
                 if (currentKey.startsWith(ApiConsts.NAMESPC_NETCOM) && splitByNamespaces.length == 2)
                 {
-                    Optional<Props> optNamespace = systemConfRepository.getCtrlConfForChange(peerAccCtx.get())
+                    @Nullable Props optNamespace = systemConfRepository.getCtrlConfForChange(peerAccCtx.get())
                         .getNamespace(currentKey);
-                    if (optNamespace.isPresent())
+                    if (optNamespace != null)
                     {
-                        Iterator<String> keysIterator = optNamespace.get().keysIterator();
+                        Iterator<String> keysIterator = optNamespace.keysIterator();
                         while (keysIterator.hasNext())
                         {
                             String actualKey = keysIterator.next();
@@ -1144,15 +1143,14 @@ public class CtrlConfApiCallHandler
             final String missingKeyFormat = "NetComConnector '%s' is missing '%s' key.";
             if (!connectorsToCheck.isEmpty())
             {
-                Optional<Props> optCtrlProps = systemConfRepository.getCtrlConfForChange(peerAccCtx.get())
+                @Nullable Props ctrlProps = systemConfRepository.getCtrlConfForChange(peerAccCtx.get())
                     .getNamespace(ApiConsts.NAMESPC_NETCOM);
-                if (optCtrlProps.isPresent())
+                if (ctrlProps != null)
                 {
-                    Props ctrlProps = optCtrlProps.get();
                     for (String connectorToCheck : connectorsToCheck)
                     {
-                        Optional<Props> optConnectorNamespace = ctrlProps.getNamespace(connectorToCheck);
-                        if (optConnectorNamespace.isPresent())
+                        @Nullable Props conNamespace = ctrlProps.getNamespace(connectorToCheck);
+                        if (conNamespace != null)
                         {
                             List<String> errorMessages = new ArrayList<>();
 
@@ -1164,7 +1162,6 @@ public class CtrlConfApiCallHandler
                                 }
                             };
 
-                            Props conNamespace = optConnectorNamespace.get();
                             String enabled = conNamespace.getProp(ApiConsts.KEY_NETCOM_ENABLED);
                             String bindAddress = conNamespace.getProp(ApiConsts.KEY_NETCOM_BIND_ADDRESS);
                             String keyPasswd = conNamespace.getProp(ApiConsts.KEY_NETCOM_KEY_PASSWD);

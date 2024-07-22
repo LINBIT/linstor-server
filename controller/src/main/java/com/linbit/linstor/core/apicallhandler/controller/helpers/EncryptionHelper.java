@@ -44,6 +44,7 @@ import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 import com.linbit.utils.Base64;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -134,10 +135,9 @@ public class EncryptionHelper
         errorReporter = errorReporterRef;
     }
 
-    public ReadOnlyProps getEncryptedNamespace(AccessContext peerAccCtxRef) throws AccessDeniedException
+    public @Nullable ReadOnlyProps getEncryptedNamespace(AccessContext peerAccCtxRef) throws AccessDeniedException
     {
-        return systemConfRepository.getCtrlConfForView(peerAccCtxRef).getNamespace(NAMESPACE_ENCRYPTED)
-            .orElse(null);
+        return systemConfRepository.getCtrlConfForView(peerAccCtxRef).getNamespace(NAMESPACE_ENCRYPTED);
     }
 
     public byte[] generateSecret()
