@@ -633,7 +633,7 @@ public class StltApiCallHandler
                         // storage pool probably not deployed on this node
                         if (sp != null)
                         {
-                            DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(sp);
+                            DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderBy(sp);
                             if (runSpUpdatesRef)
                             {
                                 @Nullable LocalPropsChangePojo pojo = deviceProvider.update(sp);

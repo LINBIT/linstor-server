@@ -7,8 +7,9 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.storage.DeviceProvider;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -79,20 +80,20 @@ public class DisklessProvider implements DeviceProvider
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPoolRef) throws AccessDeniedException, StorageException
+    public SpaceInfo getSpaceInfo(StorPoolInfo storPoolRef) throws AccessDeniedException, StorageException
     {
         return DEFAULT_DISKLESS_SPACE_INFO;
     }
 
     @Override
-    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool)
+    public @Nullable LocalPropsChangePojo checkConfig(StorPoolInfo storPool)
     {
         // no-op
         return null;
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+    public LocalPropsChangePojo setLocalNodeProps(ReadOnlyProps localNodePropsRef)
     {
         // no-op
         return null;

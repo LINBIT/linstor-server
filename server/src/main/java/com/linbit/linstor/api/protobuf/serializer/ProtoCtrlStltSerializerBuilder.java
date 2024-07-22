@@ -32,6 +32,7 @@ import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.proto.common.CryptoEntryOuterClass;
@@ -856,7 +857,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     @Override
     public ProtoCtrlStltSerializerBuilder notifyResourceApplied(
         Resource resource,
-        Map<StorPool, SpaceInfo> freeSpaceMap
+        Map<StorPoolInfo, SpaceInfo> freeSpaceMap
     )
     {
         try
@@ -1799,14 +1800,14 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
     }
 
     public static StorPoolFreeSpace.Builder buildStorPoolFreeSpace(
-        Map.Entry<StorPool, Either<SpaceInfo, ApiRcException>> entry
+        Map.Entry<StorPoolInfo, Either<SpaceInfo, ApiRcException>> entry
     )
     {
-        StorPool storPool = entry.getKey();
+        StorPoolInfo storPoolInfo = entry.getKey();
 
         StorPoolFreeSpace.Builder freeSpaceBuilder = StorPoolFreeSpace.newBuilder()
-            .setStorPoolUuid(storPool.getUuid().toString())
-            .setStorPoolName(storPool.getName().displayValue);
+            .setStorPoolUuid(storPoolInfo.getUuid().toString())
+            .setStorPoolName(storPoolInfo.getName().displayValue);
 
         entry.getValue().consume(
             spaceInfo -> freeSpaceBuilder

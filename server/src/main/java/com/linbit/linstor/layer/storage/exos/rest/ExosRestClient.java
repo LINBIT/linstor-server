@@ -6,6 +6,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestBaseResponse;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestBaseResponse.ExosStatus;
 import com.linbit.linstor.layer.storage.exos.rest.responses.ExosRestControllers;
@@ -206,11 +207,11 @@ public class ExosRestClient
         return ret;
     }
 
-    public ExosRestPool getPool(StorPool storPoolRef)
+    public ExosRestPool getPool(StorPoolInfo storPoolRef)
         throws InvalidKeyException, StorageException, AccessDeniedException
     {
         PriorityProps prioProps = getprioProps(storPoolRef);
-        String poolSn = storPoolRef.getProps(sysCtx).getProp(EXOS_POOL_SERIAL_NUMBER);
+        String poolSn = storPoolRef.getReadOnlyProps(sysCtx).getProp(EXOS_POOL_SERIAL_NUMBER);
 
         ExosRestPoolCollection poolsCollection = simpleGetRequest(
             "/show/pools",
@@ -615,9 +616,9 @@ public class ExosRestClient
         return builder.build();
     }
 
-    private PriorityProps getprioProps(StorPool sp) throws AccessDeniedException
+    private PriorityProps getprioProps(StorPoolInfo sp) throws AccessDeniedException
     {
-        return new PriorityProps(sp.getProps(sysCtx), localNodeProps, props);
+        return new PriorityProps(sp.getReadOnlyProps(sysCtx), localNodeProps, props);
     }
 
     private PriorityProps getprioProps() throws AccessDeniedException

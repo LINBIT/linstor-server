@@ -7,9 +7,9 @@ import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -46,7 +46,7 @@ public interface DeviceHandler
 
     void fullSyncApplied(Node localNodeRef) throws StorageException;
 
-    SpaceInfo getSpaceInfo(StorPool storPoolRef, boolean update) throws StorageException;
+    SpaceInfo getSpaceInfo(StorPoolInfo storPoolInfoRef, boolean update) throws StorageException;
 
     /**
      * Method called right from within the DeviceManagerImpl's constructor - i.e. at a time

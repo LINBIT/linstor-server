@@ -14,6 +14,7 @@ import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.NodeDatabaseDriver;
+import com.linbit.linstor.interfaces.NodeInfo;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.PeerController;
@@ -24,6 +25,8 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -67,7 +70,7 @@ import static java.util.stream.Collectors.toList;
  *
  * @author Robert Altnoeder &lt;robert.altnoeder@linbit.com&gt;
  */
-public class Node extends AbsCoreObj<Node> implements ProtectedObject
+public class Node extends AbsCoreObj<Node> implements ProtectedObject, NodeInfo
 {
     public interface InitMaps
     {
@@ -107,6 +110,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
 
     // Properties container for this node
     private final Props nodeProps;
+    private final ReadOnlyProps roNodeProps;
 
     private final NodeDatabaseDriver dbDriver;
 
@@ -186,6 +190,8 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
             toStringImpl(),
             LinStorObject.NODE
         );
+        roNodeProps = new ReadOnlyPropsImpl(nodeProps);
+
         nodeConnections = transObjFactory.createTransactionMap(this, nodeConnMapRef, null);
 
         flags = transObjFactory.createStateFlagsImpl(
@@ -255,6 +261,7 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
         return ret;
     }
 
+    @Override
     public NodeName getName()
     {
         checkDeleted();
@@ -346,6 +353,13 @@ public class Node extends AbsCoreObj<Node> implements ProtectedObject
         return PropsAccess.secureGetProps(accCtx, objProt, nodeProps);
     }
 
+    @Override
+    public ReadOnlyProps getReadOnlyProps(AccessContext accCtxRef) throws AccessDeniedException
+    {
+        checkDeleted();
+        objProt.requireAccess(accCtxRef, AccessType.VIEW);
+        return roNodeProps;
+    }
 
     public void addResource(AccessContext accCtx, Resource resRef) throws AccessDeniedException
     {

@@ -13,6 +13,7 @@ import com.linbit.linstor.core.objects.SnapshotDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.storage.LsBlkEntry;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.kinds.RaidLevel;
@@ -123,7 +124,7 @@ public interface CtrlStltSerializer extends CommonSerializer
 
         CtrlStltSerializerBuilder notifyResourceApplied(
             Resource resource,
-            Map<StorPool, SpaceInfo> freeSpaceMap
+            Map<StorPoolInfo, SpaceInfo> freeSpaceMap
         );
         CtrlStltSerializerBuilder notifyResourceFailed(
             Resource resource,

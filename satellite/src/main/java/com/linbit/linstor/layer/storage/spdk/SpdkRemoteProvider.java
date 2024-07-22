@@ -11,7 +11,7 @@ import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkRemoteCommands;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -72,7 +72,7 @@ public class SpdkRemoteProvider extends AbsSpdkProvider<JsonNode>
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+    public LocalPropsChangePojo setLocalNodeProps(ReadOnlyProps localNodePropsRef)
         throws StorageException, AccessDeniedException
     {
         LocalPropsChangePojo changes = super.setLocalNodeProps(localNodePropsRef);

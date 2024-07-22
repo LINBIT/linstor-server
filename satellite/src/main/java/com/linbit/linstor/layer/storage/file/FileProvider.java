@@ -21,6 +21,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
@@ -44,6 +45,7 @@ import com.linbit.linstor.storage.data.provider.AbsStorageVlmData;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject.Size;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
+import com.linbit.linstor.transaction.TransactionException;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
 import javax.annotation.Nullable;
@@ -636,13 +638,13 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
         return getStorageDirectory(storPoolRef).toString();
     }
 
-    protected Path getStorageDirectory(StorPool storPool) throws StorageException
+    protected Path getStorageDirectory(StorPoolInfo storPool) throws StorageException
     {
         Path dir;
         try
         {
             String dirStr = DeviceLayerUtils.getNamespaceStorDriver(
-                storPool.getProps(storDriverAccCtx)
+                storPool.getReadOnlyProps(storDriverAccCtx)
             )
                 .getProp(StorageConstants.CONFIG_FILE_DIRECTORY_KEY);
             if (dirStr != null)
@@ -668,7 +670,7 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
         Path dir = getStorageDirectory(storPool);
         long capacity = FileProviderUtils.getPoolCapacity(extCmdFactory.create(), dir);
@@ -683,13 +685,40 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
     }
 
     @Override
-    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPoolInfo storPool)
+        throws StorageException, AccessDeniedException
+    {
+        ReadOnlyProps props = DeviceLayerUtils.getNamespaceStorDriver(
+            storPool.getReadOnlyProps(storDriverAccCtx)
+        );
+        StorageConfigReader.checkFileStorageDirectoryEntry(props);
+
+        return null;
+    }
+
+    @Override
+    public @Nullable LocalPropsChangePojo update(StorPool storPool)
+        throws AccessDeniedException, DatabaseException, StorageException
     {
         ReadOnlyProps props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
         );
-        StorageConfigReader.checkFileStorageDirectoryEntry(props);
+        String dirStr = props.getProp(StorageConstants.CONFIG_FILE_DIRECTORY_KEY);
+        Path storageDirectory = Paths.get(dirStr);
 
+        String dev = FileProviderUtils.getSourceDevice(extCmdFactory.create(), storageDirectory);
+        if (PmemUtils.supportsDax(extCmdFactory.create(), dev))
+        {
+            storPool.setPmem(true);
+        }
+
+        updateSnapshotCapabilitiesIfNeeded(storPool, props);
+        return null;
+    }
+
+    private void updateSnapshotCapabilitiesIfNeeded(StorPool storPool, ReadOnlyProps props)
+        throws StorageException, ImplementationError, TransactionException, AccessDeniedException
+    {
         // try to create a dummy snapshot to verify if we can
         if (!storPool.isSnapshotSupportedInitialized(storDriverAccCtx))
         {
@@ -741,25 +770,6 @@ public class FileProvider extends AbsStorageProvider<FileInfo, FileData<Resource
                 throw new ImplementationError(exc);
             }
         }
-        return null;
-    }
-
-    @Override
-    public @Nullable LocalPropsChangePojo update(StorPool storPool)
-        throws AccessDeniedException, DatabaseException, StorageException
-    {
-        ReadOnlyProps props = DeviceLayerUtils.getNamespaceStorDriver(
-            storPool.getProps(storDriverAccCtx)
-        );
-        String dirStr = props.getProp(StorageConstants.CONFIG_FILE_DIRECTORY_KEY);
-        Path storageDirectory = Paths.get(dirStr);
-
-        String dev = FileProviderUtils.getSourceDevice(extCmdFactory.create(), storageDirectory);
-        if (PmemUtils.supportsDax(extCmdFactory.create(), dev))
-        {
-            storPool.setPmem(true);
-        }
-        return null;
     }
 
     @Override

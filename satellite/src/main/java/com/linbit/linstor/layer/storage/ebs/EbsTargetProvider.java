@@ -35,6 +35,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.objects.remotes.EbsRemote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.logging.ErrorReporter;
@@ -771,7 +772,7 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     }
 
     @Override
-    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPoolRef)
+    public @Nullable LocalPropsChangePojo checkConfig(StorPoolInfo storPoolRef)
         throws StorageException, AccessDeniedException
     {
         return null;

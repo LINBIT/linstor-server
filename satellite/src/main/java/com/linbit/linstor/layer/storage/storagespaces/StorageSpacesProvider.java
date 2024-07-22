@@ -17,6 +17,7 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
@@ -510,9 +511,9 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPoolRef) throws AccessDeniedException, StorageException
+    public SpaceInfo getSpaceInfo(StorPoolInfo storPoolRef) throws AccessDeniedException, StorageException
     {
-        ReadOnlyProps props = storPoolRef.getProps(storDriverAccCtx);
+        ReadOnlyProps props = storPoolRef.getReadOnlyProps(storDriverAccCtx);
         String poolName = props.getProp("StorPoolName", "StorDriver");
         OutputData res;
         Long totalSize = 0L;
@@ -546,7 +547,8 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     }
 
     @Override
-    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPoolInfo storPool)
+        throws StorageException, AccessDeniedException
     {
         return null;
     }

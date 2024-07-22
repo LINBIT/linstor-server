@@ -20,6 +20,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.common.ResourceState;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.layer.storage.utils.SEDUtils;
@@ -335,10 +336,10 @@ public class StorageLayer implements DeviceLayer
         return true;
     }
 
-    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getFreeSpaceOfAccessedStoagePools()
+    public Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> getFreeSpaceOfAccessedStoagePools()
         throws AccessDeniedException
     {
-        Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceMap = new HashMap<>();
+        Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceMap = new HashMap<>();
         Set<StorPool> changedStorPools = new HashSet<>();
         for (DeviceProvider deviceProvider : deviceProviderMapper.getDriverList())
         {
@@ -377,28 +378,38 @@ public class StorageLayer implements DeviceLayer
     }
 
     @Override
-    public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool)
+    public SpaceInfo getStoragePoolSpaceInfo(StorPoolInfo storPoolInfo)
         throws AccessDeniedException, StorageException
     {
-        return deviceProviderMapper.getDeviceProviderByStorPool(storPool).getSpaceInfo(storPool);
+        return deviceProviderMapper.getDeviceProviderBy(storPoolInfo).getSpaceInfo(storPoolInfo);
     }
 
     @Override
-    public LocalPropsChangePojo checkStorPool(StorPool storPool, boolean update)
+    public LocalPropsChangePojo checkStorPool(StorPoolInfo storPoolInfo, boolean update)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         @Nullable LocalPropsChangePojo setLocalNodePojo;
 
-        DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
-        setLocalNodePojo = deviceProvider.setLocalNodeProps(storPool.getNode().getProps(storDriverAccCtx));
+        DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderBy(storPoolInfo);
+        setLocalNodePojo = deviceProvider.setLocalNodeProps(
+            storPoolInfo.getReadOnlyNode().getReadOnlyProps(storDriverAccCtx)
+        );
         @Nullable LocalPropsChangePojo updatePropsPojo = null;
         if (update)
         {
-            updatePropsPojo = deviceProvider.update(storPool);
+            if (storPoolInfo instanceof StorPool)
+            {
+                updatePropsPojo = deviceProvider.update((StorPool) storPoolInfo);
+            }
+            else
+            {
+                throw new ImplementationError("Cannot update a read only storPool instance!");
+            }
         }
 
         // check for locked SEDs
-        Optional<Props> sedNSProps = storPool.getProps(storDriverAccCtx).getNamespace(ApiConsts.NAMESPC_SED);
+        Optional<Props> sedNSProps = storPoolInfo.getReadOnlyProps(storDriverAccCtx)
+            .getNamespace(ApiConsts.NAMESPC_SED);
         if (sedNSProps.isPresent())
         {
             byte[] masterKey = secObjs.getCryptKey();
@@ -421,7 +432,7 @@ public class StorageLayer implements DeviceLayer
         }
         return LocalPropsChangePojo.merge(
             setLocalNodePojo,
-            deviceProvider.checkConfig(storPool),
+            deviceProvider.checkConfig(storPoolInfo),
             updatePropsPojo
         );
     }

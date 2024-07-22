@@ -15,7 +15,7 @@ import com.linbit.linstor.core.ControllerPeerConnector;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.storage.utils.ProcCryptoUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
@@ -162,10 +162,10 @@ public class FullSync implements ApiCall
                 builder.addCryptoEntries(ProtoCtrlStltSerializerBuilder.buildCryptoEntry(procCryptoEntry));
             }
 
-            Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
+            Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
                 apiCallHandlerUtils.getAllSpaceInfo();
 
-            for (Entry<StorPool, Either<SpaceInfo, ApiRcException>> entry : spaceInfoQueryMap.entrySet())
+            for (Entry<StorPoolInfo, Either<SpaceInfo, ApiRcException>> entry : spaceInfoQueryMap.entrySet())
             {
                 builder.addFreeSpace(ProtoCtrlStltSerializerBuilder.buildStorPoolFreeSpace(entry).build());
             }

@@ -56,6 +56,7 @@ import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceStateEvent;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventService;
@@ -1848,10 +1849,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPoolRef, boolean update) throws StorageException
+    public SpaceInfo getSpaceInfo(StorPoolInfo storPoolInfoRef, boolean update) throws StorageException
     {
         // TODO: maybe we should synchronize with sched?
-        return devHandler.getSpaceInfo(storPoolRef, update);
+        return devHandler.getSpaceInfo(storPoolInfoRef, update);
     }
 
     private void requestControllerUpdates(boolean updateController)
@@ -1988,10 +1989,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
         if (ctrlPeer != null)
         {
-            Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
+            Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
                 apiCallHandlerUtils.getSpaceInfo(false);
 
-            Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
+            Map<StorPoolInfo, SpaceInfo> spaceInfoMap = new TreeMap<>();
 
             spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
                 spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),

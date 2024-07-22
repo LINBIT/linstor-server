@@ -9,9 +9,9 @@ import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.WipeHandler;
@@ -93,14 +93,13 @@ public class ZfsThinProvider extends ZfsProvider
     }
 
     @Override
-    protected String getZPool(StorPool storPool)
+    protected String getZPool(StorPoolInfo storPool)
     {
         String zPool;
         try
         {
-            zPool = DeviceLayerUtils.getNamespaceStorDriver(
-                storPool.getProps(storDriverAccCtx)
-            ).getProp(StorageConstants.CONFIG_ZFS_THIN_POOL_KEY);
+            zPool = DeviceLayerUtils.getNamespaceStorDriver(storPool.getReadOnlyProps(storDriverAccCtx))
+                .getProp(StorageConstants.CONFIG_ZFS_THIN_POOL_KEY);
         }
         catch (InvalidKeyException | AccessDeniedException exc)
         {
@@ -110,9 +109,9 @@ public class ZfsThinProvider extends ZfsProvider
     }
 
     @Override
-    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPoolInfo storPool)
+        throws StorageException, AccessDeniedException
     {
-
         String thinZpoolName = getZPool(storPool);
         if (thinZpoolName == null)
         {
@@ -135,7 +134,7 @@ public class ZfsThinProvider extends ZfsProvider
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
         String zPool = getZPool(storPool);
         if (zPool == null)

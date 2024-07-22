@@ -24,6 +24,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
@@ -623,14 +624,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         return getVolumeGroup(storPoolRef);
     }
 
-    protected String getVolumeGroup(StorPool storPool)
+    protected String getVolumeGroup(StorPoolInfo storPool)
     {
         String volumeGroup;
         try
         {
-            volumeGroup = DeviceLayerUtils.getNamespaceStorDriver(
-                    storPool.getProps(storDriverAccCtx)
-                )
+            volumeGroup = DeviceLayerUtils.getNamespaceStorDriver(storPool.getReadOnlyProps(storDriverAccCtx))
                 .getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY).split("/")[0];
         }
         catch (InvalidKeyException | AccessDeniedException exc)
@@ -647,7 +646,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
         String vg = getVolumeGroup(storPool);
         if (vg == null)
@@ -669,10 +668,11 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
      * Expected to be overridden by LvmThinProvider (maybe additionally called)
      */
     @Override
-    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPoolInfo storPool)
+        throws StorageException, AccessDeniedException
     {
         ReadOnlyProps publicStorDriverNamespace = DeviceLayerUtils.getNamespaceStorDriver(
-            storPool.getProps(storDriverAccCtx)
+            storPool.getReadOnlyProps(storDriverAccCtx)
         );
         StorageConfigReader.checkVolumeGroupEntry(extCmdFactory, publicStorDriverNamespace);
         StorageConfigReader.checkToleranceFactor(publicStorDriverNamespace);
@@ -680,7 +680,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         return null;
     }
 
-    protected void checkExtentSize(StorPool storPool, LocalPropsChangePojo ret)
+    protected void checkExtentSize(StorPoolInfo storPool, LocalPropsChangePojo ret)
         throws StorageException, ImplementationError
     {
         String lvmVG = getVolumeGroup(storPool);

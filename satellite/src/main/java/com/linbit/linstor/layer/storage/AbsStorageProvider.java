@@ -38,6 +38,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.storage.utils.DeviceUtils;
 import com.linbit.linstor.layer.storage.utils.DmStatCommands;
@@ -45,7 +46,6 @@ import com.linbit.linstor.layer.storage.utils.SharedStorageUtils;
 import com.linbit.linstor.layer.storage.utils.StltProviderUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -95,7 +95,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected final Provider<TransactionMgr> transMgrProvider;
     protected final WipeHandler wipeHandler;
     protected final StltConfigAccessor stltConfigAccessor;
-    protected Props localNodeProps;
+    protected ReadOnlyProps localNodeProps;
     private final SnapshotShippingService snapShipMgr;
     protected final CloneService cloneService;
     protected final StltExtToolsChecker extToolsChecker;
@@ -400,7 +400,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+    public LocalPropsChangePojo setLocalNodeProps(ReadOnlyProps localNodePropsRef)
         throws StorageException, AccessDeniedException
     {
         localNodeProps = localNodePropsRef;
@@ -1588,12 +1588,12 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     @Override
-    public abstract LocalPropsChangePojo checkConfig(StorPool storPool)
+    public abstract LocalPropsChangePojo checkConfig(StorPoolInfo storPool)
         throws StorageException, AccessDeniedException;
 
     protected void markAllocGranAsChangedIfNeeded(
         Long extentSizeInKibRef,
-        StorPool storPoolRef,
+        StorPoolInfo storPoolRef,
         LocalPropsChangePojo localPropsChangePojoRef
     )
     {
@@ -1602,7 +1602,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
             String extentSizeInKibStr = extentSizeInKibRef.toString();
             try
             {
-                String oldExtentSizeInKib = storPoolRef.getProps(storDriverAccCtx)
+                String oldExtentSizeInKib = storPoolRef.getReadOnlyProps(storDriverAccCtx)
                     .getProp(
                         InternalApiConsts.ALLOCATION_GRANULARITY,
                         StorageConstants.NAMESPACE_INTERNAL
@@ -1624,7 +1624,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     }
 
     @Override
-    public abstract SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException;
+    public abstract SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException;
 
     protected abstract String getStorageName(StorPool storPoolRef) throws AccessDeniedException, StorageException;
 

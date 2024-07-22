@@ -9,7 +9,7 @@ import com.linbit.linstor.api.protobuf.serializer.ProtoCtrlStltSerializerBuilder
 import com.linbit.linstor.core.apicallhandler.ScopeRunner;
 import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
-import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntFreeSpaceOuterClass.MsgIntFreeSpace;
 import com.linbit.locks.LockGuard;
 import com.linbit.utils.Either;
@@ -65,10 +65,10 @@ public class ReqFreeSpace implements ApiCallReactive
     private Flux<byte[]> executeInScope()
         throws IOException
     {
-        Map<StorPool, Either<SpaceInfo, ApiRcException>> freeSpaceMap = apiCallHandlerUtils.getSpaceInfo(true);
+        Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> freeSpaceMap = apiCallHandlerUtils.getSpaceInfo(true);
 
         MsgIntFreeSpace.Builder builder = MsgIntFreeSpace.newBuilder();
-        for (Map.Entry<StorPool, Either<SpaceInfo, ApiRcException>> entry : freeSpaceMap.entrySet())
+        for (Map.Entry<StorPoolInfo, Either<SpaceInfo, ApiRcException>> entry : freeSpaceMap.entrySet())
         {
             builder.addFreeSpaces(ProtoCtrlStltSerializerBuilder.buildStorPoolFreeSpace(entry).build());
         }

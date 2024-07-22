@@ -8,7 +8,7 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
@@ -47,7 +47,7 @@ public class SpdkRemoteCommands implements SpdkCommands<JsonNode>
     private final StltConfigAccessor stltConfigAccessor;
 
     private final RestHttpClient restClient;
-    private Props localNodeProps;
+    private ReadOnlyProps localNodeProps;
 
     public SpdkRemoteCommands(
         AccessContext sysCtxRef,
@@ -62,7 +62,7 @@ public class SpdkRemoteCommands implements SpdkCommands<JsonNode>
         restClient = new RestHttpClient(errorReporterRef);
     }
 
-    public void setLocalNodeProps(Props localNodePropsRef)
+    public void setLocalNodeProps(ReadOnlyProps localNodePropsRef)
     {
         localNodeProps = localNodePropsRef;
     }

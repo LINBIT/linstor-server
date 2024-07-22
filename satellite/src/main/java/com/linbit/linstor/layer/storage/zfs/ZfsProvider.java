@@ -24,6 +24,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
@@ -498,13 +499,13 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         return getZPool(storPoolRef);
     }
 
-    protected String getZPool(StorPool storPool)
+    protected String getZPool(StorPoolInfo storPool)
     {
         String zPool;
         try
         {
             zPool = DeviceLayerUtils.getNamespaceStorDriver(
-                storPool.getProps(storDriverAccCtx)
+                storPool.getReadOnlyProps(storDriverAccCtx)
             ).getProp(StorageConstants.CONFIG_ZFS_POOL_KEY);
         }
         catch (InvalidKeyException | AccessDeniedException exc)
@@ -515,7 +516,8 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPoolInfo storPool)
+        throws StorageException, AccessDeniedException
     {
         String zpoolName = getZPool(storPool);
         if (zpoolName == null)
@@ -592,7 +594,7 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
         String zPool = getZPool(storPool);
         if (zPool == null)

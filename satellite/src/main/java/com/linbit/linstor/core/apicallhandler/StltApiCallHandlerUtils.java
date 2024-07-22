@@ -25,6 +25,7 @@ import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
 import com.linbit.linstor.layer.storage.StorageLayer;
@@ -147,7 +148,7 @@ public class StltApiCallHandlerUtils
                 if (storPool.getDeviceProviderKind().usesThinProvisioning() &&
                     (storPoolFilter.isEmpty() || storPoolFilter.contains(storPool.getName())))
                 {
-                    DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderByStorPool(storPool);
+                    DeviceProvider deviceProvider = deviceProviderMapper.getDeviceProviderBy(storPool);
                     if (deviceProvider == null)
                     {
                         ApiRcException apiRcException = new ApiRcException(ApiCallRcImpl
@@ -268,19 +269,21 @@ public class StltApiCallHandlerUtils
         return allocatedMap;
     }
 
-    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getAllSpaceInfo()
+    public Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> getAllSpaceInfo()
     {
         return getSpaceInfo(ignored -> true);
     }
 
-    public Map<StorPool, Either<SpaceInfo, ApiRcException>> getSpaceInfo(boolean thin)
+    public Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> getSpaceInfo(boolean thin)
     {
-        return getSpaceInfo(storPool -> storPool.getDeviceProviderKind().usesThinProvisioning() == thin);
+        return getSpaceInfo(storPoolInfo -> storPoolInfo.getDeviceProviderKind().usesThinProvisioning() == thin);
     }
 
-    private Map<StorPool, Either<SpaceInfo, ApiRcException>> getSpaceInfo(Predicate<StorPool> shouldIncludeSpTestRef)
+    private Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> getSpaceInfo(
+        Predicate<StorPoolInfo> shouldIncludeSpTestRef
+    )
     {
-        Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceMap = new HashMap<>();
+        Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceMap = new HashMap<>();
 
         Lock nodesMapReadLock = nodesMapLock.readLock();
         Lock storPoolDfnMapReadLock = storPoolDfnMapLock.readLock();
@@ -311,14 +314,17 @@ public class StltApiCallHandlerUtils
         return spaceMap;
     }
 
-    private Either<SpaceInfo, ApiRcException> getStoragePoolSpaceInfoOrError(StorPool storPool)
+    private Either<SpaceInfo, ApiRcException> getStoragePoolSpaceInfoOrError(StorPoolInfo storPoolInfo)
     {
         Either<SpaceInfo, ApiRcException> result;
         try
         {
-            var spaceInfo = getStoragePoolSpaceInfo(storPool, false);
+            var spaceInfo = getStoragePoolSpaceInfo(storPoolInfo, false);
             errorReporter.logInfo("SpaceInfo: %s -> %d/%d",
-                storPool.getName(), spaceInfo.freeCapacity, spaceInfo.totalCapacity);
+                storPoolInfo.getName(),
+                spaceInfo.freeCapacity,
+                spaceInfo.totalCapacity
+            );
             result = Either.left(spaceInfo);
         }
         catch (StorageException storageExc)
@@ -335,10 +341,10 @@ public class StltApiCallHandlerUtils
         return result;
     }
 
-    public SpaceInfo getStoragePoolSpaceInfo(StorPool storPool, boolean update)
+    public SpaceInfo getStoragePoolSpaceInfo(StorPoolInfo storPoolInfo, boolean update)
         throws StorageException
     {
-        return devMgr.get().getSpaceInfo(storPool, update);
+        return devMgr.get().getSpaceInfo(storPoolInfo, update);
     }
 
     /**

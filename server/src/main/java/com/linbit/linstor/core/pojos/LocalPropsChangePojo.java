@@ -1,7 +1,7 @@
 package com.linbit.linstor.core.pojos;
 
 import com.linbit.linstor.core.identifier.StorPoolName;
-import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 
 import javax.annotation.Nullable;
 
@@ -140,12 +140,12 @@ public class LocalPropsChangePojo
             changedStorPoolProps.isEmpty() && deletedStorPoolProps.isEmpty();
     }
 
-    public void changeStorPoolProp(StorPool storPoolRef, String key, String value)
+    public void changeStorPoolProp(StorPoolInfo storPoolRef, String key, String value)
     {
         lazyGetMap(changedStorPoolProps, storPoolRef.getName()).put(key, value);
     }
 
-    public void deleteStorPoolProp(StorPool storPoolRef, String key)
+    public void deleteStorPoolProp(StorPoolInfo storPoolRef, String key)
     {
         lazyGetSet(deletedStorPoolProps, storPoolRef.getName()).add(key);
     }

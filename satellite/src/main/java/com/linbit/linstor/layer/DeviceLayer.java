@@ -18,6 +18,7 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.storage.StorageLayer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -149,13 +150,14 @@ public interface DeviceLayer
     /**
      * Most layers will no-op. Current exceptions is {@link StorageLayer}
      *
-     * @param storPoolRef
+     * @param storPoolInfoRef
+     * @param update
      *
      * @throws DatabaseException
      * @throws AccessDeniedException
      * @throws StorageException
      */
-    default LocalPropsChangePojo checkStorPool(StorPool storPoolRef, boolean update)
+    default LocalPropsChangePojo checkStorPool(StorPoolInfo storPoolInfoRef, boolean update)
         throws StorageException, AccessDeniedException, DatabaseException
     {
         // no-op, no change in props
@@ -166,10 +168,13 @@ public interface DeviceLayer
      * This method should only be implemented by layers managing storage.
      * Which currently is only {@link StorageLayer}
      *
+     * @param storPoolInfoRef
+     *
      * @throws StorageException
      * @throws AccessDeniedException
      */
-    default SpaceInfo getStoragePoolSpaceInfo(StorPool storPoolRef) throws AccessDeniedException, StorageException
+    default SpaceInfo getStoragePoolSpaceInfo(StorPoolInfo storPoolInfoRef)
+        throws AccessDeniedException, StorageException
     {
         throw new ImplementationError(
             "Layer " + getClass().getSimpleName() + " does not directly handle (free / total) space information!"

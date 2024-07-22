@@ -9,8 +9,9 @@ import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -51,8 +52,7 @@ public interface DeviceProvider
      * @throws StorageException
      * @throws AccessDeniedException
      */
-    SpaceInfo getSpaceInfo(StorPool storPoolRef)
-        throws AccessDeniedException, StorageException;
+    SpaceInfo getSpaceInfo(StorPoolInfo roStorPoolRef) throws AccessDeniedException, StorageException;
 
     /**
      * Checks if the given {@link StorPool} has a valid configuration for all involved {@link DeviceLayer}s.
@@ -64,9 +64,10 @@ public interface DeviceProvider
      * @throws StorageException
      * @throws AccessDeniedException
      */
-    LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException;
+    LocalPropsChangePojo checkConfig(StorPoolInfo storPool) throws StorageException, AccessDeniedException;
 
-    LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef) throws StorageException, AccessDeniedException;
+    LocalPropsChangePojo setLocalNodeProps(ReadOnlyProps localNodePropsRef)
+        throws StorageException, AccessDeniedException;
 
     Collection<StorPool> getChangedStorPools();
 
@@ -81,7 +82,8 @@ public interface DeviceProvider
      * @throws DatabaseException
      * @throws StorageException
      */
-    @Nullable LocalPropsChangePojo update(StorPool storPoolRef)
+    @Nullable
+    LocalPropsChangePojo update(StorPool storPoolRef)
         throws AccessDeniedException, DatabaseException, StorageException;
 
     DeviceProviderKind getDeviceProviderKind();

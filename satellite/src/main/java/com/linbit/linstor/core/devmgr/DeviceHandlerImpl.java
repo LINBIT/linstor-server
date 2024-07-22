@@ -33,6 +33,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.event.ObjectIdentifier;
 import com.linbit.linstor.event.common.ResourceState;
 import com.linbit.linstor.event.common.ResourceStateEvent;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.AbortLayerProcessingException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
@@ -685,10 +686,10 @@ public class DeviceHandlerImpl implements DeviceHandler
         {
             try
             {
-                Map<StorPool, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
+                Map<StorPoolInfo, Either<SpaceInfo, ApiRcException>> spaceInfoQueryMap =
                     storageLayer.getFreeSpaceOfAccessedStoagePools();
 
-                Map<StorPool, SpaceInfo> spaceInfoMap = new TreeMap<>();
+                Map<StorPoolInfo, SpaceInfo> spaceInfoMap = new TreeMap<>();
 
                 spaceInfoQueryMap.forEach((storPool, either) -> either.consume(
                     spaceInfo -> spaceInfoMap.put(storPool, spaceInfo),
@@ -1039,13 +1040,13 @@ public class DeviceHandlerImpl implements DeviceHandler
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPool, boolean update) throws StorageException
+    public SpaceInfo getSpaceInfo(StorPoolInfo storPoolInfo, boolean update) throws StorageException
     {
         SpaceInfo spaceInfo;
         try
         {
             DeviceLayer layer;
-            switch (storPool.getDeviceProviderKind())
+            switch (storPoolInfo.getDeviceProviderKind())
             {
                 case DISKLESS: // fall-through
                 case FILE: // fall-through
@@ -1065,11 +1066,11 @@ public class DeviceHandlerImpl implements DeviceHandler
                     break;
                 case FAIL_BECAUSE_NOT_A_VLM_PROVIDER_BUT_A_VLM_LAYER:
                 default:
-                    throw new ImplementationError("Unknown provider kind: " + storPool.getDeviceProviderKind());
+                    throw new ImplementationError("Unknown provider kind: " + storPoolInfo.getDeviceProviderKind());
             }
 
-            LocalPropsChangePojo pojo = layer.checkStorPool(storPool, update);
-            spaceInfo = layer.getStoragePoolSpaceInfo(storPool);
+            LocalPropsChangePojo pojo = layer.checkStorPool(storPoolInfo, update);
+            spaceInfo = layer.getStoragePoolSpaceInfo(storPoolInfo);
 
             if (pojo != null)
             {

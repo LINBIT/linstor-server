@@ -23,6 +23,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.AbsStorageProvider;
@@ -891,7 +892,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
         ExosRestPool exosPool = getClient(storPool).getPool(storPool);
         return new SpaceInfo(
@@ -901,7 +902,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
-    public LocalPropsChangePojo setLocalNodeProps(Props localNodePropsRef)
+    public LocalPropsChangePojo setLocalNodeProps(ReadOnlyProps localNodePropsRef)
         throws StorageException, AccessDeniedException
     {
         super.setLocalNodeProps(localNodePropsRef);
@@ -1102,10 +1103,11 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
     @Override
-    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public @Nullable LocalPropsChangePojo checkConfig(StorPoolInfo storPool)
+        throws StorageException, AccessDeniedException
     {
         ReadOnlyProps props = DeviceLayerUtils.getNamespaceStorDriver(
-            storPool.getProps(storDriverAccCtx)
+            storPool.getReadOnlyProps(storDriverAccCtx)
         );
         if (props.getProp(ApiConsts.KEY_STOR_POOL_NAME) == null)
         {
@@ -1138,7 +1140,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     }
 
 
-    private ExosRestClient getClient(StorPool storPoolRef) throws AccessDeniedException
+    private ExosRestClient getClient(StorPoolInfo storPoolRef) throws AccessDeniedException
     {
         return getClient(getEnclosureName(storPoolRef));
     }
@@ -1154,12 +1156,10 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         return restClient;
     }
 
-    private String getEnclosureName(StorPool storPoolRef) throws InvalidKeyException, AccessDeniedException
+    private String getEnclosureName(StorPoolInfo storPoolRef) throws InvalidKeyException, AccessDeniedException
     {
-        return storPoolRef.getProps(storDriverAccCtx).getProp(
-                ApiConsts.KEY_STOR_POOL_EXOS_ENCLOSURE,
-            ApiConsts.NAMESPC_EXOS
-            );
+        return storPoolRef.getReadOnlyProps(storDriverAccCtx)
+            .getProp(ApiConsts.KEY_STOR_POOL_EXOS_ENCLOSURE, ApiConsts.NAMESPC_EXOS);
     }
 
     @Override

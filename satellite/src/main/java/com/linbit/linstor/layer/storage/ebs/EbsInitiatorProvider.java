@@ -23,6 +23,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.ebs.rest.AwsRestClient;
@@ -602,7 +603,7 @@ public class EbsInitiatorProvider extends AbsEbsProvider<LsBlkEntry>
     }
 
     @Override
-    public @Nullable LocalPropsChangePojo checkConfig(StorPool storPoolRef)
+    public @Nullable LocalPropsChangePojo checkConfig(StorPoolInfo storPoolRef)
         throws StorageException, AccessDeniedException
     {
         return null;

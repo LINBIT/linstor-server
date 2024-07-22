@@ -1,7 +1,7 @@
 package com.linbit.linstor.layer.storage;
 
 import com.linbit.ImplementationError;
-import com.linbit.linstor.core.objects.StorPool;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.storage.diskless.DisklessProvider;
 import com.linbit.linstor.layer.storage.ebs.EbsInitiatorProvider;
 import com.linbit.linstor.layer.storage.ebs.EbsTargetProvider;
@@ -99,7 +99,7 @@ public class DeviceProviderMapper
         return driverList;
     }
 
-    public DeviceProvider getDeviceProviderByStorPool(StorPool storPool)
+    public DeviceProvider getDeviceProviderBy(StorPoolInfo storPool)
     {
         return getDeviceProviderByKind(storPool.getDeviceProviderKind());
     }

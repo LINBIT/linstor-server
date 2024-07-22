@@ -11,10 +11,10 @@ import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
-import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.dbdrivers.DatabaseException;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.DeviceLayerUtils;
 import com.linbit.linstor.layer.storage.WipeHandler;
@@ -390,7 +390,7 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    public SpaceInfo getSpaceInfo(StorPool storPool) throws StorageException, AccessDeniedException
+    public SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
         String vgForLvs = getVolumeGroupForLvs(storPool);
         String thinPool = getThinPool(storPool);
@@ -456,7 +456,7 @@ public class LvmThinProvider extends LvmProvider
         createSnapshot(vlmDataRef, snapVlmRef);
     }
 
-    private String getVolumeGroupForLvs(StorPool storPool) throws StorageException
+    private String getVolumeGroupForLvs(StorPoolInfo storPool) throws StorageException
     {
         String volumeGroup;
         String thinPool;
@@ -480,15 +480,13 @@ public class LvmThinProvider extends LvmProvider
         return volumeGroup + File.separator + thinPool;
     }
 
-    private String getThinPool(StorPool storPool) throws AccessDeniedException
+    private String getThinPool(StorPoolInfo storPool) throws AccessDeniedException
     {
         String thinPool;
         try
         {
-            thinPool = storPool.getProps(storDriverAccCtx).getProp(
-                StorageConstants.CONFIG_LVM_THIN_POOL_KEY,
-                StorageConstants.NAMESPACE_STOR_DRIVER
-            );
+            thinPool = storPool.getReadOnlyProps(storDriverAccCtx)
+                .getProp(StorageConstants.CONFIG_LVM_THIN_POOL_KEY, StorageConstants.NAMESPACE_STOR_DRIVER);
             if (!thinPool.contains("/"))
             {
                 throw new ImplementationError(
@@ -596,12 +594,12 @@ public class LvmThinProvider extends LvmProvider
     }
 
     @Override
-    public LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
+    public LocalPropsChangePojo checkConfig(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
         LocalPropsChangePojo ret = new LocalPropsChangePojo();
 
         ReadOnlyProps props = DeviceLayerUtils.getNamespaceStorDriver(
-            storPool.getProps(storDriverAccCtx)
+            storPool.getReadOnlyProps(storDriverAccCtx)
         );
         StorageConfigReader.checkThinPoolEntry(extCmdFactory, props);
         StorageConfigReader.checkToleranceFactor(props);

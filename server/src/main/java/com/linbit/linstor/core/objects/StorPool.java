@@ -15,11 +15,14 @@ import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.dbdrivers.interfaces.StorPoolDatabaseDriver;
+import com.linbit.linstor.interfaces.NodeInfo;
+import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
 import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -47,7 +50,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class StorPool extends AbsCoreObj<StorPool>
-    implements LinstorDataObject, ProtectedObject
+    implements LinstorDataObject, ProtectedObject, StorPoolInfo
 {
     public interface InitMaps
     {
@@ -60,6 +63,7 @@ public class StorPool extends AbsCoreObj<StorPool>
     private final DeviceProviderKind deviceProviderKind;
 
     private final Props props;
+    private final ReadOnlyProps roProps;
     private final Node node;
     private final StorPoolDatabaseDriver dbDriver;
     private final FreeSpaceTracker freeSpaceTracker;
@@ -115,6 +119,7 @@ public class StorPool extends AbsCoreObj<StorPool>
             toStringImpl(),
             LinStorObject.STORAGEPOOL
         );
+        roProps = new ReadOnlyPropsImpl(props);
 
         final boolean isFileProviderKind = providerKindRef == DeviceProviderKind.FILE ||
             providerKindRef == DeviceProviderKind.FILE_THIN;
@@ -139,6 +144,7 @@ public class StorPool extends AbsCoreObj<StorPool>
         activateTransMgr();
     }
 
+    @Override
     public StorPoolName getName()
     {
         checkDeleted();
@@ -146,6 +152,13 @@ public class StorPool extends AbsCoreObj<StorPool>
     }
 
     public Node getNode()
+    {
+        checkDeleted();
+        return node;
+    }
+
+    @Override
+    public NodeInfo getReadOnlyNode()
     {
         checkDeleted();
         return node;
@@ -159,6 +172,7 @@ public class StorPool extends AbsCoreObj<StorPool>
         return storPoolDef;
     }
 
+    @Override
     public DeviceProviderKind getDeviceProviderKind()
     {
         checkDeleted();
@@ -169,6 +183,15 @@ public class StorPool extends AbsCoreObj<StorPool>
     {
         checkDeleted();
         return PropsAccess.secureGetProps(accCtx, node.getObjProt(), storPoolDef.getObjProt(), props);
+    }
+
+    @Override
+    public ReadOnlyProps getReadOnlyProps(AccessContext accCtx) throws AccessDeniedException
+    {
+        checkDeleted();
+        node.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        storPoolDef.getObjProt().requireAccess(accCtx, AccessType.VIEW);
+        return roProps;
     }
 
     public void putVolume(AccessContext accCtx, VlmProviderObject<Resource> vlmProviderObj)
