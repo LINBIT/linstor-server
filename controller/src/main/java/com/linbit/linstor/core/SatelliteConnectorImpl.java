@@ -13,7 +13,6 @@ import com.linbit.linstor.netcom.NetComContainer;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -37,7 +36,7 @@ public class SatelliteConnectorImpl implements SatelliteConnector
     @Inject
     public SatelliteConnectorImpl(
         ErrorReporter errorReporterRef,
-        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef,
+        @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps ctrlConfRef,
         NetComContainer netComContainerRef,
         ReconnectorTask reconnectorTaskRef
     )

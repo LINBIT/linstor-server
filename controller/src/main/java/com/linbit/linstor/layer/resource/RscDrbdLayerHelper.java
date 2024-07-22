@@ -43,7 +43,6 @@ import com.linbit.linstor.modularcrypto.ModularCryptoProvider;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -102,7 +101,7 @@ public class RscDrbdLayerHelper extends
         @ApiContext AccessContext apiCtx,
         ResourceDefinitionRepository rscDfnMapRef,
         LayerDataFactory layerDataFactory,
-        @Named(LinStor.SATELLITE_PROPS)Props stltConfRef,
+        @Named(LinStor.SATELLITE_PROPS) ReadOnlyProps stltConfRef,
         @Named(NumberPoolModule.LAYER_RSC_ID_POOL) DynamicNumberPool layerRscIdPool,
         Provider<CtrlRscLayerDataFactory> rscLayerDataFactory,
         Provider<RscNvmeLayerHelper> nvmeHelperProviderRef,

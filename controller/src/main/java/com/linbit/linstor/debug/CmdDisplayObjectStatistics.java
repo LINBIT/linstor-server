@@ -3,7 +3,6 @@ package com.linbit.linstor.debug;
 import com.linbit.linstor.core.CoreModule;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.Identity;
@@ -64,7 +63,7 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
         @Named(CoreModule.STOR_POOL_DFN_MAP_LOCK) ReadWriteLock storPoolDfnMapLockRef,
         @Named(CoreModule.NODES_MAP_LOCK) ReadWriteLock nodesMapLockRef,
         @Named(CoreModule.RSC_DFN_MAP_LOCK) ReadWriteLock rscDfnMapLockRef,
-        @Named(LinStor.CONTROLLER_PROPS) Props confRef,
+        @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps confRef,
         CoreModule.StorPoolDefinitionMap storPoolDfnMapRef,
         CoreModule.NodesMap nodesMapRef,
         CoreModule.ResourceDefinitionMap rscDfnMapRef

@@ -22,6 +22,7 @@ import com.linbit.linstor.core.objects.remotes.AbsRemote;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.ObjectProtection;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
@@ -114,6 +115,14 @@ public class CoreModule extends AbstractModule
             LinStorObject.CONTROLLER.toString(), // use ctrl because for the user there is no difference
             LinStorObject.SATELLITE
         );
+    }
+
+    @Provides
+    @Singleton
+    @Named(LinStor.SATELLITE_PROPS)
+    public ReadOnlyProps castStltPropsToReadOnlyProps(@Named(LinStor.SATELLITE_PROPS) Props stltProps)
+    {
+        return stltProps;
     }
 
     public interface NodesMap extends Map<NodeName, Node>

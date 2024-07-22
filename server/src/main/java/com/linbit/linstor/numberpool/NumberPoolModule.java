@@ -6,7 +6,7 @@ import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.core.types.MinorNumber;
 import com.linbit.linstor.core.types.TcpPortNumber;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -67,7 +67,7 @@ public class NumberPoolModule extends AbstractModule
     @Named(MINOR_NUMBER_POOL)
     public DynamicNumberPool minorNrPool(
         ErrorReporter errorReporter,
-        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
+        @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps ctrlConfRef
     )
     {
         return new DynamicNumberPoolImpl(
@@ -87,7 +87,7 @@ public class NumberPoolModule extends AbstractModule
     @Named(TCP_PORT_POOL)
     public DynamicNumberPool tcpPortPool(
         ErrorReporter errorReporter,
-        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
+        @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps ctrlConfRef
     )
     {
         return new DynamicNumberPoolImpl(
@@ -107,7 +107,7 @@ public class NumberPoolModule extends AbstractModule
     @Named(SPECIAL_SATELLTE_PORT_POOL)
     public DynamicNumberPool specStltPortPool(
         ErrorReporter errorReporter,
-        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
+        @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps ctrlConfRef
     )
     {
         return new DynamicNumberPoolImpl(
@@ -127,7 +127,7 @@ public class NumberPoolModule extends AbstractModule
     @Named(LAYER_RSC_ID_POOL)
     public DynamicNumberPool layerRscIdPool(
         ErrorReporter errorReporter,
-        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
+        @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps ctrlConfRef
     )
     {
         return new DynamicNumberPoolImpl(
@@ -153,7 +153,7 @@ public class NumberPoolModule extends AbstractModule
     @Named(SNAPSHOPT_SHIPPING_PORT_POOL)
     public DynamicNumberPool snapshotShippingPortPool(
         ErrorReporter errorReporter,
-        @Named(LinStor.CONTROLLER_PROPS) Props ctrlConfRef
+        @Named(LinStor.CONTROLLER_PROPS) ReadOnlyProps ctrlConfRef
     )
     {
         return new DynamicNumberPoolImpl(

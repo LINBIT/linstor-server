@@ -16,7 +16,6 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -108,7 +107,7 @@ public class SysFsHandler
         ErrorReporter errorReporterRef,
         @SystemContext AccessContext apiCtxRef,
         ExtCmdFactory extCmdFactoryRef,
-        @Named(LinStor.SATELLITE_PROPS) Props satellitePropsRef
+        @Named(LinStor.SATELLITE_PROPS) ReadOnlyProps satellitePropsRef
     )
     {
         errorReporter = errorReporterRef;

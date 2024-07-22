@@ -29,7 +29,6 @@ import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils;
 import com.linbit.linstor.layer.storage.utils.DeviceUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -103,7 +102,7 @@ public class NvmeUtils
     public NvmeUtils(
         ErrorReporter errorReporterRef,
         ExtCmdFactory extCmdFactoryRef,
-        @Named(LinStor.SATELLITE_PROPS) Props stltPropsRef,
+        @Named(LinStor.SATELLITE_PROPS) ReadOnlyProps stltPropsRef,
         DeviceProviderMapper devProviderMapperRef,
         FileSystemWatch fsWatchRef
     )

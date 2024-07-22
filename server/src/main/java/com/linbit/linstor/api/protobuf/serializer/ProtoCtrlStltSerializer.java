@@ -5,7 +5,6 @@ import com.linbit.linstor.api.interfaces.serializer.CtrlStltSerializer;
 import com.linbit.linstor.core.CtrlSecurityObjects;
 import com.linbit.linstor.core.LinStor;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 
@@ -25,7 +24,8 @@ public class ProtoCtrlStltSerializer extends ProtoCommonSerializer
         ErrorReporter errReporter,
         @ApiContext AccessContext serializerCtx,
         CtrlSecurityObjects secObjsRef,
-        @Named(LinStor.SATELLITE_PROPS) Props ctrlConfRef)
+        @Named(LinStor.SATELLITE_PROPS) ReadOnlyProps ctrlConfRef
+    )
     {
         super(errReporter, serializerCtx);
         secObjs = secObjsRef;

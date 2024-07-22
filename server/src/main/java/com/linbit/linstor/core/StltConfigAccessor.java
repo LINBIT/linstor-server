@@ -18,7 +18,7 @@ public class StltConfigAccessor
 
     @Inject
     public StltConfigAccessor(
-        @Named(LinStor.SATELLITE_PROPS) Props stltPropsRef
+        @Named(LinStor.SATELLITE_PROPS) ReadOnlyProps stltPropsRef
     )
     {
         stltProps = stltPropsRef;

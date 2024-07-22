@@ -5,6 +5,7 @@ import com.linbit.linstor.core.identifier.SharedStorPoolName;
 import com.linbit.linstor.core.objects.FreeSpaceMgr;
 import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.transaction.TransactionMap;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
@@ -42,6 +43,14 @@ public class ControllerCoreModule extends AbstractModule
             LinStorObject.CONTROLLER.toString(),
             LinStorObject.CONTROLLER
         );
+    }
+
+    @Provides
+    @Singleton
+    @Named(LinStor.CONTROLLER_PROPS)
+    public ReadOnlyProps castCtrlPropsToReadOnlyProps(@Named(LinStor.CONTROLLER_PROPS) Props ctrlProps)
+    {
+        return ctrlProps;
     }
 
     public interface FreeSpaceMgrMap extends Map<SharedStorPoolName, FreeSpaceMgr>
