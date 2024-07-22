@@ -18,8 +18,6 @@ import com.google.inject.Provides;
 
 public class DevMgrModule extends AbstractModule
 {
-    public static final String LOCAL_NODE_PROPS = "localNodeProps";
-
     public static final String STLT_CONF_LOCK = "stltConfLock";
     public static final String DRBD_CONFIG_PATH = "DrbdConfigPath";
 

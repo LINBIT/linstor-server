@@ -105,8 +105,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.google.inject.Key;
-import com.google.inject.name.Names;
 import org.slf4j.event.Level;
 import reactor.core.publisher.FluxSink;
 import reactor.core.scheduler.Scheduler;
@@ -1068,10 +1066,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             {
                 TransactionMgrUtil.seedTransactionMgr(deviceMgrScope, transMgr);
                 deviceMgrScope.seed(NotificationListener.class, this);
-                deviceMgrScope.seed(
-                    Key.get(Props.class, Names.named(DevMgrModule.LOCAL_NODE_PROPS)),
-                    localNode.getProps(wrkCtx)
-                );
                 // Check whether the master key for encrypted volumes is known
                 boolean haveMasterKey = stltSecObj.getCryptKey() != null;
 
