@@ -321,6 +321,7 @@ public class StltApiCallHandler
                 // only apply this fullSync if it is newer than the last one
 
                 stltApiCallHandlerUtils.clearCoreMaps();
+                deviceManager.clearReadOnlyStltInfo(); // avoid working with outdated data
 
                 for (NodePojo node : nodes)
                 {

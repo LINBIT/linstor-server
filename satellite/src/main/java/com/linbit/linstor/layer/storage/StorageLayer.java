@@ -10,6 +10,7 @@ import com.linbit.linstor.api.SpaceInfo;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.devmgr.DeviceHandler;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo;
 import com.linbit.linstor.core.devmgr.exceptions.ResourceException;
 import com.linbit.linstor.core.devmgr.exceptions.VolumeException;
 import com.linbit.linstor.core.objects.Resource;
@@ -345,9 +346,22 @@ public class StorageLayer implements DeviceLayer
         {
             changedStorPools.addAll(deviceProvider.getChangedStorPools());
         }
+
+        @Nullable StltReadOnlyInfo.ReadOnlyNode roNode = null;
         for (StorPool storPool : changedStorPools)
         {
-            spaceMap.put(storPool, getStoragePoolSpaceInfoOrError(storPool));
+            if (roNode == null)
+            {
+                roNode = StltReadOnlyInfo.ReadOnlyNode.copyFrom(storPool.getNode(), storDriverAccCtx);
+            }
+            else if (!roNode.getUuid().equals(storPool.getNode().getUuid()))
+            {
+                throw new ImplementationError("Satellite modified storage pool from more than one nodes");
+            }
+            spaceMap.put(
+                StltReadOnlyInfo.ReadOnlyStorPool.copyFrom(roNode, storPool, storDriverAccCtx),
+                getStoragePoolSpaceInfoOrError(storPool)
+            );
         }
         return spaceMap;
     }

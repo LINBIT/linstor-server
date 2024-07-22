@@ -9,6 +9,8 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.Volume;
@@ -37,6 +39,7 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.storage.utils.MkfsUtils;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
@@ -44,7 +47,10 @@ import javax.inject.Singleton;
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Singleton
 public class LvmThinProvider extends LvmProvider
@@ -643,5 +649,41 @@ public class LvmThinProvider extends LvmProvider
     {
         LvmThinData<Resource> lvmThinData = (LvmThinData<Resource>) vlmDataRef;
         super.setAllocatedSize(vlmDataRef, (long) (allocatedSize * lvmThinData.getDataPercent()));
+    }
+
+    @Override
+    public Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
+        throws StorageException, AccessDeniedException
+    {
+        Map<ReadOnlyVlmProviderInfo, Long> ret = new HashMap<>();
+        Set<String> lvmVolumeGroups = new HashSet<>();
+
+        for (ReadOnlyVlmProviderInfo roVlmProvInfo : vlmDataListRef)
+        {
+            ReadOnlyStorPool roStorPool = roVlmProvInfo.getReadOnlyStorPool();
+            String vlmGrp = getVolumeGroup(roStorPool);
+            lvmVolumeGroups.add(vlmGrp);
+        }
+
+        HashMap<String, LvsInfo> lvsInfoMap = LvmUtils.getLvsInfo(extCmdFactory, lvmVolumeGroups);
+
+        for (ReadOnlyVlmProviderInfo roVlmProvInfo : vlmDataListRef)
+        {
+            String identifier = getFullQualifiedIdentifier(roVlmProvInfo);
+            @Nullable LvsInfo lvInfo = lvsInfoMap.get(identifier);
+            long allocatedSize;
+            if (lvInfo == null)
+            {
+                allocatedSize = roVlmProvInfo.getOrigAllocatedSize();
+            }
+            else
+            {
+                // lvInfo.size should already be in KiB
+                allocatedSize = (long) (lvInfo.size * lvInfo.dataPercent / 100.0f);
+            }
+            ret.put(roVlmProvInfo, allocatedSize);
+        }
+
+        return ret;
     }
 }

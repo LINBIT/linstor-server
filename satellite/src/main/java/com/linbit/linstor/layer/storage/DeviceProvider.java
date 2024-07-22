@@ -4,6 +4,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
@@ -20,7 +21,9 @@ import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import javax.annotation.Nullable;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public interface DeviceProvider
 {
@@ -87,4 +90,18 @@ public interface DeviceProvider
         throws AccessDeniedException, DatabaseException, StorageException;
 
     DeviceProviderKind getDeviceProviderKind();
+
+    Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
+        throws StorageException, AccessDeniedException;
+
+    default Map<ReadOnlyVlmProviderInfo, Long> fetchOrigAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
+        throws StorageException
+    {
+        Map<ReadOnlyVlmProviderInfo, Long> ret = new HashMap<>();
+        for (ReadOnlyVlmProviderInfo roVlmProv : vlmDataListRef)
+        {
+            ret.put(roVlmProv, roVlmProv.getOrigAllocatedSize());
+        }
+        return ret;
+    }
 }

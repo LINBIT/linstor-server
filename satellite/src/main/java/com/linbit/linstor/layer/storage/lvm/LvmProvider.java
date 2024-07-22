@@ -10,6 +10,7 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -207,6 +208,18 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         return vlmDataRef.getVolumeGroup() +
             File.separator +
             asIdentifierRaw(vlmDataRef);
+    }
+
+    protected String getFullQualifiedIdentifier(ReadOnlyVlmProviderInfo roVlmDataRef)
+    {
+        return getVolumeGroup(roVlmDataRef.getReadOnlyStorPool()) +
+            File.separator +
+            asLvIdentifier(
+                null,
+                roVlmDataRef.getResourceName(),
+                roVlmDataRef.getRscSuffix(),
+                roVlmDataRef.getVlmNr()
+            );
     }
 
     @SuppressWarnings("unchecked")
@@ -893,5 +906,12 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 LvmVolumeType.SNAPSHOT
             )
         );
+    }
+
+    @Override
+    public Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
+        throws StorageException, AccessDeniedException
+    {
+        return fetchOrigAllocatedSizes(vlmDataListRef);
     }
 }

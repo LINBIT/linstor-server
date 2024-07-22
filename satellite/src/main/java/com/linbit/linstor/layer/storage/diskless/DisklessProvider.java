@@ -2,6 +2,7 @@ package com.linbit.linstor.layer.storage.diskless;
 
 import com.linbit.linstor.api.ApiCallRcImpl;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.core.objects.Snapshot;
 import com.linbit.linstor.core.objects.StorPool;
@@ -22,6 +23,7 @@ import javax.inject.Singleton;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Singleton
 public class DisklessProvider implements DeviceProvider
@@ -110,5 +112,12 @@ public class DisklessProvider implements DeviceProvider
     {
         // no-op
         return null;
+    }
+
+    @Override
+    public Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
+        throws StorageException
+    {
+        return fetchOrigAllocatedSizes(vlmDataListRef);
     }
 }

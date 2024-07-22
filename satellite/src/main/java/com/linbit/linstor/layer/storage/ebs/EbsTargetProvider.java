@@ -18,6 +18,7 @@ import com.linbit.linstor.core.CoreModule.ResourceDefinitionMap;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.StltSecurityObjects;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.SnapshotName;
@@ -794,5 +795,12 @@ public class EbsTargetProvider extends AbsEbsProvider<com.amazonaws.services.ec2
     protected void setDevicePath(EbsData<Resource> vlmDataRef, String devicePathRef) throws DatabaseException
     {
         // noop
+    }
+
+    @Override
+    public Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
+        throws StorageException
+    {
+        return fetchOrigAllocatedSizes(vlmDataListRef);
     }
 }

@@ -1,5 +1,6 @@
 package com.linbit.linstor.layer.storage.file;
 
+import com.linbit.PlatformStlt;
 import com.linbit.extproc.ExtCmd;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.annotation.DeviceManagerContext;
@@ -7,6 +8,7 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.objects.Resource;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
@@ -22,13 +24,16 @@ import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.data.provider.file.FileData;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
 import com.linbit.linstor.transaction.manager.TransactionMgr;
-import com.linbit.PlatformStlt;
 
+import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Singleton
 public class FileThinProvider extends FileProvider
@@ -120,4 +125,25 @@ public class FileThinProvider extends FileProvider
         );
     }
 
+    @Override
+    public Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
+        throws StorageException
+    {
+        Map<ReadOnlyVlmProviderInfo, Long> ret = new HashMap<>();
+        for (ReadOnlyVlmProviderInfo roVlmProvInfo : vlmDataListRef)
+        {
+            @Nullable String devPath = roVlmProvInfo.getDevicePath();
+            long allocatedSize;
+            if (devPath == null)
+            {
+                allocatedSize = roVlmProvInfo.getOrigAllocatedSize();
+            }
+            else
+            {
+                allocatedSize = getAllocatedSizeFileImpl(extCmdFactory.create(), devPath);
+            }
+            ret.put(roVlmProvInfo, allocatedSize);
+        }
+        return ret;
+    }
 }

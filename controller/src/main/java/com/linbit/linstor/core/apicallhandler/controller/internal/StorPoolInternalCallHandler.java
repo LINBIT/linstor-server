@@ -207,7 +207,8 @@ public class StorPoolInternalCallHandler
                                 throw new ApiRcException(ApiCallRcImpl.simpleEntry(
                                     ApiConsts.FAIL_UUID_STOR_POOL,
                                     "UUIDs mismatched when updating free space of " +
-                                    getStorPoolDescriptionInline(storPool)
+                                        getStorPoolDescriptionInline(storPool) + ".\nLocal UUID: " + storPool
+                                            .getUuid() + ", UUID from pojo: " + capacityInfoPojo.getStorPoolUuid()
                                 ));
                             }
                         }

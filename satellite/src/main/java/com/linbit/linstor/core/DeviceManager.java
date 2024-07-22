@@ -3,6 +3,7 @@ package com.linbit.linstor.core;
 import com.linbit.extproc.ExtCmdFactoryStlt;
 import com.linbit.linstor.api.ApiCallRc;
 import com.linbit.linstor.api.SpaceInfo;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
@@ -49,4 +50,7 @@ public interface DeviceManager extends DrbdStateChange, DeviceLayer.Notification
     void controllerConnectionLost();
     boolean hasAllSharedLocksGranted();
     void registerSharedExtCmdFactory(ExtCmdFactoryStlt extCmdFactoryStltRef);
+
+    StltReadOnlyInfo getReadOnlyData();
+    void clearReadOnlyStltInfo();
 }

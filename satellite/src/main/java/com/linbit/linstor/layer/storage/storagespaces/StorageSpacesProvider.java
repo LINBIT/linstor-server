@@ -9,6 +9,7 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -57,9 +58,10 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
 {
     private static final int TOLERANCE_FACTOR = 3;
 
-            /* 64 KiB. We are using partitions which should be quite
-             * close to the size we request.
-             */
+    /**
+     * 64 KiB. We are using partitions which should be quite
+     * close to the size we request.
+     */
     private static final int WORST_CASE_GRANULARITY = 64;
     private boolean rebuildCache;
     private Set<String> dirtyVolumes;
@@ -670,5 +672,12 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     public DeviceProviderKind getDeviceProviderKind()
     {
         return DeviceProviderKind.STORAGE_SPACES;
+    }
+
+    @Override
+    public Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
+        throws StorageException, AccessDeniedException
+    {
+        return fetchOrigAllocatedSizes(vlmDataListRef);
     }
 }

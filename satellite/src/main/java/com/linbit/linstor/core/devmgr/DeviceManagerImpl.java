@@ -34,6 +34,7 @@ import com.linbit.linstor.core.apicallhandler.StltApiCallHandlerUtils;
 import com.linbit.linstor.core.apicallhandler.StltNodeApiCallHandler;
 import com.linbit.linstor.core.apicallhandler.response.ApiRcException;
 import com.linbit.linstor.core.cfg.StltConfig;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
 import com.linbit.linstor.core.identifier.ExternalFileName;
 import com.linbit.linstor.core.identifier.NodeName;
 import com.linbit.linstor.core.identifier.RemoteName;
@@ -87,6 +88,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -236,6 +238,14 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
 
     private final StltConfig stltCfg;
 
+    /**
+     * A read-only copy of the storage pools that is required for various API call (like fetch-free-spaces) that are
+     * allowed to run parallel to the device-manager. This variable is atomically reconstructed at the beginning of
+     * every device-manager-run. It is HIGHLY RECOMMENDED to make a local variable referencing this read-only
+     * datastructure since the next access to it might already contain different data!
+     */
+    private volatile StltReadOnlyInfo stltReadOnlyInfo;
+
     @Inject
     DeviceManagerImpl(
         @DeviceManagerContext AccessContext wrkCtxRef,
@@ -316,6 +326,9 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
         sharedExtCmdFactories = new HashSet<>();
 
         devHandler = deviceHandlerRef;
+
+        // initialize with empty data to avoid NPE and null-checks
+        clearReadOnlyStltInfo();
     }
 
     /**
@@ -1060,8 +1073,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             extfileWrLock.lock();
             remoteWrLock.lock();
 
-            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
             Node localNode = controllerPeerConnector.getLocalNode();
+            copyReadOnlyData(localNode);
+
+            SatelliteTransactionMgr transMgr = new SatelliteTransactionMgr();
 
             try (LinStorScope.ScopeAutoCloseable close = deviceMgrScope.enter())
             {
@@ -1229,6 +1244,10 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             }
             finally
             {
+                // copy the data one more time, so that all device-paths, identifiers, allocated sizes, etc are copied
+                // again, in case the thin-spaces are requested again before the next devMgrRun starts
+                copyReadOnlyData(localNode);
+
                 // always commit transaction as we most likely changed our environment which we cannot
                 // rollback
                 transMgr.commit();
@@ -1240,6 +1259,31 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
                 remoteWrLock.unlock();
             }
         }
+    }
+
+    private void copyReadOnlyData(Node localNodeRef) throws AccessDeniedException
+    {
+        Collection<ReadOnlyStorPool> roStorPoolList = new ArrayList<>();
+        StltReadOnlyInfo.ReadOnlyNode roLocalNode = StltReadOnlyInfo.ReadOnlyNode.copyFrom(localNodeRef, wrkCtx);
+        Iterator<StorPool> localSpIt = localNodeRef.iterateStorPools(wrkCtx);
+        while (localSpIt.hasNext())
+        {
+            StorPool localSp = localSpIt.next();
+            roStorPoolList.add(StltReadOnlyInfo.ReadOnlyStorPool.copyFrom(roLocalNode, localSp, wrkCtx));
+        }
+        stltReadOnlyInfo = new StltReadOnlyInfo(roStorPoolList);
+    }
+
+    @Override
+    public StltReadOnlyInfo getReadOnlyData()
+    {
+        return stltReadOnlyInfo;
+    }
+
+    @Override
+    public void clearReadOnlyStltInfo()
+    {
+        stltReadOnlyInfo = new StltReadOnlyInfo(Collections.emptyList());
     }
 
     private void checkIfAllRequestSharedLocksAquired(
@@ -1851,7 +1895,6 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
     @Override
     public SpaceInfo getSpaceInfo(StorPoolInfo storPoolInfoRef, boolean update) throws StorageException
     {
-        // TODO: maybe we should synchronize with sched?
         return devHandler.getSpaceInfo(storPoolInfoRef, update);
     }
 

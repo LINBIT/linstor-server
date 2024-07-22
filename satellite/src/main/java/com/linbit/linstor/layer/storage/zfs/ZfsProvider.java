@@ -11,6 +11,8 @@ import com.linbit.linstor.backupshipping.BackupShippingMgr;
 import com.linbit.linstor.clone.CloneService;
 import com.linbit.linstor.core.StltConfigAccessor;
 import com.linbit.linstor.core.apicallhandler.StltExtToolsChecker;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyStorPool;
+import com.linbit.linstor.core.devmgr.StltReadOnlyInfo.ReadOnlyVlmProviderInfo;
 import com.linbit.linstor.core.identifier.ResourceName;
 import com.linbit.linstor.core.identifier.StorPoolName;
 import com.linbit.linstor.core.identifier.VolumeNumber;
@@ -251,6 +253,17 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
             asIdentifierRaw(zfsData);
     }
 
+    private String asFullQualifiedLvIdentifier(ReadOnlyVlmProviderInfo readOnlyVlmProvInfo)
+    {
+        return getZPool(readOnlyVlmProvInfo.getReadOnlyStorPool()) +
+            File.separator +
+            asLvIdentifier(
+                null,
+                readOnlyVlmProvInfo.getResourceName(),
+                readOnlyVlmProvInfo.getRscSuffix(),
+                readOnlyVlmProvInfo.getVlmNr()
+            );
+    }
 
     @Override
     protected void createLvImpl(ZfsData<Resource> vlmData)
@@ -975,5 +988,41 @@ public class ZfsProvider extends AbsStorageProvider<ZfsInfo, ZfsData<Resource>, 
         {
             errorReporter.reportError(accessDeniedException);
         }
+    }
+
+    @Override
+    public Map<ReadOnlyVlmProviderInfo, Long> fetchAllocatedSizes(List<ReadOnlyVlmProviderInfo> vlmDataListRef)
+        throws StorageException, AccessDeniedException
+    {
+        Map<ReadOnlyVlmProviderInfo, Long> ret = new HashMap<>();
+        Set<String> zfsDatasets = new HashSet<>();
+
+        for (ReadOnlyVlmProviderInfo roVlmProvInfo : vlmDataListRef)
+        {
+            ReadOnlyStorPool roStorPool = roVlmProvInfo.getReadOnlyStorPool();
+            String zpool = getZPool(roStorPool);
+            zfsDatasets.add(zpool);
+        }
+
+        HashMap<String, ZfsInfo> zfsListMap = ZfsUtils.getZfsList(extCmdFactory.create(), zfsDatasets, kind);
+
+        for (ReadOnlyVlmProviderInfo roVlmProvInfo : vlmDataListRef)
+        {
+            @Nullable String identifier = asFullQualifiedLvIdentifier(roVlmProvInfo);
+            @Nullable ZfsInfo zfsInfo = zfsListMap.get(identifier);
+            long allocatedSize;
+            if (zfsInfo == null)
+            {
+                allocatedSize = roVlmProvInfo.getOrigAllocatedSize();
+            }
+            else
+            {
+                // zfsInfo.size should already be in KiB
+                allocatedSize = zfsInfo.allocatedSize;
+            }
+            ret.put(roVlmProvInfo, allocatedSize);
+        }
+
+        return ret;
     }
 }
