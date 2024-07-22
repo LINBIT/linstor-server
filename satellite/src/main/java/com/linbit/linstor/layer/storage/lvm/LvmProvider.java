@@ -37,7 +37,7 @@ import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.utils.StorageConfigReader;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -671,7 +671,9 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     @Override
     public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        Props publicStorDriverNamespace = DeviceLayerUtils.getNamespaceStorDriver(storPool.getProps(storDriverAccCtx));
+        ReadOnlyProps publicStorDriverNamespace = DeviceLayerUtils.getNamespaceStorDriver(
+            storPool.getProps(storDriverAccCtx)
+        );
         StorageConfigReader.checkVolumeGroupEntry(extCmdFactory, publicStorDriverNamespace);
         StorageConfigReader.checkToleranceFactor(publicStorDriverNamespace);
 

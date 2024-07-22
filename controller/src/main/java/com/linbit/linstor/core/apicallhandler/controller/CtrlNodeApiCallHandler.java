@@ -74,6 +74,7 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.proto.javainternal.s2c.MsgIntApplyConfigResponseOuterClass.MsgIntApplyConfigResponse;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -692,7 +693,7 @@ public class CtrlNodeApiCallHandler
                     {
                         try
                         {
-                            final Props props = node.getProps(peerAccCtx.get());
+                            final ReadOnlyProps props = node.getProps(peerAccCtx.get());
                             if (props.contains(propFilters))
                             {
                                 nodes.add(node.getApiData(peerAccCtx.get(), null, null));

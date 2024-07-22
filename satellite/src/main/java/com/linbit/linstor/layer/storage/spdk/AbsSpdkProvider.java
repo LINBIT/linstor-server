@@ -34,7 +34,7 @@ import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils;
 import com.linbit.linstor.layer.storage.spdk.utils.SpdkUtils.LvsInfo;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -441,7 +441,7 @@ public abstract class AbsSpdkProvider<T> extends AbsStorageProvider<LvsInfo, Spd
     {
         LocalPropsChangePojo ret = new LocalPropsChangePojo();
 
-        Props props = DeviceLayerUtils.getNamespaceStorDriver(
+        ReadOnlyProps props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
         );
         SpdkConfigReader.checkVolumeGroupEntry(spdkCommands, props);

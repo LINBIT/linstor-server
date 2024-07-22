@@ -5,7 +5,7 @@ import com.linbit.linstor.InternalApiConsts;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.layer.AbsLayerSizeCalculator;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.interfaces.categories.resource.VlmProviderObject;
@@ -98,7 +98,7 @@ public class StorageLayerSizeCalculator extends AbsLayerSizeCalculator
         }
     }
 
-    private long getAllocationGranularity(Props propsRef)
+    private long getAllocationGranularity(ReadOnlyProps propsRef)
     {
         String allocGran = propsRef.getProp(
             InternalApiConsts.ALLOCATION_GRANULARITY,

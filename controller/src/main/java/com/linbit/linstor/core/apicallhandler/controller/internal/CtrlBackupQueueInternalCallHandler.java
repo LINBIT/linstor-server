@@ -32,7 +32,7 @@ import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.SystemConfProtectionRepository;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.locks.LockGuardFactory;
@@ -617,7 +617,7 @@ public class CtrlBackupQueueInternalCallHandler
         int toClearCt = 0;
         for (Node node : nodes)
         {
-            Props nodeProps = node.getProps(accCtx);
+            ReadOnlyProps nodeProps = node.getProps(accCtx);
             PriorityProps prioProps = new PriorityProps(
                 nodeProps,
                 sysCfgRepo.getCtrlConfForView(accCtx)

@@ -70,6 +70,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -754,7 +755,7 @@ public class CtrlRscDfnApiCallHandler
                     {
                         try
                         {
-                            final Props props = rscDfn.getProps(peerAccCtx.get());
+                            final ReadOnlyProps props = rscDfn.getProps(peerAccCtx.get());
                             if (props.contains(propFilters))
                             {
                                 rscdfns.add(rscDfn.getApiData(peerAccCtx.get()));
@@ -1016,7 +1017,7 @@ public class CtrlRscDfnApiCallHandler
             clonedRscDfnProps.putAll(srcRscDfn.getProps(peerAccCtx.get()).map());
             clonedRscDfnProps.put(InternalApiConsts.KEY_CLONED_FROM, srcRscDfn.getName().displayValue);
 
-            final Props rscGrpProps = srcRscDfn.getResourceGroup().getProps(peerAccCtx.get());
+            final ReadOnlyProps rscGrpProps = srcRscDfn.getResourceGroup().getProps(peerAccCtx.get());
             PriorityProps rscGrpPrioProps = new PriorityProps(
                 rscGrpProps, systemConfRepository.getCtrlConfForView(peerAccCtx.get())
             );

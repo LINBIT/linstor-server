@@ -6,7 +6,7 @@ import com.linbit.ValueInUseException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 
 import java.util.regex.Matcher;
 
@@ -16,7 +16,7 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
         " %d is already in use";
 
     private final ErrorReporter errorReporter;
-    private final Props ctrlConf;
+    private final ReadOnlyProps ctrlConf;
     private final String ctrlConfKeyRange;
     private final String elementName;
     private final NumberRangeChecker rangeLimitChecker;
@@ -30,7 +30,7 @@ public class DynamicNumberPoolImpl implements DynamicNumberPool
 
     public DynamicNumberPoolImpl(
         ErrorReporter errorReporterRef,
-        Props ctrlConfRef,
+        ReadOnlyProps ctrlConfRef,
         String ctrlConfKeyRangeRef,
         String elementNameRef,
         NumberRangeChecker rangeLimitCheckerRef,

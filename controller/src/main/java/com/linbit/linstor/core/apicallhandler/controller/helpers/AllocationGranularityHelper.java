@@ -11,6 +11,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
@@ -105,7 +106,7 @@ public class AllocationGranularityHelper
         VolumeDefinition vlmDfn = storVlmData.getVolume().getVolumeDefinition();
         for (StorPool sp : storPoolSet)
         {
-            Props spProps = sp.getProps(accCtxRef);
+            ReadOnlyProps spProps = sp.getProps(accCtxRef);
             @Nullable String spPropValue = spProps.getProp(
                 InternalApiConsts.ALLOCATION_GRANULARITY,
                 StorageConstants.NAMESPACE_INTERNAL

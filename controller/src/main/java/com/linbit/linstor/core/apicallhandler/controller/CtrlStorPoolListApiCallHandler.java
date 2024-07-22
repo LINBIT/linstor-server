@@ -20,7 +20,6 @@ import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.repository.StorPoolDefinitionRepository;
 import com.linbit.linstor.core.repository.SystemConfRepository;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -202,7 +201,7 @@ public class CtrlStorPoolListApiCallHandler
                                     nodesFilter.contains(storPool.getNode().getName()))
                                 .collect(toList()))
                             {
-                                Props props = storPool.getProps(peerAccCtx.get());
+                                ReadOnlyProps props = storPool.getProps(peerAccCtx.get());
                                 if (props.contains(propFilters))
                                 {
                                     Long freeCapacity;

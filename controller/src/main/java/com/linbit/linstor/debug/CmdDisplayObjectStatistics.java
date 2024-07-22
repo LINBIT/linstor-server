@@ -1,23 +1,24 @@
 package com.linbit.linstor.debug;
 
+import com.linbit.linstor.core.CoreModule;
+import com.linbit.linstor.core.LinStor;
+import com.linbit.linstor.core.objects.Node;
+import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
+import com.linbit.linstor.security.AccessContext;
+import com.linbit.linstor.security.Identity;
+import com.linbit.linstor.security.Role;
+import com.linbit.linstor.security.SecurityType;
+
 import javax.inject.Inject;
+import javax.inject.Named;
+
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-
-import com.linbit.linstor.core.CoreModule;
-import com.linbit.linstor.core.LinStor;
-import com.linbit.linstor.core.objects.Node;
-import com.linbit.linstor.propscon.Props;
-import com.linbit.linstor.security.AccessContext;
-import com.linbit.linstor.security.Identity;
-import com.linbit.linstor.security.Role;
-import com.linbit.linstor.security.SecurityType;
-
-import javax.inject.Named;
 
 public class CmdDisplayObjectStatistics extends BaseDebugCmd
 {
@@ -51,7 +52,7 @@ public class CmdDisplayObjectStatistics extends BaseDebugCmd
     private final ReadWriteLock storPoolDfnMapLock;
     private final ReadWriteLock nodesMapLock;
     private final ReadWriteLock rscDfnMapLock;
-    private final Props conf;
+    private final ReadOnlyProps conf;
     private final CoreModule.StorPoolDefinitionMap storPoolDfnMap;
     private final CoreModule.NodesMap nodesMap;
     private final CoreModule.ResourceDefinitionMap rscDfnMap;

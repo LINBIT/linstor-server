@@ -25,7 +25,7 @@ import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.LvsInfo;
 import com.linbit.linstor.layer.storage.utils.StorageConfigReader;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -600,7 +600,7 @@ public class LvmThinProvider extends LvmProvider
     {
         LocalPropsChangePojo ret = new LocalPropsChangePojo();
 
-        Props props = DeviceLayerUtils.getNamespaceStorDriver(
+        ReadOnlyProps props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
         );
         StorageConfigReader.checkThinPoolEntry(extCmdFactory, props);

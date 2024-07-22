@@ -331,7 +331,7 @@ public class CtrlScheduledBackupsApiCallHandler
         TreeMap<String, SnapshotDefinition> sourceSnaps = new TreeMap<>();
         for (SnapshotDefinition snapDfn : rscDfn.getSnapshotDfns(peerAccCtx.get()))
         {
-            Props props = snapDfn.getProps(peerAccCtx.get());
+            ReadOnlyProps props = snapDfn.getProps(peerAccCtx.get());
             String schedule = props.getProp(SCHEDULE_KEY);
             String remote = props.getProp(REMOTE_KEY);
             if (schedule != null && schedule.equals(scheduleName) && remote != null && remote.equals(remoteName))
@@ -425,7 +425,7 @@ public class CtrlScheduledBackupsApiCallHandler
         {
             try
             {
-                Props props = snapDfn.getProps(peerAccCtx.get());
+                ReadOnlyProps props = snapDfn.getProps(peerAccCtx.get());
                 if (
                     isFullBackupOfSchedule(
                         props.map(), scheduleName, remoteName,

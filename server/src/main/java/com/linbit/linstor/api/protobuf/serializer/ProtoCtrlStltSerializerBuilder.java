@@ -33,7 +33,7 @@ import com.linbit.linstor.core.objects.remotes.S3Remote;
 import com.linbit.linstor.core.objects.remotes.StltRemote;
 import com.linbit.linstor.core.pojos.LocalPropsChangePojo;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.proto.common.CryptoEntryOuterClass;
 import com.linbit.linstor.proto.common.RscLayerDataOuterClass.RscLayerData;
 import com.linbit.linstor.proto.common.StltConfigOuterClass;
@@ -144,7 +144,7 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
         ErrorReporter errReporter,
         AccessContext serializerCtx,
         CtrlSecurityObjects secObjsRef,
-        Props ctrlConfRef,
+        ReadOnlyProps ctrlConfRef,
         final String apiCall,
         Long apiCallId,
         boolean isAnswer
@@ -1646,10 +1646,10 @@ public class ProtoCtrlStltSerializerBuilder extends ProtoCommonSerializerBuilder
 
     private class CtrlSerializerHelper
     {
-        private Props ctrlConfProps;
+        private ReadOnlyProps ctrlConfProps;
 
         CtrlSerializerHelper(
-            final Props ctrlConfRef
+            final ReadOnlyProps ctrlConfRef
         )
         {
             ctrlConfProps = ctrlConfRef;

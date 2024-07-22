@@ -6,7 +6,7 @@ import com.linbit.InvalidNameException;
 import com.linbit.ValueOutOfRangeException;
 import com.linbit.linstor.layer.storage.spdk.SpdkCommands;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
@@ -21,13 +21,13 @@ public class SpdkConfigReader
     {
     }
 
-    public static <T> void checkVolumeGroupEntry(SpdkCommands<T> spdkCommandsRef, Props props)
+    public static <T> void checkVolumeGroupEntry(SpdkCommands<T> spdkCommandsRef, ReadOnlyProps propsRef)
         throws StorageException, AccessDeniedException
     {
         String volumeGroup;
         try
         {
-            volumeGroup = props.getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY).split("/")[0];
+            volumeGroup = propsRef.getProp(StorageConstants.CONFIG_LVM_VOLUME_GROUP_KEY).split("/")[0];
         }
         catch (InvalidKeyException exc)
         {
@@ -64,7 +64,7 @@ public class SpdkConfigReader
         }
     }
 
-    public static void checkToleranceFactor(Props props) throws StorageException
+    public static void checkToleranceFactor(ReadOnlyProps props) throws StorageException
     {
         String toleranceFactorStr = null;
         int toleranceFactor = -1;

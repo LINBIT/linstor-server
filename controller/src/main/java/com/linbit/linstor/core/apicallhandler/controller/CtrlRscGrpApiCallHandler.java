@@ -67,6 +67,7 @@ import com.linbit.linstor.layer.LayerPayload;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -224,7 +225,7 @@ public class CtrlRscGrpApiCallHandler
                     {
                         try
                         {
-                            final Props props = rscGrp.getProps(peerAccCtx.get());
+                            final ReadOnlyProps props = rscGrp.getProps(peerAccCtx.get());
                             if (props.contains(propFilters))
                             {
                                 ret.add(rscGrp.getApiData(peerAccCtx.get()));

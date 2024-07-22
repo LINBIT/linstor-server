@@ -46,6 +46,7 @@ import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -494,7 +495,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     }
 
     private boolean propChangeCausingEbsAction(
-        Props vlmDfnPropsRef,
+        ReadOnlyProps vlmDfnPropsRef,
         Map<String, String> overridePropsRef,
         Set<String> deletePropKeysRef
     )
@@ -791,7 +792,7 @@ public class CtrlVlmDfnModifyApiCallHandler implements CtrlSatelliteConnectionLi
     {
         try
         {
-            Props rscDfnProps = vlmDfnRef.getResourceDefinition().getProps(peerAccCtx.get());
+            ReadOnlyProps rscDfnProps = vlmDfnRef.getResourceDefinition().getProps(peerAccCtx.get());
             @Nullable String exactSize = rscDfnProps.getProp(
                 ApiConsts.KEY_DRBD_EXACT_SIZE,
                 ApiConsts.NAMESPC_DRBD_OPTIONS

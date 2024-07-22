@@ -5,6 +5,7 @@ import com.linbit.linstor.dbdrivers.DatabaseException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -97,7 +98,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
     }
 
     @Override
-    public Props getCtrlConfForView(AccessContext accCtx)
+    public ReadOnlyProps getCtrlConfForView(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkProtSet();
@@ -115,7 +116,7 @@ public class SystemConfProtectionRepository implements SystemConfRepository
     }
 
     @Override
-    public Props getStltConfForView(AccessContext accCtx)
+    public ReadOnlyProps getStltConfForView(AccessContext accCtx)
         throws AccessDeniedException
     {
         checkProtSet();

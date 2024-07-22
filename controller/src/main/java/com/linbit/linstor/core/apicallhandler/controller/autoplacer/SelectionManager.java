@@ -11,7 +11,7 @@ import com.linbit.linstor.core.objects.Node;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.kinds.DeviceProviderKind;
@@ -202,7 +202,7 @@ public class SelectionManager
 
         for (Node node : alreadyDeployedOnNodesRef)
         {
-            Props prop = node.getProps(accessContext);
+            ReadOnlyProps prop = node.getProps(accessContext);
             @Nullable String val = prop.getProp(keyRef);
             if (val != null)
             {
@@ -500,7 +500,7 @@ public class SelectionManager
     private boolean checkSameProps(final StorPool spRef, final State curStateRef) throws AccessDeniedException
     {
         boolean isAllowed = true;
-        final Props nodePropsRef = spRef.getNode().getProps(accessContext);
+        final ReadOnlyProps nodePropsRef = spRef.getNode().getProps(accessContext);
 
         Iterator<Map.Entry<String, String>> samePropEntrySetIterator = curStateRef.sameProps.entrySet().iterator();
         while (isAllowed && samePropEntrySetIterator.hasNext())
@@ -535,7 +535,7 @@ public class SelectionManager
     {
         boolean isAllowed = true;
 
-        final Props nodeProps = spRef.getNode().getProps(accessContext);
+        final ReadOnlyProps nodeProps = spRef.getNode().getProps(accessContext);
         Iterator<Entry<String, Map<String, Integer>>> diffPropEntrySetIt = curStateRef.diffProps.entrySet().iterator();
         while (isAllowed && diffPropEntrySetIt.hasNext())
         {
@@ -580,7 +580,7 @@ public class SelectionManager
     {
         final State curState = getCurrentState();
         final StorPool curSp = currentSpWithScoreRef.storPool;
-        final Props nodeProps = curSp.getNode().getProps(accessContext);
+        final ReadOnlyProps nodeProps = curSp.getNode().getProps(accessContext);
 
         errorReporter.logTrace(
             "Autoplacer.Selector: Adding StorPool '%s' on Node '%s' to current selection",

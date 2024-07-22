@@ -51,6 +51,7 @@ import com.linbit.linstor.netcom.PeerNotConnectedException;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.FlagsHelper;
@@ -992,7 +993,7 @@ public class CtrlRscToggleDiskApiCallHandler implements CtrlSatelliteConnectionL
         String actionPeer = removeDisk ?
             "Notified {0} that disk has been removed on ''" + nodeName.displayValue + "''" : null;
         Publisher<ApiCallRc> migrationFlux;
-        Props rscProps = getPropsPrivileged(rsc);
+        ReadOnlyProps rscProps = getPropsPrivileged(rsc);
         String migrateFromNodeNameStr = rscProps.map().get(ApiConsts.KEY_RSC_MIGRATE_FROM);
         if (migrateFromNodeNameStr == null)
         {

@@ -936,7 +936,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
 
         if (optionalProp.isPresent())
         {
-            Props exosNamespace = optionalProp.get();
+            ReadOnlyProps exosNamespace = optionalProp.get();
             Iterator<String> exosNamespaceIt = exosNamespace.iterateNamespaces();
 
             while (exosNamespaceIt.hasNext())
@@ -1031,7 +1031,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
      * @throws AccessDeniedException
      * @throws DatabaseException
      */
-    private LocalPropsChangePojo reinitTargetIds(Props localNodePropsRef)
+    private LocalPropsChangePojo reinitTargetIds(ReadOnlyProps localNodePropsRef)
         throws StorageException, AccessDeniedException
     {
         LocalPropsChangePojo ret = new LocalPropsChangePojo();
@@ -1043,7 +1043,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
         Optional<Props> optExosNamespace = localNodePropsRef.getNamespace(ApiConsts.NAMESPC_EXOS);
         if (optExosNamespace.isPresent())
         {
-            Props exosNamespace = optExosNamespace.get();
+            ReadOnlyProps exosNamespace = optExosNamespace.get();
             for (String propKey : exosNamespace.map().keySet())
             {
                 if (propKey.contains("/Ports/"))
@@ -1104,7 +1104,7 @@ public class ExosProvider extends AbsStorageProvider<ExosRestVolume, ExosData<Re
     @Override
     public @Nullable LocalPropsChangePojo checkConfig(StorPool storPool) throws StorageException, AccessDeniedException
     {
-        Props props = DeviceLayerUtils.getNamespaceStorDriver(
+        ReadOnlyProps props = DeviceLayerUtils.getNamespaceStorDriver(
             storPool.getProps(storDriverAccCtx)
         );
         if (props.getProp(ApiConsts.KEY_STOR_POOL_NAME) == null)

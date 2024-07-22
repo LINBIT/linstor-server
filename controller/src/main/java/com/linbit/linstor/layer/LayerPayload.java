@@ -5,7 +5,7 @@ import com.linbit.linstor.PriorityProps;
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.interfaces.layers.drbd.DrbdRscDfnObject.TransportType;
 import com.linbit.utils.Pair;
 
@@ -95,7 +95,7 @@ public class LayerPayload
         return this;
     }
 
-    public LayerPayload extractFrom(Props props)
+    public LayerPayload extractFrom(ReadOnlyProps props)
     {
         return extractFrom(new PriorityProps(props));
     }

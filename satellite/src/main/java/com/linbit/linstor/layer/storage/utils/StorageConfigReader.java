@@ -7,7 +7,7 @@ import com.linbit.ValueOutOfRangeException;
 import com.linbit.extproc.ExtCmdFactory;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.storage.StorageConstants;
 import com.linbit.linstor.storage.StorageException;
 
@@ -22,7 +22,7 @@ public class StorageConfigReader
     public static final byte[] VALID_CHARS = {'_'};
     public static final byte[] VALID_INNER_CHARS = {'_', '-'};
 
-    public static void checkVolumeGroupEntry(ExtCmdFactory extCmdFactory, Props props)
+    public static void checkVolumeGroupEntry(ExtCmdFactory extCmdFactory, ReadOnlyProps props)
         throws StorageException
     {
         String volumeGroup;
@@ -70,7 +70,7 @@ public class StorageConfigReader
         }
     }
 
-    public static void checkThinPoolEntry(ExtCmdFactory extCmdFactory, Props props) throws StorageException
+    public static void checkThinPoolEntry(ExtCmdFactory extCmdFactory, ReadOnlyProps props) throws StorageException
     {
         String volumeGroup;
         String thinPool;
@@ -119,7 +119,7 @@ public class StorageConfigReader
         // if volume group does not exist
     }
 
-    public static void checkToleranceFactor(Props props) throws StorageException
+    public static void checkToleranceFactor(ReadOnlyProps props) throws StorageException
     {
         String toleranceFactorStr = null;
         int toleranceFactor = -1;
@@ -160,7 +160,7 @@ public class StorageConfigReader
         }
     }
 
-    public static void checkFileStorageDirectoryEntry(Props propsRef)
+    public static void checkFileStorageDirectoryEntry(ReadOnlyProps propsRef)
         throws StorageException
     {
         Path path = null;

@@ -44,6 +44,7 @@ import com.linbit.linstor.numberpool.DynamicNumberPool;
 import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -87,7 +88,7 @@ public class RscDrbdLayerHelper extends
     DrbdRscDfnData<Resource>, DrbdVlmDfnData<Resource>
 >
 {
-    private final Props stltConf;
+    private final ReadOnlyProps stltConf;
     private final ResourceDefinitionRepository rscDfnMap;
     private final ModularCryptoProvider cryptoProvider;
 
@@ -685,10 +686,10 @@ public class RscDrbdLayerHelper extends
             ResourceDefinition rscDfn = rsc.getResourceDefinition();
 
             Iterator<VolumeDefinition> iterateVolumeDfn = rscDfn.iterateVolumeDfn(apiCtx);
-            Props rscProps = rsc.getProps(apiCtx);
-            Props rscDfnProps = rscDfn.getProps(apiCtx);
-            Props rscGrpProps = rscDfn.getResourceGroup().getProps(apiCtx);
-            Props nodeProps = rsc.getNode().getProps(apiCtx);
+            ReadOnlyProps rscProps = rsc.getProps(apiCtx);
+            ReadOnlyProps rscDfnProps = rscDfn.getProps(apiCtx);
+            ReadOnlyProps rscGrpProps = rscDfn.getResourceGroup().getProps(apiCtx);
+            ReadOnlyProps nodeProps = rsc.getNode().getProps(apiCtx);
 
             while (iterateVolumeDfn.hasNext())
             {

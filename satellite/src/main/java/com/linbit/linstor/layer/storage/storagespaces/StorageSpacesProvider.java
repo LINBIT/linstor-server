@@ -24,7 +24,7 @@ import com.linbit.linstor.layer.storage.WipeHandler;
 import com.linbit.linstor.layer.storage.utils.WmiHelper;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -512,7 +512,7 @@ public class StorageSpacesProvider extends AbsStorageProvider<StorageSpacesInfo,
     @Override
     public SpaceInfo getSpaceInfo(StorPool storPoolRef) throws AccessDeniedException, StorageException
     {
-        Props props = storPoolRef.getProps(storDriverAccCtx);
+        ReadOnlyProps props = storPoolRef.getProps(storDriverAccCtx);
         String poolName = props.getProp("StorPoolName", "StorDriver");
         OutputData res;
         Long totalSize = 0L;

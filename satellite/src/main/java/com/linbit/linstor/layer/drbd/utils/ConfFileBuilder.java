@@ -138,10 +138,10 @@ public class ConfFileBuilder
         {
             throw new ImplementationError("No resource definition found for " + localRsc + "!");
         }
-        final Props localRscProps = localRsc.getProps(accCtx);
-        final Props rscDfnProps = rscDfn.getProps(accCtx);
+        final ReadOnlyProps localRscProps = localRsc.getProps(accCtx);
+        final ReadOnlyProps rscDfnProps = rscDfn.getProps(accCtx);
         final ResourceGroup rscGrp = rscDfn.getResourceGroup();
-        final Props rscGrpProps = rscGrp.getProps(accCtx);
+        final ReadOnlyProps rscGrpProps = rscGrp.getProps(accCtx);
         final String localNodeName = localRscData.getAbsResource().getNode().getName().displayValue;
 
         appendLine(header());
@@ -385,7 +385,7 @@ public class ConfFileBuilder
                         if (rscConn != null)
                         {
                             // get paths from resource connection...
-                            Props rscConnProps = rscConn.getProps(accCtx);
+                            ReadOnlyProps rscConnProps = rscConn.getProps(accCtx);
                             paths = rscConnProps.getNamespace(ApiConsts.NAMESPC_CONNECTION_PATHS);
 
                             PriorityProps prioRscConnProps = new PriorityProps()
@@ -795,7 +795,7 @@ public class ConfFileBuilder
 
     private void appendDrbdOptions(
         final LinStorObject lsObj,
-        final Props props,
+        final ReadOnlyProps props,
         final String namespace
     )
     {
@@ -968,7 +968,7 @@ public class ConfFileBuilder
 
                 ResourceDefinition rscDfn = vlmDfn.getResourceDefinition();
                 ResourceGroup rscGrp = rscDfn.getResourceGroup();
-                Props rscDfnProps = rscDfn.getProps(accCtx);
+                ReadOnlyProps rscDfnProps = rscDfn.getProps(accCtx);
                 PriorityProps vlmPrioProps = new PriorityProps()
                     .addProps(vlmData.getVolume().getProps(accCtx), "V (" + rscDfn.getName() + "/" + vlmNr.value + ")")
                     .addProps(vlmData.getVolume().getAbsResource().getProps(accCtx), "R (" + rscDfn.getName() + ")")

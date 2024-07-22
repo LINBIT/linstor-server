@@ -17,7 +17,7 @@ import com.linbit.linstor.core.objects.ResourceDefinition;
 import com.linbit.linstor.core.objects.StorPool;
 import com.linbit.linstor.core.objects.StorPoolDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.security.AccessType;
@@ -154,7 +154,7 @@ public class StorPoolFilter
     )
         throws AccessDeniedException
     {
-        ArrayList<Props> alreadyDeployedNodesProps = new ArrayList<>();
+        ArrayList<ReadOnlyProps> alreadyDeployedNodesProps = new ArrayList<>();
         if (rscDfnRef != null)
         {
             Iterator<Resource> rscIt = rscDfnRef.iterateResource(apiAccCtx);
@@ -327,7 +327,7 @@ public class StorPoolFilter
                     );
                 }
 
-                Props nodeProps = node.getProps(apiAccCtx);
+                ReadOnlyProps nodeProps = node.getProps(apiAccCtx);
                 if (nodeMatches && filterNodeNameList != null && !filterNodeNameList.isEmpty())
                 {
                     boolean nodeNameFound = false;
@@ -700,7 +700,7 @@ public class StorPoolFilter
      */
     private Map<String, String> extractFixedSameProperties(
         List<String> propsList,
-        List<Props> alreadyDeployedNodeProps
+        List<ReadOnlyProps> alreadyDeployedNodeProps
     )
     {
         Map<String, String> ret = new TreeMap<>();
@@ -718,7 +718,7 @@ public class StorPoolFilter
                 else
                 {
                     HashSet<String> nodeValues = new HashSet<>();
-                    for (Props alreadyDeployedNodeProp : alreadyDeployedNodeProps)
+                    for (ReadOnlyProps alreadyDeployedNodeProp : alreadyDeployedNodeProps)
                     {
                         String currentValue = alreadyDeployedNodeProp.getProp(elem);
                         if (currentValue != null)
@@ -761,7 +761,7 @@ public class StorPoolFilter
      */
     private Map<String, Map<String, Integer>> extractFixedDifferentProperties(
         @Nullable List<String> origReplicasOnDifferentList,
-        List<Props> alreadyDeployedNodeProps,
+        List<ReadOnlyProps> alreadyDeployedNodeProps,
         @Nullable Map<String, Integer> xReplicasOnDifferentRef
     )
     {
@@ -828,7 +828,7 @@ public class StorPoolFilter
     }
 
     private void processReplOnDiff(
-        List<Props> alreadyDeployedNodeProps,
+        List<ReadOnlyProps> alreadyDeployedNodeProps,
         Map<String, Integer> xReplicasOnDifferentRef,
         Map<String, Map<String, Integer>> ret,
         String key,
@@ -846,7 +846,7 @@ public class StorPoolFilter
             usedValuesMap.put(fixedValueToAvoid, 0);
         }
 
-        for (Props alreadyDeployedNodeProp : alreadyDeployedNodeProps)
+        for (ReadOnlyProps alreadyDeployedNodeProp : alreadyDeployedNodeProps)
         {
             @Nullable String currentValue = alreadyDeployedNodeProp.getProp(key);
             if (currentValue != null)

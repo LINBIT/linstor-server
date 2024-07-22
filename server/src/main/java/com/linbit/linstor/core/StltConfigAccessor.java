@@ -14,7 +14,7 @@ import java.util.Optional;
 
 public class StltConfigAccessor
 {
-    private Props stltProps;
+    private ReadOnlyProps stltProps;
 
     @Inject
     public StltConfigAccessor(

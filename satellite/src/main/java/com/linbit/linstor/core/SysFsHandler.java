@@ -17,6 +17,7 @@ import com.linbit.linstor.core.objects.VolumeDefinition;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -95,7 +96,7 @@ public class SysFsHandler
     private final AccessContext apiCtx;
     private final ExtCmdFactory extCmdFactory;
     private final Map<VlmProviderObject<Resource>, String> deviceMajorMinorMap;
-    private final Props satelliteProps;
+    private final ReadOnlyProps satelliteProps;
 
     public static final String DEVNAME = "DEVNAME";
     public static final String DEVTYPE = "DEVTYPE";

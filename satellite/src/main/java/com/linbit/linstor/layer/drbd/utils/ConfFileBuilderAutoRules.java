@@ -2,7 +2,7 @@ package com.linbit.linstor.layer.drbd.utils;
 
 import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.core.objects.Resource;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.adapter.drbd.DrbdRscData;
@@ -52,10 +52,10 @@ public class ConfFileBuilderAutoRules
     public static class AutoRule
     {
         public final String key;
-        public final Props props;
+        public final ReadOnlyProps props;
         public final boolean isNullAllowed;
 
-        private AutoRule(String keyRef, Props propsRef, boolean isNullAllowedRef)
+        private AutoRule(String keyRef, ReadOnlyProps propsRef, boolean isNullAllowedRef)
         {
             key = keyRef;
             props = propsRef;

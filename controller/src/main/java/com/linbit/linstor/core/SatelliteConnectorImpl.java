@@ -14,6 +14,7 @@ import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.netcom.TcpConnector;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.tasks.ReconnectorTask;
@@ -29,7 +30,7 @@ import java.net.InetSocketAddress;
 public class SatelliteConnectorImpl implements SatelliteConnector
 {
     private final ErrorReporter errorReporter;
-    private final Props ctrlConf;
+    private final ReadOnlyProps ctrlConf;
     private final NetComContainer netComContainer;
     private final ReconnectorTask reconnectorTask;
 

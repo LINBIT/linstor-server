@@ -81,7 +81,7 @@ public class EbsUtils
             .getProp(getEbsSnapIdKey(snapVlmDataRef));
     }
 
-    public static String getEbsSnapId(Props snapVlmPropsRef, String rscLayerSuffix)
+    public static String getEbsSnapId(ReadOnlyProps snapVlmPropsRef, String rscLayerSuffix)
     {
         return snapVlmPropsRef.getProp(getEbsSnapIdKey(rscLayerSuffix));
     }
@@ -147,7 +147,7 @@ public class EbsUtils
         );
     }
 
-    public static boolean hasAnyEbsProp(Props propsRef)
+    public static boolean hasAnyEbsProp(ReadOnlyProps propsRef)
     {
         Optional<Props> namespace = propsRef.getNamespace(EBS_NAMESPC);
         return namespace.isPresent() && !namespace.get().isEmpty();

@@ -22,7 +22,7 @@ import com.linbit.linstor.core.repository.NodeRepository;
 import com.linbit.linstor.core.repository.ResourceDefinitionRepository;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
-import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.satellitestate.SatelliteState;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -144,7 +144,7 @@ public class CtrlVlmListApiCallHandler
                             .collect(toList()))
                         {
                             // prop filter
-                            final Props props = rsc.getProps(peerAccCtx.get());
+                            final ReadOnlyProps props = rsc.getProps(peerAccCtx.get());
                             if (props.contains(propFilters))
                             {
                                 // create our api object ourselves to filter the volumes by storage pools

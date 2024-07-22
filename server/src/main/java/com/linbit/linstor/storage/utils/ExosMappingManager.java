@@ -19,6 +19,7 @@ import com.linbit.linstor.numberpool.DynamicNumberPoolImpl;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.data.RscLayerSuffixes;
@@ -81,7 +82,7 @@ public class ExosMappingManager
                     while (vlmIt.hasNext())
                     {
                         Volume vlm = vlmIt.next();
-                        Props props = vlm.getProps(apiCtx);
+                        ReadOnlyProps props = vlm.getProps(apiCtx);
 
                         StorPool storPool = LayerVlmUtils.getStorPoolMap(vlm, apiCtx).get(RscLayerSuffixes.SUFFIX_DATA);
 
@@ -134,7 +135,7 @@ public class ExosMappingManager
     public void findFreeExosPortAndLun(StorPool storPoolRef, Volume vlmRef)
         throws InvalidKeyException, InvalidValueException, LinStorException, ExhaustedPoolException
     {
-        Props nodeProps = storPoolRef.getNode().getProps(apiCtx);
+        ReadOnlyProps nodeProps = storPoolRef.getNode().getProps(apiCtx);
         String enclosureName = getEnclosureName(storPoolRef);
         String enclosurePropKey = ApiConsts.NAMESPC_EXOS + "/" + enclosureName;
 
@@ -215,11 +216,11 @@ public class ExosMappingManager
             throw new LinStorException("No enclosures defined in '" + enclosurePropKey + "'");
         }
 
-        Props vlmProps = vlmRef.getProps(apiCtx);
+        ReadOnlyProps vlmProps = vlmRef.getProps(apiCtx);
         Optional<Props> optNamespace = vlmProps.getNamespace(InternalApiConsts.NAMESPC_EXOS_MAP);
         if (optNamespace.isPresent())
         {
-            Props namespace = optNamespace.get();
+            ReadOnlyProps namespace = optNamespace.get();
             Iterator<String> ctrlNamespaces = namespace.iterateNamespaces();
             while (ctrlNamespaces.hasNext())
             {
@@ -240,7 +241,7 @@ public class ExosMappingManager
             .getProp(ApiConsts.KEY_STOR_POOL_EXOS_ENCLOSURE, ApiConsts.NAMESPC_EXOS);
     }
 
-    public static List<Triple<String, String, String>> getCtrlnamePortLunList(Props vlmProps)
+    public static List<Triple<String, String, String>> getCtrlnamePortLunList(ReadOnlyProps vlmProps)
     {
         List<Triple<String, String, String>> ret = new ArrayList<>();
 

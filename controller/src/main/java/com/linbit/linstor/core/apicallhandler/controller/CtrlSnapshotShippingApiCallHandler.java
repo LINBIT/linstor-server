@@ -38,6 +38,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -146,7 +147,7 @@ public class CtrlSnapshotShippingApiCallHandler
     {
         Flux<ApiCallRc> flux;
         ResourceDefinition rscDfn = ctrlApiDataLoader.loadRscDfn(rscNameRef, true);
-        Props rscDfnProps = propsHelper.getProps(rscDfn);
+        ReadOnlyProps rscDfnProps = propsHelper.getProps(rscDfn);
         String targetNodeName = rscDfnProps.getProp(ApiConsts.KEY_TARGET_NODE, ApiConsts.NAMESPC_SNAPSHOT_SHIPPING);
         String sourceNodeName = rscDfnProps.getProp(ApiConsts.KEY_SOURCE_NODE, ApiConsts.NAMESPC_SNAPSHOT_SHIPPING);
 
@@ -570,7 +571,7 @@ public class CtrlSnapshotShippingApiCallHandler
         Snapshot prevSourceSnapshot = null;
         try
         {
-            Props snapDfnProps = snapCurrentSourceRef.getSnapshotDefinition().getProps(peerAccCtx.get());
+            ReadOnlyProps snapDfnProps = snapCurrentSourceRef.getSnapshotDefinition().getProps(peerAccCtx.get());
             String prevShippingName = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_NAME_PREV);
             if (prevShippingName != null)
             {
@@ -725,7 +726,7 @@ public class CtrlSnapshotShippingApiCallHandler
                                     final SnapshotDefinitionListItemApi snapItem = snapshotDfn
                                         .getListItemApiData(peerAccCtx.get());
 
-                                    Props snapDfnProps = snapshotDfn.getProps(peerAccCtx.get());
+                                    ReadOnlyProps snapDfnProps = snapshotDfn.getProps(peerAccCtx.get());
                                     String sourceNode = snapDfnProps
                                         .getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_SOURCE_NODE);
                                     String targetNode = snapDfnProps

@@ -12,6 +12,7 @@ import com.linbit.linstor.numberpool.NumberPool;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 
@@ -341,7 +342,7 @@ public class NameShortener
      */
     public void remove(ResourceDefinition rscDfn, String rscSuffix) throws AccessDeniedException
     {
-        Props rscDfnProps = rscDfn.getProps(accCtx);
+        ReadOnlyProps rscDfnProps = rscDfn.getProps(accCtx);
         String shortName = rscDfnProps.getProp(propKey);
         if (shortName != null)
         {

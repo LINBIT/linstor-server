@@ -38,6 +38,7 @@ import com.linbit.linstor.numberpool.NumberPoolModule;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.InvalidValueException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.stateflags.StateFlags;
@@ -466,7 +467,7 @@ public class RscStorageLayerHelper extends
 
                 if (ebsStorPoolAZ.equals(availabilityZone))
                 {
-                    Props rscProp = rsc.getProps(accCtx);
+                    ReadOnlyProps rscProp = rsc.getProps(accCtx);
                     String connectedInitiator = rscProp.getProp(
                         InternalApiConsts.KEY_EBS_CONNECTED_INIT_NODE_NAME,
                         ApiConsts.NAMESPC_STLT + "/" + ApiConsts.NAMESPC_EBS
@@ -633,7 +634,7 @@ public class RscStorageLayerHelper extends
         boolean ret = false;
         for (VlmProviderObject<Resource> vlmData : rscData.getVlmLayerObjects().values())
         {
-            Props storPoolProps = vlmData.getStorPool().getProps(apiCtx);
+            ReadOnlyProps storPoolProps = vlmData.getStorPool().getProps(apiCtx);
             if (storPoolProps.getNamespace(ApiConsts.NAMESPC_SED).isPresent() && !secObjs.areAllSet())
             {
                 CtrlRscLayerDataFactory ctrlRscLayerDataFactory = layerDataHelperProvider.get();

@@ -46,6 +46,7 @@ import com.linbit.linstor.layer.storage.utils.StltProviderUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.snapshotshipping.SnapshotShippingService;
@@ -470,7 +471,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     private void createLvWithCopy(LAYER_DATA vlmData)
         throws AccessDeniedException, StorageException
     {
-        final Props rscDfnProps = vlmData.getRscLayerObject().getAbsResource()
+        final ReadOnlyProps rscDfnProps = vlmData.getRscLayerObject()
+            .getAbsResource()
             .getResourceDefinition().getProps(storDriverAccCtx);
         final String srcRscName = rscDfnProps.getProp(InternalApiConsts.KEY_CLONED_FROM);
         final Resource srcRsc = getResource(vlmData, srcRscName);
@@ -1117,9 +1119,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         throws AccessDeniedException, StorageException
     {
         SnapshotVolume snapVlm = (SnapshotVolume) snapVlmData.getVolume();
-        Props snapVlmDfnProps = snapVlm.getSnapshotVolumeDefinition().getProps(
-            storDriverAccCtx
-        );
+        ReadOnlyProps snapVlmDfnProps = snapVlm.getSnapshotVolumeDefinition()
+            .getProps(storDriverAccCtx);
         String socatPort = snapVlmDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
 
         snapShipMgr.startReceiving(
@@ -1140,8 +1141,8 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         SnapshotDefinition snapDfn = snapSource.getSnapshotDefinition();
         SnapshotVolumeDefinition snapVlmDfn = ((SnapshotVolume) curSnapVlmData.getVolume())
             .getSnapshotVolumeDefinition();
-        Props snapDfnProps = snapDfn.getProps(storDriverAccCtx);
-        Props snapVlmDfnProps = snapVlmDfn.getProps(storDriverAccCtx);
+        ReadOnlyProps snapDfnProps = snapDfn.getProps(storDriverAccCtx);
+        ReadOnlyProps snapVlmDfnProps = snapVlmDfn.getProps(storDriverAccCtx);
 
         String socatPort = snapVlmDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_PORT);
         String snapTargetName = snapDfnProps.getProp(InternalApiConsts.KEY_SNAPSHOT_SHIPPING_TARGET_NODE);
@@ -1407,7 +1408,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         String restoreVlmName;
         try
         {
-            Props props = vlmData.getVolume().getProps(storDriverAccCtx);
+            ReadOnlyProps props = vlmData.getVolume().getProps(storDriverAccCtx);
             String restoreFromResourceName = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_RESOURCE);
 
             if (restoreFromResourceName != null)
@@ -1440,7 +1441,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
         String restoreSnapshotName;
         try
         {
-            Props props = vlm.getProps(storDriverAccCtx);
+            ReadOnlyProps props = vlm.getProps(storDriverAccCtx);
             String restoreFromSnapshotProp = props.getProp(ApiConsts.KEY_VLM_RESTORE_FROM_SNAPSHOT);
 
             restoreSnapshotName = restoreFromSnapshotProp != null ?
@@ -1753,7 +1754,7 @@ public abstract class AbsStorageProvider<INFO, LAYER_DATA extends AbsStorageVlmD
     protected long getExtentSizeFromVlmDfn(VlmProviderObject<?> vlmDataRef) throws AccessDeniedException
     {
         AbsVolume<?> volume = vlmDataRef.getVolume();
-        Props props;
+        ReadOnlyProps props;
         if (volume instanceof Volume)
         {
             VolumeDefinition vlmDfn = volume.getVolumeDefinition();

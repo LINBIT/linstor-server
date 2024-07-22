@@ -30,6 +30,7 @@ import com.linbit.linstor.layer.storage.utils.DeviceUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.propscon.InvalidKeyException;
 import com.linbit.linstor.propscon.Props;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
 import com.linbit.linstor.storage.StorageException;
@@ -92,7 +93,7 @@ public class NvmeUtils
     private static final long NVME_GREP_SLEEP_INCREMENT = 200L;
 
     private final ExtCmdFactory extCmdFactory;
-    private final Props stltProps;
+    private final ReadOnlyProps stltProps;
     private final ErrorReporter errorReporter;
     private final DeviceProviderMapper devProviderMapper;
     private final FileSystemWatch fsWatch;

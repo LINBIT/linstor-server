@@ -14,6 +14,7 @@ import com.linbit.linstor.propscon.Props;
 import com.linbit.linstor.propscon.PropsAccess;
 import com.linbit.linstor.propscon.PropsContainer;
 import com.linbit.linstor.propscon.PropsContainerFactory;
+import com.linbit.linstor.propscon.ReadOnlyProps;
 import com.linbit.linstor.propscon.ReadOnlyPropsImpl;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -212,14 +213,14 @@ public class ResourceGroup extends AbsCoreObj<ResourceGroup> implements Protecte
      * @param vlmNrRef
      * @throws AccessDeniedException
      */
-    public Props getVolumeGroupProps(AccessContext accCtx, VolumeNumber vlmNrRef) throws AccessDeniedException
+    public ReadOnlyProps getVolumeGroupProps(AccessContext accCtx, VolumeNumber vlmNrRef) throws AccessDeniedException
     {
         checkDeleted();
         objProt.requireAccess(accCtx, AccessType.VIEW);
 
         VolumeGroup vlmGrp = vlmMap.get(vlmNrRef);
 
-        Props vlmGrpProps;
+        ReadOnlyProps vlmGrpProps;
         if (vlmGrp == null)
         {
             vlmGrpProps = ReadOnlyPropsImpl.emptyRoProps();
