@@ -31,7 +31,6 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
@@ -89,37 +88,71 @@ public class EventProcessor
 
     public void connectionClosed(Peer peer)
     {
-        ArrayList<NodeName> nodeNamesToProcess = new ArrayList<>();
-        try (LockGuard lockGuard = lockGuardFactory.build(LockGuardFactory.LockType.READ, NODES_MAP))
+        TransactionMgr transMgr = null;
+        boolean inScope = linstorScope.isEntered();
+        boolean seedTxMgr = false;
+        try (LinStorScope.ScopeAutoCloseable close = inScope ? null : linstorScope.enter())
         {
-            Node node = peer.getNode();
-            if (node != null && !node.isDeleted())
+            if (!inScope)
             {
-                nodeNamesToProcess.add(node.getName());
-                // we MUST NOT call "executeNoConnection" method from here, since that method might start a
-                // database-transaction.
-                // we MUST NOT take linstor-locks (which we currently already have) before starting a
-                // database-transaction, otherwise we might run into deadlocks with database internal locks
+                linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
+                seedTxMgr = true;
             }
-        }
-        if (!nodeNamesToProcess.isEmpty())
-        {
-            eventHandlingLock.lock();
-            try
+            else
             {
-                for (NodeName nodeName : nodeNamesToProcess)
+                if (linstorScope.isSeeded(Key.get(TransactionMgr.class)))
+                {
+                    transMgr = transMgrProvider.get();
+                }
+                else
+                {
+                    seedTxMgr = true;
+                }
+            }
+            if (seedTxMgr)
+            {
+                transMgr = transactionMgrGenerator.startTransaction();
+                TransactionMgrUtil.seedTransactionMgr(linstorScope, transMgr);
+            }
+            try (
+                LockGuard lockGuard = lockGuardFactory.create()
+                    .read(NODES_MAP)
+                    .postLinstorLocks(eventHandlingLock)
+                    .build())
+            {
+                Node node = peer.getNode();
+                if (node != null && !node.isDeleted())
                 {
                     // The peer is a Satellite
                     for (Map.Entry<String, Provider<EventHandler>> eventHandlerEntry : eventHandlers.entrySet())
                     {
                         Collection<EventIdentifier> eventStreams = incomingEventStreamStore.getDescendantEventStreams(
-                            EventIdentifier.node(eventHandlerEntry.getKey(), nodeName)
+                            EventIdentifier.node(eventHandlerEntry.getKey(), node.getName())
                         );
 
                         for (EventIdentifier eventIdentifier : eventStreams)
                         {
-                            executeNoConnection(eventHandlerEntry.getValue(), eventIdentifier);
+                            Provider<EventHandler> eventHandler = eventHandlerEntry.getValue();
+                            try
+                            {
+                                eventHandler.get()
+                                    .execute(
+                                        InternalApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION,
+                                        eventIdentifier,
+                                        null
+                                    );
 
+                                commit(transMgr);
+                            }
+                            catch (Exception exc)
+                            {
+                                errorReporter.reportError(
+                                    exc,
+                                    null,
+                                    null,
+                                    "Event handler for " + eventIdentifier + " failed on connection closed"
+                                );
+                            }
                             incomingEventStreamStore.removeEventStream(eventIdentifier);
                         }
                     }
@@ -127,7 +160,10 @@ public class EventProcessor
             }
             finally
             {
-                eventHandlingLock.unlock();
+                if (seedTxMgr) // only return/close connection of transMgr if we created it
+                {
+                    rollbackIfNeededAndCloseConn(transMgr);
+                }
             }
         }
     }
@@ -149,8 +185,8 @@ public class EventProcessor
         return scopeRunner.fluxInTransactionalScope(
             "Handle event",
             lockGuardFactory.createDeferred()
-                .preLinstorLocks(eventHandlingLock)
                 .write(NODES_MAP)
+                .postLinstorLocks(eventHandlingLock)
                 .build(),
             () -> handleEventInTransaction(
                 eventAction,
@@ -221,63 +257,6 @@ public class EventProcessor
             errorReporter.reportError(exc);
         }
         return Flux.empty();
-    }
-
-    private void executeNoConnection(
-        Provider<EventHandler> eventHandler,
-        EventIdentifier eventIdentifier
-    )
-    {
-        TransactionMgr transMgr = null;
-        boolean inScope = linstorScope.isEntered();
-        boolean seedTxMgr = false;
-        try (LinStorScope.ScopeAutoCloseable close = inScope ? null : linstorScope.enter())
-        {
-            if (!inScope)
-            {
-                linstorScope.seed(Key.get(AccessContext.class, PeerContext.class), sysCtx);
-                seedTxMgr = true;
-            }
-            else
-            {
-                if (linstorScope.isSeeded(Key.get(TransactionMgr.class)))
-                {
-                    transMgr = transMgrProvider.get();
-                }
-                else
-                {
-                    seedTxMgr = true;
-                }
-            }
-            if (seedTxMgr)
-            {
-                transMgr = transactionMgrGenerator.startTransaction();
-                TransactionMgrUtil.seedTransactionMgr(linstorScope, transMgr);
-            }
-            try (LockGuard lockGuard = lockGuardFactory.build(LockGuardFactory.LockType.READ, NODES_MAP))
-            {
-                eventHandler.get()
-                    .execute(
-                        InternalApiConsts.EVENT_STREAM_CLOSE_NO_CONNECTION,
-                        eventIdentifier,
-                        null
-                    );
-
-                commit(transMgr);
-            }
-        }
-        catch (Exception exc)
-        {
-            errorReporter.reportError(exc, null, null,
-                "Event handler for " + eventIdentifier + " failed on connection closed");
-        }
-        finally
-        {
-            if (seedTxMgr) // only return/close connection of transMgr if we created it
-            {
-                rollbackIfNeededAndCloseConn(transMgr);
-            }
-        }
     }
 
     private void commit(TransactionMgr transMgr)
