@@ -1393,7 +1393,7 @@ public class CtrlRscDfnApiCallHandler
         {
             ApiCallRcImpl.EntryBuilder rcEntry = ApiCallRcImpl.entryBuilder(
                 ApiConsts.FAIL_EXISTS_RSC_DFN,
-                "A resource definition with the name '\" + rscNameStr + \"' already exists"
+                "A resource definition with the name '" + rscNameStr + "' already exists"
             );
             rcEntry.setSkipErrorReport(true);
             throw new ApiRcException(rcEntry.build(), exc);
