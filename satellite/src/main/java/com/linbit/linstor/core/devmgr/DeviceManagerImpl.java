@@ -61,6 +61,7 @@ import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.DeviceLayer;
 import com.linbit.linstor.layer.DeviceLayer.NotificationListener;
 import com.linbit.linstor.layer.drbd.drbdstate.DrbdEventService;
+import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.netcom.Peer;
 import com.linbit.linstor.propscon.Props;
@@ -717,6 +718,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             }
 
             errLog.logInfo("Begin DeviceManager cycle %d", cycleNr);
+            LvmUtils.recacheNext();
             try
             {
                 boolean fullSyncApplied = fullSyncFlag.getAndSet(false);
@@ -864,6 +866,7 @@ class DeviceManagerImpl implements Runnable, SystemService, DeviceManager, Devic
             finally
             {
                 errLog.logInfo("End DeviceManager cycle %d", cycleNr);
+                LvmUtils.recacheNext();
 
                 Peer ctrlPeer = controllerPeerConnector.getControllerPeer();
                 synchronized (sched)

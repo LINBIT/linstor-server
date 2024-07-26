@@ -45,11 +45,13 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 @Singleton
@@ -176,6 +178,7 @@ public class LvmThinProvider extends LvmProvider
                 )
             );
         }
+        LvmUtils.recacheNextLvs();
     }
 
     @Override
@@ -194,6 +197,7 @@ public class LvmThinProvider extends LvmProvider
             )
         );
         lvmVlmData.setExists(false);
+        LvmUtils.recacheNextLvs();
     }
 
     @Override
@@ -249,6 +253,7 @@ public class LvmThinProvider extends LvmProvider
                     )
                 );
             }
+            LvmUtils.recacheNextLvs();
         }
         catch (InvalidKeyException | AccessDeniedException | InvalidNameException exc)
         {
@@ -278,6 +283,7 @@ public class LvmThinProvider extends LvmProvider
                 additionalOptionsArr
             )
         );
+        LvmUtils.recacheNextLvs();
     }
 
     @Override
@@ -296,6 +302,7 @@ public class LvmThinProvider extends LvmProvider
             )
         );
         snapVlm.setExists(false);
+        LvmUtils.recacheNextLvs();
     }
 
     @Override
@@ -325,6 +332,7 @@ public class LvmThinProvider extends LvmProvider
                 config
             )
         );
+        LvmUtils.recacheNextLvs();
     }
 
     @Override
@@ -393,31 +401,48 @@ public class LvmThinProvider extends LvmProvider
                 config
             )
         );
+        LvmUtils.recacheNextLvs();
     }
 
     @Override
     public SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
-        String vgForLvs = getVolumeGroupForLvs(storPool);
+        LvmUtils.recacheNext();
+        String vgName = getVolumeGroup(storPool);
         String thinPool = getThinPool(storPool);
-        Long capacity = LvmUtils.getThinTotalSize(
+        String vgWithThinPool = vgName + File.separator + thinPool;
+
+        Map<String /* vg */, Map<String/* thinPool */, LvsInfo>> thinTotalSizeMap = LvmUtils.getLvsInfo(
             extCmdFactory,
-            Collections.singleton(vgForLvs)
-        ).get(thinPool);
-        if (capacity == null)
+            Collections.singleton(vgName)
+        );
+        Map<String /* vg */, Map<String/* thinPool */, Long>> thinFreeSizeMap = LvmUtils.getThinFreeSize(
+            extCmdFactory,
+            Collections.singleton(vgName)
+        );
+
+        @Nullable Map<String, LvsInfo> lvMap = thinTotalSizeMap.get(vgName);
+        if (lvMap == null)
         {
-            throw new StorageException("Thin pool \'" + thinPool + "\' does not exist.");
+            throw new StorageException("Volume group \'" + vgName + "\' does not exist.");
+        }
+        @Nullable LvsInfo lvsInfo = lvMap.get(thinPool);
+        if (lvsInfo == null)
+        {
+            throw new StorageException("Thin pool \'" + vgWithThinPool + "\' does not exist.");
         }
 
-        Long freeSpace = LvmUtils.getThinFreeSize(
-            extCmdFactory,
-            Collections.singleton(vgForLvs)
-        ).get(thinPool);
+        @Nullable Map<String, Long> thinMap = thinFreeSizeMap.get(vgName);
+        if (thinMap == null)
+        {
+            throw new StorageException("Volume group \'" + vgName + "\' does not exist.");
+        }
+        @Nullable Long freeSpace = thinMap.get(thinPool);
         if (freeSpace == null)
         {
-            throw new StorageException("Thin pool \'" + thinPool + "\' does not exist.");
+            throw new StorageException("Thin pool \'" + vgWithThinPool + "\' does not exist.");
         }
-        return SpaceInfo.buildOrThrowOnError(capacity, freeSpace, storPool);
+        return SpaceInfo.buildOrThrowOnError(lvsInfo.size, freeSpace, storPool);
     }
 
     @Override
@@ -457,6 +482,7 @@ public class LvmThinProvider extends LvmProvider
             null
         );
         vlmDataRef.setExists(true);
+        LvmUtils.recacheNextLvs();
 
         // for keeping the same behavior as zfsProvider, we want to "keep" the snapshot. #
         createSnapshot(vlmDataRef, snapVlmRef);
@@ -580,6 +606,7 @@ public class LvmThinProvider extends LvmProvider
                     config
                 )
             );
+            LvmUtils.recacheNextLvs();
         }
         else
         {
@@ -589,7 +616,8 @@ public class LvmThinProvider extends LvmProvider
         cloneService.startClone(
             srcVlmData,
             vlmData,
-            this);
+            this
+        );
     }
 
     @Override
@@ -612,8 +640,18 @@ public class LvmThinProvider extends LvmProvider
 
         String vlmGrp = getVolumeGroup(storPool);
         String thinPool = getThinPool(storPool);
-        HashMap<String, LvsInfo> lvsInfo = LvmUtils.getLvsInfo(extCmdFactory, Collections.singleton(vlmGrp));
-        LvsInfo thinPoolInfo = lvsInfo.get(vlmGrp + File.separator + thinPool);
+        Map<String, Map<String, LvsInfo>> lvsInfo = LvmUtils.getLvsInfo(extCmdFactory, Collections.singleton(vlmGrp));
+
+        @Nullable Map<String, LvsInfo> lvMap = lvsInfo.get(vlmGrp);
+        if (lvMap == null)
+        {
+            throw new StorageException("Volume group '" + vlmGrp + "' does not exist");
+        }
+        @Nullable LvsInfo thinPoolInfo = lvMap.get(thinPool);
+        if (thinPoolInfo == null)
+        {
+            throw new StorageException("Thin pool '" + vlmGrp + "/" + thinPool + "' does not exist");
+        }
 
         if (!thinPoolInfo.attributes.contains("z"))
         {
@@ -622,6 +660,7 @@ public class LvmThinProvider extends LvmProvider
                 Collections.singleton(vlmGrp),
                 config -> LvmCommands.activateZero(extCmdFactory, vlmGrp, thinPool, config)
             );
+            LvmUtils.recacheNextLvs();
         }
 
         ret.changeStorPoolProp(
@@ -658,30 +697,60 @@ public class LvmThinProvider extends LvmProvider
         Map<ReadOnlyVlmProviderInfo, Long> ret = new HashMap<>();
         Set<String> lvmVolumeGroups = new HashSet<>();
 
+        Map<String, List<ReadOnlyVlmProviderInfo>> roVlmProvInfoByLvmVlmGrp = new HashMap<>();
         for (ReadOnlyVlmProviderInfo roVlmProvInfo : vlmDataListRef)
         {
             ReadOnlyStorPool roStorPool = roVlmProvInfo.getReadOnlyStorPool();
             String vlmGrp = getVolumeGroup(roStorPool);
+            roVlmProvInfoByLvmVlmGrp.computeIfAbsent(vlmGrp, ignored -> new ArrayList<>())
+                .add(roVlmProvInfo);
             lvmVolumeGroups.add(vlmGrp);
         }
 
-        HashMap<String, LvsInfo> lvsInfoMap = LvmUtils.getLvsInfo(extCmdFactory, lvmVolumeGroups);
+        Map<String/* lvm VG */, Map<String/* lvs id */, LvsInfo>> lvsInfoMap = LvmUtils.getLvsInfo(
+            extCmdFactory,
+            lvmVolumeGroups
+        );
 
-        for (ReadOnlyVlmProviderInfo roVlmProvInfo : vlmDataListRef)
+        for (Entry<String /* lvm VG */, List<ReadOnlyVlmProviderInfo>> entry : roVlmProvInfoByLvmVlmGrp.entrySet())
         {
-            String identifier = getFullQualifiedIdentifier(roVlmProvInfo);
-            @Nullable LvsInfo lvInfo = lvsInfoMap.get(identifier);
-            long allocatedSize;
-            if (lvInfo == null)
+            String lvmVlmGrp = entry.getKey();
+            @Nullable Map<String/* lvs identifier */, LvsInfo> lvsInfoForCurrentVolumeGrp = lvsInfoMap.get(lvmVlmGrp);
+            if (lvsInfoForCurrentVolumeGrp == null)
             {
-                allocatedSize = roVlmProvInfo.getOrigAllocatedSize();
+                for (ReadOnlyVlmProviderInfo roVlmProvInfo : entry.getValue())
+                {
+                    ret.put(roVlmProvInfo, roVlmProvInfo.getOrigAllocatedSize());
+                }
             }
             else
             {
-                // lvInfo.size should already be in KiB
-                allocatedSize = (long) (lvInfo.size * lvInfo.dataPercent / 100.0f);
+                for (ReadOnlyVlmProviderInfo roVlmProvInfo : entry.getValue())
+                {
+                    @Nullable String identifier = roVlmProvInfo.getIdentifier();
+                    if (identifier == null)
+                    {
+                        identifier = asLvIdentifier(
+                            roVlmProvInfo.getReadOnlyStorPool().getName(),
+                            roVlmProvInfo.getResourceName(),
+                            roVlmProvInfo.getRscSuffix(),
+                            roVlmProvInfo.getVlmNr()
+                        );
+                    }
+                    @Nullable LvsInfo lvInfo = lvsInfoForCurrentVolumeGrp.get(identifier);
+                    long allocatedSize;
+                    if (lvInfo == null)
+                    {
+                        allocatedSize = roVlmProvInfo.getOrigAllocatedSize();
+                    }
+                    else
+                    {
+                        // lvInfo.size should already be in KiB
+                        allocatedSize = (long) (lvInfo.size * (lvInfo.dataPercent / 100.0f));
+                    }
+                    ret.put(roVlmProvInfo, allocatedSize);
+                }
             }
-            ret.put(roVlmProvInfo, allocatedSize);
         }
 
         return ret;

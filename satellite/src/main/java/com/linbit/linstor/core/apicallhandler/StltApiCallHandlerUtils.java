@@ -27,6 +27,7 @@ import com.linbit.linstor.core.objects.Volume;
 import com.linbit.linstor.interfaces.StorPoolInfo;
 import com.linbit.linstor.layer.storage.DeviceProvider;
 import com.linbit.linstor.layer.storage.DeviceProviderMapper;
+import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.logging.ErrorReporter;
 import com.linbit.linstor.security.AccessContext;
 import com.linbit.linstor.security.AccessDeniedException;
@@ -43,6 +44,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class StltApiCallHandlerUtils
@@ -103,6 +105,8 @@ public class StltApiCallHandlerUtils
     )
     {
         Map<Volume.Key, Either<Long, ApiRcException>> allocatedMap = new HashMap<>();
+
+        LvmUtils.recacheNext();
 
         StltReadOnlyInfo stltReadOnlyInfo = devMgr.get().getReadOnlyData();
         // this method deliberately does not use the StorPoolInfo interface, since the getReadOnlyVolumes method is not
@@ -172,8 +176,8 @@ public class StltApiCallHandlerUtils
 
             try
             {
-                // we must not call deviceProvier.prepare(...), since that WILL interfere with the device-manager run.
-                // The prepare method populates provier-internal caches based on "lvs" or "zfs list". Recalculating
+                // we must not call deviceProvider.prepare(...), since that WILL interfere with the device-manager run.
+                // The prepare method populates provider-internal caches based on "lvs" or "zfs list". Recalculating
                 // those cached values and overriding based on our read-only-query while the device-manager is still
                 // relying on those cached values being based on the actual volumes that are currently being processed
                 // is a _very_ bad idea.
@@ -186,10 +190,28 @@ public class StltApiCallHandlerUtils
                     @Nullable Long value = allocatedSizeEntry.getValue();
                     if (value != null)
                     {
-                        allocatedMap.put(
-                            allocatedSizeEntry.getKey().getVolumeKey(),
-                            Either.left(value)
+                        @Nullable Either<Long, ApiRcException> valueFromOtherRscSuffixes = allocatedMap.get(
+                            allocatedSizeEntry.getKey().getVolumeKey()
                         );
+                        if (valueFromOtherRscSuffixes != null)
+                        {
+                            if (valueFromOtherRscSuffixes instanceof Either.Left)
+                            {
+                                Long oldValue = valueFromOtherRscSuffixes.map(Function.identity(), null);
+
+                                allocatedMap.put(
+                                    allocatedSizeEntry.getKey().getVolumeKey(),
+                                    Either.left(oldValue + value)
+                                );
+                            }
+                        }
+                        else
+                        {
+                            allocatedMap.put(
+                                allocatedSizeEntry.getKey().getVolumeKey(),
+                                Either.left(value)
+                            );
+                        }
                     }
                 }
             }
@@ -242,6 +264,7 @@ public class StltApiCallHandlerUtils
 
         StltReadOnlyInfo roInfo = devMgr.get().getReadOnlyData();
 
+        LvmUtils.recacheNext();
         for (StorPoolInfo storPoolInfo : roInfo.getStorPoolReadOnlyInfoList())
         {
             if (shouldIncludeSpTestRef.test(storPoolInfo))

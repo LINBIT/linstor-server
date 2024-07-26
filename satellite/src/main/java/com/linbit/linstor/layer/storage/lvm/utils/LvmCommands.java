@@ -11,10 +11,13 @@ import com.linbit.linstor.storage.utils.Commands.RetryHandler;
 
 import static com.linbit.linstor.storage.utils.Commands.genericExecutor;
 
+import javax.annotation.Nullable;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -40,7 +43,21 @@ public class LvmCommands
     public static final int LVS_COL_METADATA_PERCENT = 7;
     public static final int LVS_COL_CHUNK_SIZE = 8;
 
+    public static final int LVS_COLUMN_COUNT = 9;
+
+    public static final int VGS_COL_VG_NAME = 0;
+    public static final int VGS_COL_VG_EXTENT_SIZE = 1;
+    public static final int VGS_COL_VG_SIZE = 2;
+    public static final int VGS_COL_VG_FREE = 3;
+    public static final int VGS_COL_LV_NAME = 4; // only available in vgsThin
+    public static final int VGS_COL_LV_SIZE = 5; // only available in vgsThin
+    public static final int VGS_COL_DATA_PERCENT = 6; // only available in vgsThin
+
+    public static final int VGS_THICK_COLUMN_COUNT = 4;
+    public static final int VGS_THIN_COLUMN_COUNT = 7;
+
     public static final String LVM_TAG_CLONE_SNAPSHOT = "linstor_clone_snapshot";
+
 
     private static String[] buildCmd(
         String baseCmd,
@@ -55,7 +72,7 @@ public class LvmCommands
     private static String[] buildCmd(
         String baseCmd,
         String lvmConfig,
-        Collection<String> appendedString,
+        @Nullable Collection<String> appendedString,
         String... baseOptions
     )
     {
@@ -66,10 +83,7 @@ public class LvmCommands
             list.add("--config");
             list.add(lvmConfig);
         }
-        for (String baseOpt : baseOptions)
-        {
-            list.add(baseOpt);
-        }
+        Collections.addAll(list, baseOptions);
         if (appendedString != null)
         {
             list.addAll(appendedString);
@@ -99,7 +113,7 @@ public class LvmCommands
         );
     }
 
-    public static OutputData getExtentSize(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig)
+    public static OutputData vgsThick(ExtCmd extCmd, @Nullable Set<String> volumeGroups, String lvmConfig)
         throws StorageException
     {
         return genericExecutor(
@@ -108,14 +122,35 @@ public class LvmCommands
                 "vgs",
                 lvmConfig,
                 volumeGroups,
-                "-o", "vg_name,vg_extent_size",
+                "-o", "vg_name,vg_extent_size,vg_size,vg_free",
                 "--separator", LvmUtils.DELIMITER,
                 "--units", "k",
                 "--noheadings",
                 "--nosuffix"
             ),
-            "Failed to query lvm extent size",
-            "Failed to query extent size of volume group(s) " + volumeGroups,
+            "Failed to query vgs",
+            "Failed to query vgs of volume group(s) " + volumeGroups,
+            Commands.SKIP_EXIT_CODE_CHECK
+        );
+    }
+
+    public static OutputData vgsThin(ExtCmd extCmd, @Nullable Set<String> volumeGroups, String lvmConfig)
+        throws StorageException
+    {
+        return genericExecutor(
+            extCmd.setSaveWithoutSharedLocks(true),
+            buildCmd(
+                "vgs",
+                lvmConfig,
+                volumeGroups,
+                "-o", "vg_name,vg_extent_size,vg_size,vg_free,lv_name,lv_size,data_percent",
+                "--separator", LvmUtils.DELIMITER,
+                "--units", "k",
+                "--noheadings",
+                "--nosuffix"
+                ),
+            "Failed to query vgs",
+            "Failed to query vgs of volume group(s) " + volumeGroups,
             Commands.SKIP_EXIT_CODE_CHECK
         );
     }
@@ -400,90 +435,6 @@ public class LvmCommands
         );
     }
 
-    public static OutputData getVgTotalSize(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig)
-        throws StorageException
-    {
-        return genericExecutor(
-            extCmd.setSaveWithoutSharedLocks(true),
-            buildCmd(
-                "vgs",
-                lvmConfig,
-                volumeGroups,
-               "-o", "vg_name,vg_size",
-                "--units", "k",
-                "--separator", LvmUtils.DELIMITER,
-                "--noheadings",
-                "--nosuffix"
-            ),
-            "Failed to query total size of volume group(s) " + volumeGroups,
-            "Failed to query total size of volume group(s) " + volumeGroups,
-            Commands.SKIP_EXIT_CODE_CHECK
-        );
-    }
-
-    public static OutputData getVgFreeSize(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig)
-        throws StorageException
-    {
-        return genericExecutor(
-            extCmd.setSaveWithoutSharedLocks(true),
-            buildCmd(
-                "vgs",
-                lvmConfig,
-                volumeGroups,
-                "-o", "vg_name,vg_free",
-                "--units", "k",
-                "--separator", LvmUtils.DELIMITER,
-                "--noheadings",
-                "--nosuffix"
-            ),
-            "Failed to query free size of volume group(s) " + volumeGroups,
-            "Failed to query free size of volume group(s) " + volumeGroups,
-            Commands.SKIP_EXIT_CODE_CHECK
-        );
-    }
-
-    public static OutputData getVgThinTotalSize(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig)
-        throws StorageException
-    {
-        return genericExecutor(
-            extCmd.setSaveWithoutSharedLocks(true),
-            buildCmd(
-                "lvs",
-                lvmConfig,
-                volumeGroups,
-                "-o", "lv_name,lv_size",
-                "--units", "k",
-                "--separator", LvmUtils.DELIMITER,
-                "--noheadings",
-                "--nosuffix"
-            ),
-            "Failed to query total size of volume group(s) " + volumeGroups,
-            "Failed to query total size of volume group(s) " + volumeGroups,
-            Commands.SKIP_EXIT_CODE_CHECK
-        );
-    }
-
-    public static OutputData getVgThinFreeSize(ExtCmd extCmd, Set<String> volumeGroups, String lvmConfig)
-        throws StorageException
-    {
-        return genericExecutor(
-            extCmd.setSaveWithoutSharedLocks(true),
-            buildCmd(
-                "vgs",
-                lvmConfig,
-                volumeGroups,
-                "-o", "lv_name,lv_size,data_percent",
-                "--units", "b", // intentionally not "k" as usual
-                "--separator", LvmUtils.DELIMITER,
-                "--noheadings",
-                "--nosuffix"
-            ),
-            "Failed to query free size of volume group(s) " + volumeGroups,
-            "Failed to query free size of volume group(s) " + volumeGroups,
-            Commands.SKIP_EXIT_CODE_CHECK
-        );
-    }
-
     public static OutputData activateVolume(ExtCmd extCmd, String volumeGroup, String targetId, String lvmConfig)
         throws StorageException
     {
@@ -555,23 +506,6 @@ public class LvmCommands
             "y",
             vlmGrp + File.separator + thinPool
         ), failMsg, failMsg);
-    }
-
-    public static OutputData listExistingVolumeGroups(ExtCmd extCmd, String lvmConfig) throws StorageException
-    {
-        String failMsg = "Failed to query list of volume groups";
-        return genericExecutor(
-            extCmd.setSaveWithoutSharedLocks(true),
-            buildCmd(
-                "vgs",
-                lvmConfig,
-                (Collection<String>) null,
-                "-o", "vg_name",
-                "--noheadings"
-            ),
-            failMsg,
-            failMsg
-        );
     }
 
     public static OutputData pvCreate(ExtCmd extCmd, String devicePath, String lvmConfig) throws StorageException

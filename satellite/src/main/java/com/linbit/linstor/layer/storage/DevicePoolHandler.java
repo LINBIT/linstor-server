@@ -169,6 +169,8 @@ public class DevicePoolHandler
                 devicePaths,
                 LvmUtils.getLvmFilterByPhysicalVolumes(devicePaths)
             );
+            LvmUtils.recacheNext();
+
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
@@ -225,6 +227,7 @@ public class DevicePoolHandler
                     .putObjRef(ApiConsts.KEY_POOL_NAME, poolName)
                     .build()
             );
+            LvmUtils.recacheNext();
         }
         catch (StorageException storExc)
         {
@@ -252,6 +255,8 @@ public class DevicePoolHandler
                     thinPoolName, config
                 )
             );
+            LvmUtils.recacheNext();
+
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.MASK_SUCCESS | ApiConsts.MASK_CRT | ApiConsts.MASK_PHYSICAL_DEVICE,
@@ -287,6 +292,8 @@ public class DevicePoolHandler
                     LvmVolumeType.THIN_POOL
                 )
             );
+            LvmUtils.recacheNext();
+
             apiCallRc.addEntry(
                 ApiCallRcImpl.entryBuilder(
                     ApiConsts.MASK_SUCCESS | ApiConsts.MASK_DEL | ApiConsts.MASK_PHYSICAL_DEVICE,

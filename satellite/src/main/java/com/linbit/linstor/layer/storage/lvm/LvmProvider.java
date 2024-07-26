@@ -34,6 +34,7 @@ import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LvmVolumeType;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils;
 import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.LvsInfo;
+import com.linbit.linstor.layer.storage.lvm.utils.LvmUtils.VgsInfo;
 import com.linbit.linstor.layer.storage.utils.LsBlkUtils;
 import com.linbit.linstor.layer.storage.utils.PmemUtils;
 import com.linbit.linstor.layer.storage.utils.StorageConfigReader;
@@ -61,6 +62,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -156,9 +158,10 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     protected void updateStates(List<LvmData<Resource>> vlmDataList, List<LvmData<Snapshot>> snapVlmDataList)
         throws StorageException, AccessDeniedException, DatabaseException
     {
-        final Map<String, Long> extentSizes = LvmUtils.getExtentSize(
+        final Map<String, VgsInfo> extentSizes = LvmUtils.getVgsInfo(
             extCmdFactory,
-            getAffectedVolumeGroups(vlmDataList, snapVlmDataList)
+            getAffectedVolumeGroups(vlmDataList, snapVlmDataList),
+            false
         );
 
         List<LvmData<?>> combinedList = new ArrayList<>();
@@ -187,7 +190,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                         Size sizeState = Size.TOO_LARGE;
 
                         final long toleratedSize =
-                            expectedSize + extentSizes.get(info.volumeGroup) * TOLERANCE_FACTOR;
+                            expectedSize + extentSizes.get(info.volumeGroup).vgExtentSize * TOLERANCE_FACTOR;
                         if (actualSize < toleratedSize)
                         {
                             sizeState = Size.TOO_LARGE_WITHIN_TOLERANCE;
@@ -208,18 +211,6 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         return vlmDataRef.getVolumeGroup() +
             File.separator +
             asIdentifierRaw(vlmDataRef);
-    }
-
-    protected String getFullQualifiedIdentifier(ReadOnlyVlmProviderInfo roVlmDataRef)
-    {
-        return getVolumeGroup(roVlmDataRef.getReadOnlyStorPool()) +
-            File.separator +
-            asLvIdentifier(
-                null,
-                roVlmDataRef.getResourceName(),
-                roVlmDataRef.getRscSuffix(),
-                roVlmDataRef.getVlmNr()
-            );
     }
 
     @SuppressWarnings("unchecked")
@@ -301,6 +292,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                         config
                     )
                 );
+                LvmUtils.recacheNextLvs();
             }
             // deactivating a volume MUST NOT happen within the prepare step
             // as other layers might still hold the device open
@@ -347,6 +339,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 )
             );
         }
+        LvmUtils.recacheNextLvs();
     }
 
     protected String getLvCreateType(LvmData<Resource> vlmDataRef)
@@ -468,6 +461,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 config
             )
         );
+        LvmUtils.recacheNextLvs();
     }
 
     @Override
@@ -492,6 +486,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 )
             );
             vlmData.setExists(false);
+            LvmUtils.recacheNextLvs();
         }
         else
         {
@@ -520,6 +515,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                     config
                 )
             );
+            LvmUtils.recacheNextLvs();
 
             vlmData.setExists(false);
 
@@ -538,6 +534,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                             LvmVolumeType.VOLUME
                         )
                     );
+                    LvmUtils.recacheNextLvs();
                 }
             );
         }
@@ -557,20 +554,31 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 config
             )
         );
+        LvmUtils.recacheNextLvs();
     }
 
     @Override
     protected Map<String, Long> getFreeSpacesImpl() throws StorageException
     {
-        Map<String, Long> freeSizes = LvmUtils.getVgFreeSize(extCmdFactory, changedStoragePoolStrings);
+        Map<String, Long> ret = new HashMap<>();
+        Map<String, VgsInfo> vgsInfoMap = LvmUtils.getVgsInfo(
+            extCmdFactory,
+            changedStoragePoolStrings,
+            false
+        );
         for (String storPool : changedStoragePoolStrings)
         {
-            if (!freeSizes.containsKey(storPool))
+            @Nullable VgsInfo vgsInfo = vgsInfoMap.get(storPool);
+            if (vgsInfo == null)
             {
-                freeSizes.put(storPool, SIZE_OF_NOT_FOUND_STOR_POOL);
+                ret.put(storPool, SIZE_OF_NOT_FOUND_STOR_POOL);
+            }
+            else
+            {
+                ret.put(storPool, vgsInfo.vgFree);
             }
         }
-        return freeSizes;
+        return ret;
     }
 
     @Override
@@ -584,11 +592,19 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         {
             LvmCommands.vgscan(extCmdFactory.create(), true);
         }
-
-        return LvmUtils.getLvsInfo(
+        Map<String, Map<String, LvsInfo>> lvsInfoMap = LvmUtils.getLvsInfo(
             extCmdFactory,
             getAffectedVolumeGroups(vlmDataList, snapVlms)
         );
+        HashMap<String /* fullQualfiedIdentifier */, LvsInfo> ret = new HashMap<>();
+        for (Map<String, LvsInfo> lvMap : lvsInfoMap.values())
+        {
+            for (LvsInfo lvInfo : lvMap.values())
+            {
+                ret.put(lvInfo.volumeGroup + File.separator + lvInfo.identifier, lvInfo);
+            }
+        }
+        return ret;
     }
 
     @Override
@@ -661,19 +677,25 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     @Override
     public SpaceInfo getSpaceInfo(StorPoolInfo storPool) throws StorageException, AccessDeniedException
     {
+        LvmUtils.recacheNext();
         String vg = getVolumeGroup(storPool);
         if (vg == null)
         {
             throw new StorageException("Unset volume group for " + storPool);
         }
-        Long capacity = LvmUtils.getVgTotalSize(
+        @Nullable VgsInfo vgsInfo = LvmUtils.getVgsInfo(
             extCmdFactory,
-            Collections.singleton(vg)
+            Collections.singleton(vg),
+            false
         ).get(vg);
-        Long freespace = LvmUtils.getVgFreeSize(
-            extCmdFactory,
-            Collections.singleton(vg)
-        ).get(vg);
+
+        @Nullable Long capacity = null;
+        @Nullable Long freespace = null;
+        if (vgsInfo != null)
+        {
+            capacity = vgsInfo.vgSize;
+            freespace = vgsInfo.vgFree;
+        }
         return SpaceInfo.buildOrThrowOnError(capacity, freespace, storPool);
     }
 
@@ -697,9 +719,16 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
         throws StorageException, ImplementationError
     {
         String lvmVG = getVolumeGroup(storPool);
-        Map<String, Long> extentSizeInKibMap = LvmUtils.getExtentSize(extCmdFactory, Collections.singleton(lvmVG));
-        Long extentSizeInKib = extentSizeInKibMap.get(lvmVG);
-        markAllocGranAsChangedIfNeeded(extentSizeInKib, storPool, ret);
+        Map<String, VgsInfo> extentSizeInKibMap = LvmUtils.getVgsInfo(
+            extCmdFactory,
+            Collections.singleton(lvmVG),
+            false
+        );
+        @Nullable VgsInfo vgsInfo = extentSizeInKibMap.get(lvmVG);
+        if (vgsInfo != null)
+        {
+            markAllocGranAsChangedIfNeeded(vgsInfo.vgExtentSize, storPool, ret);
+        }
     }
 
     @Override
@@ -857,12 +886,18 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
     protected long getExtentSize(AbsStorageVlmData<?> vlmDataRef) throws StorageException
     {
         String vlmGrp = getVolumeGroup(vlmDataRef.getStorPool());
-        Map<String, Long> extentSizes = LvmUtils.getExtentSize(
+        Map<String, VgsInfo> vgs = LvmUtils.getVgsInfo(
             extCmdFactory,
-            Collections.singleton(vlmGrp)
+            Collections.singleton(vlmGrp),
+            false
         );
-        Long extentSize = extentSizes.get(vlmGrp);
-        if (extentSize == null)
+        @Nullable VgsInfo vgsInfo = vgs.get(vlmGrp);
+        long extentSize;
+        if (vgsInfo != null)
+        {
+            extentSize = vgsInfo.vgExtentSize;
+        }
+        else
         {
             throw new StorageException("VolumeGroup " + vlmGrp + " not found");
         }
@@ -906,6 +941,7 @@ public class LvmProvider extends AbsStorageProvider<LvsInfo, LvmData<Resource>, 
                 LvmVolumeType.SNAPSHOT
             )
         );
+        LvmUtils.recacheNextLvs();
     }
 
     @Override

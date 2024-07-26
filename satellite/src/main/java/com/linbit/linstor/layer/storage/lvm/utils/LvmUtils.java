@@ -1,10 +1,7 @@
 package com.linbit.linstor.layer.storage.lvm.utils;
 
-import com.linbit.SizeConv;
-import com.linbit.SizeConv.SizeUnit;
 import com.linbit.extproc.ExtCmd.OutputData;
 import com.linbit.extproc.ExtCmdFactory;
-import com.linbit.linstor.layer.storage.utils.ParseUtils;
 import com.linbit.linstor.storage.StorageException;
 import com.linbit.linstor.storage.StorageUtils;
 import com.linbit.utils.ExceptionThrowingFunction;
@@ -20,12 +17,11 @@ import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_PAT
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_POOL_LV;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_SIZE;
 import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.LVS_COL_VG;
+import static com.linbit.linstor.layer.storage.lvm.utils.LvmCommands.VGS_COL_VG_NAME;
 
 import javax.annotation.Nullable;
 
 import java.io.File;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,6 +41,27 @@ public class LvmUtils
     private static final float LVM_DEFAULT_DATA_PERCENT = 100;
 
     private static final HashMap<Set<String>, String> CACHED_LVM_CONFIG_STRING = new HashMap<>();
+
+    /**
+     * Outer map's key: Collection of volume groups to "filter" for
+     * <br/>
+     * Middle map's key: single volume-group name
+     * <br/>
+     * Inner map's key: LV identifier
+     */
+    private static final Map<Collection<String>, Map<String, Map<String, LvsInfo>>> cachedLvs = new HashMap<>();
+    /**
+     * Outer map's key: Collection of volume groups to "filter" for
+     * <br/>
+     * Inner map's key: single volume-group name
+     */
+    private static final Map<Collection<String>/* vgs */, Map<String/* vg */, VgsInfo>> cachedVgsThin = new HashMap<>();
+    /**
+     * Outer map's key: Collection of volume groups to "filter" for
+     * <br/>
+     * Inner map's key: single volume-group name
+     */
+    private static final Map<Collection<String>/* vgs */, Map<String/*vg*/, VgsInfo>> cachedVgsThick = new HashMap<>();
 
     private LvmUtils()
     {
@@ -86,25 +103,58 @@ public class LvmUtils
         }
     }
 
+    public static class VgsInfo
+    {
+        public final String vgName;
+        public final @Nullable Long vgExtentSize;
+        public final @Nullable Long vgSize;
+        public final @Nullable Long vgFree;
+        public final @Nullable String lvName;
+        public final @Nullable Long lvSize;
+        public final @Nullable Float dataPercent;
+
+        public VgsInfo(
+            String vgNameRef,
+            @Nullable Long vgExtentSizeRef,
+            @Nullable Long vgSizeRef,
+            @Nullable Long vgFreeRef,
+            @Nullable String lvNameRef,
+            @Nullable Long lvSizeRef,
+            @Nullable Float dataPercentRef
+        )
+        {
+            vgName = vgNameRef;
+            vgExtentSize = vgExtentSizeRef;
+            vgSize = vgSizeRef;
+            vgFree = vgFreeRef;
+            lvName = lvNameRef;
+            lvSize = lvSizeRef;
+            dataPercent = dataPercentRef;
+        }
+    }
+
     private static String getLvmConfig(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
         throws StorageException
     {
-        String lvmConfig = CACHED_LVM_CONFIG_STRING.get(volumeGroups);
+        @Nullable String lvmConfig = CACHED_LVM_CONFIG_STRING.get(volumeGroups);
 
         if (lvmConfig == null)
         {
             Set<String> vlmGrps = new HashSet<>();
-            for (String vlmGrp : volumeGroups)
+            if (volumeGroups != null)
             {
-                int thinPoolIdx = vlmGrp.indexOf("/");
-                if (thinPoolIdx != -1)
+                for (String vlmGrp : volumeGroups)
                 {
-                    // thin vlmGrp, we only need the first part, the "actual" volume group, not the thin pool
-                    vlmGrps.add(vlmGrp.substring(0, thinPoolIdx));
-                }
-                else
-                {
-                    vlmGrps.add(vlmGrp);
+                    int thinPoolIdx = vlmGrp.indexOf("/");
+                    if (thinPoolIdx != -1)
+                    {
+                        // thin vlmGrp, we only need the first part, the "actual" volume group, not the thin pool
+                        vlmGrps.add(vlmGrp.substring(0, thinPoolIdx));
+                    }
+                    else
+                    {
+                        vlmGrps.add(vlmGrp);
+                    }
                 }
             }
 
@@ -169,6 +219,7 @@ public class LvmUtils
         throws StorageException
     {
         CACHED_LVM_CONFIG_STRING.remove(volumeGroups);
+        recacheNext();
         return getLvmConfig(extCmdFactory, volumeGroups);
     }
 
@@ -195,17 +246,74 @@ public class LvmUtils
         if (someMissing)
         {
             recacheLvmConfig(extCmdFactory, volumeGroups);
+            recacheNext();
             ret = supplierRef.supply();
         }
         return ret;
     }
 
-    public static HashMap<String, LvsInfo> getLvsInfo(
+    public static void recacheNext()
+    {
+        recacheNextLvs();
+        recacheNextVgs();
+    }
+
+    public static void recacheNextLvs()
+    {
+        cachedLvs.clear();
+        cachedVgsThin.clear();
+    }
+
+    public static void recacheNextVgs()
+    {
+        cachedVgsThick.clear();
+        cachedVgsThin.clear();
+    }
+
+    public static Map<String /* vg */, Map<String/* lv */, LvsInfo>> getLvsInfo(
         final ExtCmdFactory ecf,
         final Set<String> volumeGroups
-        )
-            throws StorageException
+    )
+        throws StorageException
     {
+        @Nullable Map<String /* vg */, Map<String/* lv */, LvsInfo>> ret = cachedLvs.get(volumeGroups);
+        if (ret == null)
+        {
+            ret = getLvsInfoImpl(ecf, volumeGroups);
+            cachedLvs.put(volumeGroups, ret);
+        }
+        return ret;
+    }
+
+    public static Map<String, VgsInfo> getVgsInfo(
+        ExtCmdFactory extCmdFactoryRef,
+        Set<String> volumeGroupSetRef,
+        boolean thinRef
+    )
+        throws StorageException
+    {
+        Map<Collection<String>, Map<String, VgsInfo>> cache = thinRef ? cachedVgsThin : cachedVgsThick;
+
+        @Nullable Map<String, VgsInfo> ret = cache.get(volumeGroupSetRef);
+        if (ret == null)
+        {
+            ret = retryIfNotAllContainingVgsExist(
+                extCmdFactoryRef,
+                volumeGroupSetRef,
+                () -> getVgsInfoImpl(extCmdFactoryRef, volumeGroupSetRef, thinRef)
+            );
+            cache.put(volumeGroupSetRef, ret);
+        }
+        return ret;
+    }
+
+    private static Map<String /* vg */, Map<String/* lv */, LvsInfo>> getLvsInfoImpl(
+        final ExtCmdFactory ecf,
+        final Set<String> volumeGroups
+    )
+        throws StorageException
+    {
+        final Map<String /* vg */, Map<String/* lv */, LvsInfo>> ret = new HashMap<>();
         final OutputData output = execWithRetry(
             ecf,
             volumeGroups,
@@ -213,10 +321,9 @@ public class LvmUtils
         );
         final String stdOut = new String(output.stdoutData);
 
-        final HashMap<String, LvsInfo> infoByIdentifier = new HashMap<>();
 
         final String[] lines = stdOut.split("\n");
-        final int expectedColCount = 9;
+        final int expectedColCount = LvmCommands.LVS_COLUMN_COUNT;
         for (final String line : lines)
         {
             final String[] data = line.trim().split(DELIMITER);
@@ -316,85 +423,100 @@ public class LvmUtils
                     metaDataPercentStr,
                     chunkSizeInKib
                 );
-                infoByIdentifier.put(vgStr + File.separator + identifier, state);
+                ret.computeIfAbsent(vgStr, ignored -> new HashMap<>())
+                    .put(identifier, state);
             }
         }
-        return infoByIdentifier;
+        return ret;
     }
 
-    public static Map<String, Long> getExtentSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
+    private static HashMap<String, VgsInfo> getVgsInfoImpl(
+        final ExtCmdFactory ecf,
+        final Set<String> volumeGroups,
+        final boolean thinRef
+    )
         throws StorageException
     {
-        return retryIfNotAllContainingVgsExist(
-            extCmdFactory,
+        final HashMap<String, VgsInfo> infoByVgName = new HashMap<>();
+        final OutputData output = execWithRetry(
+            ecf,
             volumeGroups,
-            () -> ParseUtils.parseSimpleTable(
-                execWithRetry(
-                    extCmdFactory,
-                    volumeGroups,
-                    config -> LvmCommands.getExtentSize(extCmdFactory.create(), volumeGroups, config)
-                ),
-                DELIMITER,
-                "extent size"
-            )
+            config -> thinRef ?
+                LvmCommands.vgsThin(ecf.create(), volumeGroups, config) :
+                LvmCommands.vgsThick(ecf.create(), volumeGroups, config)
         );
+        final String stdOut = new String(output.stdoutData);
+
+        final String[] lines = stdOut.split("\n");
+        final int expectedColCount = thinRef ? LvmCommands.VGS_THIN_COLUMN_COUNT : LvmCommands.VGS_THICK_COLUMN_COUNT;
+        for (final String line : lines)
+        {
+            final String[] data = line.trim().split(DELIMITER);
+            if (data.length == expectedColCount)
+            {
+                final String vgName = data[VGS_COL_VG_NAME];
+                final String vgExtentSizeStr = data[LvmCommands.VGS_COL_VG_EXTENT_SIZE];
+                final String vgSizeStr = data[LvmCommands.VGS_COL_VG_SIZE];
+                final String vgFreeStr = data[LvmCommands.VGS_COL_VG_FREE];
+
+                final long vgExentSize;
+                final long vgSize;
+                final long vgFree;
+                final @Nullable String lvName;
+                final @Nullable Long lvSize;
+                final @Nullable Float dataPercent;
+
+                if (thinRef)
+                {
+                    lvName = data[LvmCommands.VGS_COL_LV_NAME];
+                    final String lvSizeStr = data[LvmCommands.VGS_COL_LV_SIZE];
+                    final String dataPercentStr = data[LvmCommands.VGS_COL_DATA_PERCENT];
+
+                    lvSize = parseLong(lvSizeStr, "lv_size", vgName, output.executedCommand, null, true);
+                    dataPercent = parseFloat(
+                        dataPercentStr,
+                        "data_percent",
+                        vgName,
+                        output.executedCommand,
+                        LVM_DEFAULT_DATA_PERCENT,
+                        true
+                    );
+                }
+                else
+                {
+                    lvName = null;
+                    lvSize = null;
+                    dataPercent = null;
+                }
+
+
+                vgExentSize = parseLong(vgExtentSizeStr, "vg_extent", vgName, output.executedCommand, null, true);
+                vgSize = parseLong(vgSizeStr, "vg_size", vgName, output.executedCommand, null, true);
+                vgFree = parseLong(vgFreeStr, "vg_free", vgName, output.executedCommand, null, true);
+
+                final VgsInfo state = new VgsInfo(
+                    vgName,
+                    vgExentSize,
+                    vgSize,
+                    vgFree,
+                    lvName,
+                    lvSize,
+                    dataPercent
+                );
+                if (lvName != null)
+                {
+                    infoByVgName.put(vgName + File.separator + lvName, state);
+                }
+                infoByVgName.put(vgName, state);
+            }
+        }
+        return infoByVgName;
     }
 
-    public static Map<String, Long> getVgTotalSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
-        throws StorageException
-    {
-        return retryIfNotAllContainingVgsExist(
-            extCmdFactory,
-            volumeGroups,
-            () -> ParseUtils.parseSimpleTable(
-                execWithRetry(
-                    extCmdFactory,
-                    volumeGroups,
-                    config -> LvmCommands.getVgTotalSize(extCmdFactory.create(), volumeGroups, config)
-                ),
-                DELIMITER,
-                "total size"
-            )
-        );
-    }
-
-    public static Map<String, Long> getVgFreeSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
-        throws StorageException
-    {
-        return retryIfNotAllContainingVgsExist(
-            extCmdFactory,
-            volumeGroups,
-            () -> ParseUtils.parseSimpleTable(
-                execWithRetry(
-                    extCmdFactory,
-                    volumeGroups,
-                    config -> LvmCommands.getVgFreeSize(extCmdFactory.create(), volumeGroups, config)
-                ),
-                DELIMITER,
-                "free size"
-            )
-        );
-    }
-
-    public static Map<String, Long> getThinTotalSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
-        throws StorageException
-    {
-        return retryIfNotAllContainingVgsExist(
-            extCmdFactory,
-            volumeGroups,
-            () -> ParseUtils.parseSimpleTable(
-                execWithRetry(
-                    extCmdFactory,
-                    volumeGroups,
-                    config -> LvmCommands.getVgThinTotalSize(extCmdFactory.create(), volumeGroups, config)
-                ),
-                DELIMITER,
-                "total thin size"
-            )
-        );
-    }
-
-    public static Map<String, Long> getThinFreeSize(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
+    public static Map<String /* vg */, Map<String/* thinPool */, Long>> getThinFreeSize(
+        ExtCmdFactory extCmdFactory,
+        Set<String> volumeGroups
+    )
         throws StorageException
     {
         return retryIfNotAllContainingVgsExist(
@@ -404,66 +526,29 @@ public class LvmUtils
         );
     }
 
-    private static Map<String, Long> getThinFreeSizeImpl(ExtCmdFactory extCmdFactory, Set<String> volumeGroups)
+    private static Map<String /* vg */, Map<String/* thinPool */, Long>> getThinFreeSizeImpl(
+        ExtCmdFactory extCmdFactory,
+        Set<String> volumeGroups
+    )
         throws StorageException
     {
-        final int expectedColums = 3;
-
-        final Map<String, Long> result = new HashMap<>();
-
-        OutputData output = execWithRetry(
+        final Map<String /* vg */, Map<String/* thinPool */, Long>> result = new HashMap<>();
+        final Map<String, VgsInfo> vgsInfoMap = getVgsInfo(
             extCmdFactory,
             volumeGroups,
-            config -> LvmCommands.getVgThinFreeSize(extCmdFactory.create(), volumeGroups, config)
+            true
         );
-        final String stdOut = new String(output.stdoutData);
-        final String[] lines = stdOut.split("\n");
-
-        for (final String line : lines)
+        for (VgsInfo vgsInfo : vgsInfoMap.values())
         {
-            final String[] data = line.trim().split(DELIMITER);
-            if (data.length == expectedColums)
+            if (vgsInfo.lvName != null)
             {
-                try
-                {
-                    BigDecimal thinPoolSizeBytes = StorageUtils.parseDecimal(data[1].trim());
-
-                    BigDecimal dataPercent = StorageUtils.parseDecimal(data[2].trim());
-                    BigDecimal dataFraction = dataPercent.movePointLeft(2);
-                    BigDecimal freeFraction = dataFraction.negate().add(BigDecimal.valueOf(1L));
-
-                    BigInteger freeBytes = thinPoolSizeBytes.multiply(freeFraction).toBigInteger();
-                    long freeSpace = SizeConv.convert(freeBytes, SizeUnit.UNIT_B, SizeUnit.UNIT_KiB).longValueExact();
-
-                    result.put(
-                        data[0],
-                        freeSpace
-                    );
-                }
-                catch (NumberFormatException nfExc)
-                {
-                    throw new StorageException(
-                        "Unable to parse free thin sizes",
-                        "Numeric value to parse: '" + data[1] + "'",
-                        null,
-                        null,
-                        "External command: " + StringUtils.joinShellQuote(output.executedCommand),
-                        nfExc
-                        );
-                }
-            }
-            else
-            {
-                throw new StorageException(
-                    "Unable to parse free thin sizes",
-                    "Expected " + expectedColums + " columns, but got " + data.length,
-                    "Failed to parse line: " + line,
-                    null,
-                    "External command: " + StringUtils.joinShellQuote(output.executedCommand)
-                    );
+                long freeSpace = (long) (vgsInfo.lvSize * (1 - vgsInfo.dataPercent / 100.0));
+                result.computeIfAbsent(vgsInfo.vgName, ignored -> new HashMap<>())
+                    .put(vgsInfo.lvName, freeSpace);
             }
         }
         return result;
+
     }
 
     public static void checkVgExists(ExtCmdFactory extCmdFactory, String volumeGroup) throws StorageException
@@ -484,6 +569,7 @@ public class LvmUtils
         if (!exists)
         {
             recacheLvmConfig(extCmdFactory, volumeGroup);
+            recacheNext();
             exists = checkVgExistsBoolImpl(extCmdFactory, volumeGroup);
         }
         return exists;
@@ -492,24 +578,12 @@ public class LvmUtils
     private static boolean checkVgExistsBoolImpl(final ExtCmdFactory extCmdFactory, final String volumeGroup)
         throws StorageException
     {
-        OutputData output = execWithRetry(
+        Map<String, VgsInfo> vgsInfo = getVgsInfo(
             extCmdFactory,
-            Collections.singleton(volumeGroup),
-            config -> LvmCommands.listExistingVolumeGroups(extCmdFactory.create(), config)
+            Collections.emptySet(),
+            false
         );
-        final String stdOut = new String(output.stdoutData);
-        final String[] volumeGroupList = stdOut.split("\n");
-        final String specVlmGrp = volumeGroup.trim();
-        boolean matchFlag = false;
-        for (String curVlmGrp : volumeGroupList)
-        {
-            if (curVlmGrp.trim().equals(specVlmGrp))
-            {
-                matchFlag = true;
-                break;
-            }
-        }
-        return matchFlag;
+        return vgsInfo.containsKey(volumeGroup);
     }
 
     public static boolean checkThinPoolExistsBool(
@@ -523,6 +597,7 @@ public class LvmUtils
         if (!exists)
         {
             recacheLvmConfig(extCmdFactory, volumeGroup);
+            recacheNext();
             exists = checkThinPoolExistsBoolImpl(extCmdFactory, volumeGroup, thinPool);
         }
         return exists;
@@ -531,9 +606,17 @@ public class LvmUtils
     private static boolean checkThinPoolExistsBoolImpl(ExtCmdFactory extCmdFactory, String volumeGroup, String thinPool)
         throws StorageException
     {
-        HashMap<String, LvsInfo> map = getLvsInfo(extCmdFactory, Collections.singleton(volumeGroup));
-        LvsInfo lvsInfo = map.get(volumeGroup + File.separator + thinPool);
-        return lvsInfo != null;
+        boolean ret = false;
+        Map<String /* vg */, Map<String/* lv */, LvsInfo>> lvsInfo = getLvsInfo(
+            extCmdFactory,
+            Collections.singleton(volumeGroup)
+        );
+        @Nullable Map<String/* lv */, LvsInfo> lvInfoByVolumeGroup = lvsInfo.get(volumeGroup);
+        if (lvInfoByVolumeGroup != null)
+        {
+            ret = lvInfoByVolumeGroup.containsKey(thinPool);
+        }
+        return ret;
     }
 
     public static void checkThinPoolExists(
@@ -586,5 +669,100 @@ public class LvmUtils
             outputData = fkt.accept(recacheLvmConfig(ecf, volumeGroups));
         }
         return outputData;
+    }
+
+    private static float parseFloat(
+        @Nullable String numToParseRef,
+        String descriptionOfNumberRef,
+        String vgNameRef,
+        String[] executedCommandRef,
+        @Nullable Float defaultValueIfNullOrEmptyRef,
+        boolean allowNullRef
+    )
+        throws StorageException
+    {
+        return parseGeneric(
+            numToParseRef,
+            descriptionOfNumberRef,
+            vgNameRef,
+            executedCommandRef,
+            defaultValueIfNullOrEmptyRef,
+            allowNullRef,
+            StorageUtils::parseDecimalAsFloat
+        );
+    }
+
+    private static long parseLong(
+        @Nullable String numToParseRef,
+        String descriptionOfNumberRef,
+        String vgNameRef,
+        String[] executedCommandRef,
+        @Nullable Long defaultValueIfNullOrEmptyRef,
+        boolean allowNullRef
+    )
+        throws StorageException
+    {
+        return parseGeneric(
+            numToParseRef,
+            descriptionOfNumberRef,
+            vgNameRef,
+            executedCommandRef,
+            defaultValueIfNullOrEmptyRef,
+            allowNullRef,
+            StorageUtils::parseDecimalAsLong
+        );
+    }
+
+    private static <T> T parseGeneric(
+        @Nullable String numToParseRef,
+        String descriptionOfNumberRef,
+        String vgNameRef,
+        String[] executedCommandRef,
+        @Nullable T defaultValueIfNullOrEmptyRef,
+        boolean allowNullRef,
+        ExceptionThrowingFunction<String, T, StorageException> parserRef
+    )
+        throws StorageException
+    {
+        T ret;
+        if (numToParseRef == null || numToParseRef.trim().isEmpty())
+        {
+            if (defaultValueIfNullOrEmptyRef != null || allowNullRef)
+            {
+                ret = defaultValueIfNullOrEmptyRef;
+            }
+            else
+            {
+                throw new StorageException(
+                    "Unable to parse '" + descriptionOfNumberRef + "' of vgs for volume group '" + vgNameRef + "'",
+                    "Column '" + descriptionOfNumberRef + "' was unexpectedly null",
+                    null,
+                    null,
+                    "External command used to query logical volume info: " +
+                        StringUtils.joinShellQuote(executedCommandRef),
+                    null
+                );
+            }
+        }
+        else
+        {
+            try
+            {
+                ret = parserRef.accept(numToParseRef.trim());
+            }
+            catch (NumberFormatException nfExc)
+            {
+                throw new StorageException(
+                    "Unable to parse '" + descriptionOfNumberRef + "' of vgs for volume group '" + vgNameRef + "'",
+                    "Data percent to parse: '" + numToParseRef + "'",
+                    null,
+                    null,
+                    "External command used to query logical volume info: " +
+                        StringUtils.joinShellQuote(executedCommandRef),
+                    nfExc
+                );
+            }
+        }
+        return ret;
     }
 }
